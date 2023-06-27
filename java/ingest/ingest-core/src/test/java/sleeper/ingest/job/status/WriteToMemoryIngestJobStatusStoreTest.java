@@ -38,6 +38,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunOnTask;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichFinished;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
@@ -327,12 +328,31 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
             store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableName))
                     .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
                             validationTime, summary)));
+        }
+
+        @Test
+        void shouldReportUnvalidatedFinishedJob() {
+            // Given
+            String tableName = "test-table";
+            String jobRunId = "test-run";
+            String taskId = "test-task";
+            IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+
+            // When
+            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
+
+            // Then
+            assertThat(store.getAllJobs(tableName))
+                    .containsExactly(finishedIngestJob(job, taskId, summary));
         }
     }
 }

@@ -31,7 +31,7 @@ public class IngestJobStartedEvent {
     private IngestJobStartedEvent(Builder builder) {
         job = Objects.requireNonNull(builder.job, "job must not be null");
         jobRunId = builder.jobRunId;
-        taskId = builder.taskId;
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
         startOfRun = builder.startOfRun;
     }
@@ -41,12 +41,14 @@ public class IngestJobStartedEvent {
     }
 
     public static IngestJobStartedEvent ingestJobStarted(String taskId, IngestJob job, Instant startTime) {
+        return ingestJobStarted(job, startTime).taskId(taskId).build();
+    }
+
+    public static Builder ingestJobStarted(IngestJob job, Instant startTime) {
         return builder()
-                .taskId(taskId)
                 .job(job)
                 .startTime(startTime)
-                .startOfRun(true)
-                .build();
+                .startOfRun(true);
     }
 
     public static IngestJobStartedEvent.Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {

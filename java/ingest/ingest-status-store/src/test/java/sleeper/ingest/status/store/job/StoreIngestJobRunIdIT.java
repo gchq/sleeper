@@ -87,7 +87,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // When
         store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
         store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFinished(ingestJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())

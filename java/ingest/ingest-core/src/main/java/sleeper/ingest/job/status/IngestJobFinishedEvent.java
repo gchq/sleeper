@@ -31,7 +31,7 @@ public class IngestJobFinishedEvent {
         job = Objects.requireNonNull(builder.job, "job must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         jobRunId = builder.jobRunId;
-        taskId = builder.taskId;
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
     }
 
     public static Builder builder() {
@@ -82,7 +82,7 @@ public class IngestJobFinishedEvent {
         if (!Objects.equals(jobRunId, that.jobRunId)) {
             return false;
         }
-        return Objects.equals(taskId, that.taskId);
+        return taskId.equals(that.taskId);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class IngestJobFinishedEvent {
         int result = job.hashCode();
         result = 31 * result + summary.hashCode();
         result = 31 * result + (jobRunId != null ? jobRunId.hashCode() : 0);
-        result = 31 * result + (taskId != null ? taskId.hashCode() : 0);
+        result = 31 * result + taskId.hashCode();
         return result;
     }
 
