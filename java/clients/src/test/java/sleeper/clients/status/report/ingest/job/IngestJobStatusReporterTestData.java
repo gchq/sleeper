@@ -122,7 +122,7 @@ public class IngestJobStatusReporterTestData {
                 rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
     }
 
-    private static IngestJob createJob(int jobNum, int inputFileCount) {
+    public static IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
                 .id(StatusReporterTestHelper.job(jobNum))
                 .files(IntStream.range(1, inputFileCount + 1)
