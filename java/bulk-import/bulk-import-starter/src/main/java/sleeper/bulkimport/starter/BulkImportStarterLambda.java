@@ -30,16 +30,18 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
-import java.util.Objects;
+import java.util.List;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.utils.HadoopPathUtils.expandDirectories;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
@@ -93,16 +95,20 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
                 .map(bulkImportJobSerDe::fromJson)
-                .map(job -> expandDirectories(job.getFiles(), hadoopConfig, instanceProperties)
-                        .map(files -> {
-                            LOGGER.info("Expanded directories for job: {}", job);
-                            return job.toBuilder().files(files).build();
-                        }).orElseGet(() -> {
-                            LOGGER.warn("Could not expand directories for job {}, skipping", job);
-                            return null;
-                        }))
-                .filter(Objects::nonNull)
+                .map(this::expandDirectories)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .forEach(executor::runJob);
         return null;
+    }
+
+    private Optional<BulkImportJob> expandDirectories(BulkImportJob job) {
+        BulkImportJob.Builder builder = job.toBuilder();
+        List<String> files = HadoopPathUtils.expandDirectories(job.getFiles(), hadoopConfig, instanceProperties);
+        if (files.isEmpty()) {
+            LOGGER.warn("Could not find files for job: {}", job);
+            return Optional.empty();
+        }
+        return Optional.of(builder.files(files).build());
     }
 }
