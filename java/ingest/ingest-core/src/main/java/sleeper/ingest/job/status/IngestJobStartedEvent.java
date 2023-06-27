@@ -49,15 +49,6 @@ public class IngestJobStartedEvent {
                 .build();
     }
 
-    public static IngestJobStartedEvent bulkImportJobStarted(String taskId, IngestJob job, Instant startTime) {
-        return builder()
-                .taskId(taskId)
-                .job(job)
-                .startTime(startTime)
-                .startOfRun(true)
-                .build();
-    }
-
     public static IngestJobStartedEvent.Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {
         return builder()
                 .job(job)
