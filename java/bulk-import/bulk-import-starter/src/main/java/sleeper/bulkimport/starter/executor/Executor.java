@@ -76,18 +76,21 @@ public abstract class Executor {
         if (!validateJob(bulkImportJob)) {
             return;
         }
+        ingestJobStatusStore.jobValidated(ingestJobAccepted(
+                bulkImportJob.toIngestJob(), validationTimeSupplier.get())
+                .jobRunId(jobRunId).build());
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        runJobOnPlatform(bulkImportJob);
+        runJobOnPlatform(bulkImportJob, jobRunId);
         LOGGER.info("Successfully submitted job");
     }
 
-    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob);
+    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId);
 
     protected abstract String getJarLocation();
 
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
+    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         LOGGER.info("Using Spark config {}", userConfig);
 
@@ -148,9 +151,6 @@ public abstract class Executor {
                     bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
             return false;
         } else {
-            ingestJobStatusStore.jobValidated(ingestJobAccepted(
-                    bulkImportJob.toIngestJob(), validationTimeSupplier.get())
-                    .jobRunId(jobRunId).build());
             return true;
         }
     }

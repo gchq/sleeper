@@ -65,12 +65,12 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         StepConfig stepConfig = new StepConfig()
                 .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(constructArgs(bulkImportJob, clusterName)));
+                        .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName)));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
                 .withSteps(stepConfig);

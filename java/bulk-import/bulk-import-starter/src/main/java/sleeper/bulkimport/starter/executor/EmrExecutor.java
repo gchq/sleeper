@@ -76,10 +76,10 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3, String runId,
+                       AmazonS3 amazonS3, String jobRunId,
                        Supplier<Instant> validationTimeSupplier) {
         this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3, runId, validationTimeSupplier,
+                amazonS3, jobRunId, validationTimeSupplier,
                 new EmrInstanceFleets(instanceProperties));
     }
 
@@ -88,17 +88,17 @@ public class EmrExecutor extends AbstractEmrExecutor {
                        TablePropertiesProvider tablePropertiesProvider,
                        StateStoreProvider stateStoreProvider,
                        IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3, String runId,
+                       AmazonS3 amazonS3, String jobRunId,
                        Supplier<Instant> validationTimeSupplier,
                        EmrInstanceConfiguration instanceConfiguration) {
         super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore, amazonS3,
-                runId, validationTimeSupplier);
+                jobRunId, validationTimeSupplier);
         this.emrClient = emrClient;
         this.instanceConfiguration = instanceConfiguration;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -129,7 +129,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(constructArgs(bulkImportJob, clusterName + "-EMR"))))
+                                .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName + "-EMR"))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));

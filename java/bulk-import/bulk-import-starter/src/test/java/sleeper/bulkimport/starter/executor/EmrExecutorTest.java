@@ -438,7 +438,7 @@ class EmrExecutorTest {
         instanceProperties.set(VERSION, "1.2.3");
         EmrExecutor executor = executorWithRunIdAndValidationTime(
                 "test-run", Instant.parse("2023-06-12T17:30:00Z"));
-        assertThat(executor.constructArgs(singleFileJob(), "test-task"))
+        assertThat(executor.constructArgs(singleFileJob(), "test-run", "test-task"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
                         "cluster",

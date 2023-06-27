@@ -119,7 +119,10 @@ public class TestProcessStatusUpdateRecords {
 
         public Stream<ProcessStatusUpdateRecord> records() {
             return statusUpdates.stream()
-                    .map(update -> new ProcessStatusUpdateRecord(jobId, update.expiryTime, update.statusUpdate, jobRunId, taskId));
+                    .map(update -> ProcessStatusUpdateRecord.builder()
+                            .jobId(jobId).statusUpdate(update.statusUpdate)
+                            .jobRunId(jobRunId).taskId(taskId).expiryDate(update.expiryTime)
+                            .build());
         }
     }
 

@@ -35,11 +35,14 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
-        ProcessStatusUpdateRecord validationRecord = new ProcessStatusUpdateRecord(event.getJob().getId(), null,
-                validatedStatus(event), event.getJobRunId(), event.getTaskId());
         tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
-                .add(validationRecord);
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJob().getId())
+                        .statusUpdate(validatedStatus(event))
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
     }
 
     private static IngestJobValidatedStatus validatedStatus(IngestJobValidatedEvent event) {
@@ -56,27 +59,33 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobStarted(IngestJobStartedEvent event) {
         IngestJob job = event.getJob();
-        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
-                        .inputFileCount(job.getFiles().size())
-                        .startTime(event.getStartTime())
-                        .updateTime(defaultUpdateTime(event.getStartTime())).build(),
-                event.getJobRunId(), event.getTaskId());
         tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(job.getId())
+                        .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
+                                .inputFileCount(job.getFiles().size())
+                                .startTime(event.getStartTime())
+                                .updateTime(defaultUpdateTime(event.getStartTime()))
+                                .build())
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
     }
 
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         IngestJob job = event.getJob();
         RecordsProcessedSummary summary = event.getSummary();
-        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary),
-                event.getJobRunId(), event.getTaskId());
         List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));
-        jobRecords.add(updateRecord);
+        jobRecords.add(ProcessStatusUpdateRecord.builder()
+                .jobId(job.getId())
+                .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                .jobRunId(event.getJobRunId())
+                .taskId(event.getTaskId())
+                .build());
     }
 
     @Override
@@ -85,7 +94,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                 .collect(Collectors.toList());
     }
 
-    private Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
+    public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
         return tableJobs(tableName)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());

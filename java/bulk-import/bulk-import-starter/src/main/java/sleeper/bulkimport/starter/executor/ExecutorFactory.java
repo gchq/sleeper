@@ -48,7 +48,7 @@ public class ExecutorFactory {
     private final AmazonElasticMapReduce emrClient;
     private final AWSStepFunctions stepFunctionsClient;
     private final String bulkImportPlatform;
-    private final String taskId;
+    private final String jobRunId;
     private final Supplier<Instant> validationTimeSupplier;
 
     public ExecutorFactory(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
@@ -60,16 +60,16 @@ public class ExecutorFactory {
                            AmazonElasticMapReduce emrClient,
                            AWSStepFunctions stepFunctionsClient,
                            AmazonDynamoDB dynamoDB,
-                           String taskId,
+                           String jobRunId,
                            Supplier<Instant> validationTimeSupplier) throws IOException {
-        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, taskId, validationTimeSupplier, System::getenv);
+        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, jobRunId, validationTimeSupplier, System::getenv);
     }
 
     ExecutorFactory(AmazonS3 s3Client,
                     AmazonElasticMapReduce emrClient,
                     AWSStepFunctions stepFunctionsClient,
                     AmazonDynamoDB dynamoDB,
-                    String taskId,
+                    String jobRunId,
                     Supplier<Instant> validationTimeSupplier,
                     UnaryOperator<String> getEnvironmentVariable) throws IOException {
         this.instanceProperties = new InstanceProperties();
@@ -81,7 +81,7 @@ public class ExecutorFactory {
         this.stepFunctionsClient = stepFunctionsClient;
         this.bulkImportPlatform = getEnvironmentVariable.apply(BULK_IMPORT_PLATFORM);
         this.ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
-        this.taskId = taskId;
+        this.jobRunId = jobRunId;
         this.validationTimeSupplier = validationTimeSupplier;
         LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
     }
@@ -90,13 +90,13 @@ public class ExecutorFactory {
         switch (bulkImportPlatform) {
             case "NonPersistentEMR":
                 return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider,
-                        stateStoreProvider, ingestJobStatusStore, s3Client, taskId, validationTimeSupplier);
+                        stateStoreProvider, ingestJobStatusStore, s3Client, jobRunId, validationTimeSupplier);
             case "EKS":
                 return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider,
-                        stateStoreProvider, ingestJobStatusStore, s3Client, taskId, validationTimeSupplier);
+                        stateStoreProvider, ingestJobStatusStore, s3Client, jobRunId, validationTimeSupplier);
             case "PersistentEMR":
                 return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider,
-                        stateStoreProvider, ingestJobStatusStore, s3Client, taskId, validationTimeSupplier);
+                        stateStoreProvider, ingestJobStatusStore, s3Client, jobRunId, validationTimeSupplier);
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }

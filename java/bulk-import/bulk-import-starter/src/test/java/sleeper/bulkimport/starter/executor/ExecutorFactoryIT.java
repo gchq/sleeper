@@ -64,7 +64,7 @@ public class ExecutorFactoryIT {
     private ExecutorFactory executorFactory(AmazonS3 s3Client) throws IOException {
         return new ExecutorFactory(s3Client,
                 mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class), mock(AmazonDynamoDB.class),
-                "test-task", Instant::now, environment::get);
+                "test-run", Instant::now, environment::get);
     }
 
     @Test

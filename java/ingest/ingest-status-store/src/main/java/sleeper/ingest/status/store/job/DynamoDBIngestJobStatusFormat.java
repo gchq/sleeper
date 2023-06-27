@@ -132,12 +132,13 @@ public class DynamoDBIngestJobStatusFormat {
     }
 
     private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return new ProcessStatusUpdateRecord(
-                getStringAttribute(item, JOB_ID),
-                getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
-                getStatusUpdate(item),
-                getStringAttribute(item, JOB_RUN_ID),
-                getStringAttribute(item, TASK_ID));
+        return ProcessStatusUpdateRecord.builder()
+                .jobId(getStringAttribute(item, JOB_ID))
+                .statusUpdate(getStatusUpdate(item))
+                .jobRunId(getStringAttribute(item, JOB_RUN_ID))
+                .taskId(getStringAttribute(item, TASK_ID))
+                .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
+                .build();
     }
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
