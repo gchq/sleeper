@@ -70,28 +70,13 @@ public class IngestJobFinishedEvent {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         IngestJobFinishedEvent that = (IngestJobFinishedEvent) o;
-
-        if (!job.equals(that.job)) {
-            return false;
-        }
-        if (!summary.equals(that.summary)) {
-            return false;
-        }
-        if (!Objects.equals(jobRunId, that.jobRunId)) {
-            return false;
-        }
-        return taskId.equals(that.taskId);
+        return Objects.equals(job, that.job) && Objects.equals(summary, that.summary) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
     }
 
     @Override
     public int hashCode() {
-        int result = job.hashCode();
-        result = 31 * result + summary.hashCode();
-        result = 31 * result + (jobRunId != null ? jobRunId.hashCode() : 0);
-        result = 31 * result + taskId.hashCode();
-        return result;
+        return Objects.hash(job, summary, jobRunId, taskId);
     }
 
     @Override

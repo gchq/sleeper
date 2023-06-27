@@ -78,12 +78,30 @@ public class IngestJobValidatedEvent {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
+        return Objects.equals(job, that.job) && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(job, validationTime, reasons, jobRunId, taskId);
+    }
+
+    @Override
     public String toString() {
         return "IngestJobValidatedEvent{" +
-                "jobRunId='" + jobRunId + '\'' +
-                ", job=" + job +
+                "job=" + job +
                 ", validationTime=" + validationTime +
-                ", reasons='" + reasons + '\'' +
+                ", reasons=" + reasons +
+                ", jobRunId='" + jobRunId + '\'' +
+                ", taskId='" + taskId + '\'' +
                 '}';
     }
 

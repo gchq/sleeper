@@ -87,19 +87,20 @@ public class IngestJobStartedEvent {
             return false;
         }
         IngestJobStartedEvent that = (IngestJobStartedEvent) o;
-        return Objects.equals(taskId, that.taskId) && Objects.equals(job, that.job) && Objects.equals(startTime, that.startTime);
+        return startOfRun == that.startOfRun && Objects.equals(job, that.job) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId) && Objects.equals(startTime, that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, job, startTime);
+        return Objects.hash(job, jobRunId, taskId, startTime, startOfRun);
     }
 
     @Override
     public String toString() {
         return "IngestJobStartedEvent{" +
-                "taskId='" + taskId + '\'' +
-                ", job=" + job +
+                "job=" + job +
+                ", jobRunId='" + jobRunId + '\'' +
+                ", taskId='" + taskId + '\'' +
                 ", startTime=" + startTime +
                 ", startOfRun=" + startOfRun +
                 '}';
