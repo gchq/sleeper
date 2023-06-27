@@ -400,7 +400,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     private Stream<FileInfo> getReadyForGCFileInfosStream() {
         long delayInMilliseconds = (long) (1000.0 * 60.0 * garbageCollectorDelayBeforeDeletionInMinutes);
-        LOGGER.info("Delay in milliseconds is {}", delayInMilliseconds);
         long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
         Map<String, String> expressionAttributeNames = new HashMap<>();
         expressionAttributeNames.put("#status", STATUS);

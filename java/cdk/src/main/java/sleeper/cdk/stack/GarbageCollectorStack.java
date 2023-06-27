@@ -94,6 +94,7 @@ public class GarbageCollectorStack extends NestedStack {
         dataBuckets.forEach(bucket -> bucket.grantRead(handler));
         dataBuckets.forEach(bucket -> bucket.grantDelete(handler));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteFileLifecycleMetadata(handler));
+        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadFileInPartitionMetadata(handler));
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
