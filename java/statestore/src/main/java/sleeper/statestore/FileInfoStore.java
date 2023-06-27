@@ -68,7 +68,7 @@ public interface FileInfoStore {
      * @param filename The name of the file to be updated
      * @throws StateStoreException if the update fails
      */
-    void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException;
+//     void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException;
 
     /**
      * Changes the file-lifecycle entry of the files with the given filenams to
@@ -80,7 +80,7 @@ public interface FileInfoStore {
      * @param filenames The names of the files to be updated
      * @throws StateStoreException if the update fails
      */
-    void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException;
+//     void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException;
 
     /**
      * This method is used to commit the results of a compaction job. The relevant file-in-partition

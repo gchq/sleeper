@@ -357,73 +357,75 @@ public class DynamoDBStateStoreIT {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test
-    public void shouldSetStatusToReadyForGarbageCollection() throws Exception {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder()
-                .schema(schema)
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.ofEpochMilli(0L))
-                .build();
-        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-        FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
-        FileInfo file3 = factory.rootFile("file3", 200L, "e", "f");
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        dynamoDBStateStore.addFiles(Arrays.asList(file1, file2));
-        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(file1, file2), file3);
+//     @Test
+//     public void shouldFindFilesThatShouldHaveStatusOfGCPending2() throws Exception {
+//         // Given
+//         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+//         PartitionTree tree = new PartitionsBuilder(schema)
+//                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+//                 .buildTree();
+//         FileInfoFactory factory = FileInfoFactory.builder()
+//                 .schema(schema)
+//                 .partitionTree(tree)
+//                 .lastStateStoreUpdate(Instant.ofEpochMilli(0L))
+//                 .build();
+//         FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
+//         FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
+//         FileInfo file3 = factory.rootFile("file3", 200L, "e", "f");
+//         StateStore dynamoDBStateStore = getStateStore(schema);
+//         dynamoDBStateStore.addFiles(Arrays.asList(file1, file2));
+//         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(file1, file2), file3);
 
-        // When
-        dynamoDBStateStore.setStatusToReadyForGarbageCollection(file2.getFilename());
+//         // When
+//         // dynamoDBStateStore.setStatusToReadyForGarbageCollection(file2.getFilename());
+//         dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
 
-        // Then
-        FileInfo expectedFileInfoForFile2 = file2.cloneWithStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-        List<FileInfo> fileLifecyclesForFile2 = dynamoDBStateStore.getFileLifecycleList().stream()
-                .filter(f -> f.getFilename().equals(file2.getFilename()))
-                .collect(Collectors.toList());
-        assertThat(fileLifecyclesForFile2).hasSize(1);
-        assertThat(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime()).isGreaterThan(0L);
-        expectedFileInfoForFile2 = expectedFileInfoForFile2.toBuilder()
-                .lastStateStoreUpdateTime(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime())
-                .build();
-        assertThat(expectedFileInfoForFile2).isEqualTo(fileLifecyclesForFile2.get(0));
-    }
+//         // Then
+//         FileInfo expectedFileInfoForFile2 = file2.cloneWithStatus(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING);
+//         List<FileInfo> fileLifecyclesForFile2 = dynamoDBStateStore.getFileLifecycleList().stream()
+//                 .filter(f -> f.getFilename().equals(file2.getFilename()))
+//                 .collect(Collectors.toList());
+//         assertThat(fileLifecyclesForFile2).hasSize(1);
+//         assertThat(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime()).isGreaterThan(0L);
+//         expectedFileInfoForFile2 = expectedFileInfoForFile2.toBuilder()
+//                 .lastStateStoreUpdateTime(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime())
+//                 .build();
+//         assertThat(expectedFileInfoForFile2).isEqualTo(fileLifecyclesForFile2.get(0));
+//     }
 
-    @Test
-    public void shouldChangeStatusFromActiveToReadyForGC() throws StateStoreException {
-        // Given
-        Schema schema = schemaWithSingleRowKeyType(new LongType());
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        FileInfo fileInfo = FileInfo.builder()
-                .rowKeyTypes(new LongType())
-                .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
-                .numberOfRecords(1000L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(1_000_000L)
-                .build();
-        dynamoDBStateStore.addFile(fileInfo);
+//     @Test
+//     public void shouldChangeStatusFromActiveToReadyForGC() throws StateStoreException {
+//         // Given
+//         Schema schema = schemaWithSingleRowKeyType(new LongType());
+//         StateStore dynamoDBStateStore = getStateStore(schema);
+//         FileInfo fileInfo = FileInfo.builder()
+//                 .rowKeyTypes(new LongType())
+//                 .filename("abc")
+//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
+//                 .partitionId("1")
+//                 .numberOfRecords(1000L)
+//                 .minRowKey(Key.create(1L))
+//                 .maxRowKey(Key.create(10L))
+//                 .lastStateStoreUpdateTime(1_000_000L)
+//                 .build();
+//         dynamoDBStateStore.addFile(fileInfo);
 
-        // When
-        dynamoDBStateStore.setStatusToReadyForGarbageCollection(fileInfo.getFilename());
+//         // When
+//         dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
+//         // dynamoDBStateStore.setStatusToReadyForGarbageCollection(fileInfo.getFilename());
 
-        // Then
-        assertThat(dynamoDBStateStore.getFileLifecycleList()).singleElement().satisfies(found -> {
-            assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
-            assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION);
-            assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
-            assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
-            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isGreaterThan(1_000_000L);
-        });
-    }
+//         // Then
+//         assertThat(dynamoDBStateStore.getFileLifecycleList()).singleElement().satisfies(found -> {
+//             assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
+//             assertThat(found.getFilename()).isEqualTo("abc");
+//             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING);
+//             assertThat(found.getPartitionId()).isEqualTo("1");
+//             assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
+//             assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
+//             assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
+//             assertThat(found.getLastStateStoreUpdateTime().longValue()).isGreaterThan(1_000_000L);
+//         });
+//     }
 
     @Test
     public void shouldAtomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile() throws StateStoreException {
@@ -689,8 +691,8 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        Map<String, FileInfo> expected = new HashMap<>();
-        for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
+        List<FileInfo> fileInfos = new ArrayList<>();
+        for (int i = 0; i < 10_000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file-" + i)
@@ -701,22 +703,31 @@ public class DynamoDBStateStoreIT {
                     .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(1_000_000L)
                     .build();
-            dynamoDBStateStore.addFile(fileInfo);
-            expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+            fileInfos.add(fileInfo);
+        //     dynamoDBStateStore.addFile(fileInfo);
+        //     expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
         }
-        dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
-        expected.put("file-0", expected.get("file-0").cloneWithStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION));
+        Map<String, FileInfo> expected = new HashMap<>();
+        for (int i = 0; i < 9_999; i++) {
+            dynamoDBStateStore.addFile(fileInfos.get(i));
+            expected.put(fileInfos.get(i).getFilename(), fileInfos.get(i).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+        }
+        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(fileInfos.get(0)), fileInfos.get(9_999));
+        // dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
+        dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
+        expected.put("file-0", expected.get("file-0").cloneWithStatus(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING));
+        expected.put("file-9999", fileInfos.get(9999).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
 
         // When
-        List<FileInfo> fileInfos = dynamoDBStateStore.getFileLifecycleList();
+        List<FileInfo> fileLifecycleList = dynamoDBStateStore.getFileLifecycleList();
 
         // Then
-        assertThat(fileInfos).hasSize(10000);
+        assertThat(fileLifecycleList).hasSize(10_000);
         List<FileInfo> expectedWithConstantLastStateStoreUpdateTime = expected.values()
                 .stream()
                 .map(f -> f.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochSecond(100L)).build())
                 .collect(Collectors.toList());
-        List<FileInfo> actualWithConstantLastStateStoreUpdateTime = fileInfos
+        List<FileInfo> actualWithConstantLastStateStoreUpdateTime = fileLifecycleList
                 .stream()
                 .map(f -> f.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochSecond(100L)).build())
                 .collect(Collectors.toList());
@@ -736,10 +747,30 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectActiveFileList() throws StateStoreException {
         // Given
+        // Schema schema = schemaWithSingleRowKeyType(new LongType());
+        // StateStore dynamoDBStateStore = getStateStore(schema);
+        // Map<String, FileInfo> expected = new HashMap<>();
+        // for (int i = 0; i < 5; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
+        //     FileInfo fileInfo = FileInfo.builder()
+        //             .rowKeyTypes(new LongType())
+        //             .filename("file-" + i)
+        //             .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+        //             .partitionId("" + i)
+        //             .numberOfRecords(1000L)
+        //             .minRowKey(Key.create(1L))
+        //             .maxRowKey(Key.create(10L))
+        //             .lastStateStoreUpdateTime(1_000_000L)
+        //             .build();
+        //     dynamoDBStateStore.addFile(fileInfo);
+        //     expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+        // }
+        // dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
+        // // dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
+        // expected.remove("file-0");
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        Map<String, FileInfo> expected = new HashMap<>();
-        for (int i = 0; i < 5; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
+        List<FileInfo> fileInfos = new ArrayList<>();
+        for (int i = 0; i < 10_000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file-" + i)
@@ -750,17 +781,48 @@ public class DynamoDBStateStoreIT {
                     .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(1_000_000L)
                     .build();
-            dynamoDBStateStore.addFile(fileInfo);
-            expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+            fileInfos.add(fileInfo);
+        //     dynamoDBStateStore.addFile(fileInfo);
+        //     expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
         }
-        dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
+        Map<String, FileInfo> expected = new HashMap<>();
+        for (int i = 0; i < 9_999; i++) {
+            dynamoDBStateStore.addFile(fileInfos.get(i));
+            expected.put(fileInfos.get(i).getFilename(), fileInfos.get(i).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+        }
+        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(fileInfos.get(0)), fileInfos.get(9_999));
+        // dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
+        dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
         expected.remove("file-0");
+        // expected.put("file-0", expected.get("file-0").cloneWithStatus(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING));
+        expected.put("file-9999", fileInfos.get(9_999).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
 
         // When
-        List<FileInfo> fileInfos = dynamoDBStateStore.getActiveFileList();
+        List<FileInfo> activeFileList = dynamoDBStateStore.getActiveFileList();
 
         // Then
-        assertThat(fileInfos).hasSize(4).containsExactlyInAnyOrderElementsOf(expected.values());
+        assertThat(activeFileList).hasSize(9_999).containsExactlyInAnyOrderElementsOf(expected.values());
+
+        // Then
+        // assertThat(fileLifecycleList).hasSize(10_000);
+        // List<FileInfo> expectedWithConstantLastStateStoreUpdateTime = expected.values()
+        //         .stream()
+        //         .map(f -> f.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochSecond(100L)).build())
+        //         .collect(Collectors.toList());
+        // List<FileInfo> actualWithConstantLastStateStoreUpdateTime = fileLifecycleList
+        //         .stream()
+        //         .map(f -> f.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochSecond(100L)).build())
+        //         .collect(Collectors.toList());
+        // assertThat(actualWithConstantLastStateStoreUpdateTime.size()).isEqualTo(expectedWithConstantLastStateStoreUpdateTime.size());
+        // Map<String, FileInfo> actualMap = new HashMap<>();
+        // for (FileInfo f : actualWithConstantLastStateStoreUpdateTime) {
+        //     actualMap.put(f.getFilename(), f);
+        // }
+        // Map<String, FileInfo> expectedMap = new HashMap<>();
+        // for (FileInfo f : expectedWithConstantLastStateStoreUpdateTime) {
+        //     expectedMap.put(f.getFilename(), f);
+        // }
+        // assertThat(actualMap).isEqualTo(expectedMap);
     }
 
     @Test

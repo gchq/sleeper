@@ -40,15 +40,15 @@ public class DelegatingStateStore implements StateStore {
         fileInfoStore.addFiles(fileInfos);
     }
 
-    @Override
-    public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
-        fileInfoStore.setStatusToReadyForGarbageCollection(filename);
-    }
+    // @Override
+    // public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
+    //     fileInfoStore.setStatusToReadyForGarbageCollection(filename);
+    // }
 
-    @Override
-    public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
-        fileInfoStore.setStatusToReadyForGarbageCollection(filenames);
-    }
+    // @Override
+    // public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
+    //     fileInfoStore.setStatusToReadyForGarbageCollection(filenames);
+    // }
 
     @Override
     public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(

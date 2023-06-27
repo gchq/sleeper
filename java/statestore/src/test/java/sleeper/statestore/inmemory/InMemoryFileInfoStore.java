@@ -20,9 +20,7 @@ import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
 
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,7 +33,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;;
 
 /**
  * This class is intended for testing only. It is not thread-safe and should not be used
@@ -66,30 +64,30 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         fileInfos.stream().forEach(this::addFile);
     }
 
-    @Override
-    public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
-        setStatusToReadyForGarbageCollection(Collections.singletonList(filename));
-    }
+    // @Override
+    // public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
+    //     setStatusToReadyForGarbageCollection(Collections.singletonList(filename));
+    // }
 
-    @Override
-    public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
-        for (String filename : filenames) {
-            if (!fileLifecycleEntries.containsKey(filename)) {
-                throw new StateStoreException("Cannot set status of file " + filename
-                    + " to READY_FOR_GARBAGE_COLLECTION as there is no file lifecycle record for the file");
-            }
-            if (fileInPartitionEntries.containsKey(filename)) {
-                throw new StateStoreException("Cannot set status of file " + filename
-                    + " to READY_FOR_GARBAGE_COLLECTION as there exists a FILE_IN_PARTITION record for the file");
-            }
-            FileInfo fileInfo = fileLifecycleEntries.get(filename)
-                .toBuilder()
-                .fileStatus(READY_FOR_GARBAGE_COLLECTION)
-                .lastStateStoreUpdateTime(Instant.now())
-                .build();
-            fileLifecycleEntries.put(filename, fileInfo);
-        }
-    }
+    // @Override
+    // public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
+    //     for (String filename : filenames) {
+    //         if (!fileLifecycleEntries.containsKey(filename)) {
+    //             throw new StateStoreException("Cannot set status of file " + filename
+    //                 + " to READY_FOR_GARBAGE_COLLECTION as there is no file lifecycle record for the file");
+    //         }
+    //         if (fileInPartitionEntries.containsKey(filename)) {
+    //             throw new StateStoreException("Cannot set status of file " + filename
+    //                 + " to READY_FOR_GARBAGE_COLLECTION as there exists a FILE_IN_PARTITION record for the file");
+    //         }
+    //         FileInfo fileInfo = fileLifecycleEntries.get(filename)
+    //             .toBuilder()
+    //             .fileStatus(READY_FOR_GARBAGE_COLLECTION)
+    //             .lastStateStoreUpdateTime(Instant.now())
+    //             .build();
+    //         fileLifecycleEntries.put(filename, fileInfo);
+    //     }
+    // }
 
     @Override
     public List<FileInfo> getFileLifecycleList() throws StateStoreException {
@@ -125,7 +123,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
         long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
         return fileLifecycleEntries.values().stream()
-            .filter(f -> f.getFileStatus().equals(READY_FOR_GARBAGE_COLLECTION))
+            .filter(f -> f.getFileStatus().equals(GARBAGE_COLLECTION_PENDING))
             .filter(f -> (f.getLastStateStoreUpdateTime() < deleteTime));
     }
 

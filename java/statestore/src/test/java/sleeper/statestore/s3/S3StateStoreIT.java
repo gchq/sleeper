@@ -546,7 +546,7 @@ public class S3StateStoreIT {
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
         // - Use the following method to remove the file in partition record for fileInfo2
         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(fileInfo2), fileInfo3);
-        stateStore.setStatusToReadyForGarbageCollection(fileInfo2.getFilename());
+        // stateStore.setStatusToReadyForGarbageCollection(fileInfo2.getFilename());
 
         // When
         stateStore.deleteFileLifecycleEntries(Collections.singletonList(fileInfo2.getFilename()));
@@ -866,7 +866,8 @@ public class S3StateStoreIT {
         }
         stateStore.addFiles(files.subList(0, 3));
         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(files.get(2)), files.get(3));
-        stateStore.setStatusToReadyForGarbageCollection(files.get(2).getFilename());
+        stateStore.findFilesThatShouldHaveStatusOfGCPending();
+        // stateStore.setStatusToReadyForGarbageCollection(files.get(2).getFilename());
 
         // When
         List<FileInfo> activeFileList = stateStore.getActiveFileList();
