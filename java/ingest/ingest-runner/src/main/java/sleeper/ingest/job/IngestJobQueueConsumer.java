@@ -62,12 +62,6 @@ public class IngestJobQueueConsumer implements IngestJobSource {
 
     public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
-                                  InstanceProperties instanceProperties) {
-        this(sqsClient, cloudWatchClient, instanceProperties, new Configuration());
-    }
-
-    public IngestJobQueueConsumer(AmazonSQS sqsClient,
-                                  AmazonCloudWatch cloudWatchClient,
                                   InstanceProperties instanceProperties,
                                   Configuration configuration) {
         this.sqsClient = sqsClient;
