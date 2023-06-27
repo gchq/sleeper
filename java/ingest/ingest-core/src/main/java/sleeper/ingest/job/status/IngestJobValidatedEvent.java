@@ -37,10 +37,6 @@ public class IngestJobValidatedEvent {
         taskId = builder.taskId;
     }
 
-    public static IngestJobValidatedEvent ingestJobAccepted(IngestJob job, String jobRunId, Instant validationTime) {
-        return ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build();
-    }
-
     public static Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
         return builder().job(job).validationTime(validationTime).reasons(List.of());
     }
