@@ -680,7 +680,7 @@ public class ReinitialiseTableIT {
                 Key.create("0"), Key.create("98"));
         FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
                 Key.create("1"), Key.create("9"));
-        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, rootPartition.getId(),
+        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition

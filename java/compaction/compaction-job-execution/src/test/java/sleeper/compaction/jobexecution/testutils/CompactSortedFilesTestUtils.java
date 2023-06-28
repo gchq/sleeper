@@ -106,7 +106,7 @@ public class CompactSortedFilesTestUtils {
                             FileInfo::getFileStatus)
                     .containsExactlyInAnyOrder(files.stream()
                             .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
-                                    FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                                    FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING))
                             .toArray(Tuple[]::new));
         } catch (StateStoreException e) {
             fail("StateStoreException generated: " + e.getMessage());

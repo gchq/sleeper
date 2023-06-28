@@ -28,7 +28,7 @@ import java.util.Map;
  * is {@link FileInfo.FileStatus.FILE_IN_PARTITION}. File-lifecyle metadata exists
  * as {@link FileInfo} objects where the {@link FileInfo.FileStatus} value is
  * either {@link FileInfo.FileStatus.ACTIVE} or
- * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}.
+ * {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}.
  */
 public interface FileInfoStore {
 
@@ -93,11 +93,11 @@ public interface FileInfoStore {
      * on the file-in-partition records still existing guarantees that if two tasks are executing
      * the same compaction job then only one can succeed.
      *
-     * Note that this method does not set any files to be ready for garbage collection. If the last
+     * Note that this method does not set the status of any files to be garbage collection pending. If the last
      * file-in-partition record for a file is deleted then there will still be an
      * {@link FileInfo.FileStatus.ACTIVE} file-lifecycle record for the file. Identifying that that
-     * active file should now have its status set to {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}
-     * is an asynchronous operation that is performed outside of the store.
+     * active file should now have its status set to {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}
+     * is an asynchronous operation that is performed using findFilesThatShouldHaveStatusOfGCPending.
      *
      * @param fileInPartitionRecordsToBeDeleted The file-in-partition records to be deleted
      * @param newActiveFile                     The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
@@ -121,8 +121,8 @@ public interface FileInfoStore {
      * Note that this method does not set any files to be ready for garbage collection. If the last
      * file-in-partition record for a file is deleted then there will still be an
      * {@link FileInfo.FileStatus.ACTIVE} file-lifecycle record for the file. Identifying that that
-     * active file should now have its status set to {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}
-     * is an asynchronous operation that is performed outside of the store.
+     * active file should now have its status set to {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}
+     * is an asynchronous operation that is performed using findFilesThatShouldHaveStatusOfGCPending.
      *
      * @param fileInPartitionRecordsToBeDeleted The file-in-partition records to be deleted
      * @param leftFileInfo                      The first file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
@@ -181,7 +181,7 @@ public interface FileInfoStore {
     /**
      * Returns an {@link Iterator} of filenames of files that are ready
      * for garbage collection, i.e. their file-lifecycle status is
-     * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION} and the last update
+     * {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING} and the last update
      * time is more than <code>delayBeforeGarbageCollectionInSeconds</code> seconds ago (where
      * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the table properties).
      *

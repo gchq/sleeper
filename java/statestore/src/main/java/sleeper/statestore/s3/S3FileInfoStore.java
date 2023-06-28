@@ -446,7 +446,7 @@ public class S3FileInfoStore implements FileInfoStore {
             long deleteTime = clock.millis() - delayInMilliseconds;
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFileLifecyclePath(getCurrentFilesRevisionId()));
             return fileInfos.stream().filter(f -> {
-                if (!f.getFileStatus().equals(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)) {
+                if (!f.getFileStatus().equals(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING)) {
                     return false;
                 }
                 long lastUpdateTime = f.getLastStateStoreUpdateTime();
