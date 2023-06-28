@@ -17,6 +17,8 @@ package sleeper.garbagecollector;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -45,11 +47,14 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -110,13 +115,12 @@ public class GarbageCollectorIT {
         GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
 
         // When
-        createReadyForGCFile(stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-        boolean fileWasReadyForGC = stateStore.getReadyForGCFiles().hasNext();
+        createReadyForGCFile("test-file.parquet", stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
         garbageCollector.run();
 
         // Then
-        assertThat(fileWasReadyForGC).isTrue();
-        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
+        assertThat(Files.exists(tempDir.resolve("test-file.parquet"))).isFalse();
+        assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
     }
 
     @Test
@@ -131,11 +135,12 @@ public class GarbageCollectorIT {
         GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
 
         // When
-        FileInfo fileInfo = createActiveFile(stateStore);
+        createActiveFile("test-file.parquet", stateStore);
         garbageCollector.run();
 
         // Then
-        assertThat(stateStore.getActiveFiles()).containsExactly(fileInfo);
+        assertThat(Files.exists(tempDir.resolve("test-file.parquet"))).isTrue();
+        assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
     }
 
     @Test
@@ -150,29 +155,37 @@ public class GarbageCollectorIT {
         GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
 
         // When
-        createReadyForGCFile(stateStore, System.currentTimeMillis());
-        boolean fileWasReadyForGC = stateStore.getReadyForGCFiles().hasNext();
+        createReadyForGCFile("test-file.parquet", stateStore, System.currentTimeMillis());
         garbageCollector.run();
 
         // Then
-        assertThat(fileWasReadyForGC).isFalse();
-        assertThat(stateStore.getReadyForGCFiles().hasNext()).isFalse();
+        assertThat(Files.exists(tempDir.resolve("test-file.parquet"))).isTrue();
+        assertThat(getFilesInReadyForGCTable(tableProperties))
+                .containsExactly(tempDir.resolve("test-file.parquet").toString());
     }
 
-    private FileInfo createActiveFile(StateStore stateStore) throws Exception {
-        return createFile(stateStore, FileInfo.FileStatus.ACTIVE, System.currentTimeMillis());
+    private Stream<String> getFilesInReadyForGCTable(TableProperties tableProperties) {
+        ScanRequest scanRequest = new ScanRequest()
+                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
+                .withConsistentRead(true);
+        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
+        return scanResult.getItems().stream().map(item -> item.get(DynamoDBStateStore.FILE_NAME).getS());
     }
 
-    private void createReadyForGCFile(StateStore stateStore, long lastUpdateTime) throws Exception {
-        createFile(stateStore, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, lastUpdateTime);
+    private void createActiveFile(String filename, StateStore stateStore) throws Exception {
+        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, System.currentTimeMillis());
     }
 
-    private FileInfo createFile(StateStore stateStore, FileInfo.FileStatus status, long lastUpdateTime) throws Exception {
+    private void createReadyForGCFile(String filename, StateStore stateStore, long lastUpdateTime) throws Exception {
+        createFile(filename, stateStore, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, lastUpdateTime);
+    }
+
+    private void createFile(String filename, StateStore stateStore, FileInfo.FileStatus status, long lastUpdateTime) throws Exception {
         String partitionId = stateStore.getAllPartitions().get(0).getId();
-        String filename = tempDir.resolve("test-file.parquet").toString();
+        String filePath = tempDir.resolve(filename).toString();
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new IntType())
-                .filename(filename)
+                .filename(filePath)
                 .partitionId(partitionId)
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
@@ -180,7 +193,7 @@ public class GarbageCollectorIT {
                 .lastStateStoreUpdateTime(lastUpdateTime)
                 .fileStatus(status)
                 .build();
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), TEST_SCHEMA);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filePath), TEST_SCHEMA);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
@@ -189,7 +202,6 @@ public class GarbageCollectorIT {
         }
         writer.close();
         stateStore.addFile(fileInfo);
-        return fileInfo;
     }
 
     private void createDynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties)
