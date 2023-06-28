@@ -39,13 +39,16 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -71,23 +74,30 @@ public class EmrExecutor extends AbstractEmrExecutor {
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
-        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3,
-                new EmrInstanceFleets(instanceProperties));
+                       StateStoreProvider stateStoreProvider,
+                       IngestJobStatusStore ingestJobStatusStore,
+                       AmazonS3 amazonS3,
+                       Supplier<Instant> validationTimeSupplier) {
+        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, validationTimeSupplier, new EmrInstanceFleets(instanceProperties));
     }
 
     public EmrExecutor(AmazonElasticMapReduce emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3,
+                       StateStoreProvider stateStoreProvider,
+                       IngestJobStatusStore ingestJobStatusStore,
+                       AmazonS3 amazonS3,
+                       Supplier<Instant> validationTimeSupplier,
                        EmrInstanceConfiguration instanceConfiguration) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, validationTimeSupplier);
         this.emrClient = emrClient;
         this.instanceConfiguration = instanceConfiguration;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -118,7 +128,7 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(constructArgs(bulkImportJob, clusterName + "-EMR"))))
+                                .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName + "-EMR"))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));
@@ -151,7 +161,6 @@ public class EmrExecutor extends AbstractEmrExecutor {
         }
         return config;
     }
-
 
     private List<Configuration> getConfigurations() {
         List<Configuration> configurations = new ArrayList<>();

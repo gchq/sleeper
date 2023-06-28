@@ -26,12 +26,15 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
@@ -80,16 +83,19 @@ public class StateMachineExecutor extends Executor {
                                 InstanceProperties instanceProperties,
                                 TablePropertiesProvider tablePropertiesProvider,
                                 StateStoreProvider stateStoreProvider,
-                                AmazonS3 s3Client) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                                IngestJobStatusStore ingestJobStatusStore,
+                                AmazonS3 s3Client,
+                                Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                s3Client, validationTimeSupplier);
         this.stepFunctions = stepFunctions;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
         Map<String, Object> input = new HashMap<>();
-        List<String> args = constructArgs(bulkImportJob, stateMachineArn);
+        List<String> args = constructArgs(bulkImportJob, jobRunId, stateMachineArn);
         input.put("job", bulkImportJob);
         input.put("args", args);
 
@@ -130,7 +136,7 @@ public class StateMachineExecutor extends Executor {
     }
 
     @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
+    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
         Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
 
         // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
@@ -147,7 +153,7 @@ public class StateMachineExecutor extends Executor {
                 .platformSpec(bulkImportJob.getPlatformSpec())
                 .sparkConf(sparkProperties)
                 .build();
-        return super.constructArgs(cloneWithUpdatedProps, taskId);
+        return super.constructArgs(cloneWithUpdatedProps, jobRunId, taskId);
     }
 
     @Override

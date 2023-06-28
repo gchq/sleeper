@@ -19,6 +19,8 @@ package sleeper.core.record.process.status;
 import java.time.Instant;
 import java.util.Objects;
 
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+
 public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStartedUpdate {
 
     private final Instant updateTime;
@@ -31,8 +33,8 @@ public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStarted
         this.isStartOfRun = isStartOfRun;
     }
 
-    public static ProcessStartedStatusWithStartOfRunFlag updateAndStartTimeNotStartOfRun(Instant updateTime, Instant startTime) {
-        return new ProcessStartedStatusWithStartOfRunFlag(updateTime, startTime, false);
+    public static ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun(Instant startTime) {
+        return new ProcessStartedStatusWithStartOfRunFlag(defaultUpdateTime(startTime), startTime, false);
     }
 
     @Override

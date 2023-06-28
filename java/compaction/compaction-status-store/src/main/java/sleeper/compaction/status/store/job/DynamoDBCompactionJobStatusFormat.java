@@ -116,11 +116,12 @@ public class DynamoDBCompactionJobStatusFormat {
     }
 
     private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return new ProcessStatusUpdateRecord(
-                getStringAttribute(item, JOB_ID),
-                getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
-                getStatusUpdate(item),
-                getStringAttribute(item, TASK_ID));
+        return ProcessStatusUpdateRecord.builder()
+                .jobId(getStringAttribute(item, JOB_ID))
+                .statusUpdate(getStatusUpdate(item))
+                .taskId(getStringAttribute(item, TASK_ID))
+                .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
+                .build();
     }
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {

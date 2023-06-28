@@ -19,9 +19,11 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.LongFunction;
+import java.util.stream.Collectors;
 
 public class DynamoDBAttributes {
 
@@ -67,6 +69,14 @@ public class DynamoDBAttributes {
 
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
         return new AttributeValue().withB(ByteBuffer.wrap(bytes));
+    }
+
+    public static AttributeValue createListAttribute(List<AttributeValue> values) {
+        if (values == null) {
+            return null;
+        } else {
+            return new AttributeValue().withL(values);
+        }
     }
 
     public static String getStringAttribute(Map<String, AttributeValue> item, String name) {
@@ -118,6 +128,19 @@ public class DynamoDBAttributes {
             return Double.NaN;
         } else {
             return Double.parseDouble(attributeValue);
+        }
+    }
+
+    public static List<String> getStringListAttribute(Map<String, AttributeValue> item, String name) {
+        return getListAttribute(item, name, AttributeValue::getS);
+    }
+
+    private static <T> List<T> getListAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
+        List<AttributeValue> list = getAttribute(item, name, AttributeValue::getL);
+        if (list == null) {
+            return null;
+        } else {
+            return list.stream().map(getter).collect(Collectors.toList());
         }
     }
 

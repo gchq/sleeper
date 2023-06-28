@@ -23,8 +23,6 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 
 public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -37,13 +35,13 @@ public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTest
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(startedIngestJob(job1, DEFAULT_TASK_ID, startedTime1));
+                .isEqualTo(defaultJobStartedStatus(job1, startedTime1));
     }
 
     @Test
