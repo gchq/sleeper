@@ -143,7 +143,7 @@ public class GarbageCollectorIT {
         void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
             // Given
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath.toString(), stateStore, TIME_EXCEEDING_DELAY);
 
             // When
             garbageCollector.run();
@@ -171,7 +171,7 @@ public class GarbageCollectorIT {
         void shouldNotCollectFileMarkedAsReadyForGCBeforeSpecifiedDelay() throws Exception {
             // Given
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, CURRENT_TIME.toEpochMilli());
+            createReadyForGCFile(filePath.toString(), stateStore, CURRENT_TIME);
 
             // When
             garbageCollector.run();
@@ -187,8 +187,8 @@ public class GarbageCollectorIT {
             // Given
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
-            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY);
 
             // When
             garbageCollector.run();
@@ -205,9 +205,9 @@ public class GarbageCollectorIT {
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
             java.nio.file.Path filePath3 = tempDir.resolve("test-file-3.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
-            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
-            createReadyForGCFile(filePath3.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath3.toString(), stateStore, TIME_EXCEEDING_DELAY);
 
             // When
             garbageCollector.run();
@@ -260,8 +260,8 @@ public class GarbageCollectorIT {
             // Given
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore1, TIME_EXCEEDING_DELAY.toEpochMilli());
-            createReadyForGCFile(filePath2.toString(), stateStore2, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath1.toString(), stateStore1, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath2.toString(), stateStore2, TIME_EXCEEDING_DELAY);
 
             // When
             garbageCollector.run();
@@ -283,14 +283,14 @@ public class GarbageCollectorIT {
     }
 
     private void createActiveFile(String filename, StateStore stateStore) throws Exception {
-        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, CURRENT_TIME.toEpochMilli());
+        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, CURRENT_TIME);
     }
 
-    private void createReadyForGCFile(String filename, StateStore stateStore, long lastUpdateTime) throws Exception {
+    private void createReadyForGCFile(String filename, StateStore stateStore, Instant lastUpdateTime) throws Exception {
         createFile(filename, stateStore, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, lastUpdateTime);
     }
 
-    private void createFile(String filename, StateStore stateStore, FileInfo.FileStatus status, long lastUpdateTime) throws Exception {
+    private void createFile(String filename, StateStore stateStore, FileInfo.FileStatus status, Instant lastUpdateTime) throws Exception {
         String partitionId = stateStore.getAllPartitions().get(0).getId();
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new IntType())
