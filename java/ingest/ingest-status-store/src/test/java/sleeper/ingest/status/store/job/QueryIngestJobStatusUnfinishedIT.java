@@ -23,12 +23,7 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -41,15 +36,15 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        startedIngestJob(job2, DEFAULT_TASK_ID, startedTime2),
-                        startedIngestJob(job1, DEFAULT_TASK_ID, startedTime1));
+                        defaultJobStartedStatus(job2, startedTime2),
+                        defaultJobStartedStatus(job1, startedTime1));
     }
 
     @Test
@@ -62,14 +57,14 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job1, defaultSummary(startedTime1, finishedTime1)));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobFinished(defaultJobFinishedEvent(job1, startedTime1, finishedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(startedIngestJob(job2, DEFAULT_TASK_ID, startedTime2));
+                .containsExactly(defaultJobStartedStatus(job2, startedTime2));
     }
 
     @Test
@@ -81,13 +76,13 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(startedIngestJob(job1, DEFAULT_TASK_ID, startedTime1));
+                .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
 
     @Test
@@ -99,15 +94,15 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime1));
-        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime1, finishedTime1)));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job, startedTime1));
+        store.jobFinished(defaultJobFinishedEvent(job, startedTime1, finishedTime1));
+        store.jobStarted(defaultJobStartedEvent(job, startedTime2));
 
         // Then
         assertThat(store.getUnfinishedJobs(tableName))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job,
-                        startedIngestRun(job, DEFAULT_TASK_ID, startedTime2),
-                        finishedIngestRun(job, DEFAULT_TASK_ID, defaultSummary(startedTime1, finishedTime1))));
+                        defaultJobStartedRun(job, startedTime2),
+                        defaultJobFinishedRun(job, startedTime1, finishedTime1)));
     }
 }

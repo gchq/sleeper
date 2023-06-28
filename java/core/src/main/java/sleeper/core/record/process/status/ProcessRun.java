@@ -171,7 +171,7 @@ public class ProcessRun {
 
         public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
             this.finishedStatus = finishedStatus;
-            this.statusUpdates.add(startedStatus);
+            this.statusUpdates.add(finishedStatus);
             return this;
         }
 

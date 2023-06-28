@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
@@ -41,6 +42,10 @@ public class DynamoDBRecordBuilder {
 
     public DynamoDBRecordBuilder bool(String key, Boolean bool) {
         return add(key, createBooleanAttribute(bool));
+    }
+
+    public DynamoDBRecordBuilder list(String key, List<AttributeValue> values) {
+        return add(key, createListAttribute(values));
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {

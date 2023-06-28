@@ -99,7 +99,7 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
                 "inputFileCount=" + inputFileCount +
                 ", startTime=" + startTime +
                 ", updateTime=" + updateTime +
-                ", isStandardIngest=" + isStartOfRun +
+                ", isStartOfRun=" + isStartOfRun +
                 '}';
     }
 

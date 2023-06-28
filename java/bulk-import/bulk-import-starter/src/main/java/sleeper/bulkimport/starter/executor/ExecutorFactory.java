@@ -24,9 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -38,22 +42,23 @@ public class ExecutorFactory {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final IngestJobStatusStore ingestJobStatusStore;
     private final AmazonS3 s3Client;
     private final AmazonElasticMapReduce emrClient;
     private final AWSStepFunctions stepFunctionsClient;
     private final String bulkImportPlatform;
+    private final Supplier<Instant> validationTimeSupplier;
 
-    public ExecutorFactory(AmazonS3 s3Client,
-                           AmazonElasticMapReduce emrClient,
-                           AWSStepFunctions stepFunctionsClient,
-                           AmazonDynamoDB dynamoDB) throws IOException {
-        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, System::getenv);
+    public ExecutorFactory(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
+                           AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
+        this(s3Client, emrClient, stepFunctionsClient, dynamoDB, Instant::now, System::getenv);
     }
 
     ExecutorFactory(AmazonS3 s3Client,
                     AmazonElasticMapReduce emrClient,
                     AWSStepFunctions stepFunctionsClient,
                     AmazonDynamoDB dynamoDB,
+                    Supplier<Instant> validationTimeSupplier,
                     UnaryOperator<String> getEnvironmentVariable) throws IOException {
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, getEnvironmentVariable.apply(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -63,17 +68,22 @@ public class ExecutorFactory {
         this.emrClient = emrClient;
         this.stepFunctionsClient = stepFunctionsClient;
         this.bulkImportPlatform = getEnvironmentVariable.apply(BULK_IMPORT_PLATFORM);
+        this.ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
+        this.validationTimeSupplier = validationTimeSupplier;
         LOGGER.info("Initialised ExecutorFactory. Environment variable {} is set to {}.", BULK_IMPORT_PLATFORM, this.bulkImportPlatform);
     }
 
     public Executor createExecutor() {
         switch (bulkImportPlatform) {
             case "NonPersistentEMR":
-                return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                return new EmrExecutor(emrClient, instanceProperties, tablePropertiesProvider,
+                        stateStoreProvider, ingestJobStatusStore, s3Client, validationTimeSupplier);
             case "EKS":
-                return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                return new StateMachineExecutor(stepFunctionsClient, instanceProperties, tablePropertiesProvider,
+                        stateStoreProvider, ingestJobStatusStore, s3Client, validationTimeSupplier);
             case "PersistentEMR":
-                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, s3Client);
+                return new PersistentEmrExecutor(emrClient, instanceProperties, tablePropertiesProvider,
+                        stateStoreProvider, ingestJobStatusStore, s3Client, validationTimeSupplier);
             default:
                 throw new IllegalArgumentException("Invalid value for " + System.getenv(BULK_IMPORT_PLATFORM));
         }
