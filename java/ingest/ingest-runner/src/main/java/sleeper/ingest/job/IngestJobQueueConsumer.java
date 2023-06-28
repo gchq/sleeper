@@ -58,7 +58,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
     private final String sqsJobQueueUrl;
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
-    private final IngestJobSerDe ingestJobSerDe;
+    private final IngestJobMessageHandler ingestJobMessageHandler;
 
     public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
@@ -70,7 +70,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobSerDe = new IngestJobSerDe(configuration, instanceProperties);
+        this.ingestJobMessageHandler = new IngestJobMessageHandler(configuration, instanceProperties);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
                 break;
             }
             LOGGER.info("Received message {}", messages.get(0).getBody());
-            Optional<IngestJob> ingestJob = ingestJobSerDe.fromJsonExpandingDirs(messages.get(0).getBody());
+            Optional<IngestJob> ingestJob = ingestJobMessageHandler.handleMessage(messages.get(0).getBody());
             if (ingestJob.isPresent()) {
                 LOGGER.info("Deserialised message to ingest job {}", ingestJob);
                 long recordsWritten = ingest(ingestJob.get(), messages.get(0).getReceiptHandle(), runJob);

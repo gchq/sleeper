@@ -38,14 +38,14 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-public class IngestJobSerDeIT {
+public class IngestJobMessageHandlerIT {
     private static final String TEST_BUCKET = "test-bucket";
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
     private final AmazonS3 s3Client = createS3Client();
     private final InstanceProperties properties = new InstanceProperties();
-    private final IngestJobSerDe ingestJobSerDe = new IngestJobSerDe(createHadoopConfiguration(), properties);
+    private final IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(createHadoopConfiguration(), properties);
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -81,7 +81,7 @@ public class IngestJobSerDeIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobSerDe.fromJsonExpandingDirs(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
 
             // Then
             assertThat(job).get()
@@ -102,7 +102,7 @@ public class IngestJobSerDeIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobSerDe.fromJsonExpandingDirs(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
 
             // Then
             assertThat(job).get()
@@ -123,7 +123,7 @@ public class IngestJobSerDeIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobSerDe.fromJsonExpandingDirs(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
 
             // Then
             assertThat(job).get()
@@ -145,7 +145,7 @@ public class IngestJobSerDeIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobSerDe.fromJsonExpandingDirs(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
 
             // Then
             assertThat(job).get()
@@ -165,7 +165,7 @@ public class IngestJobSerDeIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobSerDe.fromJsonExpandingDirs(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
 
             // Then
             assertThat(job).isNotPresent();
