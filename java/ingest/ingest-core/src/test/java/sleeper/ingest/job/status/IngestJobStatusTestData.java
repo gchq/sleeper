@@ -23,10 +23,11 @@ import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
-import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class IngestJobStatusTestData {
 
@@ -86,10 +87,6 @@ public class IngestJobStatusTestData {
         return ProcessRun.finished(taskId,
                 IngestJobStartedStatus.startAndUpdateTime(job, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary));
-    }
-
-    public static Instant defaultUpdateTime(Instant startTime) {
-        return startTime.with(ChronoField.MILLI_OF_SECOND, 123);
     }
 
     public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {

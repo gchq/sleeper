@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();

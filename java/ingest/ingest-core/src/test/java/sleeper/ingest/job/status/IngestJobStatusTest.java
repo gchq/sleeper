@@ -31,8 +31,8 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summar
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatusListFrom;

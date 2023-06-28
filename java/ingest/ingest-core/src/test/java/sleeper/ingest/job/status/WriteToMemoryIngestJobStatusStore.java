@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
