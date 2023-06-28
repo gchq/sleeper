@@ -77,6 +77,7 @@ public class GarbageCollectorIT {
     private static final String TEST_TABLE_NAME = "test-table";
     private static final String TEST_TABLE_NAME_1 = "test-table-1";
     private static final String TEST_TABLE_NAME_2 = "test-table-2";
+    private static final int DEFAULT_BATCH_SIZE = 2;
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
@@ -190,6 +191,26 @@ public class GarbageCollectorIT {
             assertThat(Files.exists(filePath1)).isFalse();
             assertThat(Files.exists(filePath2)).isFalse();
             assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+        }
+
+        @Test
+        void shouldNotCollectMoreFilesIfBatchSizeExceeded() throws Exception {
+            // Given
+            java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
+            java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
+            java.nio.file.Path filePath3 = tempDir.resolve("test-file-3.parquet");
+            createReadyForGCFile(filePath1.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath2.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath3.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+
+            // When
+            garbageCollector.run();
+
+            // Then
+            assertThat(Stream.of(filePath1, filePath2, filePath3).filter(Files::exists))
+                    .hasSize(1);
+            assertThat(getFilesInReadyForGCTable(tableProperties))
+                    .hasSize(1);
         }
     }
 
@@ -316,7 +337,7 @@ public class GarbageCollectorIT {
     private static GarbageCollector createGarbageCollector(AmazonS3 s3Client, InstanceProperties instanceProperties,
                                                            StateStoreProvider stateStoreProvider) {
         return new GarbageCollector(new Configuration(), new TableLister(s3Client, instanceProperties),
-                new TablePropertiesProvider(s3Client, instanceProperties), stateStoreProvider, 10);
+                new TablePropertiesProvider(s3Client, instanceProperties), stateStoreProvider, DEFAULT_BATCH_SIZE);
     }
 
     private static Schema getSchema() {
