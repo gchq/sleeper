@@ -106,12 +106,6 @@ public class GarbageCollectorIT {
                 .build();
     }
 
-    @AfterEach
-    void tearDown() {
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
-    }
-
     @Nested
     @DisplayName("Collecting from single table")
     class SingleTable {
@@ -137,6 +131,8 @@ public class GarbageCollectorIT {
             dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-af");
             dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-rfgcf");
             dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-p");
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
 
         @Test
@@ -253,6 +249,8 @@ public class GarbageCollectorIT {
                 dynamoDBClient.deleteTable(table + "-rfgcf");
                 dynamoDBClient.deleteTable(table + "-p");
             });
+            s3Client.shutdown();
+            dynamoDBClient.shutdown();
         }
 
         @Test
