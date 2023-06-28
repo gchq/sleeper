@@ -137,7 +137,8 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    tableStack.getStateStoreStacks()
+                    tableStack.getStateStoreStacks(),
+                    ingestStatusStoreStack.getResources()
             );
         }
 
@@ -149,7 +150,8 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    tableStack.getStateStoreStacks()
+                    tableStack.getStateStoreStacks(),
+                    ingestStatusStoreStack.getResources()
             );
         }
 
