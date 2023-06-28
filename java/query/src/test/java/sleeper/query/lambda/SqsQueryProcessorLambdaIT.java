@@ -122,6 +122,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VER
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
@@ -771,6 +772,7 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(JARS_BUCKET, "unused");
         instanceProperties.set(VERSION, "unused");
         instanceProperties.set(FILE_SYSTEM, dir);
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
         AmazonDynamoDB dynamoClient = createDynamoClient();
         String trackedQueryTable = UUID.randomUUID().toString();
