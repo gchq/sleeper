@@ -82,7 +82,7 @@ public class GarbageCollectorIT {
     private static final int DEFAULT_BATCH_SIZE = 2;
     private static final int DEFAULT_GC_DELAY = 10;
     private static final Instant CURRENT_TIME = Instant.parse("2023-06-28T13:46:00Z");
-    private static final Instant TIME_EXCEEDING_DELAY = CURRENT_TIME.minus(Duration.ofMinutes(DEFAULT_GC_DELAY + 1));
+    private static final Instant TIME_AFTER_DELAY = CURRENT_TIME.minus(Duration.ofMinutes(DEFAULT_GC_DELAY + 1));
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
@@ -143,7 +143,7 @@ public class GarbageCollectorIT {
         void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
             // Given
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath.toString(), stateStore, TIME_AFTER_DELAY);
 
             // When
             garbageCollector.run();
@@ -187,8 +187,8 @@ public class GarbageCollectorIT {
             // Given
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY);
-            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath1.toString(), stateStore, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath2.toString(), stateStore, TIME_AFTER_DELAY);
 
             // When
             garbageCollector.run();
@@ -205,9 +205,9 @@ public class GarbageCollectorIT {
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
             java.nio.file.Path filePath3 = tempDir.resolve("test-file-3.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY);
-            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY);
-            createReadyForGCFile(filePath3.toString(), stateStore, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath1.toString(), stateStore, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath2.toString(), stateStore, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath3.toString(), stateStore, TIME_AFTER_DELAY);
 
             // When
             garbageCollector.run();
@@ -260,8 +260,8 @@ public class GarbageCollectorIT {
             // Given
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore1, TIME_EXCEEDING_DELAY);
-            createReadyForGCFile(filePath2.toString(), stateStore2, TIME_EXCEEDING_DELAY);
+            createReadyForGCFile(filePath1.toString(), stateStore1, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath2.toString(), stateStore2, TIME_AFTER_DELAY);
 
             // When
             garbageCollector.run();
