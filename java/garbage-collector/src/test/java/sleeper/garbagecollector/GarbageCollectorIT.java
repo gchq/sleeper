@@ -115,11 +115,12 @@ public class GarbageCollectorIT {
         GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
 
         // When
-        createReadyForGCFile("test-file.parquet", stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+        java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+        createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
         garbageCollector.run();
 
         // Then
-        assertThat(Files.exists(tempDir.resolve("test-file.parquet"))).isFalse();
+        assertThat(Files.exists(filePath)).isFalse();
         assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
     }
 
@@ -135,11 +136,12 @@ public class GarbageCollectorIT {
         GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
 
         // When
-        createActiveFile("test-file.parquet", stateStore);
+        java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+        createActiveFile(filePath.toString(), stateStore);
         garbageCollector.run();
 
         // Then
-        assertThat(Files.exists(tempDir.resolve("test-file.parquet"))).isTrue();
+        assertThat(Files.exists(filePath)).isTrue();
         assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
     }
 
@@ -155,13 +157,38 @@ public class GarbageCollectorIT {
         GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
 
         // When
-        createReadyForGCFile("test-file.parquet", stateStore, System.currentTimeMillis());
+        java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+        createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis());
         garbageCollector.run();
 
         // Then
-        assertThat(Files.exists(tempDir.resolve("test-file.parquet"))).isTrue();
+        assertThat(Files.exists(filePath)).isTrue();
         assertThat(getFilesInReadyForGCTable(tableProperties))
-                .containsExactly(tempDir.resolve("test-file.parquet").toString());
+                .containsExactly(filePath.toString());
+    }
+
+    @Test
+    void shouldCollectMultipleFilesInOneRun() throws Exception {
+        // Given
+        InstanceProperties instanceProperties = createInstanceProperties();
+        TableProperties tableProperties = createTable(instanceProperties);
+        createDynamoDBStateStore(instanceProperties, tableProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        stateStore.initialise();
+        GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+
+        // When
+        java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
+        java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
+        createReadyForGCFile(filePath1.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+        createReadyForGCFile(filePath2.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+        garbageCollector.run();
+
+        // Then
+        assertThat(Files.exists(filePath1)).isFalse();
+        assertThat(Files.exists(filePath2)).isFalse();
+        assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
     }
 
     private Stream<String> getFilesInReadyForGCTable(TableProperties tableProperties) {
@@ -182,10 +209,9 @@ public class GarbageCollectorIT {
 
     private void createFile(String filename, StateStore stateStore, FileInfo.FileStatus status, long lastUpdateTime) throws Exception {
         String partitionId = stateStore.getAllPartitions().get(0).getId();
-        String filePath = tempDir.resolve(filename).toString();
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new IntType())
-                .filename(filePath)
+                .filename(filename)
                 .partitionId(partitionId)
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
@@ -193,7 +219,7 @@ public class GarbageCollectorIT {
                 .lastStateStoreUpdateTime(lastUpdateTime)
                 .fileStatus(status)
                 .build();
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filePath), TEST_SCHEMA);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), TEST_SCHEMA);
         for (int i = 0; i < 100; i++) {
             Record record = new Record();
             record.put("key", i);
