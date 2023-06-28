@@ -25,6 +25,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -53,6 +56,7 @@ import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -71,6 +75,8 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class GarbageCollectorIT {
     private static final Schema TEST_SCHEMA = getSchema();
     private static final String TEST_TABLE_NAME = "test-table";
+    private static final String TEST_TABLE_NAME_1 = "test-table-1";
+    private static final String TEST_TABLE_NAME_2 = "test-table-2";
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
@@ -97,98 +103,146 @@ public class GarbageCollectorIT {
     @AfterEach
     void tearDown() {
         s3Client.shutdown();
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-af");
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-rfgcf");
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-p");
         dynamoDBClient.shutdown();
     }
 
-    @Test
-    void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
-        // Given
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties);
-        createDynamoDBStateStore(instanceProperties, tableProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+    @Nested
+    @DisplayName("Collecting from single table")
+    class SingleTable {
+        private TableProperties tableProperties;
+        private StateStore stateStore;
+        private GarbageCollector garbageCollector;
 
-        // When
-        java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-        createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-        garbageCollector.run();
+        @BeforeEach
+        void setup() throws Exception {
+            // Given
+            InstanceProperties instanceProperties = createInstanceProperties();
+            tableProperties = createTable(TEST_TABLE_NAME, instanceProperties);
+            createDynamoDBStateStore(instanceProperties, tableProperties);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            stateStore = stateStoreProvider.getStateStore(tableProperties);
+            stateStore.initialise();
+            garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+        }
 
-        // Then
-        assertThat(Files.exists(filePath)).isFalse();
-        assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+        @AfterEach
+        void tearDown() {
+            dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-af");
+            dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-rfgcf");
+            dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-p");
+        }
+
+        @Test
+        void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
+            // Given
+            java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+            createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+
+            // When
+            garbageCollector.run();
+
+            // Then
+            assertThat(Files.exists(filePath)).isFalse();
+            assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+        }
+
+        @Test
+        void shouldNotCollectFileMarkedAsActive() throws Exception {
+            // Given
+            java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+            createActiveFile(filePath.toString(), stateStore);
+
+            // When
+            garbageCollector.run();
+
+            // Then
+            assertThat(Files.exists(filePath)).isTrue();
+            assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+        }
+
+        @Test
+        void shouldNotCollectFileMarkedAsReadyForGCBeforeSpecifiedDelay() throws Exception {
+            // Given
+            java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
+            createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis());
+
+            // When
+            garbageCollector.run();
+
+            // Then
+            assertThat(Files.exists(filePath)).isTrue();
+            assertThat(getFilesInReadyForGCTable(tableProperties))
+                    .containsExactly(filePath.toString());
+        }
+
+        @Test
+        void shouldCollectMultipleFilesInOneRun() throws Exception {
+            // Given
+            java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
+            java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
+            createReadyForGCFile(filePath1.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath2.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+
+            // When
+            garbageCollector.run();
+
+            // Then
+            assertThat(Files.exists(filePath1)).isFalse();
+            assertThat(Files.exists(filePath2)).isFalse();
+            assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+        }
     }
 
-    @Test
-    void shouldNotCollectFileMarkedAsActive() throws Exception {
-        // Given
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties);
-        createDynamoDBStateStore(instanceProperties, tableProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+    @Nested
+    @DisplayName("Collecting from multiple tables")
+    class MultipleTables {
+        private TableProperties tableProperties1;
+        private StateStore stateStore1;
+        private TableProperties tableProperties2;
+        private StateStore stateStore2;
+        private GarbageCollector garbageCollector;
 
-        // When
-        java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-        createActiveFile(filePath.toString(), stateStore);
-        garbageCollector.run();
+        @BeforeEach
+        void setup() throws Exception {
+            InstanceProperties instanceProperties = createInstanceProperties();
+            tableProperties1 = createTable(TEST_TABLE_NAME_1, instanceProperties);
+            tableProperties2 = createTable(TEST_TABLE_NAME_2, instanceProperties);
+            createDynamoDBStateStore(instanceProperties, tableProperties1);
+            createDynamoDBStateStore(instanceProperties, tableProperties2);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            stateStore1 = stateStoreProvider.getStateStore(tableProperties1);
+            stateStore1.initialise();
+            stateStore2 = stateStoreProvider.getStateStore(tableProperties2);
+            stateStore2.initialise();
+            garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+        }
 
-        // Then
-        assertThat(Files.exists(filePath)).isTrue();
-        assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
-    }
+        @AfterEach
+        void tearDown() {
+            List.of(TEST_TABLE_NAME_1, TEST_TABLE_NAME_2).forEach(table -> {
+                dynamoDBClient.deleteTable(table + "-af");
+                dynamoDBClient.deleteTable(table + "-rfgcf");
+                dynamoDBClient.deleteTable(table + "-p");
+            });
+        }
 
-    @Test
-    void shouldNotCollectFileMarkedAsReadyForGCBeforeSpecifiedDelay() throws Exception {
-        // Given
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties);
-        createDynamoDBStateStore(instanceProperties, tableProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+        @Test
+        void shouldCollectOneFileFromEachTable() throws Exception {
+            // Given
+            java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
+            java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
+            createReadyForGCFile(filePath1.toString(), stateStore1, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath2.toString(), stateStore2, System.currentTimeMillis() - 20L * 60L * 1000L);
 
-        // When
-        java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-        createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis());
-        garbageCollector.run();
+            // When
+            garbageCollector.run();
 
-        // Then
-        assertThat(Files.exists(filePath)).isTrue();
-        assertThat(getFilesInReadyForGCTable(tableProperties))
-                .containsExactly(filePath.toString());
-    }
-
-    @Test
-    void shouldCollectMultipleFilesInOneRun() throws Exception {
-        // Given
-        InstanceProperties instanceProperties = createInstanceProperties();
-        TableProperties tableProperties = createTable(instanceProperties);
-        createDynamoDBStateStore(instanceProperties, tableProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        GarbageCollector garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
-
-        // When
-        java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
-        java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-        createReadyForGCFile(filePath1.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-        createReadyForGCFile(filePath2.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-        garbageCollector.run();
-
-        // Then
-        assertThat(Files.exists(filePath1)).isFalse();
-        assertThat(Files.exists(filePath2)).isFalse();
-        assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+            // Then
+            assertThat(Files.exists(filePath1)).isFalse();
+            assertThat(Files.exists(filePath2)).isFalse();
+            assertThat(getFilesInReadyForGCTable(tableProperties1)).isEmpty();
+            assertThat(getFilesInReadyForGCTable(tableProperties2)).isEmpty();
+        }
     }
 
     private Stream<String> getFilesInReadyForGCTable(TableProperties tableProperties) {
@@ -246,14 +300,14 @@ public class GarbageCollectorIT {
         return instanceProperties;
     }
 
-    private TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
+    private TableProperties createTable(String tableName, InstanceProperties instanceProperties) throws IOException {
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, TEST_TABLE_NAME);
+        tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(TEST_SCHEMA);
         tableProperties.set(DATA_BUCKET, tempDir.toString());
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, TEST_TABLE_NAME + "-p");
+        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
+        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
+        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
         tableProperties.saveToS3(s3Client);
         return tableProperties;
