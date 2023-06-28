@@ -59,13 +59,13 @@ import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJob
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
-    private final BulkImportSessionRunner sessionRunner;
+    private final SessionRunner sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
+    public BulkImportJobDriver(SessionRunner sessionRunner,
                                TablePropertiesProvider tablePropertiesProvider,
                                StateStoreProvider stateStoreProvider,
                                IngestJobStatusStore statusStore,
@@ -89,12 +89,9 @@ public class BulkImportJobDriver {
                                            Supplier<Instant> getTime) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
-        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider)::run,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                statusStore,
-                getTime);
+        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
+                jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
+                tablePropertiesProvider, stateStoreProvider, statusStore, getTime);
     }
 
     public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
@@ -142,7 +139,7 @@ public class BulkImportJobDriver {
     }
 
     @FunctionalInterface
-    public interface BulkImportSessionRunner {
+    public interface SessionRunner {
         BulkImportJobOutput run(BulkImportJob job) throws IOException;
     }
 
