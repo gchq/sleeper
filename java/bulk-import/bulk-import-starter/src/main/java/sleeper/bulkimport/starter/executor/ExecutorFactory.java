@@ -53,8 +53,10 @@ public class ExecutorFactory {
                     AmazonElasticMapReduce emrClient,
                     AWSStepFunctions stepFunctionsClient,
                     AmazonDynamoDB dynamoDB,
+                    Supplier<Instant> validationTimeSupplier,
                     UnaryOperator<String> getEnvironmentVariable) throws IOException {
-        this(loadInstanceProperties(s3Client, getEnvironmentVariable), s3Client, emrClient, stepFunctionsClient, dynamoDB, getEnvironmentVariable);
+        this(loadInstanceProperties(s3Client, getEnvironmentVariable), s3Client, emrClient, stepFunctionsClient,
+                dynamoDB, validationTimeSupplier, getEnvironmentVariable);
     }
 
     public ExecutorFactory(InstanceProperties instanceProperties, AmazonS3 s3Client,
@@ -69,7 +71,7 @@ public class ExecutorFactory {
                     AWSStepFunctions stepFunctionsClient,
                     AmazonDynamoDB dynamoDB,
                     Supplier<Instant> validationTimeSupplier,
-                    UnaryOperator<String> getEnvironmentVariable) throws IOException {
+                    UnaryOperator<String> getEnvironmentVariable) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
