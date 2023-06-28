@@ -56,6 +56,8 @@ import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -78,6 +80,9 @@ public class GarbageCollectorIT {
     private static final String TEST_TABLE_NAME_1 = "test-table-1";
     private static final String TEST_TABLE_NAME_2 = "test-table-2";
     private static final int DEFAULT_BATCH_SIZE = 2;
+    private static final int DEFAULT_GC_DELAY = 10;
+    private static final Instant CURRENT_TIME = Instant.parse("2023-06-28T13:46:00Z");
+    private static final Instant TIME_EXCEEDING_DELAY = CURRENT_TIME.minus(Duration.ofMinutes(DEFAULT_GC_DELAY + 1));
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
@@ -111,7 +116,7 @@ public class GarbageCollectorIT {
     @DisplayName("Collecting from single table")
     class SingleTable {
         private TableProperties tableProperties;
-        private StateStore stateStore;
+        private DynamoDBStateStore stateStore;
         private GarbageCollector garbageCollector;
 
         @BeforeEach
@@ -121,8 +126,9 @@ public class GarbageCollectorIT {
             tableProperties = createTable(TEST_TABLE_NAME, instanceProperties);
             createDynamoDBStateStore(instanceProperties, tableProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            stateStore = stateStoreProvider.getStateStore(tableProperties);
+            stateStore = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties);
             stateStore.initialise();
+            stateStore.fixTime(CURRENT_TIME);
             garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
         }
 
@@ -137,7 +143,7 @@ public class GarbageCollectorIT {
         void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
             // Given
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
 
             // When
             garbageCollector.run();
@@ -165,7 +171,7 @@ public class GarbageCollectorIT {
         void shouldNotCollectFileMarkedAsReadyForGCBeforeSpecifiedDelay() throws Exception {
             // Given
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, System.currentTimeMillis());
+            createReadyForGCFile(filePath.toString(), stateStore, CURRENT_TIME.toEpochMilli());
 
             // When
             garbageCollector.run();
@@ -181,8 +187,8 @@ public class GarbageCollectorIT {
             // Given
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-            createReadyForGCFile(filePath2.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
 
             // When
             garbageCollector.run();
@@ -199,9 +205,9 @@ public class GarbageCollectorIT {
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
             java.nio.file.Path filePath3 = tempDir.resolve("test-file-3.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-            createReadyForGCFile(filePath2.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
-            createReadyForGCFile(filePath3.toString(), stateStore, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath1.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath2.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath3.toString(), stateStore, TIME_EXCEEDING_DELAY.toEpochMilli());
 
             // When
             garbageCollector.run();
@@ -218,9 +224,9 @@ public class GarbageCollectorIT {
     @DisplayName("Collecting from multiple tables")
     class MultipleTables {
         private TableProperties tableProperties1;
-        private StateStore stateStore1;
+        private DynamoDBStateStore stateStore1;
         private TableProperties tableProperties2;
-        private StateStore stateStore2;
+        private DynamoDBStateStore stateStore2;
         private GarbageCollector garbageCollector;
 
         @BeforeEach
@@ -231,10 +237,12 @@ public class GarbageCollectorIT {
             createDynamoDBStateStore(instanceProperties, tableProperties1);
             createDynamoDBStateStore(instanceProperties, tableProperties2);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            stateStore1 = stateStoreProvider.getStateStore(tableProperties1);
+            stateStore1 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties1);
             stateStore1.initialise();
-            stateStore2 = stateStoreProvider.getStateStore(tableProperties2);
+            stateStore1.fixTime(CURRENT_TIME);
+            stateStore2 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties2);
             stateStore2.initialise();
+            stateStore2.fixTime(CURRENT_TIME);
             garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
         }
 
@@ -252,8 +260,8 @@ public class GarbageCollectorIT {
             // Given
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore1, System.currentTimeMillis() - 20L * 60L * 1000L);
-            createReadyForGCFile(filePath2.toString(), stateStore2, System.currentTimeMillis() - 20L * 60L * 1000L);
+            createReadyForGCFile(filePath1.toString(), stateStore1, TIME_EXCEEDING_DELAY.toEpochMilli());
+            createReadyForGCFile(filePath2.toString(), stateStore2, TIME_EXCEEDING_DELAY.toEpochMilli());
 
             // When
             garbageCollector.run();
@@ -275,7 +283,7 @@ public class GarbageCollectorIT {
     }
 
     private void createActiveFile(String filename, StateStore stateStore) throws Exception {
-        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, System.currentTimeMillis());
+        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, CURRENT_TIME.toEpochMilli());
     }
 
     private void createReadyForGCFile(String filename, StateStore stateStore, long lastUpdateTime) throws Exception {
@@ -329,7 +337,7 @@ public class GarbageCollectorIT {
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "" + DEFAULT_GC_DELAY);
         tableProperties.saveToS3(s3Client);
         return tableProperties;
     }
