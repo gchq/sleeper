@@ -64,9 +64,9 @@ public class SystemTestStack extends NestedStack {
                            List<StateStoreStack> stateStoreStacks,
                            SystemTestProperties systemTestProperties,
                            Queue ingestJobQueue,
-                           Queue emrBulkImportJobQueue) {
+                           Queue emrBulkImportJobQueue,
+                           List<IBucket> systemTestIngestBuckets) {
         super(scope, id);
-
         // Config bucket
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", systemTestProperties.get(CONFIG_BUCKET));
 
@@ -116,6 +116,7 @@ public class SystemTestStack extends NestedStack {
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
+        systemTestIngestBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
         if (null != ingestJobQueue) {

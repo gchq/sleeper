@@ -21,13 +21,15 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 public class SystemTestIngestBucketStack extends NestedStack {
+    private final IBucket ingestBucket;
 
     public SystemTestIngestBucketStack(Construct scope, String id, String bucketName) {
         super(scope, id);
-        Bucket.Builder.create(this, "SystemTestIngestBucket")
+        ingestBucket = Bucket.Builder.create(this, "SystemTestIngestBucket")
                 .bucketName(bucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -35,5 +37,9 @@ public class SystemTestIngestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .autoDeleteObjects(true)
                 .build();
+    }
+
+    public IBucket getIngestBucket() {
+        return ingestBucket;
     }
 }
