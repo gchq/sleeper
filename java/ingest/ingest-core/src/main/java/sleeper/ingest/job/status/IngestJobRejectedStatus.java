@@ -17,15 +17,18 @@
 package sleeper.ingest.job.status;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
+    private final Instant validationTime;
     private final Instant updateTime;
-    private final String reason;
+    private final List<String> reasons;
 
     private IngestJobRejectedStatus(Builder builder) {
-        updateTime = builder.updateTime;
-        reason = builder.reason;
+        validationTime = Objects.requireNonNull(builder.validationTime, "validateTime must not be null");
+        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
+        reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
     }
 
     public static Builder builder() {
@@ -33,12 +36,12 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     }
 
     @Override
-    public Instant getUpdateTime() {
-        return updateTime;
+    public Instant getStartTime() {
+        return validationTime;
     }
 
     @Override
-    public Instant getStartTime() {
+    public Instant getUpdateTime() {
         return updateTime;
     }
 
@@ -56,36 +59,45 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobRejectedStatus that = (IngestJobRejectedStatus) o;
-        return Objects.equals(updateTime, that.updateTime) && Objects.equals(reason, that.reason);
+        return Objects.equals(validationTime, that.validationTime)
+                && Objects.equals(updateTime, that.updateTime)
+                && Objects.equals(reasons, that.reasons);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, reason);
+        return Objects.hash(validationTime, updateTime, reasons);
     }
 
     @Override
     public String toString() {
         return "IngestJobRejectedStatus{" +
-                "updateTime=" + updateTime +
-                ", reason='" + reason + '\'' +
+                "validationTime=" + validationTime +
+                ", updateTime=" + updateTime +
+                ", reasons=" + reasons +
                 '}';
     }
 
     public static final class Builder {
         private Instant updateTime;
-        private String reason;
+        private List<String> reasons;
+        private Instant validationTime;
 
         private Builder() {
         }
 
-        public Builder validationTime(Instant updateTime) {
+        public Builder validationTime(Instant validationTime) {
+            this.validationTime = validationTime;
+            return this;
+        }
+
+        public Builder updateTime(Instant updateTime) {
             this.updateTime = updateTime;
             return this;
         }
 
-        public Builder reason(String reason) {
-            this.reason = reason;
+        public Builder reasons(List<String> reasons) {
+            this.reasons = reasons;
             return this;
         }
 

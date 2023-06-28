@@ -96,7 +96,8 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJobWithValidation;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 @Testcontainers
 class BulkImportJobDriverIT {
@@ -124,6 +125,7 @@ class BulkImportJobDriverIT {
     private final Schema schema = getSchema();
     private final IngestJobStatusStore statusStore = new WriteToMemoryIngestJobStatusStore();
     private final String taskId = "test-bulk-import-spark-cluster";
+    private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
     private final Instant endTime = Instant.parse("2023-04-05T16:01:11Z");
 
@@ -308,10 +310,12 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
+        String jobRunId = "test-run";
+        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
                 s3Client, dynamoDBClient, statusStore,
                 List.of(startTime, endTime).iterator()::next);
-        driver.run(job, taskId);
+        driver.run(job, jobRunId, taskId);
     }
 
     @ParameterizedTest
@@ -358,7 +362,8 @@ class BulkImportJobDriverIT {
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
-                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
+                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
+                        summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -405,7 +410,8 @@ class BulkImportJobDriverIT {
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
-                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
+                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
+                        summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -445,7 +451,8 @@ class BulkImportJobDriverIT {
                         tuple(100L, leftPartition),
                         tuple(100L, rightPartition));
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
-                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
+                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
+                        summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -514,7 +521,8 @@ class BulkImportJobDriverIT {
                     .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
-                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
+                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
+                        summary(startTime, endTime, records.size(), records.size())));
     }
 
     @ParameterizedTest
@@ -548,6 +556,7 @@ class BulkImportJobDriverIT {
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
-                finishedIngestJob(job.toIngestJob(), taskId, summary(startTime, endTime, records.size(), records.size())));
+                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
+                        summary(startTime, endTime, records.size(), records.size())));
     }
 }

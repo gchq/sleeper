@@ -25,10 +25,6 @@ import java.time.Instant;
 import java.time.Period;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 
 public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -44,8 +40,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime1, startedUpdateTime2);
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
@@ -53,8 +49,8 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        startedIngestJob(job2, DEFAULT_TASK_ID, startedTime2),
-                        startedIngestJob(job1, DEFAULT_TASK_ID, startedTime1));
+                        defaultJobStartedStatus(job2, startedTime2),
+                        defaultJobStartedStatus(job1, startedTime1));
     }
 
     @Test
@@ -68,7 +64,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime);
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
@@ -86,15 +82,15 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime1, startedUpdateTime2);
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job1, startedTime1));
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job2, startedTime2));
+        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(startedIngestJob(job1, DEFAULT_TASK_ID, startedTime1));
+                .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
 
     @Test
@@ -110,13 +106,13 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(startedUpdateTime, finishedUpdateTime);
 
         // When
-        store.jobStarted(ingestJobStarted(DEFAULT_TASK_ID, job, startedTime));
-        store.jobFinished(ingestJobFinished(DEFAULT_TASK_ID, job, defaultSummary(startedTime, finishedTime)));
+        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(finishedIngestJob(job, DEFAULT_TASK_ID, defaultSummary(startedTime, finishedTime)));
+                .containsExactly(defaultJobFinishedStatus(job, startedTime, finishedTime));
     }
 
 }

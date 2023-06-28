@@ -22,14 +22,16 @@ import sleeper.ingest.job.IngestJob;
 import java.util.Objects;
 
 public class IngestJobFinishedEvent {
-    private final String taskId;
     private final IngestJob job;
     private final RecordsProcessedSummary summary;
+    private final String jobRunId;
+    private final String taskId;
 
     private IngestJobFinishedEvent(Builder builder) {
-        taskId = builder.taskId;
         job = Objects.requireNonNull(builder.job, "job must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
+        jobRunId = builder.jobRunId;
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
     }
 
     public static Builder builder() {
@@ -37,15 +39,11 @@ public class IngestJobFinishedEvent {
     }
 
     public static IngestJobFinishedEvent ingestJobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        return builder()
-                .taskId(taskId)
-                .job(job)
-                .summary(summary)
-                .build();
+        return ingestJobFinished(job, summary).taskId(taskId).build();
     }
 
-    public String getTaskId() {
-        return taskId;
+    public static Builder ingestJobFinished(IngestJob job, RecordsProcessedSummary summary) {
+        return builder().job(job).summary(summary);
     }
 
     public IngestJob getJob() {
@@ -54,6 +52,14 @@ public class IngestJobFinishedEvent {
 
     public RecordsProcessedSummary getSummary() {
         return summary;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
+    public String getTaskId() {
+        return taskId;
     }
 
     @Override
@@ -65,34 +71,31 @@ public class IngestJobFinishedEvent {
             return false;
         }
         IngestJobFinishedEvent that = (IngestJobFinishedEvent) o;
-        return Objects.equals(taskId, that.taskId) && Objects.equals(job, that.job) && Objects.equals(summary, that.summary);
+        return Objects.equals(job, that.job) && Objects.equals(summary, that.summary) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskId, job, summary);
+        return Objects.hash(job, summary, jobRunId, taskId);
     }
 
     @Override
     public String toString() {
         return "IngestJobFinishedEvent{" +
-                "taskId='" + taskId + '\'' +
-                ", job=" + job +
+                "job=" + job +
                 ", summary=" + summary +
+                ", jobRunId='" + jobRunId + '\'' +
+                ", taskId='" + taskId + '\'' +
                 '}';
     }
 
     public static final class Builder {
-        private String taskId;
         private IngestJob job;
         private RecordsProcessedSummary summary;
+        private String jobRunId;
+        private String taskId;
 
-        public Builder() {
-        }
-
-        public Builder taskId(String taskId) {
-            this.taskId = taskId;
-            return this;
+        private Builder() {
         }
 
         public Builder job(IngestJob job) {
@@ -102,6 +105,16 @@ public class IngestJobFinishedEvent {
 
         public Builder summary(RecordsProcessedSummary summary) {
             this.summary = summary;
+            return this;
+        }
+
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
+            return this;
+        }
+
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
             return this;
         }
 

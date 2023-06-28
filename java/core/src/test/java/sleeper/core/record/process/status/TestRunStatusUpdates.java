@@ -20,6 +20,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoField;
 
 public class TestRunStatusUpdates {
 
@@ -27,8 +28,7 @@ public class TestRunStatusUpdates {
     }
 
     public static ProcessStartedStatus startedStatus(Instant startTime) {
-        Instant startUpdateTime = startTime.plus(Duration.ofMillis(123));
-        return ProcessStartedStatus.updateAndStartTime(startUpdateTime, startTime);
+        return ProcessStartedStatus.updateAndStartTime(defaultUpdateTime(startTime), startTime);
     }
 
     public static ProcessFinishedStatus finishedStatus(
@@ -39,9 +39,12 @@ public class TestRunStatusUpdates {
     public static ProcessFinishedStatus finishedStatus(
             Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
         Instant finishTime = startTime.plus(runDuration);
-        Instant finishUpdateTime = finishTime.plus(Duration.ofMillis(123));
         RecordsProcessedSummary summary = new RecordsProcessedSummary(
                 new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
-        return ProcessFinishedStatus.updateTimeAndSummary(finishUpdateTime, summary);
+        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
+    }
+
+    public static Instant defaultUpdateTime(Instant startTime) {
+        return startTime.with(ChronoField.MILLI_OF_SECOND, 123);
     }
 }

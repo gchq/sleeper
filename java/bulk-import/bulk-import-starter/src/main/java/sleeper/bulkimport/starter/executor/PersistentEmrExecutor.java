@@ -31,7 +31,11 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
+
+import java.time.Instant;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
@@ -50,20 +54,23 @@ public class PersistentEmrExecutor extends AbstractEmrExecutor {
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            AmazonS3 amazonS3) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+            IngestJobStatusStore ingestJobStatusStore,
+            AmazonS3 amazonS3,
+            Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3, validationTimeSupplier);
         this.emrClient = emrClient;
         this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
         StepConfig stepConfig = new StepConfig()
                 .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(constructArgs(bulkImportJob, clusterName)));
+                        .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName)));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
                 .withSteps(stepConfig);

@@ -78,6 +78,7 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
@@ -119,7 +120,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
@@ -160,7 +161,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
@@ -230,7 +231,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
@@ -292,7 +293,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
@@ -356,7 +357,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema);
@@ -488,7 +489,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
@@ -603,7 +604,7 @@ public class QueryExecutorIT {
                 .rowKeyFields(field1, field2)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
@@ -733,7 +734,7 @@ public class QueryExecutorIT {
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         //  Partitions:
@@ -1108,7 +1109,7 @@ public class QueryExecutorIT {
                 .sortKeyFields(new Field("value1", new LongType()))
                 .valueFields(new Field("value2", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
@@ -1165,7 +1166,7 @@ public class QueryExecutorIT {
                 .rowKeyFields(field)
                 .valueFields(new Field("timestamp", new LongType()))
                 .build();
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
@@ -1230,7 +1231,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
@@ -1265,7 +1266,7 @@ public class QueryExecutorIT {
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
         StateStore stateStore = getStateStore(schema);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -1297,7 +1298,7 @@ public class QueryExecutorIT {
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
         StateStore stateStore = getStateStore(schema);
-        InstanceProperties instanceProperties = new InstanceProperties();
+        InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
@@ -1460,5 +1461,11 @@ public class QueryExecutorIT {
         record.put("value1", value1);
         record.put("value2", value2);
         return record;
+    }
+
+    private static InstanceProperties createInstanceProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        return instanceProperties;
     }
 }
