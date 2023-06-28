@@ -29,9 +29,14 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 
+import java.util.List;
+import java.util.Locale;
+
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 /**
@@ -47,9 +52,18 @@ public class SystemTestApp extends SleeperCdkApp {
 
     @Override
     public void create() {
-        super.create();
         SystemTestProperties systemTestProperties = getInstanceProperties();
-
+        List<String> optionalStacks = systemTestProperties.getList(OPTIONAL_STACKS);
+        String systemTestIngestBucketName = String.join("-", "sleeper", systemTestProperties.get(ID),
+                "system", "test", "ingest").toLowerCase(Locale.ROOT);
+        if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
+            systemTestProperties.set(INGEST_SOURCE_BUCKET, systemTestIngestBucketName);
+            SystemTestIngestBucketStack ingestBucketStack = new SystemTestIngestBucketStack(this,
+                    "SystemTestIngestBucket", systemTestIngestBucketName);
+            systemTestProperties.getTags()
+                    .forEach((key, value) -> Tags.of(ingestBucketStack).add(key, value));
+        }
+        super.create();
         // Stack for writing random data
         IngestStack ingestStack = getIngestStack();
         EmrBulkImportStack emrBulkImportStack = getEmrBulkImportStack();

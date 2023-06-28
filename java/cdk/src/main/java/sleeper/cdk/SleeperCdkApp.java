@@ -91,7 +91,7 @@ public class SleeperCdkApp extends Stack {
                     PersistentEmrBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
-    private static final List<String> INGEST_STACK_NAMES = Stream.of(
+    public static final List<String> INGEST_STACK_NAMES = Stream.of(
                     IngestStack.class,
                     EmrBulkImportStack.class,
                     PersistentEmrBulkImportStack.class,
