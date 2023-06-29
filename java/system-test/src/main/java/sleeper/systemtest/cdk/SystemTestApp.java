@@ -19,8 +19,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.Tags;
-import software.amazon.awscdk.services.s3.IBucket;
 
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.Utils;
@@ -30,13 +28,10 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.systemtest.SystemTestProperties;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
@@ -56,31 +51,19 @@ public class SystemTestApp extends SleeperCdkApp {
     public void create() {
         SystemTestProperties systemTestProperties = getInstanceProperties();
         List<String> optionalStacks = systemTestProperties.getList(OPTIONAL_STACKS);
-        List<IBucket> systemTestIngestBuckets = new ArrayList<>();
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            String systemTestIngestBucketName = String.join("-", "sleeper", systemTestProperties.get(ID),
-                    "system", "test", "ingest").toLowerCase(Locale.ROOT);
-            systemTestProperties.set(INGEST_SOURCE_BUCKET, systemTestIngestBucketName);
-            SystemTestIngestBucketStack ingestBucketStack = new SystemTestIngestBucketStack(this,
-                    "SystemTestIngestBucket", systemTestIngestBucketName);
-            systemTestProperties.getTags()
-                    .forEach((key, value) -> Tags.of(ingestBucketStack).add(key, value));
-            systemTestIngestBuckets.add(ingestBucketStack.getIngestBucket());
+            new SystemTestIngestBucketStack(this, "SystemTestIngestBucket", systemTestProperties);
         }
         super.create();
         // Stack for writing random data
         IngestStack ingestStack = getIngestStack();
         EmrBulkImportStack emrBulkImportStack = getEmrBulkImportStack();
-        SystemTestStack systemTestStack = new SystemTestStack(this,
-                "SystemTest",
+        new SystemTestStack(this, "SystemTest",
                 getTableStack().getDataBuckets(),
                 getTableStack().getStateStoreStacks(),
                 systemTestProperties,
                 ingestStack == null ? null : ingestStack.getIngestJobQueue(),
-                emrBulkImportStack == null ? null : emrBulkImportStack.getBulkImportJobQueue(),
-                systemTestIngestBuckets);
-        systemTestProperties.getTags()
-                .forEach((key, value) -> Tags.of(systemTestStack).add(key, value));
+                emrBulkImportStack == null ? null : emrBulkImportStack.getBulkImportJobQueue());
 
         readyToGenerateProperties = true;
         generateProperties();
