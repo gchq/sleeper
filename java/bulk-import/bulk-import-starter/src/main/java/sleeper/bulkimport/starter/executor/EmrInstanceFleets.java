@@ -86,7 +86,8 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                 .map(config -> new InstanceTypeConfig()
                         .withInstanceType(config.getInstanceType())
                         .withWeightedCapacity(config.getWeightedCapacity())
-                        .withEbsConfiguration(ebsConfiguration))
+                        .withEbsConfiguration(ebsConfiguration)
+                        .withConfigurations())
                 .collect(Collectors.toList());
     }
 

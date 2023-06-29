@@ -42,8 +42,8 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.replaceBracketedJobIds;
 import static sleeper.clients.testutil.ClientTestUtils.example;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
 
@@ -136,9 +136,9 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             // Given
             IngestJob job = createJob(1, 2);
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forRunOnNoTask("run-1",
+                    forJobRunOnNoTask(job.getId(), "run-1",
                             acceptedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"))),
-                    forNoRunNoTask(
+                    forNoRunNoTask(job.getId(),
                             rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:30:00Z")))));
 
             // When / Then
