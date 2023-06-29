@@ -45,7 +45,7 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatusListFrom;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test
@@ -135,14 +135,14 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         void shouldReportJobAcceptedThenRejected() throws Exception {
             // Given
             IngestJob job = createJob(1, 2);
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
                     forJobRunOnNoTask(job.getId(), "run-1",
                             acceptedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"))),
                     forNoRunNoTask(job.getId(),
                             rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:30:00Z")))));
 
             // When / Then
-            assertThat(getStandardReport(JobQuery.Type.DETAILED, List.of(status), 0)).isEqualTo(
+            assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0)).isEqualTo(
                     example("reports/ingest/job/standard/detailed/bulkImport/acceptedThenRejectedJob.txt"));
         }
     }
