@@ -29,19 +29,13 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.*;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatusListFrom;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
 
 public class IngestJobStatusTest {
+    private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
 
     @Nested
     @DisplayName("Report when a job is finished")
@@ -49,7 +43,6 @@ public class IngestJobStatusTest {
         @Test
         public void shouldBuildAndReportIngestJobStarted() {
             // Given
-            IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
@@ -64,14 +57,12 @@ public class IngestJobStatusTest {
         @Test
         public void shouldBuildAndReportIngestJobFinished() {
             // Given
-            IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
             Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(
-                    new RecordsProcessed(450L, 300L), startTime, finishTime);
 
             // When
-            IngestJobStatus status = jobStatus(job, finishedIngestRun(job, "test-task", summary));
+            IngestJobStatus status = jobStatus(job,
+                    finishedIngestRun(job, "test-task", summary(startTime, finishTime)));
 
             // Then
             assertThat(status)
@@ -81,38 +72,89 @@ public class IngestJobStatusTest {
     }
 
     @Nested
+    @DisplayName("Report furthest status update")
+    class ReportFurthestUpdate {
+        @Test
+        void shouldReportValidatedWithOneRun() {
+            IngestJobAcceptedStatus validation = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10.001Z"));
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("test-run", validation)));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
+                    .isEqualTo(validation);
+        }
+
+        @Test
+        void shouldReportStartedWithOneRun() {
+            IngestJobAcceptedStatus validation = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10Z"));
+            IngestJobStartedStatus started = startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:33:11Z"));
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run", validation),
+                    forRunOnTask("run", "task", started)));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
+                    .isEqualTo(started);
+        }
+    }
+
+    @Nested
     @DisplayName("Apply expiry date")
     class ApplyExpiry {
 
         @Test
         public void shouldSetExpiryDateFromFirstRecord() {
-            IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
             Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
             Instant startExpiryTime = Instant.parse("2022-12-21T15:28:42.001Z");
             Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
             Instant finishExpiryTime = Instant.parse("2022-12-21T15:29:42.001Z");
-            RecordsProcessedSummary summary = summary(startTime, finishTime, 200, 100);
 
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
                     forJob(job.getId(), withExpiry(startExpiryTime,
-                            IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)))),
+                            startedStatusUpdate(startTime))),
                     forJob(job.getId(), withExpiry(finishExpiryTime,
-                            ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary)))));
+                            finishedStatusUpdate(startTime, finishTime)))));
 
             assertThat(status.getExpiryDate()).isEqualTo(startExpiryTime);
         }
 
         @Test
         public void shouldIgnoreJobWithoutStartedUpdateAsItMayHaveExpired() {
-            IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
             Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
             Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
-            RecordsProcessedSummary summary = summary(startTime, finishTime, 200, 100);
 
             List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
-                    forJob(job.getId(), ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary))));
+                    forJob(job.getId(), finishedStatusUpdate(startTime, finishTime))));
 
             assertThat(statuses).isEmpty();
         }
+    }
+
+    private IngestJobAcceptedStatus acceptedStatusUpdate(Instant validationTime) {
+        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+    }
+
+    private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
+        return IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime));
+    }
+
+    private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
+        return IngestJobStartedStatus.withStartOfRun(false).job(job)
+                .startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                .build();
+    }
+
+    private ProcessFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
+        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary(startTime, finishTime));
+    }
+
+    private RecordsProcessedSummary summary(Instant startTime, Instant finishTime) {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(450L, 300L), startTime, finishTime);
     }
 }

@@ -16,10 +16,7 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.JobStatusUpdates;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.record.process.status.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -83,11 +80,17 @@ public class IngestJobStatus {
     }
 
     public List<ProcessRun> getJobRuns() {
-        return jobRuns.getRunList();
+        return jobRuns.getRunsLatestFirst();
     }
 
     public boolean isFinished() {
         return jobRuns.isFinished();
+    }
+
+    public ProcessStatusUpdate getFurthestStatusUpdate() {
+        return jobRuns.getLatestRun()
+                .map(ProcessRun::getLatestUpdate)
+                .orElseThrow();
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {

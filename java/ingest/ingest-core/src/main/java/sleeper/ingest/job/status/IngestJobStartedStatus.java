@@ -43,12 +43,7 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
     }
 
     public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
-        return inputFileCountStartAndUpdateTime(job.getFiles().size(), startTime, updateTime);
-    }
-
-    public static IngestJobStartedStatus inputFileCountStartAndUpdateTime(int inputFileCount, Instant startTime, Instant updateTime) {
-        return builder()
-                .inputFileCount(inputFileCount)
+        return withStartOfRun(true).job(job)
                 .startTime(startTime).updateTime(updateTime)
                 .build();
     }
@@ -109,6 +104,10 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         private boolean isStartOfRun = true;
 
         public Builder() {
+        }
+
+        public Builder job(IngestJob job) {
+            return inputFileCount(job.getFiles().size());
         }
 
         public Builder inputFileCount(int inputFileCount) {

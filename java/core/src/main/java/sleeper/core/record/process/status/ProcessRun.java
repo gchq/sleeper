@@ -103,6 +103,10 @@ public class ProcessRun {
         }
     }
 
+    public ProcessStatusUpdate getLatestUpdate() {
+        return statusUpdates.get(statusUpdates.size() - 1);
+    }
+
     public RecordsProcessedSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();

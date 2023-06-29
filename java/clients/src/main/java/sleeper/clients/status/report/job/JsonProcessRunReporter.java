@@ -38,7 +38,7 @@ public class JsonProcessRunReporter {
 
     private static JsonElement createProcessRunsJson(ProcessRuns runs, JsonSerializationContext context) {
         JsonArray jsonArray = new JsonArray();
-        for (ProcessRun run : runs.getRunList()) {
+        for (ProcessRun run : runs.getRunsLatestFirst()) {
             jsonArray.add(createProcessRunJson(run, context));
         }
         return jsonArray;
