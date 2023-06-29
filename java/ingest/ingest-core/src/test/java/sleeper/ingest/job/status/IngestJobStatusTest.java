@@ -29,11 +29,21 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.*;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
-import static sleeper.ingest.job.status.IngestJobStatusType.*;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatusListFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusType.ACCEPTED;
+import static sleeper.ingest.job.status.IngestJobStatusType.FINISHED;
+import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
 
 public class IngestJobStatusTest {
     private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");

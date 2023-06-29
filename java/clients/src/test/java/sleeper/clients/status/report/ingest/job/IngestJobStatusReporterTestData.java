@@ -32,7 +32,14 @@ import java.util.stream.IntStream;
 
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {

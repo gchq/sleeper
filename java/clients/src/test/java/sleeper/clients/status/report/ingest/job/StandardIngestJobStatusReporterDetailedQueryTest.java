@@ -29,12 +29,23 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.*;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJobWhichStarted;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedStatusUpdate;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.createJob;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithMultipleReasons;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithOneReason;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedStatusUpdate;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.replaceBracketedJobIds;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.*;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.singleJobStatusFrom;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test
