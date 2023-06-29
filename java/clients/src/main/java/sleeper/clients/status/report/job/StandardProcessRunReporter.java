@@ -77,8 +77,6 @@ public class StandardProcessRunReporter {
     }
 
     public void printProcessJobRun(ProcessRun run) {
-        out.println();
-        out.printf("Run on task %s%n", run.getTaskId());
         printProcessJobRun(run, defaultUpdatePrinter());
         if (!run.isFinished()) {
             out.println("Not finished");
