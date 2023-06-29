@@ -16,7 +16,10 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.*;
+import sleeper.core.record.process.status.JobStatusUpdates;
+import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Comparator;
