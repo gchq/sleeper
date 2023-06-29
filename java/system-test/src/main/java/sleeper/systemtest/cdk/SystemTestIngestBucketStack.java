@@ -21,25 +21,31 @@ import software.amazon.awscdk.RemovalPolicy;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
-import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-public class SystemTestIngestBucketStack extends NestedStack {
-    private final IBucket ingestBucket;
+import sleeper.cdk.Utils;
+import sleeper.configuration.properties.InstanceProperties;
 
-    public SystemTestIngestBucketStack(Construct scope, String id, String bucketName) {
+import java.util.Locale;
+
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+
+public class SystemTestIngestBucketStack extends NestedStack {
+
+    public SystemTestIngestBucketStack(Construct scope, String id, InstanceProperties systemTestProperties) {
         super(scope, id);
-        ingestBucket = Bucket.Builder.create(this, "SystemTestIngestBucket")
-                .bucketName(bucketName)
+        String systemTestIngestBucketName = String.join("-", "sleeper", systemTestProperties.get(ID),
+                "system", "test", "ingest").toLowerCase(Locale.ROOT);
+        systemTestProperties.set(INGEST_SOURCE_BUCKET, systemTestIngestBucketName);
+        Bucket.Builder.create(this, "SystemTestIngestBucket")
+                .bucketName(systemTestIngestBucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .autoDeleteObjects(true)
                 .build();
-    }
-
-    public IBucket getIngestBucket() {
-        return ingestBucket;
+        Utils.addStackTagIfSet(this, systemTestProperties);
     }
 }
