@@ -19,14 +19,18 @@ package sleeper.clients.status.report.job;
 import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 import java.io.PrintStream;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static sleeper.clients.util.ClientUtils.countWithCommas;
@@ -61,34 +65,88 @@ public class StandardProcessRunReporter {
     public void writeRunFields(ProcessRun run, TableRow.Builder builder) {
         builder.value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
-                .value(FINISH_TIME, run.getFinishTime())
-                .value(DURATION, getDurationInSeconds(run))
-                .value(RECORDS_READ, getRecordsRead(run))
-                .value(RECORDS_WRITTEN, getRecordsWritten(run))
-                .value(READ_RATE, getRecordsReadPerSecond(run))
-                .value(WRITE_RATE, getRecordsWrittenPerSecond(run));
+                .value(FINISH_TIME, run.getFinishTime());
+        if (run.isFinished()) {
+            RecordsProcessedSummary summary = run.getFinishedSummary();
+            builder.value(DURATION, getDurationString(summary))
+                    .value(RECORDS_READ, getRecordsRead(summary))
+                    .value(RECORDS_WRITTEN, getRecordsWritten(summary))
+                    .value(READ_RATE, getRecordsReadPerSecond(summary))
+                    .value(WRITE_RATE, getRecordsWrittenPerSecond(summary));
+        }
     }
 
     public void printProcessJobRun(ProcessRun run) {
         out.println();
         out.printf("Run on task %s%n", run.getTaskId());
-        printProcessJobRun(run, run.getStartedStatus());
-    }
-
-    public void printProcessJobRun(ProcessRun run, ProcessRunStartedUpdate startedUpdate) {
-        out.printf("Start Time: %s%n", startedUpdate.getStartTime());
-        out.printf("Start Update Time: %s%n", startedUpdate.getUpdateTime());
-        if (run.isFinished()) {
-            out.printf("Finish Time: %s%n", run.getFinishTime());
-            out.printf("Finish Update Time: %s%n", run.getFinishUpdateTime());
-            out.printf("Duration: %s%n", getDurationInSeconds(run)); // Duration from job started in driver or job accepted in executor?
-            out.printf("Records Read: %s%n", getRecordsRead(run));
-            out.printf("Records Written: %s%n", getRecordsWritten(run));
-            out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(run));
-            out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(run));
-        } else {
+        printProcessJobRun(run, defaultUpdatePrinter());
+        if (!run.isFinished()) {
             out.println("Not finished");
         }
+    }
+
+    public void printProcessJobRunWithUpdatePrinter(ProcessRun run, UpdatePrinter updatePrinter) {
+        printProcessJobRun(run, updatePrinters(updatePrinter, defaultUpdatePrinter()));
+    }
+
+    private UpdatePrinter defaultUpdatePrinter() {
+        return updatePrinters(
+                printUpdateType(ProcessRunStartedUpdate.class, this::printProcessStarted),
+                printUpdateType(ProcessFinishedStatus.class, this::printProcessFinished));
+    }
+
+    private void printProcessJobRun(ProcessRun run, UpdatePrinter updatePrinter) {
+        out.println();
+        if (run.getTaskId() != null) {
+            out.printf("Run on task %s%n", run.getTaskId());
+        }
+        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+            if (!updatePrinter.print(update)) {
+                out.printf("Unknown update type: %s%n", update.getClass().getSimpleName());
+            }
+        }
+    }
+
+    public static <T extends ProcessStatusUpdate> UpdatePrinter printUpdateType(Class<T> type, Consumer<T> printer) {
+        return update -> {
+            if (type.isInstance(update)) {
+                printer.accept(type.cast(update));
+                return true;
+            } else {
+                return false;
+            }
+        };
+    }
+
+    public static UpdatePrinter updatePrinters(UpdatePrinter... printers) {
+        return update -> {
+            for (UpdatePrinter printer : printers) {
+                if (printer.print(update)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    }
+
+    public interface UpdatePrinter {
+        boolean print(ProcessStatusUpdate update);
+    }
+
+    public void printProcessStarted(ProcessRunStartedUpdate update) {
+        out.printf("Start Time: %s%n", update.getStartTime());
+        out.printf("Start Update Time: %s%n", update.getUpdateTime());
+    }
+
+    public void printProcessFinished(ProcessFinishedStatus update) {
+        RecordsProcessedSummary summary = update.getSummary();
+        out.printf("Finish Time: %s%n", summary.getFinishTime());
+        out.printf("Finish Update Time: %s%n", update.getUpdateTime());
+        out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?
+        out.printf("Records Read: %s%n", getRecordsRead(summary));
+        out.printf("Records Written: %s%n", getRecordsWritten(summary));
+        out.printf("Read Rate (reads per second): %s%n", getRecordsReadPerSecond(summary));
+        out.printf("Write Rate (writes per second): %s%n", getRecordsWrittenPerSecond(summary));
     }
 
     public List<TableFieldDefinition> getFinishedFields() {
@@ -102,32 +160,28 @@ public class StandardProcessRunReporter {
         return STATE_IN_PROGRESS;
     }
 
-    public static String getDurationInSeconds(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDurationString((long) (summary.getDurationInSeconds() * 1000)));
+    private static String getDurationString(RecordsProcessedSummary summary) {
+        return formatDurationString(summary.getDuration());
     }
 
-    public static String getRecordsRead(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getRecordsRead()));
+    private static String getRecordsRead(RecordsProcessedSummary summary) {
+        return countWithCommas(summary.getRecordsRead());
     }
 
-    public static String getRecordsWritten(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> countWithCommas(summary.getRecordsWritten()));
+    private static String getRecordsWritten(RecordsProcessedSummary summary) {
+        return countWithCommas(summary.getRecordsWritten());
     }
 
-    public static String getRecordsReadPerSecond(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getRecordsReadPerSecond()));
+    private static String getRecordsReadPerSecond(RecordsProcessedSummary summary) {
+        return formatDecimal(summary.getRecordsReadPerSecond());
     }
 
-    public static String getRecordsWrittenPerSecond(ProcessRun run) {
-        return getOrNull(run.getFinishedSummary(), summary -> formatDecimal(summary.getRecordsWrittenPerSecond()));
+    private static String getRecordsWrittenPerSecond(RecordsProcessedSummary summary) {
+        return formatDecimal(summary.getRecordsWrittenPerSecond());
     }
 
     public static String formatDecimal(double value) {
         return decimalWithCommas("%.2f", value);
-    }
-
-    private static String formatDurationString(long millis) {
-        return formatDurationString(Duration.ofMillis(millis));
     }
 
     public static String formatDurationString(Duration duration) {

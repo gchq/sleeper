@@ -26,7 +26,6 @@ import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
-import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusType;
 import sleeper.ingest.job.status.IngestJobValidatedStatus;
@@ -34,6 +33,9 @@ import sleeper.ingest.job.status.IngestJobValidatedStatus;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
+
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
+import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -113,14 +115,11 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     }
 
     private void printProcessJobRun(ProcessRun run) {
-        out.println();
-        if (run.getTaskId() != null) {
-            out.printf("Run on task %s%n", run.getTaskId());
+        runReporter.printProcessJobRunWithUpdatePrinter(run,
+                printUpdateType(IngestJobValidatedStatus.class, this::printValidation));
+        if (IngestJobStatusType.of(run.getLatestUpdate()) == IN_PROGRESS) {
+            out.println("Not finished");
         }
-        run.getLastStatusOfType(IngestJobValidatedStatus.class)
-                .ifPresent(this::printValidation);
-        run.getLastStatusOfType(IngestJobStartedStatus.class)
-                .ifPresent(started -> runReporter.printProcessJobRun(run, started));
     }
 
     private void printValidation(IngestJobValidatedStatus status) {
