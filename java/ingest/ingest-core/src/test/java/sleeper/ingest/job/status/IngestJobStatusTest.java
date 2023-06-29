@@ -101,6 +101,58 @@ public class IngestJobStatusTest {
                     .extracting(IngestJobStatus::getFurthestStatusUpdate)
                     .isEqualTo(started);
         }
+
+        @Test
+        void shouldReportFinishedWithOneRun() {
+            Instant validationTime = Instant.parse("2022-09-22T13:33:10Z");
+            Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
+            ProcessFinishedStatus finished = finishedStatusUpdate(startTime, Instant.parse("2022-09-22T13:40:10Z"));
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run", acceptedStatusUpdate(validationTime)),
+                    forRunOnTask("run", "task",
+                            startedStatusUpdateAfterValidation(startTime),
+                            finished)));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
+                    .isEqualTo(finished);
+        }
+
+        @Test
+        void shouldReportStartedWhenAnotherRunAcceptedAfterwards() {
+            IngestJobAcceptedStatus validation1 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"));
+            IngestJobStartedStatus started = startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:33:10Z"));
+            IngestJobAcceptedStatus validation2 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:34:00Z"));
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run-1", validation1),
+                    forRunOnTask("run-1", "task", started),
+                    forRunOnNoTask("run-2", validation2)));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
+                    .isEqualTo(started);
+        }
+
+        @Test
+        void shouldReportStartedWhenAnotherRunAcceptedBefore() {
+            IngestJobAcceptedStatus validation1 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"));
+            IngestJobAcceptedStatus validation2 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:34:00Z"));
+            IngestJobStartedStatus started = startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:34:10Z"));
+
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run-1", validation1),
+                    forRunOnNoTask("run-2", validation2),
+                    forRunOnTask("run-2", "task", started)));
+
+            // Then
+            assertThat(status)
+                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
+                    .isEqualTo(started);
+        }
     }
 
     @Nested

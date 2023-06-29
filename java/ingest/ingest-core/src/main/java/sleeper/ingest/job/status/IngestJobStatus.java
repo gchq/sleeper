@@ -19,6 +19,7 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.status.*;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -87,9 +88,14 @@ public class IngestJobStatus {
         return jobRuns.isFinished();
     }
 
+    private static final List<Class<?>> UPDATE_TYPES_ORDER = List.of(
+            IngestJobRejectedStatus.class, IngestJobAcceptedStatus.class,
+            IngestJobStartedStatus.class, ProcessFinishedStatus.class);
+
     public ProcessStatusUpdate getFurthestStatusUpdate() {
-        return jobRuns.getLatestRun()
+        return jobRuns.getRunsLatestFirst().stream()
                 .map(ProcessRun::getLatestUpdate)
+                .min(Comparator.comparingInt(update -> -UPDATE_TYPES_ORDER.indexOf(update.getClass())))
                 .orElseThrow();
     }
 
