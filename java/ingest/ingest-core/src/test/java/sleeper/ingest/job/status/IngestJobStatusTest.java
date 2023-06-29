@@ -33,6 +33,7 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
+import static sleeper.ingest.job.status.IngestJobStatusType.*;
 
 public class IngestJobStatusTest {
     private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
@@ -72,8 +73,8 @@ public class IngestJobStatusTest {
     }
 
     @Nested
-    @DisplayName("Report furthest status update")
-    class ReportFurthestUpdate {
+    @DisplayName("Report furthest status")
+    class ReportFurthestStatus {
         @Test
         void shouldReportValidatedWithOneRun() {
             IngestJobAcceptedStatus validation = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10.001Z"));
@@ -83,41 +84,41 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
-                    .isEqualTo(validation);
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(ACCEPTED);
         }
 
         @Test
         void shouldReportStartedWithOneRun() {
-            IngestJobAcceptedStatus validation = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10Z"));
-            IngestJobStartedStatus started = startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:33:11Z"));
-
+            // Given
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forRunOnNoTask("run", validation),
-                    forRunOnTask("run", "task", started)));
+                    forRunOnNoTask("run",
+                            acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10Z"))),
+                    forRunOnTask("run", "task",
+                            startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:33:11Z")))));
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
-                    .isEqualTo(started);
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(STARTED);
         }
 
         @Test
         void shouldReportFinishedWithOneRun() {
             Instant validationTime = Instant.parse("2022-09-22T13:33:10Z");
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
-            ProcessFinishedStatus finished = finishedStatusUpdate(startTime, Instant.parse("2022-09-22T13:40:10Z"));
+            Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
 
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run", acceptedStatusUpdate(validationTime)),
                     forRunOnTask("run", "task",
                             startedStatusUpdateAfterValidation(startTime),
-                            finished)));
+                            finishedStatusUpdate(startTime, finishTime))));
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
-                    .isEqualTo(finished);
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(FINISHED);
         }
 
         @Test
@@ -133,8 +134,8 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
-                    .isEqualTo(started);
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(STARTED);
         }
 
         @Test
@@ -150,8 +151,8 @@ public class IngestJobStatusTest {
 
             // Then
             assertThat(status)
-                    .extracting(IngestJobStatus::getFurthestStatusUpdate)
-                    .isEqualTo(started);
+                    .extracting(IngestJobStatus::getFurthestStatusType)
+                    .isEqualTo(STARTED);
         }
     }
 

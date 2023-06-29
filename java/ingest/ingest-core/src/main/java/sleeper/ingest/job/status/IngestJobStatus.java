@@ -88,14 +88,11 @@ public class IngestJobStatus {
         return jobRuns.isFinished();
     }
 
-    private static final List<Class<?>> UPDATE_TYPES_ORDER = List.of(
-            IngestJobRejectedStatus.class, IngestJobAcceptedStatus.class,
-            IngestJobStartedStatus.class, ProcessFinishedStatus.class);
-
-    public ProcessStatusUpdate getFurthestStatusUpdate() {
+    public IngestJobStatusType getFurthestStatusType() {
         return jobRuns.getRunsLatestFirst().stream()
                 .map(ProcessRun::getLatestUpdate)
-                .min(Comparator.comparingInt(update -> -UPDATE_TYPES_ORDER.indexOf(update.getClass())))
+                .map(IngestJobStatusType::of)
+                .max(Comparator.comparing(IngestJobStatusType::getOrder))
                 .orElseThrow();
     }
 
