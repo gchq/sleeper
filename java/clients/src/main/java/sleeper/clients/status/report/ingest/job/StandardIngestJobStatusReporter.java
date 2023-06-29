@@ -165,20 +165,9 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
-            row.value(stateField, getState(run));
+            row.value(stateField, IngestJobStatusType.of(run.getLatestUpdate()));
             runReporter.writeRunFields(run, row);
         }));
-
-    }
-
-    private String getState(ProcessRun run) {
-        if (run.getStartedStatus() instanceof IngestJobAcceptedStatus) {
-            return "ACCEPTED";
-        } else if (run.getStartedStatus() instanceof IngestJobRejectedStatus) {
-            return "REJECTED";
-        } else {
-            return StandardProcessRunReporter.getState(run);
-        }
     }
 
     private void writeJobFields(IngestJobStatus job, TableRow.Builder builder) {
