@@ -27,8 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -37,8 +35,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
 
 public class SendBulkImportJobs {
@@ -52,11 +49,11 @@ public class SendBulkImportJobs {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-        TableProperties tableProperties = new TablePropertiesProvider(s3Client, systemTestProperties).getTableProperties(args[1]);
+        String tableName = args[1];
 
         List<String> files = new ArrayList<>();
         for (S3ObjectSummary object : S3Objects.withPrefix(
-                s3Client, tableProperties.get(DATA_BUCKET), "ingest/")) {
+                s3Client, systemTestProperties.getList(INGEST_SOURCE_BUCKET).get(0), "ingest/")) {
             files.add(object.getBucketName() + "/" + object.getKey());
         }
 
@@ -66,7 +63,7 @@ public class SendBulkImportJobs {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         for (int i = 0; i < sendCopies; i++) {
             BulkImportJob bulkImportJob = new BulkImportJob.Builder()
-                    .tableName(tableProperties.get(TABLE_NAME))
+                    .tableName(tableName)
                     .id(UUID.randomUUID().toString())
                     .files(files)
                     .build();
