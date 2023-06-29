@@ -2,7 +2,7 @@
 Ingest Job Status Report
 ------------------------
 Details for job $(jobId1):
-State: IN PROGRESS
+State: FINISHED
 Number of input files: 1
 
 Run on task task1111-1111-1111-1111-111111111111

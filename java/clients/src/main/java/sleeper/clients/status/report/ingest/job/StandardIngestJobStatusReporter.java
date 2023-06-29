@@ -25,16 +25,11 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.ingest.job.status.IngestJobAcceptedStatus;
-import sleeper.ingest.job.status.IngestJobRejectedStatus;
-import sleeper.ingest.job.status.IngestJobStartedStatus;
-import sleeper.ingest.job.status.IngestJobStatus;
-import sleeper.ingest.job.status.IngestJobValidatedStatus;
+import sleeper.ingest.job.status.*;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -106,25 +101,11 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
-        out.printf("State: %s%n", getJobState(status));
+        out.printf("State: %s%n", status.getFurthestStatusType());
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
             printProcessJobRun(run);
         }
-    }
-
-    private String getJobState(IngestJobStatus status) {
-        if (status.isFinished()) {
-            return StandardProcessRunReporter.STATE_FINISHED;
-        } else {
-            Optional<ProcessRun> runOpt = status.getJobRuns().stream().findFirst();
-            if (runOpt.isPresent()) {
-                if (runOpt.get().getStartedStatus() instanceof IngestJobRejectedStatus) {
-                    return "REJECTED";
-                }
-            }
-        }
-        return StandardProcessRunReporter.STATE_IN_PROGRESS;
     }
 
     private void printProcessJobRun(ProcessRun run) {

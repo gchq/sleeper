@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -30,20 +29,12 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJobWhichStarted;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.createJob;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithMultipleReasons;
-import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithOneReason;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.*;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.replaceBracketedJobIds;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.*;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test
@@ -130,17 +121,18 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         }
 
         @Test
-        @Disabled("TODO")
-        void shouldReportJobRejectedThenAccepted() throws Exception {
+        void shouldReportJobAcceptedThenRejected() throws Exception {
             // Given
             IngestJob job = createJob(1, 2);
-            IngestJobStatus status = jobStatus(job,
-                    rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), "Test validation reason"),
-                    acceptedRun(job, Instant.parse("2023-06-05T17:30:00Z")));
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnNoTask("run-1",
+                            acceptedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"))),
+                    forNoRunNoTask(
+                            rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:30:00Z")))));
 
             // When / Then
             assertThat(getStandardReport(JobQuery.Type.DETAILED, List.of(status), 0)).isEqualTo(
-                    example("reports/ingest/job/standard/detailed/bulkImport/rejectedThenAcceptedJob.txt"));
+                    example("reports/ingest/job/standard/detailed/bulkImport/acceptedThenRejectedJob.txt"));
         }
     }
 }

@@ -92,6 +92,10 @@ public class TestProcessStatusUpdateRecords {
         return forJobRunOnTask(DEFAULT_JOB_ID, jobRunId, null, updates);
     }
 
+    public static TaskUpdates forNoRunNoTask(ProcessStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, null, null, updates);
+    }
+
     public static UpdateWithExpiry withExpiry(Instant expiryTime, ProcessStatusUpdate update) {
         return new UpdateWithExpiry(update, expiryTime);
     }

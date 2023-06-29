@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 public enum IngestJobStatusType {
     REJECTED(IngestJobRejectedStatus.class, 1),
     ACCEPTED(IngestJobAcceptedStatus.class, 2),
-    STARTED(IngestJobStartedStatus.class, 3),
+    IN_PROGRESS(IngestJobStartedStatus.class, 3),
     FINISHED(ProcessFinishedStatus.class, 4);
 
     private final Class<?> statusUpdateClass;

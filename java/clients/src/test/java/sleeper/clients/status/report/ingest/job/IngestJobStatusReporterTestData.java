@@ -18,6 +18,8 @@ package sleeper.clients.status.report.ingest.job;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Duration;
@@ -29,14 +31,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.*;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {
@@ -128,6 +124,17 @@ public class IngestJobStatusReporterTestData {
                 .files(IntStream.range(1, inputFileCount + 1)
                         .mapToObj(f -> String.format("test%1d.parquet", f))
                         .collect(Collectors.toList()))
+                .build();
+    }
+
+    public static IngestJobAcceptedStatus acceptedStatusUpdate(IngestJob job, Instant validationTime) {
+        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+    }
+
+    public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime) {
+        return IngestJobRejectedStatus.builder().job(job)
+                .validationTime(validationTime).updateTime(defaultUpdateTime(validationTime))
+                .reasons(List.of("Test validation reason"))
                 .build();
     }
 }

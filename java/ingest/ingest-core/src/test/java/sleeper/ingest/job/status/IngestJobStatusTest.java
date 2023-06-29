@@ -77,10 +77,10 @@ public class IngestJobStatusTest {
     class ReportFurthestStatus {
         @Test
         void shouldReportValidatedWithOneRun() {
-            IngestJobAcceptedStatus validation = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10.001Z"));
-
+            // Given
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forRunOnNoTask("test-run", validation)));
+                    forRunOnNoTask("test-run",
+                            acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10.001Z")))));
 
             // Then
             assertThat(status)
@@ -100,7 +100,7 @@ public class IngestJobStatusTest {
             // Then
             assertThat(status)
                     .extracting(IngestJobStatus::getFurthestStatusType)
-                    .isEqualTo(STARTED);
+                    .isEqualTo(IN_PROGRESS);
         }
 
         @Test
@@ -123,36 +123,36 @@ public class IngestJobStatusTest {
 
         @Test
         void shouldReportStartedWhenAnotherRunAcceptedAfterwards() {
-            IngestJobAcceptedStatus validation1 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"));
-            IngestJobStartedStatus started = startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:33:10Z"));
-            IngestJobAcceptedStatus validation2 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:34:00Z"));
-
+            // Given
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forRunOnNoTask("run-1", validation1),
-                    forRunOnTask("run-1", "task", started),
-                    forRunOnNoTask("run-2", validation2)));
+                    forRunOnNoTask("run-1",
+                            acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"))),
+                    forRunOnTask("run-1", "task",
+                            startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:33:10Z"))),
+                    forRunOnNoTask("run-2",
+                            acceptedStatusUpdate(Instant.parse("2022-09-22T13:34:00Z")))));
 
             // Then
             assertThat(status)
                     .extracting(IngestJobStatus::getFurthestStatusType)
-                    .isEqualTo(STARTED);
+                    .isEqualTo(IN_PROGRESS);
         }
 
         @Test
         void shouldReportStartedWhenAnotherRunAcceptedBefore() {
-            IngestJobAcceptedStatus validation1 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"));
-            IngestJobAcceptedStatus validation2 = acceptedStatusUpdate(Instant.parse("2022-09-22T13:34:00Z"));
-            IngestJobStartedStatus started = startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:34:10Z"));
-
+            // Given
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forRunOnNoTask("run-1", validation1),
-                    forRunOnNoTask("run-2", validation2),
-                    forRunOnTask("run-2", "task", started)));
+                    forRunOnNoTask("run-1",
+                            acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"))),
+                    forRunOnNoTask("run-2",
+                            acceptedStatusUpdate(Instant.parse("2022-09-22T13:34:00Z"))),
+                    forRunOnTask("run-2", "task",
+                            startedStatusUpdateAfterValidation(Instant.parse("2022-09-22T13:34:10Z")))));
 
             // Then
             assertThat(status)
                     .extracting(IngestJobStatus::getFurthestStatusType)
-                    .isEqualTo(STARTED);
+                    .isEqualTo(IN_PROGRESS);
         }
     }
 
