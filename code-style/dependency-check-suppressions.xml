@@ -44,11 +44,11 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        Kerby's token-provider is a dependency of hadoop-client. We've left it bringing in the version from Hadoop, as
-        the fix requires a major version upgrade for Kerby.
+        Kerby is a dependency of hadoop-client. We've left it bringing in the version from Hadoop, as the fix requires
+        a major version upgrade for Kerby.
         CVE details: An LDAP Injection vulnerability exists in the LdapIdentityBackend of Apache Kerby before 2.0.3.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.kerby/token\-provider@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.kerby/.*$</packageUrl>
         <cpe>cpe:/a:apache:kerby</cpe>
     </suppress>
 </suppressions>
