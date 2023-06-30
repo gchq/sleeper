@@ -79,6 +79,8 @@
         <commons-text.version>1.10.0</commons-text.version>
         <jackson.version>2.15.2</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
+        <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
+        <guava.version>32.0.1-jre</guava.version>
         <cdk.version>2.86.0</cdk.version>
         <cdk.kubectl.24.version>2.0.237</cdk.kubectl.24.version>
         <cdk.apigatewayv2.version>2.86.0-alpha.0</cdk.apigatewayv2.version>
@@ -288,6 +290,11 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
             </dependency>
             <!-- Apache commons -->
             <dependency>
