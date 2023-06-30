@@ -46,9 +46,18 @@
         <notes><![CDATA[
         Kerby is a dependency of hadoop-client. We've left it bringing in the version from Hadoop, as the fix requires
         a major version upgrade for Kerby.
-        CVE details: An LDAP Injection vulnerability exists in the LdapIdentityBackend of Apache Kerby before 2.0.3.
+        https://nvd.nist.gov/vuln/detail/CVE-2023-25613
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.kerby/.*$</packageUrl>
         <cpe>cpe:/a:apache:kerby</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
+        fixed version.
+        https://nvd.nist.gov/vuln/detail/CVE-2019-10172
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
+        <cpe>cpe:/a:fasterxml:jackson-mapper-asl</cpe>
     </suppress>
 </suppressions>
