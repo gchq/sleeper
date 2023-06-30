@@ -100,6 +100,7 @@
         <commons-io.version>2.13.0</commons-io.version>
         <commons-configuration.version>2.9.0</commons-configuration.version>
         <commons-text.version>1.10.0</commons-text.version>
+        <commons-compiler.version>3.1.9</commons-compiler.version>
         <jackson.version>2.15.2</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
@@ -403,6 +404,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${commons-text.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>commons-compiler</artifactId>
+                <version>${commons-compiler.version}</version>
             </dependency>
             <!-- GSON -->
             <dependency>
