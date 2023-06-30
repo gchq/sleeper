@@ -79,11 +79,11 @@
         <commons-text.version>1.10.0</commons-text.version>
         <jackson.version>2.15.2</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
-        <cdk.version>2.66.0</cdk.version>
-        <cdk.kubectl.24.version>2.0.107</cdk.kubectl.24.version>
-        <cdk.apigatewayv2.version>2.59.0-alpha.0</cdk.apigatewayv2.version>
-        <awskeypair.version>1.0.0-alpha.5</awskeypair.version>
-        <constructs.version>10.1.213</constructs.version>
+        <cdk.version>2.86.0</cdk.version>
+        <cdk.kubectl.24.version>2.0.237</cdk.kubectl.24.version>
+        <cdk.apigatewayv2.version>2.86.0-alpha.0</cdk.apigatewayv2.version>
+        <awskeypair.version>1.0.0-alpha.7</awskeypair.version>
+        <constructs.version>10.2.63</constructs.version>
         <gson.version>2.10.1</gson.version>
         <datasketches.version>3.3.0</datasketches.version>
         <slf4j.version>2.0.6</slf4j.version>
