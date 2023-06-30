@@ -245,7 +245,7 @@ public interface TableProperty extends SleeperProperty {
                     "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
                     "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
                     "For example:\n" +
-                    " sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge\n" +
+                    " sleeper.default.bulk.import.emr.executor.x86.instance.types=m5.4xlarge,4,m5.xlarge\n" +
                     "The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the " +
                     "capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, " +
                     "so is defaulted to 1.\n" +
@@ -276,7 +276,7 @@ public interface TableProperty extends SleeperProperty {
                     "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
                     "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
                     "For example:\n" +
-                    " sleeper.default.bulk.import.emr.executor.instance.types=m6x.4xlarge,4,m6x.xlarge\n" +
+                    " sleeper.default.bulk.import.emr.executor.arm.instance.types=m6x.4xlarge,4,m6x.xlarge\n" +
                     "The above configuration would tell EMR that an m6x.4xlarge instance would provide 4 times the " +
                     "capacity of an m6x.xlarge instance. The m6x.xlarge instance type does not have a weight, " +
                     "so is defaulted to 1.\n" +
