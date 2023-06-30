@@ -25,7 +25,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,11 +59,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
@@ -79,10 +80,6 @@ public class GarbageCollectorIT {
     private static final String TEST_TABLE_NAME = "test-table";
     private static final String TEST_TABLE_NAME_1 = "test-table-1";
     private static final String TEST_TABLE_NAME_2 = "test-table-2";
-    private static final int DEFAULT_BATCH_SIZE = 2;
-    private static final int DEFAULT_GC_DELAY = 10;
-    private static final Instant CURRENT_TIME = Instant.parse("2023-06-28T13:46:00Z");
-    private static final Instant TIME_AFTER_DELAY = CURRENT_TIME.minus(Duration.ofMinutes(DEFAULT_GC_DELAY + 1));
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
@@ -109,21 +106,16 @@ public class GarbageCollectorIT {
     @Nested
     @DisplayName("Collecting from single table")
     class SingleTable {
+        private InstanceProperties instanceProperties;
         private TableProperties tableProperties;
-        private DynamoDBStateStore stateStore;
-        private GarbageCollector garbageCollector;
+        private StateStoreProvider stateStoreProvider;
 
-        @BeforeEach
-        void setup() throws Exception {
-            // Given
-            InstanceProperties instanceProperties = createInstanceProperties();
-            tableProperties = createTable(TEST_TABLE_NAME, instanceProperties);
+        void setupStateStoreWithFixedTime(Instant fixedTime) throws Exception {
             createDynamoDBStateStore(instanceProperties, tableProperties);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            stateStore = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties);
+            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            DynamoDBStateStore stateStore = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties);
             stateStore.initialise();
-            stateStore.fixTime(CURRENT_TIME);
-            garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
+            stateStore.fixTime(fixedTime);
         }
 
         @AfterEach
@@ -138,11 +130,16 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectFileMarkedAsReadyForGCAfterSpecifiedDelay() throws Exception {
             // Given
+            instanceProperties = createInstanceProperties();
+            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
+            setupStateStoreWithFixedTime(currentTime);
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath.toString(), stateStoreProvider.getStateStore(tableProperties), timeAfterDelay);
 
             // When
-            garbageCollector.run();
+            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isFalse();
@@ -152,11 +149,15 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectFileMarkedAsActive() throws Exception {
             // Given
+            instanceProperties = createInstanceProperties();
+            tableProperties = createTable(TEST_TABLE_NAME, instanceProperties);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            setupStateStoreWithFixedTime(currentTime);
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createActiveFile(filePath.toString(), stateStore);
+            createActiveFile(filePath.toString(), stateStoreProvider.getStateStore(tableProperties), currentTime);
 
             // When
-            garbageCollector.run();
+            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -166,11 +167,15 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectFileMarkedAsReadyForGCBeforeSpecifiedDelay() throws Exception {
             // Given
+            instanceProperties = createInstanceProperties();
+            tableProperties = createTable(TEST_TABLE_NAME, instanceProperties);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            setupStateStoreWithFixedTime(currentTime);
             java.nio.file.Path filePath = tempDir.resolve("test-file.parquet");
-            createReadyForGCFile(filePath.toString(), stateStore, CURRENT_TIME);
+            createReadyForGCFile(filePath.toString(), stateStoreProvider.getStateStore(tableProperties), currentTime);
 
             // When
-            garbageCollector.run();
+            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -181,13 +186,18 @@ public class GarbageCollectorIT {
         @Test
         void shouldCollectMultipleFilesInOneRun() throws Exception {
             // Given
+            instanceProperties = createInstanceProperties();
+            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
+            setupStateStoreWithFixedTime(currentTime);
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, TIME_AFTER_DELAY);
-            createReadyForGCFile(filePath2.toString(), stateStore, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath1.toString(), stateStoreProvider.getStateStore(tableProperties), timeAfterDelay);
+            createReadyForGCFile(filePath2.toString(), stateStoreProvider.getStateStore(tableProperties), timeAfterDelay);
 
             // When
-            garbageCollector.run();
+            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
@@ -198,15 +208,20 @@ public class GarbageCollectorIT {
         @Test
         void shouldNotCollectMoreFilesIfBatchSizeExceeded() throws Exception {
             // Given
+            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            tableProperties = createTableWithGCDelay(TEST_TABLE_NAME, instanceProperties, 10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
+            setupStateStoreWithFixedTime(currentTime);
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
             java.nio.file.Path filePath3 = tempDir.resolve("test-file-3.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore, TIME_AFTER_DELAY);
-            createReadyForGCFile(filePath2.toString(), stateStore, TIME_AFTER_DELAY);
-            createReadyForGCFile(filePath3.toString(), stateStore, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath1.toString(), stateStoreProvider.getStateStore(tableProperties), timeAfterDelay);
+            createReadyForGCFile(filePath2.toString(), stateStoreProvider.getStateStore(tableProperties), timeAfterDelay);
+            createReadyForGCFile(filePath3.toString(), stateStoreProvider.getStateStore(tableProperties), timeAfterDelay);
 
             // When
-            garbageCollector.run();
+            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Stream.of(filePath1, filePath2, filePath3).filter(Files::exists))
@@ -219,28 +234,10 @@ public class GarbageCollectorIT {
     @Nested
     @DisplayName("Collecting from multiple tables")
     class MultipleTables {
+        private InstanceProperties instanceProperties;
         private TableProperties tableProperties1;
-        private DynamoDBStateStore stateStore1;
         private TableProperties tableProperties2;
-        private DynamoDBStateStore stateStore2;
-        private GarbageCollector garbageCollector;
-
-        @BeforeEach
-        void setup() throws Exception {
-            InstanceProperties instanceProperties = createInstanceProperties();
-            tableProperties1 = createTable(TEST_TABLE_NAME_1, instanceProperties);
-            tableProperties2 = createTable(TEST_TABLE_NAME_2, instanceProperties);
-            createDynamoDBStateStore(instanceProperties, tableProperties1);
-            createDynamoDBStateStore(instanceProperties, tableProperties2);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            stateStore1 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties1);
-            stateStore1.initialise();
-            stateStore1.fixTime(CURRENT_TIME);
-            stateStore2 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties2);
-            stateStore2.initialise();
-            stateStore2.fixTime(CURRENT_TIME);
-            garbageCollector = createGarbageCollector(s3Client, instanceProperties, stateStoreProvider);
-        }
+        private StateStoreProvider stateStoreProvider;
 
         @AfterEach
         void tearDown() {
@@ -253,16 +250,34 @@ public class GarbageCollectorIT {
             dynamoDBClient.shutdown();
         }
 
+        void setupStateStoreWithFixedTime(Instant fixedTime) throws Exception {
+            createDynamoDBStateStore(instanceProperties, tableProperties1);
+            createDynamoDBStateStore(instanceProperties, tableProperties2);
+            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            DynamoDBStateStore stateStore1 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties1);
+            stateStore1.initialise();
+            stateStore1.fixTime(fixedTime);
+            DynamoDBStateStore stateStore2 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties2);
+            stateStore2.initialise();
+            stateStore2.fixTime(fixedTime);
+        }
+
         @Test
         void shouldCollectOneFileFromEachTable() throws Exception {
             // Given
+            instanceProperties = createInstancePropertiesWithGCBatchSize(2);
+            tableProperties1 = createTableWithGCDelay(TEST_TABLE_NAME_1, instanceProperties, 10);
+            tableProperties2 = createTableWithGCDelay(TEST_TABLE_NAME_2, instanceProperties, 10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant timeAfterDelay = currentTime.minus(Duration.ofMinutes(11));
+            setupStateStoreWithFixedTime(currentTime);
             java.nio.file.Path filePath1 = tempDir.resolve("test-file-1.parquet");
             java.nio.file.Path filePath2 = tempDir.resolve("test-file-2.parquet");
-            createReadyForGCFile(filePath1.toString(), stateStore1, TIME_AFTER_DELAY);
-            createReadyForGCFile(filePath2.toString(), stateStore2, TIME_AFTER_DELAY);
+            createReadyForGCFile(filePath1.toString(), stateStoreProvider.getStateStore(tableProperties1), timeAfterDelay);
+            createReadyForGCFile(filePath2.toString(), stateStoreProvider.getStateStore(tableProperties2), timeAfterDelay);
 
             // When
-            garbageCollector.run();
+            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
@@ -280,8 +295,8 @@ public class GarbageCollectorIT {
         return scanResult.getItems().stream().map(item -> item.get(DynamoDBStateStore.FILE_NAME).getS());
     }
 
-    private void createActiveFile(String filename, StateStore stateStore) throws Exception {
-        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, CURRENT_TIME);
+    private void createActiveFile(String filename, StateStore stateStore, Instant lastUpdateTime) throws Exception {
+        createFile(filename, stateStore, FileInfo.FileStatus.ACTIVE, lastUpdateTime);
     }
 
     private void createReadyForGCFile(String filename, StateStore stateStore, Instant lastUpdateTime) throws Exception {
@@ -316,7 +331,17 @@ public class GarbageCollectorIT {
         new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
     }
 
+    private InstanceProperties createInstancePropertiesWithGCBatchSize(int gcBatchSize) {
+        return createInstanceProperties(properties ->
+                properties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, gcBatchSize));
+    }
+
     private InstanceProperties createInstanceProperties() {
+        return createInstanceProperties(properties -> {
+        });
+    }
+
+    private InstanceProperties createInstanceProperties(Consumer<InstanceProperties> extraProperties) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
@@ -324,10 +349,24 @@ public class GarbageCollectorIT {
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
+        extraProperties.accept(instanceProperties);
         return instanceProperties;
     }
 
+    private TableProperties createTableWithGCDelay(String tableName, InstanceProperties instanceProperties, int gcDelay)
+            throws IOException {
+        return createTable(tableName, instanceProperties, tableProperties ->
+                tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, gcDelay));
+    }
+
     private TableProperties createTable(String tableName, InstanceProperties instanceProperties) throws IOException {
+        return createTable(tableName, instanceProperties, tableProperties -> {
+        });
+    }
+
+    private TableProperties createTable(
+            String tableName, InstanceProperties instanceProperties, Consumer<TableProperties> extraProperties)
+            throws IOException {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(TEST_SCHEMA);
@@ -335,15 +374,16 @@ public class GarbageCollectorIT {
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "" + DEFAULT_GC_DELAY);
+        extraProperties.accept(tableProperties);
         tableProperties.saveToS3(s3Client);
         return tableProperties;
     }
 
-    private static GarbageCollector createGarbageCollector(AmazonS3 s3Client, InstanceProperties instanceProperties,
-                                                           StateStoreProvider stateStoreProvider) {
+    private static GarbageCollector createGarbageCollector(
+            AmazonS3 s3Client, InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
         return new GarbageCollector(new Configuration(), new TableLister(s3Client, instanceProperties),
-                new TablePropertiesProvider(s3Client, instanceProperties), stateStoreProvider, DEFAULT_BATCH_SIZE);
+                new TablePropertiesProvider(s3Client, instanceProperties), stateStoreProvider,
+                instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
     }
 
     private static Schema getSchema() {
