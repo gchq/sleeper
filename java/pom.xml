@@ -84,7 +84,6 @@
         <cdk.version>2.86.0</cdk.version>
         <cdk.kubectl.24.version>2.0.237</cdk.kubectl.24.version>
         <cdk.apigatewayv2.version>2.86.0-alpha.0</cdk.apigatewayv2.version>
-        <awskeypair.version>1.0.0-alpha.7</awskeypair.version>
         <constructs.version>10.2.63</constructs.version>
         <gson.version>2.10.1</gson.version>
         <datasketches.version>3.3.0</datasketches.version>
@@ -178,11 +177,6 @@
                 <groupId>software.constructs</groupId>
                 <artifactId>constructs</artifactId>
                 <version>${constructs.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.github.cdklabs.cdk_cloudformation</groupId>
-                <artifactId>tf-aws-keypair</artifactId>
-                <version>${awskeypair.version}</version>
             </dependency>
             <!-- AWS SDK -->
             <dependency>
