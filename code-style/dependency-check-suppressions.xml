@@ -102,4 +102,14 @@
         <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.199\.jar/.*$</filePath>
         <cve>CVE-2020-10663</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This seems to be a false positive where dependency check is reporting the CVE against the wrong artifact.
+        The CVE states the vulnerability is in the AWS S3 SDK before version 1.12.261.
+        We're using a version of that library that has the fix.
+        The aws-crt library is still used with the same version after the fix was applied in the S3 SDK.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk\.crt/aws\-crt@.*$</packageUrl>
+        <cve>CVE-2022-31159</cve>
+    </suppress>
 </suppressions>
