@@ -69,4 +69,23 @@
         <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
         <vulnerabilityName>CVE-2019-10172</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
+        we can use that instead.
+        https://nvd.nist.gov/vuln/detail/CVE-2021-23497
+        file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+        ]]></notes>
+        <sha1>b63fef954a0be0be0e54237812a830c79bbea44e</sha1>
+        <cve>CVE-2021-23497</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
+        https://nvd.nist.gov/vuln/detail/CVE-2020-10663
+        file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+        ]]></notes>
+        <sha1>b63fef954a0be0be0e54237812a830c79bbea44e</sha1>
+        <cve>CVE-2020-10663</cve>
+    </suppress>
 </suppressions>
