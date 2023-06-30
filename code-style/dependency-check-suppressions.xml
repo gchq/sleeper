@@ -57,7 +57,6 @@
         <notes><![CDATA[
         Kerby is a dependency of hadoop-client. We've left it bringing in the version from Hadoop, as the fix requires
         a major version upgrade for Kerby.
-        https://nvd.nist.gov/vuln/detail/CVE-2023-25613
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.kerby/.*$</packageUrl>
         <cpe>cpe:/a:apache:kerby</cpe>
@@ -66,7 +65,6 @@
         <notes><![CDATA[
         The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
         fixed version.
-        https://nvd.nist.gov/vuln/detail/CVE-2017-7525
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
         <vulnerabilityName>CVE-2017-7525</vulnerabilityName>
@@ -75,16 +73,22 @@
         <notes><![CDATA[
         The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
         fixed version.
-        https://nvd.nist.gov/vuln/detail/CVE-2019-10172
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
         <vulnerabilityName>CVE-2019-10172</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of OkHttp, with old Maven artifacts that don't have a
+        fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp/okhttp@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
         we can use that instead.
-        https://nvd.nist.gov/vuln/detail/CVE-2021-23497
         file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
         ]]></notes>
         <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.199\.jar/.*$</filePath>
@@ -93,7 +97,6 @@
     <suppress>
         <notes><![CDATA[
         The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
-        https://nvd.nist.gov/vuln/detail/CVE-2020-10663
         file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
         ]]></notes>
         <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.199\.jar/.*$</filePath>
