@@ -55,9 +55,18 @@
         <notes><![CDATA[
         The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
         fixed version.
+        https://nvd.nist.gov/vuln/detail/CVE-2017-7525
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
+        <vulnerabilityName>CVE-2017-7525</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
+        fixed version.
         https://nvd.nist.gov/vuln/detail/CVE-2019-10172
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
-        <cpe>cpe:/a:fasterxml:jackson-mapper-asl</cpe>
+        <vulnerabilityName>CVE-2019-10172</vulnerabilityName>
     </suppress>
 </suppressions>
