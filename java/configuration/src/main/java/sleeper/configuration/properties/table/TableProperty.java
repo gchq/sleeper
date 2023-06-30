@@ -27,10 +27,12 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
@@ -223,20 +225,22 @@ public interface TableProperty extends SleeperProperty {
                     "the S3StateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .runCDKDeployWhenChanged(true).build();
-    TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.types")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES)
-            .description("(Non-persistent EMR mode only) The EC2 instance types to be used for the master node of the " +
-                    "EMR cluster. Multiple instance types can be specified separated by commas. One will be chosen " +
-                    "depending on the capacity available.\n" +
+    TableProperty BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.x86.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types to be used for the master node of the " +
+                    "EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "This property only accepts instance types which use an x86_64 architecture. " +
+                    "One will be chosen depending on the capacity available.\n" +
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.types")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES)
-            .description("(Non-persistent EMR mode only) The EC2 instance types to be used for the executor nodes of " +
-                    "the EMR cluster. Multiple instance types can be specified separated by commas. Instance types " +
-                    "will be chosen from the list based on the capacity available.\n" +
+    TableProperty BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.x86.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types to be used for the executor nodes of " +
+                    "the EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "This property only accepts instance types which use an x86_64 architecture. " +
+                    "Instance types will be chosen from the list based on the capacity available.\n" +
                     "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
                     "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
                     "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
@@ -247,6 +251,37 @@ public interface TableProperty extends SleeperProperty {
                     "so is defaulted to 1.\n" +
                     "In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one " +
                     "instance of m5.4xlarge, or 3 instances of m5.xlarge.\n" +
+                    "See also: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options\n" +
+                    "This property overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.arm.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types to be used for the master node of the " +
+                    "EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "This property only accepts instance types which use an ARM64 architecture. " +
+                    "One will be chosen depending on the capacity available.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.arm.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types to be used for the executor nodes of " +
+                    "the EMR cluster. Multiple instance types can be specified separated by commas. " +
+                    "This property only accepts instance types which use an ARM64 architecture. " +
+                    "Instance types will be chosen from the list based on the capacity available.\n" +
+                    "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
+                    "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
+                    "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
+                    "For example:\n" +
+                    " sleeper.default.bulk.import.emr.executor.instance.types=m6x.4xlarge,4,m6x.xlarge\n" +
+                    "The above configuration would tell EMR that an m6x.4xlarge instance would provide 4 times the " +
+                    "capacity of an m6x.xlarge instance. The m6x.xlarge instance type does not have a weight, " +
+                    "so is defaulted to 1.\n" +
+                    "In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one " +
+                    "instance of m6x.4xlarge, or 3 instances of m6x.xlarge.\n" +
                     "See also: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options\n" +
                     "This property overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")

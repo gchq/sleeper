@@ -65,10 +65,10 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VER
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -121,7 +121,7 @@ class EmrExecutorTest {
             // Given
             BulkImportJob myJob = singleFileJobBuilder()
                     .platformSpec(ImmutableMap.of(
-                            BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES.getPropertyName(),
+                            BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(),
                             "r5.xlarge"))
                     .build();
 
@@ -212,7 +212,7 @@ class EmrExecutorTest {
         @Test
         void shouldUseFirstInstanceTypeForExecutorsWhenMoreThanOneIsSpecified() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES, "m5.4xlarge,m5a.4xlarge");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m5.4xlarge,m5a.4xlarge");
 
             // When
             executorWithInstanceGroups().runJob(singleFileJob());
@@ -226,7 +226,7 @@ class EmrExecutorTest {
         @Test
         void shouldUseFirstInstanceTypeForDriverWhenMoreThanOneIsSpecified() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES, "m5.xlarge,m5a.xlarge");
+            tableProperties.set(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "m5.xlarge,m5a.xlarge");
 
             // When
             executorWithInstanceGroups().runJob(singleFileJob());
@@ -324,7 +324,7 @@ class EmrExecutorTest {
         @Test
         void shouldUseMultipleInstanceTypesForExecutorsWhenSpecified() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES, "m5.4xlarge,m5a.4xlarge");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m5.4xlarge,m5a.4xlarge");
 
             // When
             executorWithInstanceFleets().runJob(singleFileJob());
@@ -339,7 +339,7 @@ class EmrExecutorTest {
         @Test
         void shouldUseMultipleInstanceTypesForDriverWhenSpecified() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES, "m5.xlarge,m5a.xlarge");
+            tableProperties.set(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "m5.xlarge,m5a.xlarge");
 
             // When
             executorWithInstanceFleets().runJob(singleFileJob());
@@ -371,7 +371,7 @@ class EmrExecutorTest {
         @Test
         void shouldSetCapacityWeightsForInstanceTypesForExecutorsWhenSpecified() {
             // Given
-            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES, "m5.4xlarge,5,m5a.4xlarge");
+            tableProperties.set(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m5.4xlarge,5,m5a.4xlarge");
 
             // When
             executorWithInstanceFleets().runJob(singleFileJob());
@@ -391,7 +391,7 @@ class EmrExecutorTest {
         // Given
         BulkImportJob myJob = singleFileJobBuilder()
                 .sparkConf(ImmutableMap.of("spark.hadoop.fs.s3a.connection.maximum", "100"))
-                .platformSpec(ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"))
+                .platformSpec(ImmutableMap.of(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getPropertyName(), "r5.xlarge"))
                 .build();
 
         // When
