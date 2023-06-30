@@ -639,18 +639,32 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.instance.types")
-            .description("(Persistent EMR mode only) The EC2 instance types used for the master node of the " +
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.x86.instance.types")
+            .description("(Persistent EMR mode only) The EC2 x86 instance types used for the master node of the " +
                     "persistent EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.executor.instance.types")
-            .description("(Persistent EMR mode only) The EC2 instance types used for the executor nodes of the " +
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.executor.x86.instance.types")
+            .description("(Persistent EMR mode only) The EC2 x86 instance types used for the executor nodes of the " +
                     "persistent EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getDefaultValue())
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.arm.instance.types")
+            .description("(Persistent EMR mode only) The EC2 ARM64 instance types used for the master node of the " +
+                    "persistent EMR cluster. " +
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+            .defaultValue(DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES.getDefaultValue())
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.executor.arm.instance.types")
+            .description("(Persistent EMR mode only) The EC2 ARM64 instance types used for the executor nodes of the " +
+                    "persistent EMR cluster. " +
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+            .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.use.managed.scaling")

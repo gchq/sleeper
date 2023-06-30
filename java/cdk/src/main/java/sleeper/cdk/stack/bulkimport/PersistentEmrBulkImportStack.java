@@ -55,8 +55,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
@@ -120,7 +120,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         CfnCluster.InstanceFleetConfigProperty masterInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Driver")
-                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES).stream()
+                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES).stream()
                         .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
                                 .instanceType(type)
                                 .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
@@ -128,7 +128,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Executors")
-                .instanceTypeConfigs(readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES))
+                .instanceTypeConfigs(readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES))
                         .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
                                 .instanceType(type.getInstanceType())
                                 .weightedCapacity(type.getWeightedCapacity())
