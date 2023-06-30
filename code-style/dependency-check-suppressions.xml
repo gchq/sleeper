@@ -79,6 +79,14 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        The version of Athena we're using uses an old version of Bouncy Castle Provider, with an old Maven artifact that
+        doesn't have a fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-33201</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
         we can use that instead.
         file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
