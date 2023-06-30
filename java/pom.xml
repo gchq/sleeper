@@ -76,15 +76,15 @@
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
         <woodstox.version>5.4.0</woodstox.version>
-        <!--
-        Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0 to 2.5.1.
-        -->
+        <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
         <ivy.version>2.5.1</ivy.version>
         <!--
-        Snappy is used by both hadoop-client and parquet-hadoop. We were getting multiple versions added to the
-        classpath, and they both had vulnerabilities.
+        Snappy is used by both hadoop-client and parquet-hadoop.
+        We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
         <snappy.version>1.1.10.1</snappy.version>
+        <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 2.5.0. -->
+        <protobuf.version>3.23.3</protobuf.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.20.95</aws-java-sdk-v2.version>
         <aws-crt.version>0.22.2</aws-crt.version>
@@ -348,6 +348,11 @@
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
                 <version>${snappy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
