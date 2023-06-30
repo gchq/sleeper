@@ -594,13 +594,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master " +
                     "node of the EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.arm.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the executor " +
                     "nodes of the EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.market.type")
             .description("(Non-persistent EMR mode only) The default purchasing option to be used for the executor " +
@@ -650,7 +648,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("(Persistent EMR mode only) The EC2 x86 instance types used for the executor nodes of the " +
                     "persistent EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.arm.instance.types")

@@ -20,6 +20,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture.ARM64;
+import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture.X86_64;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SPARK_DRIVER_CORES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
@@ -51,12 +53,21 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIM
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
 public class ConfigurationUtils {
-    private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.x86_64";
+    public enum Architecture {
+        X86_64, ARM64
+    }
+
+    private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.%s";
 
     private ConfigurationUtils() {
     }
 
     public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties) {
+        return getSparkConfigurationFromInstanceProperties(instanceProperties, X86_64);
+    }
+
+    public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
+                                                                                  Architecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
 
         // spark.driver properties
@@ -114,7 +125,7 @@ public class ConfigurationUtils {
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS));
 
         // Set JAVA_HOME explicitly
-        sparkConf.put("spark.executorEnv.JAVA_HOME", JAVA_HOME);
+        sparkConf.put("spark.executorEnv.JAVA_HOME", getJavaHome(arch));
 
         return sparkConf;
     }
@@ -141,14 +152,19 @@ public class ConfigurationUtils {
         return mapRedSiteConf;
     }
 
-    public static Map<String, String> getJavaHomeConfiguration() {
+    public static Map<String, String> getJavaHomeConfiguration(Architecture arch) {
         Map<String, String> javaHomeConf = new HashMap<>();
-        javaHomeConf.put("JAVA_HOME", JAVA_HOME);
-
+        javaHomeConf.put("JAVA_HOME", getJavaHome(arch));
         return javaHomeConf;
     }
 
-    public static String getJavaHome() {
-        return JAVA_HOME;
+    public static String getJavaHome(Architecture arch) {
+        if (X86_64.equals(arch)) {
+            return String.format(JAVA_HOME, "x86_64");
+        } else if (ARM64.equals(arch)) {
+            return String.format(JAVA_HOME, "arm64");
+        } else {
+            throw new IllegalArgumentException("Unrecognised architecture: " + arch.toString());
+        }
     }
 }
