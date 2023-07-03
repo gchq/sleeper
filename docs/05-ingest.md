@@ -231,10 +231,10 @@ sleeper.default.bulk.import.persistent.emr.master.x86.instance.types=m5.xlarge #
 sleeper.default.bulk.import.persistent.emr.executor.x86.instance.types=m5.4xlarge # The EC2 x86_64 instance types to be used for the executor nodes of the EMR cluster.
 
 # The following properties are specific to AR64 instance types
-sleeper.default.bulk.import.emr.master.arm.instance.types=m6x.xlarge # The EC2 ARM64 instance types to be used for the master node of the EMR cluster.
-sleeper.default.bulk.import.emr.executor.arm.instance.types=m6x.4xlarge # The EC2 ARM64 instance types to be used for the executor nodes of the EMR cluster.
-sleeper.default.bulk.import.persistent.emr.master.arm.instance.types=m6x.xlarge # The EC2 ARM64 instance types to be used for the master node of the EMR cluster.
-sleeper.default.bulk.import.persistent.emr.executor.arm.instance.types=m6x.4xlarge # The EC2 ARM64 instance types to be used for the executor nodes of the EMR cluster.
+sleeper.default.bulk.import.emr.master.arm.instance.types=m6g.xlarge # The EC2 ARM64 instance types to be used for the master node of the EMR cluster.
+sleeper.default.bulk.import.emr.executor.arm.instance.types=m6g.4xlarge # The EC2 ARM64 instance types to be used for the executor nodes of the EMR cluster.
+sleeper.default.bulk.import.persistent.emr.master.arm.instance.types=m6g.xlarge # The EC2 ARM64 instance types to be used for the master node of the EMR cluster.
+sleeper.default.bulk.import.persistent.emr.executor.arm.instance.types=m6g.4xlarge # The EC2 ARM64 instance types to be used for the executor nodes of the EMR cluster.
 ```
 Multiple instance types can be specified separated by commas. One instance will be chosen depending on the capacity available.
 
