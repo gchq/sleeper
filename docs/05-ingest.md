@@ -184,8 +184,8 @@ job specification:
   	"my-bucket/my-files/"
   ],
   "platformSpec": {
-  	"sleeper.table.bulk.import.emr.master.instance.types": "m5.xlarge",
-  	"sleeper.table.bulk.import.emr.executor.instance.types": "m5.4xlarge",
+  	"sleeper.table.bulk.import.emr.master.x86.instance.types": "m5.xlarge",
+  	"sleeper.table.bulk.import.emr.executor.x86.instance.types": "m5.4xlarge",
   	"sleeper.table.bulk.import.emr.executor.initial.instances": "2",
   	"sleeper.table.bulk.import.emr.executor.max.instances": "10"
   }
@@ -354,8 +354,8 @@ following instance properties:
 
 ```properties
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
-sleeper.bulk.import.persistent.emr.master.instance.type=m5.xlarge
-sleeper.bulk.import.persistent.emr.executor.instance.types=m5.4xlarge
+sleeper.bulk.import.persistent.emr.master.x86.instance.types=m5.xlarge
+sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m5.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=false
 sleeper.bulk.import.persistent.emr.min.instances=10
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
