@@ -68,4 +68,19 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
                 .containsExactly(
                         jobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")));
     }
+
+    @Test
+    void shouldExcludeJobThatWasRejectedThenAccepted() {
+        // Given
+        IngestJob job = jobWithFiles("file1");
+        Instant validationTime1 = Instant.parse("2022-12-14T13:51:12.001Z");
+        Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
+
+        // When
+        store.jobValidated(ingestJobRejected(job, validationTime1, "Test reason 1"));
+        store.jobValidated(ingestJobAccepted(job, validationTime2).build());
+
+        // Then
+        assertThat(store.getInvalidJobs()).isEmpty();
+    }
 }

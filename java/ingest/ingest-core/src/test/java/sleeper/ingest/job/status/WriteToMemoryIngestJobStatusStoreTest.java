@@ -267,6 +267,24 @@ public class WriteToMemoryIngestJobStatusStoreTest {
                     jobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")),
                     jobStatus(job1, rejectedRun(job1, validationTime1, "Test reason 1")));
         }
+
+        @Test
+        void shouldNotGetJobThatWasRejectedThenAccepted() {
+            // Given
+            String tableName = "test-table";
+            IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+
+            Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
+            Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
+
+            // When
+            store.jobValidated(ingestJobRejected(job1, validationTime1, "Test validation reason"));
+            store.jobValidated(ingestJobAccepted(job1, validationTime2).build());
+
+
+            // Then
+            assertThat(store.getInvalidJobs()).isEmpty();
+        }
     }
 
     @Nested
