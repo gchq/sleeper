@@ -18,6 +18,8 @@ package sleeper.clients.status.report.ingest.job;
 
 import sleeper.clients.status.report.StatusReporterTestHelper;
 import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.status.IngestJobAcceptedStatus;
+import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.time.Duration;
@@ -29,9 +31,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRun;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
 
@@ -91,12 +97,51 @@ public class IngestJobStatusReporterTestData {
                 finishedIngestJob(createJob(1, 1), "task-id", summary(startTime1, Duration.ofMillis(123_123), 600_000, 300_000)));
     }
 
-    private static IngestJob createJob(int jobNum, int inputFileCount) {
+    public static List<IngestJobStatus> acceptedJob() {
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                acceptedRun(job, Instant.parse("2023-06-05T17:20:00Z"))));
+    }
+
+    public static List<IngestJobStatus> acceptedJobWhichStarted() {
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                acceptedRunWhichStarted(job, "test-task",
+                        Instant.parse("2023-06-05T17:20:00Z"),
+                        Instant.parse("2023-06-05T18:20:00Z"))));
+    }
+
+    public static List<IngestJobStatus> rejectedJobWithOneReason() {
+        List<String> reasons = List.of("Test validation reason");
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
+    }
+
+    public static List<IngestJobStatus> rejectedJobWithMultipleReasons() {
+        List<String> reasons = List.of("Test validation reason 1", "Test validation reason 2", "Test validation reason 3");
+        IngestJob job = createJob(1, 2);
+        return List.of(jobStatus(job,
+                rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
+    }
+
+    public static IngestJob createJob(int jobNum, int inputFileCount) {
         return IngestJob.builder()
                 .id(StatusReporterTestHelper.job(jobNum))
                 .files(IntStream.range(1, inputFileCount + 1)
                         .mapToObj(f -> String.format("test%1d.parquet", f))
                         .collect(Collectors.toList()))
+                .build();
+    }
+
+    public static IngestJobAcceptedStatus acceptedStatusUpdate(IngestJob job, Instant validationTime) {
+        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+    }
+
+    public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime) {
+        return IngestJobRejectedStatus.builder().job(job)
+                .validationTime(validationTime).updateTime(defaultUpdateTime(validationTime))
+                .reasons(List.of("Test validation reason"))
                 .build();
     }
 }
