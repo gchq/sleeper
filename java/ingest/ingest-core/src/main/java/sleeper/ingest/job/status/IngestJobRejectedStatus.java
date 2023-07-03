@@ -16,18 +16,23 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.ingest.job.IngestJob;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     private final Instant validationTime;
     private final Instant updateTime;
+    private final int inputFileCount;
     private final List<String> reasons;
 
     private IngestJobRejectedStatus(Builder builder) {
         validationTime = Objects.requireNonNull(builder.validationTime, "validateTime must not be null");
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
+        inputFileCount = builder.inputFileCount;
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
     }
 
@@ -46,6 +51,15 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     }
 
     @Override
+    public int getInputFileCount() {
+        return inputFileCount;
+    }
+
+    public List<String> getReasons() {
+        return reasons;
+    }
+
+    @Override
     public boolean isValid() {
         return false;
     }
@@ -59,14 +73,15 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobRejectedStatus that = (IngestJobRejectedStatus) o;
-        return Objects.equals(validationTime, that.validationTime)
+        return inputFileCount == that.inputFileCount
+                && Objects.equals(validationTime, that.validationTime)
                 && Objects.equals(updateTime, that.updateTime)
                 && Objects.equals(reasons, that.reasons);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(validationTime, updateTime, reasons);
+        return Objects.hash(validationTime, updateTime, inputFileCount, reasons);
     }
 
     @Override
@@ -74,12 +89,14 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         return "IngestJobRejectedStatus{" +
                 "validationTime=" + validationTime +
                 ", updateTime=" + updateTime +
+                ", inputFileCount=" + inputFileCount +
                 ", reasons=" + reasons +
                 '}';
     }
 
     public static final class Builder {
         private Instant updateTime;
+        private int inputFileCount = 0;
         private List<String> reasons;
         private Instant validationTime;
 
@@ -99,6 +116,15 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         public Builder reasons(List<String> reasons) {
             this.reasons = reasons;
             return this;
+        }
+
+        public Builder inputFileCount(int inputFileCount) {
+            this.inputFileCount = inputFileCount;
+            return this;
+        }
+
+        public Builder job(IngestJob job) {
+            return inputFileCount(Optional.ofNullable(job.getFiles()).map(List::size).orElse(0));
         }
 
         public IngestJobRejectedStatus build() {

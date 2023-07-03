@@ -221,7 +221,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, acceptedRunOnTask(taskId, validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
         }
 
         @Test
@@ -255,7 +255,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(
+                    .containsExactly(jobStatus(job, rejectedRun(job,
                             validationTime, "Test validation reason")));
         }
 
@@ -272,7 +272,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, rejectedRun(validationTime,
+                    .containsExactly(jobStatus(job, rejectedRun(job, validationTime,
                             List.of("Test validation reason 1", "Test validation reason 2"))));
         }
     }
@@ -292,7 +292,7 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableName))
-                    .containsExactly(jobStatus(job, acceptedRun(validationTime)));
+                    .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
             assertThat(store.streamTableRecords(tableName))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run");

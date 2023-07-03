@@ -16,28 +16,49 @@
 
 package sleeper.clients.status.report.job;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
+
+import java.util.List;
 
 public class JsonProcessRunReporter {
     private JsonProcessRunReporter() {
     }
 
-    public static JsonSerializer<ProcessRun> processRunJsonSerializer() {
-        return ((processRun, type, context) -> createProcessRunJson(processRun, context));
+    public static JsonSerializer<ProcessRuns> processRunsJsonSerializer() {
+        return ((processRuns, type, context) -> createProcessRunsJson(processRuns, context));
+    }
+
+    private static JsonElement createProcessRunsJson(ProcessRuns runs, JsonSerializationContext context) {
+        JsonArray jsonArray = new JsonArray();
+        for (ProcessRun run : runs.getRunsLatestFirst()) {
+            jsonArray.add(createProcessRunJson(run, context));
+        }
+        return jsonArray;
     }
 
     private static JsonElement createProcessRunJson(ProcessRun run, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("taskId", run.getTaskId());
-        jsonObject.add("startedStatus", context.serialize(run.getStartedStatus()));
-        if (run.isFinished()) {
-            jsonObject.add("finishedStatus", context.serialize(run.getFinishedStatus()));
-        }
+        jsonObject.add("updates", createStatusUpdatesJson(run.getStatusUpdates(), context));
         return jsonObject;
+    }
+
+    private static JsonElement createStatusUpdatesJson(
+            List<ProcessStatusUpdate> updates, JsonSerializationContext context) {
+        JsonArray jsonArray = new JsonArray();
+        for (ProcessStatusUpdate update : updates) {
+            JsonObject jsonObject = context.serialize(update).getAsJsonObject();
+            jsonObject.addProperty("type", update.getClass().getSimpleName());
+            jsonArray.add(jsonObject);
+        }
+        return jsonArray;
     }
 }

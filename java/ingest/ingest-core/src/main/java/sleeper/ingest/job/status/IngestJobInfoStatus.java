@@ -16,6 +16,8 @@
 
 package sleeper.ingest.job.status;
 
-public interface IngestJobValidatedStatus extends IngestJobInfoStatus {
-    boolean isValid();
+import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+
+public interface IngestJobInfoStatus extends ProcessRunStartedUpdate {
+    int getInputFileCount();
 }
