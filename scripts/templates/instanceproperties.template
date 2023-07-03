@@ -416,12 +416,12 @@ sleeper.default.bulk.import.emr.release.label=emr-6.10.0
 # (Non-persistent EMR mode only) The default EC2 x86 instance types to be used for the master node of
 # the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-sleeper.default.bulk.import.emr.master.x86.instance.types=m5.xlarge
+sleeper.default.bulk.import.emr.master.x86.instance.types=m6i.xlarge
 
 # (Non-persistent EMR mode only) The default EC2 x86_64 instance types to be used for the executor
 # nodes of the EMR cluster. For more information, see the Bulk import using EMR - Instance types
 # section in docs/05-ingest.md
-sleeper.default.bulk.import.emr.executor.x86.instance.types=m5.4xlarge
+sleeper.default.bulk.import.emr.executor.x86.instance.types=m6i.4xlarge
 
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master node
 # of the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
@@ -464,7 +464,7 @@ sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 # (Persistent EMR mode only) The EC2 x86 instance types used for the master node of the persistent EMR
 # cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-sleeper.bulk.import.persistent.emr.master.x86.instance.types=m5.xlarge
+sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 
 # (Persistent EMR mode only) The EC2 x86 instance types used for the executor nodes of the persistent
 # EMR cluster. For more information, see the Bulk import using EMR - Instance types section in

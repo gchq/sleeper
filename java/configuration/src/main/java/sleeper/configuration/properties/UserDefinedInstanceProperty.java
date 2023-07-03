@@ -386,7 +386,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
     //          same which allows the following properties to be used across both types):
     //      - Theses are based on this blog
     //      https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
-    //      - Our default core/task instance type is m5.4xlarge. These have 64GB of RAM and 16 vCPU. The amount of
+    //      - Our default core/task instance type is m6i.4xlarge. These have 64GB of RAM and 16 vCPU. The amount of
     //          usable RAM is 56GB.
     //      - The recommended value of spark.executor.cores is 5, irrespective of the number of servers or their specs.
     //      - Number of executors per instance = (number of vCPU per instance - 1) / spark.executors.cores = (16 - 1) / 5 = 3
@@ -582,13 +582,13 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .description("(Non-persistent EMR mode only) The default EC2 x86 instance types to be used for the master " +
                     "node of the EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("m5.xlarge")
+            .defaultValue("m6i.xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.x86.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 x86_64 instance types to be used for the executor " +
                     "nodes of the EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("m5.4xlarge")
+            .defaultValue("m6i.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.arm.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master " +
