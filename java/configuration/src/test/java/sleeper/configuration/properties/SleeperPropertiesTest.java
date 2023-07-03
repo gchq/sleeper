@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Properties;
@@ -158,6 +159,19 @@ class SleeperPropertiesTest {
 
         // Then
         assertThat(list).isNull();
+    }
+
+    @Test
+    void shouldReturnEmptyListIfListPropertyIsExplicitlyUnset() throws IOException {
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+        testSleeperProperties.loadFromString("sleeper.optional.stacks=");
+
+        // When
+        List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
+
+        // Then
+        assertThat(list).isEmpty();
     }
 
     private static class TestSleeperProperties extends SleeperProperties<SleeperProperty> {
