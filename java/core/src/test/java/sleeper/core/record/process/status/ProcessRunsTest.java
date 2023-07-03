@@ -55,7 +55,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(started);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, null));
@@ -72,7 +72,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(started, finished);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, finished));
@@ -90,7 +90,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(started, finished1, finished2);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started, finished1));
@@ -112,7 +112,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(started1, started2);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started2, null),
@@ -132,7 +132,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(started1, finished1, started2, finished2);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(DEFAULT_TASK_ID, started2, finished2),
@@ -154,7 +154,7 @@ class ProcessRunsTest {
                     onTask(TASK_ID_2, started2, started4));
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(TASK_ID_2, started4, null),
@@ -178,7 +178,7 @@ class ProcessRunsTest {
                     onTask(TASK_ID_2, started2, finished2));
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(TASK_ID_2, started2, finished2),
@@ -200,7 +200,7 @@ class ProcessRunsTest {
                     onTask(TASK_ID_2, started2, finished2));
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple(TASK_ID_2, started2, finished2),
@@ -230,7 +230,7 @@ class ProcessRunsTest {
                     forRunOnTask("run-2", "some-task", started2));
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStatusUpdates)
                     .containsExactly(
                             tuple("some-task", List.of(validated2, started2)),
@@ -252,7 +252,7 @@ class ProcessRunsTest {
                     forRunOnTask("run-1", "some-task", finished2));
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                     .containsExactly(
                             tuple("some-task", started, finished1));
@@ -317,7 +317,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(notStartedUpdate);
 
             // Then
-            assertThat(runs.getRunList()).isEmpty();
+            assertThat(runs.getRunsLatestFirst()).isEmpty();
         }
 
         @Test
@@ -332,7 +332,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(startedStatusNotStartOfRun, startedStatus);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
         }
 
@@ -348,7 +348,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(startedStatus, startedStatusNotStartOfRun);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .containsExactly(ProcessRun.builder()
                             .taskId(DEFAULT_TASK_ID)
                             .startedStatus(startedStatus)
@@ -366,7 +366,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .containsExactly(ProcessRun.builder()
                             .taskId(DEFAULT_TASK_ID)
                             .startedStatus(startedStatus)
@@ -384,7 +384,7 @@ class ProcessRunsTest {
             ProcessRuns runs = runsFromUpdates(startedStatus, customStatus);
 
             // Then
-            assertThat(runs.getRunList())
+            assertThat(runs.getRunsLatestFirst())
                     .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
         }
     }

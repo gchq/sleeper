@@ -10,13 +10,16 @@
         "partnCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
       ]
     },
-    "jobRunList": [
+    "jobRuns": [
       {
         "taskId": "task2222-2222-2222-2222-222222222222",
-        "startedStatus": {
-          "updateTime": "2022-09-21T13:34:12.123Z",
-          "startTime": "2022-09-21T13:34:12.001Z"
-        }
+        "updates": [
+          {
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-09-21T13:34:12.123Z",
+            "startTime": "2022-09-21T13:34:12.001Z"
+          }
+        ]
       }
     ]
   },
@@ -31,7 +34,7 @@
         "partnBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB"
       ]
     },
-    "jobRunList": []
+    "jobRuns": []
   },
   {
     "jobId": "$(jobId2)",
@@ -41,13 +44,16 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "jobRunList": [
+    "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
-        "startedStatus": {
-          "updateTime": "2022-09-18T13:34:12.123Z",
-          "startTime": "2022-09-18T13:34:12.001Z"
-        }
+        "updates": [
+          {
+            "type": "CompactionJobStartedStatus",
+            "updateTime": "2022-09-18T13:34:12.123Z",
+            "startTime": "2022-09-18T13:34:12.001Z"
+          }
+        ]
       }
     ]
   },
@@ -59,6 +65,6 @@
       "inputFilesCount": 1,
       "childPartitionIds": []
     },
-    "jobRunList": []
+    "jobRuns": []
   }
 ]

@@ -425,7 +425,7 @@ class EmrExecutorTest {
                 .isNull();
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun(Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
@@ -441,7 +441,7 @@ class EmrExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        acceptedRun(Instant.parse("2023-06-02T15:41:00Z"))));
+                        acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
         assertThat(ingestJobStatusStore.streamTableRecords("myTable"))
                 .extracting(ProcessStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");

@@ -41,7 +41,7 @@ public class ProcessRunsRecordsOutOfOrderTest {
         ProcessRuns runs = runsFromUpdates(finished, started);
 
         // Then
-        assertThat(runs.getRunList())
+        assertThat(runs.getRunsLatestFirst())
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started, finished));
@@ -59,7 +59,7 @@ public class ProcessRunsRecordsOutOfOrderTest {
         ProcessRuns runs = runsFromUpdates(started3, started1, started2);
 
         // Then
-        assertThat(runs.getRunList())
+        assertThat(runs.getRunsLatestFirst())
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, null),
@@ -80,7 +80,7 @@ public class ProcessRunsRecordsOutOfOrderTest {
         ProcessRuns runs = runsFromUpdates(started3, finished, started1, started2);
 
         // Then
-        assertThat(runs.getRunList())
+        assertThat(runs.getRunsLatestFirst())
                 .extracting(ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(started3, finished),
@@ -103,7 +103,7 @@ public class ProcessRunsRecordsOutOfOrderTest {
                 onTask(TASK_ID_2, finished2, started2));
 
         // Then
-        assertThat(runs.getRunList())
+        assertThat(runs.getRunsLatestFirst())
                 .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
                 .containsExactly(
                         tuple(TASK_ID_2, started2, finished2),

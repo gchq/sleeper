@@ -26,7 +26,7 @@ import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.GsonConfig;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.ingest.job.status.IngestJobStartedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
 
@@ -34,13 +34,12 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunJsonSerializer;
+import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunsJsonSerializer;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
-            .registerTypeAdapter(IngestJobStatus.class, ingestJobStatusJsonSerializer())
-            .registerTypeAdapter(ProcessRun.class, processRunJsonSerializer())
+            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer())
             .registerTypeAdapter(IngestJobStartedStatus.class, ingestJobStartedStatusJsonSerializer())
             .create();
     private final PrintStream out;
@@ -70,26 +69,17 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
         return jsonObject;
     }
 
-    private static JsonSerializer<IngestJobStatus> ingestJobStatusJsonSerializer() {
-        return (jobStatus, type, context) -> createIngestJobJson(jobStatus, context);
-    }
-
-    private static JsonElement createIngestJobJson(IngestJobStatus jobStatus, JsonSerializationContext context) {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("jobId", jobStatus.getJobId());
-        jsonObject.add("jobRunList", context.serialize(jobStatus.getJobRuns()));
-        return jsonObject;
-    }
-
     private static JsonSerializer<IngestJobStartedStatus> ingestJobStartedStatusJsonSerializer() {
-        return (jobStatus, type, context) -> createStartedStatusJson(jobStatus);
+        return (jobStatus, type, context) -> createStartedStatusJson(jobStatus, context);
     }
 
-    private static JsonElement createStartedStatusJson(IngestJobStartedStatus startedUpdate) {
+    private static JsonElement createStartedStatusJson(
+            IngestJobStartedStatus startedUpdate, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("inputFileCount", startedUpdate.getInputFileCount());
-        jsonObject.addProperty("startTime", startedUpdate.getStartTime().toString());
-        jsonObject.addProperty("updateTime", startedUpdate.getUpdateTime().toString());
+        jsonObject.add("startTime", context.serialize(startedUpdate.getStartTime()));
+        jsonObject.add("updateTime", context.serialize(startedUpdate.getUpdateTime()));
         return jsonObject;
     }
+
 }

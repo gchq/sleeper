@@ -49,7 +49,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunOnTask(taskId, validationTime)));
+                .containsExactly(jobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobStatus(job, rejectedRun(
-                        validationTime, "Test validation reason")));
+                        job, validationTime, "Test validation reason")));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, rejectedRun(validationTime,
+                .containsExactly(jobStatus(job, rejectedRun(job, validationTime,
                         List.of("Test validation reason 1", "Test validation reason 2"))));
     }
 }

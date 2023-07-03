@@ -103,6 +103,10 @@ public class ProcessRun {
         }
     }
 
+    public ProcessStatusUpdate getLatestUpdate() {
+        return statusUpdates.get(statusUpdates.size() - 1);
+    }
+
     public RecordsProcessedSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();
@@ -115,10 +119,10 @@ public class ProcessRun {
         return statusUpdates;
     }
 
-    public <T extends ProcessStatusUpdate> Optional<ProcessStatusUpdate> getLastStatusOfType(Class<T> cls) {
+    public <T extends ProcessStatusUpdate> Optional<T> getLastStatusOfType(Class<T> cls) {
         for (int i = statusUpdates.size() - 1; i >= 0; i--) {
             if (cls.isInstance(statusUpdates.get(i))) {
-                return Optional.of(statusUpdates.get(i));
+                return Optional.of(cls.cast(statusUpdates.get(i)));
             }
         }
         return Optional.empty();
