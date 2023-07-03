@@ -162,7 +162,7 @@ public class ConfigurationUtils {
         if (X86_64.equals(arch)) {
             return String.format(JAVA_HOME, "x86_64");
         } else if (ARM64.equals(arch)) {
-            return String.format(JAVA_HOME, "arm64");
+            return String.format(JAVA_HOME, "aarch64");
         } else {
             throw new IllegalArgumentException("Unrecognised architecture: " + arch.toString());
         }
