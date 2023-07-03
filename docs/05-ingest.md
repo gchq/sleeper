@@ -266,7 +266,7 @@ The other properties of the cluster are controlled using similar properties to t
 ```properties
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m5.xlarge
-sleeper.bulk.import.persistent.emr.core.x86.instance.types=m5.4xlarge
+sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m5.4xlarge
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
 sleeper.bulk.import.persistent.emr.min.instances=1
 sleeper.bulk.import.persistent.emr.max.instances=10
