@@ -300,7 +300,7 @@ public class BulkImportStarterLambdaIT {
 
     private static BulkImportJob jobWithFiles(List<String> files) {
         return BulkImportJob.builder()
-                .id("id").files(files).build();
+                .id("id").files(files).tableName("test-table").build();
     }
 
     private static Configuration createHadoopConfiguration() {
