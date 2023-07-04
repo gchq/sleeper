@@ -40,6 +40,7 @@ import sleeper.systemtest.SystemTestProperty;
 import java.util.List;
 import java.util.Locale;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -51,7 +52,7 @@ import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
 import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
- * A {@link Stack} to deploy the system test components.
+ * A {@link NestedStack} to deploy the system test components.
  */
 public class SystemTestStack extends NestedStack {
     public static final String SYSTEM_TEST_CLUSTER_NAME = "systemTestClusterName";
@@ -66,7 +67,6 @@ public class SystemTestStack extends NestedStack {
                            Queue ingestJobQueue,
                            Queue emrBulkImportJobQueue) {
         super(scope, id);
-
         // Config bucket
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", systemTestProperties.get(CONFIG_BUCKET));
 
@@ -78,8 +78,7 @@ public class SystemTestStack extends NestedStack {
                 .vpcId(systemTestProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC2", vpcLookupOptions);
-        String clusterName = Utils.truncateTo64Characters(String.join("-", "sleeper",
-                systemTestProperties.get(ID).toLowerCase(Locale.ROOT), "system-test-cluster"));
+        String clusterName = generateSystemTestClusterName(systemTestProperties.get(ID));
         Cluster cluster = Cluster.Builder
                 .create(this, "SystemTestCluster")
                 .clusterName(clusterName)
@@ -117,6 +116,8 @@ public class SystemTestStack extends NestedStack {
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
+        addIngestSourceBucketReferences(this, "IngestBucket", systemTestProperties)
+                .forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
         if (null != ingestJobQueue) {
@@ -125,5 +126,11 @@ public class SystemTestStack extends NestedStack {
         if (null != emrBulkImportJobQueue) {
             emrBulkImportJobQueue.grantSendMessages(taskDefinition.getTaskRole());
         }
+        Utils.addStackTagIfSet(this, systemTestProperties);
+    }
+
+    public static String generateSystemTestClusterName(String instanceId) {
+        return Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceId.toLowerCase(Locale.ROOT), "system-test-cluster"));
     }
 }

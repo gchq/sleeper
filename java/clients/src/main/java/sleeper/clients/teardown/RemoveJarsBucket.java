@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import java.util.Collection;
@@ -32,12 +33,16 @@ public class RemoveJarsBucket {
     }
 
     public static void remove(S3Client s3, String bucketName) {
-        LOGGER.info("Emptying bucket {}", bucketName);
-        s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))
-                .stream().parallel()
-                .forEach(response -> deleteVersions(s3, bucketName, response));
-        LOGGER.info("Deleting bucket {}", bucketName);
-        s3.deleteBucket(builder -> builder.bucket(bucketName));
+        try {
+            LOGGER.info("Emptying bucket {}", bucketName);
+            s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))
+                    .stream().parallel()
+                    .forEach(response -> deleteVersions(s3, bucketName, response));
+            LOGGER.info("Deleting bucket {}", bucketName);
+            s3.deleteBucket(builder -> builder.bucket(bucketName));
+        } catch (NoSuchBucketException e) {
+            LOGGER.info("Bucket not found: {}", bucketName);
+        }
     }
 
     private static void deleteVersions(S3Client s3, String bucketName, ListObjectVersionsResponse response) {

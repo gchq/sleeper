@@ -95,8 +95,8 @@ public class DynamoDBCompactionJobStatusFormat {
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, taskId)
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, summary.getLinesRead())
-                .number(RECORDS_WRITTEN, summary.getLinesWritten())
+                .number(RECORDS_READ, summary.getRecordsRead())
+                .number(RECORDS_WRITTEN, summary.getRecordsWritten())
                 .build();
     }
 
@@ -116,11 +116,12 @@ public class DynamoDBCompactionJobStatusFormat {
     }
 
     private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return new ProcessStatusUpdateRecord(
-                getStringAttribute(item, JOB_ID),
-                getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond),
-                getStatusUpdate(item),
-                getStringAttribute(item, TASK_ID));
+        return ProcessStatusUpdateRecord.builder()
+                .jobId(getStringAttribute(item, JOB_ID))
+                .statusUpdate(getStatusUpdate(item))
+                .taskId(getStringAttribute(item, TASK_ID))
+                .expiryDate(getInstantAttribute(item, EXPIRY_DATE, Instant::ofEpochSecond))
+                .build();
     }
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {

@@ -19,9 +19,11 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.LongFunction;
+import java.util.stream.Collectors;
 
 public class DynamoDBAttributes {
 
@@ -35,7 +37,11 @@ public class DynamoDBAttributes {
      * @return the AttributeValue
      */
     public static AttributeValue createStringAttribute(String str) {
-        return new AttributeValue(str);
+        if (str == null) {
+            return null;
+        } else {
+            return new AttributeValue(str);
+        }
     }
 
     /**
@@ -48,15 +54,29 @@ public class DynamoDBAttributes {
         // To differentiate NaN and null:
         // - An attribute which is set to the value of null will be treated as NaN
         // - An attribute which is NOT set, will be treated as null
-        if (Double.valueOf(Double.NaN).equals(number)) {
+        if (number == null) {
+            return null;
+        } else if (Double.valueOf(Double.NaN).equals(number)) {
             return new AttributeValue().withNULL(true);
         } else {
             return new AttributeValue().withN(String.valueOf(number));
         }
     }
 
+    public static AttributeValue createBooleanAttribute(boolean bool) {
+        return new AttributeValue().withBOOL(bool);
+    }
+
     public static AttributeValue createBinaryAttribute(byte[] bytes) {
         return new AttributeValue().withB(ByteBuffer.wrap(bytes));
+    }
+
+    public static AttributeValue createListAttribute(List<AttributeValue> values) {
+        if (values == null) {
+            return null;
+        } else {
+            return new AttributeValue().withL(values);
+        }
     }
 
     public static String getStringAttribute(Map<String, AttributeValue> item, String name) {
@@ -65,6 +85,10 @@ public class DynamoDBAttributes {
 
     public static String getNumberAttribute(Map<String, AttributeValue> item, String name) {
         return getAttribute(item, name, AttributeValue::getN);
+    }
+
+    public static boolean getBooleanAttribute(Map<String, AttributeValue> item, String name) {
+        return Boolean.TRUE.equals(getAttribute(item, name, AttributeValue::getBOOL));
     }
 
     public static int getIntAttribute(Map<String, AttributeValue> item, String name, int defaultValue) {
@@ -104,6 +128,19 @@ public class DynamoDBAttributes {
             return Double.NaN;
         } else {
             return Double.parseDouble(attributeValue);
+        }
+    }
+
+    public static List<String> getStringListAttribute(Map<String, AttributeValue> item, String name) {
+        return getListAttribute(item, name, AttributeValue::getS);
+    }
+
+    private static <T> List<T> getListAttribute(Map<String, AttributeValue> item, String name, Function<AttributeValue, T> getter) {
+        List<AttributeValue> list = getAttribute(item, name, AttributeValue::getL);
+        if (list == null) {
+            return null;
+        } else {
+            return list.stream().map(getter).collect(Collectors.toList());
         }
     }
 

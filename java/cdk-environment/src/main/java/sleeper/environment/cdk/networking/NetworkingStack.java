@@ -39,7 +39,7 @@ public class NetworkingStack extends Stack {
 
         vpc = Vpc.Builder.create(this, "Vpc")
                 .ipAddresses(IpAddresses.cidr("10.0.0.0/16"))
-                .maxAzs(2)
+                .maxAzs(3)
                 .subnetConfiguration(Arrays.asList(
                         SubnetConfiguration.builder().name("public")
                                 .subnetType(SubnetType.PUBLIC)

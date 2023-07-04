@@ -30,6 +30,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -52,7 +53,7 @@ public class ExecutorFactoryIT {
             "sleeper.version=0.10.0-SNAPSHOT\n" +
             "sleeper.jars.bucket=jars-bucket\n" +
             "sleeper.vpc=1234567890\n" +
-            "sleeper.subnet=subnet-123\n" +
+            "sleeper.subnets=subnet-123\n" +
             "sleeper.account=123\n";
 
     @BeforeEach
@@ -63,7 +64,7 @@ public class ExecutorFactoryIT {
     private ExecutorFactory executorFactory(AmazonS3 s3Client) throws IOException {
         return new ExecutorFactory(s3Client,
                 mock(AmazonElasticMapReduceClient.class), mock(AWSStepFunctionsClient.class), mock(AmazonDynamoDB.class),
-                environment::get);
+                Instant::now, environment::get);
     }
 
     @Test
@@ -87,10 +88,9 @@ public class ExecutorFactoryIT {
     @Test
     public void shouldCreateStateMachineExecutor() throws IOException {
         // Given
-        String configurationFile = DEFAULT_CONFIGURATION_FILE;
         AmazonS3 s3Client = createS3Client();
         s3Client.createBucket("config-bucket");
-        s3Client.putObject("config-bucket", "config", configurationFile);
+        s3Client.putObject("config-bucket", "config", DEFAULT_CONFIGURATION_FILE);
         setEnvironmentVariable("BULK_IMPORT_PLATFORM", "EKS");
         ExecutorFactory executorFactory = executorFactory(s3Client);
 
@@ -106,11 +106,10 @@ public class ExecutorFactoryIT {
     @Test
     public void shouldNotCreateExecutorWithInvalidConfiguration() throws IOException {
         // Given
-        String configurationFile = DEFAULT_CONFIGURATION_FILE;
         setEnvironmentVariable(CONFIG_BUCKET.toEnvironmentVariable(), "config-bucket");
         AmazonS3 s3Client = createS3Client();
         s3Client.createBucket("config-bucket");
-        s3Client.putObject("config-bucket", "config", configurationFile);
+        s3Client.putObject("config-bucket", "config", DEFAULT_CONFIGURATION_FILE);
         setEnvironmentVariable("BULK_IMPORT_PLATFORM", "ZZZ");
         ExecutorFactory executorFactory = executorFactory(s3Client);
 

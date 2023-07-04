@@ -17,19 +17,15 @@
 package sleeper.core.record.process.status;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class ProcessRuns {
     private final List<ProcessRun> latestFirst;
 
-    private ProcessRuns(List<ProcessRun> latestFirst) {
+    ProcessRuns(List<ProcessRun> latestFirst) {
         this.latestFirst = Collections.unmodifiableList(Objects.requireNonNull(latestFirst, "latestFirst must not be null"));
     }
 
@@ -38,30 +34,11 @@ public class ProcessRuns {
     }
 
     public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
-        Map<String, ProcessRun.Builder> taskBuilders = new HashMap<>();
-        List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
+        ProcessRunsBuilder builder = new ProcessRunsBuilder();
         for (int i = recordList.size() - 1; i >= 0; i--) {
-            ProcessStatusUpdateRecord record = recordList.get(i);
-            String taskId = record.getTaskId();
-            ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
-            if (statusUpdate instanceof ProcessRunStartedUpdate) {
-                ProcessRun.Builder builder = ProcessRun.builder()
-                        .startedStatus((ProcessRunStartedUpdate) statusUpdate)
-                        .taskId(taskId);
-                taskBuilders.put(taskId, builder);
-                orderedBuilders.add(builder);
-            } else if ((statusUpdate instanceof ProcessFinishedStatus)
-                    && taskBuilders.containsKey(taskId)) {
-                taskBuilders.remove(taskId)
-                        .finishedStatus((ProcessFinishedStatus) statusUpdate)
-                        .taskId(taskId);
-            }
+            builder.add(recordList.get(i));
         }
-        List<ProcessRun> jobRuns = orderedBuilders.stream()
-                .map(ProcessRun.Builder::build)
-                .collect(Collectors.toList());
-        Collections.reverse(jobRuns);
-        return new ProcessRuns(jobRuns);
+        return builder.build();
     }
 
     public boolean isStarted() {
@@ -73,7 +50,7 @@ public class ProcessRuns {
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return latestFirst.stream().anyMatch(run -> run.getTaskId().equals(taskId));
+        return latestFirst.stream().anyMatch(run -> taskId.equals(run.getTaskId()));
     }
 
     public Optional<Instant> lastTime() {

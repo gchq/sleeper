@@ -27,14 +27,18 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.GsonConfig;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.util.List;
+
+import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunJsonSerializer;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = GsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(CompactionJobStatus.class, compactionJobStatusJsonSerializer())
+            .registerTypeAdapter(ProcessRun.class, processRunJsonSerializer())
             .create();
     private final PrintStream out;
 

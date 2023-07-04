@@ -31,12 +31,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import static sleeper.configuration.properties.table.TableProperty.COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.STATISTICS_TRUNCATE_LENGTH;
 
 public class ParquetRecordWriterFactory {
 
@@ -44,19 +46,7 @@ public class ParquetRecordWriterFactory {
     }
 
     public static ParquetWriter<Record> createParquetRecordWriter(Path path, Schema schema) throws IOException {
-        return new Builder(path, schema).build();
-    }
-
-    public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
-        return createParquetRecordWriter(path,
-            tableProperties.getSchema(),
-            tableProperties.get(COMPRESSION_CODEC),
-            tableProperties.getLong(ROW_GROUP_SIZE),
-            tableProperties.getInt(PAGE_SIZE),
-            tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS),
-            tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS),
-            tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS),
-            conf);
+        return createParquetRecordWriter(path, schema, new Configuration());
     }
 
     public static ParquetWriter<Record> createParquetRecordWriter(Path path, Schema schema, Configuration conf) throws IOException {
@@ -65,24 +55,21 @@ public class ParquetRecordWriterFactory {
         return createParquetRecordWriter(path, tableProperties, conf);
     }
 
-    public static ParquetWriter<Record> createParquetRecordWriter(Path path,
-            Schema schema,
-            String compressionCodec,
-            long rowGroupSize,
-            int pageSize,
-            boolean dictionaryEncodingForRowKeyFields,
-            boolean dictionaryEncodingForSortKeyFields,
-            boolean dictionaryEncodingForValueFields,
-            Configuration conf) throws IOException {
-        Builder builder = new Builder(path, schema)
-            .withCompressionCodec(compressionCodec)
-            .withRowGroupSize(rowGroupSize)
-            .withPageSize(pageSize)
-            .withConf(conf)
-            .withDictionaryEncodingForRowKeyFields(dictionaryEncodingForRowKeyFields)
-            .withDictionaryEncodingForSortKeyFields(dictionaryEncodingForSortKeyFields)
-            .withDictionaryEncodingForValueFields(dictionaryEncodingForValueFields);
-        return builder.build();
+    public static ParquetWriter<Record> createParquetRecordWriter(Path path, TableProperties tableProperties, Configuration conf) throws IOException {
+        return parquetRecordWriterBuilder(path, tableProperties)
+                .withConf(conf).build();
+    }
+
+    public static Builder parquetRecordWriterBuilder(Path path, TableProperties tableProperties) {
+        return new Builder(path, tableProperties.getSchema())
+                .withCompressionCodec(tableProperties.get(COMPRESSION_CODEC))
+                .withRowGroupSize(tableProperties.getLong(ROW_GROUP_SIZE))
+                .withPageSize(tableProperties.getInt(PAGE_SIZE))
+                .withDictionaryEncodingForRowKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS))
+                .withDictionaryEncodingForSortKeyFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS))
+                .withDictionaryEncodingForValueFields(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS))
+                .withColumnIndexTruncateLength(tableProperties.getInt(COLUMN_INDEX_TRUNCATE_LENGTH))
+                .withStatisticsTruncateLength(tableProperties.getInt(STATISTICS_TRUNCATE_LENGTH));
     }
 
     public static class Builder extends ParquetWriter.Builder<Record, Builder> {
@@ -105,21 +92,21 @@ public class ParquetRecordWriterFactory {
             return this;
         }
 
-        protected Builder withCompressionCodec(String compressionCodec) {
+        public Builder withCompressionCodec(String compressionCodec) {
             return withCompressionCodec(CompressionCodecName.fromConf(compressionCodec.toUpperCase(Locale.ROOT)));
         }
 
-        protected Builder withDictionaryEncodingForRowKeyFields(boolean dictionaryEncodingForRowKeyFields) {
+        public Builder withDictionaryEncodingForRowKeyFields(boolean dictionaryEncodingForRowKeyFields) {
             setDictionaryEncoding(this, schema.getRowKeyFieldNames(), dictionaryEncodingForRowKeyFields);
             return this;
         }
 
-        protected Builder withDictionaryEncodingForSortKeyFields(boolean dictionaryEncodingForSortKeyFields) {
+        public Builder withDictionaryEncodingForSortKeyFields(boolean dictionaryEncodingForSortKeyFields) {
             setDictionaryEncoding(this, schema.getSortKeyFieldNames(), dictionaryEncodingForSortKeyFields);
             return this;
         }
 
-        protected Builder withDictionaryEncodingForValueFields(boolean dictionaryEncodingForValueFields) {
+        public Builder withDictionaryEncodingForValueFields(boolean dictionaryEncodingForValueFields) {
             setDictionaryEncoding(this, schema.getValueFieldNames(), dictionaryEncodingForValueFields);
             return this;
         }

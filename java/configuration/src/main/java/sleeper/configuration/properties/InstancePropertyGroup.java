@@ -28,17 +28,17 @@ public class InstancePropertyGroup {
 
     private static final List<PropertyGroup> ALL = new ArrayList<>();
     public static final PropertyGroup COMMON = instanceGroup("Common")
-            .description("The following properties are commonly used throughout Sleeper")
+            .description("The following properties are commonly used throughout Sleeper.")
             .build();
     public static final PropertyGroup INGEST = instanceGroup("Ingest")
-            .description("The following properties relate to standard ingest")
+            .description("The following properties relate to standard ingest.")
             .build();
     public static final PropertyGroup BULK_IMPORT = instanceGroup("Bulk Import")
             .description("The following properties relate to bulk import, " +
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.")
             .build();
     public static final PropertyGroup PARTITION_SPLITTING = instanceGroup("Partition Splitting")
-            .description("The following properties relate to the splitting of partitions")
+            .description("The following properties relate to the splitting of partitions.")
             .build();
     public static final PropertyGroup GARBAGE_COLLECTOR = instanceGroup("Garbage Collector")
             .description("The following properties relate to garbage collection.")

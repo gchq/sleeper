@@ -20,14 +20,14 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class FileIngestRequest {
-    private final String pathToFile;
+    private final String file;
     private final long fileSizeBytes;
     private final String tableName;
     private final Instant receivedTime;
     private final String jobId;
 
     private FileIngestRequest(Builder builder) {
-        pathToFile = Objects.requireNonNull(builder.pathToFile, "pathToFile must not be null");
+        file = Objects.requireNonNull(builder.file, "file must not be null");
         fileSizeBytes = builder.fileSizeBytes;
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         receivedTime = Objects.requireNonNull(builder.receivedTime, "receivedTime must not be null");
@@ -42,8 +42,8 @@ public class FileIngestRequest {
         return jobId != null;
     }
 
-    public String getPathToFile() {
-        return pathToFile;
+    public String getFile() {
+        return file;
     }
 
     public long getFileSizeBytes() {
@@ -63,10 +63,9 @@ public class FileIngestRequest {
     }
 
     public Builder toBuilder() {
-        return builder().pathToFile(pathToFile)
+        return builder().file(file)
                 .fileSizeBytes(fileSizeBytes)
                 .tableName(tableName)
-                .fileSizeBytes(fileSizeBytes)
                 .receivedTime(receivedTime)
                 .jobId(jobId);
     }
@@ -85,7 +84,7 @@ public class FileIngestRequest {
         if (fileSizeBytes != that.fileSizeBytes) {
             return false;
         }
-        if (!pathToFile.equals(that.pathToFile)) {
+        if (!file.equals(that.file)) {
             return false;
         }
         if (!tableName.equals(that.tableName)) {
@@ -99,7 +98,7 @@ public class FileIngestRequest {
 
     @Override
     public int hashCode() {
-        int result = pathToFile.hashCode();
+        int result = file.hashCode();
         result = 31 * result + (int) (fileSizeBytes ^ (fileSizeBytes >>> 32));
         result = 31 * result + tableName.hashCode();
         result = 31 * result + receivedTime.hashCode();
@@ -110,7 +109,7 @@ public class FileIngestRequest {
     @Override
     public String toString() {
         return "FileIngestRequest{" +
-                "pathToFile='" + pathToFile + '\'' +
+                "file='" + file + '\'' +
                 ", fileSizeBytes=" + fileSizeBytes +
                 ", tableName='" + tableName + '\'' +
                 ", receivedTime=" + receivedTime +
@@ -119,7 +118,7 @@ public class FileIngestRequest {
     }
 
     public static final class Builder {
-        private String pathToFile;
+        private String file;
         private long fileSizeBytes;
         private String tableName;
         private Instant receivedTime;
@@ -128,8 +127,8 @@ public class FileIngestRequest {
         private Builder() {
         }
 
-        public Builder pathToFile(String pathToFile) {
-            this.pathToFile = pathToFile;
+        public Builder file(String file) {
+            this.file = file;
             return this;
         }
 

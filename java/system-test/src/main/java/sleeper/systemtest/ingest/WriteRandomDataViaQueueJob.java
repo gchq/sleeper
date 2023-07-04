@@ -58,7 +58,7 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
     @Override
     public void run() throws IOException {
         Iterator<Record> recordIterator = createRecordIterator(getTableProperties().getSchema());
-        String dir = WriteRandomDataFiles.writeToS3GetDirectory(getTableProperties(), recordIterator);
+        String dir = WriteRandomDataFiles.writeToS3GetDirectory(getSystemTestProperties(), getTableProperties(), recordIterator);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 

@@ -26,19 +26,32 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
     private final int inputFileCount;
     private final Instant startTime;
     private final Instant updateTime;
+    private final boolean isStartOfRun;
 
-    private IngestJobStartedStatus(int inputFileCount, Instant updateTime, Instant startTime) {
-        this.inputFileCount = inputFileCount;
-        this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
-        this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
+    private IngestJobStartedStatus(Builder builder) {
+        inputFileCount = builder.inputFileCount;
+        startTime = Objects.requireNonNull(builder.startTime, "startTime may not be null");
+        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime may not be null");
+        isStartOfRun = builder.isStartOfRun;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder withStartOfRun(boolean startOfRun) {
+        return builder().isStartOfRun(startOfRun);
     }
 
     public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
-        return new IngestJobStartedStatus(job.getFiles().size(), updateTime, startTime);
+        return inputFileCountStartAndUpdateTime(job.getFiles().size(), startTime, updateTime);
     }
 
     public static IngestJobStartedStatus inputFileCountStartAndUpdateTime(int inputFileCount, Instant startTime, Instant updateTime) {
-        return new IngestJobStartedStatus(inputFileCount, updateTime, startTime);
+        return builder()
+                .inputFileCount(inputFileCount)
+                .startTime(startTime).updateTime(updateTime)
+                .build();
     }
 
     public int getInputFileCount() {
@@ -56,6 +69,11 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
     }
 
     @Override
+    public boolean isStartOfRun() {
+        return isStartOfRun;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -64,12 +82,15 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
             return false;
         }
         IngestJobStartedStatus that = (IngestJobStartedStatus) o;
-        return inputFileCount == that.inputFileCount && startTime.equals(that.startTime) && updateTime.equals(that.updateTime);
+        return inputFileCount == that.inputFileCount
+                && isStartOfRun == that.isStartOfRun
+                && Objects.equals(startTime, that.startTime)
+                && Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(inputFileCount, startTime, updateTime);
+        return Objects.hash(inputFileCount, startTime, updateTime, isStartOfRun);
     }
 
     @Override
@@ -78,6 +99,41 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
                 "inputFileCount=" + inputFileCount +
                 ", startTime=" + startTime +
                 ", updateTime=" + updateTime +
+                ", isStartOfRun=" + isStartOfRun +
                 '}';
+    }
+
+    public static final class Builder {
+        private int inputFileCount;
+        private Instant startTime;
+        private Instant updateTime;
+        private boolean isStartOfRun = true;
+
+        public Builder() {
+        }
+
+        public Builder inputFileCount(int inputFileCount) {
+            this.inputFileCount = inputFileCount;
+            return this;
+        }
+
+        public Builder startTime(Instant startTime) {
+            this.startTime = startTime;
+            return this;
+        }
+
+        public Builder updateTime(Instant updateTime) {
+            this.updateTime = updateTime;
+            return this;
+        }
+
+        public Builder isStartOfRun(boolean isStandardIngest) {
+            this.isStartOfRun = isStandardIngest;
+            return this;
+        }
+
+        public IngestJobStartedStatus build() {
+            return new IngestJobStartedStatus(this);
+        }
     }
 }

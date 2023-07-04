@@ -18,22 +18,16 @@ package sleeper.clients.status.update;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEvents;
 import com.amazonaws.services.cloudwatchevents.AmazonCloudWatchEventsClientBuilder;
 import com.amazonaws.services.cloudwatchevents.model.DisableRuleRequest;
+import com.amazonaws.services.cloudwatchevents.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.SleeperScheduleRule;
 
 import java.io.IOException;
-
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
+import java.util.List;
 
 public class PauseSystem {
 
@@ -54,49 +48,29 @@ public class PauseSystem {
 
     public static void pause(AmazonCloudWatchEvents cwClient, InstanceProperties instanceProperties) {
 
-        // Rule that creates compaction jobs
-        disableRule(cwClient, instanceProperties, COMPACTION_JOB_CREATION_CLOUDWATCH_RULE);
-
-        // Rules that create compaction and splitting compaction tasks
-        disableRule(cwClient, instanceProperties, COMPACTION_TASK_CREATION_CLOUDWATCH_RULE);
-        disableRule(cwClient, instanceProperties, SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE);
-
-        // Rule that looks for partitions that need splitting
-        disableRule(cwClient, instanceProperties, PARTITION_SPLITTING_CLOUDWATCH_RULE);
-
-        // Rule that triggers garbage collector lambda
-        disableRule(cwClient, instanceProperties, GARBAGE_COLLECTOR_CLOUDWATCH_RULE);
-
-        // Rule that triggers creation of ingest tasks
-        disableRule(cwClient, instanceProperties, INGEST_CLOUDWATCH_RULE);
-
-        // Rules that trigger generation of metrics for tables
-        String csvRules = instanceProperties.get(TABLE_METRICS_RULES);
-        if (null != csvRules && !csvRules.isEmpty()) {
-            String[] rules = csvRules.split(",");
-            for (String rule : rules) {
-                disableRule(cwClient, rule);
-            }
-        }
+        SleeperScheduleRule.getCloudWatchRules(instanceProperties)
+                .forEach(rules -> disableRule(cwClient, rules));
 
         cwClient.shutdown();
     }
 
     private static void disableRule(AmazonCloudWatchEvents cwClient,
-                                    InstanceProperties instanceProperties,
-                                    InstanceProperty ruleProperty) {
-        String ruleName = instanceProperties.get(ruleProperty);
-        if (null == ruleName) {
-            System.out.println("Null rule name for property " + ruleProperty + ", not disabling");
+                                    SleeperScheduleRule.Value rules) {
+        List<String> ruleNames = rules.getRuleNames();
+        if (ruleNames.isEmpty()) {
+            System.out.println("No rule found for property " + rules.getProperty() + ", not disabling");
         } else {
-            disableRule(cwClient, ruleName);
+            ruleNames.forEach(ruleName -> disableRule(cwClient, ruleName));
         }
     }
 
     private static void disableRule(AmazonCloudWatchEvents cwClient, String ruleName) {
-        DisableRuleRequest disableRuleRequest = new DisableRuleRequest()
-                .withName(ruleName);
-        cwClient.disableRule(disableRuleRequest);
-        System.out.println("Disabled rule " + ruleName);
+        try {
+            cwClient.disableRule(new DisableRuleRequest()
+                    .withName(ruleName));
+            System.out.println("Disabled rule " + ruleName);
+        } catch (ResourceNotFoundException e) {
+            System.out.println("Rule not found: " + ruleName);
+        }
     }
 }

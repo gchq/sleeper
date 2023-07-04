@@ -18,6 +18,16 @@ FROM ${DEPENDENCIES_IMAGE}
 RUN apt-get update
 RUN apt-get install -y ssh jq
 
+# Install Session Manager plugin
+RUN set -eux; \
+    dpkgArch="$(dpkg --print-architecture)"; \
+    case "$dpkgArch" in \
+        arm64) ssmArch='ubuntu_arm64' ;; \
+        *) ssmArch='ubuntu_64bit' ;; \
+    esac; \
+    curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/$ssmArch/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+RUN dpkg -i session-manager-plugin.deb
+
 # Set command line prompt to show you're in the environment Docker container
 RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-environment\e[0m: \w # "' >> ~/.bashrc
 

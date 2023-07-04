@@ -21,17 +21,20 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
-public class DynamoDBAttributesTest {
+class DynamoDBAttributesTest {
     private static final String TEST_KEY = "test-key";
 
     @Test
-    public void shouldCreateStringAttribute() {
+    void shouldCreateStringAttribute() {
         // Given we have a string attribute
-        AttributeValue value = DynamoDBAttributes.createStringAttribute("test-value");
+        AttributeValue value = createStringAttribute("test-value");
         // When we construct a record with a key for the attribute value
         Map<String, AttributeValue> item = new HashMap<>();
         item.put(TEST_KEY, value);
@@ -40,7 +43,12 @@ public class DynamoDBAttributesTest {
     }
 
     @Test
-    public void shouldCreateNumberAttributeWithLong() {
+    void shouldCreateStringAttributeWithNull() {
+        assertThat(createStringAttribute(null)).isNull();
+    }
+
+    @Test
+    void shouldCreateNumberAttributeWithLong() {
         // Given we have a long attribute
         AttributeValue value = DynamoDBAttributes.createNumberAttribute(123L);
         // When we construct a record with a key for the attribute value
@@ -51,7 +59,7 @@ public class DynamoDBAttributesTest {
     }
 
     @Test
-    public void shouldCreateNumberAttributeWithInt() {
+    void shouldCreateNumberAttributeWithInt() {
         // Given we have an integer attribute
         AttributeValue value = DynamoDBAttributes.createNumberAttribute(123);
         // When we construct a record with a key for the attribute value
@@ -62,7 +70,12 @@ public class DynamoDBAttributesTest {
     }
 
     @Test
-    public void shouldCreateNumberAttributeWithInstant() {
+    void shouldCreateNumberAttributeWithNull() {
+        assertThat(DynamoDBAttributes.createNumberAttribute(null)).isNull();
+    }
+
+    @Test
+    void shouldCreateNumberAttributeWithInstant() {
         // Given we have a long attribute based on an Instant
         Instant time = Instant.parse("2022-11-07T16:00:00.001Z");
         AttributeValue value = DynamoDBAttributes.createNumberAttribute(time.toEpochMilli());
@@ -102,6 +115,28 @@ public class DynamoDBAttributesTest {
 
         // When/Then
         assertThat(DynamoDBAttributes.getDoubleAttribute(item, TEST_KEY, 0))
-                .isEqualTo(0);
+                .isZero();
+    }
+
+    @Test
+    void shouldGetStringListAttribute() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, createListAttribute(List.of(
+                createStringAttribute("test1"), createStringAttribute("test2"))));
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getStringListAttribute(item, TEST_KEY))
+                .isEqualTo(List.of("test1", "test2"));
+    }
+
+    @Test
+    void shouldNotGetStringListAttributeWithNull() {
+        // Given
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(TEST_KEY, null);
+
+        // When/Then
+        assertThat(DynamoDBAttributes.getStringListAttribute(item, TEST_KEY)).isNull();
     }
 }

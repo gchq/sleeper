@@ -16,9 +16,6 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.ingest.job.IngestJob;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -27,10 +24,13 @@ public interface IngestJobStatusStore {
     IngestJobStatusStore NONE = new IngestJobStatusStore() {
     };
 
-    default void jobStarted(String taskId, IngestJob job, Instant startTime) {
+    default void jobValidated(IngestJobValidatedEvent event) {
     }
 
-    default void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
+    default void jobStarted(IngestJobStartedEvent event) {
+    }
+
+    default void jobFinished(IngestJobFinishedEvent event) {
     }
 
     default List<IngestJobStatus> getJobsInTimePeriod(String tableName, Instant start, Instant end) {

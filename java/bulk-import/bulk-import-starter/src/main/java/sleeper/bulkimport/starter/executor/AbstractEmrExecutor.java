@@ -21,7 +21,11 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
+
+import java.time.Instant;
+import java.util.function.Supplier;
 
 public abstract class AbstractEmrExecutor extends Executor {
 
@@ -29,8 +33,11 @@ public abstract class AbstractEmrExecutor extends Executor {
             InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            AmazonS3 amazonS3Client) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3Client);
+            IngestJobStatusStore ingestJobStatusStore,
+            AmazonS3 amazonS3Client,
+            Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+                amazonS3Client, validationTimeSupplier);
     }
 
     @Override

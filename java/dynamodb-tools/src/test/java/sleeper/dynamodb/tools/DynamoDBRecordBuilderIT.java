@@ -28,9 +28,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
+class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
     @Test
-    public void shouldCreateRecordWithStringAttribute() {
+    void shouldCreateRecordWithStringAttribute() {
         // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
@@ -44,7 +44,7 @@ public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
 
 
     @Test
-    public void shouldCreateRecordWithIntAttribute() {
+    void shouldCreateRecordWithIntAttribute() {
         // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
@@ -57,7 +57,7 @@ public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
     }
 
     @Test
-    public void shouldCreateRecordWithLongAttribute() {
+    void shouldCreateRecordWithLongAttribute() {
         // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
@@ -70,7 +70,7 @@ public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
     }
 
     @Test
-    public void shouldCreateRecordWithInstantAttribute() {
+    void shouldCreateRecordWithInstantAttribute() {
         // Given
         Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
                 .string(TEST_KEY, UUID.randomUUID().toString())
@@ -118,6 +118,22 @@ public class DynamoDBRecordBuilderIT extends DynamoDBTableTestBase {
                 .string(TEST_KEY, key)
                 .number(TEST_VALUE, 123)
                 .number(TEST_VALUE, null).build();
+        // When
+        dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
+        // Then
+        ScanResult result = dynamoDBClient.scan(new ScanRequest().withTableName(TEST_TABLE_NAME));
+        assertThat(result.getItems()).containsExactly(new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key).build());
+    }
+
+    @Test
+    void shouldUnsetExistingStringAttributeWhenProvidingNull() {
+        // Given
+        String key = UUID.randomUUID().toString();
+        Map<String, AttributeValue> record = new DynamoDBRecordBuilder()
+                .string(TEST_KEY, key)
+                .string(TEST_VALUE, "abc")
+                .string(TEST_VALUE, null).build();
         // When
         dynamoDBClient.putItem(new PutItemRequest(TEST_TABLE_NAME, record));
         // Then

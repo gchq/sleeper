@@ -27,13 +27,14 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_COMPRESSION_CODEC;
@@ -56,6 +57,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
 
 /**
  * These contain the table properties which are stored separately to the instance properties.
@@ -73,7 +75,34 @@ public interface TableProperty extends SleeperProperty {
             .validationPredicate(Objects::nonNull)
             .description("The schema representing the structure of this table.")
             .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .editable(false).build();
+            .editable(false)
+            .includedInTemplate(false).build();
+    TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
+            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table. " +
+                    "Defaults to nothing.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
+            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
+            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
+            .build();
+    TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
+            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
+                    "table will be created with a single root partition.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .runCDKDeployWhenChanged(true).build();
+    TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
+            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
+            .description("Partitions in this table with more than the following number of records in will be split.")
+            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+            .build();
     TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
             .defaultValue("true")
             .validationPredicate(s -> s.equals("true") || s.equals("false"))
@@ -109,6 +138,18 @@ public interface TableProperty extends SleeperProperty {
             .description("Whether dictionary encoding should be used for value columns in the Parquet files.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
+    TableProperty COLUMN_INDEX_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.columnindex.truncate.length")
+            .defaultProperty(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH)
+            .description("Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate binary values in a column index.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty STATISTICS_TRUNCATE_LENGTH = Index.propertyBuilder("sleeper.table.parquet.statistics.truncate.length")
+            .defaultProperty(DEFAULT_STATISTICS_TRUNCATE_LENGTH)
+            .description("Used to set parquet.statistics.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate the min/max binary values in row groups.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
@@ -120,29 +161,9 @@ public interface TableProperty extends SleeperProperty {
                     "Valid values are: " + describeEnumValuesInLowerCase(CompressionCodec.class))
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
-    TableProperty ITERATOR_CLASS_NAME = Index.propertyBuilder("sleeper.table.iterator.class.name")
-            .description("Fully qualified class of a custom iterator to use when iterating over the values in this table.  " +
-                    "Defaults to nothing.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
-    TableProperty ITERATOR_CONFIG = Index.propertyBuilder("sleeper.table.iterator.config")
-            .description("Iterator configuration. An iterator will be initialised with the following configuration.")
-            .propertyGroup(TablePropertyGroup.DATA_DEFINITION)
-            .build();
-    TableProperty SPLIT_POINTS_FILE = Index.propertyBuilder("sleeper.table.splits.file")
-            .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
-                    "table will be created with a single root partition.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
-    TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
-            .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
-    TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.seconds")
+    TableProperty GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.table.gc.delay.minutes")
             .defaultProperty(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION)
-            .description("A file will not be deleted until this number of seconds have passed after it has been marked as ready for " +
+            .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. Defaults to the value set in the instance " +
                     "properties.")
@@ -166,10 +187,17 @@ public interface TableProperty extends SleeperProperty {
                     "(NB This does not apply to splitting jobs which will run even if there is only 1 file.)")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
-    TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
-            .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
-            .description("Partitions in this table with more than the following number of records in will be split.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
+    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
+            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
+            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
+                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
+            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
+            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
+                    "concurrently per partition.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
@@ -183,51 +211,82 @@ public interface TableProperty extends SleeperProperty {
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
+    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
+            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
+            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
+                    "the DynamoDBStateStore is used.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .runCDKDeployWhenChanged(true).build();
     TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for the revision table if " +
                     "the S3StateStore is used.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .runCDKDeployWhenChanged(true).build();
-    TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.type")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPE)
-            .description("(EMR mode only) The EC2 instance type to be used for the master node of the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+    TableProperty BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 instance types to be used for the master node of the " +
+                    "EMR cluster. Multiple instance types can be specified separated by commas. One will be chosen " +
+                    "depending on the capacity available.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.type")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPE)
-            .description("(EMR mode only) The EC2 instance type to be used for the executor nodes of the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+    TableProperty BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.instance.types")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES)
+            .description("(Non-persistent EMR mode only) The EC2 instance types to be used for the executor nodes of " +
+                    "the EMR cluster. Multiple instance types can be specified separated by commas. Instance types " +
+                    "will be chosen from the list based on the capacity available.\n" +
+                    "You can assign weights to instance types to define the amount of capacity that each instance type provides. " +
+                    "By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by " +
+                    "adding a number after the instance type in this comma separated list. This must be a whole number.\n" +
+                    "For example:\n" +
+                    " sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge\n" +
+                    "The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the " +
+                    "capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, " +
+                    "so is defaulted to 1.\n" +
+                    "In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one " +
+                    "instance of m5.4xlarge, or 3 instances of m5.xlarge.\n" +
+                    "See also: https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options\n" +
+                    "This property overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.market.type")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE)
-            .description("(EMR mode only) The purchasing option to be used for the executor nodes of the EMR cluster.\n" +
+            .description("(Non-persistent EMR mode only) The purchasing option to be used for the executor nodes of " +
+                    "the EMR cluster.\n" +
                     "Valid values are ON_DEMAND or SPOT.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.instances")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_NUMBER_OF_EXECUTORS)
-            .description("(EMR mode only) The initial number of EC2 instances to be used as executors in the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+    TableProperty BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.initial.capacity")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY)
+            .description("(Non-persistent EMR mode only) The initial number of capacity units to provision as EC2 " +
+                    "instances for executors in the EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
-    TableProperty BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.instances")
-            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_NUMBER_OF_EXECUTORS)
-            .description("(EMR mode only) The maximum number of EC2 instances to be used as executors in the EMR cluster. This value " +
-                    "overrides the default value in the instance properties. It can be overridden by a value in the bulk " +
-                    "import job specification.")
+    TableProperty BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.max.capacity")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY)
+            .description("(Non-persistent EMR mode only) The maximum number of capacity units to provision as EC2 " +
+                    "instances for executors in the EMR cluster.\n" +
+                    "This is measured in instance fleet capacity units. These are declared alongside the requested " +
+                    "instance types, as each type will count for a certain number of units. By default the units are " +
+                    "the number of instances.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.table.bulk.import.emr.release.label")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL)
-            .description("(EMR mode only) The EMR release label to be used when creating an EMR cluster for bulk importing data " +
-                    "using Spark running on EMR. This value overrides the default value in the instance properties. It can " +
-                    "be overridden by a value in the bulk import job specification.")
+            .description("(Non-persistent EMR mode only) The EMR release label to be used when creating an EMR " +
+                    "cluster for bulk importing data using Spark running on EMR.\n" +
+                    "This value overrides the default value in the instance properties. " +
+                    "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.table.bulk.import.min.leaf.partitions")
@@ -286,20 +345,6 @@ public interface TableProperty extends SleeperProperty {
                     "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
-    // Size ratio compaction strategy
-    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
-            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO)
-            .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +
-                    "If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio * s_n.")
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-    TableProperty SIZE_RATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition")
-            .defaultProperty(DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION)
-            .description("Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running " +
-                    "concurrently per partition.")
-            .propertyGroup(TablePropertyGroup.COMPACTION)
-            .build();
-
     // System defined
     TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
@@ -322,13 +367,6 @@ public interface TableProperty extends SleeperProperty {
     TableProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for DynanmoDB tables if " +
-                    "the DynamoDBStateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true)
             .systemDefined(true).build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.revision.table")

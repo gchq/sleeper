@@ -30,6 +30,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
@@ -38,6 +39,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
+import java.util.function.IntUnaryOperator;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
@@ -47,7 +50,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
  * An {@link EmrBulkImportStack} creates an SQS queue that bulk import jobs can
@@ -56,6 +59,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  */
 public class EmrBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
+    private final IntUnaryOperator randomSubnet;
 
     public EmrBulkImportStack(
             Construct scope,
@@ -65,10 +69,11 @@ public class EmrBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             TopicStack errorsTopicStack,
-            List<StateStoreStack> stateStoreStacks) {
+            List<StateStoreStack> stateStoreStacks,
+            IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "NonPersistentEMR", instanceProperties);
+                this, "NonPersistentEMR", instanceProperties, statusStoreResources);
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
@@ -80,6 +85,7 @@ public class EmrBulkImportStack extends NestedStack {
 
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
+        randomSubnet = new Random()::nextInt;
     }
 
     private static void configureJobStarterFunction(
@@ -98,7 +104,7 @@ public class EmrBulkImportStack extends NestedStack {
                 .build());
     }
 
-    public Queue getEmrBulkImportJobQueue() {
+    public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
     }
 
@@ -119,7 +125,7 @@ public class EmrBulkImportStack extends NestedStack {
                 )
                 .networkConfiguration(NetworkConfigurationProperty.builder()
                         .securityGroupIds(List.of(properties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).toString()))
-                        .subnetIds(List.of(properties.get(SUBNET).toString()))
+                        .subnetIds(List.of(randomSubnet(instanceProperties)))
                         .build()
                 )
                 .tags(List.of(new CfnTag.Builder()
@@ -130,5 +136,10 @@ public class EmrBulkImportStack extends NestedStack {
 
         CfnApplication emrsCluster = new CfnApplication(scope, getArtifactId(), props);
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, emrsCluster.getName());
+    }
+
+      private String randomSubnet(InstanceProperties instanceProperties) {
+        List<String> subnets = instanceProperties.getList(SUBNETS);
+        return subnets.get(randomSubnet.applyAsInt(subnets.size()));
     }
 }

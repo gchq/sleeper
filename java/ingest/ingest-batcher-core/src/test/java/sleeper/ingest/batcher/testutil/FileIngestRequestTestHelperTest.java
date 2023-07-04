@@ -33,7 +33,7 @@ class FileIngestRequestTestHelperTest {
     void shouldGenerateDefaultValues() {
         assertThat(helper.fileRequest().build()).isEqualTo(
                 FileIngestRequest.builder()
-                        .pathToFile("test-bucket/auto-named-file-1.parquet")
+                        .file("test-bucket/auto-named-file-1.parquet")
                         .fileSizeBytes(1024)
                         .tableName("test-table")
                         .receivedTime(Instant.parse("2023-05-19T15:33:42Z"))
@@ -47,9 +47,9 @@ class FileIngestRequestTestHelperTest {
                 helper.fileRequest().build(),
                 helper.fileRequest().build()
         )).containsExactly(
-                assertHelper.fileRequest().pathToFile("test-bucket/auto-named-file-1.parquet").build(),
-                assertHelper.fileRequest().pathToFile("test-bucket/auto-named-file-2.parquet").build(),
-                assertHelper.fileRequest().pathToFile("test-bucket/auto-named-file-3.parquet").build()
+                assertHelper.fileRequest().file("test-bucket/auto-named-file-1.parquet").build(),
+                assertHelper.fileRequest().file("test-bucket/auto-named-file-2.parquet").build(),
+                assertHelper.fileRequest().file("test-bucket/auto-named-file-3.parquet").build()
         );
     }
 

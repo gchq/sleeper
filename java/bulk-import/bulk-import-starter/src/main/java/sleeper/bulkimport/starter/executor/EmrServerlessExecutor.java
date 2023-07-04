@@ -20,10 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
-import software.amazon.awssdk.services.emrserverless.model.Architecture;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
-import software.amazon.awssdk.services.emrserverless.model.CreateApplicationRequest;
-import software.amazon.awssdk.services.emrserverless.model.ImageConfigurationInput;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
 import software.amazon.awssdk.services.emrserverless.model.ListApplicationsRequest;
 import software.amazon.awssdk.services.emrserverless.model.MonitoringConfiguration;
@@ -35,15 +32,14 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
+import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
+import java.util.function.Supplier;
 
-//import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_TYPE;
 
 /**
@@ -57,18 +53,23 @@ public class EmrServerlessExecutor extends AbstractEmrExecutor {
     public EmrServerlessExecutor(EmrServerlessClient emrClient,
                        InstanceProperties instanceProperties,
                        TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider, AmazonS3 amazonS3) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, amazonS3);
+                       StateStoreProvider stateStoreProvider,
+                       IngestJobStatusStore ingestJobStatusStore,
+                       AmazonS3 amazonS3,
+                       Supplier<Instant> validationTimeSupplier) {
+        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
+            amazonS3, validationTimeSupplier);
         this.emrClient = emrClient;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob) {
-        //String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        //String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
+    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        String logUri = null == bulkImportBucket ? null : "s3://" + clusterName + "/emr-serverless/logs";
 
-        // Get Appliation Id to run the job, this find the first application where the cluster names match.
         clusterName = String.join("-", "sleeper", "emr", "serverless");
+
+        // Todo Get Appliation Id to run the job
         String applicationId = "";
         for (ApplicationSummary summary : emrClient.listApplications(ListApplicationsRequest.builder().build()).applications()) {
                 if (summary.name().equals(clusterName)) {
@@ -83,7 +84,7 @@ public class EmrServerlessExecutor extends AbstractEmrExecutor {
 
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(applicationId)
-                .name(clusterName + UUID.randomUUID().toString())
+                .name(clusterName + jobRunId)
                 .executionRoleArn("applicationId")  //Todo Role that can run job
                 .tags(instanceProperties.getTags())
                 .jobDriver(JobDriver.builder()
@@ -93,7 +94,7 @@ public class EmrServerlessExecutor extends AbstractEmrExecutor {
                         .monitoringConfiguration(MonitoringConfiguration.builder()
                                 .s3MonitoringConfiguration(S3MonitoringConfiguration
                                         .builder()
-                                        .logUri("s3://" + clusterName + "/emr-serverless/logs")
+                                        .logUri(logUri)
                                         .build())
                                 .build())
                         .build())
@@ -107,25 +108,5 @@ public class EmrServerlessExecutor extends AbstractEmrExecutor {
             return tableProperties.get(tableProperty);
         }
         return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
-    }
-
-    // Not needed this is done via CDK
-    public void createApplication() {
-        if (!BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE.toString().equals(Architecture.ARM64.toString()) ||
-        !BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE.toString().equals(Architecture.X86_64.toString())) {
-                LOGGER.error("{} is not a valid Architecture. Use either X86_64 or ARM64",
-                        BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE);
-                throw new RuntimeException("Invalid Architecture deatcted for EMR Serverless");
-        }
-        CreateApplicationRequest appRequest = CreateApplicationRequest.builder()
-        .name(clusterName)
-        .architecture(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE.toString())
-        .type(BULK_IMPORT_EMR_SERVERLESS_TYPE.toString())
-        .releaseLabel(BULK_IMPORT_EMR_SERVERLESS_RELEASE.toString())
-        .imageConfiguration(ImageConfigurationInput.builder()
-                .imageUri(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO.toString())
-                .build())
-        .build();
-        emrClient.createApplication(appRequest);
     }
 }

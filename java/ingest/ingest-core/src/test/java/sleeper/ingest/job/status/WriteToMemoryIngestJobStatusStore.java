@@ -20,7 +20,6 @@ import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.IngestJob;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,27 +28,64 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.ingest.job.status.IngestJobStatusTestData.defaultUpdateTime;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
 
     @Override
-    public void jobStarted(String taskId, IngestJob job, Instant startTime) {
-        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                IngestJobStartedStatus.startAndUpdateTime(job, startTime, defaultUpdateTime(startTime)), taskId);
-        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>()).add(updateRecord);
+    public void jobValidated(IngestJobValidatedEvent event) {
+        tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(event.getJob().getId())
+                        .statusUpdate(validatedStatus(event))
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    private static IngestJobValidatedStatus validatedStatus(IngestJobValidatedEvent event) {
+        if (event.isAccepted()) {
+            return IngestJobAcceptedStatus.from(event.getValidationTime(),
+                    defaultUpdateTime(event.getValidationTime()));
+        } else {
+            return IngestJobRejectedStatus.builder().validationTime(event.getValidationTime())
+                    .updateTime(defaultUpdateTime(event.getValidationTime()))
+                    .reasons(event.getReasons()).build();
+        }
     }
 
     @Override
-    public void jobFinished(String taskId, IngestJob job, RecordsProcessedSummary summary) {
-        ProcessStatusUpdateRecord updateRecord = new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary), taskId);
+    public void jobStarted(IngestJobStartedEvent event) {
+        IngestJob job = event.getJob();
+        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
+                .add(ProcessStatusUpdateRecord.builder()
+                        .jobId(job.getId())
+                        .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
+                                .inputFileCount(job.getFiles().size())
+                                .startTime(event.getStartTime())
+                                .updateTime(defaultUpdateTime(event.getStartTime()))
+                                .build())
+                        .jobRunId(event.getJobRunId())
+                        .taskId(event.getTaskId())
+                        .build());
+    }
+
+    @Override
+    public void jobFinished(IngestJobFinishedEvent event) {
+        IngestJob job = event.getJob();
+        RecordsProcessedSummary summary = event.getSummary();
         List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));
-        jobRecords.add(updateRecord);
+        jobRecords.add(ProcessStatusUpdateRecord.builder()
+                .jobId(job.getId())
+                .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
+                .jobRunId(event.getJobRunId())
+                .taskId(event.getTaskId())
+                .build());
     }
 
     @Override
@@ -58,7 +94,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                 .collect(Collectors.toList());
     }
 
-    private Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
+    public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
         return tableJobs(tableName)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());

@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createListAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
@@ -31,15 +33,19 @@ public class DynamoDBRecordBuilder {
     private final List<Attribute> attributes = new ArrayList<>();
 
     public DynamoDBRecordBuilder string(String key, String value) {
-        return add(new Attribute(key, createStringAttribute(value)));
+        return add(key, createStringAttribute(value));
     }
 
     public DynamoDBRecordBuilder number(String key, Number value) {
-        if (null == value) {
-            return remove(key);
-        } else {
-            return add(new Attribute(key, createNumberAttribute(value)));
-        }
+        return add(key, createNumberAttribute(value));
+    }
+
+    public DynamoDBRecordBuilder bool(String key, Boolean bool) {
+        return add(key, createBooleanAttribute(bool));
+    }
+
+    public DynamoDBRecordBuilder list(String key, List<AttributeValue> values) {
+        return add(key, createListAttribute(values));
     }
 
     public DynamoDBRecordBuilder apply(Consumer<DynamoDBRecordBuilder> config) {
@@ -52,13 +58,12 @@ public class DynamoDBRecordBuilder {
                 .collect(Collectors.toMap(Attribute::getKey, Attribute::getValue));
     }
 
-    private DynamoDBRecordBuilder add(Attribute attribute) {
-        attributes.add(attribute);
-        return this;
-    }
-
-    private DynamoDBRecordBuilder remove(String key) {
-        attributes.removeIf(attribute -> attribute.key.equals(key));
+    private DynamoDBRecordBuilder add(String key, AttributeValue value) {
+        if (value == null) {
+            attributes.removeIf(attribute -> attribute.key.equals(key));
+        } else {
+            attributes.add(new Attribute(key, value));
+        }
         return this;
     }
 

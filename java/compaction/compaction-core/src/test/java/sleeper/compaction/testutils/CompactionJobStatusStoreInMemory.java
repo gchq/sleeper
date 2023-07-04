@@ -33,7 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static sleeper.compaction.job.CompactionJobStatusTestData.defaultUpdateTime;
+import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
 
 public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
@@ -65,22 +65,28 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
     }
 
     public void jobCreated(CompactionJob job, Instant createdTime) {
-        add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
-                CompactionJobCreatedStatus.from(job, createdTime), null));
+        add(job.getTableName(), ProcessStatusUpdateRecord.builder()
+                .jobId(job.getId())
+                .statusUpdate(CompactionJobCreatedStatus.from(job, createdTime))
+                .build());
     }
 
     @Override
     public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
-        add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
-                CompactionJobStartedStatus.startAndUpdateTime(startTime,
-                        getUpdateTimeForEventTime(startTime)), taskId));
+        add(job.getTableName(), ProcessStatusUpdateRecord.builder()
+                .jobId(job.getId()).taskId(taskId)
+                .statusUpdate(CompactionJobStartedStatus.startAndUpdateTime(
+                        startTime, getUpdateTimeForEventTime(startTime)))
+                .build());
     }
 
     @Override
     public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
-        add(job.getTableName(), new ProcessStatusUpdateRecord(job.getId(), null,
-                ProcessFinishedStatus.updateTimeAndSummary(
-                        getUpdateTimeForEventTime(summary.getFinishTime()), summary), taskId));
+        add(job.getTableName(), ProcessStatusUpdateRecord.builder()
+                .jobId(job.getId()).taskId(taskId)
+                .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(
+                        getUpdateTimeForEventTime(summary.getFinishTime()), summary))
+                .build());
     }
 
     @Override

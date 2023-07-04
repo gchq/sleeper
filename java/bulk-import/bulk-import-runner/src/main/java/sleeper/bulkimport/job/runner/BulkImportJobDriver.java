@@ -47,6 +47,8 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
+import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
  * This class executes a Spark job that reads in input Parquet files and writes
@@ -57,13 +59,13 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 public class BulkImportJobDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJobDriver.class);
 
-    private final BulkImportSessionRunner sessionRunner;
+    private final SessionRunner sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobStatusStore statusStore;
     private final Supplier<Instant> getTime;
 
-    public BulkImportJobDriver(BulkImportSessionRunner sessionRunner,
+    public BulkImportJobDriver(SessionRunner sessionRunner,
                                TablePropertiesProvider tablePropertiesProvider,
                                StateStoreProvider stateStoreProvider,
                                IngestJobStatusStore statusStore,
@@ -87,26 +89,25 @@ public class BulkImportJobDriver {
                                            Supplier<Instant> getTime) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
-        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(jobRunner, instanceProperties,
-                tablePropertiesProvider, stateStoreProvider)::run,
-                tablePropertiesProvider,
-                stateStoreProvider,
-                statusStore,
-                getTime);
+        return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
+                jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
+                tablePropertiesProvider, stateStoreProvider, statusStore, getTime);
     }
 
-    public void run(BulkImportJob job, String taskId) throws IOException {
+    public void run(BulkImportJob job, String jobRunId, String taskId) throws IOException {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is {}", job);
-        statusStore.jobStarted(taskId, job.toIngestJob(), startTime);
+        statusStore.jobStarted(validatedIngestJobStarted(job.toIngestJob(), startTime)
+                .jobRunId(jobRunId).taskId(taskId).build());
 
         BulkImportJobOutput output;
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get()));
+            statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()))
+                    .jobRunId(jobRunId).taskId(taskId).build());
             throw e;
         }
 
@@ -115,8 +116,9 @@ public class BulkImportJobDriver {
                     .addFiles(output.fileInfos());
             LOGGER.info("Added {} files to statestore", output.numFiles());
         } catch (Exception e) {
-            statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                    new RecordsProcessed(0, 0), startTime, getTime.get()));
+            statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
+                    new RecordsProcessed(0, 0), startTime, getTime.get()))
+                    .jobRunId(jobRunId).taskId(taskId).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
@@ -127,8 +129,9 @@ public class BulkImportJobDriver {
         long numRecords = output.numRecords();
         double rate = numRecords / (double) durationInSeconds;
         LOGGER.info("Bulk import job {} took {} seconds (rate of {} per second)", job.getId(), durationInSeconds, rate);
-        statusStore.jobFinished(taskId, job.toIngestJob(), new RecordsProcessedSummary(
-                new RecordsProcessed(numRecords, numRecords), startTime, finishTime));
+        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
+                new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+                .jobRunId(jobRunId).taskId(taskId).build());
 
         // Calling this manually stops it potentially timing out after 10 seconds.
         // Note that we stop the Spark context after we've applied the changes in Sleeper.
@@ -136,17 +139,19 @@ public class BulkImportJobDriver {
     }
 
     @FunctionalInterface
-    public interface BulkImportSessionRunner {
+    public interface SessionRunner {
         BulkImportJobOutput run(BulkImportJob job) throws IOException;
     }
 
     public static void start(String[] args, BulkImportJobRunner runner) throws Exception {
-        if (args.length != 3) {
-            throw new IllegalArgumentException("Expected 3 arguments: <config bucket name> <bulk import job ID> <bulk import task ID>");
+        if (args.length != 4) {
+            throw new IllegalArgumentException("Expected 4 arguments:" +
+                    " <config bucket name> <bulk import job ID> <bulk import task ID> <bulk import job run ID>");
         }
         String configBucket = args[0];
         String jobId = args[1];
         String taskId = args[2];
+        String jobRunId = args[3];
 
         InstanceProperties instanceProperties = new InstanceProperties();
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
@@ -191,6 +196,6 @@ public class BulkImportJobDriver {
 
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
                 amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
-        driver.run(bulkImportJob, taskId);
+        driver.run(bulkImportJob, jobRunId, taskId);
     }
 }

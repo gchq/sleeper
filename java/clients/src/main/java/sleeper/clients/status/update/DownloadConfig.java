@@ -17,15 +17,12 @@ package sleeper.clients.status.update;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.io.file.PathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class DownloadConfig {
@@ -46,18 +43,8 @@ public class DownloadConfig {
             SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
             LOGGER.info("Download complete");
         } catch (IOException e) {
-            LOGGER.error("Download failed: " + e.getMessage());
+            LOGGER.error("Download failed: {}", e.getMessage());
         }
     }
 
-    public static InstanceProperties overwriteTargetDirectoryIfDownloadSuccessful(AmazonS3 s3, String instanceId, Path targetDir, Path tempDir) throws IOException {
-        Files.createDirectories(tempDir);
-        PathUtils.cleanDirectory(tempDir);
-        InstanceProperties properties = SaveLocalProperties.saveFromS3(s3, instanceId, tempDir);
-        Files.createDirectories(targetDir);
-        PathUtils.cleanDirectory(targetDir);
-        PathUtils.copyDirectory(tempDir, targetDir);
-        PathUtils.cleanDirectory(tempDir);
-        return properties;
-    }
 }

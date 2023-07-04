@@ -94,6 +94,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 public final class EksBulkImportStack extends NestedStack {
     private final StateMachine stateMachine;
     private final ServiceAccount sparkServiceAccount;
+    private final Queue bulkImportJobQueue;
 
     public EksBulkImportStack(
             Construct scope,
@@ -135,7 +136,7 @@ public final class EksBulkImportStack extends NestedStack {
                         .build())
                 .addAlarmAction(new SnsAction(errorsTopicStack.getTopic()));
 
-        Queue bulkImportJobQueue = Queue.Builder
+        bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
                 .deadLetterQueue(deadLetterQueue)
                 .queueName(instanceId + "-BulkImportEKSQ")
@@ -160,7 +161,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .timeout(Duration.seconds(10))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .handler("sleeper.bulkimport.starter.BulkImportStarter")
+                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
         configureJobStarterFunction(bulkImportJobStarter);
@@ -351,5 +352,9 @@ public final class EksBulkImportStack extends NestedStack {
         if (ingestBucket != null) {
             ingestBucket.grantRead(sparkServiceAccount);
         }
+    }
+
+    public Queue getBulkImportJobQueue() {
+        return bulkImportJobQueue;
     }
 }

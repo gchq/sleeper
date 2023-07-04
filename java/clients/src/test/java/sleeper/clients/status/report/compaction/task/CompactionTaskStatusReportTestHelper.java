@@ -45,8 +45,8 @@ public class CompactionTaskStatusReportTestHelper {
     }
 
     public static CompactionTaskStatus finishedTask(String taskId, String startTime, String finishTime,
-                                                    long linesRead, long linesWritten) {
-        return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten).build();
+                                                    long recordsRead, long recordsWritten) {
+        return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten).build();
     }
 
     public static CompactionTaskStatus finishedTask(String taskId, String startTime, String finishTime,
@@ -57,8 +57,8 @@ public class CompactionTaskStatusReportTestHelper {
     }
 
     public static CompactionTaskStatus finishedSplittingTask(String taskId, String startTime, String finishTime,
-                                                             long linesRead, long linesWritten) {
-        return finishedTaskBuilder(taskId, startTime, finishTime, linesRead, linesWritten)
+                                                             long recordsRead, long recordsWritten) {
+        return finishedTaskBuilder(taskId, startTime, finishTime, recordsRead, recordsWritten)
                 .type(CompactionTaskType.SPLITTING).build();
     }
 
@@ -71,27 +71,27 @@ public class CompactionTaskStatusReportTestHelper {
     }
 
     private static CompactionTaskStatus.Builder finishedTaskBuilder(String taskId, String startTime,
-                                                                    String finishTime, long linesRead, long linesWritten) {
+                                                                    String finishTime, long recordsRead, long recordsWritten) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
-                        taskFinishedStatus(startTime, finishTime, linesRead, linesWritten));
+                        taskFinishedStatus(startTime, finishTime, recordsRead, recordsWritten));
     }
 
     private static CompactionTaskFinishedStatus.Builder taskFinishedStatus(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
-        return taskFinishedStatusBuilder(startTime, finishTime, linesRead, linesWritten);
+            String startTime, String finishTime, long recordsRead, long recordsWritten) {
+        return taskFinishedStatusBuilder(startTime, finishTime, recordsRead, recordsWritten);
     }
 
     private static CompactionTaskFinishedStatus.Builder taskFinishedStatusBuilder(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
+            String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return CompactionTaskFinishedStatus.builder()
-                .addJobSummary(createSummary(startTime, finishTime, linesRead, linesWritten));
+                .addJobSummary(createSummary(startTime, finishTime, recordsRead, recordsWritten));
     }
 
     private static RecordsProcessedSummary createSummary(
-            String startTime, String finishTime, long linesRead, long linesWritten) {
+            String startTime, String finishTime, long recordsRead, long recordsWritten) {
         return new RecordsProcessedSummary(
-                new RecordsProcessed(linesRead, linesWritten),
+                new RecordsProcessed(recordsRead, recordsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }
 }

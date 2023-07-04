@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
 
-public class BulkImportSparkSessionRunner {
+public class BulkImportSparkSessionRunner implements BulkImportJobDriver.SessionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);
 
     private final BulkImportJobRunner jobRunner;
@@ -69,13 +69,11 @@ public class BulkImportSparkSessionRunner {
         this.stateStoreProvider = stateStoreProvider;
     }
 
+    @Override
     public BulkImportJobOutput run(BulkImportJob job) throws IOException {
         // Initialise Spark
         LOGGER.info("Initialising Spark");
-        SparkConf sparkConf = new SparkConf();
-        sparkConf.set("spark.serializer", KryoSerializer.class.getName());
-        sparkConf.registerKryoClasses(new Class[]{Partition.class});
-        SparkSession session = new SparkSession.Builder().config(sparkConf).getOrCreate();
+        SparkSession session = new SparkSession.Builder().config(createSparkConf()).getOrCreate();
         scala.collection.immutable.List<SparkStrategy> strategies = JavaConverters.collectionAsScalaIterable(Collections.singletonList((org.apache.spark.sql.execution.SparkStrategy) ExplicitRepartitionStrategy$.MODULE$)).toList();
         session.experimental().extraStrategies_$eq(strategies);
         SparkContext sparkContext = session.sparkContext();
@@ -126,5 +124,13 @@ public class BulkImportSparkSessionRunner {
                 .collect(Collectors.toList());
 
         return new BulkImportJobOutput(fileInfos, sparkContext::stop);
+    }
+
+    public static SparkConf createSparkConf() {
+        SparkConf sparkConf = new SparkConf();
+        sparkConf.set("spark.serializer", KryoSerializer.class.getName());
+        sparkConf.set("spark.kryo.registrator", JdkImmutableListRegistrator.class.getName());
+        sparkConf.registerKryoClasses(new Class[]{Partition.class});
+        return sparkConf;
     }
 }

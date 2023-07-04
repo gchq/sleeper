@@ -6,216 +6,223 @@
 # Template Values #
 ###################
 
-# AWS account number
-sleeper.account=changeme
+## The following properties are commonly used throughout Sleeper.
 
-# AWS region to deploy to
-sleeper.region=changeme
-
-# A string to uniquely identify this deployment
+# A string to uniquely identify this deployment. This should be no longer than 20 chars. It should be
+# globally unique as it will be used to name AWS resources such as S3 buckets.
 sleeper.id=changeme
 
-# The S3 bucket containing your jar files
+# The S3 bucket containing the jar files of the Sleeper components.
 sleeper.jars.bucket=changeme
 
-# The name of the repository for the compaction container. The Docker image from the compaction-job-execution module
-# should have been uploaded to an ECR repository of this name in this account.
-sleeper.compaction.repo=changeme
+# The AWS account number. This is the AWS account that the instance will be deployed to.
+sleeper.account=changeme
 
-# The name of the repository for the ingest container. The Docker image from the ingest module should have been
-# uploaded to an ECR repository of this name in this account.
-sleeper.ingest.repo=changeme
+# The AWS region to deploy to.
+sleeper.region=changeme
 
-# The name of the bulk import repo containing spark and bulk import code
-sleeper.bulk.import.eks.repo=changeme
-
-# The id of the VPC to deploy to
+# The id of the VPC to deploy to.
 sleeper.vpc=changeme
 
-# The subnet to deploy tasks to
-sleeper.subnet=changeme
+# A comma separated list of subnets to deploy to. ECS tasks will be run across multiple subnets. EMR
+# clusters will be deployed in a subnet chosen when the cluster is created.
+sleeper.subnets=changeme
+
+
+## The following properties relate to standard ingest.
+
+# The name of the ECR repository for the ingest container. The Docker image from the ingest module
+# should have been uploaded to an ECR repository of this name in this account.
+sleeper.ingest.repo=changeme
+
+
+## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
+## or EKS.
+
+# (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
+# is stored.
+sleeper.bulk.import.eks.repo=changeme
+
+
+## The following properties relate to compactions.
+
+# The name of the repository for the compaction container. The Docker image from the
+# compaction-job-execution module should have been uploaded to an ECR repository of this name in this
+# account.
+sleeper.compaction.repo=changeme
+
 
 ##################
 # Default Values #
 ##################
 
-# Logging level for sleeper classes
-sleeper.logging.level=debug
+## The following properties are commonly used throughout Sleeper.
 
-# The optional stacks to deploy - DataAndMetadata & Topic are also included.
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,EmrBulkImportStack
+# A comma-separated list of the jars containing application specific iterator code. These jars are
+# assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that bucket contains two iterator
+# jars called iterator1.jar and iterator2.jar then the property should be
+# 'sleeper.userjars=iterator1.jar,iterator2.jar'.
+# sleeper.userjars=
 
-# Whether to keep the sleeper table bucket, Dynamo tables related to tables and query results bucket or not.
+# A name for a tag to identify the stack that deployed a resource. This will be set for all AWS
+# resources, to the ID of the CDK stack that they are deployed under. This can be used to organise the
+# cost explorer for billing.
+sleeper.stack.tag.name=DeploymentStack
+
+# Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., when the
+# instance is destroyed.
 sleeper.retain.infra.after.destroy=true
 
-# The maximum number of concurrent compaction tasks to run
-sleeper.compaction.max.concurrent.tasks=300
+# The optional stacks to deploy.
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack
 
-# Partitions with more than the following number of records in will be split
-sleeper.default.partition.splitting.threshold=100000000
+# Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
+# endpoint then the NAT costs can be very significant.
+sleeper.vpc.endpoint.check=true
 
-# How often partition splitting should happen
-sleeper.partition.splitting.period.minutes=10
+# The Hadoop filesystem used to connect to S3.
+sleeper.filesystem=s3a://
 
-# The maximum number of files in a partition splitting job
-sleeper.partition.splitting.files.maximum=50
+# An email address used by the TopicStack to publish SNS notifications of errors.
+# sleeper.errors.email=
 
-# The frequency with which the garbage collector is run
-sleeper.gc.period.minutes=5
-
-# The size of the batch of files that are ready for garbage collection requested from the State Store
-sleeper.gc.batch.size=2000
-
-# The length of time after a message is consumed from a queue before it becomes visible again
+# The visibility timeout on the queues used in ingest, query, etc.
 sleeper.queue.visibility.timeout.seconds=900
 
-# The frequency with which a compaction job sends keep alive messages to the job queue
-sleeper.compaction.keepalive.period.seconds=600
-
-# The rate at which the compaction job creation lambda runs (in minutes, must be >=1)
-sleeper.compaction.job.creation.period.minutes=1
-
-# The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes, must be >= 1)
-sleeper.compaction.task.creation.period.minutes=1
-
-# The amount of memory for the lambda that creates compaction jobs
-sleeper.compaction.job.creation.memory=1024
-
-# The amount of memory for the lambda that runs ECS tasks to execute compaction jobs
-sleeper.task.runner.memory=1024
-
-# The timeout for the lambda that creates compaction jobs in seconds
-sleeper.compaction.job.creation.timeout.seconds=900
-
-# The timeout for the lambda that creates compaction jobs in seconds
-sleeper.task.runner.timeout.seconds=900
-
-# The CPU architecture to run compaction tasks on.
-# See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
-sleeper.compaction.task.cpu.architecture=X86_64
-
-# The CPU and memory for a compaction task. Which of these are used will depend on the chosen CPU architecture.
-# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.
-sleeper.compaction.task.arm.cpu=1024
-sleeper.compaction.task.arm.memory=4096
-sleeper.compaction.task.x86.cpu=1024
-sleeper.compaction.task.x86.memory=4096
-
-# Flag to enable/disable storage of tracking information for compaction jobs and tasks.
-sleeper.compaction.status.store.enabled=true
-
-# The time to live in seconds for compaction job updates in the status store. Default is 1 week
-sleeper.compaction.job.status.ttl=604800
-
-# The time to live in seconds for compaction task updates in the status store. Default is 1 week
-sleeper.compaction.task.status.ttl=604800
-
-# The retention period for CloudWatch logs. See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.
+# The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are
+# retained.
+# See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
+# for valid options.
 # Use -1 to indicate infinite retention.
 sleeper.log.retention.days=30
 
-# The amount of memory in MB for the lambda that garbage collects old files
-sleeper.gc.memory=1024
-
-# The amount of memory in MB for the lambda that identifies partitions that need splitting
-sleeper.partition.splitting.finder.memory=2048
-
-# The timeout for the lambda that identifies partitions that need splitting in seconds
-sleeper.partition.splitting.finder.timeout.seconds=900
-
-# The amount of memory for the lambda that splits partitions
-sleeper.partition.splitting.memory=2048
-
-# The timeout for the lambda that splits partitions in seconds
-sleeper.partition.splitting.timeout.seconds=900
-
-# The amount of memory in MB for the lambda that executes queries
-sleeper.query.processor.memory=2048
-
-# The timeout for the lambda that executes queries in seconds
-sleeper.query.processor.timeout.seconds=900
-
-# The maximum number of simultaneous connections to S3 from a single client
+# Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the
+# maximum number of http connections to S3.
+# See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
 sleeper.s3.max-connections=25
 
-# The frequency with which the query processing lambda refreshes its knowledge of the system state
-# (i.e. the partitions and the mapping from partition to files), in seconds.
-sleeper.query.processor.state.refresh.period.seconds=60
-
-# The maximum number of records to include in a batch of query results send to
-# the results queue from the query processing lambda.
-sleeper.query.processor.results.batch.size=2000
-
-# Fargate version
+# The version of Fargate to use.
 sleeper.fargate.version=1.4.0
 
-# The EC2 instance type to use for compaction tasks (when not using Fargate).
-sleeper.compaction.ec2.type=t3.xlarge
+# The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.
+sleeper.task.runner.memory=1024
 
-# The minimum / initial desired / maximum number of instances for the cluster.
-sleeper.compaction.ec2.pool.minimum=0
-sleeper.compaction.ec2.pool.desired=0
-# Maximum set by dividing initial maximum containers by number that should fit on instance type
-sleeper.compaction.ec2.pool.maximum=75
+# The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest
+# jobs.
+# This must be >0 and <= 900.
+sleeper.task.runner.timeout.seconds=900
 
-# What launch type should compaction containers use? Valid options: FARGATE, EC2
-sleeper.compaction.ecs.launch.type=FARGATE
+# The namespaces for the metrics used in the metrics stack.
+sleeper.metrics.namespace=Sleeper
 
-# The size in GiB of the root EBS volume attached to the EC2 instances.
-sleeper.compaction.ec2.root.size=50
 
-# The frequency with which the WriteData class refreshes the list of partitions from the state store
-# (NB Refreshes only happen once a batch of data has been written so this is a lower bound
-# on the refresh frequency.)
-sleeper.ingest.partition.refresh.period=120
+## The following properties relate to standard ingest.
 
-# The frequency with which the lambda that checks whether ingest tasks need creating runs (in minutes).
+# The maximum number of concurrent ECS tasks to run.
+sleeper.ingest.max.concurrent.tasks=200
+
+# The frequency in minutes with which an EventBridge rule runs to trigger a lambda that, if necessary,
+# runs more ECS tasks to perform ingest jobs.
 sleeper.ingest.task.creation.period.minutes=1
 
-# The number of files to read in a compaction job. Note that the state store
-# must support atomic updates for this many files. For the DynamoDBStateStore this
-# is 11.
-# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)
-sleeper.compaction.files.batch.size=11
+# The frequency, in seconds, with which change message visibility requests are sent to extend the
+# visibility of messages on the ingest queue so that they are not processed by other processes.
+# This should be less than the value of sleeper.queue.visibility.timeout.seconds.
+sleeper.ingest.keepalive.period.seconds=300
 
-# The way in which records are held in memory before they are written to a local store
-# Valid values are 'arraylist' and 'arrow'
+# This sets the value of fs.s3a.experimental.input.fadvise on the Hadoop configuration used to read
+# and write files to and from S3 in ingest jobs. Changing this value allows you to fine-tune how files
+# are read. Possible values are "normal", "sequential" and "random". More information is available
+# here:
+# https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/performance.html#fadvise.
+sleeper.ingest.fs.s3a.experimental.input.fadvise=sequential
+
+# The amount of CPU used by Fargate tasks that perform ingest jobs.
+# Note that only certain combinations of CPU and memory are valid.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.ingest.task.cpu=2048
+
+# The amount of memory used by Fargate tasks that perform ingest jobs.
+# Note that only certain combinations of CPU and memory are valid.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.ingest.task.memory=4096
+
+# The frequency in seconds with which ingest tasks refresh their view of the partitions.
+# (NB Refreshes only happen once a batch of data has been written so this is a lower bound on the
+# refresh frequency.)
+sleeper.ingest.partition.refresh.period=120
+
+# A comma-separated list of buckets that contain files to be ingested via ingest jobs. The buckets
+# should already exist, i.e. they will not be created as part of the cdk deployment of this instance
+# of Sleeper. The ingest and bulk import stacks will be given read access to these buckets so that
+# they can consume data from them.
+# sleeper.ingest.source.bucket=
+
+# The way in which records are held in memory before they are written to a local store.
+# Valid values are 'arraylist' and 'arrow'.
+# The arraylist method is simpler, but it is slower and requires careful tuning of the number of
+# records in each batch.
 sleeper.ingest.record.batch.type=arrow
 
-# The way in which partition files are written to the main Sleeper store
-# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes locally and then
-# copies the completed Parquet file asynchronously into S3)
-sleeper.ingest.partition.file.writer.type=direct
+# The way in which partition files are written to the main Sleeper store.
+# Valid values are 'direct' (which writes using the s3a Hadoop file system) and 'async' (which writes
+# locally and then copies the completed Parquet file asynchronously into S3).
+# The direct method is simpler but the async method should provide better performance when the number
+# of partitions is large.
+sleeper.ingest.partition.file.writer.type=async
 
-# The maximum number of records that the ingest process writes to the local file (arraylist only)
+# The maximum number of records written to local file in an ingest job. (Records are written in sorted
+# order to local disk before being uploaded to S3. Increasing this value increases the amount of time
+# before data is visible in the system, but increases the number of records written to S3 in a batch,
+# therefore reducing costs.)
+# (arraylist-based ingest only)
 sleeper.ingest.max.local.records=100000000
 
-# The maximum number of records that the ingest process loads into memory at one time (arraylist only)
+# The maximum number of records to read into memory in an ingest job. (Up to
+# sleeper.ingest.memory.max.batch.size records are read into memory before being sorted and written to
+# disk. This process is repeated until sleeper.ingest.max.local.records records have been written to
+# local files. Then the sorted files and merged and the data is written to sorted files in S3.)
+# (arraylist-based ingest only)
 sleeper.ingest.memory.max.batch.size=1000000
 
-# The number of bytes to allocate to the Arrow working buffer, which is used for sorting and other sundry activities
-# (arrow only) [256MB]
+# The number of bytes to allocate to the Arrow working buffer. This buffer is used for sorting and
+# other sundry activities. Note that this is off-heap memory, which is in addition to the memory
+# assigned to the JVM.
+# (arrow-based ingest only) [256MB]
 sleeper.ingest.arrow.working.buffer.bytes=268435456
 
-# The number of bytes to allocate to the Arrow batch buffer, which is used to hold the records (arrow only) [1GB]
+# The number of bytes to allocate to the Arrow batch buffer, which is used to hold the records before
+# they are written to local disk. A larger value means that the local disk holds fewer, larger files,
+# which are more efficient to merge together during an upload to S3. Larger values may require a
+# larger working buffer. Note that this is off-heap memory, which is in addition to the memory
+# assigned to the JVM.
+# (arrow-based ingest only) [1GB]
 sleeper.ingest.arrow.batch.buffer.bytes=1073741824
 
-# The maximum number of bytes to store on the local disk before uploading to the main Sleeper store (arrow only) [2GB]
+# The maximum number of bytes to store on the local disk before uploading to the main Sleeper store. A
+# larger value reduces the number of S3 PUTs that are required to upload thle data to S3 and results
+# in fewer files per partition.
+# (arrow-based ingest only) [2GB]
 sleeper.ingest.arrow.max.local.store.bytes=2147483648
 
-# The number of records to write at once into an Arrow file in the local store. A single Arrow file will be written to
-# multiple times and so this parameter does not affect the final size of the Arrow file (arrow only) [1K]
+# The number of records to write at once into an Arrow file in the local store. A single Arrow file
+# contains many of these micro-batches and so this parameter does not significantly affect the final
+# size of the Arrow file. Larger values may require a larger working buffer.
+# (arrow-based ingest only) [1K]
 sleeper.ingest.arrow.max.single.write.to.file.records=1024
 
 # The implementation of the async S3 client to use for upload during ingest.
-# Valid values are 'java' or 'crt'. This determines the implementation of S3AsyncClient that gets used.
+# Valid values are 'java' or 'crt'. This determines the implementation of S3AsyncClient that gets
+# used.
 # With 'java' it makes a single PutObject request for each file.
 # With 'crt' it uses the AWS Common Runtime (CRT) to make multipart uploads.
-# Note that the CRT option is recommended. Using the Java option may cause failures if any file is >5GB in size, and
-# will lead to the following warning:
-# "The provided S3AsyncClient is not an instance of S3CrtAsyncClient, and thus multipart upload/download feature is not
-# enabled and resumable file upload is not supported. To benefit from maximum throughput, consider using
-# S3AsyncClient.crtBuilder().build() instead."
+# Note that the CRT option is recommended. Using the Java option may cause failures if any file is
+# >5GB in size, and will lead to the following warning:
+# "The provided S3AsyncClient is not an instance of S3CrtAsyncClient, and thus multipart
+# upload/download feature is not enabled and resumable file upload is not supported. To benefit from
+# maximum throughput, consider using S3AsyncClient.crtBuilder().build() instead."
 # (async partition file writer only)
 sleeper.ingest.async.client.type=crt
 
@@ -223,15 +230,606 @@ sleeper.ingest.async.client.type=crt
 # (CRT async ingest only) [128MB]
 sleeper.ingest.async.crt.part.size.bytes=134217728
 
-# The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded simultaneously.
+# The target throughput for multipart uploads, in GB/s. Determines how many parts should be uploaded
+# simultaneously.
 # (CRT async ingest only)
 sleeper.ingest.async.crt.target.throughput.gbps=10
 
 # Flag to enable/disable storage of tracking information for ingest jobs and tasks.
 sleeper.ingest.status.store.enabled=true
 
-# The time to live in seconds for ingest job updates in the status store. Default is 1 week
+# The time to live in seconds for ingest job updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
 sleeper.ingest.job.status.ttl=604800
 
-# The time to live in seconds for ingest task updates in the status store. Default is 1 week
+# The time to live in seconds for ingest task updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
 sleeper.ingest.task.status.ttl=604800
+
+# The amount of memory in MB for the lambda that receives submitted requests to ingest files.
+sleeper.ingest.batcher.submitter.memory.mb=1024
+
+# The timeout in seconds for the lambda that receives submitted requests to ingest files.
+sleeper.ingest.batcher.submitter.timeout.seconds=20
+
+# The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest
+# requests.
+sleeper.ingest.batcher.job.creation.memory.mb=1024
+
+# The timeout in seconds for the lambda that creates ingest jobs from submitted file ingest requests.
+sleeper.ingest.batcher.job.creation.timeout.seconds=900
+
+# The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).
+sleeper.ingest.batcher.job.creation.period.minutes=1
+
+
+## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
+## or EKS.
+
+# The class to use to perform the bulk import. The default value below uses Spark Dataframes. There is
+# an alternative option that uses RDDs (sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver).
+sleeper.bulk.import.class.name=sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver
+
+# The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.
+# Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested.
+sleeper.bulk.import.emr.spark.shuffle.mapStatus.compression.codec=lz4
+
+# If true then speculative execution of tasks will be performed. Used to set spark.speculation.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.speculation=false
+
+# Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used
+# to set spark.speculation.quantile.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.spark.speculation.quantile=0.75
+
+# The amount of memory allocated to a Spark executor. Used to set spark.executor.memory.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.executor.memory=16g
+
+# The amount of memory allocated to the Spark driver. Used to set spark.driver.memory.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.driver.memory=16g
+
+# The number of executors. Used to set spark.executor.instances.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.executor.instances=29
+
+# The memory overhead for an executor. Used to set spark.yarn.executor.memoryOverhead.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead=2g
+
+# The memory overhead for the driver. Used to set spark.yarn.driver.memoryOverhead.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead=2g
+
+# The default parallelism for Spark job. Used to set spark.default.parallelism.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.default.parallelism=290
+
+# The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to set
+# spark.sql.shuffle.partitions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.sql.shuffle.partitions=290
+
+# (Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying
+# this will allow you to SSH to the nodes in the cluster while it's running.
+# sleeper.bulk.import.emr.keypair.name=
+
+# (Non-persistent or persistent EMR mode only) Specifying this security group causes the group to be
+# added to the EMR master's list of security groups.
+# sleeper.bulk.import.emr.master.additional.security.group=
+
+# (Non-persistent or persistent EMR mode only) The number of cores used by an executor. Used to set
+# spark.executor.cores.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.executor.cores=5
+
+# (Non-persistent or persistent EMR mode only) The number of cores used by the driver. Used to set
+# spark.driver.cores.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.driver.cores=5
+
+# (Non-persistent or persistent EMR mode only) The default timeout for network interactions in Spark.
+# Used to set spark.network.timeout.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.network.timeout=800s
+
+# (Non-persistent or persistent EMR mode only) The interval between heartbeats from executors to the
+# driver. Used to set spark.executor.heartbeatInterval.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.executor.heartbeat.interval=60s
+
+# (Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale
+# resources up and down. Used to set spark.dynamicAllocation.enabled.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.dynamic.allocation.enabled=false
+
+# (Non-persistent or persistent EMR mode only) The fraction of heap space used for execution and
+# storage. Used to set spark.memory.fraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.memory.fraction=0.80
+
+# (Non-persistent or persistent EMR mode only) The amount of storage memory immune to eviction,
+# expressed as a fraction of the heap space used for execution and storage. Used to set
+# spark.memory.storageFraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.memory.storage.fraction=0.30
+
+# (Non-persistent or persistent EMR mode only) JVM options passed to the executors. Used to set
+# spark.executor.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.executor.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# (Non-persistent or persistent EMR mode only) JVM options passed to the driver. Used to set
+# spark.driver.extraJavaOptions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.driver.extra.java.options=-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'
+
+# (Non-persistent or persistent EMR mode only) The maximum number of executor failures before YARN can
+# fail the application. Used to set spark.yarn.scheduler.reporterThread.maxFailures.
+# See
+# https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
+sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures=5
+
+# (Non-persistent or persistent EMR mode only) The storage to use for temporary caching. Used to set
+# spark.storage.level.
+# See
+# https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.
+sleeper.bulk.import.emr.spark.storage.level=MEMORY_AND_DISK_SER
+
+# (Non-persistent or persistent EMR mode only) Whether to compress serialized RDD partitions. Used to
+# set spark.rdd.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.rdd.compress=true
+
+# (Non-persistent or persistent EMR mode only) Whether to compress map output files. Used to set
+# spark.shuffle.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.shuffle.compress=true
+
+# (Non-persistent or persistent EMR mode only) Whether to compress data spilled during shuffles. Used
+# to set spark.shuffle.spill.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.spark.shuffle.spill.compress=true
+
+# (Non-persistent or persistent EMR mode only) The size of the EBS volume in gibibytes (GiB).
+# This can be a number from 10 to 1024.
+sleeper.bulk.import.emr.ebs.volume.size.gb=256
+
+# (Non-persistent or persistent EMR mode only) The type of the EBS volume.
+# Valid values are 'gp2', 'gp3', 'io1', 'io2'.
+sleeper.bulk.import.emr.ebs.volume.type=gp2
+
+# (Non-persistent or persistent EMR mode only) The number of EBS volumes per instance.
+# This can be a number from 1 to 25.
+sleeper.bulk.import.emr.ebs.volumes.per.instance=4
+
+# (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
+# for bulk importing data using Spark running on EMR.
+# This property is a default which can be overridden by a table property or by a property in the bulk
+# import job specification.
+sleeper.default.bulk.import.emr.release.label=emr-6.10.0
+
+# (Non-persistent EMR mode only) The default EC2 instance types to be used for the master node of the
+# EMR cluster. Multiple instance types can be specified separated by commas. One will be chosen
+# depending on the capacity available.
+# This property is a default which can be overridden by a table property or by a property in the bulk
+# import job specification.
+sleeper.default.bulk.import.emr.master.instance.types=m5.xlarge
+
+# (Non-persistent EMR mode only) The default EC2 instance types to be used for the executor nodes of
+# the EMR cluster. Multiple instance types can be specified separated by commas. Instance types will
+# be chosen from the list based on the capacity available.
+# You can assign weights to instance types to define the amount of capacity that each instance type
+# provides. By default, each instance type delivers a capacity of 1. You can set custom weights for an
+# instance type by adding a number after the instance type in this comma separated list. This must be
+# a whole number.
+# For example:
+#  sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge
+# The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the
+# capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, so is
+# defaulted to 1.
+# In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one
+# instance of m5.4xlarge, or 3 instances of m5.xlarge.
+# See also:
+# https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options
+# This property is a default which can be overridden by a table property or by a property in the bulk
+# import job specification.
+sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge
+
+# (Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of
+# the EMR cluster.
+# Valid values are ON_DEMAND or SPOT.
+# This property is a default which can be overridden by a table property or by a property in the bulk
+# import job specification.
+sleeper.default.bulk.import.emr.executor.market.type=SPOT
+
+# (Non-persistent EMR mode only) The default initial number of capacity units to provision as EC2
+# instances for executors in the EMR cluster.
+# This is measured in instance fleet capacity units. These are declared alongside the requested
+# instance types, as each type will count for a certain number of units. By default the units are the
+# number of instances.
+# This property is a default which can be overridden by a table property or by a property in the bulk
+# import job specification.
+sleeper.default.bulk.import.emr.executor.initial.instances=2
+
+# (Non-persistent EMR mode only) The default maximum number of capacity units to provision as EC2
+# instances for executors in the EMR cluster.
+# This is measured in instance fleet capacity units. These are declared alongside the requested
+# instance types, as each type will count for a certain number of units. By default the units are the
+# number of instances.
+# This property is a default which can be overridden by a table property or by a property in the bulk
+# import job specification.
+sleeper.default.bulk.import.emr.executor.max.instances=10
+
+# (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
+sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
+
+# (Persistent EMR mode only) The EC2 instance types used for the master node of the persistent EMR
+# cluster. Multiple instance types can be specified separated by commas. One will be chosen depending
+# on the capacity available.
+sleeper.bulk.import.persistent.emr.master.instance.types=m5.xlarge
+
+# (Persistent EMR mode only) The EC2 instance types used for the executor nodes of the persistent EMR
+# cluster. Multiple instance types can be specified separated by commas. Instance types will be chosen
+# from the list based on the capacity available.
+# You can assign weights to instance types to define the amount of capacity that each instance type
+# provides. By default, each instance type delivers a capacity of 1. You can set custom weights for an
+# instance type by adding a number after the instance type in this comma separated list. This must be
+# a whole number.
+# For example:
+#  sleeper.default.bulk.import.emr.executor.instance.types=m5.4xlarge,4,m5.xlarge
+# The above configuration would tell EMR that an m5.4xlarge instance would provide 4 times the
+# capacity of an m5.xlarge instance. The m5.xlarge instance type does not have a weight, so is
+# defaulted to 1.
+# In this example, if you set the initial executor capacity to 3, EMR could fulfil that with one
+# instance of m5.4xlarge, or 3 instances of m5.xlarge.
+# See also:
+# https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options
+sleeper.bulk.import.persistent.emr.core.instance.types=m5.4xlarge
+
+# (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
+sleeper.bulk.import.persistent.emr.use.managed.scaling=true
+
+# (Persistent EMR mode only) The minimum number of capacity units to provision as EC2 instances for
+# executors in the persistent EMR cluster.
+# This is measured in instance fleet capacity units. These are declared alongside the requested
+# instance types, as each type will count for a certain number of units. By default the units are the
+# number of instances.
+# If managed scaling is not used then the cluster will be of fixed size, with a number of instances
+# equal to this value.
+sleeper.bulk.import.persistent.emr.min.capacity=1
+
+# (Persistent EMR mode only) The maximum number of capacity units to provision as EC2 instances for
+# executors in the persistent EMR cluster.
+# This is measured in instance fleet capacity units. These are declared alongside the requested
+# instance types, as each type will count for a certain number of units. By default the units are the
+# number of instances.
+# This value is only used if managed scaling is used.
+sleeper.bulk.import.persistent.emr.max.capacity=10
+
+# (Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.
+sleeper.bulk.import.persistent.emr.step.concurrency.level=2
+
+
+## The following properties relate to the splitting of partitions.
+
+# The frequency in minutes with which the lambda that finds partitions that need splitting runs.
+sleeper.partition.splitting.period.minutes=30
+
+# When a partition needs splitting, a partition splitting job is created. This reads in the sketch
+# files associated to the files in the partition in order to identify the median. This parameter
+# controls the maximum number of files that are read in.
+sleeper.partition.splitting.files.maximum=50
+
+# The amount of memory in MB for the lambda function used to identify partitions that need to be
+# split.
+sleeper.partition.splitting.finder.memory=2048
+
+# The timeout in seconds for the lambda function used to identify partitions that need to be split.
+sleeper.partition.splitting.finder.timeout.seconds=900
+
+# The memory for the lambda function used to split partitions.
+sleeper.partition.splitting.memory=2048
+
+# The timeout in seconds for the lambda function used to split partitions.
+sleeper.partition.splitting.timeout.seconds=900
+
+# This is the default value of the partition splitting threshold. Partitions with more than the
+# following number of records in will be split. This value can be overridden on a per-table basis.
+sleeper.default.partition.splitting.threshold=1000000000
+
+
+## The following properties relate to garbage collection.
+
+# The frequency in minutes with which the garbage collector lambda is run.
+sleeper.gc.period.minutes=15
+
+# The memory in MB for the lambda function used to perform garbage collection.
+sleeper.gc.memory=1024
+
+# The size of the batch of files ready for garbage collection requested from the State Store.
+sleeper.gc.batch.size=2000
+
+# A file will not be deleted until this number of minutes have passed after it has been marked as
+# ready for garbage collection. The reason for not deleting files immediately after they have been
+# marked as ready for garbage collection is that they may still be in use by queries. This property
+# can be overridden on a per-table basis.
+sleeper.default.gc.delay.minutes=15
+
+
+## The following properties relate to compactions.
+
+# The visibility timeout for the queue of compaction jobs.
+sleeper.compaction.queue.visibility.timeout.seconds=900
+
+# The frequency, in seconds, with which change message visibility requests are sent to extend the
+# visibility of messages on the compaction job queue so that they are not processed by other
+# processes.
+# This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.
+sleeper.compaction.keepalive.period.seconds=300
+
+# The rate at which the compaction job creation lambda runs (in minutes, must be >=1).
+sleeper.compaction.job.creation.period.minutes=1
+
+# The amount of memory for the lambda that creates compaction jobs.
+sleeper.compaction.job.creation.memory=1024
+
+# The timeout for the lambda that creates compaction jobs in seconds.
+sleeper.compaction.job.creation.timeout.seconds=900
+
+# The maximum number of concurrent compaction tasks to run.
+sleeper.compaction.max.concurrent.tasks=300
+
+# The rate at which a check to see if compaction ECS tasks need to be created is made (in minutes,
+# must be >= 1).
+sleeper.compaction.task.creation.period.minutes=1
+
+# The CPU architecture to run compaction tasks on.
+# See Task CPU architecture at
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+sleeper.compaction.task.cpu.architecture=X86_64
+
+# The CPU for a compaction task using an ARM architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.compaction.task.arm.cpu=1024
+
+# The memory for a compaction task using an ARM architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.compaction.task.arm.memory=4096
+
+# The CPU for a compaction task using an x86 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.compaction.task.x86.cpu=1024
+
+# The memory for a compaction task using an x86 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.compaction.task.x86.memory=4096
+
+# What launch type should compaction containers use? Valid options: FARGATE, EC2.
+sleeper.compaction.ecs.launch.type=FARGATE
+
+# The EC2 instance type to use for compaction tasks (when using EC2-based compactions).
+sleeper.compaction.ec2.type=t3.xlarge
+
+# The minimum number of instances for the EC2 cluster (when using EC2-based compactions).
+sleeper.compaction.ec2.pool.minimum=0
+
+# The initial desired number of instances for the EC2 cluster (when using EC2-based compactions).
+# Can be set by dividing initial maximum containers by number that should fit on instance type.
+sleeper.compaction.ec2.pool.desired=0
+
+# The maximum number of instances for the EC2 cluster (when using EC2-based compactions).
+sleeper.compaction.ec2.pool.maximum=75
+
+# The size in GiB of the root EBS volume attached to the EC2 instances (when using EC2-based
+# compactions).
+sleeper.compaction.ec2.root.size=50
+
+# Flag to enable/disable storage of tracking information for compaction jobs and tasks.
+sleeper.compaction.status.store.enabled=true
+
+# The time to live in seconds for compaction job updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
+sleeper.compaction.job.status.ttl=604800
+
+# The time to live in seconds for compaction task updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
+sleeper.compaction.task.status.ttl=604800
+
+# The name of the class that defines how compaction jobs should be created. This should implement
+# sleeper.compaction.strategy.CompactionStrategy. The value of this property is the default value
+# which can be overridden on a per-table basis.
+sleeper.default.compaction.strategy.class=sleeper.compaction.strategy.impl.SizeRatioCompactionStrategy
+
+# The minimum number of files to read in a compaction job. Note that the state store must support
+# atomic updates for this many files. For the DynamoDBStateStore this is 11. It can be overridden on a
+# per-table basis.
+# (NB This does not apply to splitting jobs which will run even if there is only 1 file.)
+# This is a default value and will be used if not specified in the table.properties file.
+sleeper.default.compaction.files.batch.size=11
+
+# Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.
+# If the file sizes are s_1, ..., s_n then the files are compacted if s_1 + ... + s_{n-1} >= ratio *
+# s_n.
+# It can be overridden on a per-table basis.
+sleeper.default.table.compaction.strategy.sizeratio.ratio=3
+
+# Used by the SizeRatioCompactionStrategy to control the maximum number of jobs that can be running
+# concurrently per partition. It can be overridden on a per-table basis.
+sleeper.default.table.compaction.strategy.sizeratio.max.concurrent.jobs.per.partition=2147483647
+
+
+## The following properties relate to queries.
+
+# The maximum number of simultaneous connections to S3 from a single query runner. This is separated
+# from the main one as it's common for a query runner to need to open more files at once.
+sleeper.query.s3.max-connections=1024
+
+# The amount of memory in MB for the lambda that executes queries.
+sleeper.query.processor.memory=2048
+
+# The timeout for the lambda that executes queries in seconds.
+sleeper.query.processor.timeout.seconds=900
+
+# The frequency with which the query processing lambda refreshes its knowledge of the system state
+# (i.e. the partitions and the mapping from partition to files), in seconds.
+sleeper.query.processor.state.refresh.period.seconds=60
+
+# The maximum number of records to include in a batch of query results send to the results queue from
+# the query processing lambda.
+sleeper.query.processor.results.batch.size=2000
+
+# The size of the thread pool for retrieving records in a query processing lambda.
+sleeper.query.processor.record.retrieval.threads=10
+
+# This value is used to set the time-to-live on the tracking of the queries in the DynamoDB-based
+# query tracker.
+sleeper.query.tracker.ttl.days=1
+
+# The length of time the results of queries remain in the query results bucket before being deleted.
+sleeper.query.results.bucket.expiry.days=7
+
+# The default value of the rowgroup size used when the results of queries are written to Parquet
+# files. The value given below is 8MiB. This value can be overridden using the query config.
+sleeper.default.query.results.rowgroup.size=8388608
+
+# The default value of the page size used when the results of queries are written to Parquet files.
+# The value given below is 128KiB. This value can be overridden using the query config.
+sleeper.default.query.results.page.size=131072
+
+
+## The following properties relate to the dashboard.
+
+# The period in minutes used in the dashboard.
+sleeper.dashboard.time.window.minutes=5
+
+
+## The following properties relate to logging.
+
+# The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is
+# always set to INFO.
+# sleeper.logging.level=
+
+# The logging level for Apache logs that are not Parquet.
+# sleeper.logging.apache.level=
+
+# The logging level for Parquet logs.
+# sleeper.logging.parquet.level=
+
+# The logging level for AWS logs.
+# sleeper.logging.aws.level=
+
+# The logging level for everything else.
+# sleeper.logging.root.level=
+
+
+## The following properties relate to the integration with Athena.
+
+# The number of days before objects in the spill bucket are deleted.
+sleeper.athena.spill.bucket.ageoff.days=1
+
+# The fully qualified composite classes to deploy. These are the classes that interact with Athena.
+# You can choose to remove one if you don't need them. Both are deployed by default.
+sleeper.athena.handler.classes=sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler
+
+# The amount of memory (GB) the athena composite handler has.
+sleeper.athena.handler.memory=4096
+
+# The timeout in seconds for the athena composite handler.
+sleeper.athena.handler.timeout.seconds=900
+
+
+## The following properties relate to default values used by table properties.
+
+# The readahead range set on the Hadoop configuration when reading Parquet files in a query
+# (see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).
+sleeper.default.fs.s3a.readahead.range=64K
+
+# The size of the row group in the Parquet files (default is 8MiB).
+sleeper.default.rowgroup.size=8388608
+
+# The size of the pages in the Parquet files (default is 128KiB).
+sleeper.default.page.size=131072
+
+# The compression codec to use in the Parquet files.
+# Valid values are: [uncompressed, snappy, gzip, lzo, brotli, lz4, zstd]
+sleeper.default.compression.codec=zstd
+
+# Whether dictionary encoding should be used for row key columns in the Parquet files.
+sleeper.default.parquet.dictionary.encoding.rowkey.fields=false
+
+# Whether dictionary encoding should be used for sort key columns in the Parquet files.
+sleeper.default.parquet.dictionary.encoding.sortkey.fields=false
+
+# Whether dictionary encoding should be used for value columns in the Parquet files.
+sleeper.default.parquet.dictionary.encoding.value.fields=false
+
+# Used to set parquet.columnindex.truncate.length, see documentation here:
+# https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
+# The length in bytes to truncate binary values in a column index.
+sleeper.default.parquet.columnindex.truncate.length=128
+
+# Used to set parquet.statistics.truncate.length, see documentation here:
+# https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md
+# The length in bytes to truncate the min/max binary values in row groups.
+sleeper.default.parquet.statistics.truncate.length=2147483647
+
+# This specifies whether point in time recovery is turned on for DynamoDB tables. This default can be
+# overridden by a table property.
+sleeper.default.table.dynamo.pointintimerecovery=false
+
+# This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store
+# are strongly consistent. This default can be overridden by a table property.
+sleeper.default.table.dynamo.strongly.consistent.reads=false
+
+# Specifies the minimum number of leaf partitions that are needed to run a bulk import job. If this
+# minimum has not been reached, bulk import jobs will refuse to start.
+sleeper.default.bulk.import.min.leaf.partitions=64
+
+# Specifies the minimum total file size required for an ingest job to be batched and sent. An ingest
+# job will be created if the batcher runs while this much data is waiting, and the minimum number of
+# files is also met.
+sleeper.default.ingest.batcher.job.min.size=1G
+
+# Specifies the maximum total file size for a job in the ingest batcher. If more data is waiting than
+# this, it will be split into multiple jobs. If a single file exceeds this, it will still be ingested
+# in its own job. It's also possible some data may be left for a future run of the batcher if some
+# recent files overflow the size of a job but aren't enough to create a job on their own.
+sleeper.default.ingest.batcher.job.max.size=5G
+
+# Specifies the minimum number of files for a job in the ingest batcher. An ingest job will be created
+# if the batcher runs while this many files are waiting, and the minimum size of files is also met.
+sleeper.default.ingest.batcher.job.min.files=1
+
+# Specifies the maximum number of files for a job in the ingest batcher. If more files are waiting
+# than this, they will be split into multiple jobs. It's possible some data may be left for a future
+# run of the batcher if some recent files overflow the size of a job but aren't enough to create a job
+# on their own.
+sleeper.default.ingest.batcher.job.max.files=100
+
+# Specifies the maximum time in seconds that a file can be held in the batcher before it will be
+# included in an ingest job. When any file has been waiting for longer than this, jobs will be created
+# for all the currently held files, even if other criteria for a batch are not met.
+sleeper.default.ingest.batcher.file.max.age.seconds=300
+
+# Specifies the target ingest queue where batched jobs are sent.
+# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks]
+sleeper.default.ingest.batcher.ingest.mode=standard_ingest
+
+# The time in minutes that the tracking information is retained for a file before the records of its
+# ingest are deleted (eg. which ingest job it was assigned to, the time this occurred, the size of the
+# file).
+# The expiry time is fixed when a file is saved to the store, so changing this will only affect new
+# data.
+# Defaults to 1 week.
+sleeper.default.ingest.batcher.file.tracking.ttl.minutes=10080

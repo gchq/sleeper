@@ -89,7 +89,7 @@ public class InvokeCdkForInstance {
         int exitCode = runCommand.run(command.toArray(new String[0]));
 
         if (exitCode != 0) {
-            throw new IOException("Failed invoking CDK");
+            throw new CdkFailedException(exitCode);
         }
     }
 

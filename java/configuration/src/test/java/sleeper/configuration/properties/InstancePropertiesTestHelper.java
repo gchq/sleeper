@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -29,7 +30,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOU
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class InstancePropertiesTestHelper {
@@ -38,7 +39,14 @@ public class InstancePropertiesTestHelper {
     }
 
     public static InstanceProperties createTestInstanceProperties(AmazonS3 s3) {
+        return createTestInstanceProperties(s3, properties -> {
+        });
+    }
+
+    public static InstanceProperties createTestInstanceProperties(
+            AmazonS3 s3, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties instanceProperties = createTestInstanceProperties();
+        extraProperties.accept(instanceProperties);
         try {
             s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
             instanceProperties.saveToS3(s3);
@@ -58,7 +66,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(REGION, "");
         instanceProperties.set(VERSION, "");
         instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNET, "");
+        instanceProperties.set(SUBNETS, "");
         return instanceProperties;
     }
 
