@@ -54,13 +54,9 @@ public class IngestJobMessageHandler {
     }
 
     public Optional<IngestJob> handleMessage(String message) {
-        Optional<IngestJob> jobOptional = deserialiseAndValidate(message, new IngestJobSerDe()::fromJson,
-                IngestJob::getValidationFailures, ingestJobStatusStore, invalidJobIdSupplier, timeSupplier);
-        if (jobOptional.isPresent()) {
-            return expandDirectories(jobOptional.get());
-        } else {
-            return Optional.empty();
-        }
+        return deserialiseAndValidate(message, new IngestJobSerDe()::fromJson,
+                IngestJob::getValidationFailures, ingestJobStatusStore, invalidJobIdSupplier, timeSupplier)
+                .flatMap(this::expandDirectories);
     }
 
     private Optional<IngestJob> expandDirectories(IngestJob ingestJob) {
