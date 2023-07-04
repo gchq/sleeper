@@ -61,13 +61,13 @@ public class IngestJobMessageHandler {
     public Optional<IngestJob> handleMessage(String message) {
         try {
             IngestJob ingestJob = new IngestJobSerDe().fromJson(message);
-            List<String> modelValidationFailures = ingestJob.validate();
-            if (modelValidationFailures.isEmpty()) {
+            List<String> validationFailures = ingestJob.getValidationFailures();
+            if (validationFailures.isEmpty()) {
                 return expandDirectories(ingestJob);
             } else {
                 ingestJobStatusStore.jobValidated(
                         ingestJobRejected(invalidJobIdSupplier.get(), message, timeSuppler.get(),
-                                modelValidationFailures.stream()
+                                validationFailures.stream()
                                         .map(failure -> "Model validation failed. " + failure)
                                         .collect(Collectors.toList())));
                 return Optional.empty();

@@ -45,7 +45,7 @@ public class IngestJob {
         return new Builder();
     }
 
-    public List<String> validate() {
+    public List<String> getValidationFailures() {
         List<String> validationFailures = new ArrayList<>();
         if (files == null) {
             validationFailures.add("Missing property \"files\"");
