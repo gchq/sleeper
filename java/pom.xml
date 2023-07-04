@@ -136,7 +136,7 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.24.1</assertj.version>
-        <jsonunit.version>2.36.0</jsonunit.version>
+        <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
         <sleeper.system.test.instance.id/>
         <sleeper.system.test.vpc.id/>
