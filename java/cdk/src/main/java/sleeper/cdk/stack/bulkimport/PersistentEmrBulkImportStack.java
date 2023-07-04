@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
 import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
@@ -191,14 +192,14 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                                         .instanceType(config.getInstanceType())
                                         .weightedCapacity(config.getWeightedCapacity())
                                         .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, ConfigurationUtils.Architecture.X86_64))
+                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
                                         .build()),
                         readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES))
                                 .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
                                         .instanceType(config.getInstanceType())
                                         .weightedCapacity(config.getWeightedCapacity())
                                         .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, ConfigurationUtils.Architecture.ARM64))
+                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
                                         .build()))
                 .collect(Collectors.toList());
     }
@@ -211,14 +212,14 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                                         .instanceType(config.getInstanceType())
                                         .weightedCapacity(config.getWeightedCapacity())
                                         .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, ConfigurationUtils.Architecture.X86_64))
+                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
                                         .build()),
                         readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
                                 .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
                                         .instanceType(config.getInstanceType())
                                         .weightedCapacity(config.getWeightedCapacity())
                                         .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, ConfigurationUtils.Architecture.ARM64))
+                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
                                         .build()))
                 .collect(Collectors.toList());
     }
