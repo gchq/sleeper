@@ -121,4 +121,11 @@
         <filePath regex="true">^.*/avro-ipc-1\.11\.1\.jar/.*$</filePath>
         <cve>CVE-2012-6708</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Janino is used by Spark SQL to compile SQL. We don't expose that, so it won't be a problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.janino/commons\-compiler@.*$</packageUrl>
+        <cve>CVE-2023-33546</cve>
+    </suppress>
 </suppressions>
