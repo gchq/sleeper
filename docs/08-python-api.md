@@ -94,8 +94,8 @@ platform_spec = {
     "sleeper.table.bulk.import.emr.executor.initial.instances": "1",
     "sleeper.table.bulk.import.emr.executor.max.instances": "10",
     "sleeper.table.bulk.import.emr.release.label": "emr-6.10.0",
-    "sleeper.table.bulk.import.emr.master.instance.type": "m5.xlarge",
-    "sleeper.table.bulk.import.emr.executor.instance.type": "m5.4xlarge",
+    "sleeper.table.bulk.import.emr.master.x86.instance.type": "m5.xlarge",
+    "sleeper.table.bulk.import.emr.executor.x86.instance.type": "m5.4xlarge",
     "sleeper.table.bulk.import.emr.executor.market.type": "SPOT" // Use "ON_DEMAND" for on demand instances
 }
 

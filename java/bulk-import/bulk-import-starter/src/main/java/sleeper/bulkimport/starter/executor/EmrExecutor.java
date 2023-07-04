@@ -17,7 +17,6 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.Application;
-import com.amazonaws.services.elasticmapreduce.model.Configuration;
 import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
@@ -34,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -43,11 +41,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -124,7 +118,6 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withLogUri(logUri)
                 .withServiceRole(instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
                 .withJobFlowRole(instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME))
-                .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
@@ -160,55 +153,5 @@ public class EmrExecutor extends AbstractEmrExecutor {
             config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
         }
         return config;
-    }
-
-    private List<Configuration> getConfigurations() {
-        List<Configuration> configurations = new ArrayList<>();
-
-        Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
-        Configuration emrConfiguration = new Configuration()
-                .withClassification("spark")
-                .withProperties(emrSparkProps);
-        configurations.add(emrConfiguration);
-
-        Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
-        Configuration yarnConfiguration = new Configuration()
-                .withClassification("yarn-site")
-                .withProperties(yarnConf);
-        configurations.add(yarnConfiguration);
-
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties);
-        Configuration sparkDefaultsConfigurations = new Configuration()
-                .withClassification("spark-defaults")
-                .withProperties(sparkConf);
-        configurations.add(sparkDefaultsConfigurations);
-
-        Map<String, String> sparkExecutorJavaHome = new HashMap<>();
-        sparkExecutorJavaHome.put("JAVA_HOME", ConfigurationUtils.getJavaHome());
-        Configuration sparkEnvExportConfigurations = new Configuration()
-                .withClassification("export")
-                .withProperties(sparkExecutorJavaHome);
-        Configuration sparkEnvConfigurations = new Configuration()
-                .withClassification("spark-env")
-                .withConfigurations(sparkEnvExportConfigurations);
-        configurations.add(sparkEnvConfigurations);
-
-        Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
-        Configuration mapRedSiteConfigurations = new Configuration()
-                .withClassification("mapred-site")
-                .withProperties(mapReduceSiteConf);
-        configurations.add(mapRedSiteConfigurations);
-
-        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration();
-
-        Configuration hadoopEnvExportConfigurations = new Configuration()
-                .withClassification("export")
-                .withProperties(javaHomeConf);
-        Configuration hadoopEnvConfigurations = new Configuration()
-                .withClassification("hadoop-env")
-                .withConfigurations(hadoopEnvExportConfigurations);
-        configurations.add(hadoopEnvConfigurations);
-
-        return configurations;
     }
 }
