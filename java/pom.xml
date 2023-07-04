@@ -91,6 +91,8 @@
         <avro.version>1.11.1</avro.version>
         <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
         <json-smart.version>2.4.11</json-smart.version>
+        <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
+        <kerby.version>2.0.3</kerby.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.20.95</aws-java-sdk-v2.version>
         <aws-crt.version>0.22.2</aws-crt.version>
@@ -381,6 +383,16 @@
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
                 <version>${json-smart.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerb-core</artifactId>
+                <version>${kerby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kerby</groupId>
+                <artifactId>kerb-simplekdc</artifactId>
+                <version>${kerby.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
