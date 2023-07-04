@@ -98,6 +98,8 @@
         Managed from a conflict between 1.6.20 and 1.5.31.
         -->
         <kotlin.version>1.8.22</kotlin.version>
+        <!-- Trino testing declares an old version. Managed from 1.2.3. -->
+        <logback.version>1.4.8</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.20.95</aws-java-sdk-v2.version>
         <aws-crt.version>0.22.2</aws-crt.version>
@@ -418,6 +420,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${logback.version}</version>
             </dependency>
             <!-- Apache commons -->
             <dependency>
