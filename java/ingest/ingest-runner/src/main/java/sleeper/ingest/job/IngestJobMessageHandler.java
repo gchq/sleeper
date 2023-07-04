@@ -16,10 +16,7 @@
 
 package sleeper.ingest.job;
 
-import com.google.gson.JsonParseException;
 import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -30,17 +27,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
+import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
 
 public class IngestJobMessageHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
     private final Configuration configuration;
     private final InstanceProperties instanceProperties;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final Supplier<String> invalidJobIdSupplier;
-    private final Supplier<Instant> timeSuppler;
+    private final Supplier<Instant> timeSupplier;
 
     public IngestJobMessageHandler(Configuration configuration, InstanceProperties instanceProperties,
                                    IngestJobStatusStore ingestJobStatusStore) {
@@ -55,28 +50,15 @@ public class IngestJobMessageHandler {
         this.instanceProperties = instanceProperties;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.invalidJobIdSupplier = invalidJobIdSupplier;
-        this.timeSuppler = timeSupplier;
+        this.timeSupplier = timeSupplier;
     }
 
     public Optional<IngestJob> handleMessage(String message) {
-        try {
-            IngestJob ingestJob = new IngestJobSerDe().fromJson(message);
-            List<String> validationFailures = ingestJob.getValidationFailures();
-            if (validationFailures.isEmpty()) {
-                return expandDirectories(ingestJob);
-            } else {
-                ingestJobStatusStore.jobValidated(
-                        ingestJobRejected(invalidJobIdSupplier.get(), message, timeSuppler.get(),
-                                validationFailures.stream()
-                                        .map(failure -> "Model validation failed. " + failure)
-                                        .collect(Collectors.toList())));
-                return Optional.empty();
-            }
-        } catch (JsonParseException e) {
-            LOGGER.error("Could not deserialize message {}, ", message, e);
-            ingestJobStatusStore.jobValidated(
-                    ingestJobRejected(invalidJobIdSupplier.get(), message, timeSuppler.get(),
-                            "Error parsing JSON. Reason: " + e.getCause().getMessage()));
+        Optional<IngestJob> jobOptional = deserialiseAndValidate(message, new IngestJobSerDe()::fromJson,
+                IngestJob::getValidationFailures, ingestJobStatusStore, invalidJobIdSupplier, timeSupplier);
+        if (jobOptional.isPresent()) {
+            return expandDirectories(jobOptional.get());
+        } else {
             return Optional.empty();
         }
     }
