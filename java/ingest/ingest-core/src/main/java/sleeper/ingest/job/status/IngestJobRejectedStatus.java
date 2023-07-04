@@ -94,7 +94,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
                 ", updateTime=" + updateTime +
                 ", inputFileCount=" + inputFileCount +
                 ", reasons=" + reasons +
-                ", jsonMessage=" + jsonMessage +
+                ", jsonMessage=\"" + jsonMessage + "\"" +
                 '}';
     }
 

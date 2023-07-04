@@ -35,13 +35,19 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
@@ -52,8 +58,10 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     private final Executor executor;
     private final Configuration hadoopConfig;
-    private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
     private final InstanceProperties instanceProperties;
+    private final IngestJobStatusStore ingestJobStatusStore;
+    private final Supplier<String> invalidJobIdSupplier;
+    private final Supplier<Instant> timeSupplier;
 
     public BulkImportStarterLambda() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(),
@@ -70,17 +78,21 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     public BulkImportStarterLambda(InstanceProperties properties, AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
                                    AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) {
         this(new ExecutorFactory(properties, s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor(),
-                properties);
+                properties, new Configuration(), new DynamoDBIngestJobStatusStore(dynamoDB, properties));
     }
 
-    public BulkImportStarterLambda(Executor executor, InstanceProperties properties) {
-        this(executor, properties, new Configuration());
+    public BulkImportStarterLambda(Executor executor, InstanceProperties properties, Configuration hadoopConfig, IngestJobStatusStore ingestJobStatusStore) {
+        this(executor, properties, hadoopConfig, ingestJobStatusStore, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
-    public BulkImportStarterLambda(Executor executor, InstanceProperties properties, Configuration hadoopConfig) {
+    public BulkImportStarterLambda(Executor executor, InstanceProperties properties, Configuration hadoopConfig, IngestJobStatusStore ingestJobStatusStore,
+                                   Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
         this.executor = executor;
         this.instanceProperties = properties;
         this.hadoopConfig = hadoopConfig;
+        this.ingestJobStatusStore = ingestJobStatusStore;
+        this.invalidJobIdSupplier = invalidJobIdSupplier;
+        this.timeSupplier = timeSupplier;
     }
 
     private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) throws IOException {
@@ -94,7 +106,11 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         LOGGER.info("Received request: {}", event);
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
-                .map(bulkImportJobSerDe::fromJson)
+                .map(message -> deserialiseAndValidate(message, new BulkImportJobSerDe()::fromJson,
+                        job -> job.toIngestJob().getValidationFailures(), ingestJobStatusStore,
+                        invalidJobIdSupplier, timeSupplier))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .map(this::expandDirectories)
                 .filter(Optional::isPresent)
                 .map(Optional::get)

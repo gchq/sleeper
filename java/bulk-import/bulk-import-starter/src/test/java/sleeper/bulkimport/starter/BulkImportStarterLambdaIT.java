@@ -39,14 +39,20 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
+import java.time.Instant;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 @Testcontainers
 public class BulkImportStarterLambdaIT {
@@ -81,7 +87,7 @@ public class BulkImportStarterLambdaIT {
     class ExpandDirectories {
         Executor executor = mock(Executor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                new InstanceProperties(), createHadoopConfiguration());
+                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
 
         @Test
         void shouldExpandDirectoryWithOneFileInside() {
@@ -159,6 +165,32 @@ public class BulkImportStarterLambdaIT {
         }
     }
 
+    @Nested
+    @DisplayName("Report validation failures")
+    class ReportValidationFailures {
+        Executor executor = mock(Executor.class);
+        IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+
+        @Test
+        void shouldReportValidationFailureIfJsonInvalid() {
+            // Given
+            String json = "{";
+            SQSEvent event = getSqsEvent(json);
+
+            // When
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor, new InstanceProperties(),
+                    createHadoopConfiguration(), ingestJobStatusStore, () -> "test-job-id", () -> validationTime);
+            bulkImportStarter.handleRequest(event, mock(Context.class));
+
+            // Then
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(jobStatus("test-job-id",
+                            rejectedRun("test-job-id", json, validationTime,
+                                    "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
+        }
+    }
+
     @Test
     public void shouldNotCreateAImportStarterWithoutConfig() {
         // Given
@@ -178,7 +210,7 @@ public class BulkImportStarterLambdaIT {
         uploadFileToS3("test-1.parquet");
         Executor executor = mock(Executor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                new InstanceProperties(), createHadoopConfiguration());
+                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
         SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-1.parquet")));
 
         // When
@@ -191,9 +223,13 @@ public class BulkImportStarterLambdaIT {
     private SQSEvent getSqsEvent(BulkImportJob importJob) {
         BulkImportJobSerDe jobSerDe = new BulkImportJobSerDe();
         String jsonQuery = jobSerDe.toJson(importJob);
+        return getSqsEvent(jsonQuery);
+    }
+
+    private SQSEvent getSqsEvent(String message) {
         SQSEvent event = new SQSEvent();
         SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage();
-        sqsMessage.setBody(jsonQuery);
+        sqsMessage.setBody(message);
         event.setRecords(Lists.newArrayList(
                 sqsMessage
         ));
