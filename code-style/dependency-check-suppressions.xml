@@ -125,7 +125,7 @@
         <notes><![CDATA[
         Janino is used by Spark SQL to compile SQL. We don't expose that, so it won't be a problem.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.janino/commons\-compiler@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.janino/(commons\-compiler|janino)@.*$</packageUrl>
         <cve>CVE-2023-33546</cve>
     </suppress>
     <suppress>
