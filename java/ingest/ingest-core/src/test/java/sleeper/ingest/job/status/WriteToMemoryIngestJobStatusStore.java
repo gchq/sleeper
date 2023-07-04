@@ -47,10 +47,14 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     private static IngestJobValidatedStatus validatedStatus(IngestJobValidatedEvent event) {
         if (event.isAccepted()) {
-            return IngestJobAcceptedStatus.from(event.getValidationTime(),
+            return IngestJobAcceptedStatus.from(
+                    event.getJob(),
+                    event.getValidationTime(),
                     defaultUpdateTime(event.getValidationTime()));
         } else {
-            return IngestJobRejectedStatus.builder().validationTime(event.getValidationTime())
+            return IngestJobRejectedStatus.builder()
+                    .job(event.getJob())
+                    .validationTime(event.getValidationTime())
                     .updateTime(defaultUpdateTime(event.getValidationTime()))
                     .reasons(event.getReasons()).build();
         }

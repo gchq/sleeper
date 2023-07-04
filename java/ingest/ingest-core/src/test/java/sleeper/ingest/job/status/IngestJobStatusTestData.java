@@ -57,8 +57,8 @@ public class IngestJobStatusTestData {
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(validationTime,
-                        defaultUpdateTime(validationTime)))
+                .startedStatus(IngestJobAcceptedStatus.from(job,
+                        validationTime, defaultUpdateTime(validationTime)))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
@@ -70,42 +70,45 @@ public class IngestJobStatusTestData {
             IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(validationTime,
-                        defaultUpdateTime(validationTime)))
+                .startedStatus(IngestJobAcceptedStatus.from(job,
+                        validationTime, defaultUpdateTime(validationTime)))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
                                 .inputFileCount(job.getFiles().size())
-                                .startTime(summary.getStartTime()).updateTime(defaultUpdateTime(summary.getStartTime())).build())
+                                .startTime(summary.getStartTime())
+                                .updateTime(defaultUpdateTime(summary.getStartTime())).build())
                 .finishedStatus(ProcessFinishedStatus
                         .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
                 .build();
     }
 
-    public static ProcessRun acceptedRun(Instant validationTime) {
+    public static ProcessRun acceptedRun(IngestJob job, Instant validationTime) {
         return ProcessRun.builder()
-                .startedStatus(IngestJobAcceptedStatus.from(validationTime,
-                        defaultUpdateTime(validationTime)))
+                .startedStatus(IngestJobAcceptedStatus.from(job,
+                        validationTime, defaultUpdateTime(validationTime)))
                 .build();
     }
 
-    public static ProcessRun acceptedRunOnTask(String taskId, Instant validationTime) {
+    public static ProcessRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(validationTime,
+                .startedStatus(IngestJobAcceptedStatus.from(job, validationTime,
                         defaultUpdateTime(validationTime)))
                 .build();
     }
 
-    public static ProcessRun rejectedRun(Instant validationTime, String... reasons) {
-        return rejectedRun(validationTime, List.of(reasons));
+    public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String... reasons) {
+        return rejectedRun(job, validationTime, List.of(reasons));
     }
 
-    public static ProcessRun rejectedRun(Instant validationTime, List<String> reasons) {
+    public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {
         return ProcessRun.builder()
                 .startedStatus(IngestJobRejectedStatus.builder()
                         .validationTime(validationTime)
                         .updateTime(defaultUpdateTime(validationTime))
-                        .reasons(reasons).build())
+                        .reasons(reasons)
+                        .job(job)
+                        .build())
                 .build();
     }
 

@@ -121,7 +121,7 @@ public class CompactionJobStatus {
     }
 
     public List<ProcessRun> getJobRuns() {
-        return jobRuns.getRunList();
+        return jobRuns.getRunsLatestFirst();
     }
 
     public Optional<ProcessRun> getLatestRun() {

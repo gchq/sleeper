@@ -22,6 +22,7 @@ import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -67,8 +68,10 @@ public class IngestJobStatus {
 
     public int getInputFilesCount() {
         return jobRuns.getLatestRun()
-                .map(run -> (IngestJobStartedStatus) run.getStartedStatus())
-                .map(IngestJobStartedStatus::getInputFileCount)
+                .map(ProcessRun::getStartedStatus)
+                .filter(startedUpdate -> startedUpdate instanceof IngestJobInfoStatus)
+                .map(startedUpdate -> (IngestJobInfoStatus) startedUpdate)
+                .map(IngestJobInfoStatus::getInputFileCount)
                 .orElse(0);
     }
 
@@ -81,11 +84,19 @@ public class IngestJobStatus {
     }
 
     public List<ProcessRun> getJobRuns() {
-        return jobRuns.getRunList();
+        return jobRuns.getRunsLatestFirst();
     }
 
     public boolean isFinished() {
         return jobRuns.isFinished();
+    }
+
+    public IngestJobStatusType getFurthestStatusType() {
+        return jobRuns.getRunsLatestFirst().stream()
+                .map(ProcessRun::getLatestUpdate)
+                .map(IngestJobStatusType::of)
+                .max(Comparator.comparing(IngestJobStatusType::getOrder))
+                .orElseThrow();
     }
 
     public boolean isInPeriod(Instant startTime, Instant endTime) {

@@ -15,13 +15,12 @@
  */
 package sleeper.ingest.job.status;
 
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
+public class IngestJobStartedStatus implements IngestJobInfoStatus {
 
     private final int inputFileCount;
     private final Instant startTime;
@@ -44,12 +43,7 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
     }
 
     public static IngestJobStartedStatus startAndUpdateTime(IngestJob job, Instant startTime, Instant updateTime) {
-        return inputFileCountStartAndUpdateTime(job.getFiles().size(), startTime, updateTime);
-    }
-
-    public static IngestJobStartedStatus inputFileCountStartAndUpdateTime(int inputFileCount, Instant startTime, Instant updateTime) {
-        return builder()
-                .inputFileCount(inputFileCount)
+        return withStartOfRun(true).job(job)
                 .startTime(startTime).updateTime(updateTime)
                 .build();
     }
@@ -110,6 +104,10 @@ public class IngestJobStartedStatus implements ProcessRunStartedUpdate {
         private boolean isStartOfRun = true;
 
         public Builder() {
+        }
+
+        public Builder job(IngestJob job) {
+            return inputFileCount(job.getFiles().size());
         }
 
         public Builder inputFileCount(int inputFileCount) {

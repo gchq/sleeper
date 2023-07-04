@@ -16,20 +16,28 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.ingest.job.IngestJob;
+
 import java.time.Instant;
 import java.util.Objects;
 
 public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     private final Instant validationTime;
     private final Instant updateTime;
+    private final int inputFileCount;
 
-    private IngestJobAcceptedStatus(Instant validationTime, Instant updateTime) {
+    private IngestJobAcceptedStatus(int inputFileCount, Instant validationTime, Instant updateTime) {
         this.validationTime = Objects.requireNonNull(validationTime, "validationTime must not be null");
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
+        this.inputFileCount = inputFileCount;
     }
 
-    public static IngestJobAcceptedStatus from(Instant validationTime, Instant updateTime) {
-        return new IngestJobAcceptedStatus(validationTime, updateTime);
+    public static IngestJobAcceptedStatus from(IngestJob job, Instant validationTime, Instant updateTime) {
+        return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime, updateTime);
+    }
+
+    public static IngestJobAcceptedStatus from(int inputFileCount, Instant validationTime, Instant updateTime) {
+        return new IngestJobAcceptedStatus(inputFileCount, validationTime, updateTime);
     }
 
     @Override
@@ -40,6 +48,10 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
     @Override
     public Instant getUpdateTime() {
         return updateTime;
+    }
+
+    public int getInputFileCount() {
+        return inputFileCount;
     }
 
     @Override
@@ -56,13 +68,14 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
             return false;
         }
         IngestJobAcceptedStatus that = (IngestJobAcceptedStatus) o;
-        return Objects.equals(validationTime, that.validationTime)
+        return inputFileCount == that.inputFileCount
+                && Objects.equals(validationTime, that.validationTime)
                 && Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(validationTime, updateTime);
+        return Objects.hash(validationTime, updateTime, inputFileCount);
     }
 
     @Override
@@ -70,6 +83,7 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
         return "IngestJobAcceptedStatus{" +
                 "validationTime=" + validationTime +
                 ", updateTime=" + updateTime +
+                ", inputFileCount=" + inputFileCount +
                 '}';
     }
 }
