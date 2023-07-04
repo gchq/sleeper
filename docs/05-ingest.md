@@ -240,7 +240,7 @@ Multiple instance types can be specified separated by commas. One instance will 
 
 For executor nodes, you can assign weights to instance types to define the amount of capacity that each instance type provides.
 By default, each instance type delivers a capacity of 1. You can set custom weights for an instance type by adding a number
-after the instance type in this comma separated list. This must be a whole number
+after the instance type in this comma separated list. This must be a whole number.
 
 For example:
 ```properties
@@ -250,7 +250,7 @@ The above configuration would tell EMR that an m5.4xlarge instance would provide
 The m5.xlarge instance type does not have a weight, so is defaulted to 1. In this example, if you set the 
 initial executor capacity to 3, EMR could fulfil that with one instance of m5.4xlarge, or 3 instances of m5.xlarge.
 
-More information about instance fleet options can be found [here](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options)
+More information about instance fleet options can be found [here](https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-instance-fleet.html#emr-instance-fleet-options).
 
 #### Bulk import on persistent EMR
 
