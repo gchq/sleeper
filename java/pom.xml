@@ -93,6 +93,11 @@
         <json-smart.version>2.4.11</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
         <kerby.version>2.0.3</kerby.version>
+        <!--
+        OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
+        Managed from a conflict between 1.6.20 and 1.5.31.
+        -->
+        <kotlin.version>1.8.22</kotlin.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.20.95</aws-java-sdk-v2.version>
         <aws-crt.version>0.22.2</aws-crt.version>
@@ -393,6 +398,21 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-simplekdc</artifactId>
                 <version>${kerby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${kotlin.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
