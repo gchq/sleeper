@@ -100,7 +100,7 @@
         <commons-io.version>2.13.0</commons-io.version>
         <commons-configuration.version>2.9.0</commons-configuration.version>
         <commons-text.version>1.10.0</commons-text.version>
-        <commons-compiler.version>3.1.9</commons-compiler.version>
+        <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.15.2</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
@@ -409,7 +409,12 @@
             <dependency>
                 <groupId>org.codehaus.janino</groupId>
                 <artifactId>commons-compiler</artifactId>
-                <version>${commons-compiler.version}</version>
+                <version>${janino.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.janino</groupId>
+                <artifactId>janino</artifactId>
+                <version>${janino.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-net</groupId>
