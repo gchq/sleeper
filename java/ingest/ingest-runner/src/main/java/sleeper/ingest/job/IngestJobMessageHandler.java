@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
@@ -60,11 +61,22 @@ public class IngestJobMessageHandler {
     public Optional<IngestJob> handleMessage(String message) {
         try {
             IngestJob ingestJob = new IngestJobSerDe().fromJson(message);
-            return expandDirectories(ingestJob);
+            List<String> modelValidationFailures = ingestJob.validate();
+            if (modelValidationFailures.isEmpty()) {
+                return expandDirectories(ingestJob);
+            } else {
+                ingestJobStatusStore.jobValidated(
+                        ingestJobRejected(invalidJobIdSupplier.get(), message, timeSuppler.get(),
+                                modelValidationFailures.stream()
+                                        .map(failure -> "Model validation failed. " + failure)
+                                        .collect(Collectors.toList())));
+                return Optional.empty();
+            }
         } catch (JsonParseException e) {
             LOGGER.error("Could not deserialize message {}, ", message, e);
-            ingestJobStatusStore.jobValidated(ingestJobRejected(invalidJobIdSupplier.get(), message, timeSuppler.get(),
-                    "Error parsing JSON. Reason: " + e.getCause().getMessage()));
+            ingestJobStatusStore.jobValidated(
+                    ingestJobRejected(invalidJobIdSupplier.get(), message, timeSuppler.get(),
+                            "Error parsing JSON. Reason: " + e.getCause().getMessage()));
             return Optional.empty();
         }
     }
