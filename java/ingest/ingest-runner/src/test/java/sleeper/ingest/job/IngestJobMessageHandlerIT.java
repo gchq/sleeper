@@ -31,11 +31,16 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {
@@ -45,7 +50,6 @@ public class IngestJobMessageHandlerIT {
             .withServices(LocalStackContainer.Service.S3);
     private final AmazonS3 s3Client = createS3Client();
     private final InstanceProperties properties = new InstanceProperties();
-    private final IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(createHadoopConfiguration(), properties);
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -69,6 +73,10 @@ public class IngestJobMessageHandlerIT {
     @Nested
     @DisplayName("Expand directories")
     class ExpandDirectories {
+        IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+        IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
+                createHadoopConfiguration(), properties, ingestJobStatusStore);
+
         @Test
         void shouldExpandDirectoryWithOneFileInside() {
             // Given
@@ -169,6 +177,30 @@ public class IngestJobMessageHandlerIT {
 
             // Then
             assertThat(job).isNotPresent();
+        }
+    }
+
+    @Nested
+    @DisplayName("Report validation failures")
+    class ReportValidationFailures {
+        @Test
+        void shouldReportValidationFailureIfJsonInvalid() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+            IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
+                    createHadoopConfiguration(), properties, ingestJobStatusStore,
+                    () -> "test-job-id", () -> validationTime);
+            String json = "{";
+
+            // When
+            ingestJobMessageHandler.handleMessage(json);
+
+            // Then
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(jobStatus("test-job-id",
+                            rejectedRun("test-job-id", json, validationTime,
+                                    "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
         }
     }
 

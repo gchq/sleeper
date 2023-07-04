@@ -28,6 +28,7 @@ public class IngestJobValidatedEvent {
     private final List<String> reasons;
     private final String jobRunId;
     private final String taskId;
+    private final String jsonMessage;
 
     private IngestJobValidatedEvent(Builder builder) {
         job = Objects.requireNonNull(builder.job, "job must not be null");
@@ -35,10 +36,16 @@ public class IngestJobValidatedEvent {
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
         jobRunId = builder.jobRunId;
         taskId = builder.taskId;
+        jsonMessage = builder.jsonMessage;
     }
 
     public static Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
         return builder().job(job).validationTime(validationTime).reasons(List.of());
+    }
+
+    public static IngestJobValidatedEvent ingestJobRejected(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
+        return builder().job(IngestJob.builder().id(jobId).build()).validationTime(validationTime)
+                .jsonMessage(jsonMessage).reasons(reasons).build();
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, String... reasons) {
@@ -77,6 +84,10 @@ public class IngestJobValidatedEvent {
         return reasons;
     }
 
+    public String getJsonMessage() {
+        return jsonMessage;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -86,12 +97,17 @@ public class IngestJobValidatedEvent {
             return false;
         }
         IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
-        return Objects.equals(job, that.job) && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
+        return Objects.equals(job, that.job)
+                && Objects.equals(validationTime, that.validationTime)
+                && Objects.equals(reasons, that.reasons)
+                && Objects.equals(jobRunId, that.jobRunId)
+                && Objects.equals(taskId, that.taskId)
+                && Objects.equals(jsonMessage, that.jsonMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(job, validationTime, reasons, jobRunId, taskId);
+        return Objects.hash(job, validationTime, reasons, jobRunId, taskId, jsonMessage);
     }
 
     @Override
@@ -102,6 +118,7 @@ public class IngestJobValidatedEvent {
                 ", reasons=" + reasons +
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +
+                ", jsonMessage='" + jsonMessage + '\'' +
                 '}';
     }
 
@@ -111,12 +128,9 @@ public class IngestJobValidatedEvent {
         private List<String> reasons;
         private String jobRunId;
         private String taskId;
+        private String jsonMessage;
 
         private Builder() {
-        }
-
-        public static Builder builder() {
-            return new Builder();
         }
 
         public Builder job(IngestJob job) {
@@ -145,6 +159,11 @@ public class IngestJobValidatedEvent {
 
         public Builder taskId(String taskId) {
             this.taskId = taskId;
+            return this;
+        }
+
+        public Builder jsonMessage(String jsonMessage) {
+            this.jsonMessage = jsonMessage;
             return this;
         }
 

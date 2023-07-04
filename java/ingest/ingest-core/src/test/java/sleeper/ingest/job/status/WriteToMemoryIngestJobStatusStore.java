@@ -57,7 +57,8 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                     .job(event.getJob())
                     .validationTime(event.getValidationTime())
                     .updateTime(defaultUpdateTime(event.getValidationTime()))
-                    .reasons(event.getReasons()).build();
+                    .reasons(event.getReasons())
+                    .jsonMessage(event.getJsonMessage()).build();
         }
     }
 
