@@ -242,7 +242,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             store.jobValidated(ingestJobRejected(job1, validationTime1, "Test validation reason"));
             store.jobValidated(ingestJobAccepted(job2, validationTime2).build());
 
-
             // Then
             assertThat(store.getInvalidJobs())
                     .containsExactly(jobStatus(job1, rejectedRun(job1,
@@ -281,9 +280,22 @@ public class WriteToMemoryIngestJobStatusStoreTest {
             store.jobValidated(ingestJobRejected(job1, validationTime1, "Test validation reason"));
             store.jobValidated(ingestJobAccepted(job1, validationTime2).build());
 
-
             // Then
             assertThat(store.getInvalidJobs()).isEmpty();
+        }
+
+        @Test
+        void shouldGetInvalidJobWithNoTable() {
+            // Given
+            IngestJob job = IngestJob.builder().id("test-job").build();
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+
+            // When
+            store.jobValidated(ingestJobRejected(job, validationTime, "Test validation reason"));
+
+            // Then
+            assertThat(store.getInvalidJobs()).containsExactly(
+                    jobStatus(job, rejectedRun(job, validationTime, "Test validation reason")));
         }
     }
 
