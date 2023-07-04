@@ -70,7 +70,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         printSummary(statusList, query, queueMessages, persistentEmrStepCount);
         if (!query.equals(JobQuery.Type.DETAILED)) {
             tableFactory.tableBuilder()
-                    .showFields(query != JobQuery.Type.UNFINISHED, runReporter.getFinishedFields())
+                    .showFields(query != JobQuery.Type.UNFINISHED && query != JobQuery.Type.REJECTED,
+                            runReporter.getFinishedFields())
                     .itemsAndSplittingWriter(statusList, this::writeJob)
                     .build().write(out);
         }
@@ -86,6 +87,8 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             printUnfinishedSummary(statusList, queueMessages, persistentEmrStepCount);
         } else if (queryType.equals(JobQuery.Type.RANGE)) {
             printRangeSummary(statusList, queueMessages);
+        } else if (queryType.equals(JobQuery.Type.REJECTED)) {
+            printRejectedSummary(statusList, queueMessages);
         }
     }
 
@@ -158,6 +161,11 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         queueMessages.print(out);
         out.printf("Total jobs in defined range: %d%n", statusList.size());
         AverageRecordRateReport.printf("Average ingest rate: %s%n", recordRate(statusList), out);
+    }
+
+    private void printRejectedSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages) {
+        queueMessages.print(out);
+        out.printf("Total jobs rejected: %d%n", statusList.size());
     }
 
     private static AverageRecordRate recordRate(List<IngestJobStatus> jobs) {

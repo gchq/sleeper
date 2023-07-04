@@ -61,7 +61,8 @@ public interface JobQuery {
         ALL,
         DETAILED,
         RANGE,
-        UNFINISHED;
+        UNFINISHED,
+        REJECTED;
 
         public boolean isParametersRequired() {
             return this == DETAILED;
