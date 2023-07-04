@@ -135,4 +135,13 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.hive/hive\-storage\-api@.*$</packageUrl>
         <cve>CVE-2021-34538</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This is a stack overflow caused by trying to build JSON from a data structure with cyclic dependencies.
+        There's no version of Jackson available with a fix yet, and it seems very unlikely that there's a case where
+        this could happen in Sleeper.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>
 </suppressions>
