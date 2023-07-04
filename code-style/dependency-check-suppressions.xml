@@ -112,4 +112,13 @@
         <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk\.crt/aws\-crt@.*$</packageUrl>
         <cve>CVE-2022-31159</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        At time of writing, the latest version of Avro IPC uses an old version of jQuery in its static pages for stats.
+        We don't expose that page, so it won't be a problem.
+        This is a provided dependency for the module bulk-import/bulk-import-runner.
+        ]]></notes>
+        <filePath regex="true">^.*/avro-ipc-1\.11\.1\.jar/.*$</filePath>
+        <cve>CVE-2012-6708</cve>
+    </suppress>
 </suppressions>
