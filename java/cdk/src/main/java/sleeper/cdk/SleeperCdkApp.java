@@ -42,6 +42,7 @@ import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
+import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
 
@@ -128,6 +129,18 @@ public class SleeperCdkApp extends Stack {
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
                     instanceProperties, bulkImportBucketStack, tableStack, ingestStatusStoreStack);
+        }
+
+        // Stack to run bulk import jobs via EMR Serverless
+        if (optionalStacks.contains(EmrServerlessBulkImportStack.class.getSimpleName())) {
+            new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
+                    instanceProperties, jars,
+                    bulkImportBucketStack,
+                    emrBulkImportCommonStack,
+                    topicStack,
+                    tableStack.getStateStoreStacks(),
+                    ingestStatusStoreStack.getResources()
+            );
         }
 
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
