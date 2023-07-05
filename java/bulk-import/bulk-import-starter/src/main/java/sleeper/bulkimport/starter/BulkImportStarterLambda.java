@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
@@ -52,58 +53,26 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarterLambda.class);
 
-    private final Executor executor;
+    private final BulkImportExecutor executor;
     private final Configuration hadoopConfig;
     private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
     private final InstanceProperties instanceProperties;
 
     public BulkImportStarterLambda() throws IOException {
-        this(AmazonS3ClientBuilder.defaultClient(),
-                AmazonElasticMapReduceClientBuilder.defaultClient(),
-                AWSStepFunctionsClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient());
-    }
-
-    public BulkImportStarterLambda(AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
-                                   AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
-        this(loadInstanceProperties(s3Client), s3Client, emrClient, stepFunctionsClient, dynamoDB);
-    }
-
-    public BulkImportStarterLambda(InstanceProperties properties, AmazonS3 s3Client, AmazonElasticMapReduce emrClient,
-                                   AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) {
-        this(new ExecutorFactory(properties, s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor(),
-                properties);
-    }
-
-    public BulkImportStarterLambda(Executor executor, InstanceProperties properties) {
-        this(executor, properties, new Configuration());
-    }
-
-    public BulkImportStarterLambda(Executor executor, InstanceProperties properties, Configuration hadoopConfig) {
-        this.executor = executor;
-        this.instanceProperties = properties;
-        this.hadoopConfig = hadoopConfig;
-    }
-
-    private BulkImportStarterLambda(Builder builder) {
-        executor = builder.executor;
-        hadoopConfig = builder.hadoopConfig;
-        instanceProperties = builder.instanceProperties;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public Builder withSystemEnvironment() throws IOException {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = loadInstanceProperties(s3);
+        instanceProperties = loadInstanceProperties(s3);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
-        return builder()
-                .instanceProperties(instanceProperties)
-                .hadoopConfig(new Configuration());
+        hadoopConfig = new Configuration();
+        executor = null;
+    }
+
+
+    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig) {
+        this.executor = executor;
+        this.instanceProperties = properties;
+        this.hadoopConfig = hadoopConfig;
     }
 
     @Override
@@ -133,33 +102,5 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
         return instanceProperties;
-    }
-
-    public static final class Builder {
-        private Executor executor;
-        private Configuration hadoopConfig;
-        private InstanceProperties instanceProperties;
-
-        private Builder() {
-        }
-
-        public Builder executor(Executor executor) {
-            this.executor = executor;
-            return this;
-        }
-
-        public Builder hadoopConfig(Configuration hadoopConfig) {
-            this.hadoopConfig = hadoopConfig;
-            return this;
-        }
-
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
-            return this;
-        }
-
-        public BulkImportStarterLambda build() {
-            return new BulkImportStarterLambda(this);
-        }
     }
 }
