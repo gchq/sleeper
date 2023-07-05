@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
-public abstract class CommonExecutor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommonExecutor.class);
+public class BulkImportExecutor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportExecutor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
 
     protected final InstanceProperties instanceProperties;
@@ -56,9 +56,9 @@ public abstract class CommonExecutor {
     protected final Supplier<Instant> validationTimeSupplier;
 
 
-    public CommonExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-                    StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                    PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
+    public BulkImportExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+                              StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
+                              PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -87,12 +87,12 @@ public abstract class CommonExecutor {
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        platformExecutor.runJobOnPlatform(bulkImportJob, jobRunId);
+        platformExecutor.runJobOnPlatform(this, bulkImportJob, jobRunId);
         LOGGER.info("Successfully submitted job");
     }
 
 
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
+    public List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         LOGGER.info("Using Spark config {}", userConfig);
 

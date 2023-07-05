@@ -41,6 +41,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.statestore.FixedStateStoreProvider;
@@ -415,7 +416,7 @@ class EmrExecutorTest {
         // Given
         tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "5");
         BulkImportJob myJob = singleFileJob();
-        EmrExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+        BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executor.runJob(myJob);
@@ -433,7 +434,7 @@ class EmrExecutorTest {
     void shouldReportJobRunIdToStatusStore() {
         // Given
         BulkImportJob myJob = singleFileJob();
-        EmrExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+        BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
 
         // When
         executor.runJob(myJob, "test-job-run");
@@ -454,7 +455,7 @@ class EmrExecutorTest {
         instanceProperties.set(JARS_BUCKET, "jarsBucket");
         instanceProperties.set(CONFIG_BUCKET, "configBucket");
         instanceProperties.set(VERSION, "1.2.3");
-        EmrExecutor executor = executorWithValidationTime(Instant.parse("2023-06-12T17:30:00Z"));
+        BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-12T17:30:00Z"));
         assertThat(executor.constructArgs(singleFileJob(), "test-run", "test-task"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
@@ -468,36 +469,38 @@ class EmrExecutorTest {
                         "test-run");
     }
 
-    private EmrExecutor executor() {
+    private BulkImportExecutor executor() {
         return executorWithInstanceConfiguration(new FakeEmrInstanceConfiguration());
     }
 
-    private EmrExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
+    private BulkImportExecutor executorWithInstanceConfiguration(EmrInstanceConfiguration configuration) {
         return executor(configuration, Instant::now);
     }
 
-    private EmrExecutor executorWithValidationTime(Instant validationTime) {
+    private BulkImportExecutor executorWithValidationTime(Instant validationTime) {
         return executor(new FakeEmrInstanceConfiguration(), List.of(validationTime).iterator()::next);
     }
 
-    private EmrExecutor executor(
+    private BulkImportExecutor executor(
             EmrInstanceConfiguration configuration, Supplier<Instant> validationTimeSupplier) {
-        return new EmrExecutor(emr, instanceProperties,
-                new FixedTablePropertiesProvider(tableProperties),
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
+        return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
-                ingestJobStatusStore, amazonS3, validationTimeSupplier, configuration);
+                ingestJobStatusStore, amazonS3,
+                new EmrPlatformExecutor(emr, instanceProperties, tablePropertiesProvider, configuration),
+                validationTimeSupplier);
     }
 
-    private EmrExecutor executorWithInstanceGroups() {
+    private BulkImportExecutor executorWithInstanceGroups() {
         return executorWithInstanceConfiguration(new EmrInstanceGroups(instanceProperties));
     }
 
-    private EmrExecutor executorWithInstanceGroupsSubnetIndexPicker(IntUnaryOperator randomSubnet) {
+    private BulkImportExecutor executorWithInstanceGroupsSubnetIndexPicker(IntUnaryOperator randomSubnet) {
         return executorWithInstanceConfiguration(new EmrInstanceGroups(instanceProperties, randomSubnet));
     }
 
-    private EmrExecutor executorWithInstanceFleets() {
+    private BulkImportExecutor executorWithInstanceFleets() {
         return executorWithInstanceConfiguration(new EmrInstanceFleets(instanceProperties));
     }
 

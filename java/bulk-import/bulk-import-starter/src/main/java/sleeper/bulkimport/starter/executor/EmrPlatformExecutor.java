@@ -65,15 +65,15 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider) {
+                               InstanceProperties instanceProperties,
+                               TablePropertiesProvider tablePropertiesProvider) {
         this(emrClient, instanceProperties, tablePropertiesProvider, new EmrInstanceFleets(instanceProperties));
     }
 
     public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       EmrInstanceConfiguration instanceConfiguration) {
+                               InstanceProperties instanceProperties,
+                               TablePropertiesProvider tablePropertiesProvider,
+                               EmrInstanceConfiguration instanceConfiguration) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.emrClient = emrClient;
@@ -81,7 +81,7 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(CommonExecutor commonExecutor, BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId) {
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -111,7 +111,7 @@ public class EmrPlatformExecutor implements PlatformExecutor {
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(commonExecutor.constructArgs(bulkImportJob, jobRunId, clusterName + "-EMR"))))
+                                .withArgs(bulkImportExecutor.constructArgs(bulkImportJob, jobRunId, clusterName + "-EMR"))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));
@@ -148,8 +148,8 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     @Override
     public String getJarLocation() {
         return "s3a://"
-            + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
-            + "/bulk-import-runner-"
-            + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar";
+                + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
+                + "/bulk-import-runner-"
+                + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar";
     }
 }
