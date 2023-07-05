@@ -91,7 +91,7 @@ public class DynamoDBIngestJobStatusFormat {
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
                 .string(JSON_MESSAGE, event.getJsonMessage())
-                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .number(INPUT_FILES_COUNT, event.getJob().getFileCount())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .build();
@@ -102,7 +102,7 @@ public class DynamoDBIngestJobStatusFormat {
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .number(INPUT_FILES_COUNT, event.getJob().getFileCount())
                 .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
