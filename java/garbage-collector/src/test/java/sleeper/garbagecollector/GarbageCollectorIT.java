@@ -153,11 +153,9 @@ public class GarbageCollectorIT {
         String file1 = tempFolder + "/file1.parquet";
         String file2 = tempFolder + "/file2.parquet";
         String file3 = tempFolder + "/file3.parquet";
-        // String file4 = tempFolder + "/file4.parquet";
         FileInfo fileInfo1 = writeFile(file1, partition, schema);
         FileInfo fileInfo2 = writeFile(file2, partition, schema);
         FileInfo fileInfo3 = writeFile(file3, partition, schema);
-        // FileInfo fileInfo4 = writeFile(file4, partition, schema);
         stateStore.addFile(fileInfo1);
         stateStore.addFile(fileInfo2);
         stateStore.addFile(fileInfo3);
@@ -229,7 +227,6 @@ public class GarbageCollectorIT {
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
-                // .lastStateStoreUpdateTime(System.currentTimeMillis() - 20L * 60L * 1000L)
                 .build();
         ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema);
         for (int i = 0; i < 100; i++) {

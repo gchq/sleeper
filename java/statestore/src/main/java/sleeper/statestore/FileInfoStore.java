@@ -59,30 +59,6 @@ public interface FileInfoStore {
     void addFiles(List<FileInfo> fileInfos) throws StateStoreException;
 
     /**
-     * Changes the file-lifecycle entry of the file with the given filename to
-     * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}. This should only be done
-     * if there are no file-in-partition records for this file. Implementations of this
-     * interface may or may not choose to enforce this. This method should update the
-     * last update tine of the record to the current time.
-     *
-     * @param filename The name of the file to be updated
-     * @throws StateStoreException if the update fails
-     */
-//     void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException;
-
-    /**
-     * Changes the file-lifecycle entry of the files with the given filenams to
-     * {@link FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION}. This should only be done
-     * if there are no file-in-partition records for these files. Implementations of this
-     * interface may or may not choose to enforce this. This method should update the
-     * last update tine of the record to the current time.
-     *
-     * @param filenames The names of the files to be updated
-     * @throws StateStoreException if the update fails
-     */
-//     void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException;
-
-    /**
      * This method is used to commit the results of a compaction job. The relevant file-in-partition
      * records for the input files are deleted and information about the output file is added.
      * (As a file may be present in multiple partitions, not all file-in-partition records for

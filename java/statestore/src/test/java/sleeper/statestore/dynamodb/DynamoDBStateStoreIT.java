@@ -45,9 +45,12 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoFactory;
+import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -357,82 +360,12 @@ public class DynamoDBStateStoreIT {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-//     @Test
-//     public void shouldFindFilesThatShouldHaveStatusOfGCPending2() throws Exception {
-//         // Given
-//         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-//         PartitionTree tree = new PartitionsBuilder(schema)
-//                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-//                 .buildTree();
-//         FileInfoFactory factory = FileInfoFactory.builder()
-//                 .schema(schema)
-//                 .partitionTree(tree)
-//                 .lastStateStoreUpdate(Instant.ofEpochMilli(0L))
-//                 .build();
-//         FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-//         FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
-//         FileInfo file3 = factory.rootFile("file3", 200L, "e", "f");
-//         StateStore dynamoDBStateStore = getStateStore(schema);
-//         dynamoDBStateStore.addFiles(Arrays.asList(file1, file2));
-//         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(file1, file2), file3);
-
-//         // When
-//         // dynamoDBStateStore.setStatusToReadyForGarbageCollection(file2.getFilename());
-//         dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
-
-//         // Then
-//         FileInfo expectedFileInfoForFile2 = file2.cloneWithStatus(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING);
-//         List<FileInfo> fileLifecyclesForFile2 = dynamoDBStateStore.getFileLifecycleList().stream()
-//                 .filter(f -> f.getFilename().equals(file2.getFilename()))
-//                 .collect(Collectors.toList());
-//         assertThat(fileLifecyclesForFile2).hasSize(1);
-//         assertThat(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime()).isGreaterThan(0L);
-//         expectedFileInfoForFile2 = expectedFileInfoForFile2.toBuilder()
-//                 .lastStateStoreUpdateTime(fileLifecyclesForFile2.get(0).getLastStateStoreUpdateTime())
-//                 .build();
-//         assertThat(expectedFileInfoForFile2).isEqualTo(fileLifecyclesForFile2.get(0));
-//     }
-
-//     @Test
-//     public void shouldChangeStatusFromActiveToReadyForGC() throws StateStoreException {
-//         // Given
-//         Schema schema = schemaWithSingleRowKeyType(new LongType());
-//         StateStore dynamoDBStateStore = getStateStore(schema);
-//         FileInfo fileInfo = FileInfo.builder()
-//                 .rowKeyTypes(new LongType())
-//                 .filename("abc")
-//                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-//                 .partitionId("1")
-//                 .numberOfRecords(1000L)
-//                 .minRowKey(Key.create(1L))
-//                 .maxRowKey(Key.create(10L))
-//                 .lastStateStoreUpdateTime(1_000_000L)
-//                 .build();
-//         dynamoDBStateStore.addFile(fileInfo);
-
-//         // When
-//         dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
-//         // dynamoDBStateStore.setStatusToReadyForGarbageCollection(fileInfo.getFilename());
-
-//         // Then
-//         assertThat(dynamoDBStateStore.getFileLifecycleList()).singleElement().satisfies(found -> {
-//             assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
-//             assertThat(found.getFilename()).isEqualTo("abc");
-//             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING);
-//             assertThat(found.getPartitionId()).isEqualTo("1");
-//             assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
-//             assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
-//             assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
-//             assertThat(found.getLastStateStoreUpdateTime().longValue()).isGreaterThan(1_000_000L);
-//         });
-//     }
-
     @Test
     public void shouldAtomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile() throws StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<FileInfo> filesToRemoveFileInPartitionEntries = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
@@ -444,7 +377,7 @@ public class DynamoDBStateStoreIT {
                     .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToRemoveFileInPartitionEntries.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }
         FileInfo newFileInfo = FileInfo.builder()
@@ -456,15 +389,15 @@ public class DynamoDBStateStoreIT {
                 .build();
 
         // When
-        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
+        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(filesToRemoveFileInPartitionEntries, newFileInfo);
 
         // Then
         assertThat(dynamoDBStateStore.getFileInPartitionList()).containsExactly(newFileInfo);
         assertThat(dynamoDBStateStore.getFileLifecycleList()).containsExactlyInAnyOrder(
-                filesToMoveToReadyForGC.get(0).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
-                filesToMoveToReadyForGC.get(1).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
-                filesToMoveToReadyForGC.get(2).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
-                filesToMoveToReadyForGC.get(3).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(0).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(1).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(2).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(3).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
                 newFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE)
         );
     }
@@ -474,7 +407,7 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
-        List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
+        List<FileInfo> filesToRemoveFileInPartitionEntries = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
@@ -486,7 +419,7 @@ public class DynamoDBStateStoreIT {
                     .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
-            filesToMoveToReadyForGC.add(fileInfo);
+            filesToRemoveFileInPartitionEntries.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
         }
         FileInfo newLeftFileInfo = FileInfo.builder()
@@ -507,15 +440,15 @@ public class DynamoDBStateStoreIT {
                 .build();
 
         // When
-        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
+        dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToRemoveFileInPartitionEntries, newLeftFileInfo, newRightFileInfo);
 
         // Then
         assertThat(dynamoDBStateStore.getFileInPartitionList()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
         assertThat(dynamoDBStateStore.getFileLifecycleList()).containsExactlyInAnyOrder(
-                filesToMoveToReadyForGC.get(0).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
-                filesToMoveToReadyForGC.get(1).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
-                filesToMoveToReadyForGC.get(2).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
-                filesToMoveToReadyForGC.get(3).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(0).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(1).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(2).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
+                filesToRemoveFileInPartitionEntries.get(3).cloneWithStatus(FileInfo.FileStatus.ACTIVE),
                 newLeftFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE),
                 newRightFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE)
         );
@@ -539,7 +472,6 @@ public class DynamoDBStateStoreIT {
                     .build();
             files.add(fileInfo);
         }
-        //  - One of the files is not active
         dynamoDBStateStore.addFiles(files);
         FileInfo newFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -548,6 +480,7 @@ public class DynamoDBStateStoreIT {
                 .partitionId("7")
                 .numberOfRecords(5000L)
                 .build();
+        //  - One of the file-in-partition entries is removed
         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(files.get(3)), newFileInfo);
 
         // When / Then
@@ -585,7 +518,8 @@ public class DynamoDBStateStoreIT {
         assertThat(dynamoDBStateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
                 .containsExactlyInAnyOrderElementsOf(files)
-                .extracting(FileInfo::getJobId).containsOnly(jobId);
+                .extracting(FileInfo::getJobId)
+                .containsOnly(jobId);
         assertThat(dynamoDBStateStore.getFileLifecycleList())
                 .containsExactlyInAnyOrder(files.get(0), files.get(1), files.get(2), files.get(3));
         assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
@@ -664,7 +598,7 @@ public class DynamoDBStateStoreIT {
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
-        for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
+        for (int i = 0; i < 10_000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file-" + i)
@@ -692,6 +626,7 @@ public class DynamoDBStateStoreIT {
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> fileInfos = new ArrayList<>();
+        // - Create 10,000 FileInfos
         for (int i = 0; i < 10_000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
@@ -712,8 +647,9 @@ public class DynamoDBStateStoreIT {
             dynamoDBStateStore.addFile(fileInfos.get(i));
             expected.put(fileInfos.get(i).getFilename(), fileInfos.get(i).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
         }
+        // - Remove the file-in-partition record for the 0th file and add file 9999
         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(fileInfos.get(0)), fileInfos.get(9_999));
-        // dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
+        // - The 0th file can have its status updated to GARBAGE_COLLECTION_PENDING
         dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
         expected.put("file-0", expected.get("file-0").cloneWithStatus(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING));
         expected.put("file-9999", fileInfos.get(9999).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
@@ -747,26 +683,6 @@ public class DynamoDBStateStoreIT {
     @Test
     public void shouldReturnCorrectActiveFileList() throws StateStoreException {
         // Given
-        // Schema schema = schemaWithSingleRowKeyType(new LongType());
-        // StateStore dynamoDBStateStore = getStateStore(schema);
-        // Map<String, FileInfo> expected = new HashMap<>();
-        // for (int i = 0; i < 5; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
-        //     FileInfo fileInfo = FileInfo.builder()
-        //             .rowKeyTypes(new LongType())
-        //             .filename("file-" + i)
-        //             .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-        //             .partitionId("" + i)
-        //             .numberOfRecords(1000L)
-        //             .minRowKey(Key.create(1L))
-        //             .maxRowKey(Key.create(10L))
-        //             .lastStateStoreUpdateTime(1_000_000L)
-        //             .build();
-        //     dynamoDBStateStore.addFile(fileInfo);
-        //     expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
-        // }
-        // dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
-        // // dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
-        // expected.remove("file-0");
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         List<FileInfo> fileInfos = new ArrayList<>();
@@ -782,8 +698,6 @@ public class DynamoDBStateStoreIT {
                     .lastStateStoreUpdateTime(1_000_000L)
                     .build();
             fileInfos.add(fileInfo);
-        //     dynamoDBStateStore.addFile(fileInfo);
-        //     expected.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
         }
         Map<String, FileInfo> expected = new HashMap<>();
         for (int i = 0; i < 9_999; i++) {
@@ -791,10 +705,8 @@ public class DynamoDBStateStoreIT {
             expected.put(fileInfos.get(i).getFilename(), fileInfos.get(i).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
         }
         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(fileInfos.get(0)), fileInfos.get(9_999));
-        // dynamoDBStateStore.setStatusToReadyForGarbageCollection("file-0");
         dynamoDBStateStore.findFilesThatShouldHaveStatusOfGCPending();
         expected.remove("file-0");
-        // expected.put("file-0", expected.get("file-0").cloneWithStatus(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING));
         expected.put("file-9999", fileInfos.get(9_999).cloneWithStatus(FileInfo.FileStatus.ACTIVE));
 
         // When
@@ -802,27 +714,6 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(activeFileList).hasSize(9_999).containsExactlyInAnyOrderElementsOf(expected.values());
-
-        // Then
-        // assertThat(fileLifecycleList).hasSize(10_000);
-        // List<FileInfo> expectedWithConstantLastStateStoreUpdateTime = expected.values()
-        //         .stream()
-        //         .map(f -> f.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochSecond(100L)).build())
-        //         .collect(Collectors.toList());
-        // List<FileInfo> actualWithConstantLastStateStoreUpdateTime = fileLifecycleList
-        //         .stream()
-        //         .map(f -> f.toBuilder().lastStateStoreUpdateTime(Instant.ofEpochSecond(100L)).build())
-        //         .collect(Collectors.toList());
-        // assertThat(actualWithConstantLastStateStoreUpdateTime.size()).isEqualTo(expectedWithConstantLastStateStoreUpdateTime.size());
-        // Map<String, FileInfo> actualMap = new HashMap<>();
-        // for (FileInfo f : actualWithConstantLastStateStoreUpdateTime) {
-        //     actualMap.put(f.getFilename(), f);
-        // }
-        // Map<String, FileInfo> expectedMap = new HashMap<>();
-        // for (FileInfo f : expectedWithConstantLastStateStoreUpdateTime) {
-        //     expectedMap.put(f.getFilename(), f);
-        // }
-        // assertThat(actualMap).isEqualTo(expectedMap);
     }
 
     @Test
@@ -858,59 +749,59 @@ public class DynamoDBStateStoreIT {
         assertThat(fileInfoForFile2).extracting(FileInfo::getFileStatus).containsOnly(ACTIVE);
     }
 
-//     @Test
-//     public void shouldReturnCorrectReadyForGCFilesIterator() throws Exception {
-//         // Given
-//         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-//         PartitionTree tree = new PartitionsBuilder(schema)
-//                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-//                 .buildTree();
-//         StateStore dynamoDBStateStore = getStateStore(schema, 4);
-//         //  - A file which should be garbage collected immediately
-//         //     (NB Need to add file, which adds file-in-partition and lifecycle enrties, then simulate a compaction
-//         //      to remove the file in partition entries, then set the status to ready for GC)
-//         FileInfoFactory factory = FileInfoFactory.builder()
-//                 .schema(schema)
-//                 .partitionTree(tree)
-//                 .lastStateStoreUpdate(Instant.ofEpochMilli(System.currentTimeMillis() - 8000))
-//                 .build();
-//         FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-//         FileInfo file2 = factory.rootFile("file2", 100L, "a", "b");
-//         dynamoDBStateStore.addFile(file1);
-//         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION)),
-//                 file2);
-//         dynamoDBStateStore.setStatusToReadyForGarbageCollection(file1.getFilename());
-//         //  - An active file which should not be garbage collected immediately
-//         FileInfoFactory factory2 = FileInfoFactory.builder()
-//                 .schema(schema)
-//                 .partitionTree(tree)
-//                 .lastStateStoreUpdate(Instant.ofEpochMilli(System.currentTimeMillis() + 4000L))
-//                 .build();
-//         FileInfo file3 = factory2.rootFile("file3", 100L, "a", "b");
-//         dynamoDBStateStore.addFile(file3);
-//         FileInfo file4 = factory2.rootFile("file4", 100L, "a", "b");
-//         dynamoDBStateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file3.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION)),
-//                 file4);
-//         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
-//         //      just been marked as ready for GC
-//         FileInfo file5 = factory2.rootFile("file5", 100L, "a", "b");
-//         dynamoDBStateStore.addFile(file5);
+    @Test
+    public void shouldReturnCorrectReadyForGCFilesIterator() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .buildTree();
+        FileInfoStore store = new InMemoryFileInfoStore(4);
+        //  - A file which should be garbage collected immediately
+        //     (NB Need to add file, which adds file-in-partition and lifecycle enrties, then simulate a compaction
+        //      to remove the file in partition entries, then set the status to ready for GC)
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema)
+                .partitionTree(tree)
+                .lastStateStoreUpdate(Instant.ofEpochMilli(System.currentTimeMillis() - 8000))
+                .build();
+        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
+        FileInfo file2 = factory.rootFile("file2", 100L, "a", "b");
+        store.addFile(file1);
+        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1.cloneWithStatus(FileStatus.FILE_IN_PARTITION)),
+                file2);
+        store.findFilesThatShouldHaveStatusOfGCPending();
+        //  - An active file which should not be garbage collected immediately
+        FileInfoFactory factory2 = FileInfoFactory.builder()
+                .schema(schema)
+                .partitionTree(tree)
+                .lastStateStoreUpdate(Instant.ofEpochMilli(System.currentTimeMillis() + 4000L))
+                .build();
+        FileInfo file3 = factory2.rootFile("file3", 100L, "a", "b");
+        store.addFile(file3);
+        FileInfo file4 = factory2.rootFile("file4", 100L, "a", "b");
+        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file3.cloneWithStatus(FileStatus.FILE_IN_PARTITION)),
+                file4);
+        //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
+        //      just been marked as ready for GC
+        FileInfo file5 = factory2.rootFile("file5", 100L, "a", "b");
+        store.addFile(file5);
 
-//         // When / Then 1
-//         Thread.sleep(5000L);
-//         List<String> readyForGCFiles = new ArrayList<>();
-//         dynamoDBStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
-//         assertThat(readyForGCFiles).hasSize(1);
-//         assertThat(readyForGCFiles.get(0)).isEqualTo("file1");
+        // When / Then 1
+        Thread.sleep(5000L);
+        List<String> readyForGCFiles = new ArrayList<>();
+        store.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
+        assertThat(readyForGCFiles).hasSize(1);
+        assertThat(readyForGCFiles.get(0)).isEqualTo("file1");
 
-//         // When / Then 2
-//         dynamoDBStateStore.setStatusToReadyForGarbageCollection(file3.getFilename());
-//         Thread.sleep(5000L);
-//         readyForGCFiles.clear();
-//         dynamoDBStateStore.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
-//         assertThat(readyForGCFiles).hasSize(2);
-//         assertThat(readyForGCFiles.stream().collect(Collectors.toSet())).containsExactlyInAnyOrder("file1", "file3");
-//     }
+        // When / Then 2
+        store.findFilesThatShouldHaveStatusOfGCPending();
+        Thread.sleep(5000L);
+        readyForGCFiles.clear();
+        store.getReadyForGCFiles().forEachRemaining(readyForGCFiles::add);
+        assertThat(readyForGCFiles).hasSize(2);
+        assertThat(readyForGCFiles.stream().collect(Collectors.toSet())).containsExactlyInAnyOrder("file1", "file3");
+    }
 
     @Test
     public void shouldReturnFileInPartitionInfosWithNoJobId() throws StateStoreException {
@@ -965,7 +856,7 @@ public class DynamoDBStateStoreIT {
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
         Set<FileInfo> expected = new HashSet<>();
-        for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dyanmo are paged
+        for (int i = 0; i < 10_000; i++) { // 10,000 figure chosen to ensure results returned from Dyanmo are paged
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file-" + i)

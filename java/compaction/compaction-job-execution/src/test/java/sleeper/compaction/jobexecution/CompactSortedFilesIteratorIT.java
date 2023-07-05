@@ -26,8 +26,11 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
+import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.StateStore;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -78,13 +81,20 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isEqualTo(100L);
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(data1);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
-        // - Check DynamoDBStateStore has correct file in partition list
+        // - Check DynamoDBStateStore has the correct file-in-partition entries
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L));
+
+        // - Check DynamoDBStateStore has the correct file-lifecycle entries
+        List<FileInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L).cloneWithStatus(FileStatus.ACTIVE));
+        dataHelper.allFileInfos().stream()
+                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .forEach(expectedFileInfos::add);
+        assertThat(stateStore.getFileLifecycleList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
     }
 
     @Test
@@ -127,14 +137,22 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(data1.subList(0, 50));
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(data1.subList(50, 100));
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
         // - Check DynamoDBStateStore has correct file in partition list
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 50L, 0L, 98L),
                         dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 50L, 100L, 198L));
+
+        // - Check DynamoDBStateStore has the correct file-lifecycle entries
+        List<FileInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 50L, 0L, 98L).cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 50L, 100L, 198L).cloneWithStatus(FileStatus.ACTIVE));
+        dataHelper.allFileInfos().stream()
+                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .forEach(expectedFileInfos::add);
+        assertThat(stateStore.getFileLifecycleList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
     }
 }

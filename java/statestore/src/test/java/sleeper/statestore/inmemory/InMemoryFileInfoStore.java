@@ -64,31 +64,6 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         fileInfos.stream().forEach(this::addFile);
     }
 
-    // @Override
-    // public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
-    //     setStatusToReadyForGarbageCollection(Collections.singletonList(filename));
-    // }
-
-    // @Override
-    // public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
-    //     for (String filename : filenames) {
-    //         if (!fileLifecycleEntries.containsKey(filename)) {
-    //             throw new StateStoreException("Cannot set status of file " + filename
-    //                 + " to READY_FOR_GARBAGE_COLLECTION as there is no file lifecycle record for the file");
-    //         }
-    //         if (fileInPartitionEntries.containsKey(filename)) {
-    //             throw new StateStoreException("Cannot set status of file " + filename
-    //                 + " to READY_FOR_GARBAGE_COLLECTION as there exists a FILE_IN_PARTITION record for the file");
-    //         }
-    //         FileInfo fileInfo = fileLifecycleEntries.get(filename)
-    //             .toBuilder()
-    //             .fileStatus(READY_FOR_GARBAGE_COLLECTION)
-    //             .lastStateStoreUpdateTime(Instant.now())
-    //             .build();
-    //         fileLifecycleEntries.put(filename, fileInfo);
-    //     }
-    // }
-
     @Override
     public List<FileInfo> getFileLifecycleList() throws StateStoreException {
         return new ArrayList<>(fileLifecycleEntries.values());

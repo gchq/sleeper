@@ -106,21 +106,20 @@ public class CreateJobs {
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
         List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
-        // NB We retrieve the information about all the active files and filter
+        // NB We retrieve the information about all the file-in-partition infos and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
-        // TODO - rename these variables
-        List<FileInfo> activeFileInfosWithNoJobId = fileInPartitionList.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
-        List<FileInfo> activeFileInfosWithJobId = fileInPartitionList.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} active files with no job id", activeFileInfosWithNoJobId.size());
-        LOGGER.debug("Found {} active files with a job id", activeFileInfosWithJobId.size());
+        List<FileInfo> fileInPartitionInfosWithNoJobId = fileInPartitionList.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
+        List<FileInfo> fileInPartitionInfosWithJobId = fileInPartitionList.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
+        LOGGER.debug("Found {} active files with no job id", fileInPartitionInfosWithNoJobId.size());
+        LOGGER.debug("Found {} active files with a job id", fileInPartitionInfosWithJobId.size());
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
         compactionStrategy.init(instanceProperties, tableProperties);
 
-        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
+        List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(fileInPartitionInfosWithJobId, fileInPartitionInfosWithNoJobId, allPartitions);
         LOGGER.info("Used {} to create {} compaction jobs", compactionStrategy.getClass().getSimpleName(), compactionJobs.size());
 
         for (CompactionJob compactionJob : compactionJobs) {

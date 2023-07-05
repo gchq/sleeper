@@ -40,8 +40,11 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.StateStore;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -117,13 +120,20 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
-        // - Check DynamoDBStateStore has correct active files
+        // - Check DynamoDBStateStore has the correct file-in-partition entries
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
+
+        // - Check DynamoDBStateStore has the correct file-lifecycle entries
+        List<FileInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L).cloneWithStatus(FileStatus.ACTIVE));
+        dataHelper.allFileInfos().stream()
+                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .forEach(expectedFileInfos::add);
+        assertThat(stateStore.getFileLifecycleList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
     }
 
     @Test
@@ -158,15 +168,22 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getLeft())).isEqualTo(expectedResults.subList(0, 100));
         assertThat(readDataFile(schema, compactionJob.getOutputFiles().getRight())).isEqualTo(expectedResults.subList(100, 200));
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
-        // - Check DynamoDBStateStore has correct active files
+        // - Check DynamoDBStateStore has the correct file-in-partition entries
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L),
                         dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L, 100L, 199L));
-    }
 
+        // - Check DynamoDBStateStore has the correct file-lifecycle entries
+        List<FileInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L).cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L, 100L, 199L).cloneWithStatus(FileStatus.ACTIVE));
+        dataHelper.allFileInfos().stream()
+                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .forEach(expectedFileInfos::add);
+        assertThat(stateStore.getFileLifecycleList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+    }
 }

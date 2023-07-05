@@ -140,39 +140,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
-    // TODO Is this method needed?
-    // @Override
-    // public void setStatusToReadyForGarbageCollection(String filename) throws StateStoreException {
-    //     Map<String, AttributeValue> key = new HashMap<>();
-    //     key.put(DynamoDBStateStore.FILE_NAME, DynamoDBAttributes.createStringAttribute(filename));
-    //     Map<String, String> expressionAttributeNames = new HashMap<>();
-    //     expressionAttributeNames.put("#status", DynamoDBFileInfoFormat.STATUS);
-    //     expressionAttributeNames.put("#lastupdatetime", DynamoDBFileInfoFormat.LAST_UPDATE_TIME);
-    //     Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-    //     expressionAttributeValues.put(":status", DynamoDBAttributes.createStringAttribute(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION.toString()));
-    //     expressionAttributeValues.put(":lastupdatetime", DynamoDBAttributes.createNumberAttribute(Instant.now().toEpochMilli()));
-    //     UpdateItemRequest updateItemRequest = new UpdateItemRequest()
-    //         .withTableName(fileLifecycleTablename)
-    //         .withKey(key)
-    //         .withExpressionAttributeNames(expressionAttributeNames)
-    //         .withExpressionAttributeValues(expressionAttributeValues)
-    //         .withUpdateExpression("SET #status = :status, #lastupdatetime = :lastupdatetime");
-    //     try {
-    //         dynamoDB.updateItem(updateItemRequest);
-    //     } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException
-    //         | ItemCollectionSizeLimitExceededException | TransactionConflictException | RequestLimitExceededException
-    //         | InternalServerErrorException e) {
-    //         throw new StateStoreException(e);
-    //     }
-    // }
-
-    // @Override
-    // public void setStatusToReadyForGarbageCollection(List<String> filenames) throws StateStoreException {
-    //     for (String filename : filenames) {
-    //         setStatusToReadyForGarbageCollection(filename);
-    //     }
-    // }
-
     @Override
     public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
             List<FileInfo> fileInPartitionRecordsToBeDeleted,
@@ -400,7 +367,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     private Stream<FileInfo> getReadyForGCFileInfosStream() {
         long delayInMilliseconds = (long) (1000.0 * 60.0 * garbageCollectorDelayBeforeDeletionInMinutes);
-        long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+        long deleteTime = clock.millis() - delayInMilliseconds;
         Map<String, String> expressionAttributeNames = new HashMap<>();
         expressionAttributeNames.put("#status", STATUS);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();

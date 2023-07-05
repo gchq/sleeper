@@ -54,10 +54,12 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -285,10 +287,42 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .withWaitTimeSeconds(2);
         ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
-        // - Check DynamoDBStateStore has correct file in partition list
-        List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
-        assertThat(fileInPartitionList)
-                .extracting(FileInfo::getFilename)
-                .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());
+
+        // - Check DynamoDBStateStore has the correct file-in-partition entries
+        FileInfo expectedOutputFileInfoFromJob1 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(compactionJob1.getOutputFile())
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("1")
+                .numberOfRecords(200L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(199L))
+                .build();
+        FileInfo expectedOutputFileInfoFromJob2 = FileInfo.builder()
+                .rowKeyTypes(new LongType())
+                .filename(compactionJob2.getOutputFile())
+                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                .partitionId("1")
+                .numberOfRecords(200L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(199L))
+                .build();
+        assertThat(stateStore.getFileInPartitionList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        expectedOutputFileInfoFromJob1, expectedOutputFileInfoFromJob2
+                );
+
+        // - Check DynamoDBStateStore has the correct file-lifecycle entries
+        List<FileInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(fileInfo1.cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(fileInfo2.cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(fileInfo3.cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(fileInfo4.cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(expectedOutputFileInfoFromJob1.cloneWithStatus(FileStatus.ACTIVE));
+        expectedFileInfos.add(expectedOutputFileInfoFromJob2.cloneWithStatus(FileStatus.ACTIVE));
+        assertThat(stateStore.getFileLifecycleList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
     }
 }
