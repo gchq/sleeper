@@ -53,7 +53,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
- * An {@link Executor} which runs a bulk import job on an EMR cluster.
+ * An {@link PlatformExecutor} which runs a bulk import job on an EMR cluster.
  */
 public class EmrPlatformExecutor implements PlatformExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(EmrPlatformExecutor.class);
