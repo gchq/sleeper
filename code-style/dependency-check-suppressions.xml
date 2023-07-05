@@ -97,17 +97,17 @@
         <notes><![CDATA[
         The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
         we can use that instead.
-        file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+        file name: cdk-asset-awscli-v1-2.2.200.jar: asset-awscli-v1@2.2.200.jsii.tgz: asset-awscli-v1@2.2.200.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
         ]]></notes>
-        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.199\.jar/.*$</filePath>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.200\.jar/.*$</filePath>
         <cve>CVE-2021-23497</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
         The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
-        file name: cdk-asset-awscli-v1-2.2.199.jar: asset-awscli-v1@2.2.199.jsii.tgz: asset-awscli-v1@2.2.199.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+        file name: cdk-asset-awscli-v1-2.2.200.jar: asset-awscli-v1@2.2.200.jsii.tgz: asset-awscli-v1@2.2.200.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
         ]]></notes>
-        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.199\.jar/.*$</filePath>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.200\.jar/.*$</filePath>
         <cve>CVE-2020-10663</cve>
     </suppress>
     <suppress>
