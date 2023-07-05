@@ -32,6 +32,7 @@ import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.status.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.InstanceProperties;
@@ -71,7 +72,7 @@ public class IngestJobStatusReport {
             Map<String, Integer> persistentEmrStepCount) {
         this.statusStore = ingestJobStatusStore;
         this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()));
+                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery()));
         this.queryType = queryType;
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;

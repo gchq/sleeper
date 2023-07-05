@@ -19,6 +19,7 @@ package sleeper.clients.status.report.job.query;
 import sleeper.clients.util.console.ConsoleInput;
 
 import java.time.Clock;
+import java.util.Map;
 
 public class JobQueryPrompt {
 
@@ -26,6 +27,10 @@ public class JobQueryPrompt {
     }
 
     public static JobQuery from(String tableName, Clock clock, ConsoleInput in) {
+        return from(tableName, clock, in, Map.of());
+    }
+
+    public static JobQuery from(String tableName, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;
@@ -38,8 +43,10 @@ public class JobQueryPrompt {
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
             return RangeJobsQuery.prompt(tableName, in, clock);
+        } else if (extraQueries.containsKey(type)) {
+            return extraQueries.get(type);
         } else {
-            return from(tableName, clock, in);
+            return from(tableName, clock, in, extraQueries);
         }
     }
 }
