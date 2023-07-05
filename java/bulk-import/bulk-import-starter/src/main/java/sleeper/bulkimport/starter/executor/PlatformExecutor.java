@@ -17,6 +17,7 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -42,6 +43,8 @@ public interface PlatformExecutor {
                 return new PersistentEmrPlatformExecutor(
                         AmazonElasticMapReduceClientBuilder.defaultClient(),
                         instanceProperties);
+            case "EMRServerless":
+                return new EmrServerlessPlatformExecutor(EmrServerlessClient.create(), instanceProperties);
             default:
                 throw new IllegalArgumentException("Invalid platform: " + platform);
         }

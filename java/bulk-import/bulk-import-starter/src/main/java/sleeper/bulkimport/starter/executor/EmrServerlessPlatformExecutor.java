@@ -15,63 +15,43 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
-import software.amazon.awssdk.services.emrserverless.model.ListApplicationsRequest;
 import software.amazon.awssdk.services.emrserverless.model.MonitoringConfiguration;
 import software.amazon.awssdk.services.emrserverless.model.S3MonitoringConfiguration;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProvider;
-
-import java.time.Instant;
-import java.util.Map;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 
 /**
- * An {@link Executor} which runs a bulk import job on an EMR cluster.
+ * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
  */
-public class EmrServerlessExecutor extends AbstractEmrExecutor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmrServerlessExecutor.class);
+public class EmrServerlessPlatformExecutor implements PlatformExecutor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmrServerlessPlatformExecutor.class);
     private final EmrServerlessClient emrClient;
-    private String clusterName;
+    private final InstanceProperties instanceProperties;
 
-    public EmrServerlessExecutor(EmrServerlessClient emrClient,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider,
-                       IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3,
-                       Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-            amazonS3, validationTimeSupplier);
+    public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
+                                         InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
+        this.instanceProperties = instanceProperties;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
+        String clusterName = String.join("-", "sleeper", "emr", "serverless");
         String logUri = null == bulkImportBucket ? null : "s3://" + clusterName + "/emr-serverless/logs";
-
-        clusterName = String.join("-", "sleeper", "emr", "serverless");
 
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
-                .name(clusterName + jobRunId)
+                .name(clusterName + arguments.getJobRunId())
                 .executionRoleArn("roleId")  //Todo Role that can run job
                 .tags(instanceProperties.getTags())
                 .jobDriver(JobDriver.builder()
@@ -88,12 +68,5 @@ public class EmrServerlessExecutor extends AbstractEmrExecutor {
                 .build();
 
         emrClient.startJobRun(job);
-    }
-
-    protected String getFromPlatformSpec(TableProperty tableProperty, Map<String, String> platformSpec, TableProperties tableProperties) {
-        if (null == platformSpec) {
-            return tableProperties.get(tableProperty);
-        }
-        return platformSpec.getOrDefault(tableProperty.getPropertyName(), tableProperties.get(tableProperty));
     }
 }
