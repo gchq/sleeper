@@ -15,8 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
@@ -33,7 +31,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
  */
 public class EmrServerlessPlatformExecutor implements PlatformExecutor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmrServerlessPlatformExecutor.class);
     private final EmrServerlessClient emrClient;
     private final InstanceProperties instanceProperties;
 
