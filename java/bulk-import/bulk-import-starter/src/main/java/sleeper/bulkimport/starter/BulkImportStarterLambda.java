@@ -65,9 +65,9 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 instanceProperties, tablePropertiesProvider);
         hadoopConfig = new Configuration();
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
-            new StateStoreProvider(dynamo, instanceProperties), 
-            new DynamoDBIngestJobStatusStore(dynamo, instanceProperties), 
-            s3, platformExecutor, Instant::now);
+                new StateStoreProvider(dynamo, instanceProperties),
+                new DynamoDBIngestJobStatusStore(dynamo, instanceProperties),
+                s3, platformExecutor, Instant::now);
     }
 
     public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig) {
