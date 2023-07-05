@@ -25,11 +25,17 @@ import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.ingest.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.ingest.job.status.IngestJobStatusType;
+import sleeper.ingest.job.status.IngestJobValidatedStatus;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
+
+import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
+import static sleeper.ingest.job.status.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 
@@ -101,10 +107,30 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
 
     private void printDetailedSummary(IngestJobStatus status) {
         out.printf("Details for job %s:%n", status.getJobId());
-        out.printf("State: %s%n", status.isFinished() ? StandardProcessRunReporter.STATE_FINISHED : StandardProcessRunReporter.STATE_IN_PROGRESS);
+        out.printf("State: %s%n", status.getFurthestStatusType());
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
         for (ProcessRun run : status.getJobRuns()) {
-            runReporter.printProcessJobRun(run);
+            printProcessJobRun(run);
+        }
+    }
+
+    private void printProcessJobRun(ProcessRun run) {
+        runReporter.printProcessJobRunWithUpdatePrinter(run,
+                printUpdateType(IngestJobValidatedStatus.class, this::printValidation));
+        if (IngestJobStatusType.of(run.getLatestUpdate()) == IN_PROGRESS) {
+            out.println("Not finished");
+        }
+    }
+
+    private void printValidation(IngestJobValidatedStatus status) {
+        out.printf("Validation Time: %s%n", status.getStartTime());
+        out.printf("Validation Update Time: %s%n", status.getUpdateTime());
+        if (status.isValid()) {
+            out.println("Job was accepted");
+        } else {
+            out.println("Job was rejected with reasons:");
+            IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) status;
+            rejectedStatus.getReasons().forEach(reason -> out.printf("- %s%n", reason));
         }
     }
 
@@ -142,10 +168,9 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private void writeJob(IngestJobStatus job, TableWriter.Builder table) {
         job.getJobRuns().forEach(run -> table.row(row -> {
             writeJobFields(job, row);
-            row.value(stateField, StandardProcessRunReporter.getState(run));
+            row.value(stateField, IngestJobStatusType.of(run.getLatestUpdate()));
             runReporter.writeRunFields(run, row);
         }));
-
     }
 
     private void writeJobFields(IngestJobStatus job, TableRow.Builder builder) {

@@ -118,6 +118,11 @@ public class BulkImportJob {
         return IngestJob.builder().files(files).id(id).tableName(tableName).build();
     }
 
+    public Builder toBuilder() {
+        return builder().id(id).files(files).tableName(tableName)
+                .className(className).platformSpec(platformSpec).sparkConf(sparkConf);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

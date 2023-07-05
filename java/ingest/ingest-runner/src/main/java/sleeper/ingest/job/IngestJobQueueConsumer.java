@@ -24,6 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
@@ -56,18 +58,19 @@ public class IngestJobQueueConsumer implements IngestJobSource {
     private final String sqsJobQueueUrl;
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
-    private final IngestJobSerDe ingestJobSerDe;
+    private final IngestJobMessageHandler ingestJobMessageHandler;
 
     public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
-                                  InstanceProperties instanceProperties) {
+                                  InstanceProperties instanceProperties,
+                                  Configuration configuration) {
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobSerDe = new IngestJobSerDe();
+        this.ingestJobMessageHandler = new IngestJobMessageHandler(configuration, instanceProperties);
     }
 
     @Override
@@ -83,10 +86,14 @@ public class IngestJobQueueConsumer implements IngestJobSource {
                 break;
             }
             LOGGER.info("Received message {}", messages.get(0).getBody());
-            IngestJob ingestJob = ingestJobSerDe.fromJson(messages.get(0).getBody());
-            LOGGER.info("Deserialised message to ingest job {}", ingestJob);
-            long recordsWritten = ingest(ingestJob, messages.get(0).getReceiptHandle(), runJob);
-            LOGGER.info("{} records were written", recordsWritten);
+            Optional<IngestJob> ingestJob = ingestJobMessageHandler.handleMessage(messages.get(0).getBody());
+            if (ingestJob.isPresent()) {
+                LOGGER.info("Deserialised message to ingest job {}", ingestJob);
+                long recordsWritten = ingest(ingestJob.get(), messages.get(0).getReceiptHandle(), runJob);
+                LOGGER.info("{} records were written", recordsWritten);
+            } else {
+                LOGGER.info("Could not deserialise ingest job {}, skipping", ingestJob);
+            }
         }
     }
 

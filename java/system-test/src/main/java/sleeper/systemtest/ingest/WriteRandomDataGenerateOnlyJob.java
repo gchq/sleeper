@@ -34,7 +34,7 @@ public class WriteRandomDataGenerateOnlyJob extends WriteRandomDataJob {
     @Override
     public void run() throws IOException {
         WriteRandomDataFiles.writeToS3GetDirectory(
-                getTableProperties(),
+                getSystemTestProperties(), getTableProperties(),
                 createRecordIterator(getTableProperties().getSchema()));
     }
 }

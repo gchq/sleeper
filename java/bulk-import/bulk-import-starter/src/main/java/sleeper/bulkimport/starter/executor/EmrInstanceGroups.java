@@ -31,10 +31,10 @@ import java.util.Random;
 import java.util.function.IntUnaryOperator;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 
 public class EmrInstanceGroups implements EmrInstanceConfiguration {
@@ -60,7 +60,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                 .withInstanceGroups(
                         new InstanceGroupConfig()
                                 .withName("Executors")
-                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_INSTANCE_TYPES).get(0))
+                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES).get(0))
                                 .withInstanceRole(InstanceRoleType.CORE)
                                 .withInstanceCount(platformSpec.getInt(BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY))
                                 .withEbsConfiguration(ebsConfiguration)
@@ -68,7 +68,7 @@ public class EmrInstanceGroups implements EmrInstanceConfiguration {
                                         BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE, "SPOT"))),
                         new InstanceGroupConfig()
                                 .withName("Driver")
-                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_INSTANCE_TYPES).get(0))
+                                .withInstanceType(platformSpec.getList(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES).get(0))
                                 .withInstanceRole(InstanceRoleType.MASTER)
                                 .withInstanceCount(1)
                                 .withEbsConfiguration(ebsConfiguration));

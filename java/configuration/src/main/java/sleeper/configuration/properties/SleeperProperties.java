@@ -114,7 +114,13 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public static List<String> readList(String value) {
-        return value == null ? null : Lists.newArrayList(value.split(","));
+        if (value == null) {
+            return null;
+        } else if ("".equals(value)) {
+            return List.of();
+        } else {
+            return Lists.newArrayList(value.split(","));
+        }
     }
 
     public void setNumber(T property, Number number) {

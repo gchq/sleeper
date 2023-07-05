@@ -72,7 +72,7 @@ public class ProcessRuns {
         return Optional.of(latestFirst.get(latestFirst.size() - 1));
     }
 
-    public List<ProcessRun> getRunList() {
+    public List<ProcessRun> getRunsLatestFirst() {
         return latestFirst;
     }
 

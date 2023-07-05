@@ -169,13 +169,13 @@ class BulkImportJobDriverTest {
 
     private void runJob(BulkImportJob job, String jobRunId, String taskId,
                         Instant validationTime, Instant startTime, Instant finishTime,
-                        BulkImportJobDriver.BulkImportSessionRunner sessionRunner) throws Exception {
+                        BulkImportJobDriver.SessionRunner sessionRunner) throws Exception {
         runJob(job, jobRunId, taskId, validationTime, startTime, finishTime, sessionRunner, stateStore);
     }
 
     private void runJob(BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
                         Instant startTime, Instant finishTime,
-                        BulkImportJobDriver.BulkImportSessionRunner sessionRunner,
+                        BulkImportJobDriver.SessionRunner sessionRunner,
                         StateStore stateStore) throws Exception {
         statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = new BulkImportJobDriver(sessionRunner,

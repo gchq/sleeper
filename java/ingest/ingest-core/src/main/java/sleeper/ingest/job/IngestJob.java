@@ -56,6 +56,10 @@ public class IngestJob {
         return files;
     }
 
+    public Builder toBuilder() {
+        return builder().id(id).files(files).tableName(tableName);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -34,15 +34,6 @@ public class TestProcessRuns {
         return runsFrom(records().fromUpdates(taskUpdates));
     }
 
-    public static ProcessRun runFromUpdates(ProcessStatusUpdate... updates) {
-        return runFrom(records().fromUpdates(updates));
-    }
-
-    public static ProcessRun runFromUpdates(
-            TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
-        return runFrom(records().fromUpdates(taskUpdates));
-    }
-
     private static ProcessRuns runsFrom(TestProcessStatusUpdateRecords records) {
         List<JobStatusUpdates> built = JobStatusUpdates.streamFrom(records.stream())
                 .collect(Collectors.toList());
@@ -50,13 +41,5 @@ public class TestProcessRuns {
             throw new IllegalStateException("Expected single status");
         }
         return built.get(0).getRuns();
-    }
-
-    private static ProcessRun runFrom(TestProcessStatusUpdateRecords records) {
-        List<ProcessRun> list = runsFrom(records).getRunList();
-        if (list.size() != 1) {
-            throw new IllegalStateException("Expected single run");
-        }
-        return list.get(0);
     }
 }

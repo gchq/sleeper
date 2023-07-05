@@ -17,6 +17,8 @@
 package sleeper.clients.status.report.ingest.job;
 
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
@@ -26,9 +28,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithOneReason;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardIngestJobStatusReporterAllQueryTest {
@@ -82,4 +86,29 @@ public class StandardIngestJobStatusReporterAllQueryTest {
         Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, noJobs, 0, stepCount))
                 .hasToString(example("reports/ingest/job/standard/all/noJobsWithEmrStepsUnfinished.txt"));
     }
+
+    @Nested
+    @DisplayName("Bulk Import job reporting")
+    class BulkImportJobReporting {
+        @Test
+        void shouldReportPendingBulkImportJobWithValidationAccepted() throws Exception {
+            // Given
+            List<IngestJobStatus> acceptedJob = acceptedJob();
+
+            // When / Then
+            Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, acceptedJob, 0)).hasToString(
+                    example("reports/ingest/job/standard/all/bulkImport/acceptedJob.txt"));
+        }
+
+        @Test
+        void shouldReportRejectedBulkImportJob() throws Exception {
+            // Given
+            List<IngestJobStatus> rejectedJob = rejectedJobWithOneReason();
+
+            // When / Then
+            Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, rejectedJob, 0)).hasToString(
+                    example("reports/ingest/job/standard/all/bulkImport/rejectedJob.txt"));
+        }
+    }
+
 }

@@ -24,12 +24,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
 
 public class WriteRandomDataFiles {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataFiles.class);
@@ -37,10 +38,12 @@ public class WriteRandomDataFiles {
     private WriteRandomDataFiles() {
     }
 
-    public static String writeToS3GetDirectory(TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException {
+    public static String writeToS3GetDirectory(
+            SystemTestProperties systemTestProperties, TableProperties tableProperties, Iterator<Record> recordIterator)
+            throws IOException {
 
         int fileNumber = 0;
-        String dir = tableProperties.get(DATA_BUCKET) + "/ingest/" + UUID.randomUUID() + "/";
+        String dir = systemTestProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID() + "/";
         String filename = dir + fileNumber + ".parquet";
         String path = "s3a://" + filename;
 

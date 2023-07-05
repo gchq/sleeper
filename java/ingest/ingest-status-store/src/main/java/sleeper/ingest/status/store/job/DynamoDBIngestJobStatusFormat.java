@@ -89,6 +89,7 @@ public class DynamoDBIngestJobStatusFormat {
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
+                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .build();
@@ -147,10 +148,12 @@ public class DynamoDBIngestJobStatusFormat {
                 boolean accepted = getBooleanAttribute(item, VALIDATION_RESULT);
                 if (accepted) {
                     return IngestJobAcceptedStatus.from(
+                            getIntAttribute(item, INPUT_FILES_COUNT, 0),
                             getInstantAttribute(item, VALIDATION_TIME),
                             getInstantAttribute(item, UPDATE_TIME));
                 } else {
                     return IngestJobRejectedStatus.builder()
+                            .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                             .validationTime(getInstantAttribute(item, VALIDATION_TIME))
                             .updateTime(getInstantAttribute(item, UPDATE_TIME))
                             .reasons(getStringListAttribute(item, VALIDATION_REASONS))

@@ -37,6 +37,7 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
@@ -54,11 +55,15 @@ public class CommonEmrBulkImportHelper {
     private final Construct scope;
     private final String shortId;
     private final InstanceProperties instanceProperties;
+    private final IngestStatusStoreResources statusStoreResources;
 
-    public CommonEmrBulkImportHelper(Construct scope, String shortId, InstanceProperties instanceProperties) {
+    public CommonEmrBulkImportHelper(Construct scope, String shortId,
+                                     InstanceProperties instanceProperties,
+                                     IngestStatusStoreResources ingestStatusStoreResources) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
+        this.statusStoreResources = ingestStatusStoreResources;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -121,7 +126,7 @@ public class CommonEmrBulkImportHelper {
                 .timeout(Duration.seconds(20))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .handler("sleeper.bulkimport.starter.BulkImportStarter")
+                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(jobQueue))));
 
@@ -129,6 +134,7 @@ public class CommonEmrBulkImportHelper {
         importBucket.grantReadWrite(function);
         addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
                 .forEach(ingestBucket -> ingestBucket.grantRead(function));
+        statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)

@@ -17,6 +17,7 @@ package sleeper.systemtest.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
@@ -52,6 +53,8 @@ public class InvokeSystemTestLambda {
                 .overrideConfiguration(builder -> builder
                         .apiCallTimeout(Duration.ofMinutes(5))
                         .apiCallAttemptTimeout(Duration.ofMinutes(5)))
+                .httpClientBuilder(ApacheHttpClient.builder()
+                        .socketTimeout(Duration.ofMinutes(5)))
                 .build();
     }
 
