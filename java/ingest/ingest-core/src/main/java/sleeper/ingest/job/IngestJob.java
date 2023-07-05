@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public class IngestJob {
@@ -66,6 +67,10 @@ public class IngestJob {
 
     public List<String> getFiles() {
         return files;
+    }
+
+    public int getFileCount() {
+        return Optional.ofNullable(files).map(List::size).orElse(0);
     }
 
     public Builder toBuilder() {

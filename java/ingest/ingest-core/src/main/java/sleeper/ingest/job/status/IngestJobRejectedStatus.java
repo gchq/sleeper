@@ -21,7 +21,6 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     private final Instant validationTime;
@@ -134,7 +133,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         }
 
         public Builder job(IngestJob job) {
-            return inputFileCount(Optional.ofNullable(job.getFiles()).map(List::size).orElse(0));
+            return inputFileCount(job.getFileCount());
         }
 
         public IngestJobRejectedStatus build() {
