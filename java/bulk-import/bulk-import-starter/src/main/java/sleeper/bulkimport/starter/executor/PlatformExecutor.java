@@ -23,14 +23,15 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 public interface PlatformExecutor {
+    String PLATFORM_ENV_VARIABLE = "BULK_IMPORT_PLATFORM";
 
     String getJarLocation();
 
     void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId);
 
-    static PlatformExecutor withDefaultClients(String platform,
-                                               InstanceProperties instanceProperties,
-                                               TablePropertiesProvider tablePropertiesProvider) {
+    static PlatformExecutor fromEnvironment(InstanceProperties instanceProperties,
+                                            TablePropertiesProvider tablePropertiesProvider) {
+        String platform = System.getenv(PLATFORM_ENV_VARIABLE);
         switch (platform) {
             case "NonPersistentEMR":
                 return new EmrPlatformExecutor(

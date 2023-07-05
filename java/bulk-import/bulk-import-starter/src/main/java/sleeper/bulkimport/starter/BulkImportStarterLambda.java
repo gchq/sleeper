@@ -34,7 +34,9 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.Executor;
 import sleeper.bulkimport.starter.executor.ExecutorFactory;
+import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
@@ -44,7 +46,7 @@ import java.util.Optional;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * The {@link BulkImportStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
+ * The {@link BulkImportStarterLambda} consumes {@link BulkImportJob} messages from SQS and starts executes them using
  * an {@link Executor}.
  */
 public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
@@ -83,10 +85,25 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         this.hadoopConfig = hadoopConfig;
     }
 
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
-        return instanceProperties;
+    private BulkImportStarterLambda(Builder builder) {
+        executor = builder.executor;
+        hadoopConfig = builder.hadoopConfig;
+        instanceProperties = builder.instanceProperties;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public Builder withSystemEnvironment() throws IOException {
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = loadInstanceProperties(s3);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
+                instanceProperties, tablePropertiesProvider);
+        return builder()
+                .instanceProperties(instanceProperties)
+                .hadoopConfig(new Configuration());
     }
 
     @Override
@@ -110,5 +127,39 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
             return Optional.empty();
         }
         return Optional.of(builder.files(files).build());
+    }
+
+    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) throws IOException {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        return instanceProperties;
+    }
+
+    public static final class Builder {
+        private Executor executor;
+        private Configuration hadoopConfig;
+        private InstanceProperties instanceProperties;
+
+        private Builder() {
+        }
+
+        public Builder executor(Executor executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        public Builder hadoopConfig(Configuration hadoopConfig) {
+            this.hadoopConfig = hadoopConfig;
+            return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public BulkImportStarterLambda build() {
+            return new BulkImportStarterLambda(this);
+        }
     }
 }
