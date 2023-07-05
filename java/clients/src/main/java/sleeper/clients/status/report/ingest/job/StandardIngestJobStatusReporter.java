@@ -16,6 +16,10 @@
 
 package sleeper.clients.status.report.ingest.job;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+
 import sleeper.clients.status.report.job.AverageRecordRateReport;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
@@ -134,7 +138,18 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
             out.println("Job was rejected with reasons:");
             IngestJobRejectedStatus rejectedStatus = (IngestJobRejectedStatus) status;
             rejectedStatus.getReasons().forEach(reason -> out.printf("- %s%n", reason));
+            if (rejectedStatus.getJsonMessage() != null) {
+                out.println();
+                out.println("Received JSON message:");
+                out.println(prettyPrintJsonString(rejectedStatus.getJsonMessage()));
+                out.println();
+            }
         }
+    }
+
+    private String prettyPrintJsonString(String json) {
+        Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
+        return prettyGson.toJson(prettyGson.fromJson(json, JsonObject.class));
     }
 
     private void printAllSummary(List<IngestJobStatus> statusList, IngestQueueMessages queueMessages,

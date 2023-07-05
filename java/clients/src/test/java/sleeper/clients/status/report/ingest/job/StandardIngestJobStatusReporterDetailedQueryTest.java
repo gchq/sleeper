@@ -145,5 +145,23 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0)).isEqualTo(
                     example("reports/ingest/job/standard/detailed/bulkImport/acceptedThenRejectedJob.txt"));
         }
+
+        @Test
+        void shouldReportRejectedJobWithJsonMessageSaved() throws Exception {
+            String json = "{\n" +
+                    "\"id\": \"a_unique_id\",\n" +
+                    "\"tableName\": \"myTable\",\n" +
+                    "\"files\": [\n" +
+                    "\"databucket/file1.parquet\"\n" +
+                    "]\n" +
+                    "}";
+            IngestJob job = createJob(1, 2);
+            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+                    rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
+
+            // When / Then
+            assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0)).isEqualTo(
+                    example("reports/ingest/job/standard/detailed/bulkImport/rejectedWithJson.txt"));
+        }
     }
 }

@@ -139,9 +139,14 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime) {
+        return rejectedStatusUpdate(job, validationTime, null);
+    }
+
+    public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime, String jsonMessage) {
         return IngestJobRejectedStatus.builder().job(job)
                 .validationTime(validationTime).updateTime(defaultUpdateTime(validationTime))
                 .reasons(List.of("Test validation reason"))
+                .jsonMessage(jsonMessage)
                 .build();
     }
 }
