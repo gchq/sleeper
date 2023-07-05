@@ -43,6 +43,8 @@ public interface JobQuery {
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
                 return RangeJobsQuery.fromParameters(tableName, queryParameters, clock);
+            case REJECTED:
+                return new RejectedJobsQuery();
             default:
                 throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }
