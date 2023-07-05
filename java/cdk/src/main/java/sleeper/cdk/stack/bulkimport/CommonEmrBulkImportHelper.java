@@ -121,7 +121,7 @@ public class CommonEmrBulkImportHelper {
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
         String handler = instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_ENABLED)
-                ? "sleeper.bulkimport.starter.BulkImportServerlessStarter"
+                ? "sleeper.bulkimport.starter.BulkImportServerlessStarterLambda"
                 : "sleeper.bulkimport.starter.BulkImportStarterLambda";
 
         IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + shortId + "JobStarter", builder -> builder

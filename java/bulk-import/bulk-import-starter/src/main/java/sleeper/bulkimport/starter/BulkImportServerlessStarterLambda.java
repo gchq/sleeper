@@ -29,19 +29,19 @@ import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import java.io.IOException;
 
 /**
- * The {@link BulkImportSeverlessStarter} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
+ * The {@link BulkImportServerlessStarterLambda} consumes {@link sleeper.bulkimport.job.BulkImportJob} messages from SQS and starts executes them using
  * an {@link Executor}.
  */
-public class BulkImportSeverlessStarterLambda extends AbstractBulkImportStarter {
-    public BulkImportSeverlessStarterLambda() throws IOException {
+public class BulkImportServerlessStarterLambda extends AbstractBulkImportStarter {
+    public BulkImportServerlessStarterLambda() throws IOException {
         this(AmazonS3ClientBuilder.defaultClient(),
-                EmrServerlessClient.builder().build(),
+                EmrServerlessClient.create(),
                 AWSStepFunctionsClientBuilder.defaultClient(),
                 AmazonDynamoDBClientBuilder.defaultClient());
-        }
+    }
 
-    public BulkImportSeverlessStarterLambda(AmazonS3 s3Client, EmrServerlessClient emrClient,
-                             AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
+    public BulkImportServerlessStarterLambda(AmazonS3 s3Client, EmrServerlessClient emrClient,
+                                             AWSStepFunctions stepFunctionsClient, AmazonDynamoDB dynamoDB) throws IOException {
         super(new ExecutorFactory(s3Client, emrClient, stepFunctionsClient, dynamoDB).createExecutor(), loadInstanceProperties(s3Client));
     }
 
