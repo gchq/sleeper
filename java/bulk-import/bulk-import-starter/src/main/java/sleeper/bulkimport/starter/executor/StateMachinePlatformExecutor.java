@@ -85,10 +85,11 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
         String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, Object> input = new HashMap<>();
-        List<String> args = constructArgs(bulkImportExecutor, bulkImportJob, jobRunId, stateMachineArn);
+        List<String> args = constructArgs(arguments, stateMachineArn);
         input.put("job", bulkImportJob);
         input.put("args", args);
 
@@ -128,7 +129,8 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         return defaultConfig;
     }
 
-    private List<String> constructArgs(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId, String taskId) {
+    private List<String> constructArgs(BulkImportArguments arguments, String taskId) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG,
                 tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
 
@@ -146,11 +148,6 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
                 .platformSpec(bulkImportJob.getPlatformSpec())
                 .sparkConf(sparkProperties)
                 .build();
-        return bulkImportExecutor.constructArgs(cloneWithUpdatedProps, jobRunId, taskId);
-    }
-
-    @Override
-    public String getJarLocation() {
-        return DEFAULT_JAR_LOCATION;
+        return arguments.constructArgs(cloneWithUpdatedProps, taskId, DEFAULT_JAR_LOCATION);
     }
 }

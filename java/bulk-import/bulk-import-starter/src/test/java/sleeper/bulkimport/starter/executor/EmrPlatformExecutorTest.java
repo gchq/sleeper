@@ -61,10 +61,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -446,27 +443,6 @@ class EmrPlatformExecutorTest {
         assertThat(ingestJobStatusStore.streamTableRecords("myTable"))
                 .extracting(ProcessStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");
-    }
-
-    @Test
-    void shouldConstructArgs() {
-        // Given
-        instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        instanceProperties.set(JARS_BUCKET, "jarsBucket");
-        instanceProperties.set(CONFIG_BUCKET, "configBucket");
-        instanceProperties.set(VERSION, "1.2.3");
-        BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-12T17:30:00Z"));
-        assertThat(executor.constructArgs(singleFileJob(), "test-run", "test-task"))
-                .containsExactly("spark-submit",
-                        "--deploy-mode",
-                        "cluster",
-                        "--class",
-                        "sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
-                        "s3a://jarsBucket/bulk-import-runner-1.2.3.jar",
-                        "configBucket",
-                        "my-job",
-                        "test-task",
-                        "test-run");
     }
 
     private BulkImportExecutor executor() {

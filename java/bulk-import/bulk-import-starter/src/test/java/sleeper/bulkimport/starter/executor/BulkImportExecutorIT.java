@@ -324,14 +324,9 @@ class BulkImportExecutorIT {
         }
 
         @Override
-        public void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId) {
-            jobsRun.add(bulkImportJob);
-            jobRunIdsOfJobsRun.add(jobRunId);
-        }
-
-        @Override
-        public String getJarLocation() {
-            return "test-bucket";
+        public void runJobOnPlatform(BulkImportArguments arguments) {
+            jobsRun.add(arguments.getBulkImportJob());
+            jobRunIdsOfJobsRun.add(arguments.getJobRunId());
         }
     }
 

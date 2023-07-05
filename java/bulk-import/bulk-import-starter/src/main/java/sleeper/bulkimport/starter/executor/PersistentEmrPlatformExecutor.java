@@ -27,7 +27,6 @@ import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
@@ -53,12 +52,13 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
         StepConfig stepConfig = new StepConfig()
-                .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
+                .withName("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(bulkImportExecutor.constructArgs(bulkImportJob, jobRunId, clusterName)));
+                        .withArgs(arguments.constructArgs(
+                                clusterName, EmrJarLocation.getJarLocation(instanceProperties))));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
                 .withSteps(stepConfig);
@@ -87,10 +87,4 @@ public class PersistentEmrPlatformExecutor implements PlatformExecutor {
         }
         return clusterId;
     }
-
-    @Override
-    public String getJarLocation() {
-        return EmrJarLocation.getJarLocation(instanceProperties);
-    }
-
 }

@@ -16,7 +16,6 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +29,6 @@ import sleeper.statestore.StateStoreProvider;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -38,8 +36,6 @@ import java.util.regex.Pattern;
 
 import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
@@ -54,7 +50,6 @@ public class BulkImportExecutor {
     protected final AmazonS3 s3Client;
     protected final PlatformExecutor platformExecutor;
     protected final Supplier<Instant> validationTimeSupplier;
-
 
     public BulkImportExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
                               StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
@@ -87,32 +82,11 @@ public class BulkImportExecutor {
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        platformExecutor.runJobOnPlatform(this, bulkImportJob, jobRunId);
+        platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
+                .instanceProperties(instanceProperties)
+                .bulkImportJob(bulkImportJob).jobRunId(jobRunId)
+                .build());
         LOGGER.info("Successfully submitted job");
-    }
-
-
-    public List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
-        Map<String, String> userConfig = bulkImportJob.getSparkConf();
-        LOGGER.info("Using Spark config {}", userConfig);
-
-        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
-
-        List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
-
-        if (null != userConfig) {
-            for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
-                args.add("--conf");
-                args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
-            }
-        }
-
-        args.add(platformExecutor.getJarLocation());
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        args.add(bulkImportJob.getId());
-        args.add(taskId);
-        args.add(jobRunId);
-        return args;
     }
 
     private boolean validateJob(BulkImportJob bulkImportJob) {

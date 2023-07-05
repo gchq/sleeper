@@ -79,7 +79,8 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -109,7 +110,9 @@ public class EmrPlatformExecutor implements PlatformExecutor {
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(bulkImportExecutor.constructArgs(bulkImportJob, jobRunId, clusterName + "-EMR"))))
+                                .withArgs(arguments.constructArgs(
+                                        clusterName + "-EMR",
+                                        EmrJarLocation.getJarLocation(instanceProperties)))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));
@@ -141,10 +144,5 @@ public class EmrPlatformExecutor implements PlatformExecutor {
             config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
         }
         return config;
-    }
-
-    @Override
-    public String getJarLocation() {
-        return EmrJarLocation.getJarLocation(instanceProperties);
     }
 }

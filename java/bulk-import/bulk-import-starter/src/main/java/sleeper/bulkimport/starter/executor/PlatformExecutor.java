@@ -18,16 +18,13 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 public interface PlatformExecutor {
     String PLATFORM_ENV_VARIABLE = "BULK_IMPORT_PLATFORM";
 
-    String getJarLocation();
-
-    void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId);
+    void runJobOnPlatform(BulkImportArguments arguments);
 
     static PlatformExecutor fromEnvironment(InstanceProperties instanceProperties,
                                             TablePropertiesProvider tablePropertiesProvider) {
