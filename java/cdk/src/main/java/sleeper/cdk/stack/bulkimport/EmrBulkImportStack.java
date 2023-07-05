@@ -72,16 +72,19 @@ public class EmrBulkImportStack extends NestedStack {
             List<StateStoreStack> stateStoreStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
-        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "NonPersistentEMR", instanceProperties, statusStoreResources);
-        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
-        IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
-        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
 
+        String instanceName = "NonPersistentEMR";
         if (instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_ENABLED)) {
             createEmrServerlessApplication(scope, instanceProperties);
+            instanceName = "EMRServerless";
         }
+
+        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
+                this, instanceName, instanceProperties, statusStoreResources);
+        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
+        IFunction jobStarter = commonHelper.createJobStarterFunction(
+                instanceName, bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
+        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter))
 
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
@@ -107,10 +110,7 @@ public class EmrBulkImportStack extends NestedStack {
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
     }
-
-    //ToDo create execution role
-
-    // Add stack to create EMR Serverless
+    
     public void createEmrServerlessApplication(Construct scope, InstanceProperties instanceProperties) {
         Properties properties = instanceProperties.getProperties();
 

@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -212,7 +213,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
     }
 
     private static ManagedPolicy createEmrServerlessManagedPolicy(Construct scope, InstanceProperties instanceProperties) {
-        // Inspired from https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
+        // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
 
@@ -242,8 +243,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                         "s3:ListBucket",
                                         "s3:DeleteObject"))
                                 .resources(Lists.newArrayList(
-                                        "arn:aws:s3:" + region + ":" + account + ":*", //ToDo should lock down to a bucket
-                                        "arn:aws:s3:" + region + ":" + account + ":/*"))
+                                        "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET,
+                                        "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET+ "/*"))
                                 .build()),
                         new PolicyStatement(PolicyStatementProps.builder()
                                 .sid("GlueCreateAndReadDataCatalog")
