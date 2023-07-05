@@ -295,7 +295,7 @@ class BulkImportExecutorIT {
         private final List<String> jobRunIdsOfJobsRun = new ArrayList<>();
         private final Instant validationTime;
 
-        public FakeExecutor(Instant validationTime) {
+        FakeExecutor(Instant validationTime) {
             this.validationTime = validationTime;
         }
 
