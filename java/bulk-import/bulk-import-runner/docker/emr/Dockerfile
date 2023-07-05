@@ -20,5 +20,7 @@ USER root
 RUN yum update -y && \
     yum install java-11-amazon-corretto -y
 
+COPY ./bulk-import-runner.jar /workdir
+
 # EMR Severless will run the image as hadoop
 USER hadoop:hadoop
