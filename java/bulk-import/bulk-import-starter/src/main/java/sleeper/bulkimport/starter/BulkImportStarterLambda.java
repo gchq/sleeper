@@ -17,15 +17,11 @@ package sleeper.bulkimport.starter;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.stepfunctions.AWSStepFunctions;
-import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +30,15 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.Executor;
-import sleeper.bulkimport.starter.executor.ExecutorFactory;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,14 +58,17 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     public BulkImportStarterLambda() throws IOException {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
         instanceProperties = loadInstanceProperties(s3);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         hadoopConfig = new Configuration();
-        executor = null;
+        executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
+            new StateStoreProvider(dynamo, instanceProperties), 
+            new DynamoDBIngestJobStatusStore(dynamo, instanceProperties), 
+            s3, platformExecutor, Instant::now);
     }
-
 
     public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig) {
         this.executor = executor;
