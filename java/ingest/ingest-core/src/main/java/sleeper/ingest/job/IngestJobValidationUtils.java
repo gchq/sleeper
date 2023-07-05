@@ -16,8 +16,6 @@
 
 package sleeper.ingest.job;
 
-import com.google.gson.JsonParseException;
-
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
@@ -36,23 +34,24 @@ public class IngestJobValidationUtils {
     public static <T> Optional<T> deserialiseAndValidate(
             String message, Function<String, T> deserialiser, Function<T, List<String>> getValidationFailures,
             IngestJobStatusStore ingestJobStatusStore, Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
+        T job;
         try {
-            T job = deserialiser.apply(message);
-            List<String> validationFailures = getValidationFailures.apply(job);
-            if (validationFailures.isEmpty()) {
-                return Optional.of(job);
-            } else {
-                ingestJobStatusStore.jobValidated(
-                        ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
-                                validationFailures.stream()
-                                        .map(failure -> "Model validation failed. " + failure)
-                                        .collect(Collectors.toList())));
-                return Optional.empty();
-            }
-        } catch (JsonParseException e) {
+            job = deserialiser.apply(message);
+        } catch (RuntimeException e) {
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
                             "Error parsing JSON. Reason: " + e.getCause().getMessage()));
+            return Optional.empty();
+        }
+        List<String> validationFailures = getValidationFailures.apply(job);
+        if (validationFailures.isEmpty()) {
+            return Optional.of(job);
+        } else {
+            ingestJobStatusStore.jobValidated(
+                    ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
+                            validationFailures.stream()
+                                    .map(failure -> "Model validation failed. " + failure)
+                                    .collect(Collectors.toList())));
             return Optional.empty();
         }
     }
