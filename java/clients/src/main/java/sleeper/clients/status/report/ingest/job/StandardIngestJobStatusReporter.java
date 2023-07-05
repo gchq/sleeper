@@ -19,7 +19,6 @@ package sleeper.clients.status.report.ingest.job;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
 import sleeper.clients.status.report.job.StandardProcessRunReporter;
@@ -152,7 +151,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
         try {
             return prettyGson.toJson(prettyGson.fromJson(json, JsonObject.class));
-        } catch (JsonSyntaxException e) {
+        } catch (RuntimeException e) {
             return json;
         }
     }
