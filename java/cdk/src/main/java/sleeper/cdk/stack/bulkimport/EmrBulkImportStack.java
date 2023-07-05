@@ -84,7 +84,7 @@ public class EmrBulkImportStack extends NestedStack {
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 instanceName, bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
-        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter))
+        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
 
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
