@@ -207,7 +207,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                         createEmrServerlessManagedPolicy(scope, instanceProperties)))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
-    
+
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
     }
@@ -218,59 +218,59 @@ public class CommonEmrBulkImportStack extends NestedStack {
         String account = instanceProperties.get(ACCOUNT);
 
         ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServerlessServicePolicy", ManagedPolicyProps.builder()
-        .managedPolicyName(null)
-        .description("Policy required for Sleepe Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
-        .document(PolicyDocument.Builder.create()
-                .statements(Lists.newArrayList(
-                        new PolicyStatement(PolicyStatementProps.builder()
-                                .sid("PolicyStatementProps")
-                                .effect(Effect.ALLOW)
-                                .actions(Lists.newArrayList(
-                                "s3:GetObject",
-                                        "s3:ListBucket"
-                                ))
-                                .resources(Lists.newArrayList(
-                                        "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce",
-                                        "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce/*"
-                                ))
-                                .build()),
-                        new PolicyStatement(PolicyStatementProps.builder()
-                                .sid("FullAccessToOutputBucket")
-                                .effect(Effect.ALLOW)
-                                .actions(Lists.newArrayList(
-                                        "s3:PutObject",
-                                        "s3:GetObject",
-                                        "s3:ListBucket",
-                                        "s3:DeleteObject"))
-                                .resources(Lists.newArrayList(
-                                        "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET,
-                                        "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET+ "/*"))
-                                .build()),
-                        new PolicyStatement(PolicyStatementProps.builder()
-                                .sid("GlueCreateAndReadDataCatalog")
-                                .effect(Effect.ALLOW)
-                                .actions(Lists.newArrayList(
-                                        "glue:GetDatabase",
-                                        "glue:CreateDatabase",
-                                        "glue:GetDataBases",
-                                        "glue:CreateTable",
-                                        "glue:GetTable",
-                                        "glue:UpdateTable",
-                                        "glue:DeleteTable",
-                                        "glue:GetTables",
-                                        "glue:GetPartition",
-                                        "glue:GetPartitions",
-                                        "glue:CreatePartition",
-                                        "glue:BatchCreatePartition",
-                                        "glue:GetUserDefinedFunctions"
-                                ))
-                                .resources(Lists.newArrayList(
-                                        "arn:aws:*:" + region + ":" + account + ":*" //ToDo this sould be locked down more
-                                ))
-                                .build())
+                .managedPolicyName(null)
+                .description("Policy required for Sleepe Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
+                .document(PolicyDocument.Builder.create()
+                        .statements(Lists.newArrayList(
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("PolicyStatementProps")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList(
+                                                "s3:GetObject",
+                                                "s3:ListBucket"
+                                        ))
+                                        .resources(Lists.newArrayList(
+                                                "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce",
+                                                "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce/*"
+                                        ))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("FullAccessToOutputBucket")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList(
+                                                "s3:PutObject",
+                                                "s3:GetObject",
+                                                "s3:ListBucket",
+                                                "s3:DeleteObject"))
+                                        .resources(Lists.newArrayList(
+                                                "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET,
+                                                "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET + "/*"))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("GlueCreateAndReadDataCatalog")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList(
+                                                "glue:GetDatabase",
+                                                "glue:CreateDatabase",
+                                                "glue:GetDataBases",
+                                                "glue:CreateTable",
+                                                "glue:GetTable",
+                                                "glue:UpdateTable",
+                                                "glue:DeleteTable",
+                                                "glue:GetTables",
+                                                "glue:GetPartition",
+                                                "glue:GetPartitions",
+                                                "glue:CreatePartition",
+                                                "glue:BatchCreatePartition",
+                                                "glue:GetUserDefinedFunctions"
+                                        ))
+                                        .resources(Lists.newArrayList(
+                                                "arn:aws:*:" + region + ":" + account + ":*" //ToDo this sould be locked down more
+                                        ))
+                                        .build())
                         ))
-                .build())
-        .build());
+                        .build())
+                .build());
         return emrServerlessManagedPolicy;
     }
 

@@ -42,8 +42,8 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.function.IntUnaryOperator;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
@@ -111,7 +111,7 @@ public class EmrBulkImportStack extends NestedStack {
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
     }
-    
+
     public void createEmrServerlessApplication(Construct scope, InstanceProperties instanceProperties) {
         Properties properties = instanceProperties.getProperties();
 
@@ -140,7 +140,7 @@ public class EmrBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, emrsCluster.getAttrApplicationId());
     }
 
-      private String randomSubnet(InstanceProperties instanceProperties) {
+    private String randomSubnet(InstanceProperties instanceProperties) {
         List<String> subnets = instanceProperties.getList(SUBNETS);
         return subnets.get(randomSubnet.applyAsInt(subnets.size()));
     }
