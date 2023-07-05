@@ -15,11 +15,37 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
+import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
+
 import sleeper.bulkimport.job.BulkImportJob;
+import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 public interface PlatformExecutor {
 
     String getJarLocation();
 
     void runJobOnPlatform(BulkImportExecutor bulkImportExecutor, BulkImportJob bulkImportJob, String jobRunId);
+
+    static PlatformExecutor withDefaultClients(String platform,
+                                               InstanceProperties instanceProperties,
+                                               TablePropertiesProvider tablePropertiesProvider) {
+        switch (platform) {
+            case "NonPersistentEMR":
+                return new EmrPlatformExecutor(
+                        AmazonElasticMapReduceClientBuilder.defaultClient(),
+                        instanceProperties, tablePropertiesProvider);
+            case "EKS":
+                return new StateMachinePlatformExecutor(
+                        AWSStepFunctionsClientBuilder.defaultClient(),
+                        instanceProperties, tablePropertiesProvider);
+            case "PersistentEMR":
+                return new PersistentEmrPlatformExecutor(
+                        AmazonElasticMapReduceClientBuilder.defaultClient(),
+                        instanceProperties);
+            default:
+                throw new IllegalArgumentException("Invalid platform: " + platform);
+        }
+    }
 }

@@ -34,8 +34,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
@@ -147,9 +145,6 @@ public class EmrPlatformExecutor implements PlatformExecutor {
 
     @Override
     public String getJarLocation() {
-        return "s3a://"
-                + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
-                + "/bulk-import-runner-"
-                + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar";
+        return EmrJarLocation.getJarLocation(instanceProperties);
     }
 }
