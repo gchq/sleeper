@@ -79,7 +79,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-class EmrExecutorTest {
+class EmrPlatformExecutorTest {
     private final AmazonElasticMapReduce emr = mock(AmazonElasticMapReduce.class);
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
