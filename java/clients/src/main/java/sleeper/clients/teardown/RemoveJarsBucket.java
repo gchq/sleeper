@@ -32,12 +32,15 @@ public class RemoveJarsBucket {
     private RemoveJarsBucket() {
     }
 
-    public static void remove(S3Client s3, String bucketName) {
+    public static void remove(S3Client s3, String bucketName) throws InterruptedException {
         try {
             LOGGER.info("Emptying bucket {}", bucketName);
             s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))
                     .stream().parallel()
                     .forEach(response -> deleteVersions(s3, bucketName, response));
+            LOGGER.info("Waiting for bucket to empty");
+            WaitForS3BucketToEmpty.from(s3, bucketName)
+                    .pollUntilFinished();
             LOGGER.info("Deleting bucket {}", bucketName);
             s3.deleteBucket(builder -> builder.bucket(bucketName));
         } catch (NoSuchBucketException e) {
