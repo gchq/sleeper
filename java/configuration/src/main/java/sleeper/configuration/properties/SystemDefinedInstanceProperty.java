@@ -251,6 +251,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.application.id")
+            .description("The id of the application used for EMR Severless bulk import jobs.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
     // Bulk import using persistent EMR
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using persistent EMR.")

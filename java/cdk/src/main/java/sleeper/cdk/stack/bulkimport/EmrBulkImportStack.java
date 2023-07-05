@@ -42,6 +42,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.function.IntUnaryOperator;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
@@ -136,6 +137,7 @@ public class EmrBulkImportStack extends NestedStack {
 
         CfnApplication emrsCluster = new CfnApplication(scope, getArtifactId(), props);
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, emrsCluster.getName());
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, emrsCluster.getAttrApplicationId());
     }
 
       private String randomSubnet(InstanceProperties instanceProperties) {

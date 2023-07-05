@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_TYPE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 
 /**
  * An {@link Executor} which runs a bulk import job on an EMR cluster.
@@ -69,23 +69,10 @@ public class EmrServerlessExecutor extends AbstractEmrExecutor {
 
         clusterName = String.join("-", "sleeper", "emr", "serverless");
 
-        // Todo Get Appliation Id to run the job
-        String applicationId = "";
-        for (ApplicationSummary summary : emrClient.listApplications(ListApplicationsRequest.builder().build()).applications()) {
-                if (summary.name().equals(clusterName)) {
-                        applicationId = summary.id();
-                        break;
-                }
-        }
-        if (applicationId.isEmpty()) {
-                LOGGER.error("Unable to find {} application to run the jon in", BULK_IMPORT_EMR_SERVERLESS_TYPE);
-                throw new RuntimeException("No Application found");
-        }
-
         StartJobRunRequest job = StartJobRunRequest.builder()
-                .applicationId(applicationId)
+                .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
                 .name(clusterName + jobRunId)
-                .executionRoleArn("applicationId")  //Todo Role that can run job
+                .executionRoleArn("roleId")  //Todo Role that can run job
                 .tags(instanceProperties.getTags())
                 .jobDriver(JobDriver.builder()
                         //.sparkSubmit(null) //Todo Spark Job

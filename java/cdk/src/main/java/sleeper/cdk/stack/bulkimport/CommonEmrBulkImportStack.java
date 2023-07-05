@@ -207,7 +207,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                         createEmrServerlessManagedPolicy(scope, instanceProperties)))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
-
+    
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
     }
@@ -271,7 +271,6 @@ public class CommonEmrBulkImportStack extends NestedStack {
                         ))
                 .build())
         .build());
-
         return emrServerlessManagedPolicy;
     }
 
