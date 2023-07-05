@@ -24,6 +24,7 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -162,6 +163,18 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
             // When / Then
             assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0)).isEqualTo(
                     example("reports/ingest/job/standard/detailed/bulkImport/rejectedWithJson.txt"));
+        }
+
+        @Test
+        void shouldReportRejectedJobWithInvalidJsonMessageSaved() throws IOException {
+            String json = "{";
+            IngestJob job = createJob(1, 2);
+            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+                    rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
+
+            // When / Then
+            assertThat(getStandardReport(JobQuery.Type.DETAILED, status, 0)).isEqualTo(
+                    example("reports/ingest/job/standard/detailed/bulkImport/rejectedWithInvalidJson.txt"));
         }
     }
 }
