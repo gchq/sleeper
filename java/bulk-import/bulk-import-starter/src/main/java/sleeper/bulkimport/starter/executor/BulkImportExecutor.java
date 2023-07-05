@@ -151,8 +151,4 @@ public class BulkImportExecutor {
         s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
         LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
     }
-
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
-    }
 }
