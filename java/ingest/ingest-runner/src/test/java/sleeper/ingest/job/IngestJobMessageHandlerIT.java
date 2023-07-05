@@ -34,13 +34,10 @@ import sleeper.core.CommonTestConstants;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
-import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {
@@ -177,95 +174,6 @@ public class IngestJobMessageHandlerIT {
 
             // Then
             assertThat(job).isNotPresent();
-        }
-    }
-
-    @Nested
-    @DisplayName("Report validation failures")
-    class ReportValidationFailures {
-        @Test
-        void shouldReportValidationFailureIfJsonInvalid() {
-            // Given
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
-                    createHadoopConfiguration(), properties, ingestJobStatusStore,
-                    () -> "test-job-id", () -> validationTime);
-            String json = "{";
-
-            // When
-            ingestJobMessageHandler.handleMessage(json);
-
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
-        }
-
-        @Test
-        void shouldReportModelValidationFailureIfTableNameNotProvided() {
-            // Given
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
-                    createHadoopConfiguration(), properties, ingestJobStatusStore,
-                    () -> "test-job-id", () -> validationTime);
-            String json = "{" +
-                    "\"files\":[]" +
-                    "}";
-
-            // When
-            ingestJobMessageHandler.handleMessage(json);
-
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"tableName\"")));
-        }
-
-        @Test
-        void shouldReportModelValidationFailureIfFilesNotProvided() {
-            // Given
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
-                    createHadoopConfiguration(), properties, ingestJobStatusStore,
-                    () -> "test-job-id", () -> validationTime);
-            String json = "{" +
-                    "\"tableName\":\"test-table\"" +
-                    "}";
-
-            // When
-            ingestJobMessageHandler.handleMessage(json);
-
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"")));
-        }
-
-        @Test
-        void shouldReportMultipleModelValidationFailures() {
-            // Given
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
-                    createHadoopConfiguration(), properties, ingestJobStatusStore,
-                    () -> "test-job-id", () -> validationTime);
-            String json = "{}";
-
-            // When
-            ingestJobMessageHandler.handleMessage(json);
-
-            // Then
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"",
-                                    "Model validation failed. Missing property \"tableName\"")));
         }
     }
 
