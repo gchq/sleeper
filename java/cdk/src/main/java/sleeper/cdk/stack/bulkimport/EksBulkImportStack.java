@@ -27,7 +27,9 @@ import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
+import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -85,6 +87,7 @@ import java.util.Map;
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
  * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
@@ -193,8 +196,12 @@ public final class EksBulkImportStack extends NestedStack {
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
 
+        ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
         bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
+                .subnetSelection(SubnetSelection.builder()
+                        .subnets(List.of(subnet))
+                        .build())
                 .selectors(Lists.newArrayList(Selector.builder()
                         .namespace(uniqueBulkImportId)
                         .build()))
