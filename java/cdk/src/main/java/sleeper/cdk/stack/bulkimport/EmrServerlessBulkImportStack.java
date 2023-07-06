@@ -53,32 +53,28 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
- * An {@link EmrServerlessBulkImportStack} creates an SQS queue that bulk import jobs can
- * be sent to. A message arriving on this queue triggers a lambda. That lambda
- * creates an EMR cluster that executes the bulk import job and then terminates.
+ * An {@link EmrServerlessBulkImportStack} creates an SQS queue that bulk import jobs can be sent
+ * to. A message arriving on this queue triggers a lambda. That lambda creates an EMR cluster that
+ * executes the bulk import job and then terminates.
  */
 public class EmrServerlessBulkImportStack extends NestedStack {
     private final IntUnaryOperator randomSubnet;
 
-    public EmrServerlessBulkImportStack(
-            Construct scope,
-            String id,
-            InstanceProperties instanceProperties,
-            BuiltJars jars,
-            BulkImportBucketStack importBucketStack,
-            CommonEmrBulkImportStack commonEmrStack,
-            TopicStack errorsTopicStack,
-            List<StateStoreStack> stateStoreStacks,
+    public EmrServerlessBulkImportStack(Construct scope, String id,
+            InstanceProperties instanceProperties, BuiltJars jars,
+            BulkImportBucketStack importBucketStack, CommonEmrBulkImportStack commonEmrStack,
+            TopicStack errorsTopicStack, List<StateStoreStack> stateStoreStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
 
         createEmrServerlessApplication(scope, instanceProperties);
 
-        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "EMRServerless", instanceProperties, statusStoreResources);
-        Queue bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
-        IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "EMRServerless", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
+        CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
+                "EMRServerless", instanceProperties, statusStoreResources);
+        Queue bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL,
+                errorsTopicStack.getTopic());
+        IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
+                bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
 
         configureJobStarterFunction(instanceProperties, jobStarter);
@@ -86,23 +82,22 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         randomSubnet = new Random()::nextInt;
     }
 
-    private static void configureJobStarterFunction(
-            InstanceProperties instanceProperties, IFunction bulkImportJobStarter) {
+    private static void configureJobStarterFunction(InstanceProperties instanceProperties,
+            IFunction bulkImportJobStarter) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
-        instanceProperties.getTags().forEach((key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
+        instanceProperties.getTags().forEach(
+                (key, value) -> tagKeyCondition.put("elasticmapreduce:RequestTag/" + key, value));
 
         conditions.put("StringEquals", tagKeyCondition);
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("elasticmapreduce:RunJobFlow"))
-                .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*"))
-                .conditions(conditions)
-                .build());
+                .actions(Lists.newArrayList("elasticmapreduce:RunJobFlow")).effect(Effect.ALLOW)
+                .resources(Lists.newArrayList("*")).conditions(conditions).build());
     }
 
-    public void createEmrServerlessApplication(Construct scope, InstanceProperties instanceProperties) {
+    public void createEmrServerlessApplication(Construct scope,
+            InstanceProperties instanceProperties) {
         Properties properties = instanceProperties.getProperties();
 
         CfnApplicationProps props = CfnApplicationProps.builder()
@@ -111,25 +106,25 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .architecture(properties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE).toString())
                 .type(properties.get(BULK_IMPORT_EMR_SERVERLESS_TYPE).toString())
                 .imageConfiguration(ImageConfigurationInputProperty.builder()
-                        .imageUri(properties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO).toString())
-                        .build()
-                )
+                        .imageUri(properties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
+                                .toString())
+                        .build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .securityGroupIds(List.of(properties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).toString()))
-                        .subnetIds(List.of(randomSubnet(instanceProperties)))
-                        .build()
-                )
-                .tags(List.of(new CfnTag.Builder()
-                        .key("DeploymentStack")
-                        .value("BulkImportServerlessEMR")
-                        .build()))
+                        .securityGroupIds(List.of(properties
+                                .get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).toString()))
+                        .subnetIds(List.of(randomSubnet(instanceProperties))).build())
+                .tags(List.of(new CfnTag.Builder().key("DeploymentStack")
+                        .value("BulkImportServerlessEMR").build()))
                 .build();
 
-        CfnApplication emrsCluster = new CfnApplication(scope, getArtifactId(), props);
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, emrsCluster.getName());
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, emrsCluster.getAttrApplicationId());
+        CfnApplication emrServerlessCluster = new CfnApplication(scope, getArtifactId(), props);
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME,
+                emrServerlessCluster.getName());
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID,
+                emrServerlessCluster.getAttrApplicationId());
     }
 
+    // ToDo test on multiple subnets
     private String randomSubnet(InstanceProperties instanceProperties) {
         List<String> subnets = instanceProperties.getList(SUBNETS);
         return subnets.get(randomSubnet.applyAsInt(subnets.size()));

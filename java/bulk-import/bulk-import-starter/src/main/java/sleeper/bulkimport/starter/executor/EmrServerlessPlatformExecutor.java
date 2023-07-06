@@ -20,12 +20,18 @@ import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverride
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
 import software.amazon.awssdk.services.emrserverless.model.MonitoringConfiguration;
 import software.amazon.awssdk.services.emrserverless.model.S3MonitoringConfiguration;
+import software.amazon.awssdk.services.emrserverless.model.SparkSubmit;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
+import software.amazon.awssdk.services.emrserverless.model.StartJobRunResponse;
 
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME;
 
 /**
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
@@ -35,7 +41,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     private final InstanceProperties instanceProperties;
 
     public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
-                                         InstanceProperties instanceProperties) {
+            InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
     }
@@ -43,27 +49,38 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        String clusterName = String.join("-", "sleeper", "emr", "serverless");
-        String logUri = null == bulkImportBucket ? null : "s3://" + clusterName + "/emr-serverless/logs";
+        String clusterName = String.join("-",
+                instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME), "job",
+                arguments.getJobRunId());
+        String logUri = null == bulkImportBucket ? null
+                : "s3://" + clusterName + "/emr-serverless/logs";
 
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
                 .name(clusterName + arguments.getJobRunId())
-                .executionRoleArn("roleId")  //Todo Role that can run job
-                .tags(instanceProperties.getTags())
-                .jobDriver(JobDriver.builder()
-                        //.sparkSubmit(null) //Todo Spark Job
-                        .build())
-                .configurationOverrides(ConfigurationOverrides.builder()
-                        .monitoringConfiguration(MonitoringConfiguration.builder()
-                                .s3MonitoringConfiguration(S3MonitoringConfiguration
-                                        .builder()
-                                        .logUri(logUri)
+                .executionRoleArn(
+                        instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN))
+                .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
+                        .entryPoint("/workdir/bulk-import-runner.jar").entryPointArguments("1")
+                        .sparkSubmitParameters(constructArgs(instanceProperties)).build()).build())
+                .configurationOverrides(
+                        ConfigurationOverrides.builder()
+                                .monitoringConfiguration(MonitoringConfiguration.builder()
+                                        .s3MonitoringConfiguration(S3MonitoringConfiguration
+                                                .builder().logUri(logUri).build())
                                         .build())
                                 .build())
-                        .build())
                 .build();
 
         emrClient.startJobRun(job);
+    }
+
+    private String constructArgs(InstanceProperties instanceProperties) {
+        return "--class " + BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME
+                + " --conf spark.executorEnv.JAVA_HOME=" + BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME
+                + " --conf spark.emr-serverless.driverEnv.JAVA_HOME="
+                + BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME + " --conf spark.executor.cores=1"
+                + " --conf spark.executor.memory=2g" + " --conf spark.driver.cores=1"
+                + " --conf spark.driver.memory=2g" + " --conf spark.executor.instances=1";
     }
 }

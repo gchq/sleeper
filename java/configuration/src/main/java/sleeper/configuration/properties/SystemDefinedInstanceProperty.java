@@ -238,21 +238,30 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The name of the security configuration used by bulk import using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-
     // Bulk import using EMR
     SystemDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-
     // Bulk import using EMR Serverless
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.cluster.name")
-            .description("The name of the cluster used for EMR Severless bulk import jobs.")
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.emrserverless.cluster.name")
+            .description("The name of the cluster used for EMR Serverless bulk import jobs.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.application.id")
-            .description("The id of the application used for EMR Severless bulk import jobs.")
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID = Index.propertyBuilder("sleeper.bulk.import.emrserverless.application.id")
+            .description("The id of the application used for EMR Serverless bulk import jobs.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN = Index.propertyBuilder("sleeper.bulk.import.emrserverless.role.arn")
+            .description("The ARN of the role assumed by the bulk import clusters using EMR Serverless.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.emrserverless.class.name")
+            .description("The class to use to perform the bulk import.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME = Index.propertyBuilder("sleeper.bulk.import.emrserverless.java.home")
+            .description("The path to JAVA_HOME to be used by the custom image for bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     // Bulk import using persistent EMR

@@ -18,7 +18,8 @@ USER root
 
 # Install JDK 11
 RUN yum update -y && \
-    yum install java-11-amazon-corretto -y
+    yum install java-11-amazon-corretto -y && \
+    mkdir /workdir
 
 COPY ./bulk-import-runner.jar /workdir
 

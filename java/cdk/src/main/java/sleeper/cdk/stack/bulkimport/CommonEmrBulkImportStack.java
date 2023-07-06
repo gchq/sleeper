@@ -58,6 +58,7 @@ import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
@@ -67,6 +68,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_I
 public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole ec2Role;
     private final IRole emrRole;
+    private final IRole emrServerlessRole;
     private final CfnSecurityConfiguration securityConfiguration;
 
     public CommonEmrBulkImportStack(Construct scope,
@@ -79,10 +81,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
         ec2Role = createEc2Role(this, instanceProperties,
                 importBucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
+        emrServerlessRole = createEmrServerlessRole(this, instanceProperties);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
         IngestStatusStoreResources statusStore = statusStoreStack.getResources();
         statusStore.grantWriteJobEvent(ec2Role);
         statusStore.grantWriteJobEvent(emrRole);
+        statusStore.grantWriteJobEvent(emrServerlessRole);
     }
 
     private static IRole createEc2Role(
@@ -203,12 +207,24 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .description("The role assumed by the Bulk import clusters")
                 .managedPolicies(Lists.newArrayList(
                         emrManagedPolicy,
-                        customEmrManagedPolicy,
-                        createEmrServerlessManagedPolicy(scope, instanceProperties)))
+                        customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
+        return role;
+    }
+
+    private static IRole createEmrServerlessRole(Construct scope, InstanceProperties instanceProperties) {
+        String instanceId = instanceProperties.get(ID);
+        Role role = new Role(scope, "EmrServerlessRole", RoleProps.builder()
+                        .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
+                .description("The role assumed by the Bulk import EMR Serverless Application")
+                                .managedPolicies(Lists.newArrayList(
+                        createEmrServerlessManagedPolicy(scope, instanceProperties)))
+                        .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com")).build());
+
+        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
         return role;
     }
 
@@ -219,7 +235,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
         ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServerlessServicePolicy", ManagedPolicyProps.builder()
                 .managedPolicyName(null)
-                .description("Policy required for Sleepe Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
+                .description("Policy required for Sleeper Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
                 .document(PolicyDocument.Builder.create()
                         .statements(Lists.newArrayList(
                                 new PolicyStatement(PolicyStatementProps.builder()
@@ -265,7 +281,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                                 "glue:GetUserDefinedFunctions"
                                         ))
                                         .resources(Lists.newArrayList(
-                                                "arn:aws:*:" + region + ":" + account + ":*" //ToDo this sould be locked down more
+                                                "arn:aws:*:" + region + ":" + account + ":*"
                                         ))
                                         .build())
                         ))
