@@ -123,12 +123,12 @@ public class CommonEmrBulkImportHelper {
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
                 .memorySize(1024)
-                .timeout(Duration.seconds(20))
+                .timeout(Duration.minutes(2))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(2).build())));
+                .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);
