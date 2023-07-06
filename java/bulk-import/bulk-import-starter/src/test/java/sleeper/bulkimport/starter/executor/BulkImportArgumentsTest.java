@@ -48,6 +48,8 @@ public class BulkImportArgumentsTest {
                         .build())
                 .jobRunId("test-run")
                 .build();
+
+        // When / Then
         assertThat(arguments.constructArgs("test-task", "s3a://jarsBucket/bulk-import-runner-1.2.3.jar"))
                 .containsExactly("spark-submit",
                         "--deploy-mode",
