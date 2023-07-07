@@ -60,6 +60,10 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         return reasons;
     }
 
+    public String getJsonMessage() {
+        return jsonMessage;
+    }
+
     @Override
     public boolean isValid() {
         return false;
