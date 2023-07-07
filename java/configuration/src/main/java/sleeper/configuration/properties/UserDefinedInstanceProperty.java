@@ -731,6 +731,36 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
            .defaultValue("Spark")
            .runCDKDeployWhenChanged(true)
            .build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.executor.cores")
+            .description("The number of cores used by an executor. Used to set spark.executor.cores.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("5")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.executor.memory")
+            .description("The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("16g")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.executor.instances")
+            .description("The number of executors. Used to set spark.executor.instances.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("29")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.driver.cores")
+            .description("The number of cores used by the driver. Used to set spark.driver.cores.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES.getDefaultValue())
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.driver.memory")
+            .description("The amount of memory allocated to the Spark driver. Used to set spark.driver.memory.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY.getDefaultValue())
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
 
     // Bulk import using EKS
     UserDefinedInstanceProperty BULK_IMPORT_REPO = Index.propertyBuilder("sleeper.bulk.import.eks.repo")

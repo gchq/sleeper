@@ -15,6 +15,8 @@
  */
 package sleeper.bulkimport.starter.executor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
@@ -32,11 +34,18 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
 
 /**
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
  */
 public class EmrServerlessPlatformExecutor implements PlatformExecutor {
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(EmrServerlessPlatformExecutor.class);
     private final EmrServerlessClient emrClient;
     private final InstanceProperties instanceProperties;
 
@@ -72,15 +81,21 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                                 .build())
                 .build();
 
-        emrClient.startJobRun(job);
+        StartJobRunResponse response = emrClient.startJobRun(job);
+        LOGGER.info("Job {} started on application {}", response.jobRunId(),
+                response.applicationId());
     }
 
     private String constructArgs(InstanceProperties instanceProperties) {
-        return "--class " + BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME
-                + " --conf spark.executorEnv.JAVA_HOME=" + BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME
-                + " --conf spark.emr-serverless.driverEnv.JAVA_HOME="
-                + BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME + " --conf spark.executor.cores=1"
-                + " --conf spark.executor.memory=2g" + " --conf spark.driver.cores=1"
-                + " --conf spark.driver.memory=2g" + " --conf spark.executor.instances=1";
+        String javaHome = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME);
+
+        return "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME)
+                + " --conf spark.executorEnv.JAVA_HOME=" + javaHome
+                + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
+                + " --conf spark.executor.cores=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES)
+                + " --conf spark.executor.memory=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY)
+                + " --conf spark.executor.instances=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES)
+                + " --conf spark.driver.cores=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES)
+                + " --conf spark.driver.memory=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY);
     }
 }
