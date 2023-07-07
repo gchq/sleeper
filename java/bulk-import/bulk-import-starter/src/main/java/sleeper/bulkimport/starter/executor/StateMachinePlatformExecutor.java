@@ -16,7 +16,6 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
 import com.amazonaws.services.stepfunctions.model.StartExecutionRequest;
 import com.google.gson.Gson;
@@ -26,15 +25,11 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProvider;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
@@ -46,17 +41,19 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 /**
- * A {@link StateMachineExecutor} Generates the arguments and configuration to
+ * A {@link StateMachinePlatformExecutor} Generates the arguments and configuration to
  * run a job using spark on an EKS cluster. It creates a list of arguments and
  * submits them to a state machine in AWS Step Functions.
  */
-public class StateMachineExecutor extends Executor {
+public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String DEFAULT_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String DEFAULT_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
     private static final String EKS_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
     private static final Map<String, String> DEFAULT_CONFIG;
 
     private final AWSStepFunctions stepFunctions;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
 
     static {
         Map<String, String> defaultConf = new HashMap<>();
@@ -79,23 +76,20 @@ public class StateMachineExecutor extends Executor {
         DEFAULT_CONFIG = Collections.unmodifiableMap(defaultConf);
     }
 
-    public StateMachineExecutor(AWSStepFunctions stepFunctions,
-                                InstanceProperties instanceProperties,
-                                TablePropertiesProvider tablePropertiesProvider,
-                                StateStoreProvider stateStoreProvider,
-                                IngestJobStatusStore ingestJobStatusStore,
-                                AmazonS3 s3Client,
-                                Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                s3Client, validationTimeSupplier);
+    public StateMachinePlatformExecutor(AWSStepFunctions stepFunctions,
+                                        InstanceProperties instanceProperties,
+                                        TablePropertiesProvider tablePropertiesProvider) {
         this.stepFunctions = stepFunctions;
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
         String stateMachineArn = instanceProperties.get(BULK_IMPORT_EKS_STATE_MACHINE_ARN);
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         Map<String, Object> input = new HashMap<>();
-        List<String> args = constructArgs(bulkImportJob, jobRunId, stateMachineArn);
+        List<String> args = constructArgs(arguments, stateMachineArn);
         input.put("job", bulkImportJob);
         input.put("args", args);
 
@@ -135,9 +129,10 @@ public class StateMachineExecutor extends Executor {
         return defaultConfig;
     }
 
-    @Override
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
-        Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG, tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
+    private List<String> constructArgs(BulkImportArguments arguments, String taskId) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
+        Map<String, String> sparkProperties = getDefaultSparkConfig(bulkImportJob, DEFAULT_CONFIG,
+                tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName()), instanceProperties);
 
         // Create Spark conf by copying DEFAULT_CONFIG and over-writing any entries
         // which have been specified in the Spark conf on the bulk import job.
@@ -153,11 +148,6 @@ public class StateMachineExecutor extends Executor {
                 .platformSpec(bulkImportJob.getPlatformSpec())
                 .sparkConf(sparkProperties)
                 .build();
-        return super.constructArgs(cloneWithUpdatedProps, jobRunId, taskId);
-    }
-
-    @Override
-    protected String getJarLocation() {
-        return DEFAULT_JAR_LOCATION;
+        return arguments.constructArgs(cloneWithUpdatedProps, taskId, DEFAULT_JAR_LOCATION);
     }
 }

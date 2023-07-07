@@ -22,7 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.bulkimport.starter.executor.Executor;
+import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
@@ -39,7 +39,7 @@ public class BulkImportStarterLambdaTest {
     @Nested
     @DisplayName("Report validation failures")
     class ReportValidationFailures {
-        Executor executor = mock(Executor.class);
+        BulkImportExecutor executor = mock(BulkImportExecutor.class);
         IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
         @Test

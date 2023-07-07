@@ -45,7 +45,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
 import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
@@ -55,8 +57,10 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
@@ -120,19 +124,12 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         CfnCluster.InstanceFleetConfigProperty masterInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Driver")
-                .instanceTypeConfigs(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_INSTANCE_TYPES).stream()
-                        .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                .instanceType(type)
-                                .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
+                .instanceTypeConfigs(readMasterInstanceTypes(instanceProperties, ebsConf))
                 .targetOnDemandCapacity(1)
                 .build();
         CfnCluster.InstanceFleetConfigProperty coreInstanceFleetConfigProperty = CfnCluster.InstanceFleetConfigProperty.builder()
                 .name("Executors")
-                .instanceTypeConfigs(readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_INSTANCE_TYPES))
-                        .map(type -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                .instanceType(type.getInstanceType())
-                                .weightedCapacity(type.getWeightedCapacity())
-                                .ebsConfiguration(ebsConf).build()).collect(Collectors.toList()))
+                .instanceTypeConfigs(readExecutorInstanceTypes(instanceProperties, ebsConf))
                 .targetOnDemandCapacity(instanceProperties.getInt(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY))
                 .build();
 
@@ -165,7 +162,6 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .logUri(logUri)
                 .serviceRole(commonStack.getEmrRole().getRoleName())
                 .jobFlowRole(commonStack.getEc2Role().getRoleName())
-                .configurations(getConfigurations(instanceProperties))
                 .tags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> CfnTag.builder().key(entry.getKey()).value(entry.getValue()).build())
                         .collect(Collectors.toList()));
@@ -188,6 +184,46 @@ public class PersistentEmrBulkImportStack extends NestedStack {
         instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS, emrCluster.getAttrMasterPublicDns());
     }
 
+    private static List<CfnCluster.InstanceTypeConfigProperty> readExecutorInstanceTypes(
+            InstanceProperties instanceProperties, EbsConfigurationProperty ebsConf) {
+        return Stream.concat(
+                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES))
+                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                        .instanceType(config.getInstanceType())
+                                        .weightedCapacity(config.getWeightedCapacity())
+                                        .ebsConfiguration(ebsConf)
+                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
+                                        .build()),
+                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES))
+                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                        .instanceType(config.getInstanceType())
+                                        .weightedCapacity(config.getWeightedCapacity())
+                                        .ebsConfiguration(ebsConf)
+                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
+                                        .build()))
+                .collect(Collectors.toList());
+    }
+
+    private static List<CfnCluster.InstanceTypeConfigProperty> readMasterInstanceTypes(
+            InstanceProperties instanceProperties, EbsConfigurationProperty ebsConf) {
+        return Stream.concat(
+                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES))
+                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                        .instanceType(config.getInstanceType())
+                                        .weightedCapacity(config.getWeightedCapacity())
+                                        .ebsConfiguration(ebsConf)
+                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
+                                        .build()),
+                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
+                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                                        .instanceType(config.getInstanceType())
+                                        .weightedCapacity(config.getWeightedCapacity())
+                                        .ebsConfiguration(ebsConf)
+                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
+                                        .build()))
+                .collect(Collectors.toList());
+    }
+
     private static void configureJobStarterFunction(IFunction bulkImportJobStarter) {
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
@@ -197,7 +233,8 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build());
     }
 
-    private static List<CfnCluster.ConfigurationProperty> getConfigurations(InstanceProperties instanceProperties) {
+    private static List<CfnCluster.ConfigurationProperty> getConfigurations(
+            InstanceProperties instanceProperties, ConfigurationUtils.Architecture architecture) {
         List<CfnCluster.ConfigurationProperty> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
@@ -214,7 +251,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         configurations.add(yarnConfigurations);
 
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties);
+        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, architecture);
         CfnCluster.ConfigurationProperty sparkDefaultsConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("spark-defaults")
                 .configurationProperties(sparkConf)
@@ -228,7 +265,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .build();
         configurations.add(mapRedSiteConfigurations);
 
-        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration();
+        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration(architecture);
         CfnCluster.ConfigurationProperty hadoopEnvExportConfigurations = CfnCluster.ConfigurationProperty.builder()
                 .classification("export")
                 .configurationProperties(javaHomeConf)
