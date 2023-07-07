@@ -16,12 +16,7 @@
 package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
-import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
-import software.amazon.awscdk.services.emrserverless.CfnApplication;
-import software.amazon.awscdk.services.emrserverless.CfnApplication.ImageConfigurationInputProperty;
-import software.amazon.awscdk.services.emrserverless.CfnApplication.NetworkConfigurationProperty;
-import software.amazon.awscdk.services.emrserverless.CfnApplicationProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
@@ -38,20 +33,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
-import java.util.function.IntUnaryOperator;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ENABLED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
  * An {@link EmrBulkImportStack} creates an SQS queue that bulk import jobs can
@@ -60,7 +43,6 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  */
 public class EmrBulkImportStack extends NestedStack {
     private final Queue bulkImportJobQueue;
-    private final IntUnaryOperator randomSubnet;
 
     public EmrBulkImportStack(
             Construct scope,
@@ -74,22 +56,15 @@ public class EmrBulkImportStack extends NestedStack {
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
 
-        String instanceName = "NonPersistentEMR";
-        if (instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_ENABLED)) {
-            createEmrServerlessApplication(scope, instanceProperties);
-            instanceName = "EMRServerless";
-        }
-
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, instanceName, instanceProperties, statusStoreResources);
+                this, "NonPersistentEMR", instanceProperties, statusStoreResources);
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                instanceName, bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
+                "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
 
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
-        randomSubnet = new Random()::nextInt;
     }
 
     private static void configureJobStarterFunction(
@@ -110,38 +85,5 @@ public class EmrBulkImportStack extends NestedStack {
 
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
-    }
-
-    public void createEmrServerlessApplication(Construct scope, InstanceProperties instanceProperties) {
-        Properties properties = instanceProperties.getProperties();
-
-        CfnApplicationProps props = CfnApplicationProps.builder()
-                .name(String.join("-", "sleeper", "emr", "serverless"))
-                .releaseLabel(properties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE).toString())
-                .architecture(properties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE).toString())
-                .type(properties.get(BULK_IMPORT_EMR_SERVERLESS_TYPE).toString())
-                .imageConfiguration(ImageConfigurationInputProperty.builder()
-                        .imageUri(properties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO).toString())
-                        .build()
-                )
-                .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .securityGroupIds(List.of(properties.get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).toString()))
-                        .subnetIds(List.of(randomSubnet(instanceProperties)))
-                        .build()
-                )
-                .tags(List.of(new CfnTag.Builder()
-                        .key("DeploymentStack")
-                        .value("BulkImportServerlessEMR")
-                        .build()))
-                .build();
-
-        CfnApplication emrsCluster = new CfnApplication(scope, getArtifactId(), props);
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, emrsCluster.getName());
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, emrsCluster.getAttrApplicationId());
-    }
-
-    private String randomSubnet(InstanceProperties instanceProperties) {
-        List<String> subnets = instanceProperties.getList(SUBNETS);
-        return subnets.get(randomSubnet.applyAsInt(subnets.size()));
     }
 }

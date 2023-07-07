@@ -256,10 +256,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the role assumed by the bulk import clusters using EMR Serverless.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.emrserverless.class.name")
-            .description("The class to use to perform the bulk import.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .build();
     SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME = Index.propertyBuilder("sleeper.bulk.import.emrserverless.java.home")
             .description("The path to JAVA_HOME to be used by the custom image for bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
