@@ -29,6 +29,9 @@ import java.util.List;
 
 public class GetStackOutputs {
 
+    private GetStackOutputs() {
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException {
         String environmentId = args[0];
         Path outputFile = Path.of(args[1]);
