@@ -16,10 +16,16 @@
 
 package sleeper.environment.cdk;
 
+import com.google.gson.Gson;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+
+import sleeper.environment.cdk.outputs.StackOutputs;
 import sleeper.environment.cdk.util.ListEnvironmentStacks;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class GetStackOutputs {
 
@@ -27,7 +33,12 @@ public class GetStackOutputs {
         String environmentId = args[0];
         Path outputFile = Path.of(args[1]);
 
-        ListEnvironmentStacks.atWorkingDirectory()
+        List<String> stacks = ListEnvironmentStacks.atWorkingDirectory()
                 .stacksForEnvironment(environmentId);
+
+        try (CloudFormationClient cloudFormation = CloudFormationClient.create()) {
+            StackOutputs outputs = StackOutputs.load(cloudFormation, stacks);
+            Files.writeString(outputFile, new Gson().toJson(outputs.toMap()));
+        }
     }
 }

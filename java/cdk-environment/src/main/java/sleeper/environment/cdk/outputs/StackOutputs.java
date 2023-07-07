@@ -57,6 +57,11 @@ public class StackOutputs {
                 Collectors.toMap(Output::outputKey, Output::outputValue));
     }
 
+    public Map<String, Map<String, String>> toMap() {
+        return stacks.stream().collect(
+                Collectors.toMap(Stack::getStackName, Stack::getOutputs));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -88,6 +93,14 @@ public class StackOutputs {
         private Stack(String stackName, Map<String, String> outputs) {
             this.stackName = stackName;
             this.outputs = outputs;
+        }
+
+        public String getStackName() {
+            return stackName;
+        }
+
+        public Map<String, String> getOutputs() {
+            return outputs;
         }
 
         @Override
