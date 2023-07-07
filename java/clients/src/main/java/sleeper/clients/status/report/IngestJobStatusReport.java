@@ -30,8 +30,9 @@ import sleeper.clients.status.report.ingest.job.IngestQueueMessages;
 import sleeper.clients.status.report.ingest.job.JsonIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
+import sleeper.clients.status.report.ingest.job.query.IngestJobQueryArgument;
 import sleeper.clients.status.report.job.query.JobQuery;
-import sleeper.clients.status.report.job.query.JobQueryArgument;
+import sleeper.clients.status.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.InstanceProperties;
@@ -71,7 +72,7 @@ public class IngestJobStatusReport {
             Map<String, Integer> persistentEmrStepCount) {
         this.statusStore = ingestJobStatusStore;
         this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()));
+                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery()));
         this.queryType = queryType;
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;
@@ -97,7 +98,7 @@ public class IngestJobStatusReport {
             String instanceId = args[0];
             String tableName = args[1];
             IngestJobStatusReporter reporter = getReporter(args, 2);
-            JobQuery.Type queryType = JobQueryArgument.readTypeArgument(args, 3);
+            JobQuery.Type queryType = IngestJobQueryArgument.readTypeArgument(args, 3);
             String queryParameters = optionalArgument(args, 4).orElse(null);
 
             AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
@@ -123,6 +124,7 @@ public class IngestJobStatusReport {
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +
+                "-n (Rejected jobs)\n" +
                 "-r (Provide startRange and endRange separated by commas in format yyyyMMddhhmmss)\n" +
                 "-u (Unfinished jobs)");
     }

@@ -121,6 +121,7 @@ public class ExpectedAdminConsoleValues {
     public static final String JOB_QUERY_UNFINISHED_OPTION = "2";
     public static final String JOB_QUERY_DETAILED_OPTION = "3";
     public static final String JOB_QUERY_RANGE_OPTION = "4";
+    public static final String JOB_QUERY_REJECTED_OPTION = "5";
 
     public static final String TASK_QUERY_ALL_OPTION = "1";
     public static final String TASK_QUERY_UNFINISHED_OPTION = "2";
