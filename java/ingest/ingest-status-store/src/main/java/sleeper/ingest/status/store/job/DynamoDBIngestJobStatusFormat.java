@@ -59,6 +59,7 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String VALIDATION_TIME = "ValidationTime";
     public static final String VALIDATION_RESULT = "Result";
     public static final String VALIDATION_REASONS = "ValidationReasons";
+    public static final String JSON_MESSAGE = "JsonMessage";
 
     public static final String TABLE_NAME = "TableName";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
@@ -89,7 +90,8 @@ public class DynamoDBIngestJobStatusFormat {
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
-                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .string(JSON_MESSAGE, event.getJsonMessage())
+                .number(INPUT_FILES_COUNT, event.getJob().getFileCount())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .build();
@@ -100,7 +102,7 @@ public class DynamoDBIngestJobStatusFormat {
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(INPUT_FILES_COUNT, event.getJob().getFiles().size())
+                .number(INPUT_FILES_COUNT, event.getJob().getFileCount())
                 .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
@@ -157,6 +159,7 @@ public class DynamoDBIngestJobStatusFormat {
                             .validationTime(getInstantAttribute(item, VALIDATION_TIME))
                             .updateTime(getInstantAttribute(item, UPDATE_TIME))
                             .reasons(getStringListAttribute(item, VALIDATION_REASONS))
+                            .jsonMessage(getStringAttribute(item, JSON_MESSAGE))
                             .build();
                 }
             case UPDATE_TYPE_STARTED:

@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
+import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
@@ -56,7 +57,8 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                     .job(event.getJob())
                     .validationTime(event.getValidationTime())
                     .updateTime(defaultUpdateTime(event.getValidationTime()))
-                    .reasons(event.getReasons()).build();
+                    .reasons(event.getReasons())
+                    .jsonMessage(event.getJsonMessage()).build();
         }
     }
 
@@ -95,6 +97,14 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public List<IngestJobStatus> getAllJobs(String tableName) {
         return IngestJobStatus.streamFrom(streamTableRecords(tableName))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<IngestJobStatus> getInvalidJobs() {
+        return IngestJobStatus.streamFrom(tableNameToJobs.values().stream()
+                        .flatMap(TableJobs::streamAllRecords))
+                .filter(status -> status.getFurthestStatusType().equals(REJECTED))
                 .collect(Collectors.toList());
     }
 

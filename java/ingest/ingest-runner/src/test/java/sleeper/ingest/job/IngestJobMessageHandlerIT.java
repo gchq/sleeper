@@ -31,6 +31,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +47,6 @@ public class IngestJobMessageHandlerIT {
             .withServices(LocalStackContainer.Service.S3);
     private final AmazonS3 s3Client = createS3Client();
     private final InstanceProperties properties = new InstanceProperties();
-    private final IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(createHadoopConfiguration(), properties);
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
@@ -69,6 +70,10 @@ public class IngestJobMessageHandlerIT {
     @Nested
     @DisplayName("Expand directories")
     class ExpandDirectories {
+        IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+        IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
+                createHadoopConfiguration(), properties, ingestJobStatusStore);
+
         @Test
         void shouldExpandDirectoryWithOneFileInside() {
             // Given
