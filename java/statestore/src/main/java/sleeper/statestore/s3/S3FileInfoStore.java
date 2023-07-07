@@ -370,13 +370,13 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
-        return getReadyForGCFileInfosStream().iterator();
+    public Iterator<String> getReadyForGCFiles() throws StateStoreException {
+        return getReadyForGCFileInfosStream().map(FileInfo::getFilename).iterator();
     }
 
     @Override
-    public Iterator<String> getReadyForGCFiles() throws StateStoreException {
-        return getReadyForGCFileInfosStream().map(FileInfo::getFilename).iterator();
+    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+        return getReadyForGCFileInfosStream().iterator();
     }
 
     private Stream<FileInfo> getReadyForGCFileInfosStream() throws StateStoreException {
@@ -578,6 +578,7 @@ public class S3FileInfoStore implements FileInfoStore {
                 .build();
     }
 
+    @Override
     public void initialise() throws StateStoreException {
         RevisionId firstRevisionId = new RevisionId(S3StateStore.getZeroPaddedLong(1L), UUID.randomUUID().toString());
         String fileInPartitionsPath = getFileInPartitionsPath(firstRevisionId);
@@ -640,8 +641,6 @@ public class S3FileInfoStore implements FileInfoStore {
                 .rowKeyTypes(rowKeyTypes)
                 .build();
     }
-
-
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
         ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileSchema, conf);

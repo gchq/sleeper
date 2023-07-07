@@ -54,6 +54,11 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public void addFile(FileInfo fileInfo) {
+        if (null == fileInfo.getFilename()
+                || null == fileInfo.getPartitionId()
+                || null == fileInfo.getNumberOfRecords()) {
+            throw new IllegalArgumentException("FileInfo needs non-null filename, partition, number of records: got " + fileInfo);
+        }
         fileInPartitionEntries.putIfAbsent(fileInfo.getFilename(), new HashMap<>());
         fileInPartitionEntries.get(fileInfo.getFilename()).put(fileInfo.getPartitionId(), fileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
         fileLifecycleEntries.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileStatus.ACTIVE));
@@ -65,78 +70,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
-        return new ArrayList<>(fileLifecycleEntries.values());
-    }
-
-    @Override
-    public List<FileInfo> getFileInPartitionList() {
-        return fileInPartitionEntries.values().stream()
-            .map(map -> map.values())
-            .flatMap(c -> c.stream())
-            .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<FileInfo> getActiveFileList() throws StateStoreException {
-        return fileLifecycleEntries.values().stream()
-            .filter(f -> f.getFileStatus().equals(ACTIVE))
-            .collect(Collectors.toList());
-    }
-
-    @Override
-    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
-        return getReadyForGCFileInfoStream().iterator();
-    }
-
-    @Override
-    public Iterator<String> getReadyForGCFiles() {
-        return getReadyForGCFileInfoStream().map(FileInfo::getFilename).iterator();
-    }
-
-    private Stream<FileInfo> getReadyForGCFileInfoStream() {
-        long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
-        long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
-        return fileLifecycleEntries.values().stream()
-            .filter(f -> f.getFileStatus().equals(GARBAGE_COLLECTION_PENDING))
-            .filter(f -> (f.getLastStateStoreUpdateTime() < deleteTime));
-    }
-
-    @Override
-    public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
-        // Identify any files which have lifecycle records that do not have any
-        // file-in-partition records.
-        Set<String> allFilesWithLifecycleEntries = new HashSet<>(fileLifecycleEntries.keySet());
-        Set<String> allFilesWithFileInPartitionEntries = new HashSet<>(fileInPartitionEntries.keySet());
-        allFilesWithLifecycleEntries.removeAll(allFilesWithFileInPartitionEntries);
-        // Update the file-lifecylce records to GARBAGE_COLLECTION_PENDING.
-        for (String filename : allFilesWithLifecycleEntries) {
-            FileInfo updatedFileInfo = fileLifecycleEntries.get(filename).cloneWithStatus(FileStatus.GARBAGE_COLLECTION_PENDING);
-            fileLifecycleEntries.put(filename, updatedFileInfo);
-        }
-    }
-
-    @Override
-    public List<FileInfo> getFileInPartitionInfosWithNoJobId() {
-        return getFileInPartitionList().stream()
-                .filter(file -> file.getJobId() == null)
-                .collect(Collectors.toList());
-    }
-
-    // TODO - rename
-    @Override
-    public Map<String, List<String>> getPartitionToFileInPartitionMap() {
-        return getFileInPartitionList().stream().collect(
-                groupingBy(FileInfo::getPartitionId,
-                        mapping(FileInfo::getFilename, Collectors.toList())));
-    }
-
-    @Override
     public synchronized void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(List<FileInfo> fileInPartitionRecordsToBeDeleted,
             FileInfo newActiveFile) throws StateStoreException {
         checkAndDeleteFileInPartitionInfos(fileInPartitionRecordsToBeDeleted);
-
-        // Add the new file
         addFile(newActiveFile);
     }
 
@@ -144,38 +80,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     public synchronized void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(List<FileInfo> fileInPartitionRecordsToBeDeleted,
             FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
         checkAndDeleteFileInPartitionInfos(fileInPartitionRecordsToBeDeleted);
-
-        // Add the new files
         addFile(leftFileInfo);
         addFile(rightFileInfo);
-    }
-
-    private synchronized void checkAndDeleteFileInPartitionInfos(List<FileInfo> fileInPartitionRecordsToBeDeleted)
-            throws StateStoreException {
-        // Check that the right file-in-partition records exist
-        List<FileInfo> failures = new ArrayList<>();
-        for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
-            if (!fileInPartitionEntries.containsKey(fileInfo.getFilename())) {
-                failures.add(fileInfo);
-            } else {
-                Map<String, FileInfo> partitionToFileInfo = fileInPartitionEntries.get(fileInfo.getFilename());
-                if (!partitionToFileInfo.containsKey(fileInfo.getPartitionId())) {
-                    failures.add(fileInfo);
-                }
-            }
-        }
-        if (!failures.isEmpty()) {
-            throw new StateStoreException("Some of the provided fileInPartitionRecordsToBeDeleted do not have the correct"
-                + " file-in-partition entries" + failures);
-        }
-
-        // Delete the records
-        for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
-            fileInPartitionEntries.get(fileInfo.getFilename()).remove(fileInfo.getPartitionId());
-            if (fileInPartitionEntries.get(fileInfo.getFilename()).isEmpty()) {
-                fileInPartitionEntries.remove(fileInfo.getFilename());
-            }
-        }
     }
 
     @Override
@@ -209,6 +115,100 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     private void deleteReadyForGCFile(String filename) {
         fileLifecycleEntries.remove(filename);
+    }
+
+    @Override
+    public List<FileInfo> getFileInPartitionList() {
+        return fileInPartitionEntries.values().stream()
+            .map(map -> map.values())
+            .flatMap(c -> c.stream())
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+        return new ArrayList<>(fileLifecycleEntries.values());
+    }
+
+    @Override
+    public List<FileInfo> getActiveFileList() throws StateStoreException {
+        return fileLifecycleEntries.values().stream()
+            .filter(f -> f.getFileStatus().equals(ACTIVE))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public Iterator<String> getReadyForGCFiles() {
+        return getReadyForGCFileInfoStream().map(FileInfo::getFilename).iterator();
+    }
+
+    @Override
+    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+        return getReadyForGCFileInfoStream().iterator();
+    }
+
+    private Stream<FileInfo> getReadyForGCFileInfoStream() {
+        long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
+        long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
+        return fileLifecycleEntries.values().stream()
+            .filter(f -> f.getFileStatus().equals(GARBAGE_COLLECTION_PENDING))
+            .filter(f -> (f.getLastStateStoreUpdateTime() < deleteTime));
+    }
+
+    @Override
+    public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
+        // Identify any files which have lifecycle records that do not have any
+        // file-in-partition records.
+        Set<String> allFilesWithLifecycleEntries = new HashSet<>(fileLifecycleEntries.keySet());
+        Set<String> allFilesWithFileInPartitionEntries = new HashSet<>(fileInPartitionEntries.keySet());
+        allFilesWithLifecycleEntries.removeAll(allFilesWithFileInPartitionEntries);
+        // Update the file-lifecylce records to GARBAGE_COLLECTION_PENDING.
+        for (String filename : allFilesWithLifecycleEntries) {
+            FileInfo updatedFileInfo = fileLifecycleEntries.get(filename).cloneWithStatus(FileStatus.GARBAGE_COLLECTION_PENDING);
+            fileLifecycleEntries.put(filename, updatedFileInfo);
+        }
+    }
+
+    @Override
+    public List<FileInfo> getFileInPartitionInfosWithNoJobId() {
+        return getFileInPartitionList().stream()
+                .filter(file -> file.getJobId() == null)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, List<String>> getPartitionToFileInPartitionMap() {
+        return getFileInPartitionList().stream().collect(
+                groupingBy(FileInfo::getPartitionId,
+                        mapping(FileInfo::getFilename, Collectors.toList())));
+    }
+
+    private synchronized void checkAndDeleteFileInPartitionInfos(List<FileInfo> fileInPartitionRecordsToBeDeleted)
+            throws StateStoreException {
+        // Check that the right file-in-partition records exist
+        List<FileInfo> failures = new ArrayList<>();
+        for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
+            if (!fileInPartitionEntries.containsKey(fileInfo.getFilename())) {
+                failures.add(fileInfo);
+            } else {
+                Map<String, FileInfo> partitionToFileInfo = fileInPartitionEntries.get(fileInfo.getFilename());
+                if (!partitionToFileInfo.containsKey(fileInfo.getPartitionId())) {
+                    failures.add(fileInfo);
+                }
+            }
+        }
+        if (!failures.isEmpty()) {
+            throw new StateStoreException("Some of the provided fileInPartitionRecordsToBeDeleted do not have the correct"
+                + " file-in-partition entries" + failures);
+        }
+
+        // Delete the records
+        for (FileInfo fileInfo : fileInPartitionRecordsToBeDeleted) {
+            fileInPartitionEntries.get(fileInfo.getFilename()).remove(fileInfo.getPartitionId());
+            if (fileInPartitionEntries.get(fileInfo.getFilename()).isEmpty()) {
+                fileInPartitionEntries.remove(fileInfo.getFilename());
+            }
+        }
     }
 
     @Override
