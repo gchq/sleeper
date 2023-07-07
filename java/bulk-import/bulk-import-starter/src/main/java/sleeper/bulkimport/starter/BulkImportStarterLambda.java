@@ -31,9 +31,9 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopPathUtils;
 
@@ -69,13 +69,21 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         hadoopConfig = new Configuration();
+        ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new StateStoreProvider(dynamo, instanceProperties),
-                new DynamoDBIngestJobStatusStore(dynamo, instanceProperties),
-                s3, platformExecutor, Instant::now);
+                ingestJobStatusStore, s3, platformExecutor, Instant::now);
+        invalidJobIdSupplier = () -> UUID.randomUUID().toString();
+        timeSupplier = Instant::now;
     }
 
-    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig) {
+    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
+                                   IngestJobStatusStore ingestJobStatusStore) {
+        this(executor, properties, hadoopConfig, ingestJobStatusStore, () -> UUID.randomUUID().toString(), Instant::now);
+    }
+
+    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
+                                   IngestJobStatusStore ingestJobStatusStore, Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
         this.executor = executor;
         this.instanceProperties = properties;
         this.hadoopConfig = hadoopConfig;
