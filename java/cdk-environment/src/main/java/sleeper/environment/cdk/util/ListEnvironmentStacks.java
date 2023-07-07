@@ -39,9 +39,7 @@ public interface ListEnvironmentStacks {
     }
 
     static List<String> stacksForEnvironment(Path cdkDir, String environmentId) throws IOException, InterruptedException {
-        List<String> command = new ArrayList<>(List.of(
-                "cdk", "ls", "-c", String.format("instanceId=%s", environmentId)
-        ));
+        List<String> command = List.of("cdk", "ls", "-c", String.format("instanceId=%s", environmentId));
 
         Process process = new ProcessBuilder(command.toArray(new String[0]))
                 .redirectInput(INHERIT).redirectError(INHERIT).directory(cdkDir.toFile())
