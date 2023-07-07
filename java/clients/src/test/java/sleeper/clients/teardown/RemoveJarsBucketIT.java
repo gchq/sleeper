@@ -29,7 +29,7 @@ import static sleeper.clients.util.BucketUtils.doesBucketExist;
 
 class RemoveJarsBucketIT extends JarsBucketITBase {
     @Test
-    void shouldRemoveEmptyBucket() throws IOException {
+    void shouldRemoveEmptyBucket() throws Exception {
         // Given
         uploadJarsToBucket(bucketName);
 
@@ -41,7 +41,7 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
     }
 
     @Test
-    void shouldRemoveBucketWithJars() throws IOException {
+    void shouldRemoveBucketWithJars() throws Exception {
         // Given
         Files.writeString(tempDir.resolve("test.jar"), "data");
         uploadJarsToBucket(bucketName);

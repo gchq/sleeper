@@ -24,53 +24,41 @@ import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
 import com.amazonaws.services.elasticmapreduce.model.ListClustersRequest;
 import com.amazonaws.services.elasticmapreduce.model.ListClustersResult;
 import com.amazonaws.services.elasticmapreduce.model.StepConfig;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProvider;
-
-import java.time.Instant;
-import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 /**
  *
  */
-public class PersistentEmrExecutor extends AbstractEmrExecutor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrExecutor.class);
+public class PersistentEmrPlatformExecutor implements PlatformExecutor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersistentEmrPlatformExecutor.class);
 
     private final AmazonElasticMapReduce emrClient;
+    private final InstanceProperties instanceProperties;
     private final String clusterId;
     private final String clusterName;
 
-    public PersistentEmrExecutor(
+    public PersistentEmrPlatformExecutor(
             AmazonElasticMapReduce emrClient,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore ingestJobStatusStore,
-            AmazonS3 amazonS3,
-            Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3, validationTimeSupplier);
+            InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
+        this.instanceProperties = instanceProperties;
         this.clusterName = String.join("-", "sleeper", instanceProperties.get(ID), "persistentEMR");
         this.clusterId = getClusterIdFromName(emrClient, clusterName);
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
         StepConfig stepConfig = new StepConfig()
-                .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
+                .withName("Bulk Load (job id " + arguments.getBulkImportJob().getId() + ")")
                 .withActionOnFailure(ActionOnFailure.CONTINUE)
                 .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                        .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName)));
+                        .withArgs(arguments.constructArgs(
+                                clusterName, EmrJarLocation.getJarLocation(instanceProperties))));
         AddJobFlowStepsRequest addJobFlowStepsRequest = new AddJobFlowStepsRequest()
                 .withJobFlowId(clusterId)
                 .withSteps(stepConfig);
