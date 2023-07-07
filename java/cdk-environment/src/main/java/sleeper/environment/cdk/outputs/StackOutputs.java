@@ -17,39 +17,49 @@
 package sleeper.environment.cdk.outputs;
 
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.cloudformation.model.Output;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class StackOutputs {
 
-    private final List<Stack> stacks;
+    private final Set<Stack> stacks;
 
-    private StackOutputs(List<Stack> stacks) {
+    private StackOutputs(Set<Stack> stacks) {
         this.stacks = stacks;
     }
 
     public static StackOutputs load(CloudFormationClient cloudFormation, List<String> stackNames) {
         return new StackOutputs(stackNames.stream()
                 .flatMap(stackName -> loadStack(cloudFormation, stackName).stream())
-                .collect(Collectors.toUnmodifiableList()));
+                .collect(Collectors.toUnmodifiableSet()));
     }
 
     public static StackOutputs fromMap(Map<String, Map<String, String>> outputsByStackName) {
         return new StackOutputs(outputsByStackName.entrySet().stream()
                 .map(entry -> new Stack(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toUnmodifiableList()));
+                .collect(Collectors.toUnmodifiableSet()));
     }
 
     private static Optional<Stack> loadStack(CloudFormationClient cloudFormation, String stackName) {
-        return cloudFormation.describeStacks(builder -> builder.stackName(stackName))
-                .stacks().stream().findFirst()
-                .map(stack -> loadOutputs(stack.outputs()))
-                .map(outputs -> new Stack(stackName, outputs));
+        try {
+            return cloudFormation.describeStacks(builder -> builder.stackName(stackName))
+                    .stacks().stream().findFirst()
+                    .map(stack -> loadOutputs(stack.outputs()))
+                    .map(outputs -> new Stack(stackName, outputs));
+        } catch (CloudFormationException e) {
+            if (e.statusCode() == 400) {
+                return Optional.empty();
+            } else {
+                throw e;
+            }
+        }
     }
 
     private static Map<String, String> loadOutputs(List<Output> outputs) {
