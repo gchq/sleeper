@@ -15,13 +15,12 @@
  */
 package sleeper.bulkimport.starter;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctions;
+import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,14 +34,13 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.bulkimport.starter.executor.Executor;
+import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -79,7 +77,7 @@ public class BulkImportStarterLambdaIT {
     @Nested
     @DisplayName("Expand directories")
     class ExpandDirectories {
-        Executor executor = mock(Executor.class);
+        BulkImportExecutor executor = mock(BulkImportExecutor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
                 new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
 
@@ -160,23 +158,10 @@ public class BulkImportStarterLambdaIT {
     }
 
     @Test
-    public void shouldNotCreateAImportStarterWithoutConfig() {
-        // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonElasticMapReduce emrClient = mock(AmazonElasticMapReduce.class);
-        AWSStepFunctions stepFunctionsClient = mock(AWSStepFunctions.class);
-        AmazonDynamoDB dynamoDB = mock(AmazonDynamoDB.class);
-
-        // When / Then
-        assertThatThrownBy(() -> new BulkImportStarterLambda(s3Client, emrClient, stepFunctionsClient, dynamoDB))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     public void shouldHandleAValidRequest() {
         // Given
         uploadFileToS3("test-1.parquet");
-        Executor executor = mock(Executor.class);
+        BulkImportExecutor executor = mock(BulkImportExecutor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
                 new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
         SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-1.parquet")));

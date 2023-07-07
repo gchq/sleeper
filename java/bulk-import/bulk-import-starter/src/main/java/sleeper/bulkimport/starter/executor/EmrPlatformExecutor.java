@@ -17,7 +17,6 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.Application;
-import com.amazonaws.services.elasticmapreduce.model.Configuration;
 import com.amazonaws.services.elasticmapreduce.model.EbsBlockDeviceConfig;
 import com.amazonaws.services.elasticmapreduce.model.EbsConfiguration;
 import com.amazonaws.services.elasticmapreduce.model.HadoopJarStepConfig;
@@ -29,26 +28,16 @@ import com.amazonaws.services.elasticmapreduce.model.ScaleDownBehavior;
 import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import com.amazonaws.services.elasticmapreduce.model.Tag;
 import com.amazonaws.services.elasticmapreduce.model.VolumeSpecification;
-import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
-import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProvider;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
@@ -64,40 +53,34 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**
- * An {@link Executor} which runs a bulk import job on an EMR cluster.
+ * An {@link PlatformExecutor} which runs a bulk import job on an EMR cluster.
  */
-public class EmrExecutor extends AbstractEmrExecutor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmrExecutor.class);
+public class EmrPlatformExecutor implements PlatformExecutor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmrPlatformExecutor.class);
     private final AmazonElasticMapReduce emrClient;
     private final EmrInstanceConfiguration instanceConfiguration;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
 
-    public EmrExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider,
-                       IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3,
-                       Supplier<Instant> validationTimeSupplier) {
-        this(emrClient, instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3, validationTimeSupplier, new EmrInstanceFleets(instanceProperties));
+    public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
+                               InstanceProperties instanceProperties,
+                               TablePropertiesProvider tablePropertiesProvider) {
+        this(emrClient, instanceProperties, tablePropertiesProvider, new EmrInstanceFleets(instanceProperties));
     }
 
-    public EmrExecutor(AmazonElasticMapReduce emrClient,
-                       InstanceProperties instanceProperties,
-                       TablePropertiesProvider tablePropertiesProvider,
-                       StateStoreProvider stateStoreProvider,
-                       IngestJobStatusStore ingestJobStatusStore,
-                       AmazonS3 amazonS3,
-                       Supplier<Instant> validationTimeSupplier,
-                       EmrInstanceConfiguration instanceConfiguration) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3, validationTimeSupplier);
+    public EmrPlatformExecutor(AmazonElasticMapReduce emrClient,
+                               InstanceProperties instanceProperties,
+                               TablePropertiesProvider tablePropertiesProvider,
+                               EmrInstanceConfiguration instanceConfiguration) {
+        this.instanceProperties = instanceProperties;
+        this.tablePropertiesProvider = tablePropertiesProvider;
         this.emrClient = emrClient;
         this.instanceConfiguration = instanceConfiguration;
     }
 
     @Override
-    public void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId) {
+    public void runJobOnPlatform(BulkImportArguments arguments) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
@@ -124,11 +107,12 @@ public class EmrExecutor extends AbstractEmrExecutor {
                 .withLogUri(logUri)
                 .withServiceRole(instanceProperties.get(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME))
                 .withJobFlowRole(instanceProperties.get(BULK_IMPORT_EMR_EC2_ROLE_NAME))
-                .withConfigurations(getConfigurations())
                 .withSteps(new StepConfig()
                         .withName("Bulk Load (job id " + bulkImportJob.getId() + ")")
                         .withHadoopJarStep(new HadoopJarStepConfig().withJar("command-runner.jar")
-                                .withArgs(constructArgs(bulkImportJob, jobRunId, clusterName + "-EMR"))))
+                                .withArgs(arguments.constructArgs(
+                                        clusterName + "-EMR",
+                                        EmrJarLocation.getJarLocation(instanceProperties)))))
                 .withTags(instanceProperties.getTags().entrySet().stream()
                         .map(entry -> new Tag(entry.getKey(), entry.getValue()))
                         .collect(Collectors.toList())));
@@ -160,55 +144,5 @@ public class EmrExecutor extends AbstractEmrExecutor {
             config.setAdditionalMasterSecurityGroups(Collections.singletonList(additionalSecurityGroup));
         }
         return config;
-    }
-
-    private List<Configuration> getConfigurations() {
-        List<Configuration> configurations = new ArrayList<>();
-
-        Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
-        Configuration emrConfiguration = new Configuration()
-                .withClassification("spark")
-                .withProperties(emrSparkProps);
-        configurations.add(emrConfiguration);
-
-        Map<String, String> yarnConf = ConfigurationUtils.getYarnConfiguration();
-        Configuration yarnConfiguration = new Configuration()
-                .withClassification("yarn-site")
-                .withProperties(yarnConf);
-        configurations.add(yarnConfiguration);
-
-        Map<String, String> sparkConf = ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties);
-        Configuration sparkDefaultsConfigurations = new Configuration()
-                .withClassification("spark-defaults")
-                .withProperties(sparkConf);
-        configurations.add(sparkDefaultsConfigurations);
-
-        Map<String, String> sparkExecutorJavaHome = new HashMap<>();
-        sparkExecutorJavaHome.put("JAVA_HOME", ConfigurationUtils.getJavaHome());
-        Configuration sparkEnvExportConfigurations = new Configuration()
-                .withClassification("export")
-                .withProperties(sparkExecutorJavaHome);
-        Configuration sparkEnvConfigurations = new Configuration()
-                .withClassification("spark-env")
-                .withConfigurations(sparkEnvExportConfigurations);
-        configurations.add(sparkEnvConfigurations);
-
-        Map<String, String> mapReduceSiteConf = ConfigurationUtils.getMapRedSiteConfiguration();
-        Configuration mapRedSiteConfigurations = new Configuration()
-                .withClassification("mapred-site")
-                .withProperties(mapReduceSiteConf);
-        configurations.add(mapRedSiteConfigurations);
-
-        Map<String, String> javaHomeConf = ConfigurationUtils.getJavaHomeConfiguration();
-
-        Configuration hadoopEnvExportConfigurations = new Configuration()
-                .withClassification("export")
-                .withProperties(javaHomeConf);
-        Configuration hadoopEnvConfigurations = new Configuration()
-                .withClassification("hadoop-env")
-                .withConfigurations(hadoopEnvExportConfigurations);
-        configurations.add(hadoopEnvConfigurations);
-
-        return configurations;
     }
 }

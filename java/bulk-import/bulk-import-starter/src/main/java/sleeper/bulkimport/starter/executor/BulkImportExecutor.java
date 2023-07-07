@@ -16,7 +16,6 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +29,6 @@ import sleeper.statestore.StateStoreProvider;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -38,13 +36,11 @@ import java.util.regex.Pattern;
 
 import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
-public abstract class Executor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Executor.class);
+public class BulkImportExecutor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportExecutor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
 
     protected final InstanceProperties instanceProperties;
@@ -52,16 +48,18 @@ public abstract class Executor {
     protected final StateStoreProvider stateStoreProvider;
     protected final IngestJobStatusStore ingestJobStatusStore;
     protected final AmazonS3 s3Client;
+    protected final PlatformExecutor platformExecutor;
     protected final Supplier<Instant> validationTimeSupplier;
 
-    public Executor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-                    StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
-                    Supplier<Instant> validationTimeSupplier) {
+    public BulkImportExecutor(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+                              StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore, AmazonS3 s3Client,
+                              PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.s3Client = s3Client;
+        this.platformExecutor = platformExecutor;
         this.validationTimeSupplier = validationTimeSupplier;
     }
 
@@ -84,36 +82,11 @@ public abstract class Executor {
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
         writeJobToJSONFile(bulkImportJob);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
-        runJobOnPlatform(bulkImportJob, jobRunId);
+        platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
+                .instanceProperties(instanceProperties)
+                .bulkImportJob(bulkImportJob).jobRunId(jobRunId)
+                .build());
         LOGGER.info("Successfully submitted job");
-    }
-
-    protected abstract void runJobOnPlatform(BulkImportJob bulkImportJob, String jobRunId);
-
-    protected abstract String getJarLocation();
-
-    protected List<String> constructArgs(BulkImportJob bulkImportJob, String jobRunId, String taskId) {
-        Map<String, String> userConfig = bulkImportJob.getSparkConf();
-        LOGGER.info("Using Spark config {}", userConfig);
-
-        String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
-
-        List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
-
-        if (null != userConfig) {
-            for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
-                args.add("--conf");
-                args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
-            }
-        }
-
-        args.add(getJarLocation());
-
-        args.add(instanceProperties.get(CONFIG_BUCKET));
-        args.add(bulkImportJob.getId());
-        args.add(taskId);
-        args.add(jobRunId);
-        return args;
     }
 
     private boolean validateJob(BulkImportJob bulkImportJob) {
@@ -177,9 +150,5 @@ public abstract class Executor {
         String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
         s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
         LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);
-    }
-
-    public InstanceProperties getInstanceProperties() {
-        return instanceProperties;
     }
 }
