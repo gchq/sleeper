@@ -76,8 +76,6 @@
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
         <woodstox.version>5.4.0</woodstox.version>
-        <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
-        <ivy.version>2.5.1</ivy.version>
         <!--
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
@@ -97,7 +95,7 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
         -->
-        <kotlin.version>1.8.22</kotlin.version>
+        <kotlin.version>1.6.20</kotlin.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <logback.version>1.4.8</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
@@ -372,11 +370,6 @@
                 <version>${woodstox.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.ivy</groupId>
-                <artifactId>ivy</artifactId>
-                <version>${ivy.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
                 <version>${snappy.version}</version>
@@ -415,21 +408,6 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-simplekdc</artifactId>
                 <version>${kerby.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-jdk8</artifactId>
-                <version>${kotlin.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib</artifactId>
-                <version>${kotlin.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-common</artifactId>
-                <version>${kotlin.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
