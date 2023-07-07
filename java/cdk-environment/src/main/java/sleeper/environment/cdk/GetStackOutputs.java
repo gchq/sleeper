@@ -41,7 +41,9 @@ public class GetStackOutputs {
 
         try (CloudFormationClient cloudFormation = CloudFormationClient.create()) {
             StackOutputs outputs = StackOutputs.load(cloudFormation, stacks);
-            Files.createDirectories(outputFile.getParent());
+            if (outputFile.getParent() != null) {
+                Files.createDirectories(outputFile.getParent());
+            }
             Files.writeString(outputFile, new Gson().toJson(outputs.toMap()));
         }
     }
