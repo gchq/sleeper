@@ -29,6 +29,10 @@ public interface ListEnvironmentStacks {
 
     List<String> stacksForEnvironment(String environmentId) throws IOException, InterruptedException;
 
+    static ListEnvironmentStacks atWorkingDirectory() {
+        return atDirectory(Path.of("").toAbsolutePath());
+    }
+
     static ListEnvironmentStacks atDirectory(Path cdkDir) {
         return environmentId -> stacksForEnvironment(cdkDir, environmentId);
     }

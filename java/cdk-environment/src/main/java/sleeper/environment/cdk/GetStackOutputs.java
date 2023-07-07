@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.environment.cdk.util;
+package sleeper.environment.cdk;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import sleeper.environment.cdk.util.ListEnvironmentStacks;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.io.IOException;
+import java.nio.file.Path;
 
-@Disabled("Run manually with CDK installed and AWS credentials in environment variables")
-public class ListEnvironmentStacksIT {
-    @Test
-    void shouldListStacks() throws Exception {
-        assertThat(ListEnvironmentStacks.atWorkingDirectory()
-                .stacksForEnvironment("test-environment"))
-                .containsExactly("test-environment-Networking", "test-environment-BuildEC2");
+public class GetStackOutputs {
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        String environmentId = args[0];
+        Path outputFile = Path.of(args[1]);
+
+        ListEnvironmentStacks.atWorkingDirectory()
+                .stacksForEnvironment(environmentId);
     }
 }
