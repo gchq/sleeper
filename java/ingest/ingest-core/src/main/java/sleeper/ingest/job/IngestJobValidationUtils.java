@@ -40,7 +40,7 @@ public class IngestJobValidationUtils {
         } catch (RuntimeException e) {
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
-                            "Error parsing JSON. Reason: " + e.getCause().getMessage()));
+                            "Error parsing JSON. Reason: " + Optional.ofNullable(e.getCause()).orElse(e).getMessage()));
             return Optional.empty();
         }
         List<String> validationFailures = getValidationFailures.apply(job);
