@@ -26,12 +26,12 @@ import java.util.function.Consumer;
 import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.commonProperties.ACCOUNT;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.commonProperties.REGION;
+import static sleeper.configuration.properties.commonProperties.SUBNETS;
+import static sleeper.configuration.properties.commonProperties.VPC_ID;
 
 public class InstancePropertiesTestHelper {
 

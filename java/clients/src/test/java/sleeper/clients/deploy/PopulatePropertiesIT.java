@@ -39,15 +39,15 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.commonProperties.ACCOUNT;
+import static sleeper.configuration.properties.bulkImportUsingEKSProperties.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.compactionProperties.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.ingestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.commonProperties.REGION;
+import static sleeper.configuration.properties.commonProperties.SUBNETS;
+import static sleeper.configuration.properties.commonProperties.VPC_ID;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers

@@ -55,8 +55,8 @@ import java.util.stream.Collectors;
 
 import static com.facebook.collections.ByteArray.wrap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.arrayListIngestProperties.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.arrayListIngestProperties.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;

@@ -84,7 +84,13 @@ import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.commonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.REGION;
+import static sleeper.configuration.properties.commonProperties.ACCOUNT;
+import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.commonProperties.VPC_ID;
+import static sleeper.configuration.properties.bulkImportUsingEKSProperties.BULK_IMPORT_REPO;
 
 /**
  * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
@@ -110,7 +116,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
 
-        String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
+        String instanceId = instanceProperties.get(ID);
 
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
@@ -162,7 +168,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
         configureJobStarterFunction(bulkImportJobStarter);
 
@@ -173,7 +179,7 @@ public final class EksBulkImportStack extends NestedStack {
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(UserDefinedInstanceProperty.VPC_ID))
+                .vpcId(instanceProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC", vpcLookupOptions);
 
@@ -187,7 +193,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
 
-        String uniqueBulkImportId = Utils.truncateToMaxSize("sleeper-" + instanceProperties.get(UserDefinedInstanceProperty.ID)
+        String uniqueBulkImportId = Utils.truncateToMaxSize("sleeper-" + instanceProperties.get(ID)
                 .replace(".", "-") + "-eks-bulk-import", 63);
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
@@ -242,11 +248,11 @@ public final class EksBulkImportStack extends NestedStack {
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
                                             ITopic errorsTopic) {
         String imageName = new StringBuilder()
-                .append(instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT))
+                .append(instanceProperties.get(ACCOUNT))
                 .append(".dkr.ecr.")
-                .append(instanceProperties.get(UserDefinedInstanceProperty.REGION))
+                .append(instanceProperties.get(REGION))
                 .append(".amazonaws.com/")
-                .append(instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_REPO))
+                .append(instanceProperties.get(BULK_IMPORT_REPO))
                 .append(":")
                 .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
                 .toString();

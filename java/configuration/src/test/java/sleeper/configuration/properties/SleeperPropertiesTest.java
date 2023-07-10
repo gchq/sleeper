@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
+import static sleeper.configuration.properties.commonProperties.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.commonProperties.USER_JARS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 
 class SleeperPropertiesTest {

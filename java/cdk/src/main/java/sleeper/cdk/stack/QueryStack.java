@@ -76,12 +76,12 @@ import java.util.Objects;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.queryProperties.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.queryProperties.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.queryProperties.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
+import static sleeper.configuration.properties.commonProperties.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 /**
  * A {@link NestedStack} to handle queries. This consists of a {@link Queue} that

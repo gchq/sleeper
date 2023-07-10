@@ -76,16 +76,16 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.ingestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_CPU;
+import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_MEMORY;
+import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.commonProperties.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.commonProperties.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.commonProperties.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.commonProperties.VPC_ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {

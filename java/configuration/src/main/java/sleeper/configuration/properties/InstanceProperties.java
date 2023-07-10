@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS;
+import static sleeper.configuration.properties.commonProperties.TAGS;
 
 /**
  * Contains all the properties needed to deploy an instance of Sleeper.

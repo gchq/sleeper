@@ -30,11 +30,11 @@ import sleeper.systemtest.SystemTestProperties;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.commonProperties.ACCOUNT;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.commonProperties.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.commonProperties.REGION;
 
 /**
  * An {@link App} to deploy the {@link SleeperCdkApp} and the additional stacks

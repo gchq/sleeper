@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
 import static sleeper.clients.util.EmrUtils.listActiveClusters;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.OPTIONAL_STACKS;
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class TerminateEMRClusters {

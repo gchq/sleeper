@@ -25,12 +25,12 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.commonProperties.ACCOUNT;
+import static sleeper.configuration.properties.compactionProperties.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.ingestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.commonProperties.REGION;
 import static sleeper.core.SleeperVersion.getVersion;
 
 class UploadDockerImagesTest {

@@ -46,14 +46,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
+import static sleeper.configuration.properties.commonProperties.ACCOUNT;
+import static sleeper.configuration.properties.athenaProperties.ATHENA_COMPOSITE_HANDLER_CLASSES;
+import static sleeper.configuration.properties.athenaProperties.ATHENA_COMPOSITE_HANDLER_MEMORY;
+import static sleeper.configuration.properties.athenaProperties.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.commonProperties.REGION;
+import static sleeper.configuration.properties.athenaProperties.SPILL_BUCKET_AGE_OFF_IN_DAYS;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {

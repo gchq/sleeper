@@ -39,9 +39,9 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
+import static sleeper.configuration.properties.commonProperties.FARGATE_VERSION;
+import static sleeper.configuration.properties.ingestProperties.MAXIMUM_CONCURRENT_INGEST_TASKS;
+import static sleeper.configuration.properties.commonProperties.SUBNETS;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.

@@ -23,8 +23,8 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.commonProperties.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
+import static sleeper.configuration.properties.commonProperties.ID;
 
 /**
  * The {@link Stack} that creates an SNS {@link Topic} that emails alerts if

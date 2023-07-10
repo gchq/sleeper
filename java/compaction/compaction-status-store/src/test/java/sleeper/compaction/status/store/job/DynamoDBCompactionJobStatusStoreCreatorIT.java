@@ -27,8 +27,8 @@ import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.sleeperCompactionStatusStoreEnabled.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.sleeperidProperties.ID;
 
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 

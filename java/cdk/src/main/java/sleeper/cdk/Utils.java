@@ -47,15 +47,15 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.APACHE_LOGGING_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.AWS_LOGGING_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOGGING_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.PARQUET_LOGGING_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ROOT_LOGGING_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.STACK_TAG_NAME;
+import static sleeper.configuration.properties.loggingLevelsProperties.APACHE_LOGGING_LEVEL;
+import static sleeper.configuration.properties.loggingLevelsProperties.AWS_LOGGING_LEVEL;
+import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.loggingLevelsProperties.LOGGING_LEVEL;
+import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.loggingLevelsProperties.PARQUET_LOGGING_LEVEL;
+import static sleeper.configuration.properties.commonProperties.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.loggingLevelsProperties.ROOT_LOGGING_LEVEL;
+import static sleeper.configuration.properties.commonProperties.STACK_TAG_NAME;
 
 /**
  * Collection of utility methods related to the CDK deployment

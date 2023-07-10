@@ -43,8 +43,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.commonProperties.*;
 
 public class VpcStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
@@ -52,7 +51,7 @@ public class VpcStack extends NestedStack {
     public VpcStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars) {
         super(scope, id);
 
-        if (!instanceProperties.getBoolean(UserDefinedInstanceProperty.VPC_ENDPOINT_CHECK)) {
+        if (!instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
             LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
                     + "in very significant NAT charges.");
             return;
@@ -88,8 +87,8 @@ public class VpcStack extends NestedStack {
 
         // Custom resource to check whether VPC is valid
         Map<String, String> vpcCheckProperties = new HashMap<>();
-        vpcCheckProperties.put("vpcId", instanceProperties.get(UserDefinedInstanceProperty.VPC_ID));
-        vpcCheckProperties.put("region", instanceProperties.get(UserDefinedInstanceProperty.REGION));
+        vpcCheckProperties.put("vpcId", instanceProperties.get(VPC_ID));
+        vpcCheckProperties.put("region", instanceProperties.get(REGION));
 
         new CustomResource(this, "VpcCheck", new CustomResourceProps.Builder()
                 .resourceType("Custom::VpcCheck")
