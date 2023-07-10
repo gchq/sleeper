@@ -38,6 +38,7 @@
         <dependency>
             <groupId>io.github.cdklabs.cdk_cloudformation</groupId>
             <artifactId>tf-aws-keypair</artifactId>
+            <version>${tf-aws-keypair.version}</version>
         </dependency>
         <!-- AWS SDK -->
         <dependency>
