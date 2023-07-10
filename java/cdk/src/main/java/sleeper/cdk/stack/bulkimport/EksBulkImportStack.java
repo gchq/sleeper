@@ -118,6 +118,7 @@ public final class EksBulkImportStack extends NestedStack {
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
                 .queueName(instanceId + "-BulkImportEKSDLQ")
+                .visibilityTimeout(Duration.minutes(3))
                 .build();
 
         DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
@@ -161,7 +162,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
                 .memorySize(1024)
-                .timeout(Duration.seconds(10))
+                .timeout(Duration.minutes(2))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
