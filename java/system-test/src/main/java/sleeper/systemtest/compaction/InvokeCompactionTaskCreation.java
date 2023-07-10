@@ -15,6 +15,14 @@
  */
 package sleeper.systemtest.compaction;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
@@ -22,16 +30,31 @@ import java.io.IOException;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class InvokeCompactionTaskCreation {
+    private static final int POLL_INTERVAL_MILLIS = 10000;
+    private static final int MAX_POLLS = 5;
 
     private InvokeCompactionTaskCreation() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length != 1) {
             System.out.println("Usage: <instance id>");
             return;
         }
 
-        InvokeSystemTestLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        SystemTestProperties systemTestProperties = new SystemTestProperties();
+        systemTestProperties.loadFromS3GivenInstanceId(AmazonS3ClientBuilder.defaultClient(), args[0]);
+        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
+                AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
+
+        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
+        poll.pollUntil("all compaction jobs have started", () -> {
+            try {
+                InvokeSystemTestLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+                return statusStore.getAllJobs("system-test").stream().allMatch(CompactionJobStatus::isStarted);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
