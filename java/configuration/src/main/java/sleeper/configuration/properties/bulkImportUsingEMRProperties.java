@@ -5,100 +5,100 @@ import sleeper.configuration.Utils;
 import java.util.List;
 
 public interface bulkImportUsingEMRProperties {
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory")
             .description("The amount of memory allocated to a Spark executor. Used to set spark.executor.memory.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("16g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.memory")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.memory")
             .description("The amount of memory allocated to the Spark driver. Used to set spark.driver.memory.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.instances")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.instances")
             .description("The number of executors. Used to set spark.executor.instances.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("29")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead")
             .description("The memory overhead for an executor. Used to set spark.yarn.executor.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("2g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead")
             .description("The memory overhead for the driver. Used to set spark.yarn.driver.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.default.parallelism")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM = Index.propertyBuilder("sleeper.bulk.import.emr.spark.default.parallelism")
             .description("The default parallelism for Spark job. Used to set spark.default.parallelism.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("290")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.sql.shuffle.partitions")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.sql.shuffle.partitions")
             .description("The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to set spark.sql.shuffle.partitions.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     //  - Properties that are independent of the instance type and number of instances:
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EC2_KEYPAIR_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.keypair.name")
             .description("(Non-persistent or persistent EMR mode only) An EC2 keypair to use for the EC2 instances. Specifying this will allow you to SSH to the nodes " +
                     "in the cluster while it's running.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP = Index.propertyBuilder("sleeper.bulk.import.emr.master.additional.security.group")
             .description("(Non-persistent or persistent EMR mode only) Specifying this security group causes the group " +
                     "to be added to the EMR master's list of security groups.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.cores")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.cores")
             .description("(Non-persistent or persistent EMR mode only) The number of cores used by an executor. Used to set spark.executor.cores.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("5")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_CORES = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.cores")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.cores")
             .description("(Non-persistent or persistent EMR mode only) The number of cores used by the driver. Used to set spark.driver.cores.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.network.timeout")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT = Index.propertyBuilder("sleeper.bulk.import.emr.spark.network.timeout")
             .description("(Non-persistent or persistent EMR mode only) The default timeout for network interactions in Spark. " +
                     "Used to set spark.network.timeout.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("800s")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.heartbeat.interval")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.heartbeat.interval")
             .description("(Non-persistent or persistent EMR mode only) The interval between heartbeats from executors to the driver. " +
                     "Used to set spark.executor.heartbeatInterval.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("60s")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED = Index.propertyBuilder("sleeper.bulk.import.emr.spark.dynamic.allocation.enabled")
             .description("(Non-persistent or persistent EMR mode only) Whether Spark should use dynamic allocation to scale resources up and down. " +
                     "Used to set spark.dynamicAllocation.enabled.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.memory.fraction")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION = Index.propertyBuilder("sleeper.bulk.import.emr.spark.memory.fraction")
             .description("(Non-persistent or persistent EMR mode only) The fraction of heap space used for execution and storage. " +
                     "Used to set spark.memory.fraction.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("0.80")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.memory.storage.fraction")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION = Index.propertyBuilder("sleeper.bulk.import.emr.spark.memory.storage.fraction")
             .description("(Non-persistent or persistent EMR mode only) The amount of storage memory immune to eviction, " +
                     "expressed as a fraction of the heap space used for execution and storage. " +
                     "Used to set spark.memory.storageFraction.\n" +
@@ -106,70 +106,70 @@ public interface bulkImportUsingEMRProperties {
             .defaultValue("0.30")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.extra.java.options")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.extra.java.options")
             .description("(Non-persistent or persistent EMR mode only) JVM options passed to the executors. " +
                     "Used to set spark.executor.extraJavaOptions.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("-XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35 -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:OnOutOfMemoryError='kill -9 %p'")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.extra.java.options")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.extra.java.options")
             .description("(Non-persistent or persistent EMR mode only) JVM options passed to the driver. " +
                     "Used to set spark.driver.extraJavaOptions.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.scheduler.reporter.thread.max.failures")
             .description("(Non-persistent or persistent EMR mode only) The maximum number of executor failures before YARN can fail the application. " +
                     "Used to set spark.yarn.scheduler.reporterThread.maxFailures.\n" +
                     "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("5")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.storage.level")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL = Index.propertyBuilder("sleeper.bulk.import.emr.spark.storage.level")
             .description("(Non-persistent or persistent EMR mode only) The storage to use for temporary caching. " +
                     "Used to set spark.storage.level.\n" +
                     "See https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/.")
             .defaultValue("MEMORY_AND_DISK_SER")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_RDD_COMPRESS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.rdd.compress")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_RDD_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.rdd.compress")
             .description("(Non-persistent or persistent EMR mode only) Whether to compress serialized RDD partitions. " +
                     "Used to set spark.rdd.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.compress")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SHUFFLE_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.compress")
             .description("(Non-persistent or persistent EMR mode only) Whether to compress map output files. " +
                     "Used to set spark.shuffle.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.spill.compress")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS = Index.propertyBuilder("sleeper.bulk.import.emr.spark.shuffle.spill.compress")
             .description("(Non-persistent or persistent EMR mode only) Whether to compress data spilled during shuffles. " +
                     "Used to set spark.shuffle.spill.compress.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volume.size.gb")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volume.size.gb")
             .description("(Non-persistent or persistent EMR mode only) The size of the EBS volume in gibibytes (GiB).\n" +
                     "This can be a number from 10 to 1024.")
             .defaultValue("256")
             .validationPredicate(Utils::isValidEbsSize)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUME_TYPE = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volume.type")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUME_TYPE = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volume.type")
             .description("(Non-persistent or persistent EMR mode only) The type of the EBS volume.\n" +
                     "Valid values are 'gp2', 'gp3', 'io1', 'io2'.")
             .defaultValue("gp2")
             .validationPredicate(Utils::isValidEbsVolumeType)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volumes.per.instance")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE = Index.propertyBuilder("sleeper.bulk.import.emr.ebs.volumes.per.instance")
             .description("(Non-persistent or persistent EMR mode only) The number of EBS volumes per instance.\n" +
                     "This can be a number from 1 to 25.")
             .defaultValue("4").validationPredicate(s -> Utils.isPositiveIntLtEqValue(s, 25))

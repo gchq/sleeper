@@ -3,21 +3,21 @@ package sleeper.configuration.properties;
 import java.util.List;
 
 public interface garbageCollectionProperties {
-    UserDefinedInstanceProperty GARBAGE_COLLECTOR_PERIOD_IN_MINUTES = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.gc.period.minutes")
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.gc.period.minutes")
             .description("The frequency in minutes with which the garbage collector lambda is run.")
             .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.gc.memory")
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
             .description("The memory in MB for the lambda function used to perform garbage collection.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.gc.batch.size")
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.batch.size")
             .description("The size of the batch of files ready for garbage collection requested from the State Store.")
             .defaultValue("2000")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
-    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.default.gc.delay.minutes")
+    UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.minutes")
             .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
                     "garbage collection. The reason for not deleting files immediately after they have been marked as ready for " +
                     "garbage collection is that they may still be in use by queries. This property can be overridden on a per-table " +

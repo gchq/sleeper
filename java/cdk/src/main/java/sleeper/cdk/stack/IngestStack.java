@@ -55,8 +55,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -76,16 +74,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.commonProperties.*;
 import static sleeper.configuration.properties.ingestProperties.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.commonProperties.ID;
 import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_CPU;
 import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_MEMORY;
-import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.commonProperties.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.commonProperties.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.commonProperties.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.commonProperties.VPC_ID;
+import static sleeper.configuration.properties.ingestProperties.INGEST_SOURCE_BUCKET;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {
@@ -142,7 +136,7 @@ public class IngestStack extends NestedStack {
 
     public static List<IBucket> addIngestSourceBucketReferences(Construct scope, String id, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
-        return Optional.ofNullable(instanceProperties.getList(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
+        return Optional.ofNullable(instanceProperties.getList(INGEST_SOURCE_BUCKET))
                 .orElse(List.of()).stream()
                 .filter(not(String::isEmpty))
                 .map(bucketName -> Bucket.fromBucketName(scope, id + index.getAndIncrement(), bucketName))
@@ -258,7 +252,7 @@ public class IngestStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
                 .resources(Collections.singletonList("*"))
-                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(UserDefinedInstanceProperty.METRICS_NAMESPACE))))
+                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.

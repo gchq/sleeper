@@ -29,8 +29,8 @@ import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFor
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobStatusTableName;
-import static sleeper.configuration.properties.sleeperCompactionStatusStoreEnabled.COMPACTION_STATUS_STORE_ENABLED;
-import static sleeper.configuration.properties.sleeperidProperties.ID;
+import static sleeper.configuration.properties.compactionProperties.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.commonProperties.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 

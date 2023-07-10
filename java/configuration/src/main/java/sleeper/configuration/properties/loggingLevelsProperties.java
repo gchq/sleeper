@@ -3,23 +3,23 @@ package sleeper.configuration.properties;
 import java.util.List;
 
 public interface loggingLevelsProperties {
-    UserDefinedInstanceProperty LOGGING_LEVEL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.logging.level")
+    UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.logging.apache.level")
+    UserDefinedInstanceProperty APACHE_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.apache.level")
             .description("The logging level for Apache logs that are not Parquet.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.logging.parquet.level")
+    UserDefinedInstanceProperty PARQUET_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.parquet.level")
             .description("The logging level for Parquet logs.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty AWS_LOGGING_LEVEL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.logging.aws.level")
+    UserDefinedInstanceProperty AWS_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.aws.level")
             .description("The logging level for AWS logs.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.logging.root.level")
+    UserDefinedInstanceProperty ROOT_LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.root.level")
             .description("The logging level for everything else.")
             .propertyGroup(InstancePropertyGroup.LOGGING)
             .runCDKDeployWhenChanged(true).build();

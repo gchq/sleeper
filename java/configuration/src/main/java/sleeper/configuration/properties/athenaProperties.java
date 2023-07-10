@@ -5,23 +5,23 @@ import sleeper.configuration.Utils;
 import java.util.List;
 
 public interface athenaProperties {
-    UserDefinedInstanceProperty SPILL_BUCKET_AGE_OFF_IN_DAYS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.athena.spill.bucket.ageoff.days")
+    UserDefinedInstanceProperty SPILL_BUCKET_AGE_OFF_IN_DAYS = Index.propertyBuilder("sleeper.athena.spill.bucket.ageoff.days")
             .description("The number of days before objects in the spill bucket are deleted.")
             .defaultValue("1")
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_CLASSES = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.athena.handler.classes")
+    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_CLASSES = Index.propertyBuilder("sleeper.athena.handler.classes")
             .description("The fully qualified composite classes to deploy. These are the classes that interact with Athena. " +
                     "You can choose to remove one if you don't need them. Both are deployed by default.")
             .defaultValue("sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler")
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.athena.handler.memory")
+    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = Index.propertyBuilder("sleeper.athena.handler.memory")
             .description("The amount of memory (GB) the athena composite handler has.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS = UserDefinedInstanceProperty.Index.propertyBuilder("sleeper.athena.handler.timeout.seconds")
+    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.athena.handler.timeout.seconds")
             .description("The timeout in seconds for the athena composite handler.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
