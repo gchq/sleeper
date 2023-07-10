@@ -29,11 +29,11 @@ import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
-public class InvokeCompactionTaskCreation {
+public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     private static final int POLL_INTERVAL_MILLIS = 10000;
     private static final int MAX_POLLS = 5;
 
-    private InvokeCompactionTaskCreation() {
+    private InvokeCompactionTaskCreationUntilAllJobsStarted() {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
