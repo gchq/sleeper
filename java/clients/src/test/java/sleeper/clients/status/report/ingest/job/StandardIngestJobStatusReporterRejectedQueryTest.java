@@ -25,26 +25,27 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithOneReason;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
-public class StandardIngestJobStatusReporterUnfinishedQueryTest {
+public class StandardIngestJobStatusReporterRejectedQueryTest {
     @Test
-    public void shouldReportNoIngestJobs() throws Exception {
+    void shouldReportOneRejectedJob() throws Exception {
         // Given
-        List<IngestJobStatus> noJobs = Collections.emptyList();
+        List<IngestJobStatus> statusList = rejectedJobWithOneReason();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, noJobs, 0)).hasToString(
-                example("reports/ingest/job/standard/unfinished/noJobs.txt"));
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.REJECTED, statusList, 0)).hasToString(
+                example("reports/ingest/job/standard/rejected/rejectedJob.txt"));
     }
 
     @Test
-    public void shouldReportMixedUnfinishedIngestJobs() throws Exception {
+    void shouldReportNoRejectedJobs() throws Exception {
         // Given
-        List<IngestJobStatus> mixedUnfinishedJobStatuses = IngestJobStatusReporterTestData.mixedUnfinishedJobStatuses();
+        List<IngestJobStatus> statusList = Collections.emptyList();
 
         // When / Then
-        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
-                example("reports/ingest/job/standard/unfinished/mixedUnfinishedJobs.txt"));
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.REJECTED, statusList, 0)).hasToString(
+                example("reports/ingest/job/standard/rejected/noJobs.txt"));
     }
 }

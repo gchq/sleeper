@@ -34,6 +34,10 @@ public class IngestJobStatusTestData {
     private IngestJobStatusTestData() {
     }
 
+    public static IngestJobStatus jobStatus(String jobId, ProcessRun... runs) {
+        return jobStatus(IngestJob.builder().id(jobId).build(), runs);
+    }
+
     public static IngestJobStatus jobStatus(IngestJob job, ProcessRun... runs) {
         return IngestJobStatus.builder()
                 .jobId(job.getId())
@@ -97,16 +101,26 @@ public class IngestJobStatusTestData {
                 .build();
     }
 
+
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, String... reasons) {
-        return rejectedRun(job, validationTime, List.of(reasons));
+        return rejectedRun(job, null, validationTime, List.of(reasons));
+    }
+
+    public static ProcessRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
+        return rejectedRun(IngestJob.builder().id(jobId).build(), jsonMessage, validationTime, List.of(reasons));
     }
 
     public static ProcessRun rejectedRun(IngestJob job, Instant validationTime, List<String> reasons) {
+        return rejectedRun(job, null, validationTime, reasons);
+    }
+
+    public static ProcessRun rejectedRun(IngestJob job, String jsonMessage, Instant validationTime, List<String> reasons) {
         return ProcessRun.builder()
                 .startedStatus(IngestJobRejectedStatus.builder()
                         .validationTime(validationTime)
                         .updateTime(defaultUpdateTime(validationTime))
                         .reasons(reasons)
+                        .jsonMessage(jsonMessage)
                         .job(job)
                         .build())
                 .build();
