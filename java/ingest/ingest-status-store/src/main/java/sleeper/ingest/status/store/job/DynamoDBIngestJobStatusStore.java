@@ -59,11 +59,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private final String statusTableName;
     private final DynamoDBIngestJobStatusFormat format;
 
-    public DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        this(dynamoDB, properties, Instant::now);
-    }
-
-    public DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+    DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = jobStatusTableName(properties.get(ID));
         int timeToLiveInSeconds = properties.getInt(UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS);
