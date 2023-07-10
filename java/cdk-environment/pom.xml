@@ -36,6 +36,17 @@
             <artifactId>constructs</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.github.cdklabs.cdk_cloudformation</groupId>
+            <artifactId>tf-aws-keypair</artifactId>
+        </dependency>
+        <!-- AWS SDK -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>cloudformation</artifactId>
+            <version>${aws-java-sdk-v2.version}</version>
+        </dependency>
+        <!-- Utilities -->
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
@@ -46,6 +57,17 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock-jre8</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

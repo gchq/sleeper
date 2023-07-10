@@ -13,35 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.s3.AmazonS3;
+package sleeper.bulkimport.starter.executor;
 
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreProvider;
 
-import java.time.Instant;
-import java.util.function.Supplier;
+public class EmrJarLocation {
 
-public abstract class AbstractEmrExecutor extends Executor {
-
-    protected AbstractEmrExecutor(
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore ingestJobStatusStore,
-            AmazonS3 amazonS3Client,
-            Supplier<Instant> validationTimeSupplier) {
-        super(instanceProperties, tablePropertiesProvider, stateStoreProvider, ingestJobStatusStore,
-                amazonS3Client, validationTimeSupplier);
+    private EmrJarLocation() {
     }
 
-    @Override
-    protected String getJarLocation() {
+    public static String getJarLocation(InstanceProperties instanceProperties) {
         return "s3a://"
                 + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
                 + "/bulk-import-runner-"

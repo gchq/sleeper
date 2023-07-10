@@ -17,7 +17,7 @@ Read Rate (reads per second): 10.00
 Write Rate (writes per second): 5.00
 ------------------------
 Details for job $(jobId3):
-State: IN PROGRESS
+State: IN_PROGRESS
 Number of input files: 3
 
 Run on task task2222-2222-2222-2222-222222222222
@@ -41,7 +41,7 @@ Read Rate (reads per second): 10.00
 Write Rate (writes per second): 5.00
 ------------------------
 Details for job $(jobId1):
-State: IN PROGRESS
+State: IN_PROGRESS
 Number of input files: 1
 
 Run on task task1111-1111-1111-1111-111111111111

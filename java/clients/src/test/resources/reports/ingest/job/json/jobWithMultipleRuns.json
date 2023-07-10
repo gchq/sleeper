@@ -5,58 +5,69 @@
   "jobList": [
     {
       "jobId": "$(jobId1)",
-      "jobRunList": [
+      "jobRuns": [
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
-          "startedStatus": {
-            "inputFileCount": 1,
-            "startTime": "2022-10-12T10:02:00.001Z",
-            "updateTime": "2022-10-12T10:02:00.123Z"
-          }
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 1,
+              "startTime": "2022-10-12T10:02:00.001Z",
+              "updateTime": "2022-10-12T10:02:00.123Z"
+            }
+          ]
         },
         {
           "taskId": "task2222-2222-2222-2222-222222222222",
-          "startedStatus": {
-            "inputFileCount": 1,
-            "startTime": "2022-10-12T10:01:15.001Z",
-            "updateTime": "2022-10-12T10:01:15.123Z"
-          },
-          "finishedStatus": {
-            "updateTime": "2022-10-12T10:01:45.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 300,
-                "recordsWritten": 200
-              },
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 1,
               "startTime": "2022-10-12T10:01:15.001Z",
-              "finishTime": "2022-10-12T10:01:45.001Z",
-              "durationInSeconds": 30.0,
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 6.666666666666667
+              "updateTime": "2022-10-12T10:01:15.123Z"
+            },
+            {
+              "type": "ProcessFinishedStatus",
+              "updateTime": "2022-10-12T10:01:45.123Z",
+              "summary": {
+                "recordsProcessed": {
+                  "recordsRead": 300,
+                  "recordsWritten": 200
+                },
+                "startTime": "2022-10-12T10:01:15.001Z",
+                "finishTime": "2022-10-12T10:01:45.001Z",
+                "durationInSeconds": 30.0,
+                "recordsReadPerSecond": 10.0,
+                "recordsWrittenPerSecond": 6.666666666666667
+              }
             }
-          }
+          ]
         },
         {
           "taskId": "task1111-1111-1111-1111-111111111111",
-          "startedStatus": {
-            "inputFileCount": 1,
-            "startTime": "2022-10-12T10:01:00.001Z",
-            "updateTime": "2022-10-12T10:01:00.123Z"
-          },
-          "finishedStatus": {
-            "updateTime": "2022-10-12T10:01:20.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 300,
-                "recordsWritten": 200
-              },
+          "updates": [
+            {
+              "type": "IngestJobStartedStatus",
+              "inputFileCount": 1,
               "startTime": "2022-10-12T10:01:00.001Z",
-              "finishTime": "2022-10-12T10:01:20.001Z",
-              "durationInSeconds": 20.0,
-              "recordsReadPerSecond": 15.0,
-              "recordsWrittenPerSecond": 10.0
+              "updateTime": "2022-10-12T10:01:00.123Z"
+            },
+            {
+              "type": "ProcessFinishedStatus",
+              "updateTime": "2022-10-12T10:01:20.123Z",
+              "summary": {
+                "recordsProcessed": {
+                  "recordsRead": 300,
+                  "recordsWritten": 200
+                },
+                "startTime": "2022-10-12T10:01:00.001Z",
+                "finishTime": "2022-10-12T10:01:20.001Z",
+                "durationInSeconds": 20.0,
+                "recordsReadPerSecond": 15.0,
+                "recordsWrittenPerSecond": 10.0
+              }
             }
-          }
+          ]
         }
       ]
     }

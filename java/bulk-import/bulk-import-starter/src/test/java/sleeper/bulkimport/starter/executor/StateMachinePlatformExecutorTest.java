@@ -54,7 +54,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
-class StateMachineExecutorTest {
+class StateMachinePlatformExecutorTest {
     private AWSStepFunctions stepFunctions;
     private InstanceProperties instanceProperties;
     private TablePropertiesProvider tablePropertiesProvider;
@@ -88,7 +88,7 @@ class StateMachineExecutorTest {
     void shouldPassJobToStepFunctions() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -108,7 +108,7 @@ class StateMachineExecutorTest {
     void shouldPassJobIdToSparkConfig() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -129,7 +129,7 @@ class StateMachineExecutorTest {
     void shouldUseDefaultConfigurationIfNoneSpecified() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -149,7 +149,7 @@ class StateMachineExecutorTest {
     void shouldFailValidationWhenInputFilesAreNull() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+        BulkImportExecutor stateMachineExecutor = createExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -161,7 +161,7 @@ class StateMachineExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun(Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
     }
 
@@ -169,7 +169,7 @@ class StateMachineExecutorTest {
     void shouldOverwriteDefaultConfigurationIfSpecifiedInJob() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -191,7 +191,7 @@ class StateMachineExecutorTest {
     void shouldUseDefaultJobIdIfNoneWasPresentInTheJob() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -212,7 +212,7 @@ class StateMachineExecutorTest {
     void shouldSetJobIdToUUIDIfNotSetByUser() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .files(Lists.newArrayList("file1.parquet"))
                 .tableName("myTable")
@@ -232,7 +232,7 @@ class StateMachineExecutorTest {
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(BULK_IMPORT_EKS_STATE_MACHINE_ARN, "myStateMachine");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -252,7 +252,7 @@ class StateMachineExecutorTest {
     void shouldUseJobIdAsDriverPodName() {
         // Given
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        StateMachineExecutor stateMachineExecutor = createExecutorWithDefaults();
+        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -280,7 +280,7 @@ class StateMachineExecutorTest {
                     return tableProperties;
                 });
 
-        StateMachineExecutor stateMachineExecutor = createExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
+        BulkImportExecutor stateMachineExecutor = createExecutorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
         BulkImportJob myJob = new BulkImportJob.Builder()
                 .tableName("myTable")
                 .id("my-job")
@@ -293,16 +293,21 @@ class StateMachineExecutorTest {
         // Then
         assertThat(ingestJobStatusStore.getAllJobs("myTable"))
                 .containsExactly(jobStatus(myJob.toIngestJob(),
-                        rejectedRun(Instant.parse("2023-06-02T15:41:00Z"),
+                        rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
-    private StateMachineExecutor createExecutorWithDefaults() {
+    private BulkImportExecutor createExecutorWithDefaults() {
         return createExecutorWithValidationTime(Instant.now());
     }
 
-    private StateMachineExecutor createExecutorWithValidationTime(Instant validationTime) {
-        return new StateMachineExecutor(stepFunctions, instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, ingestJobStatusStore, amazonS3, List.of(validationTime).iterator()::next);
+    private BulkImportExecutor createExecutorWithValidationTime(Instant validationTime) {
+        return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, ingestJobStatusStore, amazonS3,
+                createPlatformExecutor(), List.of(validationTime).iterator()::next);
+    }
+
+    private StateMachinePlatformExecutor createPlatformExecutor() {
+        return new StateMachinePlatformExecutor(stepFunctions, instanceProperties, tablePropertiesProvider);
     }
 }

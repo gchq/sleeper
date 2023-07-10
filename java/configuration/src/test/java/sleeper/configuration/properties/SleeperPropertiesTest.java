@@ -160,6 +160,19 @@ class SleeperPropertiesTest {
         assertThat(list).isNull();
     }
 
+    @Test
+    void shouldReturnEmptyListIfListPropertyIsSetToEmptyString() {
+        // Given
+        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+        testSleeperProperties.set(OPTIONAL_STACKS, "");
+
+        // When
+        List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
+
+        // Then
+        assertThat(list).isEmpty();
+    }
+
     private static class TestSleeperProperties extends SleeperProperties<SleeperProperty> {
 
         private TestSleeperProperties() {

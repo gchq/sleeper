@@ -16,6 +16,8 @@
 
 package sleeper.clients.status.report.ingest.job;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
@@ -25,10 +27,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJobWhichStarted;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedJobWithMultipleReasons;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getJsonReport;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.replaceBracketedJobIds;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -50,7 +56,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> mixedJobStatuses = mixedJobStatuses();
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, mixedJobStatuses, 0)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, mixedJobStatuses, 0)).isEqualTo(
                 replaceBracketedJobIds(mixedJobStatuses, example("reports/ingest/job/json/mixedJobs.json")));
     }
 
@@ -60,7 +66,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobWithMultipleRuns = jobWithMultipleRuns();
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, jobWithMultipleRuns, 0)).isEqualTo(
                 replaceBracketedJobIds(jobWithMultipleRuns, example("reports/ingest/job/json/jobWithMultipleRuns.json")));
     }
 
@@ -70,7 +76,7 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         List<IngestJobStatus> jobsWithLargeAndDecimalStatistics = jobsWithLargeAndDecimalStatistics();
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, jobsWithLargeAndDecimalStatistics, 0)).isEqualTo(
                 replaceBracketedJobIds(jobsWithLargeAndDecimalStatistics, example("reports/ingest/job/json/jobsWithLargeAndDecimalStatistics.json")));
     }
 
@@ -81,7 +87,41 @@ public class JsonIngestJobStatusReporterAllQueryTest {
         Map<String, Integer> stepCount = Map.of("PENDING", 2, "RUNNING", 1);
 
         // When / Then
-        assertThat(getJsonReport(JobQuery.Type.ALL, noJobs, 0, stepCount)).hasToString(
+        assertThatJson(getJsonReport(JobQuery.Type.ALL, noJobs, 0, stepCount)).isEqualTo(
                 example("reports/ingest/job/json/noJobsWithEmrStepsUnfinished.json"));
+    }
+
+    @Nested
+    @DisplayName("Bulk Import job reporting")
+    class BulkImportJobReporting {
+        @Test
+        void shouldReportPendingBulkImportJobWithValidationAccepted() throws Exception {
+            // Given
+            List<IngestJobStatus> acceptedJob = acceptedJob();
+
+            // When / Then
+            assertThatJson(getJsonReport(JobQuery.Type.ALL, acceptedJob, 0)).isEqualTo(
+                    example("reports/ingest/job/json/bulkImport/acceptedJob.json"));
+        }
+
+        @Test
+        void shouldReportAcceptedBulkImportJobWhichStarted() throws Exception {
+            // Given
+            List<IngestJobStatus> acceptedJobWhichStarted = acceptedJobWhichStarted();
+
+            // When / Then
+            assertThatJson(getJsonReport(JobQuery.Type.ALL, acceptedJobWhichStarted, 0)).isEqualTo(
+                    example("reports/ingest/job/json/bulkImport/acceptedJobWhichStarted.json"));
+        }
+
+        @Test
+        void shouldReportRejectedJob() throws Exception {
+            // Given
+            List<IngestJobStatus> rejectedJob = rejectedJobWithMultipleReasons();
+
+            // When / Then
+            assertThatJson(getJsonReport(JobQuery.Type.ALL, rejectedJob, 0)).isEqualTo(
+                    example("reports/ingest/job/json/bulkImport/rejectedJob.json"));
+        }
     }
 }
