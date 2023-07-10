@@ -48,7 +48,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 
 @Testcontainers
 class NewInstanceValidatorIT {

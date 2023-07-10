@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
+import static sleeper.configuration.properties.QueryProperties.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 
 /**
  * The query tracker updates and keeps track of the status of queries so that clients

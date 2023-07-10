@@ -4,7 +4,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface bulkImportProperties {
+public interface BulkImportProperties {
     UserDefinedInstanceProperty BULK_IMPORT_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.class.name")
             .description("The class to use to perform the bulk import. The default value below uses Spark Dataframes. There is an " +
                     "alternative option that uses RDDs (sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver).")

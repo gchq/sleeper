@@ -74,12 +74,12 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.ING
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.commonProperties.*;
-import static sleeper.configuration.properties.ingestProperties.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_CPU;
-import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.ingestProperties.INGEST_TASK_MEMORY;
-import static sleeper.configuration.properties.ingestProperties.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.CommonProperties.*;
+import static sleeper.configuration.properties.IngestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.IngestProperties.INGEST_TASK_CPU;
+import static sleeper.configuration.properties.IngestProperties.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.IngestProperties.INGEST_TASK_MEMORY;
+import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {

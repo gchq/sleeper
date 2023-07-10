@@ -34,7 +34,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.ArrayList;
@@ -46,7 +45,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.configuration.properties.CommonProperties.*;
+import static sleeper.configuration.properties.DashboardProperties.DASHBOARD_TIME_WINDOW_MINUTES;
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {
@@ -72,12 +72,12 @@ public class DashboardStack extends NestedStack {
         this.compactionStack = compactionStack;
         this.partitionSplittingStack = partitionSplittingStack;
 
-        instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
+        instanceId = instanceProperties.get(ID);
         tableNames = Utils.getAllTableProperties(instanceProperties, scope)
                 .map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
                 .sorted()
                 .collect(Collectors.toList());
-        metricsNamespace = instanceProperties.get(UserDefinedInstanceProperty.METRICS_NAMESPACE);
+        metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard").dashboardName(instanceId).build();

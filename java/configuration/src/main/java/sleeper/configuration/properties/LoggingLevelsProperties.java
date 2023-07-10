@@ -2,7 +2,7 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
-public interface loggingLevelsProperties {
+public interface LoggingLevelsProperties {
     UserDefinedInstanceProperty LOGGING_LEVEL = Index.propertyBuilder("sleeper.logging.level")
             .description("The logging level for logging Sleeper classes. This does not apply to the MetricsLogger which is always set to INFO.")
             .propertyGroup(InstancePropertyGroup.LOGGING)

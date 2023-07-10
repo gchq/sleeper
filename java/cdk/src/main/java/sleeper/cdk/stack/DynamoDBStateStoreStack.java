@@ -29,7 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;

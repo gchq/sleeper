@@ -28,7 +28,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 
 /**
  * This configuration stack deploys the config bucket used to store the Sleeper

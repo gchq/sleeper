@@ -17,9 +17,6 @@ package sleeper.configuration.properties;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.configuration.Utils;
-
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -47,25 +44,25 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
         private static SleeperPropertyIndex<UserDefinedInstanceProperty> createInstance() {
             SleeperPropertyIndex<UserDefinedInstanceProperty> index = new SleeperPropertyIndex<>();
-            index.addAll(arrayListIngestProperties.getAll());
-            index.addAll(arrowIngestProperties.getAll());
-            index.addAll(asyncIngestPartitionFileWriterProperties.getAll());
-            index.addAll(athenaProperties.getAll());
-            index.addAll(batcherProperties.getAll());
-            index.addAll(bulkImportProperties.getAll());
-            index.addAll(bulkImportUsingEKSProperties.getAll());
-            index.addAll(bulkImportUsingEMRProperties.getAll());
-            index.addAll(bulkImportUsingEMRProperties_non_persistant.getAll());
-            index.addAll(bulkImportUsingEMRProperties_persistent.getAll());
-            index.addAll(compactionProperties.getAll());
-            index.addAll(dashboardProperties.getAll());
-            index.addAll(commonProperties.getAll());
-            index.addAll(garbageCollectionProperties.getAll());
-            index.addAll(ingestProperties.getAll());
-            index.addAll(loggingLevelsProperties.getAll());
-            index.addAll(partitionSplittingProperties.getAll());
-            index.addAll(queryProperties.getAll());
-            index.addAll(statusStoreProperties.getAll());
+            index.addAll(ArrayListIngestProperties.getAll());
+            index.addAll(ArrowIngestProperties.getAll());
+            index.addAll(AsyncIngestPartitionFileWriterProperties.getAll());
+            index.addAll(AthenaProperties.getAll());
+            index.addAll(BatcherProperties.getAll());
+            index.addAll(BulkImportProperties.getAll());
+            index.addAll(BulkImportUsingEKSProperties.getAll());
+            index.addAll(BulkImportUsingEMRProperties.getAll());
+            index.addAll(BulkImportUsingEMRPropertiesNonPersistant.getAll());
+            index.addAll(BulkImportUsingEMRPropertiesPersistent.getAll());
+            index.addAll(CompactionProperties.getAll());
+            index.addAll(DashboardProperties.getAll());
+            index.addAll(CommonProperties.getAll());
+            index.addAll(GarbageCollectionProperties.getAll());
+            index.addAll(IngestProperties.getAll());
+            index.addAll(LoggingLevelsProperties.getAll());
+            index.addAll(PartitionSplittingProperties.getAll());
+            index.addAll(QueryProperties.getAll());
+            index.addAll(StatusStoreProperties.getAll());
 
 
 

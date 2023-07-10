@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {

@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 import static sleeper.utils.HadoopPathUtils.getRequestPath;
 import static sleeper.utils.HadoopPathUtils.streamFiles;
 

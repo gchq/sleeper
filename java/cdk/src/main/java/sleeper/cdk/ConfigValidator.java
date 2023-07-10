@@ -21,7 +21,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 

@@ -31,7 +31,7 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 
 public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
     private final Table jobsTable;

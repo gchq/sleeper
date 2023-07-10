@@ -4,7 +4,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface statusStoreProperties {
+public interface StatusStoreProperties {
     UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.ingest.status.store.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
             .defaultValue("true")

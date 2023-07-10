@@ -4,7 +4,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface athenaProperties {
+public interface AthenaProperties {
     UserDefinedInstanceProperty SPILL_BUCKET_AGE_OFF_IN_DAYS = Index.propertyBuilder("sleeper.athena.spill.bucket.ageoff.days")
             .description("The number of days before objects in the spill bucket are deleted.")
             .defaultValue("1")

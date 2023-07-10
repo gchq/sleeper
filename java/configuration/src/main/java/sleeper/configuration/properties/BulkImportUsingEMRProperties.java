@@ -4,7 +4,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface bulkImportUsingEMRProperties {
+public interface BulkImportUsingEMRProperties {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory")
             .description("The amount of memory allocated to a Spark executor. Used to set spark.executor.memory.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")

@@ -2,7 +2,7 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
-public interface partitionSplittingProperties {
+public interface PartitionSplittingProperties {
     UserDefinedInstanceProperty PARTITION_SPLITTING_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.partition.splitting.period.minutes")
             .description("The frequency in minutes with which the lambda that finds partitions that need splitting runs.")
             .defaultValue("30")

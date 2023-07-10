@@ -49,7 +49,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 
 public class BulkImportSparkSessionRunner implements BulkImportJobDriver.SessionRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportSparkSessionRunner.class);

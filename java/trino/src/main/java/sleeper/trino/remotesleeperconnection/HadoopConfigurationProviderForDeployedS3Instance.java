@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.CommonProperties.MAXIMUM_CONNECTIONS_TO_S3;
 
 public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopConfigurationProvider {
     /**

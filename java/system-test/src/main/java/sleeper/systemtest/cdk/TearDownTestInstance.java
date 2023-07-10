@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.cdk.SystemTestStack.generateSystemTestClusterName;

@@ -66,7 +66,7 @@ import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MAX_ROW_KE
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.MIN_ROW_KEY_PREFIX;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT {

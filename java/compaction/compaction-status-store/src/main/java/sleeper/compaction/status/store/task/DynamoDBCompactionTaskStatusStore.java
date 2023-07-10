@@ -32,7 +32,6 @@ import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.time.Instant;
 import java.util.List;
@@ -41,7 +40,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
@@ -60,7 +60,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
             AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
-        int timeToLiveInSeconds = properties.getInt(UserDefinedInstanceProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS);
+        int timeToLiveInSeconds = properties.getInt(COMPACTION_TASK_STATUS_TTL_IN_SECONDS);
         format = new DynamoDBCompactionTaskStatusFormat(timeToLiveInSeconds, getTimeNow);
     }
 

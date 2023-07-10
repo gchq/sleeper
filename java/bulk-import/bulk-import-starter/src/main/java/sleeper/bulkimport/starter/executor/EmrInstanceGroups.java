@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.IntUnaryOperator;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
+import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;

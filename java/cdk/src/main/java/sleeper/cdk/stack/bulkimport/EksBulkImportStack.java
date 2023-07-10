@@ -72,7 +72,6 @@ import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -84,13 +83,13 @@ import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.commonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.commonProperties.ID;
-import static sleeper.configuration.properties.commonProperties.REGION;
-import static sleeper.configuration.properties.commonProperties.ACCOUNT;
-import static sleeper.configuration.properties.commonProperties.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.commonProperties.VPC_ID;
-import static sleeper.configuration.properties.bulkImportUsingEKSProperties.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.REGION;
+import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.BulkImportUsingEKSProperties.BULK_IMPORT_REPO;
 
 /**
  * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes

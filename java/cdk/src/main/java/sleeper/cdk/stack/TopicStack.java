@@ -23,11 +23,11 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.commonProperties.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
-import static sleeper.configuration.properties.commonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
+import static sleeper.configuration.properties.CommonProperties.ID;
 
 /**
- * The {@link Stack} that creates an SNS {@link Topic} that emails alerts if
+ * The {@linkStack} that creates an SNS {@link Topic} that emails alerts if
  * messages arrive on a dead-letter queue.
  */
 public class TopicStack extends NestedStack {

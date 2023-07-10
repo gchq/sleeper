@@ -28,7 +28,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 
 public class BulkImportBucketStack extends NestedStack {
     private final IBucket importBucket;

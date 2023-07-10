@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
 
 public class SendBulkImportJobs {

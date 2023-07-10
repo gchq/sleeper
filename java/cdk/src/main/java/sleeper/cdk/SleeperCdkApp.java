@@ -49,11 +49,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.commonProperties.ACCOUNT;
-import static sleeper.configuration.properties.commonProperties.ID;
-import static sleeper.configuration.properties.commonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.commonProperties.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.commonProperties.REGION;
+import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperties.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.CommonProperties.REGION;
 
 /**
  * The {@link App} that deploys all the Sleeper stacks.

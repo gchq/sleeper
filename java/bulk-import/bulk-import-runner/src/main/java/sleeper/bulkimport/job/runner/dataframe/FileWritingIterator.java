@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
@@ -48,6 +47,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 
 public class FileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileWritingIterator.class);
@@ -197,7 +198,7 @@ public class FileWritingIterator implements Iterator<Row> {
 
     private ParquetWriter<Record> createWriter(String partitionId) throws IOException {
         numRecords = 0L;
-        path = instanceProperties.get(UserDefinedInstanceProperty.FILE_SYSTEM)
+        path = instanceProperties.get(FILE_SYSTEM)
                 + tableProperties.get(TableProperty.DATA_BUCKET) + "/partition_" + partitionId
                 + "/" + UUID.randomUUID().toString() + ".parquet";
 

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
 
 public class WriteRandomDataFiles {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataFiles.class);

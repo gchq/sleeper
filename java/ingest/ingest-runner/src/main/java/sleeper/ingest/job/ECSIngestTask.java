@@ -46,7 +46,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.S3A_INPUT_FADVISE;
+import static sleeper.configuration.properties.IngestProperties.S3A_INPUT_FADVISE;
 
 public class ECSIngestTask {
     private ECSIngestTask() {

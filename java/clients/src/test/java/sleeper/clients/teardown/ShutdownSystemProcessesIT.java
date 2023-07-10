@@ -56,7 +56,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest

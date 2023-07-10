@@ -40,9 +40,9 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
+import static sleeper.configuration.properties.IngestProperties.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.IngestProperties.INGEST_RECORD_BATCH_TYPE;
 
 public class IngestFactory {
 

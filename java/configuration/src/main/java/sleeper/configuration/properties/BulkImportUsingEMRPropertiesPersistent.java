@@ -4,9 +4,9 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.bulkImportUsingEMRProperties_non_persistant.*;
+import static sleeper.configuration.properties.BulkImportUsingEMRPropertiesNonPersistant.*;
 
-public interface bulkImportUsingEMRProperties_persistent {
+public interface BulkImportUsingEMRPropertiesPersistent {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.release.label")
             .description("(Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())

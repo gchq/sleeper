@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.IngestResult;
 import sleeper.job.common.action.ActionException;
@@ -43,8 +42,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.commonProperties.*;
-import static sleeper.configuration.properties.ingestProperties.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.CommonProperties.*;
+import static sleeper.configuration.properties.IngestProperties.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
 
 /**
  * An IngestJobQueueConsumer pulls ingest jobs off an SQS queue and runs them.

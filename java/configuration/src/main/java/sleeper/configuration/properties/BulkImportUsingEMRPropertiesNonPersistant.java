@@ -4,7 +4,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface bulkImportUsingEMRProperties_non_persistant {
+public interface BulkImportUsingEMRPropertiesNonPersistant {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.default.bulk.import.emr.release.label")
             .description("(Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster for bulk importing data " +
                     "using Spark running on EMR.\n" +

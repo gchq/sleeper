@@ -35,10 +35,10 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.commonProperties.ACCOUNT;
-import static sleeper.configuration.properties.bulkImportUsingEKSProperties.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.commonProperties.ID;
-import static sleeper.configuration.properties.commonProperties.REGION;
+import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
+import static sleeper.configuration.properties.BulkImportUsingEKSProperties.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.REGION;
 
 /**
  * A {@link StateMachinePlatformExecutor} Generates the arguments and configuration to

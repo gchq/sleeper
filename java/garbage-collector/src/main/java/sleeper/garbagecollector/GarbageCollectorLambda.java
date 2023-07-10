@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.configuration.properties.GarbageCollectionProperties.GARBAGE_COLLECTOR_BATCH_SIZE;
 
 /**
  * A lambda for executing the {@link GarbageCollector}.

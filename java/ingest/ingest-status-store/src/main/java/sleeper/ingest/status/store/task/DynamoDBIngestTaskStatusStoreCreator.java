@@ -26,7 +26,7 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Arrays;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;

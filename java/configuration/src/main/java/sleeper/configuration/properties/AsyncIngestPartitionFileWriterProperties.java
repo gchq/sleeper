@@ -4,7 +4,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface asyncIngestPartitionFileWriterProperties {
+public interface AsyncIngestPartitionFileWriterProperties {
     UserDefinedInstanceProperty ASYNC_INGEST_CLIENT_TYPE = Index.propertyBuilder("sleeper.ingest.async.client.type")
             .description("The implementation of the async S3 client to use for upload during ingest.\n" +
                     "Valid values are 'java' or 'crt'. This determines the implementation of S3AsyncClient that gets used.\n" +
