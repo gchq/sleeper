@@ -154,4 +154,25 @@
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
         <cve>CVE-2023-35116</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Managing some of Sparks dependencies breaks bulk import using EMR. Suppressing for the time being.
+        ]]></notes>
+        <filePath regex="true">^.*/ivy-2\.5\.0\.jar</filePath>
+        <cve>CVE-2022-37865</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Managing some of Sparks dependencies breaks bulk import using EMR. Suppressing for the time being.
+        ]]></notes>
+        <filePath regex="true">^.*/ivy-2\.5\.0\.jar</filePath>
+        <cve>CVE-2022-37866</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Managing some of Sparks dependencies breaks bulk import using EMR. Suppressing for the time being.
+        ]]></notes>
+        <filePath regex="true">^.*/kotlin-stdlib-jdk7-1\.5\.31\.jar</filePath>
+        <cve>CVE-2022-24329</cve>
+    </suppress>
 </suppressions>
