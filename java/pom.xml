@@ -159,7 +159,6 @@
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.2.1</dependency-check.plugin.version>
-        <tf-aws-keypair.version>1.0.0-alpha.5</tf-aws-keypair.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner

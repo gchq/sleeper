@@ -35,11 +35,6 @@
             <groupId>software.constructs</groupId>
             <artifactId>constructs</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.github.cdklabs.cdk_cloudformation</groupId>
-            <artifactId>tf-aws-keypair</artifactId>
-            <version>${tf-aws-keypair.version}</version>
-        </dependency>
         <!-- AWS SDK -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
