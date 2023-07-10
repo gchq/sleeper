@@ -33,7 +33,7 @@ import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopPathUtils;
 
@@ -69,7 +69,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         hadoopConfig = new Configuration();
-        ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamo, instanceProperties);
+        ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new StateStoreProvider(dynamo, instanceProperties),
                 ingestJobStatusStore, s3, platformExecutor, Instant::now);
