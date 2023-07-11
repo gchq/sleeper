@@ -76,6 +76,7 @@ import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
+ * /**
  * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
  * LocalStackContainer. Sleeper tables are created, with the data files themselves stored in a temporary directory on
  * the local disk.
