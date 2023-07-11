@@ -89,9 +89,6 @@ public class Partition {
         return parentPartitionId;
     }
 
-    public void setParentPartitionId(String parentPartitionId) {
-        this.parentPartitionId = parentPartitionId;
-    }
 
     public List<String> getChildPartitionIds() {
         if (null == childPartitionIds) {

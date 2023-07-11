@@ -26,10 +26,16 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PartitionFactoryTest {
+
+    List<Partition> toPartition(Partition parent, String leftId, String rightId, int dimension, Object splitPoint, PartitionFactory partitionFactory) {
+        List<Partition.Builder> children = partitionFactory.split(parent, leftId, rightId, dimension, splitPoint);
+        return children.stream().map(Partition.Builder::build).collect(Collectors.toList());
+    }
 
     @Test
     void shouldSpecifyParentThenChildPartition() {
@@ -37,8 +43,9 @@ class PartitionFactoryTest {
         Schema schema = Schema.builder().rowKeyFields(key).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition parent = partitionFactory.rootFirst("parent");
-        List<Partition> children = partitionFactory.split(parent, "left", "right", 0, "aaa");
+        Partition parent = partitionFactory.rootFirst("parent").build();
+        List<Partition> children = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
+
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(
@@ -79,9 +86,9 @@ class PartitionFactoryTest {
         Schema schema = Schema.builder().rowKeyFields(key1, key2).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition parent = partitionFactory.rootFirst("parent");
-        List<Partition> children = partitionFactory.split(parent, "left", "right", 0, "aaa");
-        List<Partition> nested = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
+        Partition parent = partitionFactory.rootFirst("parent").build();
+        List<Partition> children = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
+        List<Partition> nested = toPartition(children.get(1), "nestedLeft", "nestedRight", 1, "bbb", partitionFactory);
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(
@@ -150,12 +157,12 @@ class PartitionFactoryTest {
         Schema schema = Schema.builder().rowKeyFields(key).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
-        Partition a = partitionFactory.partition("A", "", "aaa");
-        Partition b = partitionFactory.partition("B", "aaa", null);
-        Partition parent = partitionFactory.parentJoining("parent", a, b);
+        Partition.Builder a = partitionFactory.partition("A", "", "aaa");
+        Partition.Builder b = partitionFactory.partition("B", "aaa", null);
+        Partition parent = partitionFactory.parentJoining("parent", a, b).build();
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
-        assertThat(a).isEqualTo(
+        assertThat(a.build()).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(key, "", "aaa")))
@@ -165,7 +172,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(Collections.emptyList())
                         .dimension(-1)
                         .build());
-        assertThat(b).isEqualTo(
+        assertThat(b.build()).isEqualTo(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(rangeFactory.createRange(key, "aaa", null)))
