@@ -287,7 +287,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, String> createErrorMessageParams = new HashMap<>();
         createErrorMessageParams.put("errorMessage.$",
-                "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.jobId)");
+                "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)");
 
         Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage").parameters(createErrorMessageParams)
                 .build();
