@@ -24,10 +24,10 @@ Agreement (CLA). Click the link in the comment to read and sign it. The pull req
 
 ### Getting help
 
-You can comment on any issue if you're looking at it and want some help.
+Read our [common problems and their solutions](docs/11-common-problems-and-their-solutions.md) to see if your problem
+is covered there.
 
-Read our [common problems and their solutions guide](docs/11-common-problems-and-their-solutions.md) to see if your
-problem is covered there.
+For help with an issue you can post in the issue's comments.
 
-If you'd like to contact us you can [raise any question as a GitHub issue](https://github.com/gchq/sleeper/issues/new),
-and we'll get back to you with a response. Please note this will be public on GitHub.
+You can also [raise any question as a GitHub issue](https://github.com/gchq/sleeper/issues/new), and we'll get back to
+you with a response. Please note this will be public on GitHub.
