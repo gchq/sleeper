@@ -113,13 +113,13 @@ VERSION=0.12.0
 
 4. Push the branch to github and open a pull request so that the tests run. If there are any failures, fix them.
 
-5. Run a deployment of the system tests to ensure that the system deploys successfully:
+5. Run a deployment of the compactionPerformance system test to ensure that the system deploys successfully:
 
 ```bash
 ID=<a-unique-id>
 VPC=<your-vpc-id>
 SUBNET=<your-subnet-id>
-./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
 Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions have completed. 
@@ -133,17 +133,16 @@ Run this occasionally until it reports that there are 440 million records in the
 
 6. Publish the performance statistics.
 
-Record the ingest rate in the [performance figures](12-performance-test.md) documentation.
-
-A compaction job will now be created (as this is done using periodically scheduled EventBridge rule it may take 
-a little while for the job to be created). Once this has been done use the following command to monitor the status 
-of the compaction job:
-
+Record the ingest and compaction rate in the [performance figures](12-performance-test.md) documentation.
 ```bash
+# Ingest performance figures can be found by running the following reports
+./scripts/utility/ingestTaskStatusReport.sh ${ID} standard -a
+./scripts/utility/ingestJobStatusReport.sh ${ID} system-test standard -a
+
+# Compaction performance figures can be found by running the following reports
+./scripts/utility/compactionTaskStatusReport.sh ${ID} standard -a
 ./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
 ```
-
-Record the compaction rate in the [performance figures](12-performance-test.md) documentation. Commit these changes.
 
 The following tests can be used as a quick check that all is working correctly. They are not intended to fully test 
 all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS 
