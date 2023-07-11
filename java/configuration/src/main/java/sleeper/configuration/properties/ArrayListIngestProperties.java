@@ -18,8 +18,6 @@ public interface ArrayListIngestProperties {
                     "(arraylist-based ingest only)")
             .defaultValue("1000000")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-
-
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
@@ -33,10 +31,6 @@ public interface ArrayListIngestProperties {
         }
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
-
-
-
-
 
         static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)

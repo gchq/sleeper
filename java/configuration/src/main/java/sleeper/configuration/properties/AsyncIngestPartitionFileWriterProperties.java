@@ -34,20 +34,13 @@ public interface AsyncIngestPartitionFileWriterProperties {
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
-
     static boolean has(String propertyName) {
         return Index.INSTANCE.getByName(propertyName).isPresent();
     }
-
     class Index {
         private Index() {
         }
-
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
-
-
-
-
 
         static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)

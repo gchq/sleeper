@@ -64,9 +64,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(QueryProperties.getAll());
             index.addAll(StatusStoreProperties.getAll());
 
-
-
-
             return index;
         }
 

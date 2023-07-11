@@ -80,10 +80,6 @@ public interface BulkImportUsingEMRPropertiesNonPersistant {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-
-
-
-
         static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
