@@ -12,7 +12,7 @@ Comment on an issue to let us know you're interested.
 ### Contributing code
 
 To get an overview of the project, read the [README](README.md). Read the [developer guide](docs/09-dev-guide.md) for
-help setting up a developer environment.
+help setting up a development environment.
 
 You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
 for your change if there isn't one already.
