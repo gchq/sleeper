@@ -5,10 +5,8 @@ This is a brief guide to developing Sleeper.
 
 ## Get your environment setup
 
-Before you do any dev work on Sleeper it is worth reading the "Get your
-environment setup" section in the [deployment guide](02-deployment-guide.md)
-as exactly the same will apply here, especially for running the system
-tests.
+Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in the [deployment guide](02-deployment-guide.md)
+as exactly the same will apply here, especially for running the system tests.
 
 ### Install Prerequisite Software
 
@@ -51,12 +49,10 @@ mvn clean install -Pquick
 
 ## System Tests
 
-Sleeper's system tests can be used to measure the performance of the standard
-ingest and compaction components of Sleeper. This is useful to ensure that
-performance degradations have not been introduced when we release new versions.
-The system tests load some random data. This allows us to see the number of records
-written per second using the standard ingest process. Once the data has been
-ingested, some compaction jobs will happen. Looking at the logs for these shows
+Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of Sleeper. 
+This is useful to ensure that performance degradations have not been introduced when we release new versions. The 
+system tests load some random data. This allows us to see the number of records written per second using the standard 
+ingest process. Once the data has been ingested, some compaction jobs will happen. Looking at the logs for these shows
 us the number of records per second that a compaction job processes.
 
 To run the system tests use:
@@ -73,21 +69,17 @@ This will generate everything for you including:
 
 Once generated, it deploys Sleeper using CDK.
 
-Each system test has an instance properties file next to the deploy script 
-called `system-test-instance.properties`. When running the deploy script, 
-the `scripts/test/<test-name>` directory is scanned for `table.properties`, 
-`tags.properties`, and `schema.properties` files. If they are found, 
-they are picked up and used by the test. If they are not present, then the template 
-files in `./scripts/templates` are used. Note that properties in these files with 
-the value `changeme` will be overwritten by the script.
+Each system test has an instance properties file next to the deploy script called `system-test-instance.properties`. 
+When running the deploy script, the `scripts/test/<test-name>` directory is scanned for `table.properties`, 
+`tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test. 
+If they are not present, then the template files in `./scripts/templates` are used. Note that properties in these 
+files with the value `changeme` will be overwritten by the script.
 
-You can also change any system test specific properties in the file
-`scripts/test/deployAll/system-test-instance.properties`. This includes the
-optional stacks property - you may want to customise this to experiment with
-different stacks.
+You can also change any system test specific properties in the file `scripts/test/<test-name>/system-test-instance.properties`. 
+This includes the optional stacks property - you may want to customise this to experiment with different stacks.
 
-All resources are tagged with the tags defined in the file `deploy/templates/tags.template`,
-or a `tags.properties` file placed next to the `system-test-instance.properties`.
+All resources are tagged with the tags defined in the file `deploy/templates/tags.template`, or a `tags.properties` file 
+placed next to the `system-test-instance.properties`.
 
 You can get a report of your instance by running:
 
@@ -101,8 +93,7 @@ Finally, when you are ready to tear down the instance, run:
 ./scripts/test/tearDown.sh
 ```
 
-This will remove your deployment, including any ECR repos, S3 buckets and local
-files that have been generated.
+This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
 
 ## Standalone deployment
 
@@ -121,8 +112,7 @@ VERSION=0.12.0
 ./scripts/dev/updateVersionNumber.sh ${VERSION}
 ```
 
-4. Push the branch to github and open a pull request so that the tests run. If there are any failures,
-   fix them.
+4. Push the branch to github and open a pull request so that the tests run. If there are any failures, fix them.
 
 5. Run a deployment of the system tests to ensure that the system deploys successfully:
 
@@ -133,8 +123,8 @@ SUBNET=<your-subnet-id>
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
-Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions
-have completed. Use the following command to check the status of the table called 'system-test':
+Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions have completed. 
+Use the following command to check the status of the table called 'system-test':
 
 ```bash
 ./scripts/utility/filesStatusReport.sh ${ID} system-test
@@ -146,21 +136,19 @@ Run this occasionally until it reports that there are 440 million records in the
 
 Record the ingest rate in the [performance figures](12-performance-test.md) documentation.
 
-A compaction job will now be created (as this is done using periodically scheduled EventBridge rule
-it may take a little while for the job to be created). Once this has been done use the following
-command to monitor the status of the compaction job:
+A compaction job will now be created (as this is done using periodically scheduled EventBridge rule it may take 
+a little while for the job to be created). Once this has been done use the following command to monitor the status 
+of the compaction job:
 
 ```bash
 ./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
 ```
 
-Record the compaction rate in the [performance figures](12-performance-test.md) documentation. Commit these
-changes.
+Record the compaction rate in the [performance figures](12-performance-test.md) documentation. Commit these changes.
 
-The following tests can be used as a quick check that all is working correctly. They are not intended to
-fully test all aspects of the system. Any changes made by pull requests should be tested by doing a system
-test deployment on AWS if they are likely to either affect performance or involve changes to the way
-the system is deployed to AWS.
+The following tests can be used as a quick check that all is working correctly. They are not intended to fully test 
+all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS 
+if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
 
 7. Test a simple query:
 
@@ -168,9 +156,9 @@ the system is deployed to AWS.
 ./scripts/utility/query.sh ${ID}
 ```
 
-Choose a range query, choose 'y' for the first two questions and then choose a range such as 'aaaaaa'
-to 'aaaazz'. As the data that is ingested is random, it is not possible to say exactly how many results
-will be returned, but it should be in the region of 900 results.
+Choose a range query, choose 'y' for the first two questions and then choose a range such as 'aaaaaa' to 'aaaazz'. 
+As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it 
+should be in the region of 900 results.
 
 8. Test a query that will be executed by lambda:
 
@@ -179,8 +167,8 @@ will be returned, but it should be in the region of 900 results.
 ```
 
 Choose the S3 results bucket option and then choose the same options as above. It should say "COMPLETED".
-The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The
-second query should be quicker.
+The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query 
+should be quicker.
 
 9. Test a query that will be executed by lambda with the results being returned over a websocket:
 
@@ -212,10 +200,10 @@ Around 900 results should be returned.
 11. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
     set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
-If you are storing versions of the code in an AWS account then upload the jars and push the Docker
-images. The following assumes that the environment variable `SLEEPER_JARS` contains the name of the
-bucket for the jars, that `VERSION` is the version of the code to upload, and that `REPO_PREFIX` is the
-prefix for the ECR repositories, e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
+If you are storing versions of the code in an AWS account then upload the jars and push the Docker images. 
+The following assumes that the environment variable `SLEEPER_JARS` contains the name of the bucket for the jars, 
+that `VERSION` is the version of the code to upload, and that `REPO_PREFIX` is the prefix for the ECR repositories, 
+e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
 
 12. Push jars to the S3 jars bucket.
     Copy the jars to the S3 bucket that is used to contain the Sleeper jar files:
