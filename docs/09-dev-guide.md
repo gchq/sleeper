@@ -84,7 +84,7 @@ placed next to the `system-test-instance.properties`.
 You can get a report of your instance by running:
 
 ```bash
-./scripts/test/systemTestStatusReport.sh <instance-id> "system-test"
+./scripts/test/systemTestStatusReport.sh
 ```
 
 Finally, when you are ready to tear down the instance, run:
