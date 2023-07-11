@@ -183,7 +183,7 @@ public class BulkImportJobDriver {
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String jsonJobKey = "bulk_import/" + jobId + ".json";
+        String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
         LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
         String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
         BulkImportJob bulkImportJob;
