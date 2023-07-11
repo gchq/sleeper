@@ -61,7 +61,6 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 import static sleeper.configuration.properties.CommonProperties.ID;
@@ -69,6 +68,7 @@ import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.REGION;
 import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;

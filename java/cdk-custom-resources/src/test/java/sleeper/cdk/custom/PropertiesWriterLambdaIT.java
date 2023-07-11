@@ -32,14 +32,14 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.REGION;
 import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 
 @Testcontainers
 public class PropertiesWriterLambdaIT {
