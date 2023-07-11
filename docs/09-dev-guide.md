@@ -50,8 +50,7 @@ mvn clean install -Pquick
 ## System Tests
 
 Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of Sleeper. 
-This is useful to ensure that performance degradations have not been introduced when we release new versions. The 
-system tests load some random data. This allows us to see the number of records written per second using the standard 
+The system tests load some random data. This allows us to see the number of records written per second using the standard 
 ingest process. Once the data has been ingested, some compaction jobs will happen. Looking at the logs for these shows
 us the number of records per second that a compaction job processes.
 

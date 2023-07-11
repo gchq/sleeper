@@ -11,6 +11,10 @@ The performance and functional tests take control of when compactions run in ord
 
 ## Deploy all
 
+This will test the functionality of the system as a whole. Most of the stacks will be deployed, in addition to a 
+system test stack, which will generate some random data and write it directly to Sleeper, using the 
+standard ingest approach.
+
 Run the tests:
 
 ```bash
@@ -20,47 +24,15 @@ SUBNETS=<ids-of-the-subnets-to-deploy-to>
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-Find the ECS cluster that is running the containers that are writing data for ingest. It will have the name
-`sleeper-${ID}-system-test-cluster`. There should be 11 running tasks. Wait until all those tasks have finished.
-Click on one of the tasks and find the corresponding Cloudwatch log group. Use the following command in
-Cloudwatch Log Insights with the above log group selected:
-
-```
-fields @message 
-| filter @message like "to S3"
-# If you want to see all the results, comment out the next two lines
-| parse @message '* * - * at * per second' as class, level, msg, rate
-| stats avg(rate)
-```
-
-This should result in a single value which summarises the performance of the containers that are ingesting data
-(these are direct standard ingest tasks, i.e. they are writing data directly to Sleeper using the standard ingest
-approach - they are not using the ingest queue). The table below records the performance for various versions of
-Sleeper.
-
-Now find the ECS cluster that runs compaction tasks. It will be named `sleeper-${ID}-merge-compaction-cluster`.
-Click on one of the tasks and find the corresponding Cloudwatch log group. Use the following command in Cloudwatch
-Log Insights with the above log group selected:
-
-```
-fields @message | filter @message like "compaction read"
-# If you want to see all the results, comment out the next two lines
-| parse @message '* * - * at * per second' as class, level, msg, rate
-| stats avg(rate)
-```
-
-This should result a single value summarising the performance of the containers that are performing a compaction. See
-the table below for the results for various versions of Sleeper.
-
 ## Compaction performance
 
-This will test the performance of the standard compactions and compaction job creation. It will not perform any 
-partition splitting. This will take around an hour. This is intended to avoid any variance that may be caused by the 
-number of input files or the amount of data processed at once.
+This will test the performance of standard ingest, standard compactions and compaction job creation. It will not 
+perform any partition splitting. This will take around an hour. This is intended to avoid any variance that may be 
+caused by the number of input files or the amount of data processed at once.
 
-There are a variety of scenarios like this that can occur when compaction occurs on scheduled jobs (as in the 
-deploy all system test, or normal system functioning). The compaction performance test avoids this by disabling the 
-scheduled jobs and triggering those processes directly.
+There are a variety of scenarios that can occur when compaction is performed on scheduled jobs (as in the deploy all 
+system test, or normal system functioning). The compaction performance test avoids this by disabling the scheduled jobs 
+and triggering those processes directly.
 
 Run the tests:
 
@@ -74,6 +46,11 @@ SUBNETS=<ids-of-the-subnets-to-deploy-to>
 Report the results:
 
 ```bash
+# Ingest performance figures can be found by running the following reports
+./scripts/utility/ingestTaskStatusReport.sh ${ID} standard -a
+./scripts/utility/ingestJobStatusReport.sh ${ID} system-test standard -a
+
+# Compaction performance figures can be found by running the following reports
 ./scripts/utility/compactionTaskStatusReport.sh ${ID} standard -a
 ./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
 ```
