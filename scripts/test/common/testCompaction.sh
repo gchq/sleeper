@@ -47,7 +47,7 @@ echo "--------------------------------------------------------------------------
 echo "Invoking compaction task creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.InvokeCompactionTaskCreation "$INSTANCE_ID"
+sleeper.systemtest.compaction.InvokeCompactionTaskCreationUntilAllJobsStarted "$INSTANCE_ID"
 
 END_CREATE_COMPACTION_TASKS_TIME=$(record_time)
 echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
