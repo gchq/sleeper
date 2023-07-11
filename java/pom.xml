@@ -76,6 +76,8 @@
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v6.
         -->
         <woodstox.version>5.4.0</woodstox.version>
+        <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
+        <ivy.version>2.5.1</ivy.version>
         <!--
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
@@ -363,6 +365,11 @@
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
                 <version>${woodstox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.ivy</groupId>
+                <artifactId>ivy</artifactId>
+                <version>${ivy.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
