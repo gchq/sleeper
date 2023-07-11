@@ -13,7 +13,7 @@ Explain the events and context leading up to this problem or idea, and what the 
 
 Please give as much information as you can.
 
-If your feature request is related to a problem, please explain it here. Ex. I'm always frustrated when [...]
+If your feature request is related to a problem, please explain it here. For example, "I'm always frustrated when [...]"
 
 ### Description
 
