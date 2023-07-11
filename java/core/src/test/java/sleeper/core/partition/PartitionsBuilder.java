@@ -107,8 +107,8 @@ public class PartitionsBuilder {
 
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
-        Partition parent = partitionById(parentId).build();
-        List<Partition.Builder> children = factory.split(parent, leftId, rightId, dimension, splitPoint);
+        Partition.Builder parent = partitionById(parentId);
+        List<Partition.Builder> children = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
         children.forEach(this::add);
         return this;
     }
@@ -125,7 +125,7 @@ public class PartitionsBuilder {
     }
 
     public List<Partition> buildList() {
-        return new ArrayList<>(partitions.stream().map(Partition.Builder::build).collect(Collectors.toList()));
+        return partitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
     public PartitionTree buildTree() {

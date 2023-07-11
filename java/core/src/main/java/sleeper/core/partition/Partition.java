@@ -36,11 +36,11 @@ import java.util.Objects;
  * their minimum but not contain their maximum.
  */
 public class Partition {
-    private List<PrimitiveType> rowKeyTypes;
+    private final List<PrimitiveType> rowKeyTypes;
     private Region region;
-    private String id;
+    private final String id;
     private boolean leafPartition;
-    private String parentPartitionId;
+    private final String parentPartitionId;
     private List<String> childPartitionIds;
     private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
@@ -67,10 +67,6 @@ public class Partition {
 
     public Region getRegion() {
         return region;
-    }
-
-    public void setRegion(Region region) {
-        this.region = region;
     }
 
     public String getId() {
@@ -216,6 +212,7 @@ public class Partition {
             if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
                 throw new IllegalArgumentException("Region must be in canonical form");
             }
+
             return new Partition(this);
         }
 
