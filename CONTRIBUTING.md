@@ -22,6 +22,15 @@ for your change if there isn't one already.
 When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
 Agreement (CLA). Click the link in the comment to read and sign it. The pull request will update once you've signed.
 
+#### GitHub Actions on a fork
+
+When you push code to your fork, GitHub Actions workflows will run automatically to validate your change. Please check
+these are successful. You can still raise a pull request for help to get it working.
+
+These workflows involve publishing test and linting results as separate checks. GitHub Actions requires separate
+permissions in your fork to do this, which you can set in the repository settings under
+Actions > General > Workflow permissions > Select "Read and write permissions".
+
 ### Getting help
 
 Read our [common problems and their solutions](docs/11-common-problems-and-their-solutions.md) to see if your problem
