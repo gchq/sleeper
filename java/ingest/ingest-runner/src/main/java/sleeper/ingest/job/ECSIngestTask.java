@@ -114,7 +114,7 @@ public class ECSIngestTask {
                 s3AsyncClient,
                 hadoopConfiguration);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
-                sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration);
+                sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration, jobStore);
         return new IngestTask(
                 queueConsumer, taskId, taskStore, jobStore, ingestJobRunner);
     }

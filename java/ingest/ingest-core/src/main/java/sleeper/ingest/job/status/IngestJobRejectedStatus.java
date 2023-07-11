@@ -21,19 +21,20 @@ import sleeper.ingest.job.IngestJob;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     private final Instant validationTime;
     private final Instant updateTime;
     private final int inputFileCount;
     private final List<String> reasons;
+    private final String jsonMessage;
 
     private IngestJobRejectedStatus(Builder builder) {
         validationTime = Objects.requireNonNull(builder.validationTime, "validateTime must not be null");
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         inputFileCount = builder.inputFileCount;
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
+        jsonMessage = builder.jsonMessage;
     }
 
     public static Builder builder() {
@@ -59,6 +60,10 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         return reasons;
     }
 
+    public String getJsonMessage() {
+        return jsonMessage;
+    }
+
     @Override
     public boolean isValid() {
         return false;
@@ -76,12 +81,13 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         return inputFileCount == that.inputFileCount
                 && Objects.equals(validationTime, that.validationTime)
                 && Objects.equals(updateTime, that.updateTime)
-                && Objects.equals(reasons, that.reasons);
+                && Objects.equals(reasons, that.reasons)
+                && Objects.equals(jsonMessage, that.jsonMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(validationTime, updateTime, inputFileCount, reasons);
+        return Objects.hash(validationTime, updateTime, inputFileCount, reasons, jsonMessage);
     }
 
     @Override
@@ -91,6 +97,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
                 ", updateTime=" + updateTime +
                 ", inputFileCount=" + inputFileCount +
                 ", reasons=" + reasons +
+                ", jsonMessage=\"" + jsonMessage + "\"" +
                 '}';
     }
 
@@ -98,6 +105,7 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
         private Instant updateTime;
         private int inputFileCount = 0;
         private List<String> reasons;
+        private String jsonMessage;
         private Instant validationTime;
 
         private Builder() {
@@ -118,13 +126,18 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
             return this;
         }
 
+        public Builder jsonMessage(String jsonMessage) {
+            this.jsonMessage = jsonMessage;
+            return this;
+        }
+
         public Builder inputFileCount(int inputFileCount) {
             this.inputFileCount = inputFileCount;
             return this;
         }
 
         public Builder job(IngestJob job) {
-            return inputFileCount(Optional.ofNullable(job.getFiles()).map(List::size).orElse(0));
+            return inputFileCount(job.getFileCount());
         }
 
         public IngestJobRejectedStatus build() {

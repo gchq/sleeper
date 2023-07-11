@@ -80,7 +80,7 @@ public class BulkImportExecutor {
                 bulkImportJob.toIngestJob(), validationTimeSupplier.get())
                 .jobRunId(jobRunId).build());
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-        writeJobToJSONFile(bulkImportJob);
+        writeJobToJSONFile(bulkImportJob, jobRunId);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
@@ -141,12 +141,12 @@ public class BulkImportExecutor {
         return false;
     }
 
-    private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
+    private void writeJobToJSONFile(BulkImportJob bulkImportJob, String jobRunID) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
+        String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunID + ".json";
         String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
         s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
         LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);

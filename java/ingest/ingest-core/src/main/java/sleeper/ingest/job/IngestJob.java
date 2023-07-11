@@ -18,9 +18,11 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 public class IngestJob {
@@ -44,6 +46,17 @@ public class IngestJob {
         return new Builder();
     }
 
+    public List<String> getValidationFailures() {
+        List<String> validationFailures = new ArrayList<>();
+        if (files == null) {
+            validationFailures.add("Missing property \"files\"");
+        }
+        if (tableName == null) {
+            validationFailures.add("Missing property \"tableName\"");
+        }
+        return validationFailures;
+    }
+
     public String getTableName() {
         return tableName;
     }
@@ -54,6 +67,10 @@ public class IngestJob {
 
     public List<String> getFiles() {
         return files;
+    }
+
+    public int getFileCount() {
+        return Optional.ofNullable(files).map(List::size).orElse(0);
     }
 
     public Builder toBuilder() {

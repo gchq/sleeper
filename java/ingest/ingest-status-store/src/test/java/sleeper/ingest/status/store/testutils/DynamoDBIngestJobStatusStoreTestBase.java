@@ -85,7 +85,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
-        return new DynamoDBIngestJobStatusStore(dynamoDBClient, instanceProperties,
+        return IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

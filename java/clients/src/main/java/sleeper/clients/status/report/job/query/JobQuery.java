@@ -23,6 +23,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 
 public interface JobQuery {
 
@@ -43,6 +44,8 @@ public interface JobQuery {
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
                 return RangeJobsQuery.fromParameters(tableName, queryParameters, clock);
+            case REJECTED:
+                return new RejectedJobsQuery();
             default:
                 throw new IllegalArgumentException("Unexpected query type: " + queryType);
         }
@@ -50,8 +53,14 @@ public interface JobQuery {
 
     static JobQuery fromParametersOrPrompt(
             String tableName, Type queryType, String queryParameters, Clock clock, ConsoleInput input) {
+        return fromParametersOrPrompt(tableName, queryType, queryParameters, clock, input, Map.of());
+    }
+
+    static JobQuery fromParametersOrPrompt(
+            String tableName, Type queryType, String queryParameters, Clock clock,
+            ConsoleInput input, Map<String, JobQuery> extraQueryTypes) {
         if (queryType == JobQuery.Type.PROMPT) {
-            return JobQueryPrompt.from(tableName, clock, input);
+            return JobQueryPrompt.from(tableName, clock, input, extraQueryTypes);
         }
         return from(tableName, queryType, queryParameters, clock);
     }
@@ -61,7 +70,8 @@ public interface JobQuery {
         ALL,
         DETAILED,
         RANGE,
-        UNFINISHED;
+        UNFINISHED,
+        REJECTED;
 
         public boolean isParametersRequired() {
             return this == DETAILED;

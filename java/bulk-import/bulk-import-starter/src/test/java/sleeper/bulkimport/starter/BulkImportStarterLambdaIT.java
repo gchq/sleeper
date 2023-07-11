@@ -19,7 +19,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +35,7 @@ import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.util.List;
 
@@ -77,7 +77,7 @@ public class BulkImportStarterLambdaIT {
     class ExpandDirectories {
         BulkImportExecutor executor = mock(BulkImportExecutor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                new InstanceProperties(), createHadoopConfiguration());
+                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
 
         @Test
         void shouldExpandDirectoryWithOneFileInside() {
@@ -161,7 +161,7 @@ public class BulkImportStarterLambdaIT {
         uploadFileToS3("test-1.parquet");
         BulkImportExecutor executor = mock(BulkImportExecutor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
-                new InstanceProperties(), createHadoopConfiguration());
+                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
         SQSEvent event = getSqsEvent(jobWithFiles(List.of("test-bucket/test-1.parquet")));
 
         // When
@@ -174,18 +174,12 @@ public class BulkImportStarterLambdaIT {
     private SQSEvent getSqsEvent(BulkImportJob importJob) {
         BulkImportJobSerDe jobSerDe = new BulkImportJobSerDe();
         String jsonQuery = jobSerDe.toJson(importJob);
-        SQSEvent event = new SQSEvent();
-        SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage();
-        sqsMessage.setBody(jsonQuery);
-        event.setRecords(Lists.newArrayList(
-                sqsMessage
-        ));
-        return event;
+        return BulkImportStarterLambdaTestHelper.getSqsEvent(jsonQuery);
     }
 
     private static BulkImportJob jobWithFiles(List<String> files) {
         return BulkImportJob.builder()
-                .id("id").files(files).build();
+                .id("id").files(files).tableName("test-table").build();
     }
 
     private static Configuration createHadoopConfiguration() {

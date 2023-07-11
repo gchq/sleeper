@@ -32,7 +32,7 @@ import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
@@ -79,7 +79,7 @@ public class InvokeIngestBatcher {
                 tablePropertiesUpdater(tableProperties, s3),
                 new SendFilesToIngestBatcher(instanceProperties, tableProperties, sourceBucketName,
                         batcherStore, sqs, lambda),
-                batcherStore, new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties),
+                batcherStore, IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 InvokeSystemTestLambda.client(lambda, instanceProperties),
                 QueueMessageCount.withSqsClient(sqs));
     }

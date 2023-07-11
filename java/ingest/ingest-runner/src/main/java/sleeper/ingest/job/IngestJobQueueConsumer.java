@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.IngestResult;
+import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
@@ -64,14 +65,15 @@ public class IngestJobQueueConsumer implements IngestJobSource {
     public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
                                   InstanceProperties instanceProperties,
-                                  Configuration configuration) {
+                                  Configuration configuration,
+                                  IngestJobStatusStore ingestJobStatusStore) {
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = new IngestJobMessageHandler(configuration, instanceProperties);
+        this.ingestJobMessageHandler = new IngestJobMessageHandler(configuration, instanceProperties, ingestJobStatusStore);
     }
 
     @Override

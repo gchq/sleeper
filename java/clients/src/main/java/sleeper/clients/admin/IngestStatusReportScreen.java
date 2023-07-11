@@ -96,7 +96,9 @@ public class IngestStatusReportScreen {
                     new MenuOption("Detailed", () ->
                             runIngestJobStatusReport(properties, tableName, JobQuery.Type.DETAILED, promptForJobId(in))),
                     new MenuOption("Range", () ->
-                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.RANGE, promptForRange(in)))
+                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.RANGE, promptForRange(in))),
+                    new MenuOption("Rejected", () ->
+                            runIngestJobStatusReport(properties, tableName, JobQuery.Type.REJECTED))
             ).run();
         }
     }
