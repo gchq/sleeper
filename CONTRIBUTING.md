@@ -2,12 +2,10 @@
 
 ### Raising issues
 
-You can raise feature requests or bugs as issues in GitHub. For bugs, please ensure you include steps to reproduce the
-problem. For feature requests, please give as much information as you can on why you want the change and what value it
-represents to you.
+You can raise feature requests or bugs as issues in GitHub. Please fill in all relevant information.
 
 Before submitting an issue, please ensure you search the existing issues to check if your change has already been
-requested.
+requested. Comment on any issue to let us know you're interested.
 
 ### Contributing code
 
