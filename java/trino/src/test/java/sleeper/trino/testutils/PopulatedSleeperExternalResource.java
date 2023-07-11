@@ -87,7 +87,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  */
 public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
     private static final String TEST_CONFIG_BUCKET_NAME = "test-config-bucket";
-
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;

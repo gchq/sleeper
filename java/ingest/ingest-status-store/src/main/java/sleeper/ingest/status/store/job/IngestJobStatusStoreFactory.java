@@ -21,9 +21,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
-import static sleeper.configuration.properties.StatusStoreProperties.INGEST_STATUS_STORE_ENABLED;
 import java.time.Instant;
 import java.util.function.Supplier;
+
+import static sleeper.configuration.properties.StatusStoreProperties.INGEST_STATUS_STORE_ENABLED;
+
 
 public class IngestJobStatusStoreFactory {
 
