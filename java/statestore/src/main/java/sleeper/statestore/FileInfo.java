@@ -45,6 +45,7 @@ public class FileInfo {
     private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
+    private final Boolean onlyContainsDataForThisPartition;
 
     private FileInfo(Builder builder) {
         this.rowKeyTypes = builder.rowKeyTypes;
@@ -56,6 +57,7 @@ public class FileInfo {
         this.fileStatus = builder.fileStatus;
         this.jobId = builder.jobId;
         this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
+        this.onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
     }
 
     public static Builder builder() {
@@ -98,6 +100,10 @@ public class FileInfo {
         return numberOfRecords;
     }
 
+    public Boolean doesOnlyContainsDataForThisPartition() {
+        return onlyContainsDataForThisPartition;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -116,14 +122,16 @@ public class FileInfo {
                 Objects.equals(maxRowKey, fileInfo.maxRowKey) &&
                 fileStatus == fileInfo.fileStatus &&
                 Objects.equals(jobId, fileInfo.jobId) &&
-                Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+                Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime) &&
+                Objects.equals(onlyContainsDataForThisPartition, fileInfo.onlyContainsDataForThisPartition);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(rowKeyTypes, filename, partitionId,
                 numberOfRecords, minRowKey, maxRowKey,
-                fileStatus, jobId, lastStateStoreUpdateTime);
+                fileStatus, jobId, lastStateStoreUpdateTime,
+                onlyContainsDataForThisPartition);
     }
 
     @Override
@@ -138,6 +146,7 @@ public class FileInfo {
                 ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
+                ", onlyContainsDataForThisPartition=" + onlyContainsDataForThisPartition +
                 '}';
     }
 
@@ -178,6 +187,7 @@ public class FileInfo {
         private FileStatus fileStatus;
         private String jobId;
         private Long lastStateStoreUpdateTime;
+        private Boolean onlyContainsDataForThisPartition = true;
 
         private Builder() {
         }
@@ -238,6 +248,11 @@ public class FileInfo {
             } else {
                 return lastStateStoreUpdateTime(lastStateStoreUpdateTime.toEpochMilli());
             }
+        }
+
+        public Builder onlyContainsDataForThisPartition(Boolean onlyContainsDataForThisPartition) {
+            this.onlyContainsDataForThisPartition = onlyContainsDataForThisPartition;
+            return this;
         }
 
         public FileInfo build() {

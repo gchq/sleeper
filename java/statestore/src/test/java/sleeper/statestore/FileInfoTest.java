@@ -30,6 +30,7 @@ public class FileInfoTest {
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
+                .onlyContainsDataForThisPartition(true)
                 .build();
 
         // When / Then
@@ -38,6 +39,7 @@ public class FileInfoTest {
         assertThat(fileInfo.getFilename()).isEqualTo("abc");
         assertThat(fileInfo.getJobId()).isEqualTo("Job1");
         assertThat(fileInfo.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        assertThat(fileInfo.doesOnlyContainsDataForThisPartition()).isEqualTo(true);
     }
 
     @Test
@@ -64,11 +66,21 @@ public class FileInfoTest {
                 .jobId("Job3")
                 .lastStateStoreUpdateTime(2_000_000L)
                 .build();
+        FileInfo fileInfo4 = FileInfo.builder()
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .partitionId("0")
+                .filename("abc")
+                .jobId("Job1")
+                .lastStateStoreUpdateTime(1_000_000L)
+                .onlyContainsDataForThisPartition(false)
+                .build();
 
         // When / Then
         assertThat(fileInfo2).isEqualTo(fileInfo1)
                 .hasSameHashCodeAs(fileInfo1);
         assertThat(fileInfo3).isNotEqualTo(fileInfo1);
+        assertThat(fileInfo4).isNotEqualTo(fileInfo1);
         assertThat(fileInfo3.hashCode()).isNotEqualTo(fileInfo1.hashCode());
+        assertThat(fileInfo4.hashCode()).isNotEqualTo(fileInfo1.hashCode());
     }
 }
