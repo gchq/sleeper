@@ -67,8 +67,8 @@ public class PartitionFactory {
         Range rightRange = rangeFactory.createRange(splitField, splitPoint, parentRange.getMax());
         Partition.Builder leftPartition = partition(leftId, parentRegion.childWithRange(leftRange));
         Partition.Builder rightPartition = partition(rightId, parentRegion.childWithRange(rightRange));
-        leftPartition.id(parent.getId());
-        rightPartition.id(parent.getId());
+        leftPartition.parentPartitionId(parent.getId());
+        rightPartition.parentPartitionId(parent.getId());
         parent.setChildPartitionIds(List.of(leftId, rightId));
         parent.setLeafPartition(false);
         parent.setDimension(dimension);

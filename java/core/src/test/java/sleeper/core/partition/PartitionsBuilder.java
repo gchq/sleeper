@@ -59,7 +59,7 @@ public class PartitionsBuilder {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
         }
         for (int i = 0; i < ids.size(); i++) {
-            add(factory.partition(ids.get(i), regions.get(i)));
+            add(factory.partition(ids.get(i), regions.get(i)).build());
         }
         return this;
     }
