@@ -45,15 +45,15 @@ public class Partition {
     private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
     private Partition(Partition.Builder builder) {
-        setRowKeyTypes(builder.getRowKeyTypes());
-        if (null != builder.getRegion()) {
-            setRegion(builder.getRegion());
+        rowKeyTypes = builder.rowKeyTypes;
+        if (null != builder.region) {
+            region = builder.region;
         }
-        setId(builder.getId());
-        setLeafPartition(builder.isLeafPartition());
-        setParentPartitionId(builder.getParentPartitionId());
-        setChildPartitionIds(builder.getChildPartitionIds());
-        setDimension(builder.getDimension());
+        id = builder.id;
+        leafPartition = builder.leafPartition;
+        parentPartitionId = builder.parentPartitionId;
+        childPartitionIds = builder.childPartitionIds;
+        dimension = builder.dimension;
     }
 
     public static Builder builder() {
@@ -64,34 +64,17 @@ public class Partition {
         return rowKeyTypes;
     }
 
-    public void setRowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-        this.rowKeyTypes = rowKeyTypes;
-    }
-
-    public void setRowKeyTypes(PrimitiveType... rowKeyTypes) {
-        this.rowKeyTypes = new ArrayList<>();
-        for (PrimitiveType type : rowKeyTypes) {
-            this.rowKeyTypes.add(type);
-        }
-    }
 
     public Region getRegion() {
         return region;
     }
 
     public void setRegion(Region region) {
-        if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
-            throw new IllegalArgumentException("Region must be in canonical form");
-        }
         this.region = region;
     }
 
     public String getId() {
         return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public boolean isLeafPartition() {
@@ -232,36 +215,31 @@ public class Partition {
             return this;
         }
 
-        public List<PrimitiveType> getRowKeyTypes() {
-            return rowKeyTypes;
-        }
-
-        public Region getRegion() {
-            return region;
+        public Partition build() {
+            if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+                throw new IllegalArgumentException("Region must be in canonical form");
+            }
+            return new Partition(this);
         }
 
         public String getId() {
             return id;
         }
 
-        public boolean isLeafPartition() {
-            return leafPartition;
+        public Region getRegion() {
+            return region;
         }
 
-        public String getParentPartitionId() {
-            return parentPartitionId;
-        }
 
-        public List<String> getChildPartitionIds() {
-            return childPartitionIds;
-        }
+    }
 
-        public int getDimension() {
-            return dimension;
-        }
-
-        public Partition build() {
-            return new Partition(this);
-        }
+    public Builder toBuilder() {
+        return builder().rowKeyTypes(rowKeyTypes)
+                .region(region)
+                .id(id)
+                .leafPartition(leafPartition)
+                .childPartitionIds(childPartitionIds)
+                .parentPartitionId(parentPartitionId)
+                .dimension(dimension);
     }
 }

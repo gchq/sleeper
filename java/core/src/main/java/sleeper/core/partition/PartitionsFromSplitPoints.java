@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Given a list of split points that split the first dimension of the row keys into partitions, this class
@@ -74,23 +75,25 @@ public class PartitionsFromSplitPoints {
         LOGGER.info("Split points are valid");
 
         // There is at least 1 split point. Use the split points to create leaf partitions.
-        List<Partition> leafPartitions = createLeafPartitions();
-        List<Partition> allPartitions = new ArrayList<>(leafPartitions);
+        List<Partition.Builder> leafPartitions = createLeafPartitions();
+        List<Partition.Builder> allPartitions = new ArrayList<>(leafPartitions);
 
-        List<Partition> nextLayer = addLayer(leafPartitions, allPartitions);
+        List<Partition.Builder> nextLayer = addLayer(leafPartitions, allPartitions);
         while (1 != nextLayer.size()) {
             nextLayer = addLayer(nextLayer, allPartitions);
         }
 
-        return allPartitions;
+        List<Partition> builtPartitions = allPartitions.stream().map(Partition.Builder::build).collect(Collectors.toList());
+
+        return builtPartitions;
     }
 
-    private List<Partition> addLayer(List<Partition> partitionsInLayer, List<Partition> allPartitions) {
-        List<Partition> parents = new ArrayList<>();
+    private List<Partition.Builder> addLayer(List<Partition.Builder> partitionsInLayer, List<Partition.Builder> allPartitions) {
+        List<Partition.Builder> parents = new ArrayList<>();
         for (int i = 0; i < partitionsInLayer.size(); i += 2) {
             if (i <= partitionsInLayer.size() - 2) {
-                Partition leftPartition = partitionsInLayer.get(i);
-                Partition rightPartition = partitionsInLayer.get(i + 1);
+                Partition.Builder leftPartition = partitionsInLayer.get(i);
+                Partition.Builder rightPartition = partitionsInLayer.get(i + 1);
 
                 List<Range> ranges = new ArrayList<>();
                 for (Range range : leftPartition.getRegion().getRanges()) {
@@ -105,18 +108,18 @@ public class PartitionsFromSplitPoints {
                         false);
                 ranges.add(rangeForDim0);
                 Region region = new Region(ranges);
-                Partition parent = Partition.builder()
-                        .id(UUID.randomUUID().toString())
+                String id = UUID.randomUUID().toString();
+                Partition.Builder parent = Partition.builder()
+                        .id(id)
                         .parentPartitionId(null)
                         .childPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()))
                         .leafPartition(false)
                         .dimension(0)
                         .rowKeyTypes(schema.getRowKeyTypes())
-                        .region(region)
-                        .build();
+                        .region(region);
 
-                leftPartition.setParentPartitionId(parent.getId());
-                rightPartition.setParentPartitionId(parent.getId());
+                leftPartition.parentPartitionId(id);
+                rightPartition.parentPartitionId(id);
 
                 parents.add(parent);
             }
@@ -135,19 +138,18 @@ public class PartitionsFromSplitPoints {
         return parents;
     }
 
-    private List<Partition> createLeafPartitions() {
+    private List<Partition.Builder> createLeafPartitions() {
         List<Region> leafRegions = leafRegionsFromSplitPoints(schema, splitPoints);
-        List<Partition> leafPartitions = new ArrayList<>();
+        List<Partition.Builder> leafPartitions = new ArrayList<>();
         for (Region region : leafRegions) {
-            Partition partition = Partition.builder()
+            Partition.Builder partition = Partition.builder()
                     .rowKeyTypes(schema.getRowKeyTypes())
                     .region(region)
                     .id(UUID.randomUUID().toString())
                     .leafPartition(true)
                     .parentPartitionId(null)
                     .childPartitionIds(new ArrayList<>())
-                    .dimension(-1)
-                    .build();
+                    .dimension(-1);
             leafPartitions.add(partition);
         }
         LOGGER.info("Created {} leaf partitions from {} split points", leafPartitions.size(), splitPoints.size());
@@ -156,10 +158,10 @@ public class PartitionsFromSplitPoints {
     }
 
     private Partition createRootPartitionThatIsLeaf() {
-        return createRootPartitionThatIsLeaf(schema, rangeFactory);
+        return createRootPartitionThatIsLeaf(schema, rangeFactory).build();
     }
 
-    public static Partition createRootPartitionThatIsLeaf(Schema schema, RangeFactory rangeFactory) {
+    public static Partition.Builder createRootPartitionThatIsLeaf(Schema schema, RangeFactory rangeFactory) {
         List<Range> ranges = new ArrayList<>();
         for (Field field : schema.getRowKeyFields()) {
             ranges.add(getRangeCoveringWholeDimension(rangeFactory, field));
@@ -172,8 +174,7 @@ public class PartitionsFromSplitPoints {
                 .leafPartition(true)
                 .parentPartitionId(null)
                 .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
+                .dimension(-1);
     }
 
     private static Range getRangeCoveringWholeDimension(RangeFactory rangeFactory, Field field) {

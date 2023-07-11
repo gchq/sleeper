@@ -45,10 +45,10 @@ public class PartitionFactory {
     }
 
     public Partition partition(String id, Object min, Object max) {
-        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max)));
+        return partition(id, new Region(rangeFactory.createRange(singleRowKeyField(), min, max))).build();
     }
 
-    public Partition partition(String id, Region region) {
+    public Partition.Builder partition(String id, Region region) {
         return Partition.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .region(region)
@@ -56,8 +56,7 @@ public class PartitionFactory {
                 .leafPartition(true)
                 .parentPartitionId(null)
                 .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
+                .dimension(-1);
     }
 
     public List<Partition> split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
@@ -66,14 +65,14 @@ public class PartitionFactory {
         Range parentRange = parentRegion.getRange(splitField.getName());
         Range leftRange = rangeFactory.createRange(splitField, parentRange.getMin(), splitPoint);
         Range rightRange = rangeFactory.createRange(splitField, splitPoint, parentRange.getMax());
-        Partition left = partition(leftId, parentRegion.childWithRange(leftRange));
-        Partition right = partition(rightId, parentRegion.childWithRange(rightRange));
-        left.setParentPartitionId(parent.getId());
-        right.setParentPartitionId(parent.getId());
+        Partition.Builder leftPartition = partition(leftId, parentRegion.childWithRange(leftRange));
+        Partition.Builder rightPartition = partition(rightId, parentRegion.childWithRange(rightRange));
+        leftPartition.id(parent.getId());
+        rightPartition.id(parent.getId());
         parent.setChildPartitionIds(List.of(leftId, rightId));
         parent.setLeafPartition(false);
         parent.setDimension(dimension);
-        return List.of(left, right);
+        return List.of(leftPartition.build(), rightPartition.build());
     }
 
     public Partition parentJoining(String parentId, Partition left, Partition right) {
@@ -81,13 +80,14 @@ public class PartitionFactory {
     }
 
     public Partition rootFirst(String id) {
-        Partition partition = PartitionsFromSplitPoints.createRootPartitionThatIsLeaf(schema, rangeFactory);
-        partition.setId(id);
-        return partition;
+        return PartitionsFromSplitPoints
+                .createRootPartitionThatIsLeaf(schema, rangeFactory)
+                .id(id)
+                .build();
     }
 
     private Partition parent(List<Partition> children, String id, Region region) {
-        Partition parent = partition(id, region);
+        Partition parent = partition(id, region).build();
         parent.setChildPartitionIds(children.stream()
                 .map(Partition::getId)
                 .collect(Collectors.toList()));
