@@ -44,29 +44,29 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
         private static SleeperPropertyIndex<UserDefinedInstanceProperty> createInstance() {
             SleeperPropertyIndex<UserDefinedInstanceProperty> index = new SleeperPropertyIndex<>();
+            index.addAll(CommonProperties.getAll());
+            index.addAll(IngestProperties.getAll());
             index.addAll(ArrayListIngestProperties.getAll());
             index.addAll(ArrowIngestProperties.getAll());
             index.addAll(AsyncIngestPartitionFileWriterProperties.getAll());
-            index.addAll(AthenaProperties.getAll());
+            index.addAll(StatusStoreProperties.getAll());
             index.addAll(BatcherProperties.getAll());
             index.addAll(BulkImportProperties.getAll());
-            index.addAll(BulkImportUsingEKSProperties.getAll());
             index.addAll(BulkImportUsingEMRProperties.getAll());
             index.addAll(BulkImportUsingEMRPropertiesNonPersistant.getAll());
             index.addAll(BulkImportUsingEMRPropertiesPersistent.getAll());
-            index.addAll(CompactionProperties.getAll());
-            index.addAll(DashboardProperties.getAll());
-            index.addAll(CommonProperties.getAll());
-            index.addAll(GarbageCollectionProperties.getAll());
-            index.addAll(IngestProperties.getAll());
-            index.addAll(LoggingLevelsProperties.getAll());
+            index.addAll(BulkImportUsingEKSProperties.getAll());
             index.addAll(PartitionSplittingProperties.getAll());
+            index.addAll(GarbageCollectionProperties.getAll());
+            index.addAll(CompactionProperties.getAll());
             index.addAll(QueryProperties.getAll());
-            index.addAll(StatusStoreProperties.getAll());
+            index.addAll(DashboardProperties.getAll());
+            index.addAll(LoggingLevelsProperties.getAll());
+            index.addAll(AthenaProperties.getAll());
+            index.addAll(DefaultProperties.getAll());
+
 
             return index;
         }
-
-
     }
 }
