@@ -72,7 +72,7 @@ Once generated, it deploys Sleeper using CDK.
 Each system test has an instance properties file next to the deploy script called `system-test-instance.properties`. 
 When running the deploy script, the `scripts/test/<test-name>` directory is scanned for `table.properties`, 
 `tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test. 
-If they are not present, then the template files in `./scripts/templates` are used. Note that properties in these 
+If they are not present, then the template files in `scripts/templates` are used. Note that properties in these 
 files with the value `changeme` will be overwritten by the script.
 
 You can also change any system test specific properties in the file `scripts/test/<test-name>/system-test-instance.properties`. 
