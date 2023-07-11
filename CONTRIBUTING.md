@@ -30,4 +30,4 @@ Read our [common problems and their solutions guide](docs/11-common-problems-and
 problem is covered there.
 
 If you'd like to contact us you can [raise any question as a GitHub issue](https://github.com/gchq/sleeper/issues/new),
-and we'll get back to you with a response.
+and we'll get back to you with a response. Please note this will be public on GitHub.
