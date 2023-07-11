@@ -14,9 +14,9 @@ Describe what's going wrong.
 ### Steps to reproduce
 
 1. Deploy stacks '...'
-2. Set properties '....'
-3. Send SQS message '....'
-4. Run report '....'
+2. Send SQS message '...'
+3. Run report '...'
+4. See error
 
 ### Expected behavior
 
