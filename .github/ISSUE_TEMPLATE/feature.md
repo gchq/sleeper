@@ -23,6 +23,6 @@ Describe what you'd like to happen, or what you'd like to be able to do.
 
 Describe any alternative solutions or features you've considered.
 
-Give any context about how this relates to other issues.
+Give any context about how this relates to other issues, with links to those issues.
 
 If parts of this seem like they might be separate issues, you can call that out here.
