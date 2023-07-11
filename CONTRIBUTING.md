@@ -7,7 +7,7 @@ can [raise it as an issue in GitHub](https://github.com/gchq/sleeper/issues/new)
 information.
 
 Before making a new one, please search the existing issues to check if your change has already been requested.
-Comment on any issue to let us know you're interested.
+Comment on an issue to let us know you're interested.
 
 ### Contributing code
 
