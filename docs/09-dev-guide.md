@@ -71,26 +71,28 @@ This will generate everything for you including:
 * ECR repositories for ingest, compaction and system test images
 * The Sleeper properties file
 
-Once generated, it deploys Sleeper using CDK. Note that currently this needs
-to be run on an x86 machine.
+Once generated, it deploys Sleeper using CDK.
 
-The system tests use the schema in `./scripts/templates/schema.template`. You can
-change the instance and table properties that are used to deploy the system test
-by editing the files in `./scripts/templates`. However, note that properties in
-these files with the value `changeme` will be overwritten by the script.
+Each system test has an instance properties file next to the deploy script 
+called `system-test-instance.properties`. When running the deploy script, 
+the `scripts/test/<test-name>` directory is scanned for `table.properties`, 
+`tags.properties`, and `schema.properties` files. If they are found, 
+they are picked up and used by the test. If they are not present, then the template 
+files in `./scripts/templates` are used. Note that properties in these files with 
+the value `changeme` will be overwritten by the script.
 
 You can also change any system test specific properties in the file
 `scripts/test/deployAll/system-test-instance.properties`. This includes the
 optional stacks property - you may want to customise this to experiment with
 different stacks.
 
-All resources are tagged with the tags defined in the file `deploy/templates/tags.properties.template`
-file.
+All resources are tagged with the tags defined in the file `deploy/templates/tags.template`,
+or a `tags.properties` file placed next to the `system-test-instance.properties`.
 
 You can get a report of your instance by running:
 
 ```bash
-./scripts/test/systemTestStatusReport.sh
+./scripts/test/systemTestStatusReport.sh <instance-id> "system-test"
 ```
 
 Finally, when you are ready to tear down the instance, run:
@@ -99,12 +101,7 @@ Finally, when you are ready to tear down the instance, run:
 ./scripts/test/tearDown.sh
 ```
 
-It is advisable to manually stop any tasks running in the compaction and system test
-clusters.
-
-Note you will still need the files in the `/generated` folder that are created
-during deployment for this tear down script to work correctly.
-This will remove your deployment and then any ECR repos, S3 buckets and local
+This will remove your deployment, including any ECR repos, S3 buckets and local
 files that have been generated.
 
 ## Standalone deployment

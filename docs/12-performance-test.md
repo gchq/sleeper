@@ -3,12 +3,11 @@ Performance tests
 
 The following notes describe how to conduct some manual tests of performance to help understand whether changes to the
 code have increased or decreased the performance. These tests are based on the system tests described in
-[09-dev-guide#System-tests](09-dev-guide.md#System-tests). Note that currently the following needs to be run on
-an x86 machine.
+[09-dev-guide#System-tests](09-dev-guide.md#System-tests).
 
-Under `scripts/test` we have system tests for deploying everything, and for compaction performance testing. The
-compaction tests take control of when compactions run in order to produce more deterministic results. The tests for
-deploying everything test direct ingest, while the compaction performance tests currently use a queue.
+Under `scripts/test` we have system tests for deploying everything, testing performance of compaction and bulk import, 
+and testing functionality of partition splitting and the ingest batcher.
+The performance and functional tests take control of when compactions run in order to produce more deterministic results.
 
 ## Deploy all
 
