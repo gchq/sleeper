@@ -12,5 +12,5 @@ Make sure you have checked _all_ steps below.
 
 ### Documentation
 
-- [ ] In case of new functionality, my PR adds documentation that describes how to use it.
-    - All the public functions and the classes in the PR contain Javadoc that explain what it does
+- [ ] In case of new functionality, my PR adds documentation that describes how to use it, or I have linked to a
+  separate issue for that below.
