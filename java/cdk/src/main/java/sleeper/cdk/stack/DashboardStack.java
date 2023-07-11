@@ -45,7 +45,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.CommonProperties.*;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.METRICS_NAMESPACE;
 import static sleeper.configuration.properties.DashboardProperties.DASHBOARD_TIME_WINDOW_MINUTES;
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")

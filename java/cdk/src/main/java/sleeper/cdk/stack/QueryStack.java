@@ -74,14 +74,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperties.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.QueryProperties.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.QueryProperties.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.QueryProperties.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.configuration.properties.CommonProperties.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 
 /**
  * A {@link NestedStack} to handle queries. This consists of a {@link Queue} that

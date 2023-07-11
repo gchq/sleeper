@@ -35,13 +35,13 @@ import sleeper.job.common.RunECSTasks;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.configuration.properties.CommonProperties.FARGATE_VERSION;
+import static sleeper.configuration.properties.CommonProperties.SUBNETS;
+import static sleeper.configuration.properties.IngestProperties.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.CommonProperties.FARGATE_VERSION;
-import static sleeper.configuration.properties.IngestProperties.MAXIMUM_CONCURRENT_INGEST_TASKS;
-import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.

@@ -30,8 +30,6 @@ import java.util.Map;
 import static org.mockito.Mockito.mock;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INSTANCE_CONFIGURATION_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_CONFIGURATION_OPTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 import static sleeper.configuration.properties.CommonProperties.ID;
@@ -40,6 +38,8 @@ import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN
 import static sleeper.configuration.properties.CommonProperties.REGION;
 import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 

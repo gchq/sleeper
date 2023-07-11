@@ -32,18 +32,18 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
-import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
 import static sleeper.configuration.properties.BulkImportUsingEKSProperties.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.CompactionProperties.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.IngestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.REGION;
 import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.CompactionProperties.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.IngestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class PopulateInstanceProperties {
     private final Supplier<String> accountSupplier;

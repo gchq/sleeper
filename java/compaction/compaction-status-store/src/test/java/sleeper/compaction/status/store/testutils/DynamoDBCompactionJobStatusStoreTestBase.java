@@ -50,8 +50,8 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompacti
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createTableProperties;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {

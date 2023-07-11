@@ -78,8 +78,6 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 import static sleeper.configuration.properties.CommonProperties.ID;
@@ -88,6 +86,8 @@ import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN
 import static sleeper.configuration.properties.CommonProperties.REGION;
 import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;

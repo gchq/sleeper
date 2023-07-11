@@ -59,10 +59,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
+import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
 
 @Testcontainers
 public class CreateJobsIT {

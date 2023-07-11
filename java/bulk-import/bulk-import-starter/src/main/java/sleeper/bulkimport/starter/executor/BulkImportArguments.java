@@ -26,8 +26,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.BulkImportProperties.BULK_IMPORT_CLASS_NAME;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class BulkImportArguments {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportArguments.class);

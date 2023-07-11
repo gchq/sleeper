@@ -42,6 +42,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.CommonProperties.FARGATE_VERSION;
+import static sleeper.configuration.properties.CommonProperties.SUBNETS;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.configuration.properties.CompactionProperties.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
@@ -52,11 +57,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_CPU_ARCHITECTURE;
-import static sleeper.configuration.properties.CommonProperties.FARGATE_VERSION;
-import static sleeper.configuration.properties.CompactionProperties.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
-import static sleeper.configuration.properties.CommonProperties.SUBNETS;
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
 import static sleeper.core.ContainerConstants.SPLITTING_COMPACTION_CONTAINER_NAME;
 

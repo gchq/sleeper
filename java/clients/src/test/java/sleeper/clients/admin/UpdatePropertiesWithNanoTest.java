@@ -36,10 +36,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.CommonProperties.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.LoggingLevelsProperties.LOGGING_LEVEL;
-import static sleeper.configuration.properties.CommonProperties.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 

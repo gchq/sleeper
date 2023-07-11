@@ -93,6 +93,26 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperties.REGION;
+import static sleeper.configuration.properties.CommonProperties.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.CommonProperties.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_POOL_DESIRED;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_POOL_MAXIMUM;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_POOL_MINIMUM;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_ROOT_SIZE;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_TYPE;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.CompactionProperties.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
@@ -113,26 +133,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_POOL_DESIRED;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_POOL_MAXIMUM;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_POOL_MINIMUM;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_ROOT_SIZE;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_EC2_TYPE;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_CPU_ARCHITECTURE;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.CompactionProperties.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.CommonProperties.REGION;
-import static sleeper.configuration.properties.CommonProperties.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.CommonProperties.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.CommonProperties.VPC_ID;
 
 /**
  * A {@link NestedStack} to deploy the {@link Queue}s, ECS {@link Cluster}s, a {@link FargateTaskDefinition} or

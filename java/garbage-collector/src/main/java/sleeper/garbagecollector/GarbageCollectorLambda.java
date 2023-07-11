@@ -35,8 +35,8 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.GarbageCollectionProperties.GARBAGE_COLLECTOR_BATCH_SIZE;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda for executing the {@link GarbageCollector}.

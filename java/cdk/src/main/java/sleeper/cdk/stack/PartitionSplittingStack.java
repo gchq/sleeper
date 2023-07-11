@@ -51,17 +51,17 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.PartitionSplittingProperties.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.PartitionSplittingProperties.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.PartitionSplittingProperties.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.PartitionSplittingProperties.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.PartitionSplittingProperties.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.PartitionSplittingProperties.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.PartitionSplittingProperties.FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.PartitionSplittingProperties.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.PartitionSplittingProperties.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.PartitionSplittingProperties.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 
 /**
  * A {@link NestedStack} to look for partitions that need splitting and to split them.

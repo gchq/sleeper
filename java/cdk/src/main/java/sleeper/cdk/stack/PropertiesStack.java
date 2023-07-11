@@ -34,10 +34,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.

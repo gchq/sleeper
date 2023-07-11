@@ -34,10 +34,10 @@ import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.admin.PropertiesDiffTestHelper.valueDeleted;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
-import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.CommonProperties.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 
 public class PropertiesDiffTest {

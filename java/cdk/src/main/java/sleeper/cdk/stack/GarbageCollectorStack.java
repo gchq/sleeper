@@ -38,13 +38,13 @@ import java.util.List;
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.GarbageCollectionProperties.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.GarbageCollectionProperties.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.CommonProperties.ID;
 import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
 import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.GarbageCollectionProperties.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.GarbageCollectionProperties.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 
 /**
  * A {@link NestedStack} to garbage collect files which have been marked as being ready
