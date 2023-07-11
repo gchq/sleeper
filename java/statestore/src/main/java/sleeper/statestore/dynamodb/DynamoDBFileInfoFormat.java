@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createBinaryAttribute;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createBooleanAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
@@ -44,6 +45,7 @@ class DynamoDBFileInfoFormat {
     private static final String MAX_KEY = "MaxKey";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String JOB_ID = "Job_name";
+    static final String ONLY_CONTAINS_DATA_FOR_THIS_PARTITION = "OnlyContainsDataForThisPartition";
 
     private final List<PrimitiveType> rowKeyTypes;
     private final KeySerDe keySerDe;
@@ -107,6 +109,7 @@ class DynamoDBFileInfoFormat {
         } else {
             itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(Instant.now().toEpochMilli()));
         }
+        itemValues.put(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION, createBooleanAttribute(fileInfo.doesOnlyContainsDataForThisPartition()));
 
         return itemValues;
     }
@@ -131,6 +134,9 @@ class DynamoDBFileInfoFormat {
         }
         if (null != item.get(LAST_UPDATE_TIME)) {
             fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
+        }
+        if (null != item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION)) {
+            fileInfoBuilder.onlyContainsDataForThisPartition(item.get(ONLY_CONTAINS_DATA_FOR_THIS_PARTITION).getBOOL());
         }
         return fileInfoBuilder.build();
     }

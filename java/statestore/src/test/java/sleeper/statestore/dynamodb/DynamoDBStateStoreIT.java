@@ -510,6 +510,79 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
+    public void shouldAtomicallySplitFileInPartitionRecord() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        StateStore dynamoDBStateStore = getStateStore(schema, tree.getAllPartitions());
+        dynamoDBStateStore.addFile(fileInfo);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+
+        // When
+        dynamoDBStateStore.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId);
+
+        // Then
+        assertThat(dynamoDBStateStore.getFileInPartitionList()).hasSize(2);
+        FileInfo expectedLeftFileInfo = fileInfo.toBuilder()
+                .partitionId("left")
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileInfo expectedRightFileInfo = fileInfo.toBuilder()
+                .partitionId("right")
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        assertThat(dynamoDBStateStore.getFileInPartitionList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedLeftFileInfo, expectedRightFileInfo);
+    }
+
+    @Test
+    public void shouldNotAtomicallySplitFileInPartitionRecordIfItDoesntExist() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        StateStore dynamoDBStateStore = getStateStore(schema, tree.getAllPartitions());
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+
+        // When / Then
+        assertThatThrownBy(() -> dynamoDBStateStore.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
+    public void shouldNotAtomicallySplitFileInPartitionRecordIfItHasAJobId() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        StateStore dynamoDBStateStore = getStateStore(schema, tree.getAllPartitions());
+        dynamoDBStateStore.addFile(fileInfo);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+        dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles("a-job", Collections.singletonList(fileInfo));
+
+        // When / Then
+        assertThatThrownBy(() -> dynamoDBStateStore.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
     public void shouldAtomicallyUpdateJobStatusOfFiles() throws StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());

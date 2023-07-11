@@ -190,6 +190,77 @@ public class InMemoryFileInfoStoreTest {
     }
 
     @Test
+    public void shouldAtomicallySplitFileInPartitionRecord() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.addFile(fileInfo);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+
+        // When
+        store.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId);
+
+        // Then
+        assertThat(store.getFileInPartitionList()).hasSize(2);
+        FileInfo expectedLeftFileInfo = fileInfo.toBuilder()
+                .partitionId("left")
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileInfo expectedRightFileInfo = fileInfo.toBuilder()
+                .partitionId("right")
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        assertThat(store.getFileInPartitionList()).containsExactlyInAnyOrder(expectedLeftFileInfo, expectedRightFileInfo);
+    }
+
+    @Test
+    public void shouldNotAtomicallySplitFileInPartitionRecordIfItDoesntExist() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        FileInfoStore store = new InMemoryFileInfoStore();
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+
+        // When / Then
+        assertThatThrownBy(() -> store.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
+    public void shouldNotAtomicallySplitFileInPartitionRecordIfItHasAJobId() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.addFile(fileInfo);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+        store.atomicallyUpdateJobStatusOfFiles("a-job", Collections.singletonList(fileInfo));
+
+        // When / Then
+        assertThatThrownBy(() -> store.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
     public void shouldAtomicallyUpdateJobStatusOfFiles() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();

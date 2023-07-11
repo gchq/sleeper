@@ -51,6 +51,12 @@ public class DelegatingStateStore implements StateStore {
         fileInfoStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
     }
 
+   @Override
+    public void atomicallySplitFileInPartitionRecord(FileInfo fileInPartitionRecordToBeSplit,
+            String leftChildPartitionId, String rightChildPartitionId) throws StateStoreException {
+        fileInfoStore.atomicallySplitFileInPartitionRecord(fileInPartitionRecordToBeSplit, leftChildPartitionId, rightChildPartitionId);
+    }
+
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
         fileInfoStore.atomicallyUpdateJobStatusOfFiles(jobId, fileInfos);

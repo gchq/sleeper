@@ -537,7 +537,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFileaShouldFailIfNoFileInPartitionRecord() throws IOException, StateStoreException {
+    public void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFilesShouldFailIfNoFileInPartitionRecord() throws IOException, StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -593,6 +593,77 @@ public class S3StateStoreIT {
         // When / Then
         assertThatThrownBy(() ->
                 stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(fileInPartitionRecordsToRemove, newLeftFileInfo, newRightFileInfo))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
+    public void shouldAtomicallySplitFileInPartitionRecord() throws Exception {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new StringType());
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        StateStore stateStore = getStateStore(schema);
+        stateStore.addFile(fileInfo);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+
+        // When
+        stateStore.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId);
+
+        // Then
+        assertThat(stateStore.getFileInPartitionList()).hasSize(2);
+        FileInfo expectedLeftFileInfo = fileInfo.toBuilder()
+                .partitionId("left")
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileInfo expectedRightFileInfo = fileInfo.toBuilder()
+                .partitionId("right")
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        assertThat(stateStore.getFileInPartitionList()).containsExactlyInAnyOrder(expectedLeftFileInfo, expectedRightFileInfo);
+    }
+
+    @Test
+    public void shouldNotAtomicallySplitFileInPartitionRecordIfItDoesntExist() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        StateStore stateStore = getStateStore(schema);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+
+        // When / Then
+        assertThatThrownBy(() -> stateStore.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
+    public void shouldNotAtomicallySplitFileInPartitionRecordIfItHasAJobId() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("X"))
+                .parentJoining("root", "left", "right")
+                .buildTree();
+        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        FileInfo fileInfo = factory.rootFile("file", 100L, "a", "c");
+        StateStore stateStore = getStateStore(schema);
+        stateStore.addFile(fileInfo);
+        String leftLeafPartitionId = tree.getLeafPartition(Key.create("A")).getId();
+        String rightLeafPartitionId = tree.getLeafPartition(Key.create("Y")).getId();
+        stateStore.atomicallyUpdateJobStatusOfFiles("a-job", Collections.singletonList(fileInfo));
+
+        // When / Then
+        assertThatThrownBy(() -> stateStore.atomicallySplitFileInPartitionRecord(fileInfo, leftLeafPartitionId, rightLeafPartitionId))
                 .isInstanceOf(StateStoreException.class);
     }
 

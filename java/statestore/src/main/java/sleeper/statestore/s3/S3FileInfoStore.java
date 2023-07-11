@@ -41,7 +41,6 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -239,6 +238,79 @@ public class S3FileInfoStore implements FileInfoStore {
 
         try {
             updateFiles(fileInPartitionUpdate, fileLifeCycleUpdate, fileInPartitionCondition, UNCONDITIONAL);
+        } catch (IOException e) {
+            throw new StateStoreException("IOException updating file infos", e);
+        }
+    }
+
+    @Override
+    public void atomicallySplitFileInPartitionRecord(FileInfo fileInPartitionRecordToBeSplit,
+            String leftChildPartitionId, String rightChildPartitionId) throws StateStoreException {
+
+        Function<List<FileInfo>, List<FileInfo>> fileInPartitionUpdate = list -> {
+            String filename = fileInPartitionRecordToBeSplit.getFilename();
+            String partitionId = fileInPartitionRecordToBeSplit.getPartitionId();
+            List<FileInfo> updatedFiles = new ArrayList<>();
+
+            // Any FileInfo with a different filename or the same filename but a different partition id
+            // should be unchanged.
+            FileInfo existingFileInfo = null;
+            for (FileInfo fileInfo : list) {
+                if (!fileInfo.getFilename().equals(filename)) {
+                    updatedFiles.add(fileInfo);
+                } else if (!fileInfo.getPartitionId().equals(partitionId)) {
+                    updatedFiles.add(fileInfo);
+                } else {
+                    existingFileInfo = fileInfo;
+                }
+            }
+            // This shouldn't happen due to the conditional check
+            if (null == existingFileInfo) {
+                throw new RuntimeException("There is no file-in-partition entry for filename " + filename + ", partition " + partitionId);
+            }
+
+            // Add the left and right FileInfos
+            FileInfo leftFileInfo = existingFileInfo.toBuilder()
+                .partitionId(leftChildPartitionId)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+            FileInfo rightFileInfo = existingFileInfo.toBuilder()
+                .partitionId(rightChildPartitionId)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+            updatedFiles.add(leftFileInfo);
+            updatedFiles.add(rightFileInfo);
+            return updatedFiles;
+        };
+
+        Function<List<FileInfo>, String> fileInPartitionCondition = list -> {
+            Map<String, List<FileInfo>> fileNameToFileInfos = convertToMapFromFilenameToFileInfos(list);
+            String filename = fileInPartitionRecordToBeSplit.getFilename();
+            String partitionId = fileInPartitionRecordToBeSplit.getPartitionId();
+
+            // Check that the fileInPartitionRecordToBeSplit record exists
+            if (!fileNameToFileInfos.containsKey(filename)) {
+                return "Cannot split file-in-partition entry for file " + filename + " as there is no file-in-partition record for it";
+            }
+            List<FileInfo> fileInPartitionEntriesForFile = fileNameToFileInfos.get(filename);
+            boolean entryExistsForPartition = fileInPartitionEntriesForFile.stream().anyMatch(f -> f.getPartitionId().equals(partitionId));
+            if (!entryExistsForPartition) {
+                return "Cannot split file-in-partition entry for file " + filename + " as there is no file-in-partition record for it";
+            }
+
+            // Check that the existing FileInfo has a null job id
+            FileInfo existingFileInPartitionEntry = fileInPartitionEntriesForFile.stream()
+                .filter(f -> f.getPartitionId().equals(partitionId)).findFirst().get();
+            if (existingFileInPartitionEntry.getJobId() != null) {
+                return "Cannot split file-in-partition entry for file " + filename + " and partition " + partitionId
+                    + " as it has a job id";
+            }
+
+            return "";
+        };
+
+        try {
+            updateFiles(fileInPartitionUpdate, IDENTITY_UPDATE, fileInPartitionCondition, UNCONDITIONAL);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -574,7 +646,8 @@ public class S3FileInfoStore implements FileInfoStore {
                         new Field("numberOfRecords", new LongType()),
                         new Field("jobId", new StringType()),
                         new Field("minRowKeys", new ByteArrayType()),
-                        new Field("maxRowKeys", new ByteArrayType()))
+                        new Field("maxRowKeys", new ByteArrayType()),
+                        new Field("onlyContainsDataForThisPartition", new StringType()))
                 .build();
     }
 
@@ -615,7 +688,11 @@ public class S3FileInfoStore implements FileInfoStore {
         record.put("fileName", fileInfo.getFilename());
         record.put("fileStatus", "" + fileInfo.getFileStatus());
         record.put("partitionId", fileInfo.getPartitionId());
-        record.put("lastStateStoreUpdateTime", fileInfo.getLastStateStoreUpdateTime());
+        if (null == fileInfo.getLastStateStoreUpdateTime()) {
+            record.put("lastStateStoreUpdateTime", Long.MIN_VALUE);
+        } else {
+            record.put("lastStateStoreUpdateTime", fileInfo.getLastStateStoreUpdateTime());
+        }
         record.put("numberOfRecords", fileInfo.getNumberOfRecords());
         if (null == fileInfo.getJobId()) {
             record.put("jobId", "null");
@@ -624,21 +701,24 @@ public class S3FileInfoStore implements FileInfoStore {
         }
         record.put("minRowKeys", keySerDe.serialise(fileInfo.getMinRowKey()));
         record.put("maxRowKeys", keySerDe.serialise(fileInfo.getMaxRowKey()));
+        record.put("onlyContainsDataForThisPartition", Boolean.toString(fileInfo.doesOnlyContainsDataForThisPartition()));
         return record;
     }
 
     private FileInfo getFileInfoFromRecord(Record record) throws IOException {
         String jobId = (String) record.get("jobId");
+        Long lastStateStoreUpdateTime = (Long) record.get("lastStateStoreUpdateTime");
         return FileInfo.builder()
                 .filename((String) record.get("fileName"))
                 .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                 .partitionId((String) record.get("partitionId"))
-                .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
+                .lastStateStoreUpdateTime(lastStateStoreUpdateTime.equals(Long.MIN_VALUE) ? null : lastStateStoreUpdateTime)
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
                 .minRowKey(keySerDe.deserialise((byte[]) record.get("minRowKeys")))
                 .maxRowKey(keySerDe.deserialise((byte[]) record.get("maxRowKeys")))
                 .rowKeyTypes(rowKeyTypes)
+                .onlyContainsDataForThisPartition(Boolean.parseBoolean((String) record.get("onlyContainsDataForThisPartition")))
                 .build();
     }
 

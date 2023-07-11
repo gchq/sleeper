@@ -242,6 +242,64 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
+    @Override
+    public void atomicallySplitFileInPartitionRecord(FileInfo fileInPartitionRecordToBeSplit,
+            String leftChildPartitionId, String rightChildPartitionId) throws StateStoreException {
+        // Create FileInfos for the two new file-in-partition entries
+        FileInfo leftFileInfo = fileInPartitionRecordToBeSplit.toBuilder()
+            .partitionId(leftChildPartitionId)
+            .onlyContainsDataForThisPartition(false)
+            .build();
+        FileInfo rightFileInfo = fileInPartitionRecordToBeSplit.toBuilder()
+            .partitionId(rightChildPartitionId)
+            .onlyContainsDataForThisPartition(false)
+            .build();
+
+        // Create list of transactions to put these new entries in
+        List<TransactWriteItem> writes = new ArrayList<>();
+        Map<String, AttributeValue> newItemFileInPartitionLeftFile = fileInfoFormat.createRecordWithStatus(leftFileInfo, FILE_IN_PARTITION);
+        Map<String, AttributeValue> newItemFileInPartitionRightFile = fileInfoFormat.createRecordWithStatus(rightFileInfo, FILE_IN_PARTITION);
+        Put putFileInPartitionLeftFile = new Put()
+                .withTableName(fileInPartitionTablename)
+                .withItem(newItemFileInPartitionLeftFile);
+        Put putFileInPartitionRightFile = new Put()
+                .withTableName(fileInPartitionTablename)
+                .withItem(newItemFileInPartitionRightFile);
+        writes.add(new TransactWriteItem().withPut(putFileInPartitionLeftFile));
+        writes.add(new TransactWriteItem().withPut(putFileInPartitionRightFile));
+
+        // Add delete of existing file-in-partition record
+        Map<String, AttributeValue> fullDynamoRecord = fileInfoFormat.createRecord(fileInPartitionRecordToBeSplit);
+        Map<String, AttributeValue> key = new HashMap<>(2);
+        key.put(DynamoDBFileInfoFormat.NAME, fullDynamoRecord.get(DynamoDBFileInfoFormat.NAME));
+        key.put(DynamoDBFileInfoFormat.PARTITION, fullDynamoRecord.get(DynamoDBFileInfoFormat.PARTITION));
+        Map<String, String> expressionAttributeNames = new HashMap<>();
+        expressionAttributeNames.put("#status", STATUS);
+        expressionAttributeNames.put("#jobid", JOB_ID);
+        Delete delete = new Delete()
+                .withTableName(fileInPartitionTablename)
+                .withKey(key)
+                .withExpressionAttributeNames(expressionAttributeNames)
+                .withConditionExpression("attribute_exists(#status) and attribute_not_exists(#jobid)");
+        writes.add(new TransactWriteItem().withDelete(delete));
+
+        try {
+            TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+                .withTransactItems(writes)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+            TransactWriteItemsResult transactWriteItemsResult = dynamoDB.transactWriteItems(transactWriteItemsRequest);
+            List<ConsumedCapacity> consumedCapacity = transactWriteItemsResult.getConsumedCapacity();
+            double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Removed file-in-partition entry for file {} in partition {} and added file-in-partition entries for partitions {} and {}, capacity consumed = {}",
+                fileInPartitionRecordToBeSplit.getFilename(), fileInPartitionRecordToBeSplit.getPartitionId(),
+                leftChildPartitionId, rightChildPartitionId, totalConsumed);
+        } catch (TransactionCanceledException | ResourceNotFoundException
+                 | TransactionInProgressException | IdempotentParameterMismatchException
+                 | ProvisionedThroughputExceededException | InternalServerErrorException e) {
+            throw new StateStoreException(e);
+        }
+    }
+
     /**
      * Atomically updates the job field of the given files to the given id, as long as
      * the compactionJob field is currently null.

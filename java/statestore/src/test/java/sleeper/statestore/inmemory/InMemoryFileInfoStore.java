@@ -85,6 +85,49 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
+    public synchronized void atomicallySplitFileInPartitionRecord(FileInfo fileInPartitionRecordToBeSplit,
+            String leftChildPartitionId, String rightChildPartitionId) throws StateStoreException {
+        // Check that the fileInPartitionRecordToBeSplit record exists
+        if (!fileInPartitionEntries.containsKey(fileInPartitionRecordToBeSplit.getFilename())) {
+            throw new StateStoreException("There is no file-in-partition entry for filename " + fileInPartitionRecordToBeSplit.getFilename());
+        }
+        if (!fileInPartitionEntries.get(fileInPartitionRecordToBeSplit.getFilename())
+            .containsKey(fileInPartitionRecordToBeSplit.getPartitionId())) {
+            throw new StateStoreException("There is no file-in-partition entry for filename " + fileInPartitionRecordToBeSplit.getFilename()
+                + " and partition " + fileInPartitionRecordToBeSplit.getPartitionId());
+        }
+
+        // Check that the existing FileInfo has a null job id
+        FileInfo existingFileInfo = fileInPartitionEntries
+            .get(fileInPartitionRecordToBeSplit.getFilename())
+            .get(fileInPartitionRecordToBeSplit.getPartitionId());
+        if (existingFileInfo.getJobId() != null) {
+            throw new StateStoreException("The FileInfo for filename " + fileInPartitionRecordToBeSplit.getFilename()
+                + " and partition " + fileInPartitionRecordToBeSplit.getPartitionId() + " has a job id");
+        }
+
+        // Create the two child ones
+        FileInfo leftFileInfo = existingFileInfo.toBuilder()
+            .partitionId(leftChildPartitionId)
+            .onlyContainsDataForThisPartition(false)
+            .build();
+        FileInfo rightFileInfo = existingFileInfo.toBuilder()
+            .partitionId(rightChildPartitionId)
+            .onlyContainsDataForThisPartition(false)
+            .build();
+
+        // Remove file-in-partition record
+        fileInPartitionEntries.get(fileInPartitionRecordToBeSplit.getFilename())
+            .remove(fileInPartitionRecordToBeSplit.getPartitionId());
+
+        // Add two new file-in-partition records
+        fileInPartitionEntries.get(fileInPartitionRecordToBeSplit.getFilename())
+            .put(leftChildPartitionId, leftFileInfo);
+        fileInPartitionEntries.get(fileInPartitionRecordToBeSplit.getFilename())
+            .put(rightChildPartitionId, rightFileInfo);
+    }
+
+    @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
         List<String> filenamesWithJobId = findFilenamesWithJobIdSet(fileInfos);
         if (!filenamesWithJobId.isEmpty()) {

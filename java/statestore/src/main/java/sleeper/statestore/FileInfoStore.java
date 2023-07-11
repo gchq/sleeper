@@ -110,6 +110,21 @@ public interface FileInfoStore {
                                                                   FileInfo rightFileInfo) throws StateStoreException;
 
     /**
+     * This method is used to split a file-in-partition record that is not in a leaf partition into two,
+     * one for each child partition. This is done by removing the file-in-partition record and replacing
+     * it with two new file-in-partition records, one for each child partition. This should be done
+     * conditionally on the file-in-partition record existing and not having a job id. The file-lifecycle
+     * entries are not affected.
+     *
+     * @param fileInPartitionRecordToBeSplit The file-in-partition records to be split
+     * @param leftChildPartitionId           The id of the left child partition
+     * @param rightChildPartitionId          The id of the right child partition
+     * @throws StateStoreException if the update fails
+     */
+    void atomicallySplitFileInPartitionRecord(FileInfo fileInPartitionRecordToBeSplit,
+        String leftChildPartitionId, String rightChildPartitionId) throws StateStoreException;
+
+    /**
      * This method is used when compaction jobs are created. It sets the jobId field to the provided
      * value for the given file-in-partition records. This is done atomically, conditional on
      * the job id fields being null. This condition ensures that each file can only have one
