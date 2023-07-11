@@ -1,44 +1,33 @@
-## How to contribute to Sleeper
+## How to contribute
 
 ### Raising issues
 
-You can raise feature requests or bugs as issues in GitHub. Please fill in all relevant information.
+If you found a bug or you'd like a new feature or change, you
+can [raise it as an issue in GitHub](https://github.com/gchq/sleeper/issues/new). Please fill in all relevant
+information.
 
-Before submitting an issue, please ensure you search the existing issues to check if your change has already been
-requested. Comment on any issue to let us know you're interested.
+Before submitting an issue, please search the existing issues to check if your change has already been requested.
+Comment on any issue to let us know you're interested.
 
 ### Contributing code
 
-TODO
+To get an overview of the project, read the [README](README.md). Read the [developer guide](docs/09-dev-guide.md) for
+help setting up a developer environment.
 
-### Testing strategy
-
-#### Manual
-
-#### Acceptance automation
-
-We have system tests in scripts/test that help determine whether the system works when deployed, and whether the
-performance is acceptable.
-We have a test script that runs all system tests in one go, which we run nightly against the main branch.
-The script uploads the results of each test to an S3 bucket. This can be
-found [here](./scripts/test/nightly/runTests.sh).
-
-#### Integration
-
-#### Unit tests
-
-### Linting
-
-### Architectural strategy
-
-### Pull requests strategy
+You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
+for your change if there isn't one already.
 
 #### How to sign the CLA
 
-### Issue strategy
+When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
+Agreement (CLA). Click the link in the comment to read and sign it. The pull request will update once you've signed.
 
-### Types of issue
+### Getting help
 
-#### What should be included on each one
+You can comment on any issue if you're looking at it and want some help.
 
-#### How do we use them
+Read our [common problems and their solutions guide](docs/11-common-problems-and-their-solutions.md) to see if your
+problem is covered there.
+
+If you'd like to contact us you can [raise any question as a GitHub issue](https://github.com/gchq/sleeper/issues/new),
+and we'll get back to you with a response.
