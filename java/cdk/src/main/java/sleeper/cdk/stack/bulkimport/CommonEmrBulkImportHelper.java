@@ -46,7 +46,6 @@ import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
@@ -121,10 +120,6 @@ public class CommonEmrBulkImportHelper {
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
 
-        String handler = instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_ENABLED)
-                ? "sleeper.bulkimport.starter.BulkImportServerlessStarterLambda"
-                : "sleeper.bulkimport.starter.BulkImportStarterLambda";
-
         IFunction function = bulkImportStarterJar.buildFunction(scope, "BulkImport" + shortId + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + shortId + " bulk import jobs")
@@ -132,7 +127,7 @@ public class CommonEmrBulkImportHelper {
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
-                .handler(handler)
+                .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
@@ -146,7 +141,7 @@ public class CommonEmrBulkImportHelper {
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
                 .resources(Lists.newArrayList(
-                        //commonEmrStack.getEmrRole().getRoleArn(),
+                        commonEmrStack.getEmrRole().getRoleArn(),
                         commonEmrStack.getEc2Role().getRoleArn()
                 ))
                 .build());
