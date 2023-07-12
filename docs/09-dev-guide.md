@@ -124,13 +124,13 @@ VERSION=0.12.0
 
 4. Push the branch to github and open a pull request so that the tests run. If there are any failures, fix them.
 
-5. Run a deployment of the compactionPerformance system test to ensure that the system deploys successfully:
+5. Run a deployment of the compactionPerformance system test to get the performance figures:
 
 ```bash
 ID=<a-unique-id>
 VPC=<your-vpc-id>
-SUBNET=<your-subnet-id>
-./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+SUBNETS=<your-subnet-ids>
+./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions have completed. 
@@ -155,11 +155,27 @@ Record the ingest and compaction rate in the [performance figures](12-performanc
 ./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
 ```
 
+7. Tear down the compactionPerformance system test
+
+```bash
+./scripts/test/tearDown.sh ${ID}
+```
+
+8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to 
+provide a different unique ID to the compactionPerformance test instance above:
+
+```bash
+ID=<a-unique-id>
+VPC=<your-vpc-id>
+SUBNETS=<your-subnet-ids>
+./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
+```
+
 The following tests can be used as a quick check that all is working correctly. They are not intended to fully test 
 all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS 
 if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
 
-7. Test a simple query:
+9. Test a simple query:
 
 ```bash
 ./scripts/utility/query.sh ${ID}
@@ -169,7 +185,7 @@ Choose a range query, choose 'y' for the first two questions and then choose a r
 As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it 
 should be in the region of 900 results.
 
-8. Test a query that will be executed by lambda:
+10. Test a query that will be executed by lambda:
 
 ```bash
 ./scripts/utility/lambdaQuery.sh ${ID}
@@ -179,7 +195,7 @@ Choose the S3 results bucket option and then choose the same options as above. I
 The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query 
 should be quicker.
 
-9. Test a query that will be executed by lambda with the results being returned over a websocket:
+11. Test a query that will be executed by lambda with the results being returned over a websocket:
 
 ```bash
 ./scripts/utility/webSocketQuery.sh ${ID}
@@ -187,7 +203,7 @@ should be quicker.
 
 Choose the same options as above, and results should be returned.
 
-10. Test the Python API:
+12. Test the Python API:
 
 ```bash
 cd python
@@ -206,7 +222,7 @@ s.range_key_query("system-test", [region])
 
 Around 900 results should be returned.
 
-11. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
+13. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
     set the tag to `v${VERSION}` and push the tag using `git push --tags`.
 
 If you are storing versions of the code in an AWS account then upload the jars and push the Docker images. 
@@ -214,7 +230,7 @@ The following assumes that the environment variable `SLEEPER_JARS` contains the 
 that `VERSION` is the version of the code to upload, and that `REPO_PREFIX` is the prefix for the ECR repositories, 
 e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
 
-12. Push jars to the S3 jars bucket.
+14. Push jars to the S3 jars bucket.
     Copy the jars to the S3 bucket that is used to contain the Sleeper jar files:
 
    ```bash
@@ -225,7 +241,7 @@ e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
    ./scripts/deploy/uploadJars.sh ${SLEEPER_JARS} eu-west-2 ${VERSION} ./java/distribution/target/distribution-${VERSION}-bin/scripts/jars
    ```
 
-13. Push the ingest Docker repo.
+15. Push the ingest Docker repo.
 
    ```bash
    aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin ${REPO_PREFIX}
@@ -234,7 +250,7 @@ e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
    docker push ${REPO_PREFIX}/sleeper-ingest:${VERSION}
    ```
 
-14. Push the compaction Docker repo.
+16. Push the compaction Docker repo.
 
    ```bash
    cp java/compaction-job-execution/target/compaction-job-execution-*-utility.jar java/compaction-job-execution/docker/compaction-job-execution.jar
@@ -242,7 +258,7 @@ e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
    docker push ${REPO_PREFIX}/sleeper-compaction:${VERSION}
    ```
 
-15. Push the bulk import Docker repo (if you do not intend to use the experimental EKS-based bulk import then this can
+17. Push the bulk import Docker repo (if you do not intend to use the experimental EKS-based bulk import then this can
     be ignored).
 
    ```bash
@@ -251,7 +267,7 @@ e.g. `123456789.dkr.ecr.eu-west-2.amazonaws.com`.
    docker push ${REPO_PREFIX}/sleeper-bulk-import:${VERSION}
    ```
 
-16. Build and copy zip archive to bucket.
+18. Build and copy zip archive to bucket.
 
    ```bash
    git checkout v${VERSION}
