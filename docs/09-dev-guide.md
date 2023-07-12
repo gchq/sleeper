@@ -49,12 +49,19 @@ mvn clean install -Pquick
 
 ## System Tests
 
-Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of Sleeper. 
+Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of Sleeper.
+This is useful to ensure that performance degradations have not been introduced when we release new versions. 
+More information about the performance tests can be found in [12-performance-test.md](12-performance-test.md).
+
+They can also be used to test the functionality of different components, and provide a way to create an instance 
+quickly for testing purposes, which generates random test data for you to work with.
+
 The system tests load some random data. This allows us to see the number of records written per second using the standard 
-ingest process. Once the data has been ingested, some compaction jobs will happen. Looking at the logs for these shows
+ingest process. Once the data has been ingested, some compaction jobs will happen. Looking at the reports shows
 us the number of records per second that a compaction job processes.
 
-To run the system tests use:
+The easiest test to run if you are not sure about what stacks you need deployed is the deployAll system test. This test
+deploys most of the stacks. To run the deployAll system test, run the following command:
 
 ```bash
 ./scripts/test/deployAll/buildDeployTest.sh <unique-identifier> <vpc-id> <subnet-id>
@@ -65,6 +72,7 @@ This will generate everything for you including:
 * An S3 Bucket containing all the necessary jars
 * ECR repositories for ingest, compaction and system test images
 * The Sleeper properties file
+* Randomly generated test data in the `system-test` table.
 
 Once generated, it deploys Sleeper using CDK.
 

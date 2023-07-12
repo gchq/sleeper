@@ -1,12 +1,12 @@
 Performance tests
 =================
 
-The following notes describe how to conduct some manual tests of performance to help understand whether changes to the
-code have increased or decreased the performance. These tests are based on the system tests described in
+The following notes describe how to run the system tests that measure performance, to help understand whether changes 
+to the code have increased or decreased the performance. These tests are based on the system tests described in
 [09-dev-guide#System-tests](09-dev-guide.md#System-tests).
 
 Under `scripts/test` we have system tests for testing performance of compaction and bulk import.
-The performance and functional tests take control of when compactions run in order to produce more deterministic results.
+The performance tests take control of when compactions run in order to produce more deterministic results.
 
 ## Compaction performance
 
