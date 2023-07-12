@@ -19,8 +19,6 @@ package sleeper.cdk.stack.bulkimport;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CfnJson;
 import software.amazon.awscdk.CfnJsonProps;
 import software.amazon.awscdk.NestedStack;
@@ -60,52 +58,44 @@ import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ENABLED;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
 
 public class CommonEmrBulkImportStack extends NestedStack {
-    private static Logger LOGGER = LoggerFactory.getLogger(CommonEmrBulkImportStack.class);
     private final IRole ec2Role;
-    private IRole emrRole;
-    private IRole emrServerlessRole;
+    private final IRole emrRole;
     private final CfnSecurityConfiguration securityConfiguration;
 
-    public CommonEmrBulkImportStack(Construct scope, String id,
-            InstanceProperties instanceProperties, BulkImportBucketStack importBucketStack,
-            TableStack tableStack, IngestStatusStoreStack statusStoreStack) {
+    public CommonEmrBulkImportStack(Construct scope,
+                                    String id,
+                                    InstanceProperties instanceProperties,
+                                    BulkImportBucketStack importBucketStack,
+                                    TableStack tableStack,
+                                    IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
-        ec2Role = createEc2Role(this, instanceProperties, importBucketStack.getImportBucket(),
-                tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
-
-        IngestStatusStoreResources statusStore = statusStoreStack.getResources();
+        ec2Role = createEc2Role(this, instanceProperties,
+                importBucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
+        emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
+        IngestStatusStoreResources statusStore = statusStoreStack.getResources();
         statusStore.grantWriteJobEvent(ec2Role);
-
-        if (Boolean.valueOf(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ENABLED))) {
-                        LOGGER.info("Creating roles for serverless");
-            emrServerlessRole = createEmrServerlessRole(this, instanceProperties);
-            statusStore.grantWriteJobEvent(emrServerlessRole);
-        } else {
-            emrRole = createEmrRole(this, instanceProperties, ec2Role);
-            statusStore.grantWriteJobEvent(emrRole);
-        }
+        statusStore.grantWriteJobEvent(emrRole);
     }
 
-    private static IRole createEc2Role(Construct scope, InstanceProperties instanceProperties,
-            IBucket importBucket, List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks) {
+    private static IRole createEc2Role(
+            Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
+            List<IBucket> dataBuckets, List<StateStoreStack> stateStoreStacks) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
         IRole role = new Role(scope, "Ec2Role", RoleProps.builder()
                 .roleName("Sleeper-" + instanceProperties.get(ID) + "-EMR-EC2-Role")
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
-                .assumedBy(new ServicePrincipal("ec2.amazonaws.com")).build());
+                .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
+                .build());
         dataBuckets.forEach(bucket -> bucket.grantReadWrite(role));
         stateStoreStacks.forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(role);
@@ -113,34 +103,41 @@ public class CommonEmrBulkImportStack extends NestedStack {
         });
 
         // The role needs to be able to access the user's jars
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket",
-                instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET));
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET));
         jarsBucket.grantRead(role);
 
         // Required to enable debugging
         role.addToPrincipalPolicy(PolicyStatement.Builder.create()
                 .actions(Lists.newArrayList("sqs:GetQueueUrl", "sqs:SendMessage"))
                 .effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("arn:aws:sqs:" + instanceProperties.get(REGION) + ":"
-                        + instanceProperties.get(ACCOUNT) + ":AWS-ElasticMapReduce-*"))
+                .resources(Lists.newArrayList("arn:aws:sqs:"
+                        + instanceProperties.get(REGION) + ":" + instanceProperties.get(ACCOUNT)
+                        + ":AWS-ElasticMapReduce-*"))
                 .build());
 
         role.addToPrincipalPolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("ec2:Describe*", "elasticmapreduce:Describe*",
-                        "elasticmapreduce:ListBootstrapActions", "elasticmapreduce:ListClusters",
-                        "elasticmapreduce:ListInstanceGroups", "elasticmapreduce:ListInstances",
-                        "elasticmapreduce:ListSteps", "cloudwatch:*", "s3:GetObject*"))
-                .effect(Effect.ALLOW).resources(Lists.newArrayList("*")).build());
+                .actions(Lists.newArrayList("ec2:Describe*",
+                        "elasticmapreduce:Describe*",
+                        "elasticmapreduce:ListBootstrapActions",
+                        "elasticmapreduce:ListClusters",
+                        "elasticmapreduce:ListInstanceGroups",
+                        "elasticmapreduce:ListInstances",
+                        "elasticmapreduce:ListSteps",
+                        "cloudwatch:*",
+                        "s3:GetObject*"))
+                .effect(Effect.ALLOW)
+                .resources(Lists.newArrayList("*"))
+                .build());
 
         // Allow SSM access
-        role.addManagedPolicy(
-                ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"));
+        role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore"));
 
         instanceProperties.set(BULK_IMPORT_EMR_EC2_ROLE_NAME, role.getRoleName());
 
-        new CfnInstanceProfile(scope, "EC2InstanceProfile",
-                CfnInstanceProfileProps.builder().instanceProfileName(role.getRoleName())
-                        .roles(Lists.newArrayList(role.getRoleName())).build());
+        new CfnInstanceProfile(scope, "EC2InstanceProfile", CfnInstanceProfileProps.builder()
+                .instanceProfileName(role.getRoleName())
+                .roles(Lists.newArrayList(role.getRoleName()))
+                .build());
 
         importBucket.grantReadWrite(role);
 
@@ -149,8 +146,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         return role;
     }
 
-    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties,
-            IRole ec2Role) {
+    private static IRole createEmrRole(Construct scope, InstanceProperties instanceProperties, IRole ec2Role) {
         String instanceId = instanceProperties.get(ID);
         String region = instanceProperties.get(REGION);
         String account = instanceProperties.get(ACCOUNT);
@@ -158,152 +154,142 @@ public class CommonEmrBulkImportStack extends NestedStack {
         List<String> subnets = instanceProperties.getList(SUBNETS);
 
         // Use the policy which is derived from the AmazonEMRServicePolicy_v2 policy.
-        PolicyDocument policyDoc = PolicyDocument
-                .fromJson(
-                        new Gson()
-                                .fromJson(new JsonReader(new InputStreamReader(
-                                        CommonEmrBulkImportStack.class
-                                                .getResourceAsStream("/iam/SleeperEMRPolicy.json"),
-                                        StandardCharsets.UTF_8)), Map.class));
+        PolicyDocument policyDoc = PolicyDocument.fromJson(new Gson().fromJson(new JsonReader(
+                        new InputStreamReader(CommonEmrBulkImportStack.class.getResourceAsStream("/iam/SleeperEMRPolicy.json"), StandardCharsets.UTF_8)),
+                Map.class));
 
-        ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(scope, "CustomEMRManagedPolicy",
-                ManagedPolicyProps.builder()
-                        .description("Custom policy for EMR bulk import to operate in VPC")
-                        .managedPolicyName("sleeper-" + instanceId + "-VPCPolicy")
-                        .document(PolicyDocument.Builder.create()
-                                .statements(Lists.newArrayList(
-                                        new PolicyStatement(PolicyStatementProps.builder()
-                                                .sid("CreateSecurityGroupInVPC")
-                                                .actions(Lists
-                                                        .newArrayList("ec2:CreateSecurityGroup"))
-                                                .effect(Effect.ALLOW)
-                                                .resources(
-                                                        Lists.newArrayList("arn:aws:ec2:" + region
-                                                                + ":" + account + ":vpc/" + vpc))
-                                                .build()),
-                                        new PolicyStatement(PolicyStatementProps.builder()
-                                                .sid("ManageResourcesInSubnet")
-                                                .actions(Lists.newArrayList(
-                                                        "ec2:CreateNetworkInterface",
-                                                        "ec2:RunInstances", "ec2:CreateFleet",
-                                                        "ec2:CreateLaunchTemplate",
-                                                        "ec2:CreateLaunchTemplateVersion"))
-                                                .effect(Effect.ALLOW)
-                                                .resources(subnets.stream()
-                                                        .map(subnet -> "arn:aws:ec2:" + region + ":"
-                                                                + account + ":subnet/" + subnet)
-                                                        .collect(Collectors.toList()))
-                                                .build()),
-                                        new PolicyStatement(PolicyStatementProps.builder()
-                                                .sid("PassEc2Role").effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("iam:PassRole"))
-                                                .resources(Lists.newArrayList(ec2Role.getRoleArn()))
-                                                .conditions(Map.of("StringLike",
-                                                        Map.of("iam:PassedToService",
-                                                                "ec2.amazonaws.com*")))
-                                                .build())))
-                                .build())
-                        .build());
+        ManagedPolicy customEmrManagedPolicy = new ManagedPolicy(scope, "CustomEMRManagedPolicy", ManagedPolicyProps.builder()
+                .description("Custom policy for EMR bulk import to operate in VPC")
+                .managedPolicyName("sleeper-" + instanceId + "-VPCPolicy")
+                .document(PolicyDocument.Builder.create().statements(Lists.newArrayList(
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("CreateSecurityGroupInVPC")
+                                        .actions(Lists.newArrayList("ec2:CreateSecurityGroup"))
+                                        .effect(Effect.ALLOW)
+                                        .resources(Lists.newArrayList("arn:aws:ec2:" + region + ":" + account + ":vpc/" + vpc))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("ManageResourcesInSubnet")
+                                        .actions(Lists.newArrayList(
+                                                "ec2:CreateNetworkInterface",
+                                                "ec2:RunInstances",
+                                                "ec2:CreateFleet",
+                                                "ec2:CreateLaunchTemplate",
+                                                "ec2:CreateLaunchTemplateVersion"))
+                                        .effect(Effect.ALLOW)
+                                        .resources(subnets.stream()
+                                                .map(subnet -> "arn:aws:ec2:" + region + ":" + account + ":subnet/" + subnet)
+                                                .collect(Collectors.toList()))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("PassEc2Role")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList("iam:PassRole"))
+                                        .resources(Lists.newArrayList(ec2Role.getRoleArn()))
+                                        .conditions(Map.of("StringLike", Map.of("iam:PassedToService", "ec2.amazonaws.com*")))
+                                        .build()
+                                )))
+                        .build())
+                .build());
 
-        ManagedPolicy emrManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServicePolicy",
-                ManagedPolicyProps.builder()
-                        .managedPolicyName("Sleeper-" + instanceId + "-DefaultEMRPolicy")
-                        .description(
-                                "Policy required for Sleeper Bulk import EMR cluster, based on the AmazonEMRServicePolicy_v2 policy")
-                        .document(policyDoc).build());
+        ManagedPolicy emrManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServicePolicy", ManagedPolicyProps.builder()
+                .managedPolicyName("Sleeper-" + instanceId + "-DefaultEMRPolicy")
+                .description("Policy required for Sleeper Bulk import EMR cluster, based on the AmazonEMRServicePolicy_v2 policy")
+                .document(policyDoc)
+                .build());
 
-        Role role = new Role(scope, "EmrRole",
-                RoleProps.builder().roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
-                        .description("The role assumed by the Bulk import clusters")
-                        .managedPolicies(
-                                Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
-                        .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com")).build());
+        Role role = new Role(scope, "EmrRole", RoleProps.builder()
+                .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
+                .description("The role assumed by the Bulk import clusters")
+                .managedPolicies(Lists.newArrayList(
+                        emrManagedPolicy,
+                        customEmrManagedPolicy,
+                        createEmrServerlessManagedPolicy(scope, instanceProperties)))
+                .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
+                .build());
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
     }
 
-    private static IRole createEmrServerlessRole(Construct scope,
-            InstanceProperties instanceProperties) {
-        String instanceId = instanceProperties.get(ID);
-        Role role = new Role(scope, "EmrServerlessRole", RoleProps.builder()
-                .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
-                .description("The role assumed by the Bulk import EMR Serverless Application")
-                .managedPolicies(Lists
-                        .newArrayList(createEmrServerlessManagedPolicy(scope, instanceProperties)))
-                .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com")).build());
-
-        instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
-        return role;
-    }
-
-    private static ManagedPolicy createEmrServerlessManagedPolicy(Construct scope,
-            InstanceProperties instanceProperties) {
+    private static ManagedPolicy createEmrServerlessManagedPolicy(Construct scope, InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
-        String instanceId = instanceProperties.get(ID);
+        String region = instanceProperties.get(REGION);
+        String account = instanceProperties.get(ACCOUNT);
 
-        ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(scope,
-                "CustomEMRServerlessServicePolicy",
-                ManagedPolicyProps.builder()
-                        .managedPolicyName("sleeper-" + instanceId + "-EmrServerlessPolicy")
-                        .description(
-                                "Policy required for Sleeper Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
-                        .document(PolicyDocument.Builder.create()
-                                .statements(Lists.newArrayList(
-                                        new PolicyStatement(PolicyStatementProps.builder()
-                                                .sid("PolicyStatementProps").effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("s3:GetObject",
-                                                        "s3:ListBucket"))
-                                                .resources(Lists.newArrayList(
-                                                        "arn:aws:s3:::*.elasticmapreduce",
-                                                        "arn:aws:s3:::*.elasticmapreduce/*"))
-                                                .build()),
-                                        new PolicyStatement(PolicyStatementProps.builder()
-                                                .sid("FullAccessToOutputBucket")
-                                                .effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("s3:PutObject",
-                                                        "s3:GetObject", "s3:ListBucket",
-                                                        "s3:DeleteObject"))
-                                                .resources(Lists.newArrayList(
-                                                        "arn:aws:s3:::" + BULK_IMPORT_BUCKET,
-                                                        "arn:aws:s3:::" + BULK_IMPORT_BUCKET
-                                                                + "/*"))
-                                                .build()),
-                                        new PolicyStatement(PolicyStatementProps.builder()
-                                                .sid("GlueCreateAndReadDataCatalog")
-                                                .effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("glue:GetDatabase",
-                                                        "glue:CreateDatabase", "glue:GetDataBases",
-                                                        "glue:CreateTable", "glue:GetTable",
-                                                        "glue:UpdateTable", "glue:DeleteTable",
-                                                        "glue:GetTables", "glue:GetPartition",
-                                                        "glue:GetPartitions",
-                                                        "glue:CreatePartition",
-                                                        "glue:BatchCreatePartition",
-                                                        "glue:GetUserDefinedFunctions"))
-                                                .resources(Lists.newArrayList("*")).build())))
-                                .build())
-                        .build());
+        ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServerlessServicePolicy", ManagedPolicyProps.builder()
+                .managedPolicyName(null)
+                .description("Policy required for Sleepe Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
+                .document(PolicyDocument.Builder.create()
+                        .statements(Lists.newArrayList(
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("PolicyStatementProps")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList(
+                                                "s3:GetObject",
+                                                "s3:ListBucket"
+                                        ))
+                                        .resources(Lists.newArrayList(
+                                                "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce",
+                                                "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce/*"
+                                        ))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("FullAccessToOutputBucket")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList(
+                                                "s3:PutObject",
+                                                "s3:GetObject",
+                                                "s3:ListBucket",
+                                                "s3:DeleteObject"))
+                                        .resources(Lists.newArrayList(
+                                                "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET,
+                                                "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET + "/*"))
+                                        .build()),
+                                new PolicyStatement(PolicyStatementProps.builder()
+                                        .sid("GlueCreateAndReadDataCatalog")
+                                        .effect(Effect.ALLOW)
+                                        .actions(Lists.newArrayList(
+                                                "glue:GetDatabase",
+                                                "glue:CreateDatabase",
+                                                "glue:GetDataBases",
+                                                "glue:CreateTable",
+                                                "glue:GetTable",
+                                                "glue:UpdateTable",
+                                                "glue:DeleteTable",
+                                                "glue:GetTables",
+                                                "glue:GetPartition",
+                                                "glue:GetPartitions",
+                                                "glue:CreatePartition",
+                                                "glue:BatchCreatePartition",
+                                                "glue:GetUserDefinedFunctions"
+                                        ))
+                                        .resources(Lists.newArrayList(
+                                                "arn:aws:*:" + region + ":" + account + ":*" //ToDo this sould be locked down more
+                                        ))
+                                        .build())
+                        ))
+                        .build())
+                .build());
         return emrServerlessManagedPolicy;
     }
 
-    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope,
-            InstanceProperties instanceProperties) {
-        // See
-        // https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
-        String jsonSecurityConf = "{\n" + "  \"InstanceMetadataServiceConfiguration\" : {\n"
-                + "      \"MinimumInstanceMetadataServiceVersion\": 2,\n"
-                + "      \"HttpPutResponseHopLimit\": 1\n" + "   }\n" + "}";
+    private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
+        // See https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-create-security-configuration.html
+        String jsonSecurityConf = "{\n" +
+                "  \"InstanceMetadataServiceConfiguration\" : {\n" +
+                "      \"MinimumInstanceMetadataServiceVersion\": 2,\n" +
+                "      \"HttpPutResponseHopLimit\": 1\n" +
+                "   }\n" +
+                "}";
         CfnJsonProps jsonProps = CfnJsonProps.builder().value(jsonSecurityConf).build();
         CfnJson jsonObject = new CfnJson(scope, "EMRSecurityConfigurationJSONObject", jsonProps);
-        CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps
-                .builder().name(String.join("-", "sleeper", instanceProperties.get(ID),
-                        "EMRSecurityConfigurationProps"))
-                .securityConfiguration(jsonObject).build();
-        instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME,
-                securityConfigurationProps.getName());
-        return new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration",
-                securityConfigurationProps);
+        CfnSecurityConfigurationProps securityConfigurationProps = CfnSecurityConfigurationProps.builder()
+                .name(String.join("-", "sleeper", instanceProperties.get(ID), "EMRSecurityConfigurationProps"))
+                .securityConfiguration(jsonObject)
+                .build();
+        instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
+        return new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration", securityConfigurationProps);
     }
 
     public IRole getEc2Role() {

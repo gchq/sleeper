@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
@@ -109,6 +110,12 @@ public class CommonEmrBulkImportHelper {
 
     public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
                                               IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
+                commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role());
+    }
+
+    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
+                                              IBucket importBucket, IRole emrRole, IRole ec2Role) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -141,8 +148,8 @@ public class CommonEmrBulkImportHelper {
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
                 .resources(Lists.newArrayList(
-                        commonEmrStack.getEmrRole().getRoleArn(),
-                        commonEmrStack.getEc2Role().getRoleArn()
+                        emrRole.getRoleArn(),
+                        ec2Role.getRoleArn()
                 ))
                 .build());
 
