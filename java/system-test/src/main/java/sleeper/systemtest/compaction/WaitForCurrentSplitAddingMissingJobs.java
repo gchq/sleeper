@@ -40,7 +40,6 @@ import java.util.Objects;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
@@ -53,6 +52,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private static final long COMPACTION_JOB_POLL_INTERVAL_MILLIS = 30000;
     private static final int COMPACTION_JOB_MAX_POLLS = 120;
 
+    private final InstanceProperties properties;
     private final String tableName;
     private final CompactionJobStatusStore store;
     private final WaitForQueueEstimate waitForSplitsToFinish;
@@ -62,7 +62,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
         QueueMessageCount.Client queueClient = Objects.requireNonNull(builder.queueClient, "queueClient must not be null");
-        InstanceProperties properties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        properties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         store = Objects.requireNonNull(builder.store, "store must not be null");
         lambdaClient = Objects.requireNonNull(builder.lambdaClient, "lambdaClient must not be null");
@@ -121,7 +121,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
             LOGGER.info("Lambda created new jobs, but they were picked up by another running task");
         } else {
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-            lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+            InvokeCompactionTaskCreationUntilAllJobsStarted.from(properties, store).pollUntilFinished();
         }
         waitForCompaction.pollUntilFinished();
         return true;

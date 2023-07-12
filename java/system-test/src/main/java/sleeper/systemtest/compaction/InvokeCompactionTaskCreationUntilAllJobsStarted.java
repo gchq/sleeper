@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
@@ -28,12 +29,21 @@ import sleeper.systemtest.util.InvokeSystemTestLambda;
 import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 
 public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     private static final int POLL_INTERVAL_MILLIS = 10000;
     private static final int MAX_POLLS = 5;
+    private final InstanceProperties properties;
+    private final CompactionJobStatusStore statusStore;
 
-    private InvokeCompactionTaskCreationUntilAllJobsStarted() {
+    private InvokeCompactionTaskCreationUntilAllJobsStarted(InstanceProperties properties, CompactionJobStatusStore statusStore) {
+        this.properties = properties;
+        this.statusStore = statusStore;
+    }
+
+    public static InvokeCompactionTaskCreationUntilAllJobsStarted from(InstanceProperties properties, CompactionJobStatusStore statusStore) {
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore);
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -47,10 +57,14 @@ public class InvokeCompactionTaskCreationUntilAllJobsStarted {
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
                 AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
 
+        from(systemTestProperties, statusStore).pollUntilFinished();
+    }
+
+    public void pollUntilFinished() throws InterruptedException {
         PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
         poll.pollUntil("all compaction jobs have started", () -> {
             try {
-                InvokeSystemTestLambda.forInstance(args[0], COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+                InvokeSystemTestLambda.forInstance(properties.get(ID), COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
                 return statusStore.getAllJobs("system-test").stream().allMatch(CompactionJobStatus::isStarted);
             } catch (IOException e) {
                 throw new RuntimeException(e);
