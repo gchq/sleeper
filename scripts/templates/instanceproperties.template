@@ -39,6 +39,10 @@ sleeper.ingest.repo=changeme
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
 
+# The name of the repository for the EMR serverless container. The Docker image from the bulk-import
+# module should have been uploaded to an ECR repository of this name in this account.
+sleeper.bulk.import.emr.serverless.repo=changeme
+
 # (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
 # is stored.
 sleeper.bulk.import.eks.repo=changeme
@@ -515,10 +519,6 @@ sleeper.bulk.import.emr.serverless.enabled=true
 
 # The version of EMR Serverless to use.
 sleeper.bulk.import.emr.serverless.release=emr-6.10.0
-
-# The name of the repository for the EMR serverless container. The Docker image from the bulk-import
-# module should have been uploaded to an ECR repository of this name in this account.
-sleeper.bulk.import.emr.serverless.repo=<sleeper-instance-id>/bulk-import-runner-emr
 
 # The type of EMR Serverless to use. Spark or Hive
 sleeper.bulk.import.emr.serverless.type=Spark
