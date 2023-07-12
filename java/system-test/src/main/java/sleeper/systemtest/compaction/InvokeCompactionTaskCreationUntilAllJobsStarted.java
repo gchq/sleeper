@@ -40,22 +40,19 @@ public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     private final CompactionJobStatusStore statusStore;
     private final SystemDefinedInstanceProperty lambdaProperty;
 
-    private InvokeCompactionTaskCreationUntilAllJobsStarted(InstanceProperties properties, CompactionJobStatusStore statusStore, boolean isSplitting) {
+    private InvokeCompactionTaskCreationUntilAllJobsStarted(
+            InstanceProperties properties, CompactionJobStatusStore statusStore, SystemDefinedInstanceProperty lambdaProperty) {
         this.properties = properties;
         this.statusStore = statusStore;
-        if (isSplitting) {
-            lambdaProperty = SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-        } else {
-            lambdaProperty = COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-        }
+        this.lambdaProperty = lambdaProperty;
     }
 
     public static InvokeCompactionTaskCreationUntilAllJobsStarted forCompaction(InstanceProperties properties, CompactionJobStatusStore statusStore) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore, false);
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore, COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
     public static InvokeCompactionTaskCreationUntilAllJobsStarted forSplitting(InstanceProperties properties, CompactionJobStatusStore statusStore) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore, true);
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
