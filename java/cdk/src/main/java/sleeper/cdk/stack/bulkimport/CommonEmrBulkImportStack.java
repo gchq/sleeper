@@ -55,7 +55,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
@@ -201,77 +200,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
         Role role = new Role(scope, "EmrRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
                 .description("The role assumed by the Bulk import clusters")
-                .managedPolicies(Lists.newArrayList(
-                        emrManagedPolicy,
-                        customEmrManagedPolicy,
-                        createEmrServerlessManagedPolicy(scope, instanceProperties)))
+                .managedPolicies(Lists.newArrayList(emrManagedPolicy, customEmrManagedPolicy))
                 .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com"))
                 .build());
 
         instanceProperties.set(BULK_IMPORT_EMR_CLUSTER_ROLE_NAME, role.getRoleName());
         return role;
-    }
-
-    private static ManagedPolicy createEmrServerlessManagedPolicy(Construct scope, InstanceProperties instanceProperties) {
-        // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
-        String region = instanceProperties.get(REGION);
-        String account = instanceProperties.get(ACCOUNT);
-
-        ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(scope, "DefaultEMRServerlessServicePolicy", ManagedPolicyProps.builder()
-                .managedPolicyName(null)
-                .description("Policy required for Sleepe Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
-                .document(PolicyDocument.Builder.create()
-                        .statements(Lists.newArrayList(
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("PolicyStatementProps")
-                                        .effect(Effect.ALLOW)
-                                        .actions(Lists.newArrayList(
-                                                "s3:GetObject",
-                                                "s3:ListBucket"
-                                        ))
-                                        .resources(Lists.newArrayList(
-                                                "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce",
-                                                "arn:aws:s3:" + region + ":" + account + ":elasticmapreduce/*"
-                                        ))
-                                        .build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("FullAccessToOutputBucket")
-                                        .effect(Effect.ALLOW)
-                                        .actions(Lists.newArrayList(
-                                                "s3:PutObject",
-                                                "s3:GetObject",
-                                                "s3:ListBucket",
-                                                "s3:DeleteObject"))
-                                        .resources(Lists.newArrayList(
-                                                "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET,
-                                                "arn:aws:s3:" + region + ":" + account + ":" + BULK_IMPORT_BUCKET + "/*"))
-                                        .build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("GlueCreateAndReadDataCatalog")
-                                        .effect(Effect.ALLOW)
-                                        .actions(Lists.newArrayList(
-                                                "glue:GetDatabase",
-                                                "glue:CreateDatabase",
-                                                "glue:GetDataBases",
-                                                "glue:CreateTable",
-                                                "glue:GetTable",
-                                                "glue:UpdateTable",
-                                                "glue:DeleteTable",
-                                                "glue:GetTables",
-                                                "glue:GetPartition",
-                                                "glue:GetPartitions",
-                                                "glue:CreatePartition",
-                                                "glue:BatchCreatePartition",
-                                                "glue:GetUserDefinedFunctions"
-                                        ))
-                                        .resources(Lists.newArrayList(
-                                                "arn:aws:*:" + region + ":" + account + ":*" //ToDo this sould be locked down more
-                                        ))
-                                        .build())
-                        ))
-                        .build())
-                .build());
-        return emrServerlessManagedPolicy;
     }
 
     private static CfnSecurityConfiguration createSecurityConfiguration(Construct scope, InstanceProperties instanceProperties) {
