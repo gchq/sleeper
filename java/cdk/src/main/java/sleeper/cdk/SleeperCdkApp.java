@@ -83,18 +83,21 @@ public class SleeperCdkApp extends Stack {
 
     private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
                     EmrBulkImportStack.class,
+                    EmrServerlessBulkImportStack.class,
                     PersistentEmrBulkImportStack.class,
                     EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     private static final List<String> EMR_BULK_IMPORT_STACK_NAMES = Stream.of(
                     EmrBulkImportStack.class,
+                    EmrServerlessBulkImportStack.class,
                     PersistentEmrBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public static final List<String> INGEST_STACK_NAMES = Stream.of(
                     IngestStack.class,
                     EmrBulkImportStack.class,
+                    EmrServerlessBulkImportStack.class,
                     PersistentEmrBulkImportStack.class,
                     EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());

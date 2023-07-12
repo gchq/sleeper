@@ -731,7 +731,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true)
             .build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_TYPE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_TYPE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.type")
            .description("The type of EMR Serverless to use. Spark or Hive")
            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
            .defaultValue("Spark")

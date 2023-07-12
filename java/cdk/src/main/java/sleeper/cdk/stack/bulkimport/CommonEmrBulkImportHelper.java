@@ -146,7 +146,7 @@ public class CommonEmrBulkImportHelper {
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
                 .resources(Lists.newArrayList(
-                        commonEmrStack.getEmrRole().getRoleArn(),
+                        //commonEmrStack.getEmrRole().getRoleArn(),
                         commonEmrStack.getEc2Role().getRoleArn()
                 ))
                 .build());

@@ -16,6 +16,8 @@
 package sleeper.cdk.stack.bulkimport;
 
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
@@ -58,6 +60,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  * executes the bulk import job and then terminates.
  */
 public class EmrServerlessBulkImportStack extends NestedStack {
+    private static Logger LOGGER = LoggerFactory.getLogger(EmrServerlessBulkImportStack.class);
     private final IntUnaryOperator randomSubnet;
 
     public EmrServerlessBulkImportStack(Construct scope, String id,
@@ -66,7 +69,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             TopicStack errorsTopicStack, List<StateStoreStack> stateStoreStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
-
+        LOGGER.info("Starting to create application.\nScope: {}\nInstanceProperties: {}", scope,
+                instanceProperties);
         createEmrServerlessApplication(scope, instanceProperties);
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
@@ -98,23 +102,20 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
     public void createEmrServerlessApplication(Construct scope,
             InstanceProperties instanceProperties) {
-        Properties properties = instanceProperties.getProperties();
-
         CfnApplicationProps props = CfnApplicationProps.builder()
                 .name(String.join("-", "sleeper", "emr", "serverless"))
-                .releaseLabel(properties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE).toString())
-                .architecture(properties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE).toString())
-                .type(properties.get(BULK_IMPORT_EMR_SERVERLESS_TYPE).toString())
+                .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE).toString())
+                .architecture(
+                        instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE).toString())
+                .type(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_TYPE).toString())
                 .imageConfiguration(ImageConfigurationInputProperty.builder()
-                        .imageUri(properties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
-                                .toString())
+                        .imageUri(instanceProperties
+                                .get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO).toString())
                         .build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .securityGroupIds(List.of(properties
-                                .get(BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP).toString()))
-                        .subnetIds(List.of(randomSubnet(instanceProperties))).build())
+                        .subnetIds(List.of(getRandomSubnet(instanceProperties))).build())
                 .tags(List.of(new CfnTag.Builder().key("DeploymentStack")
-                        .value("BulkImportServerlessEMR").build()))
+                        .value("EmrServerlessBulkImport").build()))
                 .build();
 
         CfnApplication emrServerlessCluster = new CfnApplication(scope, getArtifactId(), props);
@@ -125,8 +126,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     }
 
     // ToDo test on multiple subnets
-    private String randomSubnet(InstanceProperties instanceProperties) {
+    private String getRandomSubnet(InstanceProperties instanceProperties) {
         List<String> subnets = instanceProperties.getList(SUBNETS);
-        return subnets.get(randomSubnet.applyAsInt(subnets.size()));
+        LOGGER.info("Subnets {}", subnets);
+        return subnets.get(0);
     }
 }
