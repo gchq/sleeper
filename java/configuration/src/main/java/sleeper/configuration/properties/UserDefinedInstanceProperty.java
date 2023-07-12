@@ -76,7 +76,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy.")
-            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack")
+            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,DashboardStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
@@ -727,16 +727,16 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.repo")
             .description("The name of the repository for the EMR serverless container. The Docker image from the bulk-import module " +
-            "should have been uploaded to an ECR repository of this name in this account.")
+                    "should have been uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_TYPE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.type")
-           .description("The type of EMR Serverless to use. Spark or Hive")
-           .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-           .defaultValue("Spark")
-           .runCDKDeployWhenChanged(true)
-           .build();
+            .description("The type of EMR Serverless to use. Spark or Hive")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue("Spark")
+            .runCDKDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.executor.cores")
             .description("The number of cores used by an Serverless executor. Used to set spark.executor.cores.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
