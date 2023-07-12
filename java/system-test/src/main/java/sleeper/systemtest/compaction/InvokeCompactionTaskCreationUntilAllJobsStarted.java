@@ -31,28 +31,34 @@ import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.client;
+import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     private static final int POLL_INTERVAL_MILLIS = 10000;
     private static final int MAX_POLLS = 5;
-    private final InstanceProperties properties;
     private final CompactionJobStatusStore statusStore;
+    private final InvokeSystemTestLambda.Client lambdaClient;
     private final SystemDefinedInstanceProperty lambdaProperty;
 
     private InvokeCompactionTaskCreationUntilAllJobsStarted(
-            InstanceProperties properties, CompactionJobStatusStore statusStore, SystemDefinedInstanceProperty lambdaProperty) {
-        this.properties = properties;
+            CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient, SystemDefinedInstanceProperty lambdaProperty) {
         this.statusStore = statusStore;
+        this.lambdaClient = lambdaClient;
         this.lambdaProperty = lambdaProperty;
     }
 
-    public static InvokeCompactionTaskCreationUntilAllJobsStarted forCompaction(InstanceProperties properties, CompactionJobStatusStore statusStore) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore, COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+    public static InvokeCompactionTaskCreationUntilAllJobsStarted forCompaction(
+            InstanceProperties properties, CompactionJobStatusStore statusStore) {
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(statusStore,
+                client(createSystemTestLambdaClient(), properties),
+                COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
-    public static InvokeCompactionTaskCreationUntilAllJobsStarted forSplitting(InstanceProperties properties, CompactionJobStatusStore statusStore) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(properties, statusStore, SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+    public static InvokeCompactionTaskCreationUntilAllJobsStarted forSplitting(
+            CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient) {
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(statusStore, lambdaClient,
+                SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -72,12 +78,8 @@ public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     public void pollUntilFinished() throws InterruptedException {
         PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
         poll.pollUntil("all compaction jobs have started", () -> {
-            try {
-                InvokeSystemTestLambda.forInstance(properties.get(ID), lambdaProperty);
-                return statusStore.getAllJobs("system-test").stream().allMatch(CompactionJobStatus::isStarted);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            lambdaClient.invokeLambda(lambdaProperty);
+            return statusStore.getAllJobs("system-test").stream().allMatch(CompactionJobStatus::isStarted);
         });
     }
 }

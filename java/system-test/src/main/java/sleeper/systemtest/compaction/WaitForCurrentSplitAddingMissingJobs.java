@@ -52,7 +52,6 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private static final long COMPACTION_JOB_POLL_INTERVAL_MILLIS = 30000;
     private static final int COMPACTION_JOB_MAX_POLLS = 120;
 
-    private final InstanceProperties properties;
     private final String tableName;
     private final CompactionJobStatusStore store;
     private final WaitForQueueEstimate waitForSplitsToFinish;
@@ -62,7 +61,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
         QueueMessageCount.Client queueClient = Objects.requireNonNull(builder.queueClient, "queueClient must not be null");
-        properties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        InstanceProperties properties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         store = Objects.requireNonNull(builder.store, "store must not be null");
         lambdaClient = Objects.requireNonNull(builder.lambdaClient, "lambdaClient must not be null");
@@ -121,7 +120,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
             LOGGER.info("Lambda created new jobs, but they were picked up by another running task");
         } else {
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-            InvokeCompactionTaskCreationUntilAllJobsStarted.forSplitting(properties, store).pollUntilFinished();
+            InvokeCompactionTaskCreationUntilAllJobsStarted.forSplitting(store, lambdaClient).pollUntilFinished();
         }
         waitForCompaction.pollUntilFinished();
         return true;
