@@ -100,6 +100,9 @@ Finally, when you are ready to tear down the instance, run:
 ./scripts/test/tearDown.sh
 ```
 
+Note you will still need the files in the `/generated` folder that are created during deployment for this tear down 
+script to work correctly.
+
 This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
 
 ## Standalone deployment
