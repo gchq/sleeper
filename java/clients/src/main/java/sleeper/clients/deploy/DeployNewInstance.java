@@ -82,7 +82,7 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 6 || args.length > 8) {
+        if (args.length < 5 || args.length > 8) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> " +
                     "<optional-instance-properties-file> <optional-deploy-paused-flag> <optional-split-points-file>");
         }
