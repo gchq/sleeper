@@ -36,6 +36,7 @@ import static sleeper.configuration.properties.InstanceProperties.getConfigBucke
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
@@ -94,6 +95,7 @@ public class PopulateInstanceProperties {
         properties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
         properties.set(ECR_INGEST_REPO, instanceId + "/ingest");
         properties.set(BULK_IMPORT_REPO, instanceId + "/bulk-import-runner");
+        properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, instanceId + "/bulk-import-runner-emr");
         return properties;
     }
 
