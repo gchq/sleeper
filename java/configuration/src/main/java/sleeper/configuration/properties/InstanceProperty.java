@@ -16,6 +16,7 @@
 package sleeper.configuration.properties;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InstanceProperty extends SleeperProperty {
 
@@ -25,6 +26,10 @@ public interface InstanceProperty extends SleeperProperty {
 
     static boolean has(String propertyName) {
         return Index.INSTANCE.getByName(propertyName).isPresent();
+    }
+
+    static Optional<InstanceProperty> getByName(String propertyName) {
+        return Index.INSTANCE.getByName(propertyName);
     }
 
     class Index {

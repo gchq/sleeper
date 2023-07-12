@@ -37,7 +37,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 
 /**
@@ -96,7 +95,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         stepFunctions.startExecution(
                 new StartExecutionRequest()
                         .withStateMachineArn(stateMachineArn)
-                        .withName(String.join("-", "sleeper", instanceProperties.get(ID), bulkImportJob.getTableName(), bulkImportJob.getId()))
+                        .withName(String.join("-", bulkImportJob.getTableName(), bulkImportJob.getId()))
                         .withInput(new Gson().toJson(input)));
     }
 
