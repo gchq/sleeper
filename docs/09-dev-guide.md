@@ -56,10 +56,6 @@ More information about the performance tests can be found in [12-performance-tes
 They can also be used to test the functionality of different components, and provide a way to create an instance 
 quickly for testing purposes, which generates random test data for you to work with.
 
-The system tests load some random data. This allows us to see the number of records written per second using the standard 
-ingest process. Once the data has been ingested, some compaction jobs will happen. Looking at the reports shows
-us the number of records per second that a compaction job processes.
-
 The easiest test to run if you are not sure about what stacks you need deployed is the deployAll system test. This test
 deploys most of the stacks. To run the deployAll system test, run the following command:
 
@@ -72,7 +68,7 @@ This will generate everything for you including:
 * An S3 Bucket containing all the necessary jars
 * ECR repositories for ingest, compaction and system test images
 * The Sleeper properties file
-* Randomly generated test data in the `system-test` table.
+* Random test data in the `system-test` table.
 
 Once generated, it deploys Sleeper using CDK.
 
@@ -162,7 +158,7 @@ Record the ingest and compaction rate in the [performance figures](12-performanc
 ```
 
 8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to 
-provide a different unique ID to the compactionPerformance test instance above:
+provide an instance ID that's different from the compactionPerformance test:
 
 ```bash
 ID=<a-unique-id>
