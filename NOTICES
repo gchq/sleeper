@@ -117,10 +117,6 @@ AWS Constructs (software.constructs:constructs:10.1.213):
 
 - Apache License, Version 2.0
 
-CloudFormation Custom Types for Terraform (io.github.cdklabs.cdk_cloudformation:tf-aws-keypair:1.0.0-alpha.5):
-
-- MIT License
-
 AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.13.0):
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
