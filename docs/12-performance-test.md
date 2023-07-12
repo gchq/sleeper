@@ -14,9 +14,9 @@ This will test the performance of standard ingest, standard compactions and comp
 perform any partition splitting. This will take around an hour. This is intended to avoid any variance that may be 
 caused by the number of input files or the amount of data processed at once.
 
-There are a variety of scenarios that can occur when compaction is performed on scheduled jobs (as in the deploy all 
-system test, or normal system functioning). The compaction performance test avoids this by disabling the scheduled jobs 
-and triggering those processes directly.
+There are a variety of scenarios that can occur when compaction is performed on scheduled jobs (as in the deployAll 
+system test, or normal system functioning), such as compactions happening halfway through ingest. The compaction 
+performance test avoids this by disabling the scheduled jobs and triggering those processes directly.
 
 Run the tests:
 
