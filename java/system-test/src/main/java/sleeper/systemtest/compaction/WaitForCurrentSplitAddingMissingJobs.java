@@ -121,7 +121,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
             LOGGER.info("Lambda created new jobs, but they were picked up by another running task");
         } else {
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-            InvokeCompactionTaskCreationUntilAllJobsStarted.from(properties, store).pollUntilFinished();
+            InvokeCompactionTaskCreationUntilAllJobsStarted.forSplitting(properties, store).pollUntilFinished();
         }
         waitForCompaction.pollUntilFinished();
         return true;
