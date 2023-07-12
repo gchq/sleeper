@@ -11,11 +11,11 @@ Bulk Import:
 - Support use of EMR serverless.
 - Support use of Graviton instances in bulk import EMR.
 - Report on validation status for bulk import jobs.
-- Added option to query rejected jobs in the IngestJobStatusReport.
+- Added option to query rejected jobs in the `IngestJobStatusReport`.
 - Support use of instance fleets in bulk import EMR.
 - Updated default x86 instance types to use m6i equivalents.
 
-Environment
+Environment:
 - Allow multiple users to access cdk-environment EC2.
 - Allow users to connect to an existing deployed environment without redeploying.
 
@@ -41,9 +41,9 @@ Bugfixes:
 - Fixed an issue where the file count would not calculate correctly when sending a job with a directory to standard ingest.
 - Fixed an issue where the file count would not calculate correctly when sending a job with a directory to bulk import.
 - Fixed an issue where the file count would not calculate correctly when sending a request with a directory to the ingest batcher.
-- Fixed an issue where the InvokeSystemTestLambda could timeout waiting to read from socket.
+- Fixed an issue where the `InvokeSystemTestLambda` could timeout waiting to read from socket.
 - Fixed an issue where the jars bucket failed to tear down because it was not empty during the tearDown process.
-- Fixed an issue where the BulkImportStarterLambda would time out waiting for multiple jobs to process.
+- Fixed an issue where the `BulkImportStarterLambda` would time out waiting for multiple jobs to process.
 - Fixed an issue where submitting a bulk import job twice with the same ID twice would overwrite the first one.
 
 ## Version 0.17.0
