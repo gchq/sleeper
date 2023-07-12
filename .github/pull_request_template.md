@@ -4,7 +4,7 @@ Make sure you have checked _all_ steps below.
 
 - [ ] My PR addresses the following issues and references them in the PR title. For example, "Issue 1234 - My Sleeper
   PR"
-    - https://github.com/gchq/sleeper/issues/XXX
+    - Resolves https://github.com/gchq/sleeper/issues/XXX
 
 ### Tests
 
