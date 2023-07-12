@@ -139,7 +139,6 @@ public class SleeperCdkApp extends Stack {
             new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
                     instanceProperties, jars,
                     bulkImportBucketStack,
-                    emrBulkImportCommonStack,
                     topicStack,
                     tableStack.getStateStoreStacks(),
                     ingestStatusStoreStack.getResources()

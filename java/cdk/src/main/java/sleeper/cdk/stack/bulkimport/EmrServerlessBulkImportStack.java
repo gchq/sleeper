@@ -71,7 +71,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
     public EmrServerlessBulkImportStack(Construct scope, String id,
                                         InstanceProperties instanceProperties, BuiltJars jars,
-                                        BulkImportBucketStack importBucketStack, CommonEmrBulkImportStack commonEmrStack,
+                                        BulkImportBucketStack importBucketStack,
                                         TopicStack errorsTopicStack, List<StateStoreStack> stateStoreStacks,
                                         IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
@@ -86,7 +86,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         Queue bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL,
                 errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
-                bulkImportJobQueue, jars, importBucketStack.getImportBucket(), emrRole, commonEmrStack.getEc2Role());
+                bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
 
         configureJobStarterFunction(instanceProperties, jobStarter);

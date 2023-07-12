@@ -42,8 +42,10 @@ import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -111,11 +113,11 @@ public class CommonEmrBulkImportHelper {
     public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
                                               IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
         return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
-                commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role());
+                List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
-                                              IBucket importBucket, IRole emrRole, IRole ec2Role) {
+                                              IBucket importBucket, List<IRole> passRoles) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -147,10 +149,9 @@ public class CommonEmrBulkImportHelper {
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
-                .resources(Lists.newArrayList(
-                        emrRole.getRoleArn(),
-                        ec2Role.getRoleArn()
-                ))
+                .resources(passRoles.stream()
+                        .map(IRole::getRoleArn)
+                        .collect(Collectors.toUnmodifiableList()))
                 .build());
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
