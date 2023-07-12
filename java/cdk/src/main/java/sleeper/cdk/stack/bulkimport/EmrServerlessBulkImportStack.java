@@ -56,7 +56,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  * executes the bulk import job and then terminates.
  */
 public class EmrServerlessBulkImportStack extends NestedStack {
-    private static Logger LOGGER = LoggerFactory.getLogger(EmrServerlessBulkImportStack.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmrServerlessBulkImportStack.class);
 
     public EmrServerlessBulkImportStack(Construct scope, String id,
                                         InstanceProperties instanceProperties, BuiltJars jars,
