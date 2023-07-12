@@ -40,9 +40,9 @@ Report the results:
 ```
 
 ## Bulk import performance
-This will test the performance of bulk import using EMR. This will take about 30 minutes. A bulk import job for 
-1 billion records will be created and sent to the bulk import queue 5 times. It will then wait for all EMR steps to finish, 
-then check that there are 5 billion records in the table.
+This will test the performance of bulk import using EMR. A bulk import job for 1 billion records will be created and 
+sent to the bulk import queue 5 times. It will then wait for all EMR steps to finish, then check that there are 
+5 billion records in the table. This will take about 30 minutes.
 
 The system test table is pre-split into 512 leaf partitions using the `scripts/test/splitpoints/512-partitions.txt` 
 splitpoints file.
