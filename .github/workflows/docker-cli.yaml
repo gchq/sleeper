@@ -33,7 +33,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./scripts/cli/dependencies
-          push: true
           sbom: false
           provenance: false
           tags: ${{ env.DEPENDENCIES_IMAGE }}
