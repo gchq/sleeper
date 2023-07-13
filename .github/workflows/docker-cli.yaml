@@ -33,18 +33,8 @@ jobs:
         working-directory: ./java
       - name: Maven build
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
-      - name: Upload jars as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: scripts-jars
-          path: ./scripts/jars
       - name: Environment Maven build
         run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
-      - name: Upload environment jars as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: environment-jars
-          path: ./scripts/cli/environment/jars
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -70,11 +60,6 @@ jobs:
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
           outputs: type=oci,dest=/tmp/dependencies-image.tar
-      - name: Upload dependencies image as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: dependencies-image
-          path: /tmp/dependencies-image.tar
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
@@ -87,6 +72,21 @@ jobs:
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
             -Dmaven.repo.local=../.m2/repository \
             -Dexec.args=delete.properties \
+      - name: Upload jars as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: scripts-jars
+          path: ./scripts/jars
+      - name: Upload environment jars as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: environment-jars
+          path: ./scripts/cli/environment/jars
+      - name: Upload dependencies image as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: dependencies-image
+          path: /tmp/dependencies-image.tar
     outputs:
       builderTag: ${{ steps.plan.outputs.builderTag }}
       envTag: ${{ steps.plan.outputs.envTag }}
