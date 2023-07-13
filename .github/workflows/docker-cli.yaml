@@ -42,7 +42,7 @@ jobs:
             build-url=${{ env.BUILD_URL }}
           outputs: type=oci,dest=/tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dependencies-image
           path: /tmp/dependencies-image.tar

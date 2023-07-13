@@ -59,7 +59,7 @@ jobs:
         with:
           driver-opts: network=host
       - name: Download artifacts from previous workflows
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
       - name: Load Docker images from previous workflows
         run: |
           docker load --input dependencies-image/dependencies-image.tar
