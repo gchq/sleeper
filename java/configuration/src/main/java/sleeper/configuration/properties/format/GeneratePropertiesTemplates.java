@@ -49,11 +49,11 @@ import static sleeper.configuration.properties.CompactionProperty.ECR_COMPACTION
 import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.LoggingLevelsProperties.APACHE_LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.AWS_LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.PARQUET_LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.ROOT_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;

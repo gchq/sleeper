@@ -38,7 +38,7 @@ import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestIn
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.LoggingLevelsProperties.LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;

@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface QueryProperties {
+public interface QueryProperty {
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES = Index.propertyBuilder("sleeper.query.s3.max-connections")
             .description("The maximum number of simultaneous connections to S3 from a single query runner. This is separated " +
                     "from the main one as it's common for a query runner to need to open more files at once.")

@@ -58,9 +58,9 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(PartitionSplittingProperty.getAll());
             index.addAll(GarbageCollectionProperty.getAll());
             index.addAll(CompactionProperty.getAll());
-            index.addAll(QueryProperties.getAll());
+            index.addAll(QueryProperty.getAll());
             index.addAll(DashboardProperty.getAll());
-            index.addAll(LoggingLevelsProperties.getAll());
+            index.addAll(LoggingLevelsProperty.getAll());
             index.addAll(AthenaProperty.getAll());
             index.addAll(DefaultProperty.getAll());
 

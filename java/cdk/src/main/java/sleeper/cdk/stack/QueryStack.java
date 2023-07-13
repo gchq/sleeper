@@ -77,9 +77,9 @@ import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.QueryProperties.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.QueryProperties.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.QueryProperties.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
+import static sleeper.configuration.properties.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 

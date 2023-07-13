@@ -34,8 +34,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.QueryProperties.DEFAULT_RESULTS_PAGE_SIZE;
-import static sleeper.configuration.properties.QueryProperties.DEFAULT_RESULTS_ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
+import static sleeper.configuration.properties.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.io.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
 

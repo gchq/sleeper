@@ -34,7 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.QueryProperties.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
+import static sleeper.configuration.properties.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**

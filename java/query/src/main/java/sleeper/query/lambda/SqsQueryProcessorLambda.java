@@ -36,7 +36,7 @@ import sleeper.query.model.QuerySerDe;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.QueryProperties.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**

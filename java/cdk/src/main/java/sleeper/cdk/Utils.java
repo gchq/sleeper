@@ -49,11 +49,11 @@ import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.CommonProperty.STACK_TAG_NAME;
-import static sleeper.configuration.properties.LoggingLevelsProperties.APACHE_LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.AWS_LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.PARQUET_LOGGING_LEVEL;
-import static sleeper.configuration.properties.LoggingLevelsProperties.ROOT_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
+import static sleeper.configuration.properties.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 
