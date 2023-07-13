@@ -71,7 +71,7 @@ jobs:
           echo "keepMostRecent=4" >> delete.properties
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
             -Dmaven.repo.local=../.m2/repository \
-            -Dexec.args=delete.properties \
+            -Dexec.args=delete.properties
       - name: Upload jars as artifact
         uses: actions/upload-artifact@v2
         with:
