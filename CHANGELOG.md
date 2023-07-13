@@ -10,18 +10,19 @@ This contains the following improvements:
 Bulk Import:
 - Support use of EMR serverless.
 - Support use of Graviton instances in bulk import EMR.
-- Report on validation status for bulk import jobs.
+- Report on validation status for standard ingest jobs and bulk import jobs.
 - Added option to query rejected jobs in the `IngestJobStatusReport`.
 - Support use of instance fleets in bulk import EMR.
 - Updated default x86 instance types to use m6i equivalents.
 
 Environment:
 - Allow multiple users to access cdk-environment EC2.
-- Allow users to connect to an existing deployed environment without redeploying.
+- Allow users to load the configuration for an existing deployed environment without redeploying.
 
 Deployment:
 - Added ability to deploy to multiple subnets.
-- Split properties templating from the deployment process.
+- Split properties templating from the deployment process, allowing you to specifify your own configuration file
+while still defaulting to the templates if a configuration file is not provided.
 - Added retry and wait for running ECS tasks when capacity is unavailable.
 - Updated performance test documentation.
 
@@ -38,12 +39,11 @@ Misc:
 - Update and manage several dependencies to resolve CVEs found by dependency check.
 
 Bugfixes:
-- Fixed an issue where the file count would not calculate correctly when sending a job with a directory to standard ingest.
-- Fixed an issue where the file count would not calculate correctly when sending a job with a directory to bulk import.
-- Fixed an issue where the file count would not calculate correctly when sending a request with a directory to the ingest batcher.
-- Fixed an issue where the `InvokeSystemTestLambda` could timeout waiting to read from socket.
+- Fixed an issue where files under directories were not counted correctly in `IngestJobStatusReport`.
+- Raised timeout for system tests when waiting for lambdas to run.
 - Fixed an issue where the jars bucket failed to tear down because it was not empty during the tearDown process.
-- Fixed an issue where the `BulkImportStarterLambda` would time out waiting for multiple jobs to process.
+- Raised timeout for Lambda starting bulk import jobs
+- Stopped Lambda starting bulk import jobs processing multiple jobs at once.
 - Fixed an issue where submitting a bulk import job twice with the same ID twice would overwrite the first one.
 
 ## Version 0.17.0
