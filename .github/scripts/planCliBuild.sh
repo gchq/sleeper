@@ -38,13 +38,10 @@ echo_github_output_for_image() {
 
   {
     echo "${ENV_PREFIX}Tag=$IMAGE_ID:$VERSION"
+    echo "${ENV_PREFIX}Package=$IMAGE_NAME"
   } >> "$GITHUB_OUTPUT"
 }
 
 echo_github_output_for_image sleeper-builder builder
 echo_github_output_for_image sleeper-local env
 echo_github_output_for_image sleeper-deployment deploy
-
-{
-  echo "GHCR_PACKAGE_NAMES=sleeper-local,sleeper-deployment,sleeper-builder"
-} >> "$GITHUB_ENV"
