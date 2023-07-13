@@ -785,7 +785,7 @@ public class QueryExecutorIT {
                 .dimension(-1)
                 .build();
 
-        rootPartition.setLeafPartition(false);
+        rootPartition = rootPartition.toBuilder().leafPartition(false).build();
         rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition,
                 leftPartition, rightPartition);
@@ -841,31 +841,34 @@ public class QueryExecutorIT {
                 .build();
 
         // Split the left partition into 1 and 3
-        leftPartition.setLeafPartition(false);
+        leftPartition = leftPartition.toBuilder().leafPartition(false).build();
         leftPartition.setChildPartitionIds(Arrays.asList("P1", "P3"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(leftPartition,
                 partition1, partition3);
         // Split the right partition into 2 and 4
-        rightPartition.setLeafPartition(false);
+        rightPartition = rightPartition.toBuilder().leafPartition(false).build();
         rightPartition.setChildPartitionIds(Arrays.asList("P2", "P4"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rightPartition,
                 partition2, partition4);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
+        Partition finalLeftPartition = leftPartition;
+        Partition finalRootPartition = rootPartition;
+        Partition finalRightPartition = rightPartition;
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition1.getId()) || f.getPartitionId().equals(leftPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
+                .filter(f -> f.getPartitionId().equals(partition1.getId()) || f.getPartitionId().equals(finalLeftPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         List<String> filesInLeafPartition2 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition2.getId()) || f.getPartitionId().equals(rightPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
+                .filter(f -> f.getPartitionId().equals(partition2.getId()) || f.getPartitionId().equals(finalRightPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         List<String> filesInLeafPartition3 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition3.getId()) || f.getPartitionId().equals(leftPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
+                .filter(f -> f.getPartitionId().equals(partition3.getId()) || f.getPartitionId().equals(finalLeftPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         List<String> filesInLeafPartition4 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition4.getId()) || f.getPartitionId().equals(rightPartition.getId()) || f.getPartitionId().equals(rootPartition.getId()))
+                .filter(f -> f.getPartitionId().equals(partition4.getId()) || f.getPartitionId().equals(finalRightPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
 

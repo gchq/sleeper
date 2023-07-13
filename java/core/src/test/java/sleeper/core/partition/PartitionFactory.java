@@ -69,9 +69,7 @@ public class PartitionFactory {
         Partition.Builder rightPartition = partition(rightId, parentRegion.childWithRange(rightRange));
         leftPartition.parentPartitionId(parent.getId());
         rightPartition.parentPartitionId(parent.getId());
-        parent.setChildPartitionIds(List.of(leftId, rightId));
-        parent.setLeafPartition(false);
-        parent.setDimension(dimension);
+        parent = parent.toBuilder().leafPartition(false).dimension(dimension).childPartitionIds(List.of(leftId, rightId)).build();
         return List.of(leftPartition, rightPartition);
     }
 

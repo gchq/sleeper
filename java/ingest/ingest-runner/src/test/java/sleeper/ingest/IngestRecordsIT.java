@@ -324,17 +324,17 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, Long.MIN_VALUE, null);
         Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
         Partition rootPartition = createRootPartition(rootRegion, new IntType(), new LongType());
-        rootPartition.setDimension(1);
+        rootPartition = rootPartition.toBuilder().dimension(1).build();
         Range partition1Range1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range partition1Range2 = new Range.RangeFactory(schema).createRange(field2, Long.MIN_VALUE, 10L);
         Region region1 = new Region(Arrays.asList(partition1Range1, partition1Range2));
         Partition partition1 = createLeafPartition("partition1", region1, new IntType(), new LongType());
-        partition1.setDimension(-1);
+        partition1 = partition1.toBuilder().dimension(-1).build();
         Range partition2Range1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
         Range partition2Range2 = new Range.RangeFactory(schema).createRange(field2, 10L, null);
         Region region2 = new Region(Arrays.asList(partition2Range1, partition2Range2));
         Partition partition2 = createLeafPartition("partition2", region2, new IntType(), new LongType());
-        partition2.setDimension(-1);
+        partition2 = partition2.toBuilder().dimension(-1).build();
         rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
@@ -352,12 +352,14 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(2);
         // Find file that corresponds to partition 1
-        FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals(partition1.getId())).findFirst().orElseThrow();
+        Partition finalPartition = partition1;
+        FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals(finalPartition.getId())).findFirst().orElseThrow();
         assertThat(fileInfo1.getMinRowKey().get(0)).isEqualTo(0);
         assertThat(fileInfo1.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo1.getNumberOfRecords().longValue()).isEqualTo(2L);
         // Find file that corresponds to partition 2
-        FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals(partition2.getId())).findFirst().orElseThrow();
+        Partition finalPartition1 = partition2;
+        FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals(finalPartition1.getId())).findFirst().orElseThrow();
         assertThat(fileInfo2.getMinRowKey().get(0)).isEqualTo(0);
         assertThat(fileInfo2.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo2.getNumberOfRecords().longValue()).isEqualTo(2L);

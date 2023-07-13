@@ -160,7 +160,7 @@ public class SleeperPartitionerTest {
                 .build();
 
         leftLeafPartition.setChildPartitionIds(Arrays.asList("leftupper", "leftlower"));
-        leftLeafPartition.setLeafPartition(false);
+        leftLeafPartition = leftLeafPartition.toBuilder().leafPartition(false).build();
 
         List<Partition> partitionsAfterSplit = new ArrayList<>();
         partitionsAfterSplit.add(partitionTree.getRootPartition());

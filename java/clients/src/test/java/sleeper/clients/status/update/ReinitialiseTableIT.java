@@ -688,7 +688,7 @@ public class ReinitialiseTableIT {
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
+        rootPartition = rootPartition.toBuilder().leafPartition(false).build();
         Range leftRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "0", "eee");
         Region leftRegion = new Region(leftRange);
         Partition leftPartition = Partition.builder()

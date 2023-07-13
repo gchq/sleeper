@@ -79,9 +79,9 @@ public class PartitionedTableCreator {
         Partition leftChild = createSplitPartition(sleeperSchema, parentPartition, keyContainingSplitPoint, dimensionToSplitOn, true);
         Partition rightChild = createSplitPartition(sleeperSchema, parentPartition, keyContainingSplitPoint, dimensionToSplitOn, false);
         // Update parent partition
-        parentPartition.setLeafPartition(false);
+        parentPartition = parentPartition.toBuilder().leafPartition(false).build();
         parentPartition.setChildPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()));
-        parentPartition.setDimension(dimensionToSplitOn);
+        parentPartition = parentPartition.toBuilder().dimension(dimensionToSplitOn).build();
         // Update state store
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
     }
