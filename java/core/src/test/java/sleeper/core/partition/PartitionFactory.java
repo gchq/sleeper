@@ -15,8 +15,6 @@
  */
 package sleeper.core.partition;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
@@ -61,7 +59,7 @@ public class PartitionFactory {
                 .dimension(-1);
     }
 
-    public Pair<Partition, List<Partition.Builder>> split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
+    public PartitionSplitResult split(Partition parent, String leftId, String rightId, int dimension, Object splitPoint) {
         Field splitField = schema.getRowKeyFields().get(dimension);
         Region parentRegion = parent.getRegion();
         Range parentRange = parentRegion.getRange(splitField.getName());
@@ -71,12 +69,14 @@ public class PartitionFactory {
         Partition.Builder rightPartition = partition(rightId, parentRegion.childWithRange(rightRange));
         leftPartition.parentPartitionId(parent.getId());
         rightPartition.parentPartitionId(parent.getId());
-        parent = parent.toBuilder()
+        Partition.Builder updatedParent = parent.toBuilder()
                 .leafPartition(false)
                 .dimension(dimension)
-                .childPartitionIds(List.of(leftId, rightId))
+                .childPartitionIds(List.of(leftId, rightId));
+        return PartitionSplitResult.builder()
+                .parent(updatedParent)
+                .children(List.of(leftPartition, rightPartition))
                 .build();
-        return Pair.of(parent, List.of(leftPartition, rightPartition));
     }
 
     public Partition.Builder parentJoining(String parentId, Partition.Builder left, Partition.Builder right) {

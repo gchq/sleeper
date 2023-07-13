@@ -15,8 +15,6 @@
  */
 package sleeper.core.partition;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
@@ -110,13 +108,9 @@ public class PartitionsBuilder {
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition.Builder parent = partitionById(parentId);
-        Pair<Partition, List<Partition.Builder>> returnedPair = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
-        Partition updatedParent = returnedPair.getLeft();
-        List<Partition.Builder> children = returnedPair.getRight();
-        children.forEach(this::add);
-        
-        partitions.set(partitions.indexOf(parent), updatedParent.toBuilder());
-        partitionById.put(parentId, updatedParent.toBuilder());
+        PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
+        splitResult.getChildren().forEach(this::add);
+        update(parentId, splitResult.getParent());
         return this;
     }
 
@@ -124,6 +118,11 @@ public class PartitionsBuilder {
         partitions.add(partition);
         partitionById.put(partition.getId(), partition);
         return partition;
+    }
+
+    private void update(String partitionId, Partition.Builder newPartition) {
+        partitions.set(partitions.indexOf(partitionById(partitionId)), newPartition);
+        partitionById.put(newPartition.getId(), newPartition);
     }
 
     private Partition.Builder partitionById(String id) {
