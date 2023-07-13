@@ -31,7 +31,6 @@ import java.io.IOException;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.systemtest.util.InvokeSystemTestLambda.client;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class InvokeCompactionTaskCreationUntilAllJobsStarted {
@@ -51,7 +50,7 @@ public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     public static InvokeCompactionTaskCreationUntilAllJobsStarted forCompaction(
             InstanceProperties properties, CompactionJobStatusStore statusStore) {
         return new InvokeCompactionTaskCreationUntilAllJobsStarted(statusStore,
-                client(createSystemTestLambdaClient(), properties),
+                InvokeSystemTestLambda.client(createSystemTestLambdaClient(), properties),
                 COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
     }
 
