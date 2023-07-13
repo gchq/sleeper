@@ -91,6 +91,8 @@ jobs:
       builderTag: ${{ steps.plan.outputs.builderTag }}
       envTag: ${{ steps.plan.outputs.envTag }}
       deployTag: ${{ steps.plan.outputs.deployTag }}
+      platforms: ${{ env.DOCKER_PLATFORMS }}
+      buildUrl: ${{ env.BUILD_URL }}
   builder:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
@@ -98,8 +100,8 @@ jobs:
       pushImages: ${{ inputs.pushImages }}
       context: ./scripts/cli/builder
       pushTag: ${{ needs.setup.outputs.builderTag }}
-      platforms: ${{ env.DOCKER_PLATFORMS }}
-      buildUrl: ${{ env.BUILD_URL }}
+      platforms: ${{ needs.setup.outputs.platforms }}
+      buildUrl: ${{ needs.setup.outputs.buildUrl }}
   environment:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
@@ -107,8 +109,8 @@ jobs:
       pushImages: ${{ inputs.pushImages }}
       context: ./scripts/cli/environment
       pushTag: ${{ needs.setup.outputs.envTag }}
-      platforms: ${{ env.DOCKER_PLATFORMS }}
-      buildUrl: ${{ env.BUILD_URL }}
+      platforms: ${{ needs.setup.outputs.platforms }}
+      buildUrl: ${{ needs.setup.outputs.buildUrl }}
   deployment:
     needs: setup
     uses: ./.github/workflows/docker-cli-image.yaml
@@ -116,5 +118,5 @@ jobs:
       pushImages: ${{ inputs.pushImages }}
       context: ./scripts
       pushTag: ${{ needs.setup.outputs.deployTag }}
-      platforms: ${{ env.DOCKER_PLATFORMS }}
-      buildUrl: ${{ env.BUILD_URL }}
+      platforms: ${{ needs.setup.outputs.platforms }}
+      buildUrl: ${{ needs.setup.outputs.buildUrl }}
