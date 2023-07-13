@@ -43,7 +43,7 @@ public class RegionCanonicaliser {
 
     public static boolean isRegionInCanonicalForm(Region region) {
         if (region == null) {
-            return false;
+            return true;
         }
         for (Range range : region.getRanges()) {
             if (!range.isInCanonicalForm()) {
