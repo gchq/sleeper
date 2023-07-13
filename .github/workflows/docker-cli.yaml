@@ -8,18 +8,12 @@ on:
 
 env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
-  DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
+  DEPENDENCIES_IMAGE: sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
-
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
 
     steps:
       - uses: actions/checkout@v3
@@ -39,8 +33,18 @@ jobs:
         working-directory: ./java
       - name: Maven build
         run: ./scripts/build/buildForTest.sh package -Pquick --batch-mode -Dmaven.repo.local=.m2/repository
+      - name: Upload jars as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: scripts-jars
+          path: ./scripts/jars
       - name: Environment Maven build
         run: ./scripts/cli/environment/buildMaven.sh package -Pquick --batch-mode -Dmaven.repo.local=../.m2/repository
+      - name: Upload environment jars as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: environment-jars
+          path: ./scripts/cli/environment/jars
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -48,16 +52,11 @@ jobs:
         with:
           driver-opts: network=host
       - name: Plan build
+        id: plan
         run: |
           ./.github/scripts/planCliBuild.sh \
             "${{ github.repository_owner }}" \
             "${{ github.ref }}"
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build Docker dependencies
         uses: docker/build-push-action@v4
         with:
@@ -70,45 +69,12 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-      - name: Build builder image
-        uses: docker/build-push-action@v4
+          outputs: type=oci,dest=/tmp/dependencies-image.tar
+      - name: Upload dependencies image as artifact
+        uses: actions/upload-artifact@v2
         with:
-          context: ./scripts/cli/builder
-          push: ${{ inputs.pushImages }}
-          sbom: false
-          provenance: false
-          tags: ${{ env.BUILDER_PUSH_TAG }}
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
-      - name: Build environment image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./scripts/cli/environment
-          push: ${{ inputs.pushImages }}
-          sbom: false
-          provenance: false
-          tags: ${{ env.ENV_PUSH_TAG }}
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
-      - name: Build deployment image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./scripts
-          push: ${{ inputs.pushImages }}
-          sbom: false
-          provenance: false
-          tags: ${{ env.DEPLOY_PUSH_TAG }}
-          platforms: ${{ env.DOCKER_PLATFORMS }}
-          build-args: DEPENDENCIES_IMAGE=${{ env.DEPENDENCIES_IMAGE }}
-          labels: |
-            git-commit=${{ github.sha }}
-            build-url=${{ env.BUILD_URL }}
+          name: dependencies-image
+          path: /tmp/dependencies-image.tar
       - name: Delete old images
         if: ${{ inputs.pushImages }}
         working-directory: ./java/build
@@ -121,3 +87,34 @@ jobs:
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.github.api.containers.DeleteGHCRVersions \
             -Dmaven.repo.local=../.m2/repository \
             -Dexec.args=delete.properties \
+    outputs:
+      builderTag: ${{ steps.plan.outputs.builderTag }}
+      envTag: ${{ steps.plan.outputs.envTag }}
+      deployTag: ${{ steps.plan.outputs.deployTag }}
+  builder:
+    needs: setup
+    uses: ./.github/workflows/docker-cli-image.yaml
+    with:
+      pushImages: ${{ inputs.pushImages }}
+      context: ./scripts/cli/builder
+      pushTag: ${{ needs.setup.outputs.builderTag }}
+      platforms: ${{ env.DOCKER_PLATFORMS }}
+      buildUrl: ${{ env.BUILD_URL }}
+  environment:
+    needs: setup
+    uses: ./.github/workflows/docker-cli-image.yaml
+    with:
+      pushImages: ${{ inputs.pushImages }}
+      context: ./scripts/cli/environment
+      pushTag: ${{ needs.setup.outputs.envTag }}
+      platforms: ${{ env.DOCKER_PLATFORMS }}
+      buildUrl: ${{ env.BUILD_URL }}
+  deployment:
+    needs: setup
+    uses: ./.github/workflows/docker-cli-image.yaml
+    with:
+      pushImages: ${{ inputs.pushImages }}
+      context: ./scripts
+      pushTag: ${{ needs.setup.outputs.deployTag }}
+      platforms: ${{ env.DOCKER_PLATFORMS }}
+      buildUrl: ${{ env.BUILD_URL }}

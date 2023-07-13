@@ -28,7 +28,7 @@ VERSION=$(echo "$GIT_REF" | sed -e 's,.*/\(.*\),\1,')
 # Use Docker `latest` tag convention
 [ "$VERSION" == "main" ] && VERSION=latest
 
-export_github_env_for_image() {
+echo_github_output_for_image() {
   IMAGE_NAME=$1
   ENV_PREFIX=$2
   IMAGE_ID="ghcr.io/$REPO_OWNER/$IMAGE_NAME"
@@ -37,19 +37,14 @@ export_github_env_for_image() {
   IMAGE_ID=$(echo "$IMAGE_ID" | tr '[A-Z]' '[a-z]')
 
   {
-    echo "${ENV_PREFIX}_PUSH_TAG=$IMAGE_ID:$VERSION"
-  } >> "$GITHUB_ENV"
+    echo "${ENV_PREFIX}Tag=$IMAGE_ID:$VERSION"
+  } >> "$GITHUB_OUTPUT"
 }
 
-export_common_github_env() {
-  IMAGE_NAMES=$1
+echo_github_output_for_image sleeper-builder builder
+echo_github_output_for_image sleeper-local env
+echo_github_output_for_image sleeper-deployment deploy
 
-  {
-    echo "GHCR_PACKAGE_NAMES=$IMAGE_NAMES"
-  } >> "$GITHUB_ENV"
-}
-
-export_github_env_for_image sleeper-local ENV
-export_github_env_for_image sleeper-deployment DEPLOY
-export_github_env_for_image sleeper-builder BUILDER
-export_common_github_env "sleeper-local,sleeper-deployment,sleeper-builder"
+{
+  echo "GHCR_PACKAGE_NAMES=sleeper-local,sleeper-deployment,sleeper-builder"
+} >> "$GITHUB_ENV"
