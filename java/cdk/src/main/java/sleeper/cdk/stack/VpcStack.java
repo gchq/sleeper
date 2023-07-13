@@ -48,7 +48,6 @@ import static sleeper.configuration.properties.CommonProperty.REGION;
 import static sleeper.configuration.properties.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.CommonProperty.VPC_ID;
 
-
 public class VpcStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);
 

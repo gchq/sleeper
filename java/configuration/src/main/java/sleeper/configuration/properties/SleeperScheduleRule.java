@@ -30,7 +30,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PAR
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 
-
 public class SleeperScheduleRule {
 
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();

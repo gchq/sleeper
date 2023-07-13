@@ -64,7 +64,6 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COM
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-
 @Testcontainers
 public class CreateJobsIT {
 

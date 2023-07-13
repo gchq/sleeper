@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
-
 public class IngestJobStatusStoreFactory {
 
     private IngestJobStatusStoreFactory() {

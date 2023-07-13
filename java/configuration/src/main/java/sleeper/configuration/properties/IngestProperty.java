@@ -110,8 +110,7 @@ public interface IngestProperty {
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-
-
+    
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }

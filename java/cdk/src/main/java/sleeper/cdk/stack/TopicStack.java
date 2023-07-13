@@ -27,7 +27,7 @@ import static sleeper.configuration.properties.CommonProperty.EMAIL_ADDRESS_FOR_
 import static sleeper.configuration.properties.CommonProperty.ID;
 
 /**
- * The {@linkStack} that creates an SNS {@link Topic} that emails alerts if
+ * The {@link Stack} that creates an SNS {@link Topic} that emails alerts if
  * messages arrive on a dead-letter queue.
  */
 public class TopicStack extends NestedStack {

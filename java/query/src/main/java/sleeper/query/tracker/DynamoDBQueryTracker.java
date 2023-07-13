@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 
-
 /**
  * The query tracker updates and keeps track of the status of queries so that clients
  * can see how complete it is or if part or all of the query failed.

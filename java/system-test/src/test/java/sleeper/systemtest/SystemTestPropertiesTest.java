@@ -32,7 +32,6 @@ import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
-
 class SystemTestPropertiesTest {
 
     @Test

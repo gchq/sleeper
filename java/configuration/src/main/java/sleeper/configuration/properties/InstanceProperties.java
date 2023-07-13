@@ -32,7 +32,6 @@ import java.util.Properties;
 import static sleeper.configuration.properties.CommonProperty.TAGS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
-
 /**
  * Contains all the properties needed to deploy an instance of Sleeper.
  */

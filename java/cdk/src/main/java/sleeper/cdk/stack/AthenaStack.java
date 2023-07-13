@@ -55,7 +55,6 @@ import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_D
 import static sleeper.configuration.properties.CommonProperty.REGION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
-
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
