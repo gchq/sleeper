@@ -56,7 +56,8 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
-        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition = rootPartition.toBuilder()
+                .childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
@@ -115,7 +116,8 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
         Region region2 = new Region(range2);
         Partition partition2 = createLeafPartition("partition2", region2, new LongType());
-        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition.toBuilder()
+                .childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When

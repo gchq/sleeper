@@ -305,8 +305,10 @@ public class SplitMultiDimensionalPartitionImpl {
                 .build();
 
         // Updated split partition
-        partition = partition.toBuilder().leafPartition(false).build();
-        partition.setChildPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()));
+        partition = partition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()))
+                .build();
         partition = partition.toBuilder().dimension(dimension).build();
 
         LOGGER.info("Updating StateStore:");

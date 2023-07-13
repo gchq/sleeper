@@ -217,8 +217,8 @@ public class SplitPartitionIT {
                 .dimension(-1)
                 .build();
         // Wire up partitions
-        rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
-        partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition12.getId(), partition3.getId())).build();
+        partition12 = partition12.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
@@ -311,8 +311,8 @@ public class SplitPartitionIT {
                 .dimension(-1)
                 .build();
         // Wire up partitions
-        rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
-        partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition12.getId(), partition3.getId())).build();
+        partition12 = partition12.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
@@ -782,8 +782,8 @@ public class SplitPartitionIT {
                 .dimension(-1)
                 .build();
         // Wire up partitions
-        rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
-        partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition12.getId(), partition3.getId())).build();
+        partition12 = partition12.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);
@@ -897,8 +897,8 @@ public class SplitPartitionIT {
                 .dimension(-1)
                 .build();
         // Wire up partitions
-        rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
-        partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition12.getId(), partition3.getId())).build();
+        partition12 = partition12.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
         StateStore stateStore = getStateStore(schema, partitions);

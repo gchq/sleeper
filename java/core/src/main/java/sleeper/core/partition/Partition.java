@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A Partition is a Region of key space, with additional information that allows
@@ -77,9 +78,6 @@ public class Partition {
         return leafPartition;
     }
 
-    public void setLeafPartition(boolean leafPartition) {
-        this.leafPartition = leafPartition;
-    }
 
     public String getParentPartitionId() {
         return parentPartitionId;
@@ -93,20 +91,10 @@ public class Partition {
         return childPartitionIds;
     }
 
-    public void setChildPartitionIds(List<String> childPartitionIds) {
-        this.childPartitionIds = new ArrayList<>();
-        if (null != childPartitionIds) {
-            this.childPartitionIds.addAll(childPartitionIds);
-        }
-    }
-
     public int getDimension() {
         return dimension;
     }
 
-    public void setDimension(int dimension) {
-        this.dimension = dimension;
-    }
 
     public boolean isRowKeyInPartition(Schema schema, Key rowKey) {
         return region.isKeyInRegion(schema, rowKey);
@@ -195,7 +183,11 @@ public class Partition {
 
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
-            this.childPartitionIds = childPartitionIds;
+            this.childPartitionIds = Optional.ofNullable(
+                    childPartitionIds
+            ).orElse(
+                    new ArrayList<>()
+            );
             return this;
         }
 

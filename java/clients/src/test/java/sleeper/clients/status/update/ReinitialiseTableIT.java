@@ -707,7 +707,10 @@ public class ReinitialiseTableIT {
                 .parentPartitionId(rootPartition.getId())
                 .childPartitionIds(new ArrayList<>())
                 .build();
-        rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
+
+        rootPartition = rootPartition.toBuilder().childPartitionIds(
+                Arrays.asList(leftPartition.getId(), rightPartition.getId())
+        ).build();
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
 
         //  - Update Dynamo state store with details of files

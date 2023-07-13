@@ -786,7 +786,7 @@ public class QueryExecutorIT {
                 .build();
 
         rootPartition = rootPartition.toBuilder().leafPartition(false).build();
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
+        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList("left", "right")).build();
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition,
                 leftPartition, rightPartition);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
@@ -841,13 +841,18 @@ public class QueryExecutorIT {
                 .build();
 
         // Split the left partition into 1 and 3
-        leftPartition = leftPartition.toBuilder().leafPartition(false).build();
-        leftPartition.setChildPartitionIds(Arrays.asList("P1", "P3"));
+        leftPartition = leftPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("P1", "P3"))
+                .build();
+
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(leftPartition,
                 partition1, partition3);
         // Split the right partition into 2 and 4
-        rightPartition = rightPartition.toBuilder().leafPartition(false).build();
-        rightPartition.setChildPartitionIds(Arrays.asList("P2", "P4"));
+        rightPartition = rightPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("P2", "P4"))
+                .build();
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rightPartition,
                 partition2, partition4);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
