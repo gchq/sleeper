@@ -34,30 +34,37 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPL
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class InvokeCompactionTaskCreationUntilAllJobsStarted {
-    private static final int POLL_INTERVAL_MILLIS = 10000;
-    private static final int MAX_POLLS = 5;
+    static final int POLL_INTERVAL_MILLIS = 10000;
+    static final int MAX_POLLS = 5;
+    private final PollWithRetries pollWithRetries;
+    private final String tableName;
     private final CompactionJobStatusStore statusStore;
     private final InvokeSystemTestLambda.Client lambdaClient;
     private final SystemDefinedInstanceProperty lambdaProperty;
 
     private InvokeCompactionTaskCreationUntilAllJobsStarted(
-            CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient, SystemDefinedInstanceProperty lambdaProperty) {
+            String tableName, CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient,
+            SystemDefinedInstanceProperty lambdaProperty, PollWithRetries pollWithRetries) {
+        this.tableName = tableName;
         this.statusStore = statusStore;
         this.lambdaClient = lambdaClient;
         this.lambdaProperty = lambdaProperty;
+        this.pollWithRetries = pollWithRetries;
     }
 
     public static InvokeCompactionTaskCreationUntilAllJobsStarted forCompaction(
-            InstanceProperties properties, CompactionJobStatusStore statusStore) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(statusStore,
+            String tableName, InstanceProperties properties, CompactionJobStatusStore statusStore) {
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(tableName, statusStore,
                 InvokeSystemTestLambda.client(createSystemTestLambdaClient(), properties),
-                COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+                COMPACTION_TASK_CREATION_LAMBDA_FUNCTION,
+                PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS));
     }
 
     public static InvokeCompactionTaskCreationUntilAllJobsStarted forSplitting(
-            CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(statusStore, lambdaClient,
-                SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+            String tableName, CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient, PollWithRetries pollWithRetries) {
+        return new InvokeCompactionTaskCreationUntilAllJobsStarted(tableName, statusStore, lambdaClient,
+                SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION,
+                pollWithRetries);
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -71,14 +78,13 @@ public class InvokeCompactionTaskCreationUntilAllJobsStarted {
         CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
                 AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
 
-        forCompaction(systemTestProperties, statusStore).pollUntilFinished();
+        forCompaction("system-test", systemTestProperties, statusStore).pollUntilFinished();
     }
 
     public void pollUntilFinished() throws InterruptedException {
-        PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
-        poll.pollUntil("all compaction jobs have started", () -> {
+        pollWithRetries.pollUntil("all compaction jobs have started", () -> {
             lambdaClient.invokeLambda(lambdaProperty);
-            return statusStore.getAllJobs("system-test").stream().allMatch(CompactionJobStatus::isStarted);
+            return statusStore.getAllJobs(tableName).stream().allMatch(CompactionJobStatus::isStarted);
         });
     }
 }
