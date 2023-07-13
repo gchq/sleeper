@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.StatusStoreProperties.INGEST_JOB_STATUS_TTL_IN_SECONDS;
+import static sleeper.configuration.properties.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;

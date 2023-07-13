@@ -39,7 +39,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.configuration.properties.StatusStoreProperties.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestStatusReportScreen {
     private final ConsoleOutput out;

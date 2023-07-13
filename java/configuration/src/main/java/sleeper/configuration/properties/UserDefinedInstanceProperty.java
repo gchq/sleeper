@@ -49,7 +49,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(ArrayListIngestProperty.getAll());
             index.addAll(ArrowIngestProperty.getAll());
             index.addAll(AsyncIngestPartitionFileWriterProperty.getAll());
-            index.addAll(StatusStoreProperties.getAll());
             index.addAll(BatcherProperty.getAll());
             index.addAll(BulkImportProperty.getAll());
             index.addAll(EMRProperty.getAll());

@@ -24,7 +24,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.StatusStoreProperties.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
 
 public class IngestJobStatusStoreFactory {

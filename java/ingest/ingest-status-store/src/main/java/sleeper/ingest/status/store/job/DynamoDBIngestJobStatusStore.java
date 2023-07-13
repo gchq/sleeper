@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.StatusStoreProperties.INGEST_JOB_STATUS_TTL_IN_SECONDS;
+import static sleeper.configuration.properties.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
