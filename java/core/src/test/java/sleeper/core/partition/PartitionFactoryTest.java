@@ -15,6 +15,7 @@
  */
 package sleeper.core.partition;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.range.Range.RangeFactory;
@@ -32,9 +33,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PartitionFactoryTest {
 
-    List<Partition> toPartition(Partition parent, String leftId, String rightId, int dimension, Object splitPoint, PartitionFactory partitionFactory) {
-        List<Partition.Builder> children = partitionFactory.split(parent, leftId, rightId, dimension, splitPoint);
-        return children.stream().map(Partition.Builder::build).collect(Collectors.toList());
+    Pair<Partition, List<Partition>> toPartition(Partition parent, String leftId, String rightId, int dimension, Object splitPoint, PartitionFactory partitionFactory) {
+        Pair<Partition, List<Partition.Builder>> returnedPair = partitionFactory.split(parent, leftId, rightId, dimension, splitPoint);
+
+        return Pair.of(
+                returnedPair.getLeft(),
+                returnedPair.getRight()
+                        .stream()
+                        .map(Partition.Builder::build)
+                        .collect(Collectors.toList())
+        );
     }
 
     @Test
@@ -44,8 +52,9 @@ class PartitionFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.rootFirst("parent").build();
-        List<Partition> children = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
-
+        Pair<Partition, List<Partition>> returnedPair = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
+        List<Partition> children = returnedPair.getRight();
+        parent = returnedPair.getLeft();
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(
@@ -87,8 +96,15 @@ class PartitionFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.rootFirst("parent").build();
-        List<Partition> children = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
-        List<Partition> nested = toPartition(children.get(1), "nestedLeft", "nestedRight", 1, "bbb", partitionFactory);
+        Pair<Partition, List<Partition>> returnedPair = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
+        List<Partition> children = returnedPair.getRight();
+        parent = returnedPair.getLeft();
+        //Split on second child, and update the second element of children list
+        Pair<Partition, List<Partition>> nestedReturnedPair = toPartition(children.get(1), "nestedLeft", "nestedRight", 1, "bbb", partitionFactory);
+        Partition nestedParent = nestedReturnedPair.getLeft();
+        children.set(1, nestedParent);
+        List<Partition> nestedChildren = nestedReturnedPair.getRight();
+
 
         List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         assertThat(parent).isEqualTo(
@@ -126,7 +142,7 @@ class PartitionFactoryTest {
                         .childPartitionIds(List.of("nestedLeft", "nestedRight"))
                         .dimension(1)
                         .build());
-        assertThat(nested).containsExactly(
+        assertThat(nestedChildren).containsExactly(
                 Partition.builder()
                         .rowKeyTypes(rowKeyTypes)
                         .region(new Region(List.of(
