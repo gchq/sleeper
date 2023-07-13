@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 

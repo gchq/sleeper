@@ -19,7 +19,7 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
-public interface BulkImportUsingEKSProperties {
+public interface EKSProperty {
     UserDefinedInstanceProperty BULK_IMPORT_REPO = Index.propertyBuilder("sleeper.bulk.import.eks.repo")
             .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)

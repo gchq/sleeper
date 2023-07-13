@@ -42,7 +42,7 @@ import java.util.List;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
 
 class FileWritingIteratorIT {
 

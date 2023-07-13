@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import static sleeper.configuration.properties.CommonProperties.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.QueryProperties.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
 import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD_RANGE;
 

@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
-import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class SystemTestForIngestBatcher {

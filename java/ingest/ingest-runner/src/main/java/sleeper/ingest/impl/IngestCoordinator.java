@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.IngestProperties.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;

@@ -45,7 +45,7 @@ import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningClusters;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;

@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.StatusStoreProperties.INGEST_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;

@@ -45,9 +45,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.METRICS_NAMESPACE;
-import static sleeper.configuration.properties.DashboardProperties.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {

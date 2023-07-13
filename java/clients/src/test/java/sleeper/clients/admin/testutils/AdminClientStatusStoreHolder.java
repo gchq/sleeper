@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 
 public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFactory {
 

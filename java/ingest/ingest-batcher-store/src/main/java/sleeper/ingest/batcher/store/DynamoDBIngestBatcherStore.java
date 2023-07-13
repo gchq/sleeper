@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;

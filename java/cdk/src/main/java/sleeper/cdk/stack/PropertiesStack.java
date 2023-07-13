@@ -34,9 +34,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**

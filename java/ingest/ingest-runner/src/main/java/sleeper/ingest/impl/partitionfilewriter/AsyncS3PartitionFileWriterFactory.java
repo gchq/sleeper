@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.AsyncIngestPartitionFileWriterProperties.ASYNC_INGEST_CLIENT_TYPE;
-import static sleeper.configuration.properties.AsyncIngestPartitionFileWriterProperties.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
-import static sleeper.configuration.properties.AsyncIngestPartitionFileWriterProperties.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
+import static sleeper.configuration.properties.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CLIENT_TYPE;
+import static sleeper.configuration.properties.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
+import static sleeper.configuration.properties.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {

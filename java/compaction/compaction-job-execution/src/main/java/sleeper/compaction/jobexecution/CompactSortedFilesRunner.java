@@ -59,9 +59,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 

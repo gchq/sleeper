@@ -36,9 +36,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.REGION;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.REGION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;

@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.StatusStoreProperties.INGEST_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
 

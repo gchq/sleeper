@@ -45,9 +45,9 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class CommonEmrBulkImportHelper {

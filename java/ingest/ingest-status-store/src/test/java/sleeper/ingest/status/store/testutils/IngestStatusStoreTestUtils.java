@@ -24,8 +24,8 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 

@@ -30,8 +30,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.USER_JARS;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.USER_JARS;
 
 public class S3UserJarsLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3UserJarsLoader.class);

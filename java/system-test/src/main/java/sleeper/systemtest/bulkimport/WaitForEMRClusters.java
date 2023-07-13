@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 
 public class WaitForEMRClusters {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForEMRClusters.class);

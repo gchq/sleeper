@@ -29,7 +29,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.EXPIRY_TIME;

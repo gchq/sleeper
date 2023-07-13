@@ -50,12 +50,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.ArrayListIngestProperties.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.ArrayListIngestProperties.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
-import static sleeper.configuration.properties.IngestProperties.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.IngestProperties.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.IngestProperties.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;

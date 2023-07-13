@@ -42,8 +42,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperties.FARGATE_VERSION;
-import static sleeper.configuration.properties.CommonProperties.SUBNETS;
+import static sleeper.configuration.properties.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;

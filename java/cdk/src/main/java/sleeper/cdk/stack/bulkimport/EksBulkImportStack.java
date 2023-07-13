@@ -85,14 +85,14 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.BulkImportUsingEKSProperties.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.CommonProperties.REGION;
-import static sleeper.configuration.properties.CommonProperties.SUBNETS;
-import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperty.REGION;
+import static sleeper.configuration.properties.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**

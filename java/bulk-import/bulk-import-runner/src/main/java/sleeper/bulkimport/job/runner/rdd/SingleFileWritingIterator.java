@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
 
 public class SingleFileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);

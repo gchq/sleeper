@@ -41,9 +41,9 @@ import java.util.List;
 import java.util.Locale;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;

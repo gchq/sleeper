@@ -27,9 +27,9 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.BulkImportUsingEKSProperties.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.CompactionProperties.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.IngestProperties.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);

@@ -44,7 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.

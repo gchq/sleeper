@@ -19,7 +19,7 @@ package sleeper.bulkimport.starter.executor;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
 
 public class EmrJarLocation {
 

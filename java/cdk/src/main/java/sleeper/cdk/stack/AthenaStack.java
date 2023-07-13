@@ -45,14 +45,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.AthenaProperties.ATHENA_COMPOSITE_HANDLER_CLASSES;
-import static sleeper.configuration.properties.AthenaProperties.ATHENA_COMPOSITE_HANDLER_MEMORY;
-import static sleeper.configuration.properties.AthenaProperties.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.AthenaProperties.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.CommonProperties.REGION;
+import static sleeper.configuration.properties.AthenaProperty.ATHENA_COMPOSITE_HANDLER_CLASSES;
+import static sleeper.configuration.properties.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
+import static sleeper.configuration.properties.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.CommonProperty.REGION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 

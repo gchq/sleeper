@@ -26,7 +26,7 @@ import java.util.Locale;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 
-public interface DefaultProperties {
+public interface DefaultProperty {
     UserDefinedInstanceProperty DEFAULT_S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.default.fs.s3a.readahead.range")
             .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
                     "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).")

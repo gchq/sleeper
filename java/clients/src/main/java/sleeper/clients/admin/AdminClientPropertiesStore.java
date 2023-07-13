@@ -40,7 +40,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {

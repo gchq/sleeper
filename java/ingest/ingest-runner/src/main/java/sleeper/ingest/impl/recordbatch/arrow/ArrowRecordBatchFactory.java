@@ -29,10 +29,10 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
 
-import static sleeper.configuration.properties.ArrowIngestProperties.ARROW_INGEST_BATCH_BUFFER_BYTES;
-import static sleeper.configuration.properties.ArrowIngestProperties.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
-import static sleeper.configuration.properties.ArrowIngestProperties.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
-import static sleeper.configuration.properties.ArrowIngestProperties.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.configuration.properties.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
+import static sleeper.configuration.properties.ArrowIngestProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
 
 public class ArrowRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrowRecordBatchFactory.class);

@@ -24,12 +24,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperties.REGION;
-import static sleeper.configuration.properties.CommonProperties.SUBNETS;
-import static sleeper.configuration.properties.CommonProperties.VPC_ID;
+import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.REGION;
+import static sleeper.configuration.properties.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;

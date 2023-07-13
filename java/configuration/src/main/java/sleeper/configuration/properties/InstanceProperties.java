@@ -29,7 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.CommonProperties.TAGS;
+import static sleeper.configuration.properties.CommonProperty.TAGS;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 

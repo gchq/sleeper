@@ -23,7 +23,7 @@ import sleeper.ingest.impl.ParquetConfiguration;
 import java.io.IOException;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {

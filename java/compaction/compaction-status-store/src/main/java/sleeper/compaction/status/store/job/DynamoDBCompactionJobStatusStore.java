@@ -41,8 +41,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;

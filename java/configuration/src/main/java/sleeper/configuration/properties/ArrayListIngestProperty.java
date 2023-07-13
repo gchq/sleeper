@@ -19,7 +19,7 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
-public interface ArrayListIngestProperties {
+public interface ArrayListIngestProperty {
     UserDefinedInstanceProperty MAX_RECORDS_TO_WRITE_LOCALLY = Index.propertyBuilder("sleeper.ingest.max.local.records")
             .description("The maximum number of records written to local file in an ingest job. (Records are written in sorted order to local " +
                     "disk before being uploaded to S3. Increasing this value increases the amount of time before data is visible in the " +

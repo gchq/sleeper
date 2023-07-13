@@ -21,13 +21,13 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.BulkImportUsingEMRPropertiesNonPersistant.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
-import static sleeper.configuration.properties.BulkImportUsingEMRPropertiesNonPersistant.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.BulkImportUsingEMRPropertiesNonPersistant.DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
-import static sleeper.configuration.properties.BulkImportUsingEMRPropertiesNonPersistant.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.BulkImportUsingEMRPropertiesNonPersistant.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+import static sleeper.configuration.properties.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 
-public interface BulkImportUsingEMRPropertiesPersistent {
+public interface PersistentEMRProperty {
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.release.label")
             .description("(Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.")
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())

@@ -20,7 +20,7 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public interface CompactionStatusStoreStack {
 

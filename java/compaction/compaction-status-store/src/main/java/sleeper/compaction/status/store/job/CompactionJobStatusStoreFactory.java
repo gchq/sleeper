@@ -21,7 +21,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class CompactionJobStatusStoreFactory {
 

@@ -22,7 +22,7 @@ import sleeper.configuration.Utils;
 import java.util.Arrays;
 import java.util.List;
 
-public interface CompactionProperties {
+public interface CompactionProperty {
     UserDefinedInstanceProperty ECR_COMPACTION_REPO = Index.propertyBuilder("sleeper.compaction.repo")
             .description("The name of the repository for the compaction container. The Docker image from the compaction-job-execution module " +
                     "should have been uploaded to an ECR repository of this name in this account.")

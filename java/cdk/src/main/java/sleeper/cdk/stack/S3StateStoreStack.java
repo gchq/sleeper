@@ -32,7 +32,7 @@ import sleeper.statestore.s3.S3StateStore;
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;

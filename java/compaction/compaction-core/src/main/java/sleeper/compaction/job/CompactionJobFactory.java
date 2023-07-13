@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;

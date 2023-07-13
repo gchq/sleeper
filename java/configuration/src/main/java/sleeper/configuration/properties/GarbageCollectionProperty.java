@@ -18,7 +18,7 @@ package sleeper.configuration.properties;
 
 import java.util.List;
 
-public interface GarbageCollectionProperties {
+public interface GarbageCollectionProperty {
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.gc.period.minutes")
             .description("The frequency in minutes with which the garbage collector lambda is run.")
             .defaultValue("15")

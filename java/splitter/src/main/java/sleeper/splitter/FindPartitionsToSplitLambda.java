@@ -38,7 +38,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static sleeper.configuration.properties.PartitionSplittingProperties.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
+import static sleeper.configuration.properties.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 

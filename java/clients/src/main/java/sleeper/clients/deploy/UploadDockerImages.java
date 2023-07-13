@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.CommonProperties.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.CommonProperties.REGION;
+import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.CommonProperty.REGION;
 
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);

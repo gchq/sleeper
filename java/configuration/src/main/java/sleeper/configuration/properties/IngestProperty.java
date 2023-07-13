@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface IngestProperties {
+public interface IngestProperty {
     UserDefinedInstanceProperty ECR_INGEST_REPO = Index.propertyBuilder("sleeper.ingest.repo")
             .description("The name of the ECR repository for the ingest container. The Docker image from the ingest module should have been " +
                     "uploaded to an ECR repository of this name in this account.")

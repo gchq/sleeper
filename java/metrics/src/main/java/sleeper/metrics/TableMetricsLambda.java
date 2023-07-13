@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CommonProperties.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CommonProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<String, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);

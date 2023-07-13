@@ -30,7 +30,7 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.configuration.properties.InstanceProperties;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 
 public class DynamoDBCompactionStatusStoreStack implements CompactionStatusStoreStack {
 

@@ -26,8 +26,8 @@ import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.CommonProperties.FILE_SYSTEM;
-import static sleeper.configuration.properties.CommonProperties.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;

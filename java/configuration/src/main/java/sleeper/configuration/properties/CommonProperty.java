@@ -22,7 +22,7 @@ import sleeper.configuration.Utils;
 import java.util.List;
 import java.util.Objects;
 
-public interface CommonProperties {
+public interface CommonProperty {
     UserDefinedInstanceProperty ID = Index.propertyBuilder("sleeper.id")
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")

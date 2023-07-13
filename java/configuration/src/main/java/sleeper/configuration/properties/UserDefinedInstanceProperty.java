@@ -44,26 +44,26 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
 
         private static SleeperPropertyIndex<UserDefinedInstanceProperty> createInstance() {
             SleeperPropertyIndex<UserDefinedInstanceProperty> index = new SleeperPropertyIndex<>();
-            index.addAll(CommonProperties.getAll());
-            index.addAll(IngestProperties.getAll());
-            index.addAll(ArrayListIngestProperties.getAll());
-            index.addAll(ArrowIngestProperties.getAll());
-            index.addAll(AsyncIngestPartitionFileWriterProperties.getAll());
+            index.addAll(CommonProperty.getAll());
+            index.addAll(IngestProperty.getAll());
+            index.addAll(ArrayListIngestProperty.getAll());
+            index.addAll(ArrowIngestProperty.getAll());
+            index.addAll(AsyncIngestPartitionFileWriterProperty.getAll());
             index.addAll(StatusStoreProperties.getAll());
-            index.addAll(BatcherProperties.getAll());
-            index.addAll(BulkImportProperties.getAll());
-            index.addAll(BulkImportUsingEMRProperties.getAll());
-            index.addAll(BulkImportUsingEMRPropertiesNonPersistant.getAll());
-            index.addAll(BulkImportUsingEMRPropertiesPersistent.getAll());
-            index.addAll(BulkImportUsingEKSProperties.getAll());
-            index.addAll(PartitionSplittingProperties.getAll());
-            index.addAll(GarbageCollectionProperties.getAll());
-            index.addAll(CompactionProperties.getAll());
+            index.addAll(BatcherProperty.getAll());
+            index.addAll(BulkImportProperty.getAll());
+            index.addAll(EMRProperty.getAll());
+            index.addAll(NonPersistentEMRProperty.getAll());
+            index.addAll(PersistentEMRProperty.getAll());
+            index.addAll(EKSProperty.getAll());
+            index.addAll(PartitionSplittingProperty.getAll());
+            index.addAll(GarbageCollectionProperty.getAll());
+            index.addAll(CompactionProperty.getAll());
             index.addAll(QueryProperties.getAll());
-            index.addAll(DashboardProperties.getAll());
+            index.addAll(DashboardProperty.getAll());
             index.addAll(LoggingLevelsProperties.getAll());
-            index.addAll(AthenaProperties.getAll());
-            index.addAll(DefaultProperties.getAll());
+            index.addAll(AthenaProperty.getAll());
+            index.addAll(DefaultProperty.getAll());
 
 
             return index;

@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 
 import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
 import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
-import static sleeper.configuration.properties.CommonProperties.SUBNETS;
+import static sleeper.configuration.properties.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;

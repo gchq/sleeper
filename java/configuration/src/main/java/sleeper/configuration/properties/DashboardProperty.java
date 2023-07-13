@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface DashboardProperties {
+public interface DashboardProperty {
     UserDefinedInstanceProperty DASHBOARD_TIME_WINDOW_MINUTES = Index.propertyBuilder("sleeper.dashboard.time.window.minutes")
             .description("The period in minutes used in the dashboard.")
             .defaultValue("5")

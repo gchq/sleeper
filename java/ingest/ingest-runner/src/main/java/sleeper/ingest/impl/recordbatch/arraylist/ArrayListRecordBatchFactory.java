@@ -27,8 +27,8 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 
 import java.util.Objects;
 
-import static sleeper.configuration.properties.ArrayListIngestProperties.MAX_IN_MEMORY_BATCH_SIZE;
-import static sleeper.configuration.properties.ArrayListIngestProperties.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
+import static sleeper.configuration.properties.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 
 public class ArrayListRecordBatchFactory<INCOMINGDATATYPE> implements RecordBatchFactory<INCOMINGDATATYPE> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArrayListRecordBatchFactory.class);

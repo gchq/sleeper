@@ -21,7 +21,7 @@ import sleeper.configuration.Utils;
 
 import java.util.List;
 
-public interface BatcherProperties {
+public interface BatcherProperty {
     UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.submitter.memory.mb")
             .description("The amount of memory in MB for the lambda that receives submitted requests to ingest files.")
             .defaultValue("1024")

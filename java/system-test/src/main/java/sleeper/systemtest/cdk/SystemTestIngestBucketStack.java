@@ -28,8 +28,8 @@ import sleeper.configuration.properties.InstanceProperties;
 
 import java.util.Locale;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.IngestProperties.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class SystemTestIngestBucketStack extends NestedStack {
 

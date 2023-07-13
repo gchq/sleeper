@@ -37,8 +37,8 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
-import static sleeper.configuration.properties.CommonProperties.ID;
-import static sleeper.configuration.properties.CompactionProperties.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
+import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 
 public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
 

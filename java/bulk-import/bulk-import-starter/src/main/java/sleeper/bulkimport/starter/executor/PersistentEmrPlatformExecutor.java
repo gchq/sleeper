@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.InstanceProperties;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 
 /**
  *

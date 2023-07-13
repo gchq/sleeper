@@ -42,7 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CommonProperties.ID;
+import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.StatusStoreProperties.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
