@@ -25,6 +25,7 @@ import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture.X
 import static sleeper.configuration.properties.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.configuration.properties.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
 import static sleeper.configuration.properties.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
+import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK_DEFAULT_PARALLELISM;
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_CORES;
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
@@ -46,7 +47,6 @@ import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
-import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 
 /**
  * Properties in this class are based on the recommended values in this blog:

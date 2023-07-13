@@ -38,8 +38,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
@@ -48,6 +46,8 @@ import static sleeper.configuration.properties.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
 import static sleeper.configuration.properties.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.LoggingLevelsProperties.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.LoggingLevelsProperties.AWS_LOGGING_LEVEL;

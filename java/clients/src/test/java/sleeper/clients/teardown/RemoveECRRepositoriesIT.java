@@ -38,8 +38,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEcrClient;
-import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 

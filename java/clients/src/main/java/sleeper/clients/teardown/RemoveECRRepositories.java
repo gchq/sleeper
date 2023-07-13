@@ -27,8 +27,8 @@ import sleeper.configuration.properties.InstanceProperties;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {

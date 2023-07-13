@@ -85,7 +85,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.CommonProperty.ID;
 import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
@@ -93,6 +92,7 @@ import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_D
 import static sleeper.configuration.properties.CommonProperty.REGION;
 import static sleeper.configuration.properties.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
