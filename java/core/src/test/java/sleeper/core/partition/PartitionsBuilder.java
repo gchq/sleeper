@@ -111,8 +111,12 @@ public class PartitionsBuilder {
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition.Builder parent = partitionById(parentId);
         Pair<Partition, List<Partition.Builder>> returnedPair = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
+        Partition updatedParent = returnedPair.getLeft();
         List<Partition.Builder> children = returnedPair.getRight();
         children.forEach(this::add);
+        
+        partitions.set(partitions.indexOf(parent), updatedParent.toBuilder());
+        partitionById.put(parentId, updatedParent.toBuilder());
         return this;
     }
 
