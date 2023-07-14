@@ -535,65 +535,41 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForStringKeyCorrectly() throws Exception {
+    void shouldSplitPartitionForStringKey() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .singlePartition("A").buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", "A50")
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
+
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
             for (int r = 0; r < 100; r++) {
                 Record record = new Record();
+                //A + value from 0-10100
                 record.put("key", "A" + i + "" + r);
                 records.add(record);
             }
             ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+        Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
-                .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toList());
-        partitionSplitter.splitPartition(rootPartition, fileNames);
+        partitionSplitter.splitPartition(treeBefore.getRootPartition(),
+                stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
 
         // Then
-        List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions).hasSize(3);
-        List<Partition> nonLeafPartitions = partitions.stream()
-                .filter(p -> !p.isLeafPartition())
-                .collect(Collectors.toList());
-        assertThat(nonLeafPartitions).hasSize(1);
-        Set<Partition> leafPartitions = partitions.stream()
-                .filter(Partition::isLeafPartition)
-                .collect(Collectors.toSet());
-        Iterator<Partition> it = leafPartitions.iterator();
-        Partition leafPartition1 = it.next();
-        Partition leafPartition2 = it.next();
-        String splitPoint;
-        String minRowkey1 = (String) leafPartition1.getRegion().getRange("key").getMin();
-        String minRowkey2 = (String) leafPartition2.getRegion().getRange("key").getMin();
-        String maxRowKey1 = (String) leafPartition1.getRegion().getRange("key").getMax();
-        String maxRowKey2 = (String) leafPartition2.getRegion().getRange("key").getMax();
-        if ("".equals(minRowkey1)) {
-            splitPoint = maxRowKey1;
-            assertThat(minRowkey2).isEqualTo(maxRowKey1);
-            assertThat(maxRowKey2).isNull();
-        } else {
-            splitPoint = maxRowKey2;
-            assertThat(minRowkey2).isEmpty();
-            assertThat(minRowkey1).isEqualTo(maxRowKey2);
-            assertThat(maxRowKey1).isNull();
-        }
-        assertThat("A00".compareTo(splitPoint) < 0 && splitPoint.compareTo("A9100") < 0).isTrue();
-        assertThat(leafPartitions).allSatisfy(partition -> {
-            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-            assertThat(partition.getChildPartitionIds()).isEmpty();
-        });
-        assertThat(nonLeafPartitions).containsExactly(rootPartition);
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
+                treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+        assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
+                treeAfter.getPartition("B"), treeAfter.getPartition("C"));
     }
 
     @Test
