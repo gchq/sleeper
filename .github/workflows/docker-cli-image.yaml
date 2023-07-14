@@ -67,8 +67,7 @@ jobs:
       - name: Download artifacts from previous workflows
         uses: actions/download-artifact@v3
       - name: Load dependencies image
-        run: |
-          docker import dependencies-image/dependencies-image.tar ${{ env.DEPENDENCIES_IMAGE }}
+        run: docker load --import dependencies-image/dependencies-image.tar
       - name: Expose dependencies image to Docker Buildx via local registry
         run: docker push ${{ env.DEPENDENCIES_IMAGE }}
       - name: Login to GitHub Container Registry

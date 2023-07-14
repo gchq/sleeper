@@ -8,12 +8,18 @@ on:
 
 env:
   DOCKER_PLATFORMS: linux/amd64,linux/arm64/v8
-  DEPENDENCIES_IMAGE: sleeper-dependencies:current
+  DEPENDENCIES_IMAGE: localhost:5000/sleeper-dependencies:current
   BUILD_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
 jobs:
   setup:
     runs-on: ubuntu-latest
+
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
 
     steps:
       - uses: actions/checkout@v3
@@ -33,6 +39,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./scripts/cli/dependencies
+          push: true
           sbom: false
           provenance: false
           tags: ${{ env.DEPENDENCIES_IMAGE }}
@@ -40,7 +47,8 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
-          outputs: type=oci,dest=/tmp/dependencies-image.tar
+      - name: Save dependencies image to tarball
+        run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
         uses: actions/upload-artifact@v3
         with:
