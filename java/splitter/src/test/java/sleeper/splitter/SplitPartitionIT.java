@@ -509,71 +509,18 @@ public class SplitPartitionIT {
     @Test
     public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint() throws Exception {
         // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        // Non-leaf partitions
-        Range rootRange = new RangeFactory(schema).createRange(field, new byte[]{0}, null);
-        Partition rootPartition = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(new Region(rootRange))
-                .id("root")
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .childPartitionIds(Collections.emptyList())
-                .dimension(0)
-                .build();
-        Range range12 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{51});
-        Partition partition12 = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(new Region(range12))
-                .id("id12")
-                .leafPartition(false)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(Collections.emptyList())
-                .dimension(0)
-                .build();
-        // Leaf partitions
-        Range range1 = new RangeFactory(schema).createRange(field, new byte[]{0}, new byte[]{50});
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(new Region(range1))
-                .id("id1")
-                .leafPartition(true)
-                .parentPartitionId(partition12.getId())
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        //  - Partition 2 only includes the key 0 (partitions do not include
-        //      the maximum key), and so cannot be split.
-        Range range2 = new RangeFactory(schema).createRange(field, new byte[]{50}, new byte[]{51});
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(new Region(range2))
-                .id("id2")
-                .leafPartition(true)
-                .parentPartitionId(partition12.getId())
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        Range range3 = new RangeFactory(schema).createRange(field, new byte[]{51}, null);
-        Partition partition3 = Partition.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .region(new Region(range3))
-                .id("id3")
-                .leafPartition(true)
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(Collections.emptyList())
-                .dimension(-1)
-                .build();
-        // Wire up partitions
-        rootPartition.setChildPartitionIds(Arrays.asList(partition12.getId(), partition3.getId()));
-        partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        //
-        List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "id12", "id3", new byte[]{(byte) 51})
+                .splitToNewChildren("id12", "id1", "id2", new byte[]{(byte) 50})
+                .buildTree();
+
+        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
-        for (Partition partition : partitions) {
+        for (Partition partition : tree.getAllPartitions()) {
             for (int i = 0; i < 10; i++) {
                 List<Record> records = new ArrayList<>();
                 for (int r = 0; r < 100; r++) {
@@ -581,16 +528,16 @@ public class SplitPartitionIT {
                     record.put("key", new byte[]{(byte) r});
                     records.add(record);
                 }
-                if (partition.equals(partition1)) {
+                if (partition.getId().equals("id1")) {
                     int j = 0;
-                    for (byte r = ((byte[]) partition.getRegion().getRange("key").getMin())[0];
+                    for (byte r = (byte) 0;
                          r < ((byte[]) partition.getRegion().getRange("key").getMax())[0] && j < 10;
                          r++, j++) {
                         Record record = new Record();
                         record.put("key", new byte[]{r});
                         records.add(record);
                     }
-                } else if (partition.equals(partition2)) {
+                } else if (partition.getId().equals("id2")) {
                     for (int j = 0; j < 10; j++) {
                         Record record = new Record();
                         record.put("key", new byte[]{50});
@@ -610,15 +557,15 @@ public class SplitPartitionIT {
 
         // When
         List<String> fileNames = stateStore.getActiveFiles().stream()
-                .filter(fi -> fi.getPartitionId().equals(partition2.getId()))
+                .filter(fi -> fi.getPartitionId().equals("id2"))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        partitionSplitter.splitPartition(partition2, fileNames);
+        partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
 
         // Then
         List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-        assertThat(partitionsAfterSplit).hasSameSizeAs(partitions);
-        assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(partitions));
+        assertThat(partitionsAfterSplit).hasSameSizeAs(tree.getAllPartitions());
+        assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(tree.getAllPartitions()));
     }
 
     @Test
