@@ -62,7 +62,7 @@ jobs:
         uses: actions/download-artifact@v3
       - name: Load Docker images from previous workflows
         run: |
-          docker load --input dependencies-image/dependencies-image.tar
+          docker import dependencies-image/dependencies-image.tar ${{ env.DEPENDENCIES_IMAGE }}
       - name: Move jars from previous workflows
         run: |
           mv scripts-jars ./scripts/jars
