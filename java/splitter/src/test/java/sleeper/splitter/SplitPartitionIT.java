@@ -111,7 +111,6 @@ public class SplitPartitionIT {
         Partition rootPartition = Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(new Region(rootRange))
-                .region(new Region(rootRange))
                 .id("root")
                 .leafPartition(false)
                 .parentPartitionId(null)
@@ -499,13 +498,19 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForLongKeyCorrectly() throws Exception {
+    void shouldSplitPartitionForLongKey() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
-        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .singlePartition("A").buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 500L)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
+
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
             for (long r = 100L * i; r < 100L * (i + 1); r++) {
@@ -515,39 +520,18 @@ public class SplitPartitionIT {
             }
             ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+        Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
 
         // When
-        List<String> fileNames = stateStore.getActiveFiles().stream()
-                .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
-                .map(FileInfo::getFilename)
-                .collect(Collectors.toList());
-        partitionSplitter.splitPartition(rootPartition, fileNames);
+        partitionSplitter.splitPartition(treeBefore.getRootPartition(),
+                stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
 
         // Then
-        List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions).hasSize(3);
-        List<Partition> nonLeafPartitions = partitions.stream()
-                .filter(p -> !p.isLeafPartition())
-                .collect(Collectors.toList());
-        assertThat(nonLeafPartitions).hasSize(1);
-        Set<Partition> leafPartitions = partitions.stream()
-                .filter(Partition::isLeafPartition)
-                .collect(Collectors.toSet());
-        Iterator<Partition> it = leafPartitions.iterator();
-        Object splitPoint = splitPoint(it.next(), it.next(), "key");
-        assertThat(leafPartitions)
-                .extracting(partition -> partition.getRegion().getRange("key"))
-                .extracting(Range::getMin, Range::getMax)
-                .containsExactlyInAnyOrder(
-                        tuple(Long.MIN_VALUE, splitPoint),
-                        tuple(splitPoint, null));
-        assertThat((long) splitPoint).isStrictlyBetween(400L, 600L);
-        assertThat(leafPartitions).allSatisfy(partition -> {
-            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-            assertThat(partition.getChildPartitionIds()).isEmpty();
-        });
-        assertThat(nonLeafPartitions).containsExactly(rootPartition);
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
+                treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+        assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
+                treeAfter.getPartition("B"), treeAfter.getPartition("C"));
     }
 
     @Test
@@ -613,8 +597,7 @@ public class SplitPartitionIT {
     }
 
     @Test
-    public void shouldSplitPartitionForByteArrayKeyCorrectly()
-            throws Exception {
+    public void shouldSplitPartitionForByteArrayKeyCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
         StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
