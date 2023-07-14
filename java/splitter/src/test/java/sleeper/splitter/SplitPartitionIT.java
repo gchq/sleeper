@@ -15,24 +15,12 @@
  */
 package sleeper.splitter;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -51,8 +39,6 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,58 +49,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
-@Testcontainers
 public class SplitPartitionIT {
-    private static final int DYNAMO_PORT = 8000;
-    @Container
-    public static GenericContainer<?> dynamoDb = new GenericContainer<>(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
-    private static AmazonDynamoDB dynamoDBClient;
     @TempDir
     public Path folder;
 
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
 
-    @BeforeAll
-    public static void initDynamoClient() {
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
-                        + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
-        dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    private static StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
-    }
-
-    private static StateStore getStateStore(Schema schema, List<Partition> partitions) throws StateStoreException {
-        String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
-        StateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise(partitions);
-        return dynamoStateStore;
-    }
-
     @Test
     public void shouldSplitPartitionForIntKeyCorrectly() throws Exception {
         // Given
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -221,7 +174,7 @@ public class SplitPartitionIT {
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
-        StateStore stateStore = getStateStore(schema, partitions);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
@@ -315,7 +268,7 @@ public class SplitPartitionIT {
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
-        StateStore stateStore = getStateStore(schema, partitions);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
@@ -362,7 +315,7 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                 .build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -426,7 +379,7 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                 .build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -490,7 +443,7 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                 .build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -557,7 +510,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForLongKeyCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -609,7 +562,7 @@ public class SplitPartitionIT {
     public void shouldSplitPartitionForStringKeyCorrectly() throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -672,7 +625,7 @@ public class SplitPartitionIT {
             throws Exception {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -786,7 +739,7 @@ public class SplitPartitionIT {
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
-        StateStore stateStore = getStateStore(schema, partitions);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
@@ -901,7 +854,7 @@ public class SplitPartitionIT {
         partition12.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
         //
         List<Partition> partitions = Arrays.asList(rootPartition, partition12, partition1, partition2, partition3);
-        StateStore stateStore = getStateStore(schema, partitions);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(partitions);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         for (Partition partition : partitions) {
@@ -954,7 +907,7 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                 .build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -1020,7 +973,7 @@ public class SplitPartitionIT {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                 .build();
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
         Partition rootPartition = stateStore.getAllPartitions().get(0);
