@@ -45,7 +45,6 @@ import sleeper.statestore.StateStore;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -259,9 +258,11 @@ public class SplitPartitionIT {
             partitionSplitter.splitPartition(partition2, fileNames);
 
             // Then
-            List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-            assertThat(partitionsAfterSplit).hasSameSizeAs(tree.getAllPartitions());
-            assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(tree.getAllPartitions()));
+            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("root"), tree.getPartition("id12"),
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
         }
 
         @Test
@@ -310,9 +311,11 @@ public class SplitPartitionIT {
             partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
 
             // Then
-            List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-            assertThat(partitionsAfterSplit).hasSameSizeAs(tree.getAllPartitions());
-            assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(tree.getAllPartitions()));
+            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("root"), tree.getPartition("id12"),
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
         }
 
         @Test
@@ -372,9 +375,11 @@ public class SplitPartitionIT {
             partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
 
             // Then
-            List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-            assertThat(partitionsAfterSplit).hasSameSizeAs(tree.getAllPartitions());
-            assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(tree.getAllPartitions()));
+            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("root"), tree.getPartition("id12"),
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
         }
 
         @Test
@@ -429,9 +434,11 @@ public class SplitPartitionIT {
             partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
 
             // Then
-            List<Partition> partitionsAfterSplit = stateStore.getAllPartitions();
-            assertThat(partitionsAfterSplit).hasSameSizeAs(tree.getAllPartitions());
-            assertThat(new HashSet<>(partitionsAfterSplit)).isEqualTo(new HashSet<>(tree.getAllPartitions()));
+            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("root"), tree.getPartition("id12"),
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
+                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
         }
     }
 
