@@ -64,8 +64,9 @@ public class InMemoryPartitionStore implements PartitionStore {
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
             Partition splitPartition, Partition newPartition1, Partition newPartition2) {
-        partitions = Stream.concat(partitions.stream()
-                                .filter(partition -> !Objects.equals(partition.getId(), splitPartition.getId())),
+        partitions = Stream.concat(
+                        partitions.stream().filter(partition ->
+                                !Objects.equals(partition.getId(), splitPartition.getId())),
                         Stream.of(splitPartition, newPartition1, newPartition2))
                 .collect(Collectors.toUnmodifiableList());
     }
