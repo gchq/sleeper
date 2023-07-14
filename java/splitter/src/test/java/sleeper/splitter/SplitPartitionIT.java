@@ -41,9 +41,7 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStore;
-import sleeper.statestore.inmemory.InMemoryPartitionStore;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -73,17 +71,16 @@ public class SplitPartitionIT {
     @Test
     void shouldSplitRootToTwoChildren() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
-        PartitionTree treeBefore = new PartitionsBuilder(schema).singlePartition("A").buildTree();
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .singlePartition("A").buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 500)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
 
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
-        PartitionTree treeAfter = new PartitionsBuilder(schema)
-                .rootFirst("A")
-                .splitToNewChildren("A", "B", "C", 8)
-                .buildTree();
-        PartitionStore store = new InMemoryPartitionStore(treeBefore.getAllPartitions());
         for (int i = 0; i < 10; i++) {
             List<Record> records = new ArrayList<>();
             for (int r = 100 * i; r < 100 * (i + 1); r++) {
@@ -93,14 +90,16 @@ public class SplitPartitionIT {
             }
             ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
         // When
-        partitionSplitter.splitPartition(treeBefore.getRootPartition(), stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+        partitionSplitter.splitPartition(treeBefore.getRootPartition(),
+                stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
 
         // Then
-        assertThat(store.getAllPartitions()).containsExactlyInAnyOrder(
+        assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
                 treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
-        assertThat(store.getLeafPartitions()).containsExactlyInAnyOrder(
+        assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
                 treeAfter.getPartition("B"), treeAfter.getPartition("C"));
     }
 
