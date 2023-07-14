@@ -15,9 +15,9 @@
  */
 package sleeper.systemtest;
 
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.SleeperPropertyIndex;
 
 /**
  * A class that extends {@link InstanceProperties} adding properties needed to

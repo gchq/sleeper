@@ -17,8 +17,8 @@ package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.io.PrintWriter;
 import java.util.List;

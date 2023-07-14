@@ -18,11 +18,11 @@ package sleeper.configuration.properties.format;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.lang.WordUtils;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.properties.table.TablePropertyGroup;

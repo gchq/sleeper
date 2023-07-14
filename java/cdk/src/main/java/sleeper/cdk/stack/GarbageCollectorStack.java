@@ -30,8 +30,8 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.SleeperScheduleRule;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 import java.util.List;

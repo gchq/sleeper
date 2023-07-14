@@ -19,8 +19,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.Utils;
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.ingest.IngestMode;
 
 import java.util.List;

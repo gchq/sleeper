@@ -19,8 +19,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 
 import java.util.List;
