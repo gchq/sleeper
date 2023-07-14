@@ -47,6 +47,8 @@ jobs:
           labels: |
             git-commit=${{ github.sha }}
             build-url=${{ env.BUILD_URL }}
+      - name: Pull dependencies image from registry
+        run: docker pull ${{ env.DEPENDENCIES_IMAGE }}
       - name: Save dependencies image to tarball
         run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
