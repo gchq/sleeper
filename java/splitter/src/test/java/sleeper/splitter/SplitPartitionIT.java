@@ -17,10 +17,13 @@ package sleeper.splitter;
 
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -38,7 +41,9 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.inmemory.InMemoryPartitionStore;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,6 +68,41 @@ public class SplitPartitionIT {
 
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
+
+    @Disabled
+    @Test
+    void shouldSplitRootToTwoChildren() throws Exception {
+        // Given
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+        PartitionTree treeBefore = new PartitionsBuilder(schema).singlePartition("A").buildTree();
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("A")
+                .splitToNewChildren("A", "B", "C", 8)
+                .buildTree();
+        PartitionStore store = new InMemoryPartitionStore(treeBefore.getAllPartitions());
+        for (int i = 0; i < 10; i++) {
+            List<Record> records = new ArrayList<>();
+            for (int r = 100 * i; r < 100 * (i + 1); r++) {
+                Record record = new Record();
+                record.put("key", r);
+                records.add(record);
+            }
+            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+        }
+
+        // When
+        partitionSplitter.splitPartition(treeBefore.getRootPartition(), stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+
+        // Then
+        assertThat(store.getAllPartitions()).containsExactlyInAnyOrder(
+                treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+        assertThat(store.getLeafPartitions()).containsExactlyInAnyOrder(
+                treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+    }
 
     @Test
     public void shouldSplitPartitionForIntKeyCorrectly() throws Exception {
