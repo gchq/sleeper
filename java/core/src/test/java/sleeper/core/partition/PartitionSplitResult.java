@@ -11,21 +11,24 @@ public class PartitionSplitResult {
         parent = builder.parent;
         children = builder.children;
     }
-    public static Builder builder(){
+
+    public static Builder builder() {
         return new Builder();
     }
 
     public Partition.Builder getParent() {
         return parent;
     }
-    public Partition buildParent(){
+
+    public Partition buildParent() {
         return parent.build();
     }
 
     public List<Partition.Builder> getChildren() {
         return children;
     }
-    public List<Partition> buildChildren(){
+
+    public List<Partition> buildChildren() {
         return children.stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
