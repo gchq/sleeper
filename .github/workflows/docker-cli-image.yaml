@@ -63,11 +63,6 @@ jobs:
       - name: Load Docker images from previous workflows
         run: |
           docker import dependencies-image/dependencies-image.tar ${{ env.DEPENDENCIES_IMAGE }}
-      - name: Move jars from previous workflows
-        run: |
-          mv scripts-jars ./scripts/jars
-          mv environment-jars ./scripts/cli/environment/jars
-      - run: docker image ls
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
