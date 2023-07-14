@@ -17,7 +17,6 @@ package sleeper.splitter;
 
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -52,6 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -67,9 +67,8 @@ public class SplitPartitionIT {
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
 
-    @Disabled
     @Test
-    void shouldSplitRootToTwoChildren() throws Exception {
+    void shouldSplitPartitionForIntKey() throws Exception {
         // Given
         PartitionTree treeBefore = new PartitionsBuilder(schema)
                 .singlePartition("A").buildTree();
@@ -90,7 +89,8 @@ public class SplitPartitionIT {
             }
             ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
         }
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+        Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
 
         // When
         partitionSplitter.splitPartition(treeBefore.getRootPartition(),
@@ -101,53 +101,6 @@ public class SplitPartitionIT {
                 treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
         assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
                 treeAfter.getPartition("B"), treeAfter.getPartition("C"));
-    }
-
-    @Test
-    public void shouldSplitPartitionForIntKeyCorrectly() throws Exception {
-        // Given
-        StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
-        String path = createTempDirectory(folder, null).toString();
-        String path2 = createTempDirectory(folder, null).toString();
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
-        for (int i = 0; i < 10; i++) {
-            List<Record> records = new ArrayList<>();
-            for (int r = 100 * i; r < 100 * (i + 1); r++) {
-                Record record = new Record();
-                record.put("key", r);
-                records.add(record);
-            }
-            ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-        }
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
-
-        // When
-        partitionSplitter.splitPartition(rootPartition, stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
-
-        // Then
-        List<Partition> partitions = stateStore.getAllPartitions();
-        assertThat(partitions).hasSize(3);
-        List<Partition> nonLeafPartitions = partitions.stream()
-                .filter(p -> !p.isLeafPartition())
-                .collect(Collectors.toList());
-        assertThat(nonLeafPartitions).hasSize(1);
-        Set<Partition> leafPartitions = partitions.stream()
-                .filter(Partition::isLeafPartition)
-                .collect(Collectors.toSet());
-        Iterator<Partition> it = leafPartitions.iterator();
-        Object splitPoint = splitPoint(it.next(), it.next(), "key");
-        assertThat(leafPartitions)
-                .extracting(partition -> partition.getRegion().getRange("key"))
-                .extracting(Range::getMin, Range::getMax)
-                .containsExactlyInAnyOrder(
-                        tuple(Integer.MIN_VALUE, splitPoint),
-                        tuple(splitPoint, null));
-        assertThat((int) splitPoint).isStrictlyBetween(400, 600);
-        assertThat(leafPartitions).allSatisfy(partition -> {
-            assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-            assertThat(partition.getChildPartitionIds()).isEmpty();
-        });
-        assertThat(nonLeafPartitions).containsExactly(rootPartition);
     }
 
     @Test
