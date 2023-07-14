@@ -23,12 +23,12 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Locale;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * This configuration stack deploys the config bucket used to store the Sleeper

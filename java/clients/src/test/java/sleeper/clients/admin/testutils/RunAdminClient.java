@@ -23,7 +23,7 @@ import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;

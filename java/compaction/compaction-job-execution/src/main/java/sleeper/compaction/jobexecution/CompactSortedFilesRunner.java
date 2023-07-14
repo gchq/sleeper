@@ -41,7 +41,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
@@ -59,11 +59,11 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.configuration.properties.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes

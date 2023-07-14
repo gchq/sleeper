@@ -16,6 +16,9 @@
 
 package sleeper.configuration.properties;
 
+import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.configuration.properties.instance.InstancePropertyGroup;
+
 public class DummyInstanceProperty implements InstanceProperty {
     private final String propertyName;
 

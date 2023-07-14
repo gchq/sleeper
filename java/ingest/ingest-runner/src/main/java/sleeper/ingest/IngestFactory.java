@@ -19,7 +19,7 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
@@ -40,9 +40,9 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 
 public class IngestFactory {
 

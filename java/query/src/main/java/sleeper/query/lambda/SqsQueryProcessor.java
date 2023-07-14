@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -57,8 +57,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static sleeper.configuration.properties.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_RECORD_RETRIEVAL_THREADS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 
 public class SqsQueryProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(SqsQueryProcessorLambda.class);

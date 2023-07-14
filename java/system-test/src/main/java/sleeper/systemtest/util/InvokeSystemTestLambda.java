@@ -21,8 +21,8 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;

@@ -22,11 +22,11 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;

@@ -18,7 +18,7 @@ package sleeper.statestore.s3;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.DelegatingStateStore;
@@ -26,8 +26,8 @@ import sleeper.statestore.StateStoreException;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;

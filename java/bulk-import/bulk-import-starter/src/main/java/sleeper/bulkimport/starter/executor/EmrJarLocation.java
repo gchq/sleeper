@@ -16,10 +16,10 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
-import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class EmrJarLocation {
 

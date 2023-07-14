@@ -18,7 +18,7 @@ package sleeper.ingest.batcher.store;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -27,7 +27,7 @@ import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;

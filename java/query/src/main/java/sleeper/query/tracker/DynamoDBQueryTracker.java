@@ -28,7 +28,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
@@ -39,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 
 /**
  * The query tracker updates and keeps track of the status of queries so that clients

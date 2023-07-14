@@ -30,7 +30,7 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;
@@ -43,8 +43,8 @@ import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<String, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);

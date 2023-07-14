@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.instance;
 
 
 import sleeper.configuration.Utils;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 import java.util.Objects;

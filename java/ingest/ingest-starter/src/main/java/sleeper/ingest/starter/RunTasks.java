@@ -27,7 +27,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.RunECSTasks;
@@ -35,13 +35,13 @@ import sleeper.job.common.RunECSTasks;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 
 /**
  * Finds the number of messages on a queue, and starts up one Fargate task for each, up to a configurable maximum.

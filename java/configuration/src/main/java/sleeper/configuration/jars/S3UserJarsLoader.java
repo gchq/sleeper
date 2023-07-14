@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -30,8 +30,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperty.USER_JARS;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 
 public class S3UserJarsLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3UserJarsLoader.class);

@@ -20,17 +20,17 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.RunCommand;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImages {
     private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);

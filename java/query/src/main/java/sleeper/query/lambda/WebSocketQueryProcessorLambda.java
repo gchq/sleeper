@@ -31,8 +31,8 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;

@@ -24,8 +24,8 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertyGroup;
 
@@ -47,15 +47,15 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.instanc
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.tablePropertyGroupOption;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.configuration.properties.CommonProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.DefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.configuration.properties.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
-import static sleeper.configuration.properties.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;

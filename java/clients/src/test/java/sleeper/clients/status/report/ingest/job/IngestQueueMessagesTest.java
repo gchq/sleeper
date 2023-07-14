@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.QueueMessageCountsInMemory;
 
@@ -30,10 +30,10 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.ingestMessageCount;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 class IngestQueueMessagesTest {

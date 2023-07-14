@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.instance;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import sleeper.configuration.properties.SleeperPropertyIndex;
 
 import java.util.List;
 

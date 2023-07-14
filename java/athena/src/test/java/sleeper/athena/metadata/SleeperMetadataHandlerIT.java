@@ -48,7 +48,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.splitter.SplitPartition;
@@ -64,8 +64,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {

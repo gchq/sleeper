@@ -36,17 +36,17 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.CommonProperty.REGION;
-import static sleeper.configuration.properties.CommonProperty.VPC_ENDPOINT_CHECK;
-import static sleeper.configuration.properties.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 
 public class VpcStack extends NestedStack {
     private static final Logger LOGGER = LoggerFactory.getLogger(VpcStack.class);

@@ -24,11 +24,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertiesValidationReporter;
-import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.core.schema.Schema;
@@ -43,7 +43,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;

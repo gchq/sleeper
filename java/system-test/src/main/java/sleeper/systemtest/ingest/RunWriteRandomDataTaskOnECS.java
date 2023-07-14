@@ -42,9 +42,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.configuration.properties.CommonProperty.FARGATE_VERSION;
-import static sleeper.configuration.properties.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;

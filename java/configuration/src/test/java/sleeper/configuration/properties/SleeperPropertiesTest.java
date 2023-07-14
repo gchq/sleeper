@@ -17,6 +17,7 @@ package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 
 import java.io.PrintWriter;
@@ -24,8 +25,8 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.CommonProperty.USER_JARS;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 
 class SleeperPropertiesTest {

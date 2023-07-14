@@ -17,21 +17,23 @@ package sleeper.configuration.properties;
 
 import com.amazonaws.services.s3.AmazonS3;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperty.REGION;
-import static sleeper.configuration.properties.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.InstanceProperties.getConfigBucketFromInstanceId;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 public class InstancePropertiesTestHelper {
 

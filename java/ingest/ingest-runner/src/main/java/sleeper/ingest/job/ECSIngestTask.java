@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
@@ -46,7 +46,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.IngestProperty.S3A_INPUT_FADVISE;
+import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
 
 public class ECSIngestTask {
     private ECSIngestTask() {

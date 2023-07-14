@@ -26,7 +26,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.SystemTestProperties;
 
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class WaitForEMRClusters {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForEMRClusters.class);

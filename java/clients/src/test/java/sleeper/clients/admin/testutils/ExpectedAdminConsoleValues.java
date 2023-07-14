@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.configuration.properties.InstancePropertyGroup;
+import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.table.TablePropertyGroup;
 

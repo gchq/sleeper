@@ -33,7 +33,7 @@ import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -57,7 +57,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
-import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 @Testcontainers
 public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {

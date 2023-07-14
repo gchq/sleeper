@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,8 +40,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;

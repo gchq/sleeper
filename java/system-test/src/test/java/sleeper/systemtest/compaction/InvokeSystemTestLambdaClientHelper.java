@@ -16,15 +16,15 @@
 
 package sleeper.systemtest.compaction;
 
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class InvokeSystemTestLambdaClientHelper {
     private final Map<String, Runnable> lambdaByPropertyName = new HashMap<>();

@@ -19,11 +19,11 @@ package sleeper.ingest.batcher.store;
 import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class DynamoDBIngestBatcherStoreCreatorIT extends DynamoDBTestBase {

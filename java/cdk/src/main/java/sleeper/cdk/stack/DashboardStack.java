@@ -33,7 +33,7 @@ import software.amazon.awscdk.services.cloudwatch.YAxisProps;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.ArrayList;
@@ -45,9 +45,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.METRICS_NAMESPACE;
-import static sleeper.configuration.properties.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
 public class DashboardStack extends NestedStack {

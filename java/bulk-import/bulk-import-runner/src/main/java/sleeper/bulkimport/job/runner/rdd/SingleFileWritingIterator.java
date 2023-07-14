@@ -25,7 +25,7 @@ import org.apache.spark.sql.RowFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.key.Key;
@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class SingleFileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);

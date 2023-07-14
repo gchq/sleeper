@@ -36,7 +36,7 @@ import sleeper.compaction.job.CompactionJobSerDe;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -59,9 +59,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
-import static sleeper.configuration.properties.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 @Testcontainers

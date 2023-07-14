@@ -26,9 +26,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.IOException;
@@ -40,12 +40,12 @@ import java.util.stream.Stream;
 
 import static java.util.regex.Pattern.DOTALL;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperty.REGION;
-import static sleeper.configuration.properties.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;

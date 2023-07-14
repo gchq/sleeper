@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.instance;
 
 
 import sleeper.configuration.Utils;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 

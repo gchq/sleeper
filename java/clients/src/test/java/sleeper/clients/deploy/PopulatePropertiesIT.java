@@ -26,7 +26,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
@@ -37,17 +37,17 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.CommonProperty.REGION;
-import static sleeper.configuration.properties.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.CompactionProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.EKSProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers

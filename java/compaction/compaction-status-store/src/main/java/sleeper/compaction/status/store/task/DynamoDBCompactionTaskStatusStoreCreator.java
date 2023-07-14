@@ -21,15 +21,15 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 

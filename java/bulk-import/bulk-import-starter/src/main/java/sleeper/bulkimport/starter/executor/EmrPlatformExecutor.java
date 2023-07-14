@@ -33,23 +33,23 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.util.Collections;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.CommonProperty.ID;
-import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
-import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
-import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
-import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.configuration.properties.EMRProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_RELEASE_LABEL;
 
 /**

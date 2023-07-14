@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 
 /**

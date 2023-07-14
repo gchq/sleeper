@@ -21,13 +21,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class BulkImportArguments {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportArguments.class);
