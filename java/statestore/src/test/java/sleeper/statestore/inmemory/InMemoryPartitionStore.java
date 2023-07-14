@@ -23,12 +23,13 @@ import sleeper.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class InMemoryPartitionStore implements PartitionStore {
 
-    private Map<String, Partition> partitionsById = Map.of();
+    private List<Partition> partitions = List.of();
 
     public InMemoryPartitionStore(List<Partition> partitions) {
         initialise(partitions);
@@ -40,13 +41,12 @@ public class InMemoryPartitionStore implements PartitionStore {
 
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
-        return partitionsById.values().stream()
-                .collect(Collectors.toUnmodifiableList());
+        return partitions;
     }
 
     @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
-        return partitionsById.values().stream()
+        return partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toUnmodifiableList());
     }
@@ -58,12 +58,15 @@ public class InMemoryPartitionStore implements PartitionStore {
 
     @Override
     public void initialise(List<Partition> partitions) {
-        partitionsById = partitions.stream()
-                .collect(Collectors.toMap(Partition::getId, partition -> partition));
+        this.partitions = partitions;
     }
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
             Partition splitPartition, Partition newPartition1, Partition newPartition2) {
+        partitions = Stream.concat(partitions.stream()
+                                .filter(partition -> !Objects.equals(partition.getId(), splitPartition.getId())),
+                        Stream.of(splitPartition, newPartition1, newPartition2))
+                .collect(Collectors.toUnmodifiableList());
     }
 }

@@ -16,7 +16,6 @@
 
 package sleeper.statestore.inmemory;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -112,7 +111,6 @@ public class InMemoryPartitionStoreTest {
     class Update {
 
         @Test
-        @Disabled("TODO")
         void shouldSplitRootToTwoChildren() throws Exception {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
@@ -134,6 +132,40 @@ public class InMemoryPartitionStoreTest {
                     treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
             assertThat(store.getLeafPartitions()).containsExactlyInAnyOrder(
                     treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+        }
+
+        @Test
+        void shouldSplitChildToTwoNested() throws Exception {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree treeBefore = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "aaa")
+                    .buildTree();
+            PartitionTree treeAfter = new PartitionsBuilder(schema)
+                    .rootFirst("A")
+                    .splitToNewChildren("A", "B", "C", "aaa")
+                    .splitToNewChildren("C", "D", "E", "bbb")
+                    .buildTree();
+            PartitionStore store = new InMemoryPartitionStore(treeBefore.getAllPartitions());
+
+            // When
+            store.atomicallyUpdatePartitionAndCreateNewOnes(
+                    treeAfter.getPartition("C"),
+                    treeAfter.getPartition("D"),
+                    treeAfter.getPartition("E"));
+
+            // Then
+            assertThat(store.getAllPartitions()).containsExactlyInAnyOrder(
+                    treeAfter.getPartition("A"),
+                    treeAfter.getPartition("B"),
+                    treeAfter.getPartition("C"),
+                    treeAfter.getPartition("D"),
+                    treeAfter.getPartition("E"));
+            assertThat(store.getLeafPartitions()).containsExactlyInAnyOrder(
+                    treeAfter.getPartition("B"),
+                    treeAfter.getPartition("D"),
+                    treeAfter.getPartition("E"));
         }
     }
 }
