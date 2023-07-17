@@ -15,7 +15,6 @@
  */
 package sleeper.splitter;
 
-import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -60,9 +58,7 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class SplitPartitionIT {
     @TempDir
@@ -92,21 +88,18 @@ public class SplitPartitionIT {
                     .buildTree();
             StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
 
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-
             for (Partition partition : tree.getAllPartitions()) {
+                int minRange = (int) partition.getRegion().getRange("key").getMin();
+                int maxRange = null == partition.getRegion().getRange("key").getMax() ? Integer.MAX_VALUE : (int) partition.getRegion().getRange("key").getMax();
                 for (int i = 0; i < 10; i++) {
                     List<Record> records = new ArrayList<>();
                     int j = 0;
-                    int minRange = (int) partition.getRegion().getRange("key").getMin();
-                    int maxRange = null == partition.getRegion().getRange("key").getMax() ? Integer.MAX_VALUE : (int) partition.getRegion().getRange("key").getMax();
                     for (int r = minRange; r < maxRange && j < 10; r++, j++) {
                         Record record = new Record();
                         record.put("key", r);
                         records.add(record);
                     }
-                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
+                    ingestFileFromRecords(schema, stateStore, records.stream());
                 }
             }
 
@@ -128,16 +121,13 @@ public class SplitPartitionIT {
                     .buildTree();
             StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
 
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-
             for (Partition partition : stateStore.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
+                    int minRange = (int) partition.getRegion().getRange("key").getMin();
+                    int maxRange = null == partition.getRegion().getRange("key").getMax() ? Integer.MAX_VALUE : (int) partition.getRegion().getRange("key").getMax();
                     List<Record> records = new ArrayList<>();
                     int j = 0;
                     if (!partition.getId().equals("id2")) {
-                        int minRange = (int) partition.getRegion().getRange("key").getMin();
-                        int maxRange = null == partition.getRegion().getRange("key").getMax() ? Integer.MAX_VALUE : (int) partition.getRegion().getRange("key").getMax();
                         for (int r = minRange; r < maxRange && j < 10; r++, j++) {
                             Record record = new Record();
                             record.put("key", r);
@@ -151,7 +141,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
+                    ingestFileFromRecords(schema, stateStore, records.stream());
                 }
             }
 
@@ -175,8 +165,6 @@ public class SplitPartitionIT {
 
             StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
 
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
             for (Partition partition : tree.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
                     List<Record> records = new ArrayList<>();
@@ -207,7 +195,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
+                    ingestFileFromRecords(schema, stateStore, records.stream());
                 }
             }
 
@@ -230,8 +218,6 @@ public class SplitPartitionIT {
                     .buildTree();
             StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
 
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
             for (Partition partition : stateStore.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
                     List<Record> records = new ArrayList<>();
@@ -258,7 +244,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
+                    ingestFileFromRecords(schema, stateStore, records.stream());
                 }
             }
 
@@ -435,64 +421,27 @@ public class SplitPartitionIT {
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build();
-            StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            Partition rootPartition = stateStore.getAllPartitions().get(0);
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 0; r < 100; r++) {
-                    // The majority of the values are 10; so min should equal median
-                    records.add(new Record(Map.of(
-                            "key1", r < 75 ? 10 : 20,
-                            "key2", r)));
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of(
+                                            "key1", r < 75 ? 10 : 20,
+                                            "key2", r))))
+            );
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(rootPartition, fileNames);
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
-            //  - There should be 3 partitions
-            List<Partition> partitions = stateStore.getAllPartitions();
-            assertThat(partitions).hasSize(3);
-            //  - There should be 1 non-leaf partition
-            List<Partition> nonLeafPartitions = partitions.stream()
-                    .filter(p -> !p.isLeafPartition())
-                    .collect(Collectors.toList());
-            //  - The root partition should have been split on the second dimension
-            assertThat(nonLeafPartitions).hasSize(1)
-                    .extracting(Partition::getDimension)
-                    .containsExactly(1);
-            //  - The leaf partitions should have been split on a value which is between
-            //      0 and 100.
-            Set<Partition> leafPartitions = partitions.stream()
-                    .filter(Partition::isLeafPartition)
-                    .collect(Collectors.toSet());
-            Iterator<Partition> it = leafPartitions.iterator();
-            Object splitPoint = splitPoint(it.next(), it.next(), "key2");
-            assertThat(leafPartitions)
-                    .extracting(partition -> partition.getRegion().getRange("key2"))
-                    .extracting(Range::getMin, Range::getMax)
-                    .containsExactlyInAnyOrder(
-                            tuple(Integer.MIN_VALUE, splitPoint),
-                            tuple(splitPoint, null));
-            assertThat((int) splitPoint).isStrictlyBetween(Integer.MIN_VALUE, 99);
-            //  - The leaf partitions should have the root partition as their parent
-            //      and an empty array for the child partitions.
-            assertThat(leafPartitions).allSatisfy(partition -> {
-                assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-                assertThat(partition.getChildPartitionIds()).isEmpty();
-            });
-            assertThat(nonLeafPartitions).containsExactly(rootPartition);
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
+                            .buildList());
         }
-
 
         @Test
         public void shouldSplitByteKeyOnFirstDimension() throws Exception {
@@ -500,64 +449,25 @@ public class SplitPartitionIT {
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                     .build();
-            StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            Partition rootPartition = stateStore.getAllPartitions().get(0);
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 0; r < 100; r++) {
-                    Record record = new Record();
-                    record.put("key1", new byte[]{(byte) r});
-                    record.put("key2", new byte[]{(byte) -100});
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
 
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of(
+                                            "key1", new byte[]{(byte) r},
+                                            "key2", new byte[]{(byte) -100}))))
+            );
+
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(rootPartition, fileNames);
-
-            // Then
-            //  - There should be 3 partitions
-            List<Partition> partitions = stateStore.getAllPartitions();
-            assertThat(partitions).hasSize(3);
-            //  - There should be 1 non-leaf partition
-            List<Partition> nonLeafPartitions = partitions.stream()
-                    .filter(p -> !p.isLeafPartition())
-                    .collect(Collectors.toList());
-            //  - The root partition should have been split on the first dimension
-            assertThat(nonLeafPartitions).hasSize(1)
-                    .extracting(Partition::getDimension)
-                    .containsExactly(0);
-            //  - The leaf partitions should have been split on a value which is between
-            //      0 and 100.
-            Set<Partition> leafPartitions = partitions.stream()
-                    .filter(Partition::isLeafPartition)
-                    .collect(Collectors.toSet());
-            Iterator<Partition> it = leafPartitions.iterator();
-            byte[] splitPoint = splitPointBytes(it.next(), it.next(), "key1");
-            assertThat(leafPartitions)
-                    .extracting(partition -> partition.getRegion().getRange("key1"))
-                    .extracting(Range::getMin, Range::getMax)
-                    .containsExactlyInAnyOrder(
-                            tuple(new byte[]{}, splitPoint),
-                            tuple(splitPoint, null));
-            assertThat(ByteArray.wrap(splitPoint)).isStrictlyBetween(
-                    ByteArray.wrap(new byte[]{}),
-                    ByteArray.wrap(new byte[]{99}));
-            //  - The leaf partitions should have the root partition as their parent
-            //      and an empty array for the child partitions.
-            assertThat(leafPartitions).allSatisfy(partition -> {
-                assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-                assertThat(partition.getChildPartitionIds()).isEmpty();
-            });
-            assertThat(nonLeafPartitions).containsExactly(rootPartition);
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildrenOnDimension("A", "B", "C", 0, new byte[]{50})
+                            .buildList());
         }
 
         @Test
@@ -566,57 +476,26 @@ public class SplitPartitionIT {
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                     .build();
-            StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            Partition rootPartition = stateStore.getAllPartitions().get(0);
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 0; r < 100; r++) {
-                    Record record = new Record();
-                    record.put("key1", new byte[]{(byte) -100});
-                    record.put("key2", new byte[]{(byte) r});
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of(
+                                            "key1", new byte[]{(byte) -100},
+                                            "key2", new byte[]{(byte) r}))))
+            );
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(rootPartition, fileNames);
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
-            List<Partition> partitions = stateStore.getAllPartitions();
-            assertThat(partitions).hasSize(3);
-            List<Partition> nonLeafPartitions = partitions.stream()
-                    .filter(p -> !p.isLeafPartition())
-                    .collect(Collectors.toList());
-            assertThat(nonLeafPartitions).hasSize(1)
-                    .extracting(Partition::getDimension)
-                    .containsExactly(1);
-            Set<Partition> leafPartitions = partitions.stream()
-                    .filter(Partition::isLeafPartition)
-                    .collect(Collectors.toSet());
-            Iterator<Partition> it = leafPartitions.iterator();
-            byte[] splitPoint = splitPointBytes(it.next(), it.next(), "key2");
-            assertThat(leafPartitions)
-                    .extracting(partition -> partition.getRegion().getRange("key2"))
-                    .extracting(Range::getMin, Range::getMax)
-                    .containsExactlyInAnyOrder(
-                            tuple(new byte[]{}, splitPoint),
-                            tuple(splitPoint, null));
-            assertThat(ByteArray.wrap(splitPoint)).isStrictlyBetween(
-                    ByteArray.wrap(new byte[]{}),
-                    ByteArray.wrap(new byte[]{99}));
-            assertThat(leafPartitions).allSatisfy(partition -> {
-                assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-                assertThat(partition.getChildPartitionIds()).isEmpty();
-            });
-            assertThat(nonLeafPartitions).containsExactly(rootPartition);
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildrenOnDimension("A", "B", "C", 1, new byte[]{50})
+                            .buildList());
         }
     }
 
