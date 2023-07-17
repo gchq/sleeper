@@ -93,7 +93,7 @@ public class SplitPartitionIT {
                         record.put("key", r);
                         records.add(record);
                     }
-                    ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -147,7 +147,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -211,7 +211,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -270,7 +270,7 @@ public class SplitPartitionIT {
                             records.add(record);
                         }
                     }
-                    ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                    ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
@@ -314,7 +314,7 @@ public class SplitPartitionIT {
                     record.put("key", r);
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
@@ -351,7 +351,7 @@ public class SplitPartitionIT {
                     record.put("key", r);
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
@@ -389,7 +389,7 @@ public class SplitPartitionIT {
                     record.put("key", "A" + i + "" + r);
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
@@ -426,7 +426,7 @@ public class SplitPartitionIT {
                     record.put("key", new byte[]{(byte) r});
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
@@ -455,9 +455,7 @@ public class SplitPartitionIT {
             StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                     .singlePartition("A")
                     .buildList());
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            ingestRecordsFromIterator(stateStore, schema, path, path2,
+            ingestRecordsFromIterator(schema, stateStore,
                     IntStream.range(0, 1000)
                             .mapToObj(i -> {
                                 Record record = new Record();
@@ -495,7 +493,7 @@ public class SplitPartitionIT {
                     record.put("key2", r);
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -564,7 +562,7 @@ public class SplitPartitionIT {
                     record.put("key2", r);
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -629,7 +627,7 @@ public class SplitPartitionIT {
                     record.put("key2", new byte[]{(byte) -100});
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -695,7 +693,7 @@ public class SplitPartitionIT {
                     record.put("key2", new byte[]{(byte) r});
                     records.add(record);
                 }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
+                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
@@ -757,7 +755,7 @@ public class SplitPartitionIT {
         }
     }
 
-    private static void ingestRecordsFromIterator(StateStore stateStore, Schema schema, String localDir,
+    private static void ingestRecordsFromIterator(Schema schema, StateStore stateStore, String localDir,
                                                   String filePathPrefix, Iterator<Record> recordIterator) throws Exception {
         ParquetConfiguration parquetConfiguration = IngestCoordinatorTestHelper.parquetConfiguration(schema, new Configuration());
         IngestCoordinator<Record> ingestCoordinator = IngestCoordinatorTestHelper.standardIngestCoordinator(
@@ -772,6 +770,12 @@ public class SplitPartitionIT {
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 
+    private void ingestRecordsFromIterator(Schema schema, StateStore stateStore, Iterator<Record> recordIterator) throws Exception {
+        String path = createTempDirectory(folder, null).toString();
+        String path2 = createTempDirectory(folder, null).toString();
+        ingestRecordsFromIterator(schema, stateStore, path, path2, recordIterator);
+    }
+
     private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> stringIdSupplier) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
         List<String> fileNames = stateStore.getActiveFiles().stream()
@@ -780,7 +784,6 @@ public class SplitPartitionIT {
         SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), stringIdSupplier);
         partitionSplitter.splitPartition(partition, fileNames);
     }
-
 
     private static Supplier<String> idSupplier(String... generateIds) {
         return Arrays.stream(generateIds).iterator()::next;
