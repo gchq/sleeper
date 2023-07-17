@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -457,16 +458,14 @@ public class SplitPartitionIT {
             String path = createTempDirectory(folder, null).toString();
             String path2 = createTempDirectory(folder, null).toString();
             Partition rootPartition = stateStore.getAllPartitions().get(0);
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 0; r < 100; r++) {
-                    Record record = new Record();
-                    record.put("key1", r);
-                    record.put("key2", 10);
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
-            }
+            ingestRecordsFromIterator(stateStore, schema, path, path2,
+                    IntStream.range(0, 1000)
+                            .mapToObj(i -> {
+                                Record record = new Record();
+                                record.put("key1", i % 100);
+                                record.put("key2", 10);
+                                return record;
+                            }).iterator());
             Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
             SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
 
