@@ -15,6 +15,9 @@
  */
 package sleeper.cdk.custom;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -74,15 +77,21 @@ public class SleeperTableLambdaIT {
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 

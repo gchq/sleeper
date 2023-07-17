@@ -15,6 +15,9 @@
  */
 package sleeper.ingest.testutils;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -78,15 +81,21 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
 
     private AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
@@ -102,15 +111,21 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
 
     private AmazonSQS createSQSClient() {
         return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.SQS).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
     private AmazonCloudWatch createCloudWatchClient() {
         return AmazonCloudWatchClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.CLOUDWATCH))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.CLOUDWATCH).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 

@@ -15,6 +15,9 @@
  */
 package sleeper.bulkimport.starter;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
@@ -55,8 +58,11 @@ public class BulkImportStarterLambdaIT {
 
     private AmazonS3 createS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
