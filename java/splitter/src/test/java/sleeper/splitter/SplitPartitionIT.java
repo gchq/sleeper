@@ -217,21 +217,13 @@ public class SplitPartitionIT {
                     ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals("id2"))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
+            splitPartition(schema, stateStore, "id2", generateNoIds());
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("root"), tree.getPartition("id12"),
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
         }
 
         @Test
@@ -729,16 +721,33 @@ public class SplitPartitionIT {
         }
     }
 
-    private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> stringIdSupplier) throws Exception {
+    private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
         List<String> fileNames = stateStore.getActiveFiles().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), stringIdSupplier);
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
+        partitionSplitter.splitPartition(partition, fileNames);
+    }
+
+    private static void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
+        PartitionTree tree = new PartitionTree(schema, stateStore.getAllPartitions());
+        Partition partition = tree.getPartition(partitionId);
+        List<String> fileNames = stateStore.getActiveFiles().stream()
+                .filter(file -> partitionId.equals(file.getPartitionId()))
+                .map(FileInfo::getFilename)
+                .collect(Collectors.toList());
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
     private static Supplier<String> generateIds(String... ids) {
         return Arrays.stream(ids).iterator()::next;
+    }
+
+    private static Supplier<String> generateNoIds() {
+        return () -> {
+            throw new IllegalArgumentException("Generated an ID, expected none");
+        };
     }
 }
