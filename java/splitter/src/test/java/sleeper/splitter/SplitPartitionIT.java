@@ -53,6 +53,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -299,149 +300,96 @@ public class SplitPartitionIT {
         @Test
         void shouldSplitPartitionForIntKey() throws Exception {
             // Given
-            PartitionTree treeBefore = new PartitionsBuilder(schema)
-                    .singlePartition("A").buildTree();
-            PartitionTree treeAfter = new PartitionsBuilder(schema)
-                    .rootFirst("A")
-                    .splitToNewChildren("A", "B", "C", 500)
-                    .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
-
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 100 * i; r < 100 * (i + 1); r++) {
-                    Record record = new Record();
-                    record.put("key", r);
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(100 * i, 100 * (i + 1)).mapToObj(r ->
+                                    new Record(Map.of("key", r))))
+            );
 
             // When
-            partitionSplitter.splitPartition(treeBefore.getRootPartition(),
-                    stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildren("A", "B", "C", 500)
+                            .buildList());
         }
 
         @Test
         void shouldSplitPartitionForLongKey() throws Exception {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
-            PartitionTree treeBefore = new PartitionsBuilder(schema)
-                    .singlePartition("A").buildTree();
-            PartitionTree treeAfter = new PartitionsBuilder(schema)
-                    .rootFirst("A")
-                    .splitToNewChildren("A", "B", "C", 500L)
-                    .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
-
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (long r = 100L * i; r < 100L * (i + 1); r++) {
-                    Record record = new Record();
-                    record.put("key", r);
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            LongStream.range(100L * i, 100L * (i + 1)).mapToObj(r ->
+                                    new Record(Map.of("key", r))))
+            );
 
             // When
-            partitionSplitter.splitPartition(treeBefore.getRootPartition(),
-                    stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildren("A", "B", "C", 500L)
+                            .buildList());
         }
 
         @Test
         void shouldSplitPartitionForStringKey() throws Exception {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-            PartitionTree treeBefore = new PartitionsBuilder(schema)
-                    .singlePartition("A").buildTree();
-            PartitionTree treeAfter = new PartitionsBuilder(schema)
-                    .rootFirst("A")
-                    .splitToNewChildren("A", "B", "C", "A50")
-                    .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
-
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 0; r < 100; r++) {
-                    Record record = new Record();
-                    //A + value from 0-10100
-                    record.put("key", "A" + i + "" + r);
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of("key", String.format("A%s%s", i, r)))))
+            );
 
             // When
-            partitionSplitter.splitPartition(treeBefore.getRootPartition(),
-                    stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildren("A", "B", "C", "A50")
+                            .buildList());
         }
 
         @Test
         void shouldSplitPartitionForByteArrayKey() throws Exception {
             // Given
             Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-            PartitionTree treeBefore = new PartitionsBuilder(schema)
-                    .singlePartition("A").buildTree();
-            PartitionTree treeAfter = new PartitionsBuilder(schema)
-                    .rootFirst("A")
-                    .splitToNewChildren("A", "B", "C", new byte[]{(byte) 50})
-                    .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(treeBefore.getAllPartitions());
-
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            for (int i = 0; i < 10; i++) {
-                List<Record> records = new ArrayList<>();
-                for (int r = 0; r < 100; r++) {
-                    Record record = new Record();
-                    record.put("key", new byte[]{(byte) r});
-                    records.add(record);
-                }
-                ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
-            }
-            Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of("key", new byte[]{(byte) r}))))
+            );
 
             // When
-            partitionSplitter.splitPartition(treeBefore.getRootPartition(),
-                    stateStore.getActiveFiles().stream().map(FileInfo::getFilename).collect(Collectors.toList()));
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("A"), treeAfter.getPartition("B"), treeAfter.getPartition("C"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    treeAfter.getPartition("B"), treeAfter.getPartition("C"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildren("A", "B", "C", new byte[]{(byte) 50})
+                            .buildList());
         }
     }
 
@@ -457,7 +405,7 @@ public class SplitPartitionIT {
             StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                     .singlePartition("A")
                     .buildList());
-            ingestRecordsFromIterator(schema, stateStore,
+            ingestFileFromRecords(schema, stateStore,
                     IntStream.range(0, 1000).mapToObj(i -> new Record(Map.of(
                             "key1", i % 100,
                             "key2", 10)))
@@ -769,10 +717,14 @@ public class SplitPartitionIT {
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 
-    private void ingestRecordsFromIterator(Schema schema, StateStore stateStore, Stream<Record> recordsStream) throws Exception {
-        String path = createTempDirectory(folder, null).toString();
-        String path2 = createTempDirectory(folder, null).toString();
-        ingestRecordsFromIterator(schema, stateStore, path, path2, recordsStream.iterator());
+    private void ingestFileFromRecords(Schema schema, StateStore stateStore, Stream<Record> recordsStream) {
+        try {
+            String path = createTempDirectory(folder, null).toString();
+            String path2 = createTempDirectory(folder, null).toString();
+            ingestRecordsFromIterator(schema, stateStore, path, path2, recordsStream.iterator());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> stringIdSupplier) throws Exception {
