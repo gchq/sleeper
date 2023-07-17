@@ -38,26 +38,15 @@ import java.util.UUID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.datageneration.WriteRandomData.createRecordIterator;
 
 public class WriteRandomDataViaQueue {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteRandomDataViaQueue.class);
 
-    private final String ingestMode;
-    private final SystemTestProperties properties;
-    private final TableProperties tableProperties;
-
-    public WriteRandomDataViaQueue(
-            String ingestMode,
-            SystemTestProperties properties,
-            TableProperties tableProperties) {
-        this.ingestMode = ingestMode;
-        this.properties = properties;
-        this.tableProperties = tableProperties;
+    private WriteRandomDataViaQueue() {
     }
 
-    public void run() throws IOException {
-        Iterator<Record> recordIterator = createRecordIterator(properties, tableProperties);
+    public static void writeAndSendToQueue(String ingestMode, SystemTestProperties properties, TableProperties tableProperties) throws IOException {
+        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(properties, tableProperties);
         String dir = WriteRandomDataFiles.writeToS3GetDirectory(properties, tableProperties, recordIterator);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();

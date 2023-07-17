@@ -31,37 +31,35 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 
-import static sleeper.systemtest.datageneration.WriteRandomData.createRecordIterator;
-
 /**
  * Runs {@link sleeper.ingest.IngestRecordsFromIterator} to write random data.
  */
 public class WriteRandomDataDirect {
 
-    private final IngestFactory ingestFactory;
-    private final SystemTestProperties properties;
-    private final TableProperties tableProperties;
-
-    public WriteRandomDataDirect(
-            ObjectFactory objectFactory,
-            SystemTestProperties properties,
-            TableProperties tableProperties,
-            StateStoreProvider stateStoreProvider) {
-        this.ingestFactory = IngestFactory.builder()
-                .objectFactory(objectFactory)
-                .localDir("/mnt/scratch")
-                .stateStoreProvider(stateStoreProvider)
-                .instanceProperties(properties)
-                .build();
-        this.properties = properties;
-        this.tableProperties = tableProperties;
+    private WriteRandomDataDirect() {
     }
 
-    public void run() throws IOException {
+    public static void writeWithIngestFactory(ObjectFactory objectFactory,
+                                              SystemTestProperties properties,
+                                              TableProperties tableProperties,
+                                              StateStoreProvider stateStoreProvider) throws IOException {
+        writeWithIngestFactory(
+                IngestFactory.builder()
+                        .objectFactory(objectFactory)
+                        .localDir("/mnt/scratch")
+                        .stateStoreProvider(stateStoreProvider)
+                        .instanceProperties(properties)
+                        .build(),
+                properties, tableProperties);
+    }
+
+    public static void writeWithIngestFactory(IngestFactory ingestFactory,
+                                              SystemTestProperties properties,
+                                              TableProperties tableProperties) throws IOException {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         CloseableIterator<Record> recordIterator = new WrappedIterator<>(
-                createRecordIterator(properties, tableProperties));
+                WriteRandomData.createRecordIterator(properties, tableProperties));
 
         try {
             ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, recordIterator);
