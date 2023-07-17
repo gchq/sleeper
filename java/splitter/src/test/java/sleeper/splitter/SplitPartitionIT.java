@@ -420,7 +420,7 @@ public class SplitPartitionIT {
         }
 
         @Test
-        public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMedian() throws Exception {
+        public void shouldSplitIntKeyOnSecondDimensionWhenMinAndMedianForFirstKeyAreTheSame() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
@@ -490,7 +490,7 @@ public class SplitPartitionIT {
 
 
         @Test
-        public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnFirstDimensionCorrectly() throws Exception {
+        public void shouldSplitByteKeyOnFirstDimension() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
@@ -556,7 +556,7 @@ public class SplitPartitionIT {
         }
 
         @Test
-        public void shouldSplitPartitionForByteArrayMultidimensionalKeyOnSecondDimensionCorrectly() throws Exception {
+        public void shouldSplitByteKeyOnSecondDimensionWhenAllValuesForFirstKeyAreTheSame() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
