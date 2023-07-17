@@ -24,19 +24,14 @@
         <artifactId>aws</artifactId>
         <version>0.18.0-SNAPSHOT</version>
     </parent>
-
-    <artifactId>system-test-cdk</artifactId>
     
-    <dependencies>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>cdk</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>system-test-configuration</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-    </dependencies>
+    <packaging>pom</packaging>
+    <artifactId>system-test</artifactId>
+
+    <modules>
+        <module>system-test-cdk</module>
+        <module>system-test-configuration</module>
+        <module>system-test-data-generation</module>
+        <module>system-test-drivers</module>
+    </modules>
 </project>
