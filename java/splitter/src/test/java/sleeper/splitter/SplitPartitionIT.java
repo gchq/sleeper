@@ -47,11 +47,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -456,13 +458,10 @@ public class SplitPartitionIT {
                     .singlePartition("A")
                     .buildList());
             ingestRecordsFromIterator(schema, stateStore,
-                    IntStream.range(0, 1000)
-                            .mapToObj(i -> {
-                                Record record = new Record();
-                                record.put("key1", i % 100);
-                                record.put("key2", 10);
-                                return record;
-                            }).iterator());
+                    IntStream.range(0, 1000).mapToObj(i -> new Record(Map.of(
+                            "key1", i % 100,
+                            "key2", 10)))
+            );
 
             // When
             splitSinglePartition(schema, stateStore, idSupplier("B", "C"));
@@ -770,10 +769,10 @@ public class SplitPartitionIT {
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 
-    private void ingestRecordsFromIterator(Schema schema, StateStore stateStore, Iterator<Record> recordIterator) throws Exception {
+    private void ingestRecordsFromIterator(Schema schema, StateStore stateStore, Stream<Record> recordsStream) throws Exception {
         String path = createTempDirectory(folder, null).toString();
         String path2 = createTempDirectory(folder, null).toString();
-        ingestRecordsFromIterator(schema, stateStore, path, path2, recordIterator);
+        ingestRecordsFromIterator(schema, stateStore, path, path2, recordsStream.iterator());
     }
 
     private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> stringIdSupplier) throws Exception {
