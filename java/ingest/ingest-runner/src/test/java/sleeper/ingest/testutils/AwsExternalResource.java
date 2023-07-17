@@ -138,10 +138,10 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
         sqsClient = (localStackServiceSet.contains(LocalStackContainer.Service.SQS)) ? createSQSClient() : null;
         cloudWatchClient = (localStackServiceSet.contains(LocalStackContainer.Service.CLOUDWATCH)) ? createCloudWatchClient() : null;
 
-        LOGGER.info("S3 endpoint:         {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
-        LOGGER.info("DynamoDB endpoint:   {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB).getServiceEndpoint());
-        LOGGER.info("SQS endpoint:        {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS).getServiceEndpoint());
-        LOGGER.info("CloudWatch endpoint: {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.CLOUDWATCH).getServiceEndpoint());
+        LOGGER.info("S3 endpoint:         {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        LOGGER.info("DynamoDB endpoint:   {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString());
+        LOGGER.info("SQS endpoint:        {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.SQS).toString());
+        LOGGER.info("CloudWatch endpoint: {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.CLOUDWATCH).toString());
     }
 
     public void clear() {
@@ -246,7 +246,7 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
         if (localStackServiceSet.contains(LocalStackContainer.Service.S3)) {
             Configuration configuration = new Configuration();
             configuration.setClassLoader(this.getClass().getClassLoader());
-            configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
+            configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
             configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
             configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
             configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());

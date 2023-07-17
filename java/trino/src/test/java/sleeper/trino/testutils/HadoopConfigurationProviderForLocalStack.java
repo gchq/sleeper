@@ -34,7 +34,7 @@ public class HadoopConfigurationProviderForLocalStack implements HadoopConfigura
     public Configuration getHadoopConfiguration(InstanceProperties instanceProperties) {
         Configuration configuration = new Configuration();
         configuration.setClassLoader(this.getClass().getClassLoader());
-        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
+        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
         configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());

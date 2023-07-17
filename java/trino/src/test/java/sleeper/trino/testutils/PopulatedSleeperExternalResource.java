@@ -228,8 +228,8 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         this.s3AsyncClient = createS3AsyncClient();
         this.dynamoDBClient = createDynamoClient();
 
-        System.out.println("S3 endpoint:       " + localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
-        System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
+        System.out.println("S3 endpoint:       " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
