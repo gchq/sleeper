@@ -778,4 +778,13 @@ public class SplitPartitionIT {
                 DirectPartitionFileWriterFactory.from(parquetConfiguration, filePathPrefix));
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
+
+    private static void splitSinglePartition(Schema schema, StateStore stateStore) throws Exception {
+        Partition partition = stateStore.getAllPartitions().get(0);
+        List<String> fileNames = stateStore.getActiveFiles().stream()
+                .map(FileInfo::getFilename)
+                .collect(Collectors.toList());
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+        partitionSplitter.splitPartition(partition, fileNames);
+    }
 }
