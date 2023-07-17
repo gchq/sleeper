@@ -17,6 +17,7 @@ package sleeper.splitter;
 
 import com.facebook.collections.ByteArray;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +70,14 @@ public class SplitPartitionIT {
 
     private final Field field = new Field("key", new IntType());
     private final Schema schema = Schema.builder().rowKeyFields(field).build();
+    private String localDir;
+    private String filePathPrefix;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        localDir = createTempDirectory(folder, null).toString();
+        filePathPrefix = createTempDirectory(folder, null).toString();
+    }
 
     @Nested
     @DisplayName("Skip split")
@@ -647,9 +657,7 @@ public class SplitPartitionIT {
 
     private void ingestFileFromRecords(Schema schema, StateStore stateStore, Stream<Record> recordsStream) {
         try {
-            String path = createTempDirectory(folder, null).toString();
-            String path2 = createTempDirectory(folder, null).toString();
-            ingestRecordsFromIterator(schema, stateStore, path, path2, recordsStream.iterator());
+            ingestRecordsFromIterator(schema, stateStore, localDir, filePathPrefix, recordsStream.iterator());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
