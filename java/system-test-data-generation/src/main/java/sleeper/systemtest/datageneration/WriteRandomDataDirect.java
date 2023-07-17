@@ -24,7 +24,6 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -32,36 +31,40 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 
+import static sleeper.systemtest.datageneration.WriteRandomData.createRecordIterator;
+
 /**
  * Runs {@link sleeper.ingest.IngestRecordsFromIterator} to write random data.
  */
-public class UploadMultipleShardedSortedParquetFiles extends WriteRandomDataJob {
+public class WriteRandomDataDirect {
 
     private final IngestFactory ingestFactory;
+    private final SystemTestProperties properties;
+    private final TableProperties tableProperties;
 
-    public UploadMultipleShardedSortedParquetFiles(
+    public WriteRandomDataDirect(
             ObjectFactory objectFactory,
             SystemTestProperties properties,
             TableProperties tableProperties,
             StateStoreProvider stateStoreProvider) {
-        super(properties, tableProperties);
         this.ingestFactory = IngestFactory.builder()
                 .objectFactory(objectFactory)
                 .localDir("/mnt/scratch")
                 .stateStoreProvider(stateStoreProvider)
                 .instanceProperties(properties)
                 .build();
+        this.properties = properties;
+        this.tableProperties = tableProperties;
     }
 
     public void run() throws IOException {
-        Schema schema = getTableProperties().getSchema();
-
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
-        CloseableIterator<Record> recordIterator = new WrappedIterator<>(createRecordIterator(schema));
+        CloseableIterator<Record> recordIterator = new WrappedIterator<>(
+                createRecordIterator(properties, tableProperties));
 
         try {
-            ingestFactory.ingestFromRecordIteratorAndClose(getTableProperties(), recordIterator);
+            ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, recordIterator);
         } catch (StateStoreException | IteratorException e) {
             throw new IOException("Failed to write records using iterator", e);
         }

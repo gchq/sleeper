@@ -32,6 +32,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.datageneration.WriteRandomData.createRecordIterator;
 
 /**
  * Entrypoint for SystemTest image. Writes random data to Sleeper using the mechanism (ingestMode) defined in
@@ -64,11 +65,13 @@ public class IngestRandomData {
 
         String ingestMode = systemTestProperties.get(INGEST_MODE);
         if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {
-            new WriteRandomDataViaQueueJob(ingestMode, systemTestProperties, tableProperties).run();
+            new WriteRandomDataViaQueue(ingestMode, systemTestProperties, tableProperties).run();
         } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
-            new UploadMultipleShardedSortedParquetFiles(objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
+            new WriteRandomDataDirect(objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
         } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
-            new WriteRandomDataGenerateOnlyJob(systemTestProperties, tableProperties).run();
+            WriteRandomDataFiles.writeToS3GetDirectory(
+                    systemTestProperties, tableProperties,
+                    createRecordIterator(systemTestProperties, tableProperties));
         } else {
             throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode +
                     ". Only direct and queue ingest modes are available.");

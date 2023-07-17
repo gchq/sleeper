@@ -18,40 +18,28 @@ package sleeper.systemtest.datageneration;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 
-public abstract class WriteRandomDataJob {
-    private final SystemTestProperties systemTestProperties;
-    private final TableProperties tableProperties;
+public class WriteRandomData {
 
-    public WriteRandomDataJob(SystemTestProperties systemTestProperties,
-                              TableProperties tableProperties) {
-        this.systemTestProperties = systemTestProperties;
-        this.tableProperties = tableProperties;
+    private WriteRandomData() {
     }
 
-    public abstract void run() throws IOException, StateStoreException;
+    public static Iterator<Record> createRecordIterator(
+            SystemTestProperties systemTestProperties, TableProperties tableProperties) {
+        return createRecordIterator(systemTestProperties, tableProperties.getSchema());
+    }
 
-    protected Iterator<Record> createRecordIterator(Schema schema) {
+    public static Iterator<Record> createRecordIterator(SystemTestProperties systemTestProperties, Schema schema) {
         RandomRecordSupplierConfig config = new RandomRecordSupplierConfig(systemTestProperties);
         return Stream
                 .generate(new RandomRecordSupplier(schema, config))
                 .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_WRITER))
                 .iterator();
-    }
-
-    protected SystemTestProperties getSystemTestProperties() {
-        return systemTestProperties;
-    }
-
-    protected TableProperties getTableProperties() {
-        return tableProperties;
     }
 }
