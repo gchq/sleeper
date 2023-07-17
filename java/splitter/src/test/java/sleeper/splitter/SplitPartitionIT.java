@@ -451,7 +451,9 @@ public class SplitPartitionIT {
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build();
-            StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
             String path = createTempDirectory(folder, null).toString();
             String path2 = createTempDirectory(folder, null).toString();
             Partition rootPartition = stateStore.getAllPartitions().get(0);
@@ -465,7 +467,8 @@ public class SplitPartitionIT {
                 }
                 ingestRecordsFromIterator(stateStore, schema, path, path2, records.iterator());
             }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+            Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
+            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
 
             // When
             List<String> fileNames = stateStore.getActiveFiles().stream()
@@ -475,38 +478,11 @@ public class SplitPartitionIT {
             partitionSplitter.splitPartition(rootPartition, fileNames);
 
             // Then
-            //  - There should be 3 partitions
-            List<Partition> partitions = stateStore.getAllPartitions();
-            assertThat(partitions).hasSize(3);
-            //  - There should be 1 non-leaf partition
-            List<Partition> nonLeafPartitions = partitions.stream()
-                    .filter(p -> !p.isLeafPartition())
-                    .collect(Collectors.toList());
-            //  - The root partition should have been split on the first dimension
-            assertThat(nonLeafPartitions).hasSize(1)
-                    .extracting(Partition::getDimension)
-                    .containsExactly(0);
-            //  - The leaf partitions should have been split on a value which is between
-            //      0 and 100.
-            Set<Partition> leafPartitions = partitions.stream()
-                    .filter(Partition::isLeafPartition)
-                    .collect(Collectors.toSet());
-            Iterator<Partition> it = leafPartitions.iterator();
-            Object splitPoint = splitPoint(it.next(), it.next(), "key1");
-            assertThat(leafPartitions)
-                    .extracting(partition -> partition.getRegion().getRange("key1"))
-                    .extracting(Range::getMin, Range::getMax)
-                    .containsExactlyInAnyOrder(
-                            tuple(Integer.MIN_VALUE, splitPoint),
-                            tuple(splitPoint, null));
-            assertThat((int) splitPoint).isStrictlyBetween(Integer.MIN_VALUE, 99);
-            //  - The leaf partitions should have the root partition as their parent
-            //      and an empty array for the child partitions.
-            assertThat(leafPartitions).allSatisfy(partition -> {
-                assertThat(partition.getParentPartitionId()).isEqualTo(rootPartition.getId());
-                assertThat(partition.getChildPartitionIds()).isEmpty();
-            });
-            assertThat(nonLeafPartitions).containsExactly(rootPartition);
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
+                            .buildList());
         }
 
         @Test
