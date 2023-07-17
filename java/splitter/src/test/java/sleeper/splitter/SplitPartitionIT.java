@@ -464,7 +464,7 @@ public class SplitPartitionIT {
             );
 
             // When
-            splitSinglePartition(schema, stateStore, idSupplier("B", "C"));
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -784,7 +784,7 @@ public class SplitPartitionIT {
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
-    private static Supplier<String> idSupplier(String... generateIds) {
-        return Arrays.stream(generateIds).iterator()::next;
+    private static Supplier<String> generateIds(String... ids) {
+        return Arrays.stream(ids).iterator()::next;
     }
 }
