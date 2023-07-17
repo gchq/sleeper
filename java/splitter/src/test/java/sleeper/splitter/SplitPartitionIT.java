@@ -25,7 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.range.Range;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -49,7 +48,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -427,6 +425,7 @@ public class SplitPartitionIT {
             IntStream.range(0, 10).forEach(i ->
                     ingestFileFromRecords(schema, stateStore,
                             IntStream.range(0, 100).mapToObj(r ->
+                                    // The majority of the values are 10; so min should equal median
                                     new Record(Map.of(
                                             "key1", r < 75 ? 10 : 20,
                                             "key2", r))))
@@ -461,8 +460,10 @@ public class SplitPartitionIT {
                                             "key2", new byte[]{(byte) -100}))))
             );
 
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
             // When
+            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+
+            // Then
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
@@ -496,26 +497,6 @@ public class SplitPartitionIT {
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 1, new byte[]{50})
                             .buildList());
-        }
-    }
-
-    private static byte[] splitPointBytes(Partition partition1, Partition partition2, String key) {
-        Range range1 = partition1.getRegion().getRange(key);
-        Range range2 = partition2.getRegion().getRange(key);
-        if (Arrays.equals((byte[]) range1.getMin(), (byte[]) range2.getMax())) {
-            return (byte[]) range1.getMin();
-        } else {
-            return (byte[]) range1.getMax();
-        }
-    }
-
-    private static Object splitPoint(Partition partition1, Partition partition2, String key) {
-        Range range1 = partition1.getRegion().getRange(key);
-        Range range2 = partition2.getRegion().getRange(key);
-        if (Objects.equals(range1.getMin(), range2.getMax())) {
-            return range1.getMin();
-        } else {
-            return range1.getMax();
         }
     }
 
