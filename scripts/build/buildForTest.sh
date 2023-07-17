@@ -24,6 +24,6 @@ VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
 VERSION=$(cat "$VERSION_FILE")
 
-cp -r "$MAVEN_DIR/system-test/docker" "$DOCKER_DIR/system-test"
-cp -r "$MAVEN_DIR/system-test/target/system-test-${VERSION}-utility.jar" "$DOCKER_DIR/system-test/system-test.jar"
+cp -r "$MAVEN_DIR/system-test-data-generation/docker" "$DOCKER_DIR/system-test"
+cp -r "$MAVEN_DIR/system-test-data-generation/target/system-test-data-generation-${VERSION}-utility.jar" "$DOCKER_DIR/system-test/system-test.jar"
 cp -r "$MAVEN_DIR/system-test/target/system-test-${VERSION}-utility.jar" "$JARS_DIR"
