@@ -39,13 +39,12 @@ public class WriteRandomDataDirect {
     private WriteRandomDataDirect() {
     }
 
-    public static void writeWithIngestFactory(ObjectFactory objectFactory,
-                                              SystemTestProperties properties,
+    public static void writeWithIngestFactory(SystemTestProperties properties,
                                               TableProperties tableProperties,
                                               StateStoreProvider stateStoreProvider) throws IOException {
         writeWithIngestFactory(
                 IngestFactory.builder()
-                        .objectFactory(objectFactory)
+                        .objectFactory(ObjectFactory.noUserJars())
                         .localDir("/mnt/scratch")
                         .stateStoreProvider(stateStoreProvider)
                         .instanceProperties(properties)

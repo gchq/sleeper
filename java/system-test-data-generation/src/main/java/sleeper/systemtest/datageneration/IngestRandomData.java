@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -51,9 +50,8 @@ public class IngestRandomData {
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3(s3Client, s3Bucket);
 
-        ObjectFactory objectFactory = new ObjectFactory(systemTestProperties, s3Client, "/tmp");
-
-        TableProperties tableProperties = new TablePropertiesProvider(s3Client, systemTestProperties).getTableProperties(args[1]);
+        TableProperties tableProperties = new TablePropertiesProvider(s3Client, systemTestProperties)
+                .getTableProperties(args[1]);
 
         s3Client.shutdown();
 
@@ -63,8 +61,7 @@ public class IngestRandomData {
         } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
             StateStoreProvider stateStoreProvider = new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(),
                     systemTestProperties, HadoopConfigurationProvider.getConfigurationForECS(systemTestProperties));
-            WriteRandomDataDirect.writeWithIngestFactory(
-                    objectFactory, systemTestProperties, tableProperties, stateStoreProvider);
+            WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, tableProperties, stateStoreProvider);
         } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
             WriteRandomDataFiles.writeToS3GetDirectory(
                     systemTestProperties, tableProperties,
