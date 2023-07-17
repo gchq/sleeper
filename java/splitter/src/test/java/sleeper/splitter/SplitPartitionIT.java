@@ -432,15 +432,10 @@ public class SplitPartitionIT {
             for (int i = 0; i < 10; i++) {
                 List<Record> records = new ArrayList<>();
                 for (int r = 0; r < 100; r++) {
-                    Record record = new Record();
                     // The majority of the values are 10; so min should equal median
-                    if (r < 75) {
-                        record.put("key1", 10);
-                    } else {
-                        record.put("key1", 20);
-                    }
-                    record.put("key2", r);
-                    records.add(record);
+                    records.add(new Record(Map.of(
+                            "key1", r < 75 ? 10 : 20,
+                            "key2", r)));
                 }
                 ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
             }
