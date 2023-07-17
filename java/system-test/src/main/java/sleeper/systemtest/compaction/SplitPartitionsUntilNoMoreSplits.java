@@ -31,7 +31,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;

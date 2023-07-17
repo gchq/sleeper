@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest;
+package sleeper.systemtest.configuration;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,11 +26,11 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.systemtest.IngestMode.DIRECT;
-import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.IngestMode.DIRECT;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 class SystemTestPropertiesTest {
 

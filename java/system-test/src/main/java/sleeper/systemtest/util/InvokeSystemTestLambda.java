@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 import java.time.Duration;

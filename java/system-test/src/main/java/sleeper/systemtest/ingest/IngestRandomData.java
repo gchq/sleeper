@@ -25,13 +25,13 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.IngestMode;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.IngestMode;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 
-import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 
 /**
  * Entrypoint for SystemTest image. Writes random data to Sleeper using the mechanism (ingestMode) defined in

@@ -18,7 +18,7 @@ package sleeper.systemtest.ingest;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 

@@ -29,13 +29,13 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 
 public class CheckBulkImportRecords {
     private static final Logger LOGGER = LoggerFactory.getLogger(CheckBulkImportRecords.class);

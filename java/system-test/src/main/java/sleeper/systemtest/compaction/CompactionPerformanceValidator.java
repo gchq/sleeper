@@ -29,7 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 

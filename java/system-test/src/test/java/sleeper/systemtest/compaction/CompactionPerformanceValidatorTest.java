@@ -32,7 +32,7 @@ import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.FixedPartitionStore;
 import sleeper.statestore.inmemory.InMemoryFileInfoStore;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -41,9 +41,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.systemtest.SystemTestPropertiesTestHelper.createTestSystemTestProperties;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestPropertiesTestHelper.createTestSystemTestProperties;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 
 class CompactionPerformanceValidatorTest {
 

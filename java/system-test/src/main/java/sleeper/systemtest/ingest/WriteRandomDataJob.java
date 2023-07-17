@@ -22,13 +22,13 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 
 public abstract class WriteRandomDataJob {
     private final ObjectFactory objectFactory;

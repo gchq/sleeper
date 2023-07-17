@@ -24,7 +24,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SystemDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;

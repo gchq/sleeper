@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest;
+package sleeper.systemtest.configuration;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

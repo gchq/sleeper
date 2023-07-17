@@ -26,7 +26,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.InstanceProperties;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.util.List;
 

@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.job.common.RunECSTasks;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.ingest.json.TasksJson;
 
 import java.io.IOException;
@@ -46,10 +46,10 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 import static sleeper.systemtest.cdk.SystemTestStack.SYSTEM_TEST_CONTAINER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
  * Runs ECS tasks to write random data.

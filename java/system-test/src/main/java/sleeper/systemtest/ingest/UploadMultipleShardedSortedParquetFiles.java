@@ -28,7 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 

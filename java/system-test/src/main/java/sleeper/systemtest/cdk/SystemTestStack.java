@@ -34,8 +34,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
-import sleeper.systemtest.SystemTestProperties;
-import sleeper.systemtest.SystemTestProperty;
+import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperty;
 
 import java.util.List;
 import java.util.Locale;
@@ -46,10 +46,10 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VER
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
-import static sleeper.systemtest.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;
+import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
 /**
  * A {@link NestedStack} to deploy the system test components.

@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class TearDownTestInstance {
 

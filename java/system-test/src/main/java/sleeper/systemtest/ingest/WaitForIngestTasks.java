@@ -29,7 +29,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.util.WaitForQueueEstimate;
 
 import java.io.IOException;

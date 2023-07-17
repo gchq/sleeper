@@ -38,7 +38,7 @@ import sleeper.core.record.ResultsBatch;
 import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.Query;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.ingest.RandomRecordSupplier;
 import sleeper.systemtest.ingest.RandomRecordSupplierConfig;
 

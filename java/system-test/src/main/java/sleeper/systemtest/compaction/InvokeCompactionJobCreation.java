@@ -22,7 +22,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.util.InvokeSystemTestLambda;
 import sleeper.systemtest.util.WaitForQueueEstimate;
 

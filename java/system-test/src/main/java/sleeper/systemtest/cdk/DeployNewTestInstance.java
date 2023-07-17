@@ -23,7 +23,7 @@ import java.nio.file.Path;
 
 import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
-import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 
 public class DeployNewTestInstance {
 
