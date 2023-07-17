@@ -457,7 +457,6 @@ public class SplitPartitionIT {
                     .buildList());
             String path = createTempDirectory(folder, null).toString();
             String path2 = createTempDirectory(folder, null).toString();
-            Partition rootPartition = stateStore.getAllPartitions().get(0);
             ingestRecordsFromIterator(stateStore, schema, path, path2,
                     IntStream.range(0, 1000)
                             .mapToObj(i -> {
@@ -466,15 +465,9 @@ public class SplitPartitionIT {
                                 record.put("key2", 10);
                                 return record;
                             }).iterator());
-            Supplier<String> idSupplier = List.of("B", "C").iterator()::next;
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), idSupplier);
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals(rootPartition.getId()))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(rootPartition, fileNames);
+            splitSinglePartition(schema, stateStore, idSupplier("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -779,12 +772,17 @@ public class SplitPartitionIT {
         new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
     }
 
-    private static void splitSinglePartition(Schema schema, StateStore stateStore) throws Exception {
+    private static void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> stringIdSupplier) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
         List<String> fileNames = stateStore.getActiveFiles().stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
-        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
+        SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration(), stringIdSupplier);
         partitionSplitter.splitPartition(partition, fileNames);
+    }
+
+
+    private static Supplier<String> idSupplier(String... generateIds) {
+        return Arrays.stream(generateIds).iterator()::next;
     }
 }
