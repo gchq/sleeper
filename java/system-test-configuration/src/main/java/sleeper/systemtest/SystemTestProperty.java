@@ -21,7 +21,6 @@ import org.apache.commons.lang3.EnumUtils;
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
-import sleeper.systemtest.ingest.IngestMode;
 
 import java.util.List;
 import java.util.Objects;

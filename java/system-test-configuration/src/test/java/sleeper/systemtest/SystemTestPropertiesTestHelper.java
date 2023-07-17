@@ -18,11 +18,11 @@ package sleeper.systemtest;
 import java.io.IOException;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.systemtest.IngestMode.DIRECT;
 import static sleeper.systemtest.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.ingest.IngestMode.DIRECT;
 
 public class SystemTestPropertiesTestHelper {
 

@@ -73,6 +73,11 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-configuration</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>lambda</artifactId>
             <version>${aws-java-sdk-v2.version}</version>
@@ -144,6 +149,13 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>compaction-core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>system-test-configuration</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

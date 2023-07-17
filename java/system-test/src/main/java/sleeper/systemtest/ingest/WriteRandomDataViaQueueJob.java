@@ -29,6 +29,7 @@ import sleeper.core.record.Record;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.IngestMode;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
