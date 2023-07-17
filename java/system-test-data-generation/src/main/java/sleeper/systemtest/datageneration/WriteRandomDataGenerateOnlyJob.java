@@ -15,20 +15,16 @@
  */
 package sleeper.systemtest.datageneration;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
 
 public class WriteRandomDataGenerateOnlyJob extends WriteRandomDataJob {
     public WriteRandomDataGenerateOnlyJob(
-            ObjectFactory objectFactory,
             SystemTestProperties systemTestProperties,
-            TableProperties tableProperties,
-            StateStoreProvider stateStoreProvider) {
-        super(objectFactory, systemTestProperties, tableProperties, stateStoreProvider);
+            TableProperties tableProperties) {
+        super(systemTestProperties, tableProperties);
     }
 
     @Override

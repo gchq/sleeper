@@ -64,11 +64,11 @@ public class IngestRandomData {
 
         String ingestMode = systemTestProperties.get(INGEST_MODE);
         if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {
-            new WriteRandomDataViaQueueJob(ingestMode, objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
+            new WriteRandomDataViaQueueJob(ingestMode, systemTestProperties, tableProperties).run();
         } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
             new UploadMultipleShardedSortedParquetFiles(objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
         } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
-            new WriteRandomDataGenerateOnlyJob(objectFactory, systemTestProperties, tableProperties, stateStoreProvider).run();
+            new WriteRandomDataGenerateOnlyJob(systemTestProperties, tableProperties).run();
         } else {
             throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode +
                     ". Only direct and queue ingest modes are available.");

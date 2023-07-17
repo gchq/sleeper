@@ -15,13 +15,10 @@
  */
 package sleeper.systemtest.datageneration;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.io.IOException;
@@ -31,19 +28,13 @@ import java.util.stream.Stream;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 
 public abstract class WriteRandomDataJob {
-    private final ObjectFactory objectFactory;
     private final SystemTestProperties systemTestProperties;
     private final TableProperties tableProperties;
-    private final StateStoreProvider stateStoreProvider;
 
-    public WriteRandomDataJob(ObjectFactory objectFactory,
-                              SystemTestProperties systemTestProperties,
-                              TableProperties tableProperties,
-                              StateStoreProvider stateStoreProvider) {
-        this.objectFactory = objectFactory;
+    public WriteRandomDataJob(SystemTestProperties systemTestProperties,
+                              TableProperties tableProperties) {
         this.systemTestProperties = systemTestProperties;
         this.tableProperties = tableProperties;
-        this.stateStoreProvider = stateStoreProvider;
     }
 
     public abstract void run() throws IOException, StateStoreException;
@@ -56,23 +47,11 @@ public abstract class WriteRandomDataJob {
                 .iterator();
     }
 
-    protected ObjectFactory getClassFactory() {
-        return objectFactory;
-    }
-
     protected SystemTestProperties getSystemTestProperties() {
         return systemTestProperties;
     }
 
     protected TableProperties getTableProperties() {
         return tableProperties;
-    }
-
-    protected StateStore getStateStore() {
-        return stateStoreProvider.getStateStore(tableProperties);
-    }
-
-    protected StateStoreProvider getStateStoreProvider() {
-        return stateStoreProvider;
     }
 }

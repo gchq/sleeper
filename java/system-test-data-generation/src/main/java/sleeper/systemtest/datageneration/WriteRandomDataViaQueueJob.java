@@ -23,12 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
-import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
@@ -48,11 +46,9 @@ public class WriteRandomDataViaQueueJob extends WriteRandomDataJob {
 
     public WriteRandomDataViaQueueJob(
             String ingestMode,
-            ObjectFactory objectFactory,
             SystemTestProperties properties,
-            TableProperties tableProperties,
-            StateStoreProvider stateStoreProvider) {
-        super(objectFactory, properties, tableProperties, stateStoreProvider);
+            TableProperties tableProperties) {
+        super(properties, tableProperties);
         this.ingestMode = ingestMode;
     }
 
