@@ -32,9 +32,10 @@
         <module>configuration</module>
         <module>compaction</module>
         <module>query</module>
-        <module>system-test</module>
-        <module>system-test-cdk</module>
         <module>system-test-configuration</module>
+        <module>system-test-cdk</module>
+        <module>system-test-data-generation</module>
+        <module>system-test-drivers</module>
         <module>garbage-collector</module>
         <module>splitter</module>
         <module>cdk</module>
@@ -50,7 +51,6 @@
         <module>dynamodb-tools</module>
         <module>trino</module>
         <module>build</module>
-        <module>system-test-data-generation</module>
     </modules>
 
     <properties>
