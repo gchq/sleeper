@@ -405,10 +405,12 @@ public class SplitPartitionIT {
             StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                     .singlePartition("A")
                     .buildList());
-            ingestFileFromRecords(schema, stateStore,
-                    IntStream.range(0, 1000).mapToObj(i -> new Record(Map.of(
-                            "key1", i % 100,
-                            "key2", 10)))
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of(
+                                            "key1", r,
+                                            "key2", 10))))
             );
 
             // When
