@@ -364,7 +364,7 @@ public class SplitPartitionIT {
     @DisplayName("Multidimensional split")
     class MultidimensionalSplit {
         @Test
-        public void shouldSplitPartitionForIntMultidimensionalKeyOnFirstDimensionCorrectly() throws Exception {
+        public void shouldSplitIntKeyOnFirstDimension() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
@@ -392,12 +392,11 @@ public class SplitPartitionIT {
         }
 
         @Test
-        public void shouldSplitPartitionForIntMultidimensionalKeyOnSecondDimensionCorrectlyWhenMinIsMax() throws Exception {
+        public void shouldSplitIntKeyOnSecondDimensionWhenAllValuesForFirstKeyAreTheSame() throws Exception {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build();
-
             StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                     .singlePartition("A")
                     .buildList());
@@ -405,18 +404,18 @@ public class SplitPartitionIT {
                     ingestFileFromRecords(schema, stateStore,
                             IntStream.range(0, 100).mapToObj(r ->
                                     new Record(Map.of(
-                                            "key1", r,
-                                            "key2", 10))))
+                                            "key1", 10,
+                                            "key2", r))))
             );
-            // When
 
+            // When
             splitSinglePartition(schema, stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
-                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
+                            .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
                             .buildList());
         }
 
