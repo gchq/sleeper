@@ -25,6 +25,7 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.systemtest.drivers.compaction.WaitForCurrentSplitAddingMissingJobs;
 
 import java.time.Duration;
 import java.time.Instant;

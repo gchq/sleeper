@@ -19,7 +19,7 @@ import com.amazonaws.services.ecs.model.RunTaskResult;
 import com.amazonaws.services.ecs.model.Task;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.ingest.json.TasksJson;
+import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.StringReader;
 import java.time.Instant;

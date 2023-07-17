@@ -30,7 +30,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.util.EnsureCompactionJobCreationPaused "$INSTANCE_ID"
+ sleeper.systemtest.drivers.util.EnsureCompactionJobCreationPaused "$INSTANCE_ID"
 
 END_CHECK_PAUSED_TIME=$(record_time)
 
@@ -38,7 +38,7 @@ echo "--------------------------------------------------------------------------
 echo "Splitting partitions"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.SplitPartitionsUntilNoMoreSplits "$INSTANCE_ID" "$TABLE_NAME"
+ sleeper.systemtest.drivers.compaction.SplitPartitionsUntilNoMoreSplits "$INSTANCE_ID" "$TABLE_NAME"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

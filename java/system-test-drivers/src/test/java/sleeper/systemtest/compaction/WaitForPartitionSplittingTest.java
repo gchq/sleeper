@@ -28,6 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.systemtest.drivers.compaction.WaitForPartitionSplitting;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;

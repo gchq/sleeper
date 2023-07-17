@@ -28,6 +28,7 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.systemtest.drivers.util.WaitForQueueEstimate;
 
 import java.time.Duration;
 import java.time.Instant;

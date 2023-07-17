@@ -34,7 +34,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for tasks to generate data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
+ sleeper.systemtest.drivers.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
 
 END_DATA_GENERATION=$(record_time)
 echo "Waiting for data generation finished at $(recorded_time_str "$END_DATA_GENERATION"), took $(elapsed_time_str "$START_TIME" "$END_DATA_GENERATION")"
@@ -43,7 +43,7 @@ echo "--------------------------------------------------------------------------
 echo "Sending bulk import jobs"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.bulkimport.SendBulkImportJobs "${INSTANCE_ID}" "${TABLE_NAME}"
+ sleeper.systemtest.drivers.bulkimport.SendBulkImportJobs "${INSTANCE_ID}" "${TABLE_NAME}"
 
 FINISH_TIME=$(record_time)
 

@@ -17,7 +17,7 @@
 package sleeper.systemtest.compaction;
 
 import sleeper.configuration.properties.InstanceProperty;
-import sleeper.systemtest.util.InvokeSystemTestLambda;
+import sleeper.systemtest.drivers.util.InvokeSystemTestLambda;
 
 import java.util.HashMap;
 import java.util.Map;

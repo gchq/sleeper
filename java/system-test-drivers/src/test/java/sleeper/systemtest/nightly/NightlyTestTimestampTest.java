@@ -17,6 +17,8 @@ package sleeper.systemtest.nightly;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.drivers.nightly.NightlyTestTimestamp;
+
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;

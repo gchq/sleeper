@@ -29,6 +29,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
+import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
+import sleeper.systemtest.drivers.nightly.NightlyTestSummaryTable;
+import sleeper.systemtest.drivers.nightly.NightlyTestTimestamp;
 
 import java.io.IOException;
 import java.net.URL;

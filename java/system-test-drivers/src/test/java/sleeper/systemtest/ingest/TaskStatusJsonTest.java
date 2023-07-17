@@ -18,7 +18,7 @@ package sleeper.systemtest.ingest;
 import com.amazonaws.services.ecs.model.Task;
 import org.junit.jupiter.api.Test;
 
-import sleeper.systemtest.ingest.json.TaskStatusJson;
+import sleeper.systemtest.drivers.ingest.json.TaskStatusJson;
 
 import java.time.Instant;
 import java.util.Date;

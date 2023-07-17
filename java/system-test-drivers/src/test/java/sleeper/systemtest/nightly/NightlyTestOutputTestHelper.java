@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.nightly;
 
+import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
+import sleeper.systemtest.drivers.nightly.TestResult;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;

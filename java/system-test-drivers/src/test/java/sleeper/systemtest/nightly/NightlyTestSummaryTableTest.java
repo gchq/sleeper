@@ -20,6 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
+import sleeper.systemtest.drivers.nightly.NightlyTestSummaryTable;
+import sleeper.systemtest.drivers.nightly.NightlyTestTimestamp;
+import sleeper.systemtest.drivers.nightly.TestResult;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
