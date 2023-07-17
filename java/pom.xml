@@ -50,6 +50,7 @@
         <module>dynamodb-tools</module>
         <module>trino</module>
         <module>build</module>
+        <module>system-test-data-generation</module>
     </modules>
 
     <properties>

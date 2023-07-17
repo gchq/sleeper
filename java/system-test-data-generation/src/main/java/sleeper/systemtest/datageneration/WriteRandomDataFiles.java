@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.ingest;
+package sleeper.systemtest.datageneration;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;

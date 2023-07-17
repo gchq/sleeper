@@ -39,8 +39,8 @@ import sleeper.core.record.serialiser.JSONResultsBatchSerialiser;
 import sleeper.core.schema.Schema;
 import sleeper.query.model.Query;
 import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.ingest.RandomRecordSupplier;
-import sleeper.systemtest.ingest.RandomRecordSupplierConfig;
+import sleeper.systemtest.datageneration.RandomRecordSupplier;
+import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -127,7 +127,7 @@ public class MultipleQueries {
                 List<Record> records = resultsBatch.getRecords();
                 System.out.println(records.size() + " results for query " + queryId);
                 totalResults += records.size();
-                records.stream().forEach(System.out::println);
+                records.forEach(System.out::println);
                 sqsClient.deleteMessage(systemTestProperties.get(QUERY_RESULTS_QUEUE_URL), messageHandle);
             }
         }

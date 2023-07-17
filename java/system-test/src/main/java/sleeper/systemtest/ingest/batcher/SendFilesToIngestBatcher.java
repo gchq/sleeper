@@ -31,7 +31,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.ingest.RandomRecordSupplier;
+import sleeper.systemtest.datageneration.RandomRecordSupplier;
 
 import java.io.IOException;
 import java.util.List;

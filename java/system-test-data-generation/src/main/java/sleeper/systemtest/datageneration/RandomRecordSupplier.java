@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.ingest;
+package sleeper.systemtest.datageneration;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.commons.text.RandomStringGenerator;
@@ -82,7 +82,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
 
     public static Supplier<Object> getSupplier(PrimitiveType type, RandomRecordSupplierConfig config) {
         if (type instanceof IntType) {
-            return new Supplier<Object>() {
+            return new Supplier<>() {
                 private final RandomDataGenerator generator = new RandomDataGenerator();
 
                 @Override
@@ -92,7 +92,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
             };
         }
         if (type instanceof LongType) {
-            return new Supplier<Object>() {
+            return new Supplier<>() {
                 private final RandomDataGenerator generator = new RandomDataGenerator();
 
                 @Override
@@ -102,7 +102,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
             };
         }
         if (type instanceof StringType) {
-            return new Supplier<Object>() {
+            return new Supplier<>() {
                 private final RandomStringGenerator generator = new RandomStringGenerator.Builder()
                         .withinRange('a', 'z')
                         .build();
@@ -114,7 +114,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
             };
         }
         if (type instanceof ByteArrayType) {
-            return new Supplier<Object>() {
+            return new Supplier<>() {
                 private final Random random = new Random();
 
                 @Override
