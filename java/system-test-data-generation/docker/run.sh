@@ -15,4 +15,4 @@
 # limitations under the License.
 
 # Command line arguments for the following line are: bucket, output filename, number of lines
-java -cp /system-test.jar sleeper.systemtest.ingest.IngestRandomData $*
+java -cp /system-test.jar sleeper.systemtest.datageneration.IngestRandomData "$@"
