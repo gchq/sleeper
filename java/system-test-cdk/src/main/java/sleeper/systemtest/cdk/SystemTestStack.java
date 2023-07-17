@@ -34,6 +34,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.StateStoreStack;
+import sleeper.systemtest.configuration.SystemTestConstants;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestProperty;
 
@@ -57,7 +58,6 @@ import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TAS
 public class SystemTestStack extends NestedStack {
     public static final String SYSTEM_TEST_CLUSTER_NAME = "systemTestClusterName";
     public static final String SYSTEM_TEST_TASK_DEFINITION_FAMILY = "systemTestTaskDefinitionFamily";
-    public static final String SYSTEM_TEST_CONTAINER = "SystemTestContainer";
 
     public SystemTestStack(Construct scope,
                            String id,
@@ -111,7 +111,7 @@ public class SystemTestStack extends NestedStack {
                 .logging(Utils.createECSContainerLogDriver(this, systemTestProperties, "SystemTestTasks"))
                 .environment(Utils.createDefaultEnvironment(systemTestProperties))
                 .build();
-        taskDefinition.addContainer(SYSTEM_TEST_CONTAINER, containerDefinitionOptions);
+        taskDefinition.addContainer(SystemTestConstants.SYSTEM_TEST_CONTAINER, containerDefinitionOptions);
 
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
