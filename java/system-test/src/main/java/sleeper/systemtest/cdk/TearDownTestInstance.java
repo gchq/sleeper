@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.SystemTestProperty.SYSTEM_TEST_REPO;
-import static sleeper.systemtest.cdk.SystemTestStack.generateSystemTestClusterName;
 
 public class TearDownTestInstance {
 
@@ -40,9 +40,9 @@ public class TearDownTestInstance {
         TearDownInstance.builder()
                 .scriptsDir(Path.of(args[0]))
                 .instanceId(optionalArgument(args, 1).orElse(null))
-                .getExtraEcsClusters(properties -> List.of(
+                .getExtraEcsClusters(properties ->
                         Optional.ofNullable(properties.get(SYSTEM_TEST_CLUSTER_NAME))
-                                .orElseGet(() -> generateSystemTestClusterName(properties.get(ID)))))
+                                .stream().collect(Collectors.toUnmodifiableList()))
                 .getExtraEcrRepositories(properties -> List.of(
                         Optional.ofNullable(properties.get(SYSTEM_TEST_REPO))
                                 .orElseGet(() -> properties.get(ID) + "/system-test")))

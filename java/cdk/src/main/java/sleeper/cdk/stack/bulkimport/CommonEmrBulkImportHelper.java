@@ -98,6 +98,7 @@ public class CommonEmrBulkImportHelper {
         Queue emrBulkImportJobQueue = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobQueue")
                 .deadLetterQueue(deadLetterQueue)
+                .visibilityTimeout(Duration.minutes(3))
                 .queueName(instanceId + "-BulkImport" + shortId + "Q")
                 .build();
 

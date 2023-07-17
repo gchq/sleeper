@@ -52,4 +52,8 @@ public interface IngestJobStatusStore {
     default List<IngestJobStatus> getJobsByTaskId(String tableName, String taskId) {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
+
+    default List<IngestJobStatus> getInvalidJobs() {
+        throw new UnsupportedOperationException("Instance has no ingest job status store");
+    }
 }

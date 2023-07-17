@@ -27,11 +27,19 @@
         <notes><![CDATA[
         Spark is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.spark/spark\-core_2\.12@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-22946</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Spark is suppressed as the version we are able to use is restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
 
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <filePath regex="true">^.*/spark-.*-3\.3\.1\.jar.*$</filePath>
+        <filePath regex="true">^.*/spark-[^/]+-3\.3\.1\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -41,5 +49,109 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hadoop/.*$</packageUrl>
         <cpe>cpe:/a:apache:hadoop:3.3.3</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Hadoop is suppressed as the version we are able to use is restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+
+        Some of the Hadoop dependencies were not identified by the Hadoop CPE, so we've added this to catch
+        several shaded dependencies.
+        ]]></notes>
+        <filePath regex="true">^.*/hadoop-client-[^/]+-3\.3\.3\.jar/.*$</filePath>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
+        fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
+        <vulnerabilityName>CVE-2017-7525</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of Jackson, with old Maven artifacts that don't have a
+        fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.jackson/jackson\-mapper\-asl@.*$</packageUrl>
+        <vulnerabilityName>CVE-2019-10172</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of OkHttp, with old Maven artifacts that don't have a
+        fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp/okhttp@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The version of Athena we're using uses an old version of Bouncy Castle Provider, with an old Maven artifact that
+        doesn't have a fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-33201</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The AWS CDK uses Javascript code with a vulnerable NPM package. Once there's a version of the CDK that doesn't,
+        we can use that instead.
+        file name: cdk-asset-awscli-v1-2.2.200.jar: asset-awscli-v1@2.2.200.jsii.tgz: asset-awscli-v1@2.2.200.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+        ]]></notes>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.200\.jar/.*$</filePath>
+        <cve>CVE-2021-23497</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The AWS CDK uses a vulnerable Ruby gem. Once there's a version of the CDK that doesn't, we can use that instead.
+        file name: cdk-asset-awscli-v1-2.2.200.jar: asset-awscli-v1@2.2.200.jsii.tgz: asset-awscli-v1@2.2.200.jsii.tar: layer.zip: endpoint-rule-set-1.json.gz
+        ]]></notes>
+        <filePath regex="true">^.*/cdk-asset-awscli-v1-2\.2\.200\.jar/.*$</filePath>
+        <cve>CVE-2020-10663</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This seems to be a false positive where dependency check is reporting the CVE against the wrong artifact.
+        The CVE states the vulnerability is in the AWS S3 SDK before version 1.12.261.
+        We're using a version of that library that has the fix.
+        The aws-crt library is still used with the same version after the fix was applied in the S3 SDK.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/software\.amazon\.awssdk\.crt/aws\-crt@.*$</packageUrl>
+        <cve>CVE-2022-31159</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        At time of writing, the latest version of Avro IPC uses an old version of jQuery in its static pages for stats.
+        We don't expose that page, so it won't be a problem.
+        This is a provided dependency for the module bulk-import/bulk-import-runner.
+        ]]></notes>
+        <filePath regex="true">^.*/avro-ipc-1\.11\.1\.jar/.*/jquery-.*\.js$</filePath>
+        <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Janino/commons-compiler is used by Spark SQL to compile SQL. Our tests against Spark fail with the latest
+        version of Janino, and we can't upgrade Spark because we're restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.janino/(commons\-compiler|janino)@.*$</packageUrl>
+        <cve>CVE-2023-33546</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Spark SQL integrates with Apache Hive, but we don't use it.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.hive/hive\-storage\-api@.*$</packageUrl>
+        <cve>CVE-2021-34538</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This is a stack overflow caused by trying to build JSON from a data structure with cyclic dependencies.
+        There's no version of Jackson available with a fix yet, and it seems very unlikely that there's a case where
+        this could happen in Sleeper.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
     </suppress>
 </suppressions>

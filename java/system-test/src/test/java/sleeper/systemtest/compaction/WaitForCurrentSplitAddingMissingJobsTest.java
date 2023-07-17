@@ -106,7 +106,8 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
         // When/Then
         assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
+                .isInstanceOf(PollWithRetries.TimedOutException.class)
+                .hasMessageContaining("Timed out waiting until queue estimate matching unstarted compaction jobs");
     }
 
     @Test
@@ -198,7 +199,8 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
         // When / Then
         assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
-                .isInstanceOf(PollWithRetries.TimedOutException.class);
+                .isInstanceOf(PollWithRetries.TimedOutException.class)
+                .hasMessageContaining("Timed out waiting until compaction jobs finished");
     }
 
     @Test
@@ -220,6 +222,24 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         verifyNoInteractions(invokeCompactionTaskLambda);
     }
 
+    @Test
+    void shouldTimeOutWaitingForAllJobsToStartWhenInvokingTaskCreationLambda() {
+        // Given
+        WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
+                .lambdaClient(lambdaClientBuilder()
+                        .compactionJobCreation(lambdaWhichCreatesCompactionJob())
+                        .splittingCompactionTaskCreation(lambdaWhichDoesNothing()).build())
+                .queueClient(inOrder(
+                        visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
+                .waitForAllCompactionJobsToStart(pollTimes(1))
+                .build();
+
+        // When / Then
+        assertThatThrownBy(waiter::checkIfSplittingCompactionNeededAndWait)
+                .isInstanceOf(PollWithRetries.TimedOutException.class)
+                .hasMessageContaining("Timed out waiting until all compaction jobs have started");
+    }
+
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
         return builderWithDefaults()
                 .lambdaClient(lambdaClientBuilder()
@@ -234,7 +254,8 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .tableName(tableName)
                 .waitForSplitsToFinish(pollTimes(1))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
-                .waitForCompactionJobs(pollTimes(1));
+                .waitForCompactionJobs(pollTimes(1))
+                .waitForAllCompactionJobsToStart(pollTimes(1));
     }
 
     private Runnable lambdaWhichCreatesCompactionJob() {

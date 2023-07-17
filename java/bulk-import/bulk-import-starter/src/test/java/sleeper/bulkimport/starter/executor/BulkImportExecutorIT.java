@@ -43,6 +43,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
 
@@ -93,7 +94,7 @@ class BulkImportExecutorIT {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final String bucketName = UUID.randomUUID().toString();
     private final String tableName = "myTable";
-    private final IngestJobStatusStore ingestJobStatusStore = new DynamoDBIngestJobStatusStore(dynamoDB, instanceProperties);
+    private final IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @BeforeEach
     void setup() {

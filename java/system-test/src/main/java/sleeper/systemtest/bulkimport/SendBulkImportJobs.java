@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.SystemTestProperties;
 
 import java.io.IOException;
@@ -34,8 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.systemtest.SystemTestProperty.BULK_IMPORT_QUEUE_PROPERTY;
 import static sleeper.systemtest.SystemTestProperty.NUMBER_OF_BULK_IMPORT_JOBS;
 
 public class SendBulkImportJobs {
@@ -68,9 +69,11 @@ public class SendBulkImportJobs {
                     .files(files)
                     .build();
             String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
-            LOGGER.info("Sending message to bulk import queue ({})", jsonJob);
+            String queueUrl = systemTestProperties.get(InstanceProperty.getByName(
+                    systemTestProperties.get(BULK_IMPORT_QUEUE_PROPERTY)).orElseThrow());
+            LOGGER.info("Sending message to bulk import queue {} ({})", queueUrl, jsonJob);
             sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(systemTestProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
+                    .withQueueUrl(queueUrl)
                     .withMessageBody(jsonJob));
         }
         sqsClient.shutdown();
