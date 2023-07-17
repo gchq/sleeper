@@ -99,22 +99,13 @@ public class SplitPartitionIT {
                     ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
-            Partition partition2 = tree.getPartition("id2");
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals(partition2.getId()))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(partition2, fileNames);
+            splitPartition(schema, stateStore, "id2", generateNoIds());
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("root"), tree.getPartition("id12"),
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
         }
 
         @Test
@@ -153,21 +144,13 @@ public class SplitPartitionIT {
                     ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals("id2"))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
+            splitPartition(schema, stateStore, "id2", generateNoIds());
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("root"), tree.getPartition("id12"),
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
         }
 
         @Test
@@ -268,21 +251,13 @@ public class SplitPartitionIT {
                     ingestRecordsFromIterator(schema, stateStore, path, path2, records.iterator());
                 }
             }
-            SplitPartition partitionSplitter = new SplitPartition(stateStore, schema, new Configuration());
 
             // When
-            List<String> fileNames = stateStore.getActiveFiles().stream()
-                    .filter(fi -> fi.getPartitionId().equals("id2"))
-                    .map(FileInfo::getFilename)
-                    .collect(Collectors.toList());
-            partitionSplitter.splitPartition(tree.getPartition("id2"), fileNames);
+            splitPartition(schema, stateStore, "id2", generateNoIds());
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("root"), tree.getPartition("id12"),
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
-            assertThat(stateStore.getLeafPartitions()).containsExactlyInAnyOrder(
-                    tree.getPartition("id1"), tree.getPartition("id2"), tree.getPartition("id3"));
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
         }
     }
 
