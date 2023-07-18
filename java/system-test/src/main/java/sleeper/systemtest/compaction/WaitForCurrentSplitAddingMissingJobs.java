@@ -40,7 +40,6 @@ import java.util.Objects;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
@@ -58,6 +57,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
     private final WaitForQueueEstimate waitForSplitsToFinish;
     private final WaitForCompactionJobs waitForCompaction;
     private final WaitForQueueEstimate waitForCompactionsToAppearOnQueue;
+    private final PollWithRetries waitForAllCompactionJobsToStart;
     private final InvokeSystemTestLambda.Client lambdaClient;
 
     private WaitForCurrentSplitAddingMissingJobs(Builder builder) {
@@ -72,6 +72,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         waitForCompactionsToAppearOnQueue = WaitForQueueEstimate.matchesUnstartedJobs(
                 queueClient, properties, SPLITTING_COMPACTION_JOB_QUEUE_URL,
                 store, tableName, builder.waitForCompactionsToAppearOnQueue);
+        waitForAllCompactionJobsToStart = builder.waitForAllCompactionJobsToStart;
     }
 
     public static Builder builder() {
@@ -92,6 +93,10 @@ public class WaitForCurrentSplitAddingMissingJobs {
                         JOBS_ESTIMATE_POLL_INTERVAL_MILLIS, JOBS_ESTIMATE_MAX_POLLS))
                 .waitForCompactionJobs(PollWithRetries.intervalAndMaxPolls(
                         COMPACTION_JOB_POLL_INTERVAL_MILLIS, COMPACTION_JOB_MAX_POLLS))
+                .waitForAllCompactionJobsToStart(PollWithRetries.intervalAndMaxPolls(
+                        InvokeCompactionTaskCreationUntilAllJobsStarted.POLL_INTERVAL_MILLIS,
+                        InvokeCompactionTaskCreationUntilAllJobsStarted.MAX_POLLS
+                ))
                 .lambdaClient(lambdaClient)
                 .build();
     }
@@ -121,7 +126,9 @@ public class WaitForCurrentSplitAddingMissingJobs {
             LOGGER.info("Lambda created new jobs, but they were picked up by another running task");
         } else {
             LOGGER.info("Lambda created new jobs, creating splitting compaction tasks");
-            lambdaClient.invokeLambda(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+            InvokeCompactionTaskCreationUntilAllJobsStarted
+                    .forSplitting(tableName, store, lambdaClient, waitForAllCompactionJobsToStart)
+                    .pollUntilFinished();
         }
         waitForCompaction.pollUntilFinished();
         return true;
@@ -160,6 +167,7 @@ public class WaitForCurrentSplitAddingMissingJobs {
         private PollWithRetries waitForSplitsToFinish;
         private PollWithRetries waitForCompactionsToAppearOnQueue;
         private PollWithRetries waitForCompactionJobs;
+        private PollWithRetries waitForAllCompactionJobsToStart;
         private InvokeSystemTestLambda.Client lambdaClient;
 
         private Builder() {
@@ -197,6 +205,11 @@ public class WaitForCurrentSplitAddingMissingJobs {
 
         public Builder waitForCompactionJobs(PollWithRetries waitForCompactionJobs) {
             this.waitForCompactionJobs = waitForCompactionJobs;
+            return this;
+        }
+
+        public Builder waitForAllCompactionJobsToStart(PollWithRetries waitForAllCompactionJobsToStart) {
+            this.waitForAllCompactionJobsToStart = waitForAllCompactionJobsToStart;
             return this;
         }
 

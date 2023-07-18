@@ -26,6 +26,8 @@ import sleeper.systemtest.ingest.IngestMode;
 import java.util.List;
 import java.util.Objects;
 
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
@@ -50,6 +52,9 @@ public interface SystemTestProperty extends InstanceProperty {
                     "number of bulk import jobs that each import all of those files.")
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger).build();
+    SystemTestProperty BULK_IMPORT_QUEUE_PROPERTY = Index.propertyBuilder("sleeper.systemtest.bulkimport.queue.property")
+            .description("The property for the bulk import queue which jobs should be sent to in SendBulkImportJobs.")
+            .defaultValue(BULK_IMPORT_EMR_JOB_QUEUE_URL.getPropertyName()).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
             .description("The name of the cluster to use when performing system tests").build();
     SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
