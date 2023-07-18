@@ -23,6 +23,9 @@ import org.testcontainers.containers.GenericContainer;
 
 public class GenericContainerAwsV1ClientHelper {
 
+    private GenericContainerAwsV1ClientHelper() {
+    }
+
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV1Client(GenericContainer<?> container, int port, B builder) {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
                 new AwsClientBuilder.EndpointConfiguration("http://" + container.getHost() + ":"
