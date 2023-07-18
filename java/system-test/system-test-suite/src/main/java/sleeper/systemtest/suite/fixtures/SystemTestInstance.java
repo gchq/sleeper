@@ -19,6 +19,10 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
@@ -52,6 +56,11 @@ public enum SystemTestInstance {
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
 
         TableProperties tableProperties = new TableProperties(properties);
+        tableProperties.setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .sortKeyFields(new Field("timestamp", new LongType()))
+                .valueFields(new Field("value", new StringType()))
+                .build());
 
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
