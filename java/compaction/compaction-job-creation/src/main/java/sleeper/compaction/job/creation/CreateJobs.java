@@ -99,16 +99,23 @@ public class CreateJobs {
     }
 
     public void createJobsForTable(String tableName) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.debug("Creating jobs for table {}", tableName);
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
-
         List<Partition> allPartitions = stateStore.getAllPartitions();
-
         List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
         // NB We retrieve the information about all the file-in-partition infos and filter
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
+
+        LOGGER.info("Finding file-in-partition entries that need to be split for table {}", tableName);
+        // Split any file-in-partition entries for non-leaf partitions
+        new SplitFileInPartitionEntries(tableProperties.getSchema(), fileInPartitionList, allPartitions, stateStore).run();
+
+        // Get updated lists from the state store
+        allPartitions = stateStore.getAllPartitions();
+        fileInPartitionList = stateStore.getFileInPartitionList();
+
+        LOGGER.info("Creating jobs for table {}", tableName);
         List<FileInfo> fileInPartitionInfosWithNoJobId = fileInPartitionList.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
         List<FileInfo> fileInPartitionInfosWithJobId = fileInPartitionList.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
         LOGGER.debug("Found {} active files with no job id", fileInPartitionInfosWithNoJobId.size());
@@ -134,7 +141,7 @@ public class CreateJobs {
             List<FileInfo> fileInfos1 = new ArrayList<>();
             for (String filename : compactionJob.getInputFiles()) {
                 for (FileInfo fileInfo : fileInPartitionList) {
-                    if (fileInfo.getFilename().equals(filename)) {
+                    if (fileInfo.getFilename().equals(filename) && fileInfo.getPartitionId().equals(compactionJob.getPartitionId())) {
                         fileInfos1.add(fileInfo);
                         break;
                     }

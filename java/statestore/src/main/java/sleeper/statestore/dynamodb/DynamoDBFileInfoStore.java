@@ -312,12 +312,18 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         for (FileInfo fileInfo : files) {
             Map<String, AttributeValue> fileAttributeValues = fileInfoFormat.createRecordWithJobId(fileInfo, jobId);
             Map<String, String> expressionAttributeNames = new HashMap<>();
+            expressionAttributeNames.put("#filename", FILE_NAME);
+            expressionAttributeNames.put("#partitionid", PARTITION_ID);
             expressionAttributeNames.put("#jobid", JOB_ID);
+            Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+            expressionAttributeValues.put(":filename", new AttributeValue().withS(fileInfo.getFilename()));
+            expressionAttributeValues.put(":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
             Put put = new Put()
                     .withTableName(fileInPartitionTablename)
                     .withItem(fileAttributeValues)
                     .withExpressionAttributeNames(expressionAttributeNames)
-                    .withConditionExpression("attribute_not_exists(#jobid)");
+                    .withExpressionAttributeValues(expressionAttributeValues)
+                    .withConditionExpression("#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)");
             writes.add(new TransactWriteItem().withPut(put));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
