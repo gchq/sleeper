@@ -15,9 +15,6 @@
  */
 package sleeper.ingest.testutils;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -37,9 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.CommonTestConstants;
@@ -47,6 +41,9 @@ import sleeper.core.CommonTestConstants;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * This class is a JUnit extension which starts a local S3 and DynamoDB within a Docker
@@ -79,54 +76,24 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
         this.localStackServiceSet = Arrays.stream(services).collect(Collectors.toSet());
     }
 
-    private AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
-    }
-
     private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
-    }
-
-    private S3AsyncClient createS3AsyncClient() {
-        return S3AsyncClient.builder()
-                .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
-                )))
-                .region(Region.of(localStackContainer.getRegion()))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private AmazonSQS createSQSClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.SQS).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    }
+
+    private AmazonDynamoDB createDynamoClient() {
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    }
+
+    private S3AsyncClient createS3AsyncClient() {
+        return buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     }
 
     private AmazonCloudWatch createCloudWatchClient() {
-        return AmazonCloudWatchClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.CLOUDWATCH).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
     }
 
     @Override

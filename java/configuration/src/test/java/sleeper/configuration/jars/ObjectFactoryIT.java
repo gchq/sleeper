@@ -15,9 +15,6 @@
  */
 package sleeper.configuration.jars;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -57,6 +54,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.USER_JARS;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class ObjectFactoryIT {
@@ -69,13 +67,7 @@ public class ObjectFactoryIT {
     public Path folder;
 
     private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private InstanceProperties createInstanceProperties(AmazonS3 s3Client) {

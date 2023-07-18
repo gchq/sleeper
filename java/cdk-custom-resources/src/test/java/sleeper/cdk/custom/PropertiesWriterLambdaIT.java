@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.custom;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -43,6 +40,7 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class PropertiesWriterLambdaIT {
@@ -52,13 +50,7 @@ public class PropertiesWriterLambdaIT {
             .withServices(LocalStackContainer.Service.S3);
 
     private AmazonS3 createClient() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private InstanceProperties createDefaultProperties(String account, String bucket) {

@@ -15,9 +15,6 @@
  */
 package sleeper.clients.admin.testutils;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -40,6 +37,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 import static org.mockito.Mockito.mock;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class AdminClientITBase extends AdminClientTestBase {
@@ -50,13 +48,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                    localStackContainer.getRegion()))
-            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-            .build();
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
 
     @TempDir

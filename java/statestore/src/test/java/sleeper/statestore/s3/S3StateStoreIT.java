@@ -15,9 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -73,6 +70,7 @@ import java.util.concurrent.Executors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class S3StateStoreIT {
@@ -88,13 +86,7 @@ public class S3StateStoreIT {
 
     @BeforeAll
     public static void initDynamoClient() {
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getHost() + ":"
-                        + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
-        dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
+        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll

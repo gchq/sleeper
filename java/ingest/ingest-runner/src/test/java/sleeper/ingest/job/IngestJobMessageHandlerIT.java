@@ -16,9 +16,6 @@
 
 package sleeper.ingest.job;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -41,6 +38,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {
@@ -52,13 +50,7 @@ public class IngestJobMessageHandlerIT {
     private final InstanceProperties properties = new InstanceProperties();
 
     private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     @BeforeEach

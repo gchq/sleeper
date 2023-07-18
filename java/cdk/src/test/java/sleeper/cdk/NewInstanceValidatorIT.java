@@ -16,9 +16,6 @@
 
 package sleeper.cdk;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -52,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.ValidatorTestHelper.setupTablesPropertiesFile;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 class NewInstanceValidatorIT {
@@ -168,23 +166,11 @@ class NewInstanceValidatorIT {
     }
 
     private static AmazonS3 getS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     protected static AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClient.builder()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
-                        localStackContainer.getRegion()))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClient.builder());
     }
 
     private void createDynamoTable(String tableName) {
