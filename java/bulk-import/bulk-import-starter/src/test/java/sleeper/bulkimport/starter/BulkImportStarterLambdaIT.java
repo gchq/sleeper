@@ -33,7 +33,7 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 

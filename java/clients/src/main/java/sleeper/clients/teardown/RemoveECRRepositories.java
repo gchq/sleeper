@@ -22,14 +22,14 @@ import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_COMPACTION_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveECRRepositories.class);

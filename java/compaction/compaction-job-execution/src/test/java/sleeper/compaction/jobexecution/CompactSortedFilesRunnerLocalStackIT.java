@@ -43,7 +43,7 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCre
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -64,10 +64,10 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;

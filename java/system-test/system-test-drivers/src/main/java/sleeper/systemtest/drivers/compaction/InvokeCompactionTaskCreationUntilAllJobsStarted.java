@@ -21,16 +21,16 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.drivers.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.systemtest.drivers.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class InvokeCompactionTaskCreationUntilAllJobsStarted {

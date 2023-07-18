@@ -28,7 +28,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function to execute {@link RunTasks}.

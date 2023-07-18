@@ -20,8 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.InstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
 

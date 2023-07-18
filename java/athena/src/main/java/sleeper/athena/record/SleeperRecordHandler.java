@@ -34,7 +34,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -52,7 +52,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.SOURCE_TYPE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * An abstraction layer for the {@link RecordHandler} so that users can choose how to create a record iterator. The

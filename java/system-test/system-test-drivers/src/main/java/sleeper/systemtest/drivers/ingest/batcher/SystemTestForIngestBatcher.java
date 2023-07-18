@@ -32,7 +32,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.deploy.DeployInstanceConfiguration.fromInstancePropertiesOrTemplatesDir;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class SystemTestForIngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestForIngestBatcher.class);

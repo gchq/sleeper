@@ -42,11 +42,11 @@ import java.util.List;
 import java.util.Locale;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_CPU;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_TASK_MEMORY;

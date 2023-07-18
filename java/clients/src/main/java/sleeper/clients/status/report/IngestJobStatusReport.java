@@ -35,7 +35,7 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RejectedJobsQuery;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;

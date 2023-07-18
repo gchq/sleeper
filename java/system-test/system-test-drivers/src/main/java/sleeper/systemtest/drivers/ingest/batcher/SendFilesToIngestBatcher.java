@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
@@ -36,8 +36,8 @@ import sleeper.systemtest.datageneration.RandomRecordSupplier;
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 
 public class SendFilesToIngestBatcher {
 
