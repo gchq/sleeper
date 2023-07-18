@@ -89,7 +89,7 @@ public class S3StateStoreIT {
     @BeforeAll
     public static void initDynamoClient() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
+                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getHost() + ":"
                         + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
         dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))

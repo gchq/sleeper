@@ -16,6 +16,9 @@
 
 package sleeper.job.common;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
@@ -41,8 +44,11 @@ class QueueMessageCountIT {
 
     private AmazonSQS createSQSClient() {
         return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.SQS).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 

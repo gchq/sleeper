@@ -15,6 +15,9 @@
  */
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -44,8 +47,11 @@ public class TablePropertiesS3TestBase {
             .build();
 
     protected final AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                    localStackContainer.getRegion()))
+            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
             .build();
 
     protected TableProperties createValidPropertiesWithTableNameAndBucket(String tableName, String bucketName) {

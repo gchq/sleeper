@@ -15,6 +15,9 @@
  */
 package sleeper.clients.deploy;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
@@ -57,8 +60,11 @@ public class PopulatePropertiesIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.STS);
     private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.STS))
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.STS).toString(),
+                    localStackContainer.getRegion()))
+            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
             .build();
 
     @TempDir

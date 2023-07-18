@@ -73,7 +73,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     @BeforeAll
     public static void beforeAll() {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
+                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getHost() + ":"
                         + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
         dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
