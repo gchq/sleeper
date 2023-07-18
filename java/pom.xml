@@ -152,7 +152,7 @@
         <sleeper.system.test.instance.id/>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
-        <sleeper.system.test.subnet.id/>
+        <sleeper.system.test.subnet.ids/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -829,8 +829,8 @@
                                 <value>${sleeper.system.test.vpc.id}</value>
                             </property>
                             <property>
-                                <name>sleeper.system.test.subnet.id</name>
-                                <value>${sleeper.system.test.subnet.id}</value>
+                                <name>sleeper.system.test.subnet.ids</name>
+                                <value>${sleeper.system.test.subnet.ids}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>
