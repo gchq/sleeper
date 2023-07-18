@@ -26,7 +26,7 @@
     <artifactId>compaction-job-execution</artifactId>
 
     <dependencies>
-	    <dependency>
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-core</artifactId>
             <version>${aws-lambda-java-core.version}</version>
@@ -101,6 +101,20 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>dynamodb-tools</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
@@ -125,7 +139,7 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
-    </dependency>
+        </dependency>
     </dependencies>
 
     <build>
