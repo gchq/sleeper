@@ -24,6 +24,9 @@ import software.amazon.awssdk.regions.Region;
 
 public class LocalStackAwsV2ClientHelper {
 
+    private LocalStackAwsV2ClientHelper() {
+    }
+
     public static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
         return builder
                 .endpointOverride(localStackContainer.getEndpointOverride(service))
