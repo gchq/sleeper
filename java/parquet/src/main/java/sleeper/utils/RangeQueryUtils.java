@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.query.utils;
+package sleeper.utils;
 
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.Operators.BinaryColumn;
@@ -88,6 +88,16 @@ public class RangeQueryUtils {
             } else {
                 partitionPredicate = org.apache.parquet.filter2.predicate.FilterApi.and(partitionPredicate, partitionPredicateForThisDimension);
             }
+        }
+
+        if (null == partitionPredicate && null == anyRangeFilter) {
+            return null;
+        }
+        if (null == partitionPredicate) {
+            return anyRangeFilter;
+        }
+        if (null == anyRangeFilter) {
+            return partitionPredicate;
         }
         return org.apache.parquet.filter2.predicate.FilterApi.and(partitionPredicate, anyRangeFilter);
     }

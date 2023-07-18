@@ -22,6 +22,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.filter2.compat.FilterCompat;
+import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
@@ -38,6 +40,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.key.Key;
+import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.record.process.RecordsProcessed;
@@ -55,15 +58,18 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
+import sleeper.utils.RangeQueryUtils;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
@@ -104,7 +110,7 @@ public class CompactSortedFiles {
         this.taskId = taskId;
     }
 
-    public RecordsProcessedSummary compact() throws IOException, IteratorException {
+    public RecordsProcessedSummary compact() throws IOException, IteratorException, StateStoreException {
         Instant startTime = Instant.now();
         String id = compactionJob.getId();
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
@@ -129,7 +135,7 @@ public class CompactSortedFiles {
         return summary;
     }
 
-    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException {
+    private RecordsProcessed compactNoSplitting() throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -204,7 +210,7 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
 
-    private RecordsProcessed compactSplitting() throws IOException, IteratorException {
+    private RecordsProcessed compactSplitting() throws IOException, IteratorException, StateStoreException {
         Configuration conf = getConfiguration();
 
         // Create a reader for each file
@@ -318,10 +324,27 @@ public class CompactSortedFiles {
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
-    private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
+    private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException, StateStoreException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
+
+        String partitonId = compactionJob.getPartitionId();
+        // TODO - Optimise the following by adding a method to the state store to retrieve a Partition by id
+        List<Partition> allPartitions = stateStore.getAllPartitions();
+        List<Partition> partitions = allPartitions.stream()
+            .filter(p -> p.getId().equals(partitonId))
+            .collect(Collectors.toList());
+        if (partitions.size() != 1) {
+            throw new RuntimeException("Expected 1 Partition for partition with id "
+                + partitonId + ", found " + partitions.size());
+        }
+        Partition partition = partitions.get(0);
+        FilterPredicate filterPredicate = RangeQueryUtils.getFilterPredicateMultidimensionalKey(schema.getRowKeyFields(), Collections.emptyList(), partition.getRegion());
+
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema).withConf(conf).build();
+            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
+                .withConf(conf)
+                .withFilter(FilterCompat.get(filterPredicate))
+                .build();
             ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
             inputIterators.add(recordIterator);
             LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);

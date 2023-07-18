@@ -21,12 +21,12 @@ import sleeper.core.schema.Schema;
 import sleeper.statestore.PartitionStore;
 import sleeper.statestore.StateStoreException;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FixedPartitionStore implements PartitionStore {
-
     private final List<Partition> partitions;
 
     public FixedPartitionStore(Schema schema) {
@@ -34,7 +34,7 @@ public class FixedPartitionStore implements PartitionStore {
     }
 
     public FixedPartitionStore(List<Partition> partitions) {
-        this.partitions = partitions;
+        this.partitions = new ArrayList<>(partitions);
     }
 
     @Override
@@ -66,6 +66,9 @@ public class FixedPartitionStore implements PartitionStore {
 
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) {
-        throw new UnsupportedOperationException("Cannot split partitions with FixedPartitionStore");
+        partitions.removeIf(p -> p.getId().equals(splitPartition.getId()));
+        partitions.add(splitPartition);
+        partitions.add(newPartition1);
+        partitions.add(newPartition2);
     }
 }

@@ -74,27 +74,6 @@ public class FixedPartitionStoreTest {
     }
 
     @Test
-    public void shouldRefusePartitionSplit() {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        List<Partition> partitionsInit = new PartitionsBuilder(schema)
-                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
-                .buildList();
-        PartitionStore store = new FixedPartitionStore(partitionsInit);
-
-        // When / Then
-        PartitionTree updateTree = new PartitionsBuilder(schema)
-                .leavesWithSplits(Arrays.asList("left", "right"), Collections.singletonList("aaa"))
-                .parentJoining("root", "left", "right")
-                .buildTree();
-        Partition root = updateTree.getPartition("root");
-        Partition left = updateTree.getPartition("left");
-        Partition right = updateTree.getPartition("right");
-        assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(root, left, right))
-                .isInstanceOf(UnsupportedOperationException.class);
-    }
-
-    @Test
     public void shouldRefuseInitialiseThatChangesPartitions() {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();

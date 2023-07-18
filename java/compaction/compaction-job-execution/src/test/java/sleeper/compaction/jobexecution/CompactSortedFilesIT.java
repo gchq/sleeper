@@ -20,8 +20,14 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestBase;
 import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelper;
+import sleeper.core.key.Key;
+import sleeper.core.partition.Partition;
+import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
@@ -31,7 +37,9 @@ import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.StateStore;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleByteArrayKey;
@@ -90,6 +98,141 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+    }
+
+    @Test
+    void filesShouldMergeCorrectlyAndStateStoreUpdatedLongKeyWhenFileContainsDataFromOutsidePartition() throws Exception {
+        // Given
+        Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
+        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+        CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
+
+        List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
+        List<Record> data2 = keyAndTwoValuesSortedOddLongs();
+        stateStore.addFile(dataHelper.writeLeafFile(folderName + "/file1.parquet", data1, 0L, 198L));
+        stateStore.addFile(dataHelper.writeLeafFile(folderName + "/file2.parquet", data2, 0L, 199L));
+
+        // - Now we have 2 files in the root partition. Split the root partition in two.
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Partition rootPartition = stateStore.getAllPartitions().get(0);
+        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
+        Field keyField = schema.getRowKeyFields().get(0);
+        Range leftRange = rangeFactory.createRange(keyField, Long.MIN_VALUE, 100L);
+        Region leftRegion = new Region(leftRange);
+        Partition leftLeafPartition = Partition.builder()
+                .dimension(0)
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .id("left")
+                .leafPartition(true)
+                .region(leftRegion)
+                .build();
+        Range rightRange = rangeFactory.createRange(keyField, 100L, null);
+        Region rightRegion = new Region(rightRange);
+        Partition rightLeafPartition = Partition.builder()
+                .dimension(0)
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .id("right")
+                .leafPartition(true)
+                .region(rightRegion)
+                .build();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftLeafPartition, rightLeafPartition);
+        // - Split the file-in-partition records
+        List<FileInfo> fileInPartitionInfos = stateStore.getFileInPartitionList();
+        for (FileInfo fileInfo : fileInPartitionInfos) {
+            stateStore.atomicallySplitFileInPartitionRecord(fileInfo, "left", "right");
+        }
+        List<FileInfo> fileInPartitionEntriesLeftLeafPartition = stateStore.getFileInPartitionList().stream()
+                .filter(f -> f.getPartitionId().equals("left"))
+                .collect(Collectors.toList());
+        CompactionJob compactionJob = compactionFactory().createCompactionJob(fileInPartitionEntriesLeftLeafPartition, "left");
+
+        // When
+        CompactSortedFiles compactSortedFiles = createCompactSortedFiles(schema, compactionJob, stateStore, DEFAULT_TASK_ID);
+        RecordsProcessedSummary summary = compactSortedFiles.compact();
+
+        // Then
+        //  - Read output file and check that it contains the right results
+        List<Record> data1LeftChild = data1.stream().filter(r -> ((long) r.get(keyField.getName())) < 100).collect(Collectors.toList());
+        List<Record> data2LeftChild = data2.stream().filter(r -> ((long) r.get(keyField.getName())) < 100).collect(Collectors.toList());
+        List<Record> expectedResults = combineSortedBySingleKey(data1LeftChild, data2LeftChild);
+        assertThat(summary.getRecordsRead()).isEqualTo(expectedResults.size());
+        assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
+        assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
+
+        // - Check StateStore has the correct file-in-partition entries for left partition
+        FileInfo expectedFileInfoLeft = FileInfo.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .filename(compactionJob.getOutputFile())
+                .fileStatus(FileStatus.FILE_IN_PARTITION)
+                .partitionId("left")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(99L))
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        assertThat(stateStore.getFileInPartitionList().stream().filter(f -> f.getPartitionId().equals("left")))
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(expectedFileInfoLeft);
+
+        // - Check StateStore has the correct file-in-partition entries for right partition
+        FileInfo expectedFile1InfoRight = FileInfo.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .filename(folderName + "/file1.parquet")
+                .fileStatus(FileStatus.FILE_IN_PARTITION)
+                .partitionId("right")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileInfo expectedFile2InfoRight = FileInfo.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .filename(folderName + "/file2.parquet")
+                .fileStatus(FileStatus.FILE_IN_PARTITION)
+                .partitionId("right")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(199L))
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        assertThat(stateStore.getFileInPartitionList().stream().filter(f -> f.getPartitionId().equals("right")))
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFile1InfoRight, expectedFile2InfoRight);
+
+        // - Check StateStore has the correct file-lifecycle entries
+        FileInfo expectedFileLifecycleRecord1 = FileInfo.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .filename(folderName + "/file1.parquet")
+                .fileStatus(FileStatus.ACTIVE)
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(198L))
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        FileInfo expectedFileLifecycleRecord2 = FileInfo.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .filename(folderName + "/file2.parquet")
+                .fileStatus(FileStatus.ACTIVE)
+                .partitionId("root")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(199L))
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        FileInfo expectedFileLifecycleOutput = FileInfo.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .filename(compactionJob.getOutputFile())
+                .fileStatus(FileStatus.ACTIVE)
+                .partitionId("left")
+                .numberOfRecords(100L)
+                .minRowKey(Key.create(0L))
+                .maxRowKey(Key.create(99L))
+                .onlyContainsDataForThisPartition(true)
+                .build();
+        assertThat(stateStore.getFileLifecycleList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(expectedFileLifecycleRecord1, expectedFileLifecycleRecord2, expectedFileLifecycleOutput);
     }
 
     @Test

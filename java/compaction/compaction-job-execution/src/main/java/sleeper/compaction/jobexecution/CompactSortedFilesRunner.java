@@ -52,6 +52,7 @@ import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
@@ -140,7 +141,7 @@ public class CompactSortedFilesRunner {
                 jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, ecsClient, type, 3, 20);
     }
 
-    public void run() throws InterruptedException, IOException, ActionException {
+    public void run() throws InterruptedException, IOException, ActionException, StateStoreException {
         Instant startTime = Instant.now();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus
                 .builder().taskId(taskId).type(type).startTime(startTime);
@@ -203,7 +204,7 @@ public class CompactSortedFilesRunner {
     }
 
     private RecordsProcessedSummary compact(CompactionJob compactionJob, Message message)
-            throws IOException, IteratorException, ActionException {
+            throws IOException, IteratorException, ActionException, StateStoreException {
         MessageReference messageReference = new MessageReference(sqsClient, sqsJobQueueUrl,
                 "Compaction job " + compactionJob.getId(), message.getReceiptHandle());
         // Create background thread to keep messages alive
@@ -232,7 +233,7 @@ public class CompactSortedFilesRunner {
     }
 
     public static void main(String[] args)
-            throws InterruptedException, IOException, ObjectFactoryException, ActionException {
+            throws InterruptedException, IOException, ObjectFactoryException, ActionException, StateStoreException {
         if (2 != args.length) {
             System.err.println("Error: must have 2 arguments (config bucket and compaction type (compaction or splittingcompaction)), got "
                     + args.length

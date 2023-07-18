@@ -157,6 +157,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
+        String partitionId = stateStore.getAllPartitions().get(0).getId();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
@@ -171,7 +172,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(file1)
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .partitionId("1")
+                .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
                 .maxRowKey(Key.create(198L))
@@ -180,7 +181,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(file2)
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .partitionId("1")
+                .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(199L))
@@ -189,7 +190,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(file3)
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .partitionId("1")
+                .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
                 .maxRowKey(Key.create(198L))
@@ -198,7 +199,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(file4)
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .partitionId("1")
+                .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(199L))
@@ -247,7 +248,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableName(tableName)
                 .jobId("job1")
-                .partitionId("1")
+                .partitionId(partitionId)
                 .dimension(0)
                 .inputFiles(Arrays.asList(file1, file2))
                 .isSplittingJob(false)
@@ -255,7 +256,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         CompactionJob compactionJob2 = CompactionJob.builder()
                 .tableName(tableName)
                 .jobId("job2")
-                .partitionId("1")
+                .partitionId(partitionId)
                 .dimension(0)
                 .inputFiles(Arrays.asList(file3, file4))
                 .isSplittingJob(false)
@@ -293,7 +294,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(compactionJob1.getOutputFile())
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .partitionId("1")
+                .partitionId(partitionId)
                 .numberOfRecords(200L)
                 .minRowKey(Key.create(0L))
                 .maxRowKey(Key.create(199L))
@@ -302,7 +303,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(compactionJob2.getOutputFile())
                 .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
-                .partitionId("1")
+                .partitionId(partitionId)
                 .numberOfRecords(200L)
                 .minRowKey(Key.create(0L))
                 .maxRowKey(Key.create(199L))

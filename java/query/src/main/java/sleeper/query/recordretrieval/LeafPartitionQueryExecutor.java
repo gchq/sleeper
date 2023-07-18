@@ -33,7 +33,7 @@ import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.query.utils.RangeQueryUtils;
+import sleeper.utils.RangeQueryUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
