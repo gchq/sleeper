@@ -32,7 +32,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for EMR clusters"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.bulkimport.WaitForEMRClusters "${INSTANCE_ID}"
+ sleeper.systemtest.drivers.bulkimport.WaitForEMRClusters "${INSTANCE_ID}"
 
 END_EMR_TIME=$(record_time)
 echo "EMR clusters terminated at $(recorded_time_str "$END_EMR_TIME"), took $(elapsed_time_str "$START_TIME" "$END_EMR_TIME")"
@@ -41,7 +41,7 @@ echo "--------------------------------------------------------------------------
 echo "Checking all records have been written"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.bulkimport.CheckBulkImportRecords "${INSTANCE_ID}"
+ sleeper.systemtest.drivers.bulkimport.CheckBulkImportRecords "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
 

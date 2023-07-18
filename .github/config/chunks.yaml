@@ -10,7 +10,7 @@ chunks:
   cdk:
     name: CDK
     workflow: chunk-cdk.yaml
-    modules: [ cdk, cdk-custom-resources, cdk-environment, system-test ]
+    modules: [ cdk, cdk-custom-resources, cdk-environment, system-test/system-test-cdk, system-test/system-test-configuration, system-test/system-test-data-generation, system-test/system-test-drivers ]
   clients:
     name: Clients
     workflow: chunk-clients.yaml

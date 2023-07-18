@@ -43,7 +43,7 @@ echo "--------------------------------------------------------------------------
 echo "Writing Random Data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
+ sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
