@@ -673,6 +673,32 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
+    public void shouldNotAtomicallyUpdateJobStatusOfFilesIfFileInfoNotPresent() throws StateStoreException {
+        // Given
+        Schema schema = schemaWithSingleRowKeyType(new LongType());
+        StateStore dynamoDBStateStore = getStateStore(schema);
+        List<FileInfo> files = new ArrayList<>();
+        for (int i = 1; i < 5; i++) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file" + i)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("8")
+                    .numberOfRecords(1000L)
+                    .minRowKey(Key.create(1L))
+                    .maxRowKey(Key.create(10L))
+                    .lastStateStoreUpdateTime(i * 1_000_000L)
+                    .build();
+            files.add(fileInfo);
+        }
+        String jobId = UUID.randomUUID().toString();
+
+        // When / Then
+        assertThatThrownBy(() -> dynamoDBStateStore.atomicallyUpdateJobStatusOfFiles(jobId, files))
+                .isInstanceOf(StateStoreException.class);
+    }
+
+    @Test
     public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
