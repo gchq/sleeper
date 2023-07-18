@@ -16,6 +16,9 @@
 
 package sleeper.ingest.batcher.submitter;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -53,8 +56,11 @@ public class IngestBatcherSubmitterLambdaIT {
             .withServices(LocalStackContainer.Service.S3);
 
     protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                    localStackContainer.getRegion()))
+            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
             .build();
 
     private static final String TEST_TABLE = "test-table";

@@ -16,6 +16,9 @@
 
 package sleeper.cdk;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -53,8 +56,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 @Testcontainers
 class NewInstanceValidatorIT {
     @Container
-    public static final LocalStackContainer LOCALSTACK_CONTAINER
-            = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     @TempDir
@@ -167,15 +169,21 @@ class NewInstanceValidatorIT {
 
     private static AmazonS3 getS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(LOCALSTACK_CONTAINER.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(LOCALSTACK_CONTAINER.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
     protected static AmazonDynamoDB createDynamoClient() {
         return AmazonDynamoDBClient.builder()
-                .withEndpointConfiguration(LOCALSTACK_CONTAINER.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .withCredentials(LOCALSTACK_CONTAINER.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 

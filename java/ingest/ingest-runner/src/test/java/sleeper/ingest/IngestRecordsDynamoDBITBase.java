@@ -44,7 +44,7 @@ public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
     protected DynamoDBStateStore getStateStore(Schema schema)
             throws StateStoreException {
         AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
+                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getHost() + ":"
                         + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))

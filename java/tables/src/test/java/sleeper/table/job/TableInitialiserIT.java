@@ -15,6 +15,9 @@
  */
 package sleeper.table.job;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -66,15 +69,21 @@ public class TableInitialiserIT {
 
     private AmazonS3 getS3Client() {
         return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
     private AmazonDynamoDB getDynamoClient() {
         return AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                        localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString(),
+                        localStackContainer.getRegion()))
+                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
                 .build();
     }
 
@@ -159,9 +168,9 @@ public class TableInitialiserIT {
         String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
         String tableName = "MyTable";
         s3Client.createBucket(configBucket);
-        String content = String.join("\n", new String(Base64.encodeBase64("a".getBytes())),
-                new String(Base64.encodeBase64("b".getBytes())),
-                new String(Base64.encodeBase64("c".getBytes())));
+        String content = String.join("\n", new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
         s3Client.putObject(configBucket, "splits/" + tableName, content);
 
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -268,9 +277,9 @@ public class TableInitialiserIT {
         String tableName = "MyTable";
         s3Client.createBucket(configBucket);
         String content = String.join("\n",
-                new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_16))),
-                new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_16))),
-                new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_16))));
+                new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8));
         s3Client.putObject(configBucket, "splits/" + tableName, content);
 
         InstanceProperties instanceProperties = new InstanceProperties();
