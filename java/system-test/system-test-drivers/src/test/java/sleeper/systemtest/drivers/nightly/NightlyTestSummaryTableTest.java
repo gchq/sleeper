@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.nightly;
+package sleeper.systemtest.drivers.nightly;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
-import sleeper.systemtest.drivers.nightly.NightlyTestSummaryTable;
-import sleeper.systemtest.drivers.nightly.NightlyTestTimestamp;
-import sleeper.systemtest.drivers.nightly.TestResult;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +26,6 @@ import java.util.Map;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 class NightlyTestSummaryTableTest {
     @Nested
@@ -42,7 +36,7 @@ class NightlyTestSummaryTableTest {
             // Given
             NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                     NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                    outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)));
+                    NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)));
 
             // When / Then
             assertThatJson(summary.toJson())
@@ -60,7 +54,7 @@ class NightlyTestSummaryTableTest {
                             "\"tests\": [{\"name\":\"bulkImportPerformance\", \"exitCode\":0}]" +
                             "}]}").add(
                     NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
-                    outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+                    NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
 
             // When / Then
             assertThatJson(summary.toJson())
@@ -106,10 +100,10 @@ class NightlyTestSummaryTableTest {
             NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
                     .add(
                             NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                            outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)))
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 0)))
                     .add(
                             NightlyTestTimestamp.from(Instant.parse("2023-05-04T15:42:00Z")),
-                            outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of("bulkImportPerformance", 1)));
 
             // When / Then
             assertThat(summary.toTableString()).isEqualTo("" +
@@ -126,7 +120,7 @@ class NightlyTestSummaryTableTest {
             NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty()
                     .add(
                             NightlyTestTimestamp.from(Instant.parse("2023-05-03T15:15:00Z")),
-                            outputWithStatusCodeByTest(Map.of(
+                            NightlyTestOutputTestHelper.outputWithStatusCodeByTest(Map.of(
                                     "splittingPerformance", 0,
                                     "bulkImportPerformance", 0,
                                     "compactionPerformance", 0)));

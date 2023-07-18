@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.compaction;
+package sleeper.systemtest.drivers.compaction;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +33,6 @@ import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.FixedPartitionStore;
 import sleeper.statestore.inmemory.InMemoryFileInfoStore;
 import sleeper.systemtest.configuration.SystemTestProperties;
-import sleeper.systemtest.drivers.compaction.CompactionPerformanceResults;
-import sleeper.systemtest.drivers.compaction.CompactionPerformanceValidator;
 
 import java.time.Duration;
 import java.time.Instant;

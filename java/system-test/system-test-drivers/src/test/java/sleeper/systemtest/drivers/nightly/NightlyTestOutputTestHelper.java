@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.nightly;
-
-import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
-import sleeper.systemtest.drivers.nightly.TestResult;
+package sleeper.systemtest.drivers.nightly;
 
 import java.util.Collections;
 import java.util.Comparator;

@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.nightly;
+package sleeper.systemtest.drivers.nightly;
 
 import org.junit.jupiter.api.Test;
-
-import sleeper.systemtest.drivers.nightly.NightlyTestTimestamp;
 
 import java.time.Instant;
 

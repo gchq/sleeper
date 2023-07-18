@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.compaction;
+package sleeper.systemtest.drivers.compaction;
 
 import sleeper.configuration.properties.InstanceProperty;
 import sleeper.systemtest.drivers.util.InvokeSystemTestLambda;

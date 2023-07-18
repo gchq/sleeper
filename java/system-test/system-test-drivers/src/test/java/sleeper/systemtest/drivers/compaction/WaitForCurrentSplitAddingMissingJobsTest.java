@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.compaction;
+package sleeper.systemtest.drivers.compaction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,6 @@ import sleeper.configuration.properties.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.systemtest.drivers.compaction.WaitForCurrentSplitAddingMissingJobs;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -45,7 +44,6 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summar
 import static sleeper.job.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 import static sleeper.job.common.QueueMessageCountsSequence.inOrder;
-import static sleeper.systemtest.compaction.InvokeSystemTestLambdaClientHelper.lambdaClientBuilder;
 
 class WaitForCurrentSplitAddingMissingJobsTest {
     private static final String SPLITTING_QUEUE_URL = "test-splitting-queue";
@@ -115,7 +113,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldTimeOutIfCompactionJobDoesNotFinish() {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichStartsCompactionJob()).build())
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 1)))
@@ -134,7 +132,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldCompleteIfCompactionJobIsFinishedBeforeWeCheckQueueEstimate() throws Exception {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesAndFinishesCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichDoesNothing()).build())
                 .queueClient(inOrder(visibleMessages(COMPACTION_JOB_QUEUE_URL, 0)))
@@ -152,7 +150,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldCompleteIfCompactionJobIsStartedBeforeWeCheckQueueEstimate() throws Exception {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesAndStartsCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichDoesNothing()).build())
                 .queueClient(emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked())
@@ -170,7 +168,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldCompleteIfCompactionJobIsStartedOnSecondQueueEstimateCheck() throws Exception {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichDoesNothing()).build())
                 .queueClient(inOrder(
@@ -190,7 +188,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldTimeOutIfCompactionJobIsStartedBeforeQueueEstimateCheckButNeverFinishes() {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichDoesNothing()).build())
                 .queueClient(emptyCompactionQueueWhichStartsJobWhenEstimateIsChecked())
@@ -210,7 +208,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
         Runnable invokeCompactionTaskLambda = mock(Runnable.class);
 
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesAndStartsCompactionJob())
                         .splittingCompactionTaskCreation(invokeCompactionTaskLambda).build())
                 .queueClient(emptyCompactionQueueWhichFinishesJobWhenEstimateIsChecked())
@@ -227,7 +225,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
     void shouldTimeOutWaitingForAllJobsToStartWhenInvokingTaskCreationLambda() {
         // Given
         WaitForCurrentSplitAddingMissingJobs waiter = builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichDoesNothing()).build())
                 .queueClient(inOrder(
@@ -243,7 +241,7 @@ class WaitForCurrentSplitAddingMissingJobsTest {
 
     private WaitForCurrentSplitAddingMissingJobs.Builder runningOneJob() {
         return builderWithDefaults()
-                .lambdaClient(lambdaClientBuilder()
+                .lambdaClient(InvokeSystemTestLambdaClientHelper.lambdaClientBuilder()
                         .compactionJobCreation(lambdaWhichCreatesCompactionJob())
                         .splittingCompactionTaskCreation(lambdaWhichStartsAndFinishesCompactionJob()).build());
     }

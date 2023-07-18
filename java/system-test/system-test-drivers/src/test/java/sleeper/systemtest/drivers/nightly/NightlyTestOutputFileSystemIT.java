@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.nightly;
+package sleeper.systemtest.drivers.nightly;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
-import sleeper.systemtest.drivers.nightly.TestResult;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.nightly.NightlyTestOutputTestHelper.emptyOutput;
 
 class NightlyTestOutputFileSystemIT {
     @TempDir
@@ -116,7 +112,7 @@ class NightlyTestOutputFileSystemIT {
 
             // When / Then
             assertThat(NightlyTestOutput.from(tempDir))
-                    .isEqualTo(emptyOutput());
+                    .isEqualTo(NightlyTestOutputTestHelper.emptyOutput());
         }
     }
 
@@ -127,7 +123,7 @@ class NightlyTestOutputFileSystemIT {
 
         // When / Then
         assertThat(NightlyTestOutput.from(tempDir))
-                .isEqualTo(emptyOutput());
+                .isEqualTo(NightlyTestOutputTestHelper.emptyOutput());
     }
 
 

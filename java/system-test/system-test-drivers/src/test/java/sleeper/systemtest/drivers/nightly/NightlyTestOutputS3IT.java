@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.nightly;
+package sleeper.systemtest.drivers.nightly;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -29,9 +29,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
-import sleeper.systemtest.drivers.nightly.NightlyTestOutput;
-import sleeper.systemtest.drivers.nightly.NightlyTestSummaryTable;
-import sleeper.systemtest.drivers.nightly.NightlyTestTimestamp;
 
 import java.io.IOException;
 import java.net.URL;
@@ -46,7 +43,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.systemtest.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 @Testcontainers
 class NightlyTestOutputS3IT {
@@ -122,7 +118,7 @@ class NightlyTestOutputS3IT {
     private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                 NightlyTestTimestamp.from(startTime),
-                outputWithStatusCodeByTest(statusCodeByTest));
+                NightlyTestOutputTestHelper.outputWithStatusCodeByTest(statusCodeByTest));
         s3Client.putObject(bucketName, "summary.json", summary.toJson());
         s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
     }

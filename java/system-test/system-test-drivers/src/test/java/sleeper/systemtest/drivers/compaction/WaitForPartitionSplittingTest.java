@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.compaction;
+package sleeper.systemtest.drivers.compaction;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,7 +28,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
-import sleeper.systemtest.drivers.compaction.WaitForPartitionSplitting;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;

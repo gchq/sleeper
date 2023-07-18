@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.util;
+package sleeper.systemtest.drivers.util;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,7 +28,6 @@ import sleeper.configuration.properties.InstanceProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
-import sleeper.systemtest.drivers.util.WaitForQueueEstimate;
 
 import java.time.Duration;
 import java.time.Instant;
