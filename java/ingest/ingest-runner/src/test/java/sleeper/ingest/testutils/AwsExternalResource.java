@@ -34,9 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.CommonTestConstants;
@@ -44,6 +41,9 @@ import sleeper.core.CommonTestConstants;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * This class is a JUnit extension which starts a local S3 and DynamoDB within a Docker
@@ -76,42 +76,24 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
         this.localStackServiceSet = Arrays.stream(services).collect(Collectors.toSet());
     }
 
-    private AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
-    }
-
     private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .build();
-    }
-
-    private S3AsyncClient createS3AsyncClient() {
-        return S3AsyncClient.builder()
-                .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey()
-                )))
-                .region(Region.of(localStackContainer.getRegion()))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private AmazonSQS createSQSClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    }
+
+    private AmazonDynamoDB createDynamoClient() {
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    }
+
+    private S3AsyncClient createS3AsyncClient() {
+        return buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     }
 
     private AmazonCloudWatch createCloudWatchClient() {
-        return AmazonCloudWatchClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.CLOUDWATCH))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
     }
 
     @Override
@@ -123,10 +105,10 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
         sqsClient = (localStackServiceSet.contains(LocalStackContainer.Service.SQS)) ? createSQSClient() : null;
         cloudWatchClient = (localStackServiceSet.contains(LocalStackContainer.Service.CLOUDWATCH)) ? createCloudWatchClient() : null;
 
-        LOGGER.info("S3 endpoint:         {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
-        LOGGER.info("DynamoDB endpoint:   {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB).getServiceEndpoint());
-        LOGGER.info("SQS endpoint:        {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS).getServiceEndpoint());
-        LOGGER.info("CloudWatch endpoint: {}", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.CLOUDWATCH).getServiceEndpoint());
+        LOGGER.info("S3 endpoint:         {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        LOGGER.info("DynamoDB endpoint:   {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString());
+        LOGGER.info("SQS endpoint:        {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.SQS).toString());
+        LOGGER.info("CloudWatch endpoint: {}", localStackContainer.getEndpointOverride(LocalStackContainer.Service.CLOUDWATCH).toString());
     }
 
     public void clear() {
@@ -231,7 +213,7 @@ public class AwsExternalResource implements BeforeAllCallback, AfterAllCallback 
         if (localStackServiceSet.contains(LocalStackContainer.Service.S3)) {
             Configuration configuration = new Configuration();
             configuration.setClassLoader(this.getClass().getClassLoader());
-            configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
+            configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
             configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
             configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
             configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());

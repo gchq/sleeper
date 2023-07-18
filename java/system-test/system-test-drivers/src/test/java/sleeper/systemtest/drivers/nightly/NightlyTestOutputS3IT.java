@@ -43,6 +43,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.systemtest.drivers.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
 @Testcontainers
 class NightlyTestOutputS3IT {
@@ -62,10 +64,7 @@ class NightlyTestOutputS3IT {
     }
 
     private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     @Test
@@ -118,7 +117,7 @@ class NightlyTestOutputS3IT {
     private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {
         NightlyTestSummaryTable summary = NightlyTestSummaryTable.empty().add(
                 NightlyTestTimestamp.from(startTime),
-                NightlyTestOutputTestHelper.outputWithStatusCodeByTest(statusCodeByTest));
+                outputWithStatusCodeByTest(statusCodeByTest));
         s3Client.putObject(bucketName, "summary.json", summary.toJson());
         s3Client.putObject(bucketName, "summary.txt", summary.toTableString());
     }
