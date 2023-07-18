@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.Optional;

@@ -20,7 +20,7 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 import sleeper.core.record.ResultsBatch;
@@ -34,8 +34,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
  * An implementation of {@link ResultsOutput} that writes results to an SQS queue.

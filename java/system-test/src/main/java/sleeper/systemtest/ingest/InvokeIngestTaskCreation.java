@@ -19,7 +19,7 @@ import sleeper.systemtest.util.InvokeSystemTestLambda;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class InvokeIngestTaskCreation {
 

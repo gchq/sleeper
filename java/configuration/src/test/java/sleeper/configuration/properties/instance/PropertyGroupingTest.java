@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.instance;
 
 import org.junit.jupiter.api.Test;
+
+import sleeper.configuration.properties.PropertyGroup;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertyGroup.BULK_IMPORT;
-import static sleeper.configuration.properties.InstancePropertyGroup.COMMON;
-import static sleeper.configuration.properties.InstancePropertyGroup.INGEST;
+import static sleeper.configuration.properties.instance.InstancePropertyGroup.BULK_IMPORT;
+import static sleeper.configuration.properties.instance.InstancePropertyGroup.COMMON;
+import static sleeper.configuration.properties.instance.InstancePropertyGroup.INGEST;
 
 class PropertyGroupingTest {
     private final List<PropertyGroup> groups = List.of(COMMON, INGEST, BULK_IMPORT);

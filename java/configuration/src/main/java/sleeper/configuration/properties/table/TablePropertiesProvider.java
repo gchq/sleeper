@@ -17,7 +17,7 @@ package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

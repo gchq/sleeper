@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.SystemTestProperties;
@@ -37,9 +37,9 @@ import sleeper.systemtest.util.WaitForQueueEstimate;
 import java.io.IOException;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.job.common.QueueMessageCount.withSqsClient;
 import static sleeper.systemtest.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 

@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.configuration.properties;
+package sleeper.configuration.properties.instance;
 
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 
 import java.io.IOException;
@@ -29,8 +31,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TAGS;
+import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Contains all the properties needed to deploy an instance of Sleeper.

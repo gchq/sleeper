@@ -53,9 +53,8 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.SleeperScheduleRule;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,24 +67,26 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_CLUSTER;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CPU;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_TASK_MEMORY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CPU;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {
@@ -142,7 +143,7 @@ public class IngestStack extends NestedStack {
 
     public static List<IBucket> addIngestSourceBucketReferences(Construct scope, String id, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
-        return Optional.ofNullable(instanceProperties.getList(UserDefinedInstanceProperty.INGEST_SOURCE_BUCKET))
+        return Optional.ofNullable(instanceProperties.getList(INGEST_SOURCE_BUCKET))
                 .orElse(List.of()).stream()
                 .filter(not(String::isEmpty))
                 .map(bucketName -> Bucket.fromBucketName(scope, id + index.getAndIncrement(), bucketName))
@@ -258,7 +259,7 @@ public class IngestStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
                 .resources(Collections.singletonList("*"))
-                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(UserDefinedInstanceProperty.METRICS_NAMESPACE))))
+                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.

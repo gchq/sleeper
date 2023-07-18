@@ -19,14 +19,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.Utils;
-import sleeper.configuration.properties.InstanceProperty;
 import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.ingest.IngestMode;
 
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
