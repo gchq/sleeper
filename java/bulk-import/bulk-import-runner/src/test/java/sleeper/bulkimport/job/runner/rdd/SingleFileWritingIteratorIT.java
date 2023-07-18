@@ -26,8 +26,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionTree;
@@ -48,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 class SingleFileWritingIteratorIT {
 
@@ -203,7 +203,7 @@ class SingleFileWritingIteratorIT {
 
     private static InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(UserDefinedInstanceProperty.FILE_SYSTEM, "file://");
+        instanceProperties.set(FILE_SYSTEM, "file://");
         return instanceProperties;
     }
 

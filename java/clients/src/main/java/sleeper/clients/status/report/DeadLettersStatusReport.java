@@ -25,7 +25,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.job.CompactionJobSerDe;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.query.model.QuerySerDe;
@@ -34,11 +34,11 @@ import sleeper.splitter.SplitPartitionJobDefinitionSerDe;
 import java.io.IOException;
 import java.util.function.Function;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_DLQ_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
 
 /**
  * A utility class to report information about messages on the various dead-letter

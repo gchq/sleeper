@@ -16,7 +16,7 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.configuration.properties.PropertyGroup;
-import sleeper.configuration.properties.SleeperProperty;
+import sleeper.configuration.properties.instance.SleeperProperty;
 
 public class DummyTableProperty implements TableProperty {
 

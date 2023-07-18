@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
