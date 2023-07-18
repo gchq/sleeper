@@ -15,9 +15,6 @@
  */
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -33,6 +30,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class TablePropertiesS3TestBase {
@@ -46,13 +44,7 @@ public class TablePropertiesS3TestBase {
             .valueFields(new Field("value", new StringType()))
             .build();
 
-    protected final AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                    localStackContainer.getRegion()))
-            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-            .build();
+    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
 
     protected TableProperties createValidPropertiesWithTableNameAndBucket(String tableName, String bucketName) {
         InstanceProperties instanceProperties = new InstanceProperties();

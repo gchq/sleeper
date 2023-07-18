@@ -15,9 +15,6 @@
  */
 package sleeper.cdk.jars;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
@@ -35,6 +32,7 @@ import java.util.UUID;
 
 import static com.amazonaws.services.s3.model.BucketVersioningConfiguration.ENABLED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class BuiltJarsIT {
@@ -43,13 +41,7 @@ public class BuiltJarsIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString(),
-                    localStackContainer.getRegion()))
-            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-            .build();
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
 
     private final String bucketName = UUID.randomUUID().toString();
     private final BuiltJars builtJars = new BuiltJars(s3, bucketName);
