@@ -39,4 +39,12 @@ public class StateStoreTestHelper {
     public static StateStore inMemoryStateStoreWithFixedSinglePartition(Schema schema) {
         return new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(schema));
     }
+
+    public static StateStore inMemoryStateStoreWithSinglePartition(Schema schema) {
+        return new DelegatingStateStore(new InMemoryFileInfoStore(), InMemoryPartitionStore.withSinglePartition(schema));
+    }
+
+    public static StateStore inMemoryStateStoreWithPartitions(List<Partition> partitions) {
+        return new DelegatingStateStore(new InMemoryFileInfoStore(), new InMemoryPartitionStore(partitions));
+    }
 }

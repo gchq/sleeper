@@ -23,23 +23,25 @@ import sleeper.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class FixedPartitionStore implements PartitionStore {
+public class InMemoryPartitionStore implements PartitionStore {
 
-    private final List<Partition> partitions;
+    private List<Partition> partitions = List.of();
 
-    public FixedPartitionStore(Schema schema) {
-        this(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+    public InMemoryPartitionStore(List<Partition> partitions) {
+        initialise(partitions);
     }
 
-    public FixedPartitionStore(List<Partition> partitions) {
-        this.partitions = partitions;
+    public static PartitionStore withSinglePartition(Schema schema) {
+        return new InMemoryPartitionStore(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
     }
 
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
-        return Collections.unmodifiableList(partitions);
+        return partitions;
     }
 
     @Override
@@ -51,21 +53,21 @@ public class FixedPartitionStore implements PartitionStore {
 
     @Override
     public void initialise() {
-        if (partitions.size() != 1) {
-            throw new UnsupportedOperationException(
-                    "Called initialise with no parameters when state store fixed with more than one partition");
-        }
+        throw new UnsupportedOperationException("Not supported because schema would be required");
     }
 
     @Override
     public void initialise(List<Partition> partitions) {
-        if (!this.partitions.equals(partitions)) {
-            throw new UnsupportedOperationException("Cannot reinitialise partitions with FixedPartitionStore");
-        }
+        this.partitions = partitions;
     }
 
     @Override
-    public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) {
-        throw new UnsupportedOperationException("Cannot split partitions with FixedPartitionStore");
+    public void atomicallyUpdatePartitionAndCreateNewOnes(
+            Partition splitPartition, Partition newPartition1, Partition newPartition2) {
+        partitions = Stream.concat(
+                        partitions.stream().filter(partition ->
+                                !Objects.equals(partition.getId(), splitPartition.getId())),
+                        Stream.of(splitPartition, newPartition1, newPartition2))
+                .collect(Collectors.toUnmodifiableList());
     }
 }
