@@ -18,4 +18,4 @@ jobs:
   build-cli:
     uses: ./.github/workflows/docker-cli.yaml
     with:
-      pushImages: true
+      pushImages: false
