@@ -30,13 +30,13 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
-import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.drivers.ingest.IngestContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
@@ -63,6 +63,7 @@ public class SleeperSystemTest {
     private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, cloudFormationClient, s3Client, dynamoDB);
+    private final IngestContext ingest = new IngestContext(instance);
 
     public static SleeperSystemTest getInstance() {
         return INSTANCE;
@@ -74,11 +75,11 @@ public class SleeperSystemTest {
     }
 
     public InstanceProperties instanceProperties() {
-        return instance.getCurrentInstance().getInstanceProperties();
+        return instance.getInstanceProperties();
     }
 
     public TableProperties tableProperties() {
-        return instance.getCurrentInstance().getTableProperties();
+        return instance.getTableProperties();
     }
 
     public void ingestRecords(Path tempDir, Record... records) throws Exception {
@@ -86,13 +87,7 @@ public class SleeperSystemTest {
     }
 
     public void ingestRecords(Path tempDir, Stream<Record> recordStream) throws Exception {
-        InstanceProperties instanceProperties = instanceProperties();
-        IngestFactory.builder()
-                .objectFactory(ObjectFactory.noUserJars())
-                .localDir(tempDir.toString())
-                .stateStoreProvider(new StateStoreProvider(dynamoDB, instanceProperties))
-                .instanceProperties(instanceProperties)
-                .build().ingestFromRecordIterator(tableProperties(), recordStream.iterator());
+        ingest.factory(tempDir).ingestFromRecordIterator(tableProperties(), recordStream.iterator());
     }
 
     public List<Record> allRecordsInTable() throws StateStoreException, QueryException {

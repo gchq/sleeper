@@ -34,6 +34,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -77,8 +78,16 @@ public class SleeperInstanceContext {
         }
     }
 
-    public Instance getCurrentInstance() {
-        return currentInstance;
+    public InstanceProperties getInstanceProperties() {
+        return currentInstance.getInstanceProperties();
+    }
+
+    public TableProperties getTableProperties() {
+        return currentInstance.getTableProperties();
+    }
+
+    public StateStoreProvider getStateStoreProvider() {
+        return currentInstance.getStateStoreProvider();
     }
 
     private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
@@ -111,7 +120,8 @@ public class SleeperInstanceContext {
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TableProperties tableProperties = new TableProperties(instanceProperties);
             tableProperties.loadFromS3(s3Client, tableName);
-            return new Instance(instanceProperties, tableProperties);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            return new Instance(instanceProperties, tableProperties, stateStoreProvider);
         } catch (IOException e) {
             throw new RuntimeIOException(e);
         }
@@ -129,10 +139,12 @@ public class SleeperInstanceContext {
     public static class Instance {
         private final InstanceProperties instanceProperties;
         private final TableProperties tableProperties;
+        private final StateStoreProvider stateStoreProvider;
 
-        public Instance(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        public Instance(InstanceProperties instanceProperties, TableProperties tableProperties, StateStoreProvider stateStoreProvider) {
             this.instanceProperties = instanceProperties;
             this.tableProperties = tableProperties;
+            this.stateStoreProvider = stateStoreProvider;
         }
 
         public InstanceProperties getInstanceProperties() {
@@ -141,6 +153,10 @@ public class SleeperInstanceContext {
 
         public TableProperties getTableProperties() {
             return tableProperties;
+        }
+
+        public StateStoreProvider getStateStoreProvider() {
+            return stateStoreProvider;
         }
     }
 
