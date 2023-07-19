@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.chunks.TestChunks;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 import sleeper.build.maven.TestMavenModuleStructure;
 import sleeper.build.testutil.TestProjectStructure;
 
@@ -34,7 +34,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.common();
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
+        InternalModuleIndex maven = TestMavenModuleStructure.example().indexInternalModules();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
@@ -57,7 +57,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.bulkImport();
         ProjectChunk chunk = TestChunks.bulkImport();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
+        InternalModuleIndex maven = TestMavenModuleStructure.example().indexInternalModules();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
@@ -90,7 +90,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/core/**");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
+        InternalModuleIndex maven = TestMavenModuleStructure.example().indexInternalModules();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
@@ -109,7 +109,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/core/**");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
+        InternalModuleIndex maven = TestMavenModuleStructure.example().indexInternalModules();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);

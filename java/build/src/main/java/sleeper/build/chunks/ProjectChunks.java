@@ -16,7 +16,7 @@
 package sleeper.build.chunks;
 
 import sleeper.build.github.actions.OnPushPathsDiff;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 import sleeper.build.maven.MavenModuleAndPath;
 import sleeper.build.maven.MavenModuleStructure;
 
@@ -45,7 +45,7 @@ public class ProjectChunks {
     public void validate(ProjectStructure project, PrintStream out) throws IOException {
         MavenModuleStructure maven = project.loadMavenStructure();
         validateAllConfigured(project, maven, out);
-        validateChunkWorkflows(project, maven.indexInternalDependencies(), out);
+        validateChunkWorkflows(project, maven.indexInternalModules(), out);
     }
 
     public void validateAllConfigured(ProjectStructure project, MavenModuleStructure maven, PrintStream out) {
@@ -63,7 +63,7 @@ public class ProjectChunks {
     }
 
     private void validateChunkWorkflows(
-            ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
+            ProjectStructure project, InternalModuleIndex dependencies, PrintStream out) throws IOException {
         boolean failed = false;
         for (ProjectChunk chunk : chunks) {
             OnPushPathsDiff diff = project.loadWorkflow(chunk)

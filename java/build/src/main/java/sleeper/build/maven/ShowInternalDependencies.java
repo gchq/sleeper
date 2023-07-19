@@ -31,6 +31,6 @@ public class ShowInternalDependencies {
                 .workflowsPath(repositoryRoot.resolve(".github/config/workflows"))
                 .build().loadMavenStructure();
 
-        mavenStructure.indexInternalDependencies();
+        mavenStructure.indexInternalModules();
     }
 }

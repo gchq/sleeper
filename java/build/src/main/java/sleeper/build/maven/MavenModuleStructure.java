@@ -64,9 +64,9 @@ public class MavenModuleStructure {
         return allTestedModules(MavenModuleAndPath.root(this));
     }
 
-    public InternalDependencyIndex indexInternalDependencies() {
+    public InternalModuleIndex indexInternalModules() {
         MavenModuleAndPath root = MavenModuleAndPath.root(this);
-        return new InternalDependencyIndex(
+        return new InternalModuleIndex(
                 root.thisAndDescendents().collect(Collectors.toList()));
     }
 

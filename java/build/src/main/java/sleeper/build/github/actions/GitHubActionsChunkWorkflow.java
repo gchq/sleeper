@@ -17,7 +17,7 @@ package sleeper.build.github.actions;
 
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -47,7 +47,7 @@ public class GitHubActionsChunkWorkflow {
     }
 
     public OnPushPathsDiff getOnPushPathsDiffFromExpected(
-            ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
+            ProjectStructure project, ProjectChunk chunk, InternalModuleIndex index) {
         return OnPushPathsDiff.fromExpectedAndActual(project,
                 ExpectedOnPushPaths.from(project, index, chunk, this),
                 onPushPaths);

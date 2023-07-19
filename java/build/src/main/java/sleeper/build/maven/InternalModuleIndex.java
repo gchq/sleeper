@@ -30,12 +30,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class InternalDependencyIndex {
+public class InternalModuleIndex {
 
     private final Map<ArtifactReference, MavenModuleAndPath> modulesByArtifactRef;
     private final Map<String, MavenModuleAndPath> modulesByPath;
 
-    InternalDependencyIndex(List<MavenModuleAndPath> paths) {
+    InternalModuleIndex(List<MavenModuleAndPath> paths) {
         modulesByArtifactRef = paths.stream()
                 .collect(Collectors.toMap(path -> path.getStructure().artifactReference(), path -> path));
         modulesByPath = paths.stream()
