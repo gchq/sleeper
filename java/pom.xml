@@ -928,6 +928,7 @@
                         <configuration>
                             <groups>SystemTest</groups>
                             <excludedGroups>none</excludedGroups>
+                            <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
                     <plugin>
