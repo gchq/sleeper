@@ -100,7 +100,7 @@ public class FindPartitionsToSplit {
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableName, splitThreshold);
 
         List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
-        LOGGER.info("There are {} file in partition records in table {}", fileInPartitionList.size(), tableName);
+        LOGGER.info("There are {} file-in-partition records in table {}", fileInPartitionList.size(), tableName);
 
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         LOGGER.info("There are {} leaf partitions in table {}", leafPartitions.size(), tableName);
@@ -115,6 +115,8 @@ public class FindPartitionsToSplit {
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
             String tableName, long splitThreshold, Partition partition, List<FileInfo> fileInPartitionList) {
         List<FileInfo> relevantFiles = getFilesInPartition(partition, fileInPartitionList);
+        LOGGER.info("Found {} file-in-partition entries that only contain data for partition {}",
+            relevantFiles.size(), partition.getId());
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableName, check.getNumberOfRecordsInPartition());
         if (check.isNeedsSplitting()) {
@@ -129,7 +131,10 @@ public class FindPartitionsToSplit {
     public static List<FileInfo> getFilesInPartition(Partition partition, List<FileInfo> fileInPartitionList) {
         List<FileInfo> relevantFiles = new ArrayList<>();
         for (FileInfo fileInfo : fileInPartitionList) {
-            if (fileInfo.getPartitionId().equals(partition.getId())) {
+            // Only include files that only contain data for this partitiom as those
+            // are the only files for which we know the number of records they contribute
+            // to the partition and for which the sketches file will be correct
+            if (fileInfo.getPartitionId().equals(partition.getId()) && fileInfo.doesOnlyContainsDataForThisPartition()) {
                 relevantFiles.add(fileInfo);
             }
         }

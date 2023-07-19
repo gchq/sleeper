@@ -21,6 +21,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +36,9 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -53,9 +57,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -170,7 +177,6 @@ public class FindPartitionsToSplitIT {
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
                 stateStore, 10, sqsClient, queue.getQueueUrl());
-
         partitionFinder.run();
 
         // Then
@@ -198,7 +204,6 @@ public class FindPartitionsToSplitIT {
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
                 stateStore, 10, sqsClient, queue.getQueueUrl());
-
         partitionFinder.run();
 
         // Then
@@ -219,7 +224,6 @@ public class FindPartitionsToSplitIT {
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
                 stateStore, 5, sqsClient, queue.getQueueUrl());
-
         partitionFinder.run();
 
         // Then
@@ -247,7 +251,6 @@ public class FindPartitionsToSplitIT {
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
                 stateStore, 5, sqsClient, queue.getQueueUrl());
-
         partitionFinder.run();
 
         // Then
@@ -268,6 +271,70 @@ public class FindPartitionsToSplitIT {
 
         // 109 + 108 + 107 + 106 + 105 = 535
         assertThat(numberOfRecords).contains(Long.valueOf(535L));
+    }
+
+    @Test
+    public void shouldOnlyIncludeFilesThatOnlyContainDataForThePartition() throws StateStoreException, IOException {
+        // Given
+        AmazonDynamoDB dynamoClient = createDynamoClient();
+        AmazonSQS sqsClient = createSQSClient();
+        CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
+        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
+        StateStore stateStore = createStateStore(dynamoClient);
+        writeFiles(stateStore, SCHEMA, createAscendingRecordList(100, 10));
+        stateStore.getFileInPartitionList().forEach(System.out::println);
+
+        // - Split the root partition
+        Partition rootPartition = stateStore.getAllPartitions().get(0);
+        rootPartition.setLeafPartition(false);
+        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
+        RangeFactory rangeFactory = new RangeFactory(SCHEMA);
+        Range leftRange = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), Integer.MIN_VALUE, 50);
+        Region leftRegion = new Region(leftRange);
+        Partition leftLeafPartition = Partition.builder()
+            .rowKeyTypes(SCHEMA.getRowKeyTypes())
+            .id("left")
+            .region(leftRegion)
+            .leafPartition(true)
+            .parentPartitionId(rootPartition.getId())
+            .build();
+        Range rightRange = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 50, null);
+        Region rightRegion = new Region(rightRange);
+        Partition rightLeafPartition = Partition.builder()
+            .rowKeyTypes(SCHEMA.getRowKeyTypes())
+            .id("right")
+            .region(rightRegion)
+            .leafPartition(true)
+            .parentPartitionId(rootPartition.getId())
+            .build();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftLeafPartition, rightLeafPartition);
+        writeFiles(stateStore, SCHEMA, createAscendingRecordList(100, 10));
+
+        // When
+        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
+                stateStore, 5, sqsClient, queue.getQueueUrl());
+        partitionFinder.run();
+
+        // Then
+        // - Make 2 calls to receiveMessage to get both messages
+        List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
+        messages.addAll(sqsClient.receiveMessage(queue.getQueueUrl()).getMessages());
+        assertThat(messages).hasSize(2);
+
+        SplitPartitionJobDefinition job1 = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
+                .fromJson(messages.get(0).getBody());
+        SplitPartitionJobDefinition job2 = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
+                .fromJson(messages.get(1).getBody());
+
+        assertThat(job1.getFileNames()).hasSize(5);
+        assertThat(job1.getTableName()).isEqualTo("test");
+        Set<String> partitions = new HashSet<>();
+        partitions.add(job1.getPartition().getId());
+        partitions.add(job2.getPartition().getId());
+        assertThat(partitions).containsExactlyInAnyOrder("left", "right");
+
+        assertThat(job1.getFileNames().stream().anyMatch(s -> s.contains(rootPartition.getId()))).isFalse();
+        assertThat(job2.getFileNames().stream().anyMatch(s -> s.contains(rootPartition.getId()))).isFalse();
     }
 
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {
