@@ -87,7 +87,7 @@ class ClientUtilsTest {
             Path path = Files.createFile(tempDir.resolve("test1.jar"));
 
             // When/Then
-            assertThat(ClientUtils.runCommand("cat", String.format("%s", path)))
+            assertThat(ClientUtils.runCommandLogOutput("cat", String.format("%s", path)))
                     .isZero();
         }
 
@@ -97,7 +97,7 @@ class ClientUtilsTest {
             Path path = Files.createFile(tempDir.resolve("test1.jar"));
 
             // When/Then
-            assertThat(ClientUtils.runCommand("cat", String.format("\"%s\"", path)))
+            assertThat(ClientUtils.runCommandLogOutput("cat", String.format("\"%s\"", path)))
                     .isNotZero();
         }
     }

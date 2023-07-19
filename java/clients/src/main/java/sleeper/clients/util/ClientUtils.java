@@ -111,7 +111,7 @@ public class ClientUtils {
         }
     }
 
-    public static int runCommand(String... commands) throws IOException, InterruptedException {
+    public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
         LOGGER.info("Running command: {}", (Object) commands);
         Path outputDir = Path.of("/tmp/sleeper/runCommand");
         Path outputLog = outputDir.resolve("output.log");
@@ -126,5 +126,10 @@ public class ClientUtils {
         LOGGER.info("Error:\n{}", Files.readString(errorLog));
         LOGGER.info("Exit code: {}", exitCode);
         return exitCode;
+    }
+
+    public static int runCommandInheritIO(String... commands) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(commands).inheritIO().start();
+        return process.waitFor();
     }
 }

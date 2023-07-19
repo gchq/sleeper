@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -75,6 +76,7 @@ public class SleeperInstanceContext {
                         .deployPaused(true)
                         .tableName(tableName)
                         .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                        .runCommand(ClientUtils::runCommandLogOutput)
                         .deployWithDefaultClients();
             } catch (IOException ex) {
                 throw new RuntimeIOException(ex);
