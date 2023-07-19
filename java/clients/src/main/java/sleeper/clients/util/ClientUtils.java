@@ -22,13 +22,20 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class ClientUtils {
@@ -113,19 +120,27 @@ public class ClientUtils {
 
     public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
         LOGGER.info("Running command: {}", (Object) commands);
-        Path outputDir = Path.of("/tmp/sleeper/runCommand");
-        Path outputLog = outputDir.resolve("output.log");
-        Path errorLog = outputDir.resolve("error.log");
-        Files.createDirectories(outputDir);
-        Process process = new ProcessBuilder(commands)
-                .redirectOutput(outputLog.toFile())
-                .redirectError(errorLog.toFile())
-                .start();
+        Process process = new ProcessBuilder(commands).start();
+        CompletableFuture<Void> logOutput = CompletableFuture.allOf(
+                CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
+                CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
         int exitCode = process.waitFor();
-        LOGGER.info("Output:\n{}", Files.readString(outputLog));
-        LOGGER.info("Error:\n{}", Files.readString(errorLog));
+        logOutput.join();
         LOGGER.info("Exit code: {}", exitCode);
         return exitCode;
+    }
+
+    private static void logTo(InputStream stream, Consumer<String> logLine) {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            String line = reader.readLine();
+            while (line != null) {
+                logLine.accept(line);
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static int runCommandInheritIO(String... commands) throws IOException, InterruptedException {
