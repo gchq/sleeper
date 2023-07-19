@@ -33,6 +33,7 @@ import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
@@ -88,6 +89,14 @@ public class SleeperInstanceContext {
 
     public StateStoreProvider getStateStoreProvider() {
         return currentInstance.getStateStoreProvider();
+    }
+
+    public StateStore getStateStore() {
+        return getStateStoreProvider().getStateStore(getTableProperties());
+    }
+
+    public String getTableName() {
+        return getTableProperties().get(TableProperty.TABLE_NAME);
     }
 
     private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {

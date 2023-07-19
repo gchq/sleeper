@@ -20,38 +20,16 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.record.Record;
-import sleeper.query.QueryException;
-import sleeper.query.executor.QueryExecutor;
-import sleeper.query.model.Query;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
-import sleeper.systemtest.drivers.ingest.IngestContext;
+import sleeper.systemtest.drivers.ingest.DirectIngestContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.query.DirectQueryContext;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Spliterators;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class SleeperSystemTest {
 
@@ -63,7 +41,6 @@ public class SleeperSystemTest {
     private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, cloudFormationClient, s3Client, dynamoDB);
-    private final IngestContext ingest = new IngestContext(instance);
 
     public static SleeperSystemTest getInstance() {
         return INSTANCE;
@@ -78,36 +55,11 @@ public class SleeperSystemTest {
         return instance.getInstanceProperties();
     }
 
-    public TableProperties tableProperties() {
-        return instance.getTableProperties();
+    public SystemTestDirectIngest directIngest(Path tempDir) {
+        return new SystemTestDirectIngest(new DirectIngestContext(instance, tempDir));
     }
 
-    public void ingestRecords(Path tempDir, Record... records) throws Exception {
-        ingestRecords(tempDir, Stream.of(records));
-    }
-
-    public void ingestRecords(Path tempDir, Stream<Record> recordStream) throws Exception {
-        ingest.factory(tempDir).ingestFromRecordIterator(tableProperties(), recordStream.iterator());
-    }
-
-    public List<Record> allRecordsInTable() throws StateStoreException, QueryException {
-        InstanceProperties instanceProperties = instanceProperties();
-        TableProperties tableProperties = tableProperties();
-        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties).getStateStore(tableProperties);
-        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
-        QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties(),
-                stateStore, new Configuration(), Executors.newSingleThreadExecutor());
-        queryExecutor.init(tree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
-        try (CloseableIterator<Record> recordIterator = queryExecutor.execute(
-                new Query.Builder(tableProperties.get(TableProperty.TABLE_NAME), UUID.randomUUID().toString(),
-                        List.of(tree.getRootPartition().getRegion())).build())) {
-            return stream(recordIterator).collect(Collectors.toUnmodifiableList());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static <T> Stream<T> stream(Iterator<T> iterator) {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
+    public SystemTestDirectQuery directQuery() {
+        return new SystemTestDirectQuery(new DirectQueryContext(instance));
     }
 }

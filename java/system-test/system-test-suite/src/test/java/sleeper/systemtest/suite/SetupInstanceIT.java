@@ -49,7 +49,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestOneRecord() throws Exception {
+    void shouldIngestOneRecord() {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",
@@ -57,10 +57,10 @@ public class SetupInstanceIT {
                 "value", "Some value"));
 
         // When
-        sleeper.ingestRecords(tempDir, record);
+        sleeper.directIngest(tempDir).records(record);
 
         // Then
-        assertThat(sleeper.allRecordsInTable())
+        assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactly(record);
     }
 }

@@ -17,19 +17,37 @@
 package sleeper.systemtest.drivers.ingest;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.core.iterator.IteratorException;
+import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
+import sleeper.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.Iterator;
 
-public class IngestContext {
+public class DirectIngestContext {
     private final SleeperInstanceContext instance;
+    private final Path tempDir;
 
-    public IngestContext(SleeperInstanceContext instance) {
+    public DirectIngestContext(SleeperInstanceContext instance, Path tempDir) {
         this.instance = instance;
+        this.tempDir = tempDir;
     }
 
-    public IngestFactory factory(Path tempDir) {
+    public void ingest(Iterator<Record> records) {
+        try {
+            factory().ingestFromRecordIterator(instance.getTableProperties(), records);
+        } catch (StateStoreException | IteratorException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private IngestFactory factory() {
         return IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(tempDir.toString())
