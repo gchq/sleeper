@@ -920,6 +920,11 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
                     "concurrently per partition. It can be overridden on a per-table basis.")
             .defaultValue("" + Integer.MAX_VALUE)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty SPLIT_FILE_IN_PARTITION_ENTRIES_IN_NON_LEAF_PARTITIONS = Index.propertyBuilder("sleeper.compaction.split.file-in-partition.entries")
+            .description("If true then the process of creating compaction jobs will split file-in-partition entries for files in non-leaf partitions. This " +
+                    "avoids the need for splitting compactions.")
+            .defaultValue("true")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     // Query
     UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES = Index.propertyBuilder("sleeper.query.s3.max-connections")

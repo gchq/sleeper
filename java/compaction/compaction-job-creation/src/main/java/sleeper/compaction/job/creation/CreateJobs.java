@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_FILE_IN_PARTITION_ENTRIES_IN_NON_LEAF_PARTITIONS;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 
 /**
@@ -107,9 +108,11 @@ public class CreateJobs {
         // that, rather than making separate calls to the state store for reasons
         // of efficiency and to ensure consistency.
 
-        LOGGER.info("Finding file-in-partition entries that need to be split for table {}", tableName);
-        // Split any file-in-partition entries for non-leaf partitions
-        new SplitFileInPartitionEntries(tableProperties.getSchema(), fileInPartitionList, allPartitions, stateStore).run();
+        if (instanceProperties.getBoolean(SPLIT_FILE_IN_PARTITION_ENTRIES_IN_NON_LEAF_PARTITIONS)) {
+            LOGGER.info("Finding file-in-partition entries that need to be split for table {}", tableName);
+            // Split any file-in-partition entries for non-leaf partitions
+            new SplitFileInPartitionEntries(tableProperties.getSchema(), fileInPartitionList, allPartitions, stateStore).run();
+        }
 
         // Get updated lists from the state store
         allPartitions = stateStore.getAllPartitions();

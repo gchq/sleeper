@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -55,7 +56,6 @@ import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTablePro
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CreateJobsTest {
-
     private final StateStore stateStore = mock(StateStore.class);
     private final CompactionJobStatusStore jobStatusStore = mock(CompactionJobStatusStore.class);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
@@ -70,7 +70,7 @@ public class CreateJobsTest {
         FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
         FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
         List<FileInfo> files = Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4);
-        setActiveFiles(files);
+        setFileInPartitionEntries(files);
 
         // When
         List<CompactionJob> jobs = createJobs();
@@ -102,7 +102,7 @@ public class CreateJobsTest {
         FileInfo fileInfo2 = fileInfoFactory.leafFile("file2", 200L, "c", "d");
         FileInfo fileInfo3 = fileInfoFactory.leafFile("file3", 200L, "e", "f");
         FileInfo fileInfo4 = fileInfoFactory.leafFile("file4", 200L, "g", "h");
-        setActiveFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+        setFileInPartitionEntries(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
 
         // When
         List<CompactionJob> jobs = createJobs();
@@ -135,7 +135,7 @@ public class CreateJobsTest {
         when(stateStore.getAllPartitions()).thenReturn(partitions);
     }
 
-    private void setActiveFiles(List<FileInfo> files) throws Exception {
+    private void setFileInPartitionEntries(List<FileInfo> files) throws Exception {
         when(stateStore.getFileInPartitionList()).thenReturn(files);
     }
 
@@ -148,8 +148,8 @@ public class CreateJobsTest {
     }
 
     private void verifyOtherStateStoreCalls() throws Exception {
-        verify(stateStore).getAllPartitions();
-        verify(stateStore).getFileInPartitionList();
+        verify(stateStore, times(2)).getAllPartitions();
+        verify(stateStore, times(2)).getFileInPartitionList();
         verifyNoMoreInteractions(stateStore);
     }
 
