@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.eclipse.jetty.io.RuntimeIOException;
 import org.slf4j.Logger;
@@ -25,12 +26,17 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.clients.deploy.DeployNewInstance;
+import sleeper.clients.status.update.ReinitialiseTable;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
+import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,19 +46,35 @@ public class SleeperInstanceContext {
     private final SystemTestParameters parameters;
     private final CloudFormationClient cloudFormationClient;
     private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoDBClient;
     private final DeployedInstances deployed = new DeployedInstances();
     private Instance currentInstance;
 
     public SleeperInstanceContext(SystemTestParameters parameters,
                                   CloudFormationClient cloudFormationClient,
-                                  AmazonS3 s3Client) {
+                                  AmazonS3 s3Client,
+                                  AmazonDynamoDB dynamoDBClient) {
         this.parameters = parameters;
         this.cloudFormationClient = cloudFormationClient;
         this.s3Client = s3Client;
+        this.dynamoDBClient = dynamoDBClient;
     }
 
     public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
         currentInstance = deployed.connectTo(identifier, deployInstanceConfiguration);
+    }
+
+    public void reinitialise() {
+        try {
+            new ReinitialiseTable(s3Client, dynamoDBClient,
+                    currentInstance.getInstanceProperties().get(CommonProperty.ID),
+                    currentInstance.getTableProperties().get(TableProperty.TABLE_NAME),
+                    true).run();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Instance getCurrentInstance() {

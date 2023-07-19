@@ -42,12 +42,16 @@ import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterators;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class SleeperSystemTest {
 
@@ -57,7 +61,8 @@ public class SleeperSystemTest {
     private final CloudFormationClient cloudFormationClient = CloudFormationClient.create();
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
-    private final SleeperInstanceContext instance = new SleeperInstanceContext(parameters, cloudFormationClient, s3Client);
+    private final SleeperInstanceContext instance = new SleeperInstanceContext(
+            parameters, cloudFormationClient, s3Client, dynamoDB);
 
     public static SleeperSystemTest getInstance() {
         return INSTANCE;
@@ -65,6 +70,7 @@ public class SleeperSystemTest {
 
     public void connectToInstance(SystemTestInstance testInstance) {
         instance.connectTo(testInstance.getIdentifier(), testInstance.getInstanceConfiguration());
+        instance.reinitialise();
     }
 
     public InstanceProperties instanceProperties() {
@@ -75,7 +81,11 @@ public class SleeperSystemTest {
         return instance.getCurrentInstance().getTableProperties();
     }
 
-    public void ingestData(Path tempDir, Stream<Record> recordStream) throws Exception {
+    public void ingestRecords(Path tempDir, Record... records) throws Exception {
+        ingestRecords(tempDir, Stream.of(records));
+    }
+
+    public void ingestRecords(Path tempDir, Stream<Record> recordStream) throws Exception {
         InstanceProperties instanceProperties = instanceProperties();
         IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
@@ -89,17 +99,20 @@ public class SleeperSystemTest {
         InstanceProperties instanceProperties = instanceProperties();
         TableProperties tableProperties = tableProperties();
         StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties).getStateStore(tableProperties);
+        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
         QueryExecutor queryExecutor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties(),
                 stateStore, new Configuration(), Executors.newSingleThreadExecutor());
-        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
-        List<Record> records = new ArrayList<>();
+        queryExecutor.init(tree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
         try (CloseableIterator<Record> recordIterator = queryExecutor.execute(
                 new Query.Builder(tableProperties.get(TableProperty.TABLE_NAME), UUID.randomUUID().toString(),
                         List.of(tree.getRootPartition().getRegion())).build())) {
-            recordIterator.forEachRemaining(records::add);
+            return stream(recordIterator).collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
-        return records;
+    }
+
+    private static <T> Stream<T> stream(Iterator<T> iterator) {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
     }
 }

@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -25,7 +26,6 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
@@ -37,25 +37,30 @@ public class SetupInstanceIT {
     private Path tempDir;
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
+    @BeforeEach
+    void setUp() {
+        sleeper.connectToInstance(MAIN);
+    }
+
     @Test
     void shouldConnectToInstance() {
-        // When
-        sleeper.connectToInstance(MAIN);
-
-        // Then
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
     }
 
     @Test
-    void shouldIngestData() throws Exception {
+    void shouldIngestOneRecord() throws Exception {
+        // Given
+        Record record = new Record(Map.of(
+                "key", "some-id",
+                "timestamp", 1234L,
+                "value", "Some value"));
+
         // When
-        sleeper.connectToInstance(MAIN);
-        sleeper.ingestData(tempDir, Stream.of(new Record(
-                Map.of("key", "value"))));
+        sleeper.ingestRecords(tempDir, record);
 
         // Then
         assertThat(sleeper.allRecordsInTable())
-                .containsExactly(new Record(Map.of("key", "value")));
+                .containsExactly(record);
     }
 }
