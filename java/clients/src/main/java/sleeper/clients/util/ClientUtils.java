@@ -17,6 +17,8 @@ package sleeper.clients.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -30,6 +32,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class ClientUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
 
     private ClientUtils() {
     }
@@ -109,10 +112,19 @@ public class ClientUtils {
     }
 
     public static int runCommand(String... commands) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", (Object) commands);
+        Path outputDir = Path.of("/tmp/sleeper/runCommand");
+        Path outputLog = outputDir.resolve("output.log");
+        Path errorLog = outputDir.resolve("error.log");
+        Files.createDirectories(outputDir);
         Process process = new ProcessBuilder(commands)
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .redirectOutput(outputLog.toFile())
+                .redirectError(errorLog.toFile())
                 .start();
-        return process.waitFor();
+        int exitCode = process.waitFor();
+        LOGGER.info("Output:\n{}", Files.readString(outputLog));
+        LOGGER.info("Error:\n{}", Files.readString(errorLog));
+        LOGGER.info("Exit code: {}", exitCode);
+        return exitCode;
     }
 }
