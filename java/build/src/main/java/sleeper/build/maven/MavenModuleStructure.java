@@ -60,11 +60,11 @@ public class MavenModuleStructure {
         return builderFromPath(mapper, path).build();
     }
 
-    public Stream<String> allTestedModulesForProjectList() {
-        return allTestedModulesForProjectList(MavenModuleAndPath.root(this));
+    public Stream<MavenModuleAndPath> allTestedModules() {
+        return allTestedModules(MavenModuleAndPath.root(this));
     }
 
-    public InternalDependencyIndex internalDependencies() {
+    public InternalDependencyIndex indexInternalDependencies() {
         MavenModuleAndPath root = MavenModuleAndPath.root(this);
         return new InternalDependencyIndex(
                 root.thisAndDescendents().collect(Collectors.toList()));
@@ -74,13 +74,13 @@ public class MavenModuleStructure {
         return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }
 
-    private Stream<String> allTestedModulesForProjectList(MavenModuleAndPath parent) {
+    private Stream<MavenModuleAndPath> allTestedModules(MavenModuleAndPath parent) {
         MavenModuleAndPath projectListPath = parent.child(this);
         if ("pom".equals(packaging)) {
             return modules.stream()
-                    .flatMap(module -> module.allTestedModulesForProjectList(projectListPath));
+                    .flatMap(module -> module.allTestedModules(projectListPath));
         } else if (hasSrcTestFolder) {
-            return Stream.of(projectListPath.getPath());
+            return Stream.of(projectListPath);
         } else {
             return Stream.empty();
         }

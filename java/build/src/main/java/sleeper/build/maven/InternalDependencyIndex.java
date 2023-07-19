@@ -127,7 +127,7 @@ public class InternalDependencyIndex {
                 .map(Optional::get);
     }
 
-    private Optional<MavenModuleAndPath> moduleByArtifactRef(ArtifactReference reference) {
+    public Optional<MavenModuleAndPath> moduleByArtifactRef(ArtifactReference reference) {
         return Optional.ofNullable(reference)
                 .map(modulesByArtifactRef::get);
     }

@@ -33,10 +33,11 @@ public class MavenModuleStructureTest {
     @Test
     public void shouldProduceListOfTestedModulesForMavenProjectListArguments() {
         // When / Then
-        assertThat(TestMavenModuleStructure.example().allTestedModulesForProjectList()).containsExactly(
-                "core", "configuration", "ingest",
-                "bulk-import/bulk-import-common",
-                "bulk-import/bulk-import-runner",
-                "bulk-import/bulk-import-starter");
+        assertThat(TestMavenModuleStructure.example().allTestedModules())
+                .extracting(MavenModuleAndPath::getPath).containsExactly(
+                        "core", "configuration", "ingest",
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-runner",
+                        "bulk-import/bulk-import-starter");
     }
 }

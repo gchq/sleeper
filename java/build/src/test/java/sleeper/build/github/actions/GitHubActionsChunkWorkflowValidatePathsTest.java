@@ -34,7 +34,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.common();
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
@@ -57,7 +57,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         GitHubActionsChunkWorkflow workflow = TestGitHubActionsChunkWorkflows.bulkImport();
         ProjectChunk chunk = TestChunks.bulkImport();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
@@ -90,7 +90,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/core/**");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
@@ -109,7 +109,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
                 "maven/core/**");
         ProjectChunk chunk = TestChunks.common();
         ProjectStructure project = TestProjectStructure.example();
-        InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
+        InternalDependencyIndex maven = TestMavenModuleStructure.example().indexInternalDependencies();
 
         // When
         OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
