@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -82,7 +82,7 @@ public class DeployNewInstance {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length < 6 || args.length > 8) {
+        if (args.length < 5 || args.length > 8) {
             throw new IllegalArgumentException("Usage: <scripts-dir> <instance-id> <vpc> <subnet> <table-name> " +
                     "<optional-instance-properties-file> <optional-deploy-paused-flag> <optional-split-points-file>");
         }

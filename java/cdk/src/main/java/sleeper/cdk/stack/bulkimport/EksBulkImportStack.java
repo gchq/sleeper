@@ -27,7 +27,9 @@ import software.amazon.awscdk.services.cloudwatch.CreateAlarmOptions;
 import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
+import software.amazon.awscdk.services.ec2.ISubnet;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.Subnet;
 import software.amazon.awscdk.services.ec2.SubnetSelection;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
@@ -58,6 +60,7 @@ import software.amazon.awscdk.services.stepfunctions.CustomStateProps;
 import software.amazon.awscdk.services.stepfunctions.Fail;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
+import software.amazon.awscdk.services.stepfunctions.Succeed;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
@@ -70,9 +73,8 @@ import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -83,8 +85,15 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
  * An {@link EksBulkImportStack} creates an EKS cluster and associated Kubernetes
@@ -110,7 +119,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
 
-        String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
+        String instanceId = instanceProperties.get(ID);
 
         Queue queueForDLs = Queue.Builder
                 .create(this, "BulkImportEKSJobDeadLetterQueue")
@@ -139,6 +148,7 @@ public final class EksBulkImportStack extends NestedStack {
         bulkImportJobQueue = Queue.Builder
                 .create(this, "BulkImportEKSJobQueue")
                 .deadLetterQueue(deadLetterQueue)
+                .visibilityTimeout(Duration.minutes(3))
                 .queueName(instanceId + "-BulkImportEKSQ")
                 .build();
 
@@ -158,12 +168,12 @@ public final class EksBulkImportStack extends NestedStack {
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
                 .memorySize(1024)
-                .timeout(Duration.seconds(10))
+                .timeout(Duration.minutes(2))
                 .environment(env)
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .handler("sleeper.bulkimport.starter.BulkImportStarterLambda")
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS)))
-                .events(Lists.newArrayList(new SqsEventSource(bulkImportJobQueue))));
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 
         configBucket.grantRead(bulkImportJobStarter);
@@ -173,7 +183,7 @@ public final class EksBulkImportStack extends NestedStack {
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
-                .vpcId(instanceProperties.get(UserDefinedInstanceProperty.VPC_ID))
+                .vpcId(instanceProperties.get(VPC_ID))
                 .build();
         IVpc vpc = Vpc.fromLookup(this, "VPC", vpcLookupOptions);
 
@@ -187,14 +197,18 @@ public final class EksBulkImportStack extends NestedStack {
 
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT, bulkImportCluster.getClusterEndpoint());
 
-        String uniqueBulkImportId = Utils.truncateToMaxSize("sleeper-" + instanceProperties.get(UserDefinedInstanceProperty.ID)
+        String uniqueBulkImportId = Utils.truncateToMaxSize("sleeper-" + instanceProperties.get(ID)
                 .replace(".", "-") + "-eks-bulk-import", 63);
 
         KubernetesManifest namespace = createNamespace(bulkImportCluster, uniqueBulkImportId);
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE, uniqueBulkImportId);
 
+        ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
         bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
+                .subnetSelection(SubnetSelection.builder()
+                        .subnets(List.of(subnet))
+                        .build())
                 .selectors(Lists.newArrayList(Selector.builder()
                         .namespace(uniqueBulkImportId)
                         .build()))
@@ -242,11 +256,11 @@ public final class EksBulkImportStack extends NestedStack {
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
                                             ITopic errorsTopic) {
         String imageName = new StringBuilder()
-                .append(instanceProperties.get(UserDefinedInstanceProperty.ACCOUNT))
+                .append(instanceProperties.get(ACCOUNT))
                 .append(".dkr.ecr.")
-                .append(instanceProperties.get(UserDefinedInstanceProperty.REGION))
+                .append(instanceProperties.get(REGION))
                 .append(".amazonaws.com/")
-                .append(instanceProperties.get(UserDefinedInstanceProperty.BULK_IMPORT_REPO))
+                .append(instanceProperties.get(BULK_IMPORT_REPO))
                 .append(":")
                 .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
                 .toString();
@@ -261,16 +275,6 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, Map.class);
 
-        String deleteJobJson = parseJsonFile("/step-functions/delete-driver-pod.json",
-                instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE));
-        String parsedDeleteJob = deleteJobJson
-                .replace("endpoint-placeholder", instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
-                .replace("image-placeholder", imageName)
-                .replace("cluster-placeholder", cluster.getClusterName())
-                .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
-
-        Map<String, Object> deleteJobState = new Gson().fromJson(parsedDeleteJob, Map.class);
-
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
                 .message(TaskInput.fromJsonPathAt("$.errorMessage"))
@@ -279,7 +283,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, String> createErrorMessageParams = new HashMap<>();
         createErrorMessageParams.put("errorMessage.$",
-                "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.jobId)");
+                "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)");
 
         Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage").parameters(createErrorMessageParams)
                 .build();
@@ -289,10 +293,10 @@ public final class EksBulkImportStack extends NestedStack {
                         new CustomState(this, "RunSparkJob", CustomStateProps.builder().stateJson(runJobState).build())
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
-                                                CustomState.Builder.create(this, "DeleteDriverPod")
-                                                        .stateJson(deleteJobState).build())
-                                        .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
-                                                .create(this, "FailedJobState").cause("Spark job failed").build()))))
+                                                Succeed.Builder.create(this, "FinishedJobState").build())
+                                        .otherwise(createErrorMessage.next(publishError).next(
+                                                Fail.Builder.create(this, "FailedJobState")
+                                                        .cause("Spark job failed").build()))))
                 .build();
     }
 

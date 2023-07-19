@@ -19,7 +19,7 @@ import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguratio
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -42,8 +42,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -85,7 +85,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
-        return new DynamoDBIngestJobStatusStore(dynamoDBClient, instanceProperties,
+        return IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

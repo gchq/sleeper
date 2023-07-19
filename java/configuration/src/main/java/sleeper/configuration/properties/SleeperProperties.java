@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.Utils;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

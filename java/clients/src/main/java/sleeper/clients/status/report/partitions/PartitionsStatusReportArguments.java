@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.status.report.PartitionsStatusReport;
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStore;

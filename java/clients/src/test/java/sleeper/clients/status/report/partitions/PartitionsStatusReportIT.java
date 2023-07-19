@@ -27,7 +27,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
@@ -40,9 +40,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.dynamodb.DynamoDBStateStoreTestHelper.createTestTable;
 
 @Testcontainers
@@ -80,17 +81,11 @@ public class PartitionsStatusReportIT {
     }
 
     private static AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private static AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     }
 
     private StateStore stateStore() {

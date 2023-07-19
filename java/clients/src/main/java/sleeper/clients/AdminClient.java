@@ -35,7 +35,7 @@ import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;
