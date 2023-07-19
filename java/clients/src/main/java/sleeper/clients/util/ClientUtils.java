@@ -109,7 +109,10 @@ public class ClientUtils {
     }
 
     public static int runCommand(String... commands) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(commands).inheritIO().start();
+        Process process = new ProcessBuilder(commands)
+                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+                .redirectError(ProcessBuilder.Redirect.INHERIT)
+                .start();
         return process.waitFor();
     }
 }
