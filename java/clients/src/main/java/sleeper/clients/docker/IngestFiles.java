@@ -25,31 +25,45 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
-public class SendIngestJobForDirectory {
-    private SendIngestJobForDirectory() {
+public class IngestFiles {
+    private IngestFiles() {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
-            throw new IllegalArgumentException("Usage: <instance-id> <source-directory>");
+        if (args.length < 2) {
+            throw new IllegalArgumentException("Usage: <instance-id> <files>");
         }
         String instanceId = args[0];
-        Path sourceDir = Path.of(args[1]);
-
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         InstanceProperties properties = new InstanceProperties();
         properties.loadFromS3GivenInstanceId(s3Client, instanceId);
-
+        List<Path> filePaths = Stream.of(args).skip(1)
+                .map(Path::of)
+                .filter(Files::isRegularFile)
+                .collect(Collectors.toList());
+        filePaths.forEach(filePath -> ingestFile(s3Client, properties, filePath));
         IngestJob job = IngestJob.builder()
-                .files(sourceDir.toString())
+                .files(filePaths.stream()
+                        .map(filePath -> properties.get(INGEST_SOURCE_BUCKET) + "/ingest/" + filePath.getFileName().toString())
+                        .collect(Collectors.toList()))
                 .tableName("system-test")
                 .build();
         sqsClient.sendMessage(properties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(job));
+    }
+
+    private static void ingestFile(AmazonS3 s3Client, InstanceProperties properties, Path sourceFile) {
+        s3Client.putObject(properties.get(INGEST_SOURCE_BUCKET),
+                "ingest/" + sourceFile.getFileName().toString(), sourceFile.toFile());
     }
 }

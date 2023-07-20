@@ -86,6 +86,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
             return builder
                     .endpointOverride(customEndpoint)
                     .region(Region.US_EAST_1)
+                    .forcePathStyle(true)
                     .build();
         } else {
             return builder.build();

@@ -22,5 +22,4 @@ pushd "$JAVA_DIR"
 VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
 popd
 
-export AWS_ENDPOINT_URL="http://localhost:4566"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.DeploySleeperInDocker
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.DeployDockerInstance "$@"

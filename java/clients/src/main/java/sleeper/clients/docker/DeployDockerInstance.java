@@ -32,6 +32,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableCreator;
 
@@ -40,42 +41,40 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
-public class DeploySleeperInDocker {
-    private DeploySleeperInDocker() {
+public class DeployDockerInstance {
+    private DeployDockerInstance() {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("Usage: <instance-id>");
+        }
+        String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        String instanceId = "localstack";
-        InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .tableName("system-test")
-                .instanceProperties(instanceProperties)
-                .schema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build())
-                .build().populate();
 
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3Client.createBucket(tableProperties.get(DATA_BUCKET));
+        InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
+        TableProperties tableProperties = generateTableProperties(instanceProperties);
+        createBuckets(s3Client, instanceProperties, tableProperties);
         instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
 
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
-
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
+        stateStore.initialise();
         setupIngest(sqsClient, dynamoDB, instanceProperties);
     }
 
     private static void setupIngest(AmazonSQS sqsClient, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-
         sqsClient.createQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
     }
 
@@ -88,6 +87,21 @@ public class DeploySleeperInDocker {
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
         instanceProperties.set(INGEST_JOB_QUEUE_URL, instanceId + "-IngestJobQ");
+        instanceProperties.set(INGEST_SOURCE_BUCKET, "sleeper-" + instanceId + "-ingest-source");
         return instanceProperties;
+    }
+
+    private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {
+        return PopulateTableProperties.builder()
+                .tableName("system-test")
+                .instanceProperties(instanceProperties)
+                .schema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build())
+                .build().populate();
+    }
+
+    private static void createBuckets(AmazonS3 s3Client, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(instanceProperties.get(INGEST_SOURCE_BUCKET));
+        s3Client.createBucket(tableProperties.get(DATA_BUCKET));
     }
 }
