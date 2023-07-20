@@ -49,7 +49,7 @@ import java.util.List;
  * is reinitialised using the split points in the provided file.
  */
 public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
-    private static final java.util.logging.Logger LOGGER = Logger.getLogger(ReinitialiseTableFromSplitPoints.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromSplitPoints.class);
     private final boolean splitPointStringsBase64Encoded;
     private final String splitPointsFileLocation;
 

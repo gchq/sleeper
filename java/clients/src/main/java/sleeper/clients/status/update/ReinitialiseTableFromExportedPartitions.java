@@ -46,8 +46,7 @@ import java.util.List;
  * have been created using the class {@link ExportPartitions}.
  */
 public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
-    private static final java.util.logging.Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
     private final String partitionsFile;
 
     public ReinitialiseTableFromExportedPartitions(
