@@ -21,6 +21,8 @@ JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 pushd "$JAVA_DIR"
 VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
 popd
+DOCKER_DIR="$JAVA_DIR/distribution/target/distribution-$VERSION-bin/scripts/docker"
 
-export AWS_ENDPOINT_URL="http://localhost:4566"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.DeploySleeperInDocker
+
+docker build -t "sleeper-docker-ingest" "$DOCKER_DIR/ingest"
+#docker run -e AWS_ENDPOINT_URL=http://host.docker.internal:4566 sleeper-docker-ingest sleeper-localstack-config

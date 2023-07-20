@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.utils.AwsV1ClientHelper;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,7 +38,7 @@ public class DownloadConfig {
         }
         String instanceId = args[0];
         Path basePath = Path.of(args[1]);
-        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3 = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
         LOGGER.info("Downloading configuration from S3");
         try {
             SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
