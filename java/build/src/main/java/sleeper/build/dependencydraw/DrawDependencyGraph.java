@@ -33,7 +33,9 @@ import sleeper.build.maven.MavenModuleAndPath;
 import sleeper.build.maven.MavenModuleStructure;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Paint;
@@ -113,8 +115,13 @@ public class DrawDependencyGraph {
         gm.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 
         JFrame frame = new JFrame("Dependency Graph View");
+        JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
+        JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
+        vv.add(text, BorderLayout.CENTER);
+        vv.add(text2, BorderLayout.CENTER);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(vv);
+
         frame.pack();
         frame.setVisible(true);
     }
