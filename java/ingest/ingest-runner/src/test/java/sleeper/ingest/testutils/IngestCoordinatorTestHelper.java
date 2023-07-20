@@ -19,7 +19,7 @@ package sleeper.ingest.testutils;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;

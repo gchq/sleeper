@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.s3.model.BucketCannedACL;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,8 +35,8 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.clients.util.BucketUtils.doesBucketExist;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class SyncJars {
     private static final Logger LOGGER = LoggerFactory.getLogger(SyncJars.class);

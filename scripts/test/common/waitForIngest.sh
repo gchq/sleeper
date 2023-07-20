@@ -33,7 +33,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for tasks to generate data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
+ sleeper.systemtest.drivers.ingest.WaitForGenerateData "${WRITE_DATA_OUTPUT_FILE}"
 
 END_GENERATE_DATA_TIME=$(record_time)
 echo "Waiting for data generation finished at $(recorded_time_str "$END_GENERATE_DATA_TIME"), took $(elapsed_time_str "$START_TIME" "$END_GENERATE_DATA_TIME")"
@@ -42,7 +42,7 @@ echo "--------------------------------------------------------------------------
 echo "Invoking ingest task creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.InvokeIngestTaskCreation "${INSTANCE_ID}"
+ sleeper.systemtest.drivers.ingest.InvokeIngestTaskCreation "${INSTANCE_ID}"
 
 END_CREATE_INGEST_TASKS_TIME=$(record_time)
 echo "Creating ingest tasks finished at $(recorded_time_str "$END_CREATE_INGEST_TASKS_TIME"), took $(elapsed_time_str "$END_GENERATE_DATA_TIME" "$END_CREATE_INGEST_TASKS_TIME")"
@@ -51,7 +51,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for ingest tasks"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.WaitForIngestTasks "${INSTANCE_ID}"
+ sleeper.systemtest.drivers.ingest.WaitForIngestTasks "${INSTANCE_ID}"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
