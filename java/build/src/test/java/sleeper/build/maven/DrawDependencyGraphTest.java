@@ -16,17 +16,22 @@
 
 package sleeper.build.maven;
 
-import org.junit.Test;
+import org.jgrapht.alg.util.Pair;
+import org.junit.jupiter.api.Test;
 
 import sleeper.build.dependencydraw.DrawDependencyGraph;
 
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class DrawDependencyGraphTest {
+    DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
+    Pair<List<String>, List<List<String>>> graph = drawDependencyGraph.createGraph(TestMavenModuleStructure.example().allTestedModules().collect(Collectors.toList()));
+
     @Test
-    public void basicText() throws InterruptedException {
-        DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
-        drawDependencyGraph.produceGraphFromMaven(TestMavenModuleStructure.example());
-        TimeUnit.SECONDS.sleep(120);
+    public void checkCreateGraphCreatesCorrectNodes() {
+        List<String> createGraph = TestMavenModuleStructure.example().allTestedModules().map(i -> i.artifactReference().toString()).collect(Collectors.toList());
+        List<String> testGraph = graph.getFirst();
+        assert createGraph.equals(testGraph);
     }
 }
