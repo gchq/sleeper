@@ -26,7 +26,6 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -47,7 +46,7 @@ public class IngestBatcherIT {
                 "value", "Some value"));
         sleeper.sourceFiles().create("file.parquet", record);
         sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke();
-        assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
-                .isFalse();
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .isEmpty();
     }
 }
