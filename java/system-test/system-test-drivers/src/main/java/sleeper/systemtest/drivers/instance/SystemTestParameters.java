@@ -66,7 +66,7 @@ public class SystemTestParameters {
     }
 
     private static Path findScriptsDir() {
-        return findJavaDir().getParent().resolve("scripts");
+        return getParentOrFail(findJavaDir()).resolve("scripts");
     }
 
     private static Path findJavaDir() {
@@ -74,10 +74,19 @@ public class SystemTestParameters {
     }
 
     private static Path findJavaDir(Path currentPath) {
-        if ("java".equals(currentPath.getFileName().toString())) {
+        if ("java".equals(String.valueOf(currentPath.getFileName()))) {
             return currentPath;
         } else {
-            return findJavaDir(currentPath.getParent());
+            return findJavaDir(getParentOrFail(currentPath));
+        }
+    }
+
+    private static Path getParentOrFail(Path path) {
+        Path parent = path.getParent();
+        if (parent == null) {
+            throw new IllegalArgumentException("No parent of path " + path);
+        } else {
+            return parent;
         }
     }
 
