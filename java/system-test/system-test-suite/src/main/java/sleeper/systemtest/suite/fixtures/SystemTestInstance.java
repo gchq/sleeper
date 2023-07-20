@@ -23,19 +23,23 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.systemtest.drivers.instance.SystemTestParameters;
+
+import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 
 public enum SystemTestInstance {
 
-    MAIN("main", buildDefaultConfiguration());
+    MAIN("main", SystemTestInstance::buildDefaultConfiguration);
 
     private final String identifier;
-    private final DeployInstanceConfiguration instanceConfiguration;
+    private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
 
-    SystemTestInstance(String identifier, DeployInstanceConfiguration instanceConfiguration) {
+    SystemTestInstance(String identifier, Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration) {
         this.identifier = identifier;
         this.instanceConfiguration = instanceConfiguration;
     }
@@ -44,16 +48,17 @@ public enum SystemTestInstance {
         return identifier;
     }
 
-    public DeployInstanceConfiguration getInstanceConfiguration() {
-        return instanceConfiguration;
+    public DeployInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
+        return instanceConfiguration.apply(parameters);
     }
 
-    private static DeployInstanceConfiguration buildDefaultConfiguration() {
+    private static DeployInstanceConfiguration buildDefaultConfiguration(SystemTestParameters parameters) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
         properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,IngestBatcherStack," +
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        properties.set(INGEST_SOURCE_BUCKET, parameters.buildSourceBucketName());
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(Schema.builder()

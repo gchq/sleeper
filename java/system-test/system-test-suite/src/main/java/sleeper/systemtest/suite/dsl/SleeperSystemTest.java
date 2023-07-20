@@ -21,9 +21,11 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
@@ -38,16 +40,22 @@ public class SleeperSystemTest {
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final CloudFormationClient cloudFormationClient = CloudFormationClient.create();
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+    private final S3Client s3ClientV2 = S3Client.create();
     private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, cloudFormationClient, s3Client, dynamoDB);
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, s3ClientV2);
+
+    public SleeperSystemTest() {
+        sourceFiles.createOrEmptySourceBucket();
+    }
 
     public static SleeperSystemTest getInstance() {
         return INSTANCE;
     }
 
     public void connectToInstance(SystemTestInstance testInstance) {
-        instance.connectTo(testInstance.getIdentifier(), testInstance.getInstanceConfiguration());
+        instance.connectTo(testInstance.getIdentifier(), testInstance.getInstanceConfiguration(parameters));
         instance.reinitialise();
     }
 
@@ -61,5 +69,9 @@ public class SleeperSystemTest {
 
     public SystemTestDirectQuery directQuery() {
         return new SystemTestDirectQuery(new DirectQueryDriver(instance));
+    }
+
+    public SystemTestSourceFiles sourceFiles() {
+        return new SystemTestSourceFiles(instance, sourceFiles);
     }
 }

@@ -45,6 +45,10 @@ public class SystemTestParameters {
         return shortTestId + "-" + identifier;
     }
 
+    public String buildSourceBucketName() {
+        return "sleeper-" + shortTestId + "-ingest-source-bucket";
+    }
+
     public String getVpcId() {
         return vpcId;
     }
