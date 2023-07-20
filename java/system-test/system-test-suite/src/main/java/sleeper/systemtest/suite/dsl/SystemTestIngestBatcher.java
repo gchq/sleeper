@@ -16,12 +16,29 @@
 
 package sleeper.systemtest.suite.dsl;
 
-public class SystemTestIngestBatcher {
+import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
-    public SystemTestIngestBatcher sendSourceFiles(String... filenames) {
+import java.util.List;
+
+public class SystemTestIngestBatcher {
+    private final String sourceBucketName;
+    private final SleeperInstanceContext instance;
+    private final IngestBatcherDriver driver;
+
+    public SystemTestIngestBatcher(SystemTestParameters parameters, SleeperInstanceContext instance, IngestBatcherDriver driver) {
+        this.instance = instance;
+        this.driver = driver;
+        this.sourceBucketName = parameters.buildSourceBucketName();
+    }
+
+    public SystemTestIngestBatcher sendSourceFiles(String... filenames) throws InterruptedException {
+        driver.sendFiles(instance.getInstanceProperties(), instance.getTableProperties(), sourceBucketName, List.of(filenames));
         return this;
     }
 
     public void invoke() {
+        driver.invoke(instance.getInstanceProperties());
     }
 }

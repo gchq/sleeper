@@ -39,7 +39,7 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldStandardIngestOneRecord() {
+    void shouldStandardIngestOneRecord() throws InterruptedException {
         Record record = new Record(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,

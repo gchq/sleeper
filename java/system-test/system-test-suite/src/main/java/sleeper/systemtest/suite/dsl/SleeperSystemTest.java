@@ -20,11 +20,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
+import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
@@ -32,6 +36,8 @@ import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
+
+import static sleeper.systemtest.drivers.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class SleeperSystemTest {
 
@@ -42,6 +48,8 @@ public class SleeperSystemTest {
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final S3Client s3ClientV2 = S3Client.create();
     private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+    private final LambdaClient lambda = createSystemTestLambdaClient();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, cloudFormationClient, s3Client, dynamoDB);
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, s3ClientV2);
@@ -76,6 +84,6 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngestBatcher ingestBatcher() {
-        return new SystemTestIngestBatcher();
+        return new SystemTestIngestBatcher(parameters, instance, new IngestBatcherDriver(instance, dynamoDB, sqsClient, lambda));
     }
 }
