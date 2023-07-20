@@ -41,10 +41,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DirectQueryContext {
+public class DirectQueryDriver {
     private final SleeperInstanceContext instance;
 
-    public DirectQueryContext(SleeperInstanceContext instance) {
+    public DirectQueryDriver(SleeperInstanceContext instance) {
         this.instance = instance;
     }
 

@@ -23,10 +23,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.systemtest.drivers.ingest.DirectIngestContext;
+import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.query.DirectQueryContext;
+import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
@@ -56,10 +56,10 @@ public class SleeperSystemTest {
     }
 
     public SystemTestDirectIngest directIngest(Path tempDir) {
-        return new SystemTestDirectIngest(new DirectIngestContext(instance, tempDir));
+        return new SystemTestDirectIngest(new DirectIngestDriver(instance, tempDir));
     }
 
     public SystemTestDirectQuery directQuery() {
-        return new SystemTestDirectQuery(new DirectQueryContext(instance));
+        return new SystemTestDirectQuery(new DirectQueryDriver(instance));
     }
 }

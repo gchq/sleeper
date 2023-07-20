@@ -17,15 +17,15 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.query.DirectQueryContext;
+import sleeper.systemtest.drivers.query.DirectQueryDriver;
 
 import java.util.List;
 
 public class SystemTestDirectQuery {
 
-    private final DirectQueryContext context;
+    private final DirectQueryDriver context;
 
-    public SystemTestDirectQuery(DirectQueryContext context) {
+    public SystemTestDirectQuery(DirectQueryDriver context) {
         this.context = context;
     }
 

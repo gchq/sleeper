@@ -17,15 +17,15 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.ingest.DirectIngestContext;
+import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 
 import java.util.List;
 
 public class SystemTestDirectIngest {
 
-    private final DirectIngestContext context;
+    private final DirectIngestDriver context;
 
-    public SystemTestDirectIngest(DirectIngestContext context) {
+    public SystemTestDirectIngest(DirectIngestDriver context) {
         this.context = context;
     }
 

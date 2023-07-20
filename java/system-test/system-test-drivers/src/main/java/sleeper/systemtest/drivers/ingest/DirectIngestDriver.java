@@ -28,11 +28,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-public class DirectIngestContext {
+public class DirectIngestDriver {
     private final SleeperInstanceContext instance;
     private final Path tempDir;
 
-    public DirectIngestContext(SleeperInstanceContext instance, Path tempDir) {
+    public DirectIngestDriver(SleeperInstanceContext instance, Path tempDir) {
         this.instance = instance;
         this.tempDir = tempDir;
     }
