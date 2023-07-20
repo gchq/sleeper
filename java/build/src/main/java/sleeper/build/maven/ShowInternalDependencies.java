@@ -17,6 +17,7 @@
 package sleeper.build.maven;
 
 import sleeper.build.chunks.ProjectStructure;
+import sleeper.build.dependencydraw.DrawDependencyGraph;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,5 +33,7 @@ public class ShowInternalDependencies {
                 .build().loadMavenStructure();
 
         mavenStructure.indexInternalModules();
+        DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
+        drawDependencyGraph.produceGraphFromMaven(mavenStructure);
     }
 }
