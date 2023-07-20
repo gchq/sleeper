@@ -53,7 +53,7 @@ public class IngestSourceFilesContext {
 
     public void writeFile(TableProperties tableProperties, String file, Iterator<Record> records) {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new org.apache.hadoop.fs.Path("s3a://" + file), tableProperties, new Configuration())) {
+                new org.apache.hadoop.fs.Path("s3a://" + sourceBucketName + "/" + file), tableProperties, new Configuration())) {
             records.forEachRemaining(record -> {
                 try {
                     writer.write(record);
@@ -67,11 +67,13 @@ public class IngestSourceFilesContext {
     }
 
     private void emptySourceBucket() {
-        List<ObjectIdentifier> objects = s3Client.listObjectVersions(builder -> builder.bucket(sourceBucketName))
-                .versions().stream()
-                .map(obj -> ObjectIdentifier.builder().key(obj.key()).versionId(obj.versionId()).build())
+        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(sourceBucketName))
+                .contents().stream()
+                .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
                 .collect(Collectors.toList());
-        s3Client.deleteObjects(builder -> builder.bucket(sourceBucketName)
-                .delete(deleteBuilder -> deleteBuilder.objects(objects)));
+        if (!objects.isEmpty()) {
+            s3Client.deleteObjects(builder -> builder.bucket(sourceBucketName)
+                    .delete(deleteBuilder -> deleteBuilder.objects(objects)));
+        }
     }
 }
