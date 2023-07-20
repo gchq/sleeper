@@ -23,7 +23,7 @@ fi
 ENVIRONMENT_ID=$1
 shift
 
-if [ "$#" -lt 2 ]; then
+if [ "$#" -lt 1 ]; then
   CDK_PARAMS=("--all")
 else
   CDK_PARAMS=("$@")
