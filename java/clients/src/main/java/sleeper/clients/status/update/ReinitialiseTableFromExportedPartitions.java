@@ -46,7 +46,7 @@ import java.util.List;
  * have been created using the class {@link ExportPartitions}.
  */
 public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
+    private static final java.util.logging.Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
 
     private final String partitionsFile;
 
@@ -90,8 +90,8 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         String tableName = args[1];
         String exportedPartitionsFile = args[2];
 
-        System.out.println("If you continue all data will be deleted in the table.");
-        System.out.println("The metadata about the partitions will be deleted and replaced "
+        LOGGER.info("If you continue all data will be deleted in the table.");
+        LOGGER.info("The metadata about the partitions will be deleted and replaced "
             + "by new partitions derived from the provided partitions file.");
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
@@ -104,9 +104,9 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         try {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(amazonS3, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
-            System.out.println("Table reinitialised successfully");
+            LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
-            System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
+            LOGGER.severe("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }
