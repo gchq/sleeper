@@ -46,6 +46,7 @@ public class IngestBatcherIT {
                 "timestamp", 1234L,
                 "value", "Some value"));
         sleeper.sourceFiles().create("file.parquet", record);
+        sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke();
         assertThat(sleeper.instanceProperties().getBoolean(RETAIN_INFRA_AFTER_DESTROY))
                 .isFalse();
     }

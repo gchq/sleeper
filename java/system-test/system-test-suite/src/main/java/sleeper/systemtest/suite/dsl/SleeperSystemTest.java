@@ -74,4 +74,8 @@ public class SleeperSystemTest {
     public SystemTestSourceFiles sourceFiles() {
         return new SystemTestSourceFiles(instance, sourceFiles);
     }
+
+    public SystemTestIngestBatcher ingestBatcher() {
+        return new SystemTestIngestBatcher();
+    }
 }
