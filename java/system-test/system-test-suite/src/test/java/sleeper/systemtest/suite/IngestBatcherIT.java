@@ -30,7 +30,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_IN
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
-public class IngestBatcherSystemIT {
+public class IngestBatcherIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
