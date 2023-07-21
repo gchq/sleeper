@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
@@ -23,6 +24,8 @@ import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static sleeper.ingest.batcher.IngestBatcher.batchIngestMode;
 
 public class SystemTestIngestBatcher {
     private final SleeperSystemTest systemTest;
@@ -51,7 +54,8 @@ public class SystemTestIngestBatcher {
     }
 
     public void waitForJobs() throws InterruptedException {
-        systemTest.ingestByQueueDriver().invokeAndWaitForJobs(createdJobIds);
+        BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
+        systemTest.ingestByQueueDriver().invokeAndWaitForJobs(mode, createdJobIds);
     }
 
     public void clearStore() {

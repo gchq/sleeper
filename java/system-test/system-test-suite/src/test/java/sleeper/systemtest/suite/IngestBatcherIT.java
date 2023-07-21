@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -48,6 +49,28 @@ public class IngestBatcherIT {
         // Given
         sleeper.updateTableProperties(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1");
+        });
+        Record record = new Record(Map.of(
+                "key", "some-id",
+                "timestamp", 1234L,
+                "value", "Some value"));
+
+        // When
+        sleeper.sourceFiles().create("file.parquet", record);
+        sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactly(record);
+    }
+
+    @Test
+    void shouldBulkImportOneRecord() throws InterruptedException {
+        // Given
+        sleeper.updateTableProperties(tableProperties -> {
+            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1");
         });

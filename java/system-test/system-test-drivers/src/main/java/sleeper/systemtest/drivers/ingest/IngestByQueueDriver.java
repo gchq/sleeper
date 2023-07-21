@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -67,7 +68,7 @@ public class IngestByQueueDriver {
         this.lambdaClient = lambdaClient;
     }
 
-    public void invokeAndWaitForJobs(Collection<String> jobIds) throws InterruptedException {
+    public void invokeAndWaitForJobs(BatchIngestMode mode, Collection<String> jobIds) throws InterruptedException {
         int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
         pollUntilTasksStarted.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
