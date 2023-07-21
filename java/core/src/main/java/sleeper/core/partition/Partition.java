@@ -50,6 +50,9 @@ public class Partition {
         if (null != builder.region) {
             region = builder.region;
         }
+        if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+            throw new IllegalArgumentException("Region must be in canonical form");
+        }
         id = builder.id;
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
@@ -201,9 +204,6 @@ public class Partition {
         }
 
         public Partition build() {
-            if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
-                throw new IllegalArgumentException("Region must be in canonical form");
-            }
 
             return new Partition(this);
         }

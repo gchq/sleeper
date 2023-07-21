@@ -352,14 +352,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(2);
         // Find file that corresponds to partition 1
-        Partition finalPartition = partition1;
-        FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals(finalPartition.getId())).findFirst().orElseThrow();
+        FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals("partition1")).findFirst().orElseThrow();
         assertThat(fileInfo1.getMinRowKey().get(0)).isEqualTo(0);
         assertThat(fileInfo1.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo1.getNumberOfRecords().longValue()).isEqualTo(2L);
         // Find file that corresponds to partition 2
-        Partition finalPartition1 = partition2;
-        FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals(finalPartition1.getId())).findFirst().orElseThrow();
+        FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals("partition2")).findFirst().orElseThrow();
         assertThat(fileInfo2.getMinRowKey().get(0)).isEqualTo(0);
         assertThat(fileInfo2.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo2.getNumberOfRecords().longValue()).isEqualTo(2L);

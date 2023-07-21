@@ -851,24 +851,20 @@ public class QueryExecutorIT {
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rightPartition,
                 partition2, partition4);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
-
-        Partition finalLeftPartition = leftPartition;
-        Partition finalRootPartition = rootPartition;
-        Partition finalRightPartition = rightPartition;
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition1.getId()) || f.getPartitionId().equals(finalLeftPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
+                .filter(f -> List.of("P1", "left", "root").contains(f.getPartitionId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         List<String> filesInLeafPartition2 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition2.getId()) || f.getPartitionId().equals(finalRightPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
+                .filter(f -> List.of("P2", "right", "root").contains(f.getPartitionId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         List<String> filesInLeafPartition3 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition3.getId()) || f.getPartitionId().equals(finalLeftPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
+                .filter(f -> List.of("P3", "left", "root").contains(f.getPartitionId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         List<String> filesInLeafPartition4 = stateStore.getActiveFiles().stream()
-                .filter(f -> f.getPartitionId().equals(partition4.getId()) || f.getPartitionId().equals(finalRightPartition.getId()) || f.getPartitionId().equals(finalRootPartition.getId()))
+                .filter(f -> List.of("P4", "right", "root").contains(f.getPartitionId()))
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
 
