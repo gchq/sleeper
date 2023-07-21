@@ -1,7 +1,7 @@
 services:
   localstack:
     image: localstack/localstack:1.4.0
-    container_name: sleeper-docker
+    container_name: sleeper-localstack
     ports:
       - "4566:4566"
       - "9000:9000"
