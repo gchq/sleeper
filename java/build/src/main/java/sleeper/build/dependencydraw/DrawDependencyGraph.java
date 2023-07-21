@@ -75,6 +75,18 @@ public class DrawDependencyGraph {
         return Pair.of(allInEdges, allOutEdges);
     }
 
+    public Pair<List<List<String>>, List<List<String>>> getEdgesFromName(List<String> selectedNodesList, Graph g) {
+        List<List<String>> allInEdges = new ArrayList<>();
+        List<List<String>> allOutEdges = new ArrayList<>();
+
+
+        for (int i = 0; i < selectedNodesList.size(); i++) {
+            allInEdges.add(new ArrayList<>(g.getInEdges(String.valueOf(selectedNodesList.get(i)))));
+            allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(selectedNodesList.get(i)))));
+        }
+        return Pair.of(allInEdges, allOutEdges);
+    }
+
     public void DrawGraph(Pair<List<String>, List<List<String>>> graphData) {
         List<String> nodeIDs = graphData.getFirst();
         List<List<String>> edges = graphData.getSecond();
@@ -92,12 +104,31 @@ public class DrawDependencyGraph {
         Function<String, Paint> edgePaint = s -> {
             List<Collection<String>> edgesList = getEdges(vv, g).getFirst();
             List<Collection<String>> edgedOutList = getEdges(vv, g).getSecond();
+            List<String> nextNodes = new ArrayList<>();
+            for (Collection<String> edgeIn : edgedOutList) {
+                for (String edge : edgeIn) {
+                    nextNodes.add(String.valueOf(edge).split("---")[1]);
+                }
+            }
+            List<List<String>> edgeNames = getEdgesFromName(nextNodes, g).getSecond();
             for (Collection<String> edgeIn : edgesList) {
                 if (edgeIn.contains(s)) {
                     return Color.RED;
                 } else {
                     for (Collection<String> edgeOut : edgedOutList) {
-                        return edgeOut.contains(s) ? Color.BLUE : Color.LIGHT_GRAY;
+                        if (edgeOut.contains(s)) {
+                            return Color.BLUE;
+                        } else {
+                            for (int k = 0; k < edgeNames.size(); k++) {
+                                System.out.println(edgeNames);
+                                List<String> nextOutEdge = edgeNames.get(k);
+                                System.out.println(nextOutEdge);
+                                if (nextOutEdge.contains(s)) {
+                                    return Color.GREEN;
+                                }
+                            }
+                            return Color.lightGray;
+                        }
                     }
                 }
             }
@@ -106,6 +137,8 @@ public class DrawDependencyGraph {
 
         vv.setPreferredSize(new Dimension(350, 350));
         vv.getRenderContext().setEdgeDrawPaintTransformer(edgePaint);
+        vv.getRenderContext().setArrowDrawPaintTransformer(edgePaint);
+        vv.getRenderContext().setArrowFillPaintTransformer(edgePaint);
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
         vv.setGraphMouse(gm);
