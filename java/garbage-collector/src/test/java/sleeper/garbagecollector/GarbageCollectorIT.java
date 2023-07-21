@@ -42,6 +42,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -168,7 +169,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file2).toPath())).isTrue();
         assertThat(Files.exists(new File(file3).toPath())).isTrue();
         assertThat(stateStore.getActiveFileList())
-            .extracting(FileInfo::getFilename)
+            .extracting(FileLifecycleInfo::getFilename)
             .containsExactlyInAnyOrder(file1, file2, file3);
 
         // When 2
@@ -190,7 +191,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file3).toPath())).isTrue();
         assertThat(Files.exists(new File(file4).toPath())).isTrue();
         assertThat(stateStore.getActiveFileList())
-            .extracting(FileInfo::getFilename)
+            .extracting(FileLifecycleInfo::getFilename)
             .containsExactlyInAnyOrder(file2, file3, file4);
 
         // When 3
@@ -206,7 +207,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file3).toPath())).isTrue();
         assertThat(Files.exists(new File(file4).toPath())).isTrue();
         assertThat(stateStore.getActiveFileList())
-            .extracting(FileInfo::getFilename)
+            .extracting(FileLifecycleInfo::getFilename)
             .containsExactlyInAnyOrder(file2, file3, file4);
 
         s3Client.shutdown();
@@ -217,7 +218,6 @@ public class GarbageCollectorIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new IntType())
                 .filename(filename)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partition.getId())
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))

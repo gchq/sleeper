@@ -15,7 +15,7 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 
@@ -26,19 +26,19 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class StateStoreReadyForGC {
-    private final List<FileInfo> files;
+    private final List<FileLifecycleInfo> files;
     private final boolean reachedMax;
 
-    private StateStoreReadyForGC(List<FileInfo> files, boolean reachedMax) {
+    private StateStoreReadyForGC(List<FileLifecycleInfo> files, boolean reachedMax) {
         this.files = files;
         this.reachedMax = reachedMax;
     }
 
-    public List<FileInfo> getFiles() {
+    public List<FileLifecycleInfo> getFiles() {
         return files;
     }
 
-    public Stream<FileInfo> stream() {
+    public Stream<FileLifecycleInfo> stream() {
         return files.stream();
     }
 
@@ -47,8 +47,8 @@ public class StateStoreReadyForGC {
     }
 
     public static StateStoreReadyForGC from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
-        Iterator<FileInfo> readyForGCIT = stateStore.getReadyForGCFileInfos();
-        List<FileInfo> readyForGC = new ArrayList<>();
+        Iterator<FileLifecycleInfo> readyForGCIT = stateStore.getReadyForGCFileInfos();
+        List<FileLifecycleInfo> readyForGC = new ArrayList<>();
         int count = 0;
         while (readyForGCIT.hasNext() && count < maxNumberOfReadyForGCFilesToCount) {
             readyForGC.add(readyForGCIT.next());

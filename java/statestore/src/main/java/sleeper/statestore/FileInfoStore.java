@@ -27,7 +27,7 @@ import java.util.Map;
  * exists as {@link FileInfo} objects where the {@link FileInfo.FileStatus} value
  * is {@link FileInfo.FileStatus.FILE_IN_PARTITION}. File-lifecyle metadata exists
  * as {@link FileInfo} objects where the {@link FileInfo.FileStatus} value is
- * either {@link FileInfo.FileStatus.ACTIVE} or
+ * either {@link FileInfo.FileStatus.FILE_IN_PARTITION} or
  * {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}.
  */
 public interface FileInfoStore {
@@ -76,7 +76,7 @@ public interface FileInfoStore {
      * is an asynchronous operation that is performed using findFilesThatShouldHaveStatusOfGCPending.
      *
      * @param fileInPartitionRecordsToBeDeleted The file-in-partition records to be deleted
-     * @param newActiveFile                     The file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @param newActiveFile                     The file to be added as an {@link FileInfo.FileStatus.FILE_IN_PARTITION} file
      * @throws StateStoreException if the update fails
      */
     void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(
@@ -94,15 +94,15 @@ public interface FileInfoStore {
      * on the file-in-partition records still existing guarantees that if two tasks are executing
      * the same compaction job then only one can succeed.
      *
-     * Note that this method does not set any files to be ready for garbage collection. If the last
+     * Note that this method does not set the status of any files to be garbage collection pending. If the last
      * file-in-partition record for a file is deleted then there will still be an
      * {@link FileInfo.FileStatus.ACTIVE} file-lifecycle record for the file. Identifying that that
      * active file should now have its status set to {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}
      * is an asynchronous operation that is performed using findFilesThatShouldHaveStatusOfGCPending.
      *
      * @param fileInPartitionRecordsToBeDeleted The file-in-partition records to be deleted
-     * @param leftFileInfo                      The first file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
-     * @param rightFileInfo                     The second file to be added as an {@link FileInfo.FileStatus.ACTIVE} file
+     * @param leftFileInfo                      The first file to be added as an {@link FileInfo.FileStatus.FILE_IN_PARTITION} file
+     * @param rightFileInfo                     The second file to be added as an {@link FileInfo.FileStatus.FILE_IN_PARTITION} file
      * @throws StateStoreException if the update fails
      */
     void atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(List<FileInfo> fileInPartitionRecordsToBeDeleted,
@@ -144,7 +144,7 @@ public interface FileInfoStore {
      * @return a {@code List} of {@code FileInfo}s for the file-lifecycle records
      * @throws StateStoreException if the query fails
      */
-     List<FileInfo> getFileLifecycleList() throws StateStoreException;
+     List<FileLifecycleInfo> getFileLifecycleList() throws StateStoreException;
 
     /**
      * Returns all file-lifecycle {@link FileInfo}s with a status of ACTIVE.
@@ -152,7 +152,7 @@ public interface FileInfoStore {
      * @return a {@code} List} of the {@link FileInfo}s with a status of ACTIVE
      * @throws StateStoreException if retrieving the active file list fails
      */
-     List<FileInfo> getActiveFileList() throws StateStoreException;
+     List<FileLifecycleInfo> getActiveFileList() throws StateStoreException;
 
     /**
      * Returns an {@link Iterator} of filenames of files that are ready
@@ -176,7 +176,7 @@ public interface FileInfoStore {
      * @return an {@link Iterator} of {@link FileInfo}s file-lifecyle records of files that are ready to be garbage collected
      * @throws StateStoreException if query fails
      */
-    Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException;
+    Iterator<FileLifecycleInfo> getReadyForGCFileInfos() throws StateStoreException;
 
     /**
      * Identifies files which should have a status of GARBAGE_COLLECTION_PENDING. This means
@@ -191,7 +191,7 @@ public interface FileInfoStore {
     /**
      * Returns all file-in-partition records for files which have a null job id.
      *
-     * @return a {@link List} of {@link FileInfo}s which are {@link FileInfo.FileStatus.ACTIVE} and have a null job id
+     * @return a {@link List} of {@link FileInfo}s which are {@link FileInfo.FileStatus.FILE_IN_PARTITION} and have a null job id
      * @throws StateStoreException if the query fails
      */
     List<FileInfo> getFileInPartitionInfosWithNoJobId() throws StateStoreException;

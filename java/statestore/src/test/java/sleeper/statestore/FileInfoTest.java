@@ -25,7 +25,6 @@ public class FileInfoTest {
     public void testSettersAndGetters() {
         // Given
         FileInfo fileInfo = FileInfo.builder()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
@@ -33,7 +32,7 @@ public class FileInfoTest {
                 .build();
 
         // When / Then
-        assertThat(fileInfo.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
+        // assertThat(fileInfo.getFileStatus()).isEqualTo(FileInfo.FileStatus.FILE_IN_PARTITION);
         assertThat(fileInfo.getPartitionId()).isEqualTo("0");
         assertThat(fileInfo.getFilename()).isEqualTo("abc");
         assertThat(fileInfo.getJobId()).isEqualTo("Job1");
@@ -44,21 +43,18 @@ public class FileInfoTest {
     public void testEqualsAndHashCode() {
         // Given
         FileInfo fileInfo1 = FileInfo.builder()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .build();
         FileInfo fileInfo3 = FileInfo.builder()
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("0")
                 .filename("abc")
                 .jobId("Job3")

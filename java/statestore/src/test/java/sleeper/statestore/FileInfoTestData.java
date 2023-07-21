@@ -47,7 +47,6 @@ public class FileInfoTestData {
                 .filename(filename)
                 .partitionId("root")
                 .numberOfRecords(records)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
     }
@@ -60,7 +59,6 @@ public class FileInfoTestData {
                 .filename(partition.getId() + ".parquet")
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
     }

@@ -119,7 +119,6 @@ public class FileInfoFactory {
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .build();
     }

@@ -26,8 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 
 import java.util.ArrayList;
@@ -45,6 +44,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class CompactSortedFilesIT extends CompactSortedFilesTestBase {
@@ -82,14 +82,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -145,14 +145,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr"));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr").cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr").toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -210,13 +210,13 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 }

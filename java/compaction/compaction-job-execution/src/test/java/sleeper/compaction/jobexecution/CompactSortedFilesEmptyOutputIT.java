@@ -25,8 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 
 import java.util.ArrayList;
@@ -41,6 +40,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
@@ -77,14 +77,14 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 100L, 0L, 198L).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -117,14 +117,14 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 0L, null, null));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 0L, null, null).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 0L, null, null).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -166,14 +166,14 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
                         dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L, null, null));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L, 0L, 199L).cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L, null, null).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L, 0L, 199L).toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L, null, null).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 }

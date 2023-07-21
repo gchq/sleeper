@@ -69,7 +69,6 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.builder()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
@@ -79,7 +78,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
@@ -131,7 +129,6 @@ public class BasicCompactionStrategyTest {
         for (int i = 0; i < 100; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords(1_000_000L - i * 100L)
                     .rowKeyTypes(new IntType())
@@ -187,7 +184,6 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.builder()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
@@ -197,7 +193,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
@@ -250,7 +245,6 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.builder()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
@@ -260,7 +254,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(200L)
                 .rowKeyTypes(new IntType())
@@ -270,7 +263,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo2);
         FileInfo fileInfo3 = FileInfo.builder()
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(300L)
                 .rowKeyTypes(new IntType())
@@ -280,7 +272,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo3);
         FileInfo fileInfo4 = FileInfo.builder()
                 .filename("file4")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(400L)
                 .rowKeyTypes(new IntType())
@@ -290,7 +281,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo4);
         FileInfo fileInfo5 = FileInfo.builder()
                 .filename("file5")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(500L)
                 .rowKeyTypes(new IntType())
@@ -300,7 +290,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo5);
         FileInfo fileInfo6 = FileInfo.builder()
                 .filename("file6")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(600L)
                 .rowKeyTypes(new IntType())
@@ -400,7 +389,6 @@ public class BasicCompactionStrategyTest {
         List<FileInfo> fileInfos = new ArrayList<>();
         FileInfo fileInfo1 = FileInfo.builder()
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
@@ -410,7 +398,6 @@ public class BasicCompactionStrategyTest {
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(200L)
                 .rowKeyTypes(new IntType())

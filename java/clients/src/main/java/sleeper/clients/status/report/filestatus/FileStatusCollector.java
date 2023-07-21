@@ -56,25 +56,18 @@ public class FileStatusCollector {
                 .filter(p -> !p.isLeafPartition())
                 .map(Partition::getId)
                 .collect(Collectors.toList());
-        List<FileInfo> activeFilesInLeafPartitions = state.active()
+        List<FileInfo> activeFilesInLeafPartitions = state.getFileInPartitionInfosStream()
                 .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
-        List<FileInfo> activeFilesInNonLeafPartitions = state.active()
-                .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
-                .collect(Collectors.toList());
-        List<FileInfo> readyForGCFilesInLeafPartitions = readyForGC.stream()
-                .filter(f -> leafPartitionIds.contains(f.getPartitionId()))
-                .collect(Collectors.toList());
-        List<FileInfo> readyForGCInNonLeafPartitions = readyForGC.stream()
+        List<FileInfo> activeFilesInNonLeafPartitions = state.getFileInPartitionInfosStream()
                 .filter(f -> nonLeafPartitionIds.contains(f.getPartitionId()))
                 .collect(Collectors.toList());
 
         fileStatusReport.setLeafPartitionCount(leafPartitionIds.size());
         fileStatusReport.setNonLeafPartitionCount(nonLeafPartitionIds.size());
-        fileStatusReport.setReadyForGCFilesInLeafPartitions(readyForGCFilesInLeafPartitions.size());
-        fileStatusReport.setReadyForGCInNonLeafPartitions(readyForGCInNonLeafPartitions.size());
+        fileStatusReport.setReadyForGCFiles(readyForGC.getFiles().size());
         fileStatusReport.setReachedMax(readyForGC.isReachedMax());
-        fileStatusReport.setActiveFilesCount(state.activeCount());
+        fileStatusReport.setActiveFilesCount(state.fileInPartitionInfosCount());
         fileStatusReport.setActiveFilesInLeafPartitions(activeFilesInLeafPartitions.size());
         fileStatusReport.setActiveFilesInNonLeafPartitions(activeFilesInNonLeafPartitions.size());
 
@@ -82,13 +75,12 @@ public class FileStatusCollector {
         fileStatusReport.setNonLeafPartitionStats(getPartitionStats(activeFilesInNonLeafPartitions));
 
         fileStatusReport.setGcFiles(readyForGC.getFiles());
-        fileStatusReport.setActiveFiles(state.getActive());
+        fileStatusReport.setActiveFiles(state.getFileInPartitionInfos());
 
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
         for (Partition partition : state.getPartitions()) {
-            // TODO This logic needs changing
-            List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getActive());
+            List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getFileInPartitionInfos());
             long numRecordsInPartition = activeFilesInThisPartition.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
             totalRecords += numRecordsInPartition;
             if (partition.isLeafPartition()) {

@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -73,11 +73,11 @@ public class GarbageCollector {
             stateStore.findFilesThatShouldHaveStatusOfGCPending();
 
             LOGGER.info("Requesting iterator of files ready for garbage collection from state store");
-            Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFileInfos();
+            Iterator<FileLifecycleInfo> readyForGC = stateStore.getReadyForGCFileInfos();
 
             int numberDeleted = 0;
             while (readyForGC.hasNext() && numberDeleted < garbageCollectorBatchSize) {
-                FileInfo fileInfo = readyForGC.next();
+                FileLifecycleInfo fileInfo = readyForGC.next();
                 deleteFileAndUpdateStateStore(fileInfo, stateStore, conf);
                 numberDeleted++;
             }
@@ -91,7 +91,7 @@ public class GarbageCollector {
         LOGGER.info("{} files deleted in {} seconds", totalDeleted, runTime);
     }
 
-    private void deleteFileAndUpdateStateStore(FileInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {
+    private void deleteFileAndUpdateStateStore(FileLifecycleInfo fileInfo, StateStore stateStore, Configuration conf) throws IOException {
         deleteFiles(fileInfo.getFilename(), conf);
         try {
             stateStore.deleteFileLifecycleEntries(Arrays.asList(fileInfo.getFilename()));

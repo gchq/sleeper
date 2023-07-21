@@ -65,7 +65,6 @@ public class FileInfoSerDe {
             count++;
         }
         dos.writeUTF(fileInfo.getFilename());
-        dos.writeUTF(fileInfo.getFileStatus().toString());
         dos.writeLong(fileInfo.getNumberOfRecords());
         dos.writeUTF(fileInfo.getPartitionId());
         if (null != fileInfo.getJobId()) {
@@ -121,7 +120,6 @@ public class FileInfoSerDe {
                 .minRowKey(Key.create(minRowKey))
                 .maxRowKey(Key.create(maxRowKey))
                 .filename(dis.readUTF())
-                .fileStatus(FileInfo.FileStatus.valueOf(dis.readUTF()))
                 .numberOfRecords(dis.readLong())
                 .partitionId(dis.readUTF())
                 .jobId(dis.readBoolean() ? dis.readUTF() : null)

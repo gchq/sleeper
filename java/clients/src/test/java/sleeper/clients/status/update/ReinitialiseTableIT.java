@@ -160,7 +160,7 @@ public class ReinitialiseTableIT {
     }
 
     @Test
-    public void shouldDeleteFileInPartitionAndFileExistenceRecordsByDefaultForDynamoStateStore() throws Exception {
+    public void shouldDeleteFileInPartitionAndFileLifecycleRecordsByDefaultForDynamoStateStore() throws Exception {
         // Given
         String tableName = UUID.randomUUID().toString();
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
@@ -182,7 +182,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
@@ -246,7 +246,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(1);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
@@ -316,7 +316,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -398,7 +398,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -480,7 +480,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(3);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
@@ -530,7 +530,7 @@ public class ReinitialiseTableIT {
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
 
-    private void assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(
+    private void assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(
             TableProperties tableProperties, DynamoDBStateStore dynamoStateStore) throws StateStoreException {
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
@@ -671,11 +671,17 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
+        // FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.FILE_IN_PARTITION, rootPartition.getId(),
+        //         Key.create("0"), Key.create("98"));
+        // FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.FILE_IN_PARTITION, rootPartition.getId(),
+        //         Key.create("1"), Key.create("9"));
+        // FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.FILE_IN_PARTITION, rootPartition.getId(),
+        //         Key.create("1"), Key.create("9"));
+        FileInfo fileInfo1 = createFileInfo(file1, rootPartition.getId(),
                 Key.create("0"), Key.create("98"));
-        FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
+        FileInfo fileInfo2 = createFileInfo(file2, rootPartition.getId(),
                 Key.create("1"), Key.create("9"));
-        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
+        FileInfo fileInfo3 = createFileInfo(file3, rootPartition.getId(),
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition
@@ -705,12 +711,13 @@ public class ReinitialiseTableIT {
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3));
     }
 
-    private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId,
-                                    Key minRowKey, Key maxRowKey) {
+    private FileInfo createFileInfo(String filename,
+//      FileInfo.FileStatus fileStatus,
+            String partitionId, Key minRowKey, Key maxRowKey) {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new StringType())
                 .filename(filename)
-                .fileStatus(fileStatus)
+                // .fileStatus(fileStatus)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(minRowKey)

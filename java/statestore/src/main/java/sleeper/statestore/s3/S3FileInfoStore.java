@@ -38,10 +38,9 @@ import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -61,6 +60,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
@@ -68,8 +69,10 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 public class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
-    private static final Function<List<FileInfo>, String> UNCONDITIONAL = l -> "";
-    private static final Function<List<FileInfo>, List<FileInfo>> IDENTITY_UPDATE = l -> l;
+    private static final Function<List<FileInfo>, String> UNCONDITIONAL_FILE_INFO_UPDATE = l -> "";
+    private static final Function<List<FileLifecycleInfo>, String> UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE = l -> "";
+    private static final Function<List<FileInfo>, List<FileInfo>> IDENTITY_FILE_IN_PARTITION_UPDATE = l -> l;
+    private static final Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> IDENTITY_FILE_LIFECYCLE_UPDATE = l -> l;
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
     private final List<PrimitiveType> rowKeyTypes;
     private final double garbageCollectorDelayBeforeDeletionInMinutes;
@@ -79,6 +82,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
     private final Schema fileSchema;
+    private final Schema fileLifecycleInfoSchema;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
     private Clock clock = Clock.systemUTC();
@@ -92,6 +96,7 @@ public class S3FileInfoStore implements FileInfoStore {
         this.dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         this.keySerDe = new KeySerDe(rowKeyTypes);
         this.fileSchema = initialiseFileInfoSchema();
+        this.fileLifecycleInfoSchema = initialiseFileLifecycleInfoSchema();
         this.conf = builder.conf;
         this.s3RevisionUtils = new S3RevisionUtils(dynamoDB, dynamoRevisionIdTable);
     }
@@ -115,28 +120,29 @@ public class S3FileInfoStore implements FileInfoStore {
             }
         }
 
+        long now = Instant.now().toEpochMilli();
         Function<List<FileInfo>, List<FileInfo>> fileInPartitionUpdate = list -> {
             List<FileInfo> updatedFileList = new ArrayList<>(list);
             fileInfos.stream()
                 .forEach(fileInfo -> {
-                    FileInfo fileInPartition = fileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION);
+                    FileInfo fileInPartition = fileInfo.toBuilder().lastStateStoreUpdateTime(now).build();
                     updatedFileList.add(fileInPartition);
                 });
             return updatedFileList;
         };
 
-        Function<List<FileInfo>, List<FileInfo>> fileLifecycleUpdate = list -> {
-            List<FileInfo> updatedFileList = new ArrayList<>(list);
+        Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifecycleUpdate = list -> {
+            List<FileLifecycleInfo> updatedFileList = new ArrayList<>(list);
             fileInfos.stream()
                 .forEach(fileInfo -> {
-                    FileInfo fileLifecycle = fileInfo.cloneWithStatus(FileStatus.ACTIVE);
+                    FileLifecycleInfo fileLifecycle = fileInfo.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE);
                     updatedFileList.add(fileLifecycle);
                 });
             return updatedFileList;
         };
 
         try {
-            updateFiles(fileInPartitionUpdate, fileLifecycleUpdate, UNCONDITIONAL, UNCONDITIONAL);
+            updateFiles(fileInPartitionUpdate, fileLifecycleUpdate, UNCONDITIONAL_FILE_INFO_UPDATE, UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -159,6 +165,7 @@ public class S3FileInfoStore implements FileInfoStore {
         Set<String> filenamesOfFileInPartitionRecordsToBeDeleted = fileInPartitionRecordsToBeDeleted
                 .stream().map(FileInfo::getFilename).collect(Collectors.toSet());
 
+        long now = Instant.now().toEpochMilli();
         // Check that file-in-partition records exist for all the fileInPartitionRecordsToBeDeleted
         Function<List<FileInfo>, String> fileInPartitionCondition = list -> {
             Map<String, List<FileInfo>> fileNameToFileInfos = convertToMapFromFilenameToFileInfos(list);
@@ -179,19 +186,19 @@ public class S3FileInfoStore implements FileInfoStore {
                     updatedFiles.add(fileInfo);
                 }
             }
-            updatedFiles.add(newActiveFile.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION));
+            updatedFiles.add(newActiveFile.toBuilder().lastStateStoreUpdateTime(now).build());
             return updatedFiles;
         };
 
         // Add a file-lifecyle record for newActiveFile
-        Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
-            List<FileInfo> updatedFiles = new ArrayList<>(list);
-            updatedFiles.add(newActiveFile.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+        Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifeCycleUpdate = list -> {
+            List<FileLifecycleInfo> updatedFiles = new ArrayList<>(list);
+            updatedFiles.add(newActiveFile.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE));
             return updatedFiles;
         };
 
         try {
-            updateFiles(fileInPartitionUpdate, fileLifeCycleUpdate, fileInPartitionCondition, UNCONDITIONAL);
+            updateFiles(fileInPartitionUpdate, fileLifeCycleUpdate, fileInPartitionCondition, UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -204,6 +211,7 @@ public class S3FileInfoStore implements FileInfoStore {
         Set<String> filenamesOfFileInPartitionRecordsToBeDeleted = fileInPartitionRecordsToBeDeleted
             .stream().map(FileInfo::getFilename).collect(Collectors.toSet());
 
+        long now = Instant.now().toEpochMilli();
         // Check that file-in-partition records exist for all the fileInPartitionRecordsToBeDeleted
         Function<List<FileInfo>, String> fileInPartitionCondition = list -> {
             Map<String, List<FileInfo>> fileNameToFileInfos = convertToMapFromFilenameToFileInfos(list);
@@ -224,21 +232,21 @@ public class S3FileInfoStore implements FileInfoStore {
                     updatedFiles.add(fileInfo);
                 }
             }
-            updatedFiles.add(leftFileInfo.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION));
-            updatedFiles.add(rightFileInfo.cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION));
+            updatedFiles.add(leftFileInfo.toBuilder().lastStateStoreUpdateTime(now).build());
+            updatedFiles.add(rightFileInfo.toBuilder().lastStateStoreUpdateTime(now).build());
             return updatedFiles;
         };
 
         // Add a file-lifecyle record for newActiveFile
-        Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
-            List<FileInfo> updatedFiles = new ArrayList<>(list);
-            updatedFiles.add(leftFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
-            updatedFiles.add(rightFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+        Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifeCycleUpdate = list -> {
+            List<FileLifecycleInfo> updatedFiles = new ArrayList<>(list);
+            updatedFiles.add(leftFileInfo.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE));
+            updatedFiles.add(rightFileInfo.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE));
             return updatedFiles;
         };
 
         try {
-            updateFiles(fileInPartitionUpdate, fileLifeCycleUpdate, fileInPartitionCondition, UNCONDITIONAL);
+            updateFiles(fileInPartitionUpdate, fileLifeCycleUpdate, fileInPartitionCondition, UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -306,7 +314,7 @@ public class S3FileInfoStore implements FileInfoStore {
         };
 
         try {
-            updateFiles(fileInPartitionUpdate, IDENTITY_UPDATE, fileInPartitionCondition, UNCONDITIONAL);
+            updateFiles(fileInPartitionUpdate, IDENTITY_FILE_LIFECYCLE_UPDATE, fileInPartitionCondition, UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         } catch (StateStoreException e) {
@@ -318,9 +326,9 @@ public class S3FileInfoStore implements FileInfoStore {
     public void deleteFileLifecycleEntries(List<String> filenames) throws StateStoreException {
         Set<String> filenamesToDelete = new HashSet<>(filenames);
 
-        Function<List<FileInfo>, List<FileInfo>> fileLifecycleUpdate = list -> {
-            List<FileInfo> updatedFiles = new ArrayList<>();
-            for (FileInfo fileInfo : list) {
+        Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifecycleUpdate = list -> {
+            List<FileLifecycleInfo> updatedFiles = new ArrayList<>();
+            for (FileLifecycleInfo fileInfo : list) {
                 if (!filenamesToDelete.contains(fileInfo.getFilename())) {
                     updatedFiles.add(fileInfo);
                 }
@@ -329,7 +337,7 @@ public class S3FileInfoStore implements FileInfoStore {
         };
 
         try {
-            updateFiles(IDENTITY_UPDATE, fileLifecycleUpdate, UNCONDITIONAL, UNCONDITIONAL);
+            updateFiles(IDENTITY_FILE_IN_PARTITION_UPDATE, fileLifecycleUpdate, UNCONDITIONAL_FILE_INFO_UPDATE, UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file infos", e);
         }
@@ -350,43 +358,43 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+    public List<FileLifecycleInfo> getFileLifecycleList() throws StateStoreException {
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
             return Collections.EMPTY_LIST;
         }
         try {
-            return readFileInfosFromParquet(getFileLifecyclePath(revisionId));
+            return readFileLifecycleInfosFromParquet(getFileLifecyclePath(revisionId));
         } catch (IOException e) {
             throw new StateStoreException("IOException retrieving active files", e);
         }
     }
 
     @Override
-    public List<FileInfo> getActiveFileList() throws StateStoreException {
+    public List<FileLifecycleInfo> getActiveFileList() throws StateStoreException {
         return getFileLifecycleList().stream()
-            .filter(f -> f.getFileStatus().equals(FileInfo.FileStatus.ACTIVE))
+            .filter(f -> f.getFileStatus().equals(FileLifecycleInfo.FileStatus.ACTIVE))
             .collect(Collectors.toList());
     }
 
     @Override
     public Iterator<String> getReadyForGCFiles() throws StateStoreException {
-        return getReadyForGCFileInfosStream().map(FileInfo::getFilename).iterator();
+        return getReadyForGCFileInfosStream().map(FileLifecycleInfo::getFilename).iterator();
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+    public Iterator<FileLifecycleInfo> getReadyForGCFileInfos() throws StateStoreException {
         return getReadyForGCFileInfosStream().iterator();
     }
 
-    private Stream<FileInfo> getReadyForGCFileInfosStream() throws StateStoreException {
+    private Stream<FileLifecycleInfo> getReadyForGCFileInfosStream() throws StateStoreException {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         try {
             long delayInMilliseconds = (long) (1000.0 * 60.0 * garbageCollectorDelayBeforeDeletionInMinutes);
             long deleteTime = clock.millis() - delayInMilliseconds;
-            List<FileInfo> fileInfos = readFileInfosFromParquet(getFileLifecyclePath(getCurrentFilesRevisionId()));
+            List<FileLifecycleInfo> fileInfos = readFileLifecycleInfosFromParquet(getFileLifecyclePath(getCurrentFilesRevisionId()));
             return fileInfos.stream().filter(f -> {
-                if (!f.getFileStatus().equals(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING)) {
+                if (!f.getFileStatus().equals(GARBAGE_COLLECTION_PENDING)) {
                     return false;
                 }
                 long lastUpdateTime = f.getLastStateStoreUpdateTime();
@@ -400,9 +408,9 @@ public class S3FileInfoStore implements FileInfoStore {
     @Override
     public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
         // List files from file-lifecycle table
-        List<FileInfo> fileLifecycleList = getFileLifecycleList();
+        List<FileLifecycleInfo> fileLifecycleList = getFileLifecycleList();
         Set<String> filenamesFromFileLifecycleList = fileLifecycleList.stream()
-            .map(FileInfo::getFilename)
+            .map(FileLifecycleInfo::getFilename)
             .collect(Collectors.toSet());
         LOGGER.info("Found {} files in the file-lifecycle table", filenamesFromFileLifecycleList.size());
 
@@ -427,12 +435,12 @@ public class S3FileInfoStore implements FileInfoStore {
         }
 
         // Update the file-lifecyle records for files in filenames
-        Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
-            List<FileInfo> updatedFiles = new ArrayList<>();
-            for (FileInfo fileInfo : list) {
+        Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifeCycleUpdate = list -> {
+            List<FileLifecycleInfo> updatedFiles = new ArrayList<>();
+            for (FileLifecycleInfo fileInfo : list) {
                 String filename = fileInfo.getFilename();
                 if (filenames.contains(filename)) {
-                    updatedFiles.add(fileInfo.cloneWithStatus(FileStatus.GARBAGE_COLLECTION_PENDING));
+                    updatedFiles.add(fileInfo.cloneWithStatus(GARBAGE_COLLECTION_PENDING));
                 } else {
                     updatedFiles.add(fileInfo);
                 }
@@ -441,7 +449,7 @@ public class S3FileInfoStore implements FileInfoStore {
         };
 
         try {
-            updateFiles(IDENTITY_UPDATE, fileLifeCycleUpdate, UNCONDITIONAL, UNCONDITIONAL);
+            updateFiles(IDENTITY_FILE_IN_PARTITION_UPDATE, fileLifeCycleUpdate, UNCONDITIONAL_FILE_INFO_UPDATE, UNCONDITIONAL_FILE_LIFECYCLE_INFO_UPDATE);
         } catch (IOException e) {
             throw new StateStoreException("IOException updating file statuses to GARBAGE_COLLECTION_PENDING", e);
         }
@@ -473,9 +481,9 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     private void updateFiles(Function<List<FileInfo>, List<FileInfo>> updateToFileInPartitionRecords,
-            Function<List<FileInfo>, List<FileInfo>> updateToFileLifecycleRecords,
+            Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> updateToFileLifecycleRecords,
             Function<List<FileInfo>, String> fileInPartitionCondition,
-            Function<List<FileInfo>, String> fileLifecycleCondition)
+            Function<List<FileLifecycleInfo>, String> fileLifecycleCondition)
             throws IOException, StateStoreException {
         int numberAttempts = 0;
         while (numberAttempts < 10) {
@@ -483,10 +491,10 @@ public class S3FileInfoStore implements FileInfoStore {
             String fileInPartitionsPath = getFileInPartitionsPath(revisionId);
             String fileLifecyclePath = getFileLifecyclePath(revisionId);
             List<FileInfo> fileInPartitions;
-            List<FileInfo> fileLifecycles;
+            List<FileLifecycleInfo> fileLifecycles;
             try {
                 fileInPartitions = readFileInfosFromParquet(fileInPartitionsPath);
-                fileLifecycles = readFileInfosFromParquet(fileLifecyclePath);
+                fileLifecycles = readFileLifecycleInfosFromParquet(fileLifecyclePath);
                 LOGGER.debug("Attempt number {}: reading file information (revisionId = {}, fileInPartitionsPath = {}, fileLifecyclePath = {})",
                         numberAttempts, revisionId, fileInPartitionsPath, fileLifecyclePath);
             } catch (IOException e) {
@@ -508,7 +516,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
             // Apply update
             List<FileInfo> updatedFileInPartitions = updateToFileInPartitionRecords.apply(fileInPartitions);
-            List<FileInfo> updatedFileLifecycles = updateToFileLifecycleRecords.apply(fileLifecycles);
+            List<FileLifecycleInfo> updatedFileLifecycles = updateToFileLifecycleRecords.apply(fileLifecycles);
             LOGGER.debug("Applied update to file information");
 
             // Attempt to write update
@@ -519,7 +527,7 @@ public class S3FileInfoStore implements FileInfoStore {
                 LOGGER.debug("Writing updated file information (fileInPartitionsPath = {}, fileLifecyclePath = {})",
                     nextRevisionIdFileInPartitionPath, nextRevisionIdFileLifecyclePath);
                 writeFileInfosToParquet(updatedFileInPartitions, nextRevisionIdFileInPartitionPath);
-                writeFileInfosToParquet(updatedFileLifecycles, nextRevisionIdFileLifecyclePath);
+                writeFileLifecycleInfosToParquet(updatedFileLifecycles, nextRevisionIdFileLifecyclePath);
             } catch (IOException e) {
                 LOGGER.debug("IOException thrown attempting to write file information; retrying");
                 numberAttempts++;
@@ -568,13 +576,22 @@ public class S3FileInfoStore implements FileInfoStore {
         return Schema.builder()
                 .rowKeyFields(new Field("fileName", new StringType()))
                 .valueFields(
-                        new Field("fileStatus", new StringType()),
+                        // new Field("fileStatus", new StringType()),
                         new Field("partitionId", new StringType()),
                         new Field("lastStateStoreUpdateTime", new LongType()),
                         new Field("numberOfRecords", new LongType()),
                         new Field("jobId", new StringType()),
                         new Field("minRowKeys", new ByteArrayType()),
                         new Field("maxRowKeys", new ByteArrayType()))
+                .build();
+    }
+
+    private Schema initialiseFileLifecycleInfoSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("fileName", new StringType()))
+                .valueFields(
+                        new Field("fileStatus", new StringType()),
+                        new Field("lastStateStoreUpdateTime", new LongType()))
                 .build();
     }
 
@@ -613,7 +630,6 @@ public class S3FileInfoStore implements FileInfoStore {
     private Record getRecordFromFileInfo(FileInfo fileInfo) throws IOException {
         Record record = new Record();
         record.put("fileName", fileInfo.getFilename());
-        record.put("fileStatus", "" + fileInfo.getFileStatus());
         record.put("partitionId", fileInfo.getPartitionId());
         record.put("lastStateStoreUpdateTime", fileInfo.getLastStateStoreUpdateTime());
         record.put("numberOfRecords", fileInfo.getNumberOfRecords());
@@ -627,11 +643,18 @@ public class S3FileInfoStore implements FileInfoStore {
         return record;
     }
 
+    private Record getRecordFromFileLifecycleInfo(FileLifecycleInfo fileInfo) throws IOException {
+        Record record = new Record();
+        record.put("fileName", fileInfo.getFilename());
+        record.put("fileStatus", "" + fileInfo.getFileStatus());
+        record.put("lastStateStoreUpdateTime", fileInfo.getLastStateStoreUpdateTime());
+        return record;
+    }
+
     private FileInfo getFileInfoFromRecord(Record record) throws IOException {
         String jobId = (String) record.get("jobId");
         return FileInfo.builder()
                 .filename((String) record.get("fileName"))
-                .fileStatus(FileInfo.FileStatus.valueOf((String) record.get("fileStatus")))
                 .partitionId((String) record.get("partitionId"))
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
@@ -642,11 +665,28 @@ public class S3FileInfoStore implements FileInfoStore {
                 .build();
     }
 
+    private FileLifecycleInfo getFileLifecycleInfoFromRecord(Record record) throws IOException {
+        return FileLifecycleInfo.builder()
+                .filename((String) record.get("fileName"))
+                .fileStatus(FileLifecycleInfo.FileStatus.valueOf((String) record.get("fileStatus")))
+                .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
+                .build();
+    }
+
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
         ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileSchema, conf);
-
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
+        }
+        recordWriter.close();
+        LOGGER.debug("Wrote fileinfos to " + path);
+    }
+
+    private void writeFileLifecycleInfosToParquet(List<FileLifecycleInfo> fileInfos, String path) throws IOException {
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileLifecycleInfoSchema, conf);
+        for (FileLifecycleInfo fileInfo : fileInfos) {
+            System.out.println("ABC " + fileInfo);
+            recordWriter.write(getRecordFromFileLifecycleInfo(fileInfo));
         }
         recordWriter.close();
         LOGGER.debug("Wrote fileinfos to " + path);
@@ -660,6 +700,19 @@ public class S3FileInfoStore implements FileInfoStore {
         ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
         while (recordReader.hasNext()) {
             fileInfos.add(getFileInfoFromRecord(recordReader.next()));
+        }
+        recordReader.close();
+        return fileInfos;
+    }
+
+    private List<FileLifecycleInfo> readFileLifecycleInfosFromParquet(String path) throws IOException {
+        List<FileLifecycleInfo> fileInfos = new ArrayList<>();
+        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), fileLifecycleInfoSchema)
+                .withConf(conf)
+                .build();
+        ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+        while (recordReader.hasNext()) {
+            fileInfos.add(getFileLifecycleInfoFromRecord(recordReader.next()));
         }
         recordReader.close();
         return fileInfos;

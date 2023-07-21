@@ -54,7 +54,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
@@ -73,6 +73,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
 
 @Testcontainers
 public class CompactSortedFilesRunnerLocalStackIT {
@@ -162,7 +163,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file1)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -171,7 +171,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file2)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
@@ -180,7 +179,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file3)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -189,7 +187,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo4 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file4)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
@@ -284,7 +281,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo expectedOutputFileInfoFromJob1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(compactionJob1.getOutputFile())
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(200L)
                 .minRowKey(Key.create(0L))
@@ -293,7 +289,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo expectedOutputFileInfoFromJob2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(compactionJob2.getOutputFile())
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .numberOfRecords(200L)
                 .minRowKey(Key.create(0L))
@@ -306,15 +301,15 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 );
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(fileInfo1.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(fileInfo2.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(fileInfo3.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(fileInfo4.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(expectedOutputFileInfoFromJob1.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(expectedOutputFileInfoFromJob2.cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(fileInfo1.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(fileInfo2.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(fileInfo3.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(fileInfo4.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(expectedOutputFileInfoFromJob1.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(expectedOutputFileInfoFromJob2.toFileLifecycleInfo(ACTIVE));
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 }

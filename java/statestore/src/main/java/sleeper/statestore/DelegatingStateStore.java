@@ -67,17 +67,17 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+    public List<FileLifecycleInfo> getFileLifecycleList() throws StateStoreException {
         return fileInfoStore.getFileLifecycleList();
     }
 
     @Override
-    public List<FileInfo> getActiveFileList() throws StateStoreException {
+    public List<FileLifecycleInfo> getActiveFileList() throws StateStoreException {
         return fileInfoStore.getActiveFileList();
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+    public Iterator<FileLifecycleInfo> getReadyForGCFileInfos() throws StateStoreException {
         return fileInfoStore.getReadyForGCFileInfos();
     }
 

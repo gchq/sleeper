@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class StateStoreSnapshot {
-    private final List<FileInfo> active;
+    private final List<FileInfo> fileInPartitionInfos;
     private final StateStoreReadyForGC readyForGC;
     private final List<Partition> partitions;
 
     private StateStoreSnapshot(Builder builder) {
-        active = builder.active;
+        fileInPartitionInfos = builder.fileInPartitionInfos;
         readyForGC = builder.readyForGC;
         partitions = builder.partitions;
     }
@@ -42,16 +42,16 @@ public class StateStoreSnapshot {
         return partitions;
     }
 
-    public Stream<FileInfo> active() {
-        return active.stream();
+    public Stream<FileInfo> getFileInPartitionInfosStream() {
+        return fileInPartitionInfos.stream();
     }
 
-    public int activeCount() {
-        return active.size();
+    public int fileInPartitionInfosCount() {
+        return fileInPartitionInfos.size();
     }
 
-    public List<FileInfo> getActive() {
-        return active;
+    public List<FileInfo> getFileInPartitionInfos() {
+        return fileInPartitionInfos;
     }
 
     public StateStoreReadyForGC getReadyForGC() {
@@ -60,7 +60,7 @@ public class StateStoreSnapshot {
 
     public static StateStoreSnapshot from(StateStore stateStore, int maxNumberOfReadyForGCFilesToCount) throws StateStoreException {
         return builder()
-                .active(stateStore.getActiveFileList())
+                .fileInPartitionInfos(stateStore.getFileInPartitionList())
                 .readyForGC(StateStoreReadyForGC.from(stateStore, maxNumberOfReadyForGCFilesToCount))
                 .partitions(stateStore.getAllPartitions())
                 .build();
@@ -71,15 +71,15 @@ public class StateStoreSnapshot {
     }
 
     public static final class Builder {
-        private List<FileInfo> active;
+        private List<FileInfo> fileInPartitionInfos;
         private StateStoreReadyForGC readyForGC;
         private List<Partition> partitions;
 
         private Builder() {
         }
 
-        public Builder active(List<FileInfo> active) {
-            this.active = active;
+        public Builder fileInPartitionInfos(List<FileInfo> fileInPartitionInfos) {
+            this.fileInPartitionInfos = fileInPartitionInfos;
             return this;
         }
 

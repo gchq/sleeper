@@ -49,9 +49,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.FileInfoStore;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.inmemory.InMemoryFileInfoStore;
@@ -76,8 +76,8 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
 
 @Testcontainers
 public class S3StateStoreIT {
@@ -159,11 +159,9 @@ public class S3StateStoreIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1000L)
                 .build();
 
@@ -174,21 +172,13 @@ public class S3StateStoreIT {
         assertThat(store.getFileInPartitionList()).singleElement().satisfies(found -> {
             assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.FILE_IN_PARTITION);
             assertThat(found.getPartitionId()).isEqualTo("root");
             assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
             assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
         assertThat(store.getFileLifecycleList()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-                assertThat(found.getPartitionId()).isEqualTo("root");
-                assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
-                assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
-                assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                assertThat(found.getFileStatus()).isEqualTo(ACTIVE);
         });
         assertThat(store.getReadyForGCFiles()).isExhausted();
         assertThat(store.getPartitionToFileInPartitionMap())
@@ -205,11 +195,9 @@ public class S3StateStoreIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new ByteArrayType())
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .minRowKey(Key.create(new byte[]{1}))
                 .maxRowKey(Key.create(new byte[]{10}))
-                .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1000L)
                 .build();
 
@@ -220,26 +208,16 @@ public class S3StateStoreIT {
         assertThat(store.getFileInPartitionList()).singleElement().satisfies(found -> {
                 assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.FILE_IN_PARTITION);
                 assertThat(found.getPartitionId()).isEqualTo("root");
                 assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
                 assertThat(found.getMinRowKey().size()).isOne();
                 assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
                 assertThat(found.getMaxRowKey().size()).isOne();
                 assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
             assertThat(store.getFileLifecycleList()).singleElement().satisfies(found -> {
-                    assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
                     assertThat(found.getFilename()).isEqualTo("abc");
-                    assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-                    assertThat(found.getPartitionId()).isEqualTo("root");
-                    assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
-                    assertThat(found.getMinRowKey().size()).isOne();
-                    assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
-                    assertThat(found.getMaxRowKey().size()).isOne();
-                    assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-                    assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                    assertThat(found.getFileStatus()).isEqualTo(ACTIVE);
             });
             assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getPartitionToFileInPartitionMap())
@@ -256,11 +234,9 @@ public class S3StateStoreIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .minRowKey(Key.create(Arrays.asList(new byte[]{1}, new byte[]{2})))
                 .maxRowKey(Key.create(Arrays.asList(new byte[]{10}, new byte[]{11})))
-                .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1000L)
                 .build();
 
@@ -271,7 +247,6 @@ public class S3StateStoreIT {
         assertThat(store.getFileInPartitionList()).singleElement().satisfies(found -> {
                 assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.FILE_IN_PARTITION);
                 assertThat(found.getPartitionId()).isEqualTo("root");
                 assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
                 assertThat(found.getMinRowKey().size()).isEqualTo(2);
@@ -280,21 +255,9 @@ public class S3StateStoreIT {
                 assertThat(found.getMaxRowKey().size()).isEqualTo(2);
                 assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
                 assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
             assertThat(store.getFileLifecycleList()).singleElement().satisfies(found -> {
-                    assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
                     assertThat(found.getFilename()).isEqualTo("abc");
-                    assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-                    assertThat(found.getPartitionId()).isEqualTo("root");
-                    assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
-                    assertThat(found.getMinRowKey().size()).isEqualTo(2);
-                    assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
-                    assertThat((byte[]) found.getMinRowKey().get(1)).containsExactly(new byte[]{2});
-                    assertThat(found.getMaxRowKey().size()).isEqualTo(2);
-                    assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-                    assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
-                    assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
             });
             assertThat(store.getReadyForGCFiles()).isExhausted();
             assertThat(store.getPartitionToFileInPartitionMap())
@@ -311,11 +274,9 @@ public class S3StateStoreIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType(), new StringType())
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .minRowKey(Key.create(Arrays.asList(1L, "Z")))
                 .maxRowKey(Key.create(Arrays.asList(10L, "A")))
-                .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1000L)
                 .build();
 
@@ -326,22 +287,15 @@ public class S3StateStoreIT {
         assertThat(store.getFileInPartitionList()).singleElement().satisfies(found -> {
             assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
             assertThat(found.getFilename()).isEqualTo("abc");
-            assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.FILE_IN_PARTITION);
             assertThat(found.getPartitionId()).isEqualTo("root");
             assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
             assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
             assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
-            assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+        //     assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
         assertThat(store.getFileLifecycleList()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
                 assertThat(found.getFilename()).isEqualTo("abc");
-                assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
-                assertThat(found.getPartitionId()).isEqualTo("root");
-                assertThat(found.getNumberOfRecords()).isEqualTo(1000L);
-                assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
-                assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
-                assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
+                assertThat(found.getFileStatus()).isEqualTo(ACTIVE);
         });
         assertThat(store.getReadyForGCFiles()).isExhausted();
         assertThat(store.getPartitionToFileInPartitionMap())
@@ -357,7 +311,6 @@ public class S3StateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(1000L)
                 .minRowKey(Key.create(1L))
@@ -378,7 +331,6 @@ public class S3StateStoreIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("abc")
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
@@ -400,11 +352,9 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("7")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
-                    .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords(1L)
                     .build();
             fileInPartitionRecordsToRemove.add(fileInfo);
@@ -413,11 +363,9 @@ public class S3StateStoreIT {
         FileInfo newFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-new")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(4L)
                 .build();
 
@@ -425,7 +373,9 @@ public class S3StateStoreIT {
         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(fileInPartitionRecordsToRemove, newFileInfo);
 
         // Then
-        assertThat(stateStore.getFileInPartitionList()).containsExactly(newFileInfo);
+        assertThat(stateStore.getFileInPartitionList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(newFileInfo);
         assertThat(stateStore.getFileLifecycleList()).hasSize(5);
     }
 
@@ -439,11 +389,9 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("7")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
-                    .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords((long) i)
                     .build();
             fileInPartitionRecordsToRemove.add(fileInfo);
@@ -452,21 +400,17 @@ public class S3StateStoreIT {
         FileInfo newLeftFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-left-new")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(5L))
-                .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(5L)
                 .build();
         FileInfo newRightFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-right-new")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(5L))
                 .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(5L)
                 .build();
 
@@ -474,7 +418,9 @@ public class S3StateStoreIT {
         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles(fileInPartitionRecordsToRemove, newLeftFileInfo, newRightFileInfo);
 
         // Then
-        assertThat(stateStore.getFileInPartitionList()).containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
+        assertThat(stateStore.getFileInPartitionList())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(newLeftFileInfo, newRightFileInfo);
         assertThat(stateStore.getFileLifecycleList()).hasSize(6);
     }
 
@@ -488,7 +434,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("7")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
@@ -501,7 +446,6 @@ public class S3StateStoreIT {
         FileInfo newFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-new")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
@@ -511,7 +455,6 @@ public class S3StateStoreIT {
         FileInfo newFileInfo2FileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-new2")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
@@ -538,7 +481,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("7")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
@@ -551,7 +493,6 @@ public class S3StateStoreIT {
         FileInfo newLeftFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-left-new")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(5L))
@@ -561,7 +502,6 @@ public class S3StateStoreIT {
         FileInfo newRightFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-right-new")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(5L))
                 .maxRowKey(Key.create(10L))
@@ -571,7 +511,6 @@ public class S3StateStoreIT {
         FileInfo dummyFileInfo = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file-dummy")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("7")
                 .minRowKey(Key.create(5L))
                 .maxRowKey(Key.create(10L))
@@ -598,11 +537,9 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("8")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
-                    .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords(1L)
                     .build();
             files.add(fileInfo);
@@ -615,7 +552,7 @@ public class S3StateStoreIT {
 
         // Then
         assertThat(stateStore.getFileInPartitionList()).hasSize(4)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files)
                 .extracting(FileInfo::getJobId).containsOnly(jobId);
         assertThat(stateStore.getReadyForGCFiles()).isExhausted();
@@ -631,7 +568,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("9")
                     .jobId("compactionJob")
                     .minRowKey(Key.create(1L))
@@ -657,43 +593,39 @@ public class S3StateStoreIT {
         FileInfo fileInfo1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("4")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                // .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("5")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(2_000_000L)
                 .numberOfRecords(2L)
                 .build();
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("5")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
-                .lastStateStoreUpdateTime(2_000_000L)
                 .numberOfRecords(2L)
                 .build();
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2));
         // - Use the following method to remove the file in partition record for fileInfo2
         stateStore.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Arrays.asList(fileInfo2), fileInfo3);
-        // stateStore.setStatusToReadyForGarbageCollection(fileInfo2.getFilename());
 
         // When
         stateStore.deleteFileLifecycleEntries(Collections.singletonList(fileInfo2.getFilename()));
 
         // Then
-        assertThat(stateStore.getFileInPartitionList()).containsExactlyInAnyOrder(fileInfo1, fileInfo3);
+        assertThat(stateStore.getFileInPartitionList())
+                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(fileInfo1, fileInfo3);
         assertThat(stateStore.getReadyForGCFiles()).isExhausted();
     }
 
@@ -707,7 +639,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("8")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
@@ -723,6 +654,7 @@ public class S3StateStoreIT {
 
         // Then
         assertThat(fileInPartitionList).hasSize(4)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files);
     }
 
@@ -732,11 +664,11 @@ public class S3StateStoreIT {
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
         List<FileInfo> files = new ArrayList<>();
+        List<FileLifecycleInfo> FileLifecycleInfos = new ArrayList<>();
         for (int i = 1; i < 5; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
@@ -744,15 +676,17 @@ public class S3StateStoreIT {
                     .numberOfRecords(1L)
                     .build();
             files.add(fileInfo);
+            FileLifecycleInfos.add(fileInfo.toFileLifecycleInfo(ACTIVE));
         }
         stateStore.addFiles(files);
 
         // When
-        List<FileInfo> fileLifecycleList = stateStore.getFileLifecycleList();
+        List<FileLifecycleInfo> fileLifecycleList = stateStore.getFileLifecycleList();
 
         // Then
         assertThat(fileLifecycleList).hasSize(4)
-                .containsExactlyInAnyOrderElementsOf(files);
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrderElementsOf(FileLifecycleInfos);
     }
 
     @Test
@@ -765,7 +699,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
@@ -779,11 +712,16 @@ public class S3StateStoreIT {
         stateStore.findFilesThatShouldHaveStatusOfGCPending();
 
         // When
-        List<FileInfo> activeFileList = stateStore.getActiveFileList();
+        List<FileLifecycleInfo> activeFileList = stateStore.getActiveFileList();
 
         // Then
-        List<FileInfo> expected = Arrays.asList(files.get(0), files.get(1), files.get(3));
-        assertThat(activeFileList).hasSize(3).containsExactlyInAnyOrderElementsOf(expected);
+        List<FileLifecycleInfo> expected = Arrays.asList(
+                files.get(0).toFileLifecycleInfo(ACTIVE),
+                files.get(1).toFileLifecycleInfo(ACTIVE),
+                files.get(3).toFileLifecycleInfo(ACTIVE));
+        assertThat(activeFileList).hasSize(3)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
@@ -807,36 +745,36 @@ public class S3StateStoreIT {
 
         // Then 1
         // - Check that file1 has status of GARBAGE_COLLECTION_PENDING
-        FileInfo fileInfoForFile1 = stateStore.getFileLifecycleList().stream()
+        FileLifecycleInfo fileInfoForFile1 = stateStore.getFileLifecycleList().stream()
                 .filter(fi -> fi.getFilename().equals(file1.getFilename()))
                 .findFirst()
                 .get();
         assertThat(fileInfoForFile1.getFileStatus()).isEqualTo(GARBAGE_COLLECTION_PENDING);
         // - Check that file2 and file3 have statuses of ACTIVE
-        List<FileInfo> fileInfoForFile2 = stateStore.getFileLifecycleList().stream()
+        List<FileLifecycleInfo> fileInfoForFile2 = stateStore.getFileLifecycleList().stream()
                 .filter(fi -> fi.getFilename().equals(file2.getFilename()) || fi.getFilename().equals(file3.getFilename()))
                 .collect(Collectors.toList());
         assertThat(fileInfoForFile2)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(file2.cloneWithStatus(ACTIVE), file3.cloneWithStatus(ACTIVE));
+                .containsExactlyInAnyOrder(file2.toFileLifecycleInfo(ACTIVE), file3.toFileLifecycleInfo(ACTIVE));
 
         // When 2
         // - Run findFilesThatShouldHaveStatusOfGCPending again - nothing should change (and the state store should not
         // update the update time).
         stateStore.findFilesThatShouldHaveStatusOfGCPending();
-        FileInfo fileInfoForFile1SecondTime = stateStore.getFileLifecycleList().stream()
+        FileLifecycleInfo fileInfoForFile1SecondTime = stateStore.getFileLifecycleList().stream()
                 .filter(fi -> fi.getFilename().equals(file1.getFilename()))
                 .findFirst()
                 .get();
         assertThat(fileInfoForFile1SecondTime.getFileStatus()).isEqualTo(GARBAGE_COLLECTION_PENDING);
         assertThat(fileInfoForFile1SecondTime.getLastStateStoreUpdateTime()).isEqualTo(fileInfoForFile1.getLastStateStoreUpdateTime());
         // - File2 and file3 should still have statuses of ACTIVE
-        List<FileInfo> fileInfoForFile2SecondTime = stateStore.getFileLifecycleList().stream()
+        List<FileLifecycleInfo> fileInfoForFile2SecondTime = stateStore.getFileLifecycleList().stream()
                 .filter(fi -> fi.getFilename().equals(file2.getFilename()) || fi.getFilename().equals(file3.getFilename()))
                 .collect(Collectors.toList());
         assertThat(fileInfoForFile2SecondTime)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(file2.cloneWithStatus(ACTIVE), file3.cloneWithStatus(ACTIVE));
+                .containsExactlyInAnyOrder(file2.toFileLifecycleInfo(ACTIVE), file3.toFileLifecycleInfo(ACTIVE));
     }
 
     @Test
@@ -858,7 +796,7 @@ public class S3StateStoreIT {
         FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
         FileInfo file2 = factory.rootFile("file2", 100L, "a", "b");
         store.addFile(file1);
-        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1.cloneWithStatus(FileStatus.FILE_IN_PARTITION)),
+        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file1),
                 file2);
         store.findFilesThatShouldHaveStatusOfGCPending();
         //  - An active file which should not be garbage collected immediately
@@ -870,7 +808,7 @@ public class S3StateStoreIT {
         FileInfo file3 = factory2.rootFile("file3", 100L, "a", "b");
         store.addFile(file3);
         FileInfo file4 = factory2.rootFile("file4", 100L, "a", "b");
-        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file3.cloneWithStatus(FileStatus.FILE_IN_PARTITION)),
+        store.atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile(Collections.singletonList(file3),
                 file4);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
@@ -901,7 +839,7 @@ public class S3StateStoreIT {
         FileInfo fileInfo1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file1")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                // .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("1")
                 .minRowKey(Key.create(1L))
                 .maxRowKey(Key.create(10L))
@@ -912,7 +850,7 @@ public class S3StateStoreIT {
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file2")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                // .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("2")
                 .minRowKey(Key.create(20L))
                 .maxRowKey(Key.create(29L))
@@ -923,7 +861,7 @@ public class S3StateStoreIT {
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file3")
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
+                // .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId("3")
                 .jobId("job1")
                 .minRowKey(Key.create(100L))
@@ -937,7 +875,9 @@ public class S3StateStoreIT {
         List<FileInfo> fileInfos = stateStore.getFileInPartitionInfosWithNoJobId();
 
         // Then
-        assertThat(fileInfos).containsExactly(fileInfo1, fileInfo2);
+        assertThat(fileInfos)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(fileInfo1, fileInfo2);
     }
 
     @Test
@@ -951,7 +891,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + (i % 5))
                     .minRowKey(Key.create((long) i % 5))
                     .maxRowKey(Key.create((long) i % 5))
@@ -987,7 +926,6 @@ public class S3StateStoreIT {
             FileInfo fileInfo = FileInfo.builder()
                     .rowKeyTypes(new LongType())
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .partitionId("root")
                     .minRowKey(Key.create(1L))
                     .maxRowKey(Key.create(10L))
@@ -1012,7 +950,9 @@ public class S3StateStoreIT {
 
         // Then
         List<FileInfo> fileInPartitionList = stateStore.getFileInPartitionList();
-        assertThat(fileInPartitionList).hasSize(20).containsExactlyInAnyOrderElementsOf(files);
+        assertThat(fileInPartitionList).hasSize(20)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrderElementsOf(files);
         executorService.shutdown();
     }
 

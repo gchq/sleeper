@@ -144,7 +144,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .numberOfRecords(numberOfRecords)
                 .minRowKey(Key.create(minKey))
                 .maxRowKey(Key.create(maxKey))
