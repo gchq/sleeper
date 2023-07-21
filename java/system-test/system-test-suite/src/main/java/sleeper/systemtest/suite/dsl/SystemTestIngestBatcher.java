@@ -20,25 +20,37 @@ import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SystemTestIngestBatcher {
-    private final String sourceBucketName;
+    private final SleeperSystemTest systemTest;
     private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
+    private final String sourceBucketName;
+    private final Set<String> createdJobIds = new HashSet<>();
 
-    public SystemTestIngestBatcher(SystemTestParameters parameters, SleeperInstanceContext instance, IngestBatcherDriver driver) {
+    public SystemTestIngestBatcher(SleeperSystemTest systemTest, SystemTestParameters parameters,
+                                   SleeperInstanceContext instance, IngestBatcherDriver driver) {
+        this.systemTest = systemTest;
         this.instance = instance;
         this.driver = driver;
         this.sourceBucketName = parameters.buildSourceBucketName();
     }
 
     public SystemTestIngestBatcher sendSourceFiles(String... filenames) throws InterruptedException {
-        driver.sendFiles(instance.getInstanceProperties(), instance.getTableProperties(), sourceBucketName, List.of(filenames));
+        driver.sendFiles(instance.getInstanceProperties(), instance.getTableProperties(),
+                sourceBucketName, List.of(filenames));
         return this;
     }
 
-    public void invoke() {
-        driver.invoke(instance.getInstanceProperties());
+    public SystemTestIngestBatcher invoke() {
+        createdJobIds.addAll(driver.invokeGetJobIds());
+        return this;
+    }
+
+    public void waitForJobs() throws InterruptedException {
+        systemTest.ingestByQueueDriver().invokeAndWaitForJobs(createdJobIds);
     }
 }

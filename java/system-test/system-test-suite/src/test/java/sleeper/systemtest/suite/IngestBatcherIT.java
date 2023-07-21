@@ -45,7 +45,7 @@ public class IngestBatcherIT {
                 "timestamp", 1234L,
                 "value", "Some value"));
         sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke();
+        sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .isEmpty();
     }

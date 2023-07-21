@@ -18,6 +18,7 @@ package sleeper.core.util;
 import com.google.common.math.LongMath;
 
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
@@ -33,6 +34,10 @@ public class PollWithRetries {
 
     public static PollWithRetries intervalAndMaxPolls(long pollIntervalMillis, int maxPolls) {
         return new PollWithRetries(pollIntervalMillis, maxPolls);
+    }
+
+    public static PollWithRetries intervalAndPollingTimeout(Duration pollInterval, Duration timeout) {
+        return intervalAndPollingTimeout(pollInterval.toMillis(), timeout.toMillis());
     }
 
     public static PollWithRetries intervalAndPollingTimeout(long pollIntervalMillis, long timeoutMillis) {

@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
+import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
@@ -47,11 +48,11 @@ public class SleeperSystemTest {
     private final CloudFormationClient cloudFormationClient = CloudFormationClient.create();
     private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
     private final S3Client s3ClientV2 = S3Client.create();
-    private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+    private final AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
     private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-    private final LambdaClient lambda = createSystemTestLambdaClient();
+    private final LambdaClient lambdaClient = createSystemTestLambdaClient();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, cloudFormationClient, s3Client, dynamoDB);
+            parameters, cloudFormationClient, s3Client, dynamoDBClient);
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, s3ClientV2);
 
     public SleeperSystemTest() {
@@ -84,6 +85,11 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngestBatcher ingestBatcher() {
-        return new SystemTestIngestBatcher(parameters, instance, new IngestBatcherDriver(instance, dynamoDB, sqsClient, lambda));
+        return new SystemTestIngestBatcher(this, parameters, instance,
+                new IngestBatcherDriver(instance, dynamoDBClient, sqsClient, lambdaClient));
+    }
+
+    IngestByQueueDriver ingestByQueueDriver() {
+        return new IngestByQueueDriver(instance, dynamoDBClient, lambdaClient);
     }
 }

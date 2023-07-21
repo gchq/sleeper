@@ -34,6 +34,9 @@ import sleeper.systemtest.drivers.ingest.batcher.SendFilesToIngestBatcher;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
@@ -42,21 +45,26 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class IngestBatcherDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendFilesToIngestBatcher.class);
 
+    private final InstanceProperties properties;
     private final IngestBatcherStore batcherStore;
-    private final AmazonSQS sqs;
-    private final LambdaClient lambda;
+    private final AmazonSQS sqsClient;
+    private final LambdaClient lambdaClient;
     private final PollWithRetries pollBatcherStore = PollWithRetries
             .intervalAndPollingTimeout(5000, 1000L * 60L * 2L);
 
-    public IngestBatcherDriver(SleeperInstanceContext instanceContext, AmazonDynamoDB dynamoDB, AmazonSQS sqs, LambdaClient lambda) {
-        this(new DynamoDBIngestBatcherStore(dynamoDB, instanceContext.getInstanceProperties(),
-                instanceContext.getTablePropertiesProvider()), sqs, lambda);
+    public IngestBatcherDriver(SleeperInstanceContext instanceContext,
+                               AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, LambdaClient lambdaClient) {
+        this(instanceContext.getInstanceProperties(),
+                new DynamoDBIngestBatcherStore(dynamoDBClient, instanceContext.getInstanceProperties(),
+                        instanceContext.getTablePropertiesProvider()), sqsClient, lambdaClient);
     }
 
-    public IngestBatcherDriver(IngestBatcherStore batcherStore, AmazonSQS sqs, LambdaClient lambda) {
+    public IngestBatcherDriver(InstanceProperties properties, IngestBatcherStore batcherStore,
+                               AmazonSQS sqsClient, LambdaClient lambdaClient) {
+        this.properties = properties;
         this.batcherStore = batcherStore;
-        this.sqs = sqs;
-        this.lambda = lambda;
+        this.sqsClient = sqsClient;
+        this.lambdaClient = lambdaClient;
     }
 
     public void sendFiles(
@@ -65,7 +73,7 @@ public class IngestBatcherDriver {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
         int filesBefore = batcherStore.getPendingFilesOldestFirst().size();
         int filesAfter = filesBefore + files.size();
-        sqs.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
+        sqsClient.sendMessage(properties.get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
                 FileIngestRequestSerDe.toJson(bucketName, files, tableProperties.get(TABLE_NAME)));
         pollBatcherStore.pollUntil("files appear in batcher store", () -> {
             List<FileIngestRequest> pending = batcherStore.getPendingFilesOldestFirst();
@@ -74,8 +82,19 @@ public class IngestBatcherDriver {
         });
     }
 
-    public void invoke(InstanceProperties properties) {
+    public Set<String> invokeGetJobIds() {
         LOGGER.info("Triggering ingest batcher job creation lambda");
-        InvokeLambda.invokeWith(lambda, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
+        Set<String> jobIdsBefore = getAllJobIdsInStore().collect(Collectors.toSet());
+        InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
+        Set<String> jobIds = getAllJobIdsInStore().collect(Collectors.toSet());
+        jobIds.removeAll(jobIdsBefore);
+        return jobIds;
+    }
+
+    private Stream<String> getAllJobIdsInStore() {
+        return batcherStore.getAllFilesNewestFirst().stream()
+                .filter(FileIngestRequest::isAssignedToJob)
+                .map(FileIngestRequest::getJobId)
+                .distinct();
     }
 }
