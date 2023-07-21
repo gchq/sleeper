@@ -16,9 +16,6 @@
 
 package sleeper.ingest;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.testcontainers.containers.GenericContainer;
@@ -33,6 +30,8 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.UUID;
 
+import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
+
 @Testcontainers
 public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
     private static final int DYNAMO_PORT = 8000;
@@ -43,13 +42,7 @@ public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
 
     protected DynamoDBStateStore getStateStore(Schema schema)
             throws StateStoreException {
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
-                        + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
         String tableNameStub = UUID.randomUUID().toString();
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(tableNameStub, schema, dynamoDBClient);
         DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();

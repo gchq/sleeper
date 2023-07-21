@@ -1,6 +1,6 @@
 name: Dependency Check Changes
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/dependency-check-changes.yaml'
       - '.github/workflows/dependency-check.yaml'

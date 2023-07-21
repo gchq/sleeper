@@ -19,7 +19,7 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuild
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 public interface PlatformExecutor {

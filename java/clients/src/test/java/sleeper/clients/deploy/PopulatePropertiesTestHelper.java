@@ -17,7 +17,7 @@ package sleeper.clients.deploy;
 
 import software.amazon.awssdk.regions.Region;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;

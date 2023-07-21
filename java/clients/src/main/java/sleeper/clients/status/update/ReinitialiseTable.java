@@ -30,7 +30,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.InitialiseStateStore;
@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -87,7 +87,7 @@ public class ReinitialiseTable {
         }
     }
 
-    void run() throws IOException, StateStoreException {
+    public void run() throws IOException, StateStoreException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider =
@@ -238,7 +238,7 @@ public class ReinitialiseTable {
         System.out.println("If you continue all data will be deleted in the table.");
         if (deletePartitions) {
             System.out.println("The metadata about the partitions will be deleted and the "
-                + "table will be reset to consist of one root partition.");
+                    + "table will be reset to consist of one root partition.");
         } else {
             System.out.println("The metadata about the partitions will not be deleted.");
         }
