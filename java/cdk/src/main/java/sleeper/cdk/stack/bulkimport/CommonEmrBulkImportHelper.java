@@ -162,6 +162,13 @@ public class CommonEmrBulkImportHelper {
                         Lists.newArrayList("elasticmapreduce.amazonaws.com",
                                 "elasticmapreduce.amazonaws.com.cn"))))
                 .build());
+
+        function.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("EmrServerlessStartJobRun")
+                .actions(Lists.newArrayList("emr-serverless:StartJobRun"))
+                .resources(Lists.newArrayList("*"))
+                .build());
+
         return function;
     }
 }

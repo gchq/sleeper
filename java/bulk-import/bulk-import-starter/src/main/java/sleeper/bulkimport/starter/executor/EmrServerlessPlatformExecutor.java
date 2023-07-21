@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BUL
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_CLASS_NAME;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
@@ -57,6 +57,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
+        LOGGER.info("Configuring job to be run: {}", arguments);
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String clusterName = String.join("-",
                 instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME), "job",
@@ -80,7 +81,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                                         .build())
                                 .build())
                 .build();
-
+        LOGGER.info("Job {}", job);
         StartJobRunResponse response = emrClient.startJobRun(job);
         LOGGER.info("Job {} started on application {}", response.jobRunId(),
                 response.applicationId());
@@ -89,7 +90,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     private String constructArgs(InstanceProperties instanceProperties) {
         String javaHome = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME);
 
-        return "--class " + instanceProperties.get(BULK_IMPORT_CLASS_NAME)
+        return "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME)
                 + " --conf spark.executorEnv.JAVA_HOME=" + javaHome
                 + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
                 + " --conf spark.executor.cores=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES)

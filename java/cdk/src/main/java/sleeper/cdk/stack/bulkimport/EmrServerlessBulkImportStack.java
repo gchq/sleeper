@@ -20,6 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.ec2.SecurityGroup;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.ImageConfigurationInputProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.NetworkConfigurationProperty;
@@ -36,6 +40,7 @@ import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.sqs.Queue;
+
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -50,15 +55,19 @@ import java.util.List;
 import java.util.Map;
 
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
+import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_TYPE;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
 import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
 
 /**
@@ -67,13 +76,14 @@ import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNE
  * executes the bulk import job and then terminates.
  */
 public class EmrServerlessBulkImportStack extends NestedStack {
-    private static final Logger LOGGER = LoggerFactory.getLogger(EmrServerlessBulkImportStack.class);
+    private static final Logger LOGGER = LoggerFactory
+            .getLogger(EmrServerlessBulkImportStack.class);
 
     public EmrServerlessBulkImportStack(Construct scope, String id,
-                                        InstanceProperties instanceProperties, BuiltJars jars,
-                                        BulkImportBucketStack importBucketStack,
-                                        TopicStack errorsTopicStack, List<StateStoreStack> stateStoreStacks,
-                                        IngestStatusStoreResources statusStoreResources) {
+            InstanceProperties instanceProperties, BuiltJars jars,
+            BulkImportBucketStack importBucketStack, TopicStack errorsTopicStack,
+            List<StateStoreStack> stateStoreStacks,
+            IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
         LOGGER.info("Starting to create application.\nScope: {}\nInstanceProperties: {}", scope,
                 instanceProperties);
@@ -83,7 +93,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 "EMRServerless", instanceProperties, statusStoreResources);
-        Queue bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL,
+        Queue bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL,
                 errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));
@@ -94,7 +104,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     }
 
     private static void configureJobStarterFunction(InstanceProperties instanceProperties,
-                                                    IFunction bulkImportJobStarter) {
+            IFunction bulkImportJobStarter) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
         instanceProperties.getTags().forEach(
@@ -108,16 +118,23 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     }
 
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
+        String instanceId = instanceProperties.get(ID);
+        String region = instanceProperties.get(REGION);
+        String accountId = instanceProperties.get(ACCOUNT);
+        String repo = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO);
+        String version = instanceProperties.get(VERSION);
+        String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
+
         CfnApplicationProps props = CfnApplicationProps.builder()
-                .name(String.join("-", "sleeper", "emr", "serverless"))
+                .name(String.join("-", "sleeper", instanceId, "emr", "serverless"))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_TYPE))
-                .imageConfiguration(ImageConfigurationInputProperty.builder()
-                        .imageUri(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO))
-                        .build())
+                .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .subnetIds(List.of(getSubnet(instanceProperties))).build())
+                        .subnetIds(List.of(getSubnet(instanceProperties)))
+                        .securityGroupIds(List.of(createSecurityGroup(instanceProperties)))
+                        .build())
                 .tags(List.of(new CfnTag.Builder().key("DeploymentStack")
                         .value("EmrServerlessBulkImport").build()))
                 .build();
@@ -132,18 +149,30 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     // ToDo test on multiple subnets
     private String getSubnet(InstanceProperties instanceProperties) {
         List<String> subnets = instanceProperties.getList(SUBNETS);
-        LOGGER.info("Subnets {}", subnets);
         return subnets.get(0);
+    }
+
+    private String createSecurityGroup(InstanceProperties instanceProperties) {
+        String instanceId = instanceProperties.get(ID);
+        IVpc vpc = Vpc.fromLookup(this, "VPC",
+                VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build());
+
+        SecurityGroup securityGroup = SecurityGroup.Builder
+                .create(this, String.join("-", "SG", "sleeper", instanceId, "EMR-Serverless"))
+                .description("Security Group used by EMR Serverless")
+                .vpc(vpc).build();
+        // Save ID
+        return securityGroup.getSecurityGroupId();
     }
 
     private IRole createEmrServerlessRole(InstanceProperties instanceProperties) {
         String instanceId = instanceProperties.get(ID);
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
-                .roleName(String.join("-", "sleeper", instanceId, "EMR-Role"))
+                .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
                 .description("The role assumed by the Bulk import EMR Serverless Application")
-                .managedPolicies(Lists
-                        .newArrayList(createEmrServerlessManagedPolicy(instanceProperties)))
-                .assumedBy(new ServicePrincipal("elasticmapreduce.amazonaws.com")).build());
+                .managedPolicies(
+                        Lists.newArrayList(createEmrServerlessManagedPolicy(instanceProperties)))
+                .assumedBy(new ServicePrincipal("emr-serverless.amazonaws.com")).build());
 
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
         return role;
@@ -156,7 +185,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(this,
                 "CustomEMRServerlessServicePolicy",
                 ManagedPolicyProps.builder()
-                        .managedPolicyName("sleeper-" + instanceId + "-EmrServerlessPolicy")
+                        .managedPolicyName(
+                                String.join("-", "sleeper", instanceId, "EmrServerlessPolicy"))
                         .description(
                                 "Policy required for Sleeper Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
                         .document(PolicyDocument.Builder.create()

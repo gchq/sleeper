@@ -260,6 +260,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The path to JAVA_HOME to be used by the custom image for bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.emrserverless.job.queue.url")
+            .description("The URL of the queue for bulk import jobs using EMR Serverless.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
     // Bulk import using persistent EMR
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using persistent EMR.")

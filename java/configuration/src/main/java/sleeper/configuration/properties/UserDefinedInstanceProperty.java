@@ -701,10 +701,10 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             .runCDKDeployWhenChanged(true).build();
 
     // Bulk import using EMR Serverless
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.emrserverless.class.name")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.class.name")
             .description("The class to use to perform the bulk import.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .defaultValue(null)
+            .defaultValue("sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver")
             .runCDKDeployWhenChanged(true)
             .build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
