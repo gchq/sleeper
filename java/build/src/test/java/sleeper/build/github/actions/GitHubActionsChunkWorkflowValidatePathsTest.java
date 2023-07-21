@@ -37,7 +37,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When
-        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+        WorkflowTriggerPathsDiff diff = workflow.getTriggerPathsDiffFromExpected(project, chunk, maven);
 
         // When / Then
         assertThat(diff.getExpected()).containsExactly(
@@ -60,7 +60,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When
-        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+        WorkflowTriggerPathsDiff diff = workflow.getTriggerPathsDiffFromExpected(project, chunk, maven);
 
         // Then
         assertThat(diff.getExpected()).containsExactly(
@@ -93,7 +93,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When
-        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+        WorkflowTriggerPathsDiff diff = workflow.getTriggerPathsDiffFromExpected(project, chunk, maven);
 
         // Then
         assertThat(diff.getMissingEntries()).containsExactly("maven/configuration/**");
@@ -112,7 +112,7 @@ public class GitHubActionsChunkWorkflowValidatePathsTest {
         InternalDependencyIndex maven = TestMavenModuleStructure.example().internalDependencies();
 
         // When
-        OnPushPathsDiff diff = workflow.getOnPushPathsDiffFromExpected(project, chunk, maven);
+        WorkflowTriggerPathsDiff diff = workflow.getTriggerPathsDiffFromExpected(project, chunk, maven);
 
         // Then
         assertThat(diff.getMissingEntries()).containsExactly(

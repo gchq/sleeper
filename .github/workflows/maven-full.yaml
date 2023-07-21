@@ -1,6 +1,6 @@
 name: Full Maven Compile
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/maven-full.yaml'
       - 'java/**'

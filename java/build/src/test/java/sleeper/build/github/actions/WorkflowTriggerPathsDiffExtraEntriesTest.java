@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.github.actions.OnPushPathsDiffTestHelper.builder;
 import static sleeper.build.github.actions.OnPushPathsDiffTestHelper.identical;
 
-public class OnPushPathsDiffExtraEntriesTest {
+public class WorkflowTriggerPathsDiffExtraEntriesTest {
 
     @Test
     public void shouldReportExtraEntryUnderMavenProjectPath() {
@@ -36,7 +36,7 @@ public class OnPushPathsDiffExtraEntriesTest {
         List<String> actual = asList("java/module-a", "java/module-b", "java/module-c");
 
         // When
-        OnPushPathsDiff diff = OnPushPathsDiff.fromExpectedAndActual(
+        WorkflowTriggerPathsDiff diff = WorkflowTriggerPathsDiff.fromExpectedAndActual(
                 TestProjectStructure.exampleWithMavenPath("java"), expected, actual);
 
         // Then
@@ -53,7 +53,7 @@ public class OnPushPathsDiffExtraEntriesTest {
         List<String> actual = asList("code-style/style.xml", "java/module-a", "java/module-b");
 
         // When
-        OnPushPathsDiff diff = OnPushPathsDiff.fromExpectedAndActual(
+        WorkflowTriggerPathsDiff diff = WorkflowTriggerPathsDiff.fromExpectedAndActual(
                 TestProjectStructure.exampleWithMavenPath("java"), expected, actual);
 
         // Then
