@@ -51,7 +51,10 @@ public class DrawDependencyGraph {
         List<List<String>> edges = new ArrayList<>();
         for (MavenModuleAndPath maven : dependencies) {
             nodeIds.add(maven.artifactReference().toString());
-            List<DependencyReference> nodeDependencies = maven.dependencies().filter(DependencyReference::isSleeper).filter(DependencyReference::isExported).collect(Collectors.toList());
+            List<DependencyReference> nodeDependencies = maven.dependencies().
+                    filter(DependencyReference::isSleeper)
+                    .filter(DependencyReference::isExported)
+                    .collect(Collectors.toList());
             for (DependencyReference dependency : nodeDependencies) {
                 List<String> listToAdd = new ArrayList<>();
                 listToAdd.add(maven.artifactReference().toString());
@@ -85,6 +88,11 @@ public class DrawDependencyGraph {
             allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(selectedNodesList.get(i)))));
         }
         return Pair.of(allInEdges, allOutEdges);
+    }
+
+    private float testFunc(VisualizationViewer vv, Graph g) {
+
+        return 1.0f;
     }
 
     public void DrawGraph(Pair<List<String>, List<List<String>>> graphData) {
@@ -124,7 +132,7 @@ public class DrawDependencyGraph {
                                 List<String> nextOutEdge = edgeNames.get(k);
                                 System.out.println(nextOutEdge);
                                 if (nextOutEdge.contains(s)) {
-                                    return Color.GREEN;
+                                    return Color.BLACK;
                                 }
                             }
                             return Color.lightGray;
@@ -135,10 +143,18 @@ public class DrawDependencyGraph {
             return Color.BLACK;
         };
 
+        Function<String, Paint> arrowPaint = s -> {
+            Paint edgePaintColor = edgePaint.apply(s);
+            if (edgePaintColor.equals(Color.lightGray)) {
+                return null;
+            }
+            return edgePaintColor;
+        };
+
         vv.setPreferredSize(new Dimension(350, 350));
         vv.getRenderContext().setEdgeDrawPaintTransformer(edgePaint);
-        vv.getRenderContext().setArrowDrawPaintTransformer(edgePaint);
-        vv.getRenderContext().setArrowFillPaintTransformer(edgePaint);
+        vv.getRenderContext().setArrowDrawPaintTransformer(arrowPaint);
+        vv.getRenderContext().setArrowFillPaintTransformer(arrowPaint);
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
         vv.setGraphMouse(gm);
