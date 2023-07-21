@@ -64,6 +64,10 @@ public class MavenModuleStructure {
         return allTestedModules(MavenModuleAndPath.root(this));
     }
 
+    public Stream<MavenModuleAndPath> allModules() {
+        return allModules(MavenModuleAndPath.root(this));
+    }
+
     public InternalModuleIndex indexInternalModules() {
         MavenModuleAndPath root = MavenModuleAndPath.root(this);
         return new InternalModuleIndex(
@@ -75,14 +79,16 @@ public class MavenModuleStructure {
     }
 
     private Stream<MavenModuleAndPath> allTestedModules(MavenModuleAndPath parent) {
+        return allModules(parent).filter(module -> module.getStructure().hasSrcTestFolder);
+    }
+
+    private Stream<MavenModuleAndPath> allModules(MavenModuleAndPath parent) {
         MavenModuleAndPath projectListPath = parent.child(this);
         if ("pom".equals(packaging)) {
             return modules.stream()
-                    .flatMap(module -> module.allTestedModules(projectListPath));
-        } else if (hasSrcTestFolder) {
-            return Stream.of(projectListPath);
+                    .flatMap(module -> module.allModules(projectListPath));
         } else {
-            return Stream.empty();
+            return Stream.of(projectListPath);
         }
     }
 

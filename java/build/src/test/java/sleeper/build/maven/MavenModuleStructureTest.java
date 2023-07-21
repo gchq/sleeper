@@ -40,4 +40,16 @@ public class MavenModuleStructureTest {
                         "bulk-import/bulk-import-runner",
                         "bulk-import/bulk-import-starter");
     }
+
+    @Test
+    public void shouldProduceListOfAllModules() {
+        // When / Then
+        assertThat(TestMavenModuleStructure.example().allModules())
+                .extracting(MavenModuleAndPath::getPath).containsExactly(
+                        "core", "configuration", "ingest",
+                        "bulk-import/bulk-import-common",
+                        "bulk-import/bulk-import-runner",
+                        "bulk-import/bulk-import-starter",
+                        "distribution");
+    }
 }
