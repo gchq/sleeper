@@ -16,9 +16,10 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class EmrJarLocation {
 
@@ -27,7 +28,7 @@ public class EmrJarLocation {
 
     public static String getJarLocation(InstanceProperties instanceProperties) {
         return "s3a://"
-                + instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET)
+                + instanceProperties.get(JARS_BUCKET)
                 + "/bulk-import-runner-"
                 + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar";
     }

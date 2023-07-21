@@ -18,7 +18,7 @@ package sleeper.bulkimport.starter.executor;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.stepfunctions.AWSStepFunctionsClientBuilder;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 public interface PlatformExecutor {

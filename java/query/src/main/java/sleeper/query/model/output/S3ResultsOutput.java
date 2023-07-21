@@ -20,7 +20,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
@@ -33,10 +33,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_PAGE_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
+import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.io.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
 
 /**

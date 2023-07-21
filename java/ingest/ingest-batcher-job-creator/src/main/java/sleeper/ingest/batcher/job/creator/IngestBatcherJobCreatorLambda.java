@@ -24,7 +24,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.IngestBatcher;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
@@ -35,7 +35,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function to create jobs with the {@link IngestBatcher}.

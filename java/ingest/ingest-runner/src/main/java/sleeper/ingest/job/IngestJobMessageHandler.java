@@ -18,7 +18,7 @@ package sleeper.ingest.job;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.utils.HadoopPathUtils;
 

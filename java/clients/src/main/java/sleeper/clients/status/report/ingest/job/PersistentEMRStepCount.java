@@ -21,7 +21,7 @@ import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
 import com.amazonaws.services.elasticmapreduce.model.ListStepsRequest;
 import com.amazonaws.services.elasticmapreduce.model.StepSummary;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static sleeper.clients.util.EmrUtils.listActiveClusters;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 public class PersistentEMRStepCount {
     private PersistentEMRStepCount() {

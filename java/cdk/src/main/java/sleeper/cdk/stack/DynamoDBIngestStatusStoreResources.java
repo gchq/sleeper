@@ -24,14 +24,14 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class DynamoDBIngestStatusStoreResources implements IngestStatusStoreResources {
     private final Table jobsTable;

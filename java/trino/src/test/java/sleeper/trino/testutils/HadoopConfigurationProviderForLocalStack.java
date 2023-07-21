@@ -18,7 +18,7 @@ package sleeper.trino.testutils;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
 import static java.util.Objects.requireNonNull;
@@ -34,7 +34,7 @@ public class HadoopConfigurationProviderForLocalStack implements HadoopConfigura
     public Configuration getHadoopConfiguration(InstanceProperties instanceProperties) {
         Configuration configuration = new Configuration();
         configuration.setClassLoader(this.getClass().getClassLoader());
-        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3).getServiceEndpoint());
+        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
         configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
