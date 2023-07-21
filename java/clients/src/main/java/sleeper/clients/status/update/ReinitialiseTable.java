@@ -90,7 +90,7 @@ public class ReinitialiseTable {
         }
     }
 
-    void run() throws IOException, StateStoreException {
+    public void run() throws IOException, StateStoreException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider =
