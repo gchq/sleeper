@@ -26,6 +26,9 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -36,17 +39,27 @@ public class IngestBatcherIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
+        sleeper.ingestBatcher().clearStore();
     }
 
     @Test
     void shouldStandardIngestOneRecord() throws InterruptedException {
+        // Given
+        sleeper.updateTableProperties(tableProperties -> {
+            tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+        });
         Record record = new Record(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
+
+        // When
         sleeper.sourceFiles().create("file.parquet", record);
         sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
+
+        // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .isEmpty();
+                .containsExactly(record);
     }
 }

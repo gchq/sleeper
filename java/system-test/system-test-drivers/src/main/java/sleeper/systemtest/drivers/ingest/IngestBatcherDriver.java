@@ -30,7 +30,6 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
-import sleeper.systemtest.drivers.ingest.batcher.SendFilesToIngestBatcher;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
@@ -43,7 +42,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestBatcherDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SendFilesToIngestBatcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherDriver.class);
 
     private final InstanceProperties properties;
     private final IngestBatcherStore batcherStore;
@@ -96,5 +95,9 @@ public class IngestBatcherDriver {
                 .filter(FileIngestRequest::isAssignedToJob)
                 .map(FileIngestRequest::getJobId)
                 .distinct();
+    }
+
+    public void clearStore() {
+        batcherStore.deleteAllPending();
     }
 }

@@ -53,4 +53,8 @@ public class SystemTestIngestBatcher {
     public void waitForJobs() throws InterruptedException {
         systemTest.ingestByQueueDriver().invokeAndWaitForJobs(createdJobIds);
     }
+
+    public void clearStore() {
+        driver.clearStore();
+    }
 }

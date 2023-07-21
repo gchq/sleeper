@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
@@ -36,7 +37,10 @@ import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 import static sleeper.systemtest.drivers.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
@@ -70,6 +74,15 @@ public class SleeperSystemTest {
 
     public InstanceProperties instanceProperties() {
         return instance.getInstanceProperties();
+    }
+
+    public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
+        tablePropertiesConsumer.accept(instance.getTableProperties());
+        try {
+            instance.getTableProperties().saveToS3(s3Client);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public SystemTestDirectIngest directIngest(Path tempDir) {
