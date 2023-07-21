@@ -32,13 +32,17 @@ import sleeper.build.maven.DependencyReference;
 import sleeper.build.maven.MavenModuleAndPath;
 import sleeper.build.maven.MavenModuleStructure;
 
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Paint;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -46,6 +50,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class DrawDependencyGraph {
+    public boolean showTransitiveDependencies = false;
+
     public Pair<List<String>, List<List<String>>> createGraph(List<MavenModuleAndPath> dependencies) {
         List<String> nodeIds = new ArrayList<>();
         List<List<String>> edges = new ArrayList<>();
@@ -82,17 +88,11 @@ public class DrawDependencyGraph {
         List<List<String>> allInEdges = new ArrayList<>();
         List<List<String>> allOutEdges = new ArrayList<>();
 
-
         for (int i = 0; i < selectedNodesList.size(); i++) {
             allInEdges.add(new ArrayList<>(g.getInEdges(String.valueOf(selectedNodesList.get(i)))));
             allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(selectedNodesList.get(i)))));
         }
         return Pair.of(allInEdges, allOutEdges);
-    }
-
-    private float testFunc(VisualizationViewer vv, Graph g) {
-
-        return 1.0f;
     }
 
     public void DrawGraph(Pair<List<String>, List<List<String>>> graphData) {
@@ -127,12 +127,12 @@ public class DrawDependencyGraph {
                         if (edgeOut.contains(s)) {
                             return Color.BLUE;
                         } else {
-                            for (int k = 0; k < edgeNames.size(); k++) {
-                                System.out.println(edgeNames);
-                                List<String> nextOutEdge = edgeNames.get(k);
-                                System.out.println(nextOutEdge);
-                                if (nextOutEdge.contains(s)) {
-                                    return Color.BLACK;
+                            if (showTransitiveDependencies) {
+                                for (int k = 0; k < edgeNames.size(); k++) {
+                                    List<String> nextOutEdge = edgeNames.get(k);
+                                    if (nextOutEdge.contains(s)) {
+                                        return Color.BLACK;
+                                    }
                                 }
                             }
                             return Color.lightGray;
@@ -146,7 +146,7 @@ public class DrawDependencyGraph {
         Function<String, Paint> arrowPaint = s -> {
             Paint edgePaintColor = edgePaint.apply(s);
             if (edgePaintColor.equals(Color.lightGray)) {
-                return null;
+                return new Color(255, 255, 255, 0);
             }
             return edgePaintColor;
         };
@@ -166,8 +166,21 @@ public class DrawDependencyGraph {
         JFrame frame = new JFrame("Dependency Graph View");
         JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
         JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
+        JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
+        transitiveCheckBox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == 1) {
+                    showTransitiveDependencies = true;
+                } else {
+                    showTransitiveDependencies = false;
+                }
+                SwingUtilities.updateComponentTreeUI(frame);
+            }
+        });
         vv.add(text, BorderLayout.CENTER);
         vv.add(text2, BorderLayout.CENTER);
+        vv.add(transitiveCheckBox);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(vv);
 
