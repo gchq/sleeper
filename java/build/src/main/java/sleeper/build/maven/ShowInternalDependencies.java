@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 class ShowInternalDependencies {
-    private String checkStylePrevent = "";
 
     public static void main(String[] args) throws IOException {
         Path repositoryRoot = Path.of("").toAbsolutePath();
@@ -35,6 +34,10 @@ class ShowInternalDependencies {
         mavenStructure.indexInternalModules();
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
         drawDependencyGraph.produceGraphFromMaven(mavenStructure);
+    }
+
+    private void FilePathHelper() {
+        //not called
     }
 
 
