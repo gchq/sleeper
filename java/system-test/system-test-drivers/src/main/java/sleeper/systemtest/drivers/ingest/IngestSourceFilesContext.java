@@ -54,13 +54,9 @@ public class IngestSourceFilesContext {
     public void writeFile(TableProperties tableProperties, String file, Iterator<Record> records) {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new org.apache.hadoop.fs.Path("s3a://" + sourceBucketName + "/" + file), tableProperties, new Configuration())) {
-            records.forEachRemaining(record -> {
-                try {
-                    writer.write(record);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+            for (Record record : (Iterable<Record>) () -> records) {
+                writer.write(record);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
