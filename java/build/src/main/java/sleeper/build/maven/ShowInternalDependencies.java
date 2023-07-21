@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 class ShowInternalDependencies {
-
     public static void main(String[] args) throws IOException {
         Path repositoryRoot = Path.of("").toAbsolutePath();
         MavenModuleStructure mavenStructure = ProjectStructure.builder()
@@ -35,10 +34,4 @@ class ShowInternalDependencies {
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
         drawDependencyGraph.produceGraphFromMaven(mavenStructure);
     }
-
-    private void FilePathHelper() {
-        //not called
-    }
-
-
 }
