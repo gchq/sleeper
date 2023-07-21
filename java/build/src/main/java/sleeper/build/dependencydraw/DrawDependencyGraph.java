@@ -151,18 +151,6 @@ public class DrawDependencyGraph {
             return edgePaintColor;
         };
 
-        vv.setPreferredSize(new Dimension(350, 350));
-        vv.getRenderContext().setEdgeDrawPaintTransformer(edgePaint);
-        vv.getRenderContext().setArrowDrawPaintTransformer(arrowPaint);
-        vv.getRenderContext().setArrowFillPaintTransformer(arrowPaint);
-        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
-        vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
-        vv.setGraphMouse(gm);
-        vv.addKeyListener(gm.getModeKeyListener());
-        vv.setVertexToolTipTransformer(new ToStringLabeller());
-        vv.setEdgeToolTipTransformer(new ToStringLabeller());
-        gm.setMode(ModalGraphMouse.Mode.TRANSFORMING);
-
         JFrame frame = new JFrame("Dependency Graph View");
         JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
         JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
@@ -178,12 +166,23 @@ public class DrawDependencyGraph {
                 SwingUtilities.updateComponentTreeUI(frame);
             }
         });
+
+        vv.setPreferredSize(new Dimension(350, 350));
+        vv.getRenderContext().setEdgeDrawPaintTransformer(edgePaint);
+        vv.getRenderContext().setArrowDrawPaintTransformer(arrowPaint);
+        vv.getRenderContext().setArrowFillPaintTransformer(arrowPaint);
+        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
+        vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
+        vv.setGraphMouse(gm);
+        vv.addKeyListener(gm.getModeKeyListener());
+        vv.setVertexToolTipTransformer(new ToStringLabeller());
+        vv.setEdgeToolTipTransformer(new ToStringLabeller());
+        gm.setMode(ModalGraphMouse.Mode.TRANSFORMING);
         vv.add(text, BorderLayout.CENTER);
         vv.add(text2, BorderLayout.CENTER);
         vv.add(transitiveCheckBox);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(vv);
-
         frame.pack();
         frame.setVisible(true);
     }
