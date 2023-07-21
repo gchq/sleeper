@@ -22,7 +22,8 @@ import sleeper.build.dependencydraw.DrawDependencyGraph;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public class ShowInternalDependencies {
+class ShowInternalDependencies {
+    private String checkStylePrevent = null;
 
     public static void main(String[] args) throws IOException {
         Path repositoryRoot = Path.of("").toAbsolutePath();
@@ -36,4 +37,6 @@ public class ShowInternalDependencies {
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
         drawDependencyGraph.produceGraphFromMaven(mavenStructure);
     }
+
+
 }
