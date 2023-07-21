@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 public class GitHubActionsChunkWorkflowYaml {
 
     private final String name;
-    private final List<String> onPushPaths;
+    private final List<String> onTriggerPaths;
     private final Map<String, Object> jobs;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -43,7 +43,7 @@ public class GitHubActionsChunkWorkflowYaml {
             @JsonProperty("on") On on,
             @JsonProperty("jobs") Map<String, Object> jobs) {
         this.name = Objects.requireNonNull(name, "name must not be null");
-        this.onPushPaths = Objects.requireNonNull(on, "on must not be null").push.paths;
+        this.onTriggerPaths = Objects.requireNonNull(on, "on must not be null").pull_request.paths;
         this.jobs = Objects.requireNonNull(jobs, "jobs must not be null");
     }
 
@@ -65,7 +65,7 @@ public class GitHubActionsChunkWorkflowYaml {
                 .chunkId(job.with.chunkId)
                 .name(name)
                 .usesWorkflowPath(Paths.get(job.uses))
-                .onPushPaths(onPushPaths)
+                .onTriggerPaths(onTriggerPaths)
                 .build();
     }
 
@@ -84,19 +84,19 @@ public class GitHubActionsChunkWorkflowYaml {
     }
 
     public static class On {
-        private final Push push;
+        private final Trigger pull_request;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-        public On(@JsonProperty("push") Push push) {
-            this.push = Objects.requireNonNull(push, "push must not be null");
+        public On(@JsonProperty("pull_request") Trigger pull_request) {
+            this.pull_request = Objects.requireNonNull(pull_request, "pull_request must not be null");
         }
     }
 
-    public static class Push {
+    public static class Trigger {
         private final List<String> paths;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-        public Push(@JsonProperty("paths") List<String> paths) {
+        public Trigger(@JsonProperty("paths") List<String> paths) {
             this.paths = Objects.requireNonNull(paths, "paths must not be null");
         }
     }

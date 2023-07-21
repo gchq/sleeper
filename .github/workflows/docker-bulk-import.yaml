@@ -1,6 +1,6 @@
 name: Bulk Import Docker
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/docker-bulk-import.yaml'
       - 'java/bulk-import-runner/docker/**'

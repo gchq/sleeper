@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ExpectedOnPushPaths {
+public class ExpectedWorkflowTriggerPaths {
 
-    private ExpectedOnPushPaths() {
+    private ExpectedWorkflowTriggerPaths() {
     }
 
     public static List<String> from(

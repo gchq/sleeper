@@ -1,6 +1,6 @@
 name: Build CDK Modules
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-cdk.yaml'
       - '.github/workflows/chunk.yaml'
