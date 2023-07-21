@@ -2,7 +2,7 @@ name: Bulk Import Docker
 on:
   pull_request:
     paths:
-      - '.github/workflows/docker-bulk-import.yaml'
+      #- '.github/workflows/docker-bulk-import.yaml'
       - 'java/bulk-import/bulk-import-runner/docker/**'
 
 jobs:
