@@ -72,7 +72,7 @@ public class InvokeCdkForInstance {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(instanceType, cdkCommand, ClientUtils::runCommand);
+        invoke(instanceType, cdkCommand, ClientUtils::runCommandInheritIO);
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {

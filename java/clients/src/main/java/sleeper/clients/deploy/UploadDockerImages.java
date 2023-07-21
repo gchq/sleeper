@@ -52,7 +52,7 @@ public class UploadDockerImages {
     }
 
     public void upload() throws IOException, InterruptedException {
-        upload(ClientUtils::runCommand);
+        upload(ClientUtils::runCommandInheritIO);
     }
 
     public void upload(RunCommand runCommand) throws IOException, InterruptedException {
