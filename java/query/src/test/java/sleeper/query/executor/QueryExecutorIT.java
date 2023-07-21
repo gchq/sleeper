@@ -785,8 +785,11 @@ public class QueryExecutorIT {
                 .dimension(-1)
                 .build();
 
-        rootPartition = rootPartition.toBuilder().leafPartition(false).build();
-        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList("left", "right")).build();
+        rootPartition = rootPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("left", "right"))
+                .build();
+
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition,
                 leftPartition, rightPartition);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());

@@ -42,7 +42,7 @@ class PartitionFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.rootFirst("parent").build();
-        PartitionSplitResult splitResult = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
+        PartitionSplitResult splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
         List<Partition> children = splitResult.buildChildren();
         parent = splitResult.buildParent();
 
@@ -86,10 +86,10 @@ class PartitionFactoryTest {
         RangeFactory rangeFactory = new RangeFactory(schema);
         PartitionFactory partitionFactory = new PartitionFactory(schema);
         Partition parent = partitionFactory.rootFirst("parent").build();
-        PartitionSplitResult splitResult = toPartition(parent, "left", "right", 0, "aaa", partitionFactory);
+        PartitionSplitResult splitResult = partitionFactory.split(parent, "left", "right", 0, "aaa");
         List<Partition> children = splitResult.buildChildren();
         parent = splitResult.buildParent();
-        PartitionSplitResult nestedSplitResult = toPartition(children.get(1), "nestedLeft", "nestedRight", 1, "bbb", partitionFactory);
+        PartitionSplitResult nestedSplitResult = partitionFactory.split(children.get(1), "nestedLeft", "nestedRight", 1, "bbb");
         List<Partition> nestedChildren = nestedSplitResult.buildChildren();
         children.set(1, nestedSplitResult.buildParent());
 
