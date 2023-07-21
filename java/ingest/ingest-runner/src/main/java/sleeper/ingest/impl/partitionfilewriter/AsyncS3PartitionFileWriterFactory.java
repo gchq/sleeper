@@ -15,7 +15,9 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -24,6 +26,7 @@ import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -31,6 +34,8 @@ import static sleeper.configuration.properties.instance.AsyncIngestPartitionFile
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.configuration.utils.AwsV2ClientHelper.getCustomEndpoint;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -65,14 +70,26 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
         String clientType = properties.get(ASYNC_INGEST_CLIENT_TYPE).toLowerCase(Locale.ROOT);
         if ("java".equals(clientType)) {
-            return S3AsyncClient.create();
+            return buildAwsV2Client(S3AsyncClient.builder());
         } else if ("crt".equals(clientType)) {
-            return S3AsyncClient.crtBuilder()
+            return buildCrtClient(S3AsyncClient.crtBuilder()
                     .minimumPartSizeInBytes(properties.getLong(ASYNC_INGEST_CRT_PART_SIZE_BYTES))
-                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS))
-                    .build();
+                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS)));
         } else {
             throw new IllegalArgumentException("Unrecognised async client type: " + clientType);
+        }
+    }
+
+    public static S3AsyncClient buildCrtClient(S3CrtAsyncClientBuilder builder) {
+        URI customEndpoint = getCustomEndpoint();
+        if (customEndpoint != null) {
+            return builder
+                    .endpointOverride(customEndpoint)
+                    .region(Region.US_EAST_1)
+                    .forcePathStyle(true)
+                    .build();
+        } else {
+            return builder.build();
         }
     }
 
