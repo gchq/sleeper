@@ -19,8 +19,8 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ChooseOne;
 import sleeper.clients.util.console.menu.ConsoleChoice;
-import sleeper.configuration.properties.InstancePropertyGroup;
 import sleeper.configuration.properties.PropertyGroup;
+import sleeper.configuration.properties.instance.InstancePropertyGroup;
 import sleeper.configuration.properties.table.TablePropertyGroup;
 
 import java.util.ArrayList;

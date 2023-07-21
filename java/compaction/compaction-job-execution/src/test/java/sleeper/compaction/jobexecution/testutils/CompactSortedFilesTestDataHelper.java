@@ -64,7 +64,7 @@ public class CompactSortedFilesTestDataHelper {
     }
 
     public FileInfo expectedLeafFileInPartition(String filename, long records, Object min, Object max) {
-        return expectedLeafFile(filename, records, min, max).cloneWithStatus(FileInfo.FileStatus.FILE_IN_PARTITION);
+        return expectedLeafFile(filename, records, min, max);
     }
 
     public FileInfo expectedPartitionFile(String partitionId, String filename, long records, Object min, Object max) {

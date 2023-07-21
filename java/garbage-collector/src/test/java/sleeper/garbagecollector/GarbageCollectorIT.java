@@ -29,7 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -42,6 +42,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -57,15 +58,16 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCLE_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class GarbageCollectorIT {
@@ -79,17 +81,11 @@ public class GarbageCollectorIT {
     public java.nio.file.Path folder;
 
     private AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     }
 
     private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private InstanceProperties createInstanceProperties(AmazonS3 s3Client) {
@@ -173,7 +169,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file2).toPath())).isTrue();
         assertThat(Files.exists(new File(file3).toPath())).isTrue();
         assertThat(stateStore.getActiveFileList())
-            .extracting(FileInfo::getFilename)
+            .extracting(FileLifecycleInfo::getFilename)
             .containsExactlyInAnyOrder(file1, file2, file3);
 
         // When 2
@@ -195,7 +191,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file3).toPath())).isTrue();
         assertThat(Files.exists(new File(file4).toPath())).isTrue();
         assertThat(stateStore.getActiveFileList())
-            .extracting(FileInfo::getFilename)
+            .extracting(FileLifecycleInfo::getFilename)
             .containsExactlyInAnyOrder(file2, file3, file4);
 
         // When 3
@@ -211,7 +207,7 @@ public class GarbageCollectorIT {
         assertThat(Files.exists(new File(file3).toPath())).isTrue();
         assertThat(Files.exists(new File(file4).toPath())).isTrue();
         assertThat(stateStore.getActiveFileList())
-            .extracting(FileInfo::getFilename)
+            .extracting(FileLifecycleInfo::getFilename)
             .containsExactlyInAnyOrder(file2, file3, file4);
 
         s3Client.shutdown();
@@ -222,7 +218,6 @@ public class GarbageCollectorIT {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new IntType())
                 .filename(filename)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partition.getId())
                 .minRowKey(Key.create(1))
                 .maxRowKey(Key.create(100))

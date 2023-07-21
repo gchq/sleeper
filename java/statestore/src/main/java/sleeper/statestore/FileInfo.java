@@ -30,19 +30,12 @@ import java.util.Objects;
  * job is responsible for compacting it.
  */
 public class FileInfo {
-    public enum FileStatus {
-        FILE_IN_PARTITION,
-        ACTIVE,
-        GARBAGE_COLLECTION_PENDING
-    }
-
     private final List<PrimitiveType> rowKeyTypes;
     private final Key minRowKey;
     private final Key maxRowKey;
     private final String filename;
     private final String partitionId;
     private final Long numberOfRecords;
-    private final FileStatus fileStatus;
     private final String jobId;
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
     private final Boolean onlyContainsDataForThisPartition;
@@ -54,7 +47,6 @@ public class FileInfo {
         this.filename = builder.filename;
         this.partitionId = builder.partitionId;
         this.numberOfRecords = builder.numberOfRecords;
-        this.fileStatus = builder.fileStatus;
         this.jobId = builder.jobId;
         this.lastStateStoreUpdateTime = builder.lastStateStoreUpdateTime;
         this.onlyContainsDataForThisPartition = builder.onlyContainsDataForThisPartition;
@@ -78,10 +70,6 @@ public class FileInfo {
 
     public String getFilename() {
         return filename;
-    }
-
-    public FileStatus getFileStatus() {
-        return fileStatus;
     }
 
     public String getJobId() {
@@ -120,7 +108,6 @@ public class FileInfo {
                 Objects.equals(numberOfRecords, fileInfo.numberOfRecords) &&
                 Objects.equals(minRowKey, fileInfo.minRowKey) &&
                 Objects.equals(maxRowKey, fileInfo.maxRowKey) &&
-                fileStatus == fileInfo.fileStatus &&
                 Objects.equals(jobId, fileInfo.jobId) &&
                 Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime) &&
                 Objects.equals(onlyContainsDataForThisPartition, fileInfo.onlyContainsDataForThisPartition);
@@ -130,7 +117,7 @@ public class FileInfo {
     public int hashCode() {
         return Objects.hash(rowKeyTypes, filename, partitionId,
                 numberOfRecords, minRowKey, maxRowKey,
-                fileStatus, jobId, lastStateStoreUpdateTime,
+                jobId, lastStateStoreUpdateTime,
                 onlyContainsDataForThisPartition);
     }
 
@@ -143,7 +130,6 @@ public class FileInfo {
                 ", numberOfRecords=" + numberOfRecords +
                 ", minKey=" + minRowKey +
                 ", maxKey=" + maxRowKey +
-                ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
                 ", onlyContainsDataForThisPartition=" + onlyContainsDataForThisPartition +
@@ -158,21 +144,14 @@ public class FileInfo {
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
-                .fileStatus(fileStatus)
                 .jobId(jobId)
                 .lastStateStoreUpdateTime(lastStateStoreUpdateTime);
     }
 
-    public FileInfo cloneWithStatus(FileStatus fileStatus) {
-        return FileInfo.builder()
-            .rowKeyTypes(rowKeyTypes)
-            .minRowKey(minRowKey)
-            .maxRowKey(maxRowKey)
+    public FileLifecycleInfo toFileLifecycleInfo(FileLifecycleInfo.FileStatus fileStatus1) {
+        return FileLifecycleInfo.builder()
             .filename(filename)
-            .partitionId(partitionId)
-            .numberOfRecords(numberOfRecords)
-            .fileStatus(fileStatus)
-            .jobId(jobId)
+            .fileStatus(fileStatus1)
             .lastStateStoreUpdateTime(lastStateStoreUpdateTime)
             .build();
     }
@@ -184,7 +163,6 @@ public class FileInfo {
         private String filename;
         private String partitionId;
         private Long numberOfRecords;
-        private FileStatus fileStatus;
         private String jobId;
         private Long lastStateStoreUpdateTime;
         private Boolean onlyContainsDataForThisPartition = true;
@@ -224,11 +202,6 @@ public class FileInfo {
 
         public Builder numberOfRecords(Long numberOfRecords) {
             this.numberOfRecords = numberOfRecords;
-            return this;
-        }
-
-        public Builder fileStatus(FileStatus fileStatus) {
-            this.fileStatus = fileStatus;
             return this;
         }
 

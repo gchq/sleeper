@@ -55,20 +55,6 @@ class DynamoDBFileInfoFormat {
         keySerDe = new KeySerDe(rowKeyTypes);
     }
 
-    /**
-     * Creates a record with a new status
-     *
-     * @param fileInfo  the File
-     * @param newStatus the new status of that file
-     * @return A Dynamo record
-     * @throws StateStoreException if the Dynamo record fails to be created
-     */
-    Map<String, AttributeValue> createRecordWithStatus(FileInfo fileInfo, FileInfo.FileStatus newStatus) throws StateStoreException {
-        Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(STATUS, createStringAttribute(newStatus.toString()));
-        return record;
-    }
-
     Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) throws StateStoreException {
         Map<String, AttributeValue> record = createRecord(fileInfo);
         record.put(JOB_ID, createStringAttribute(jobId));
@@ -87,7 +73,6 @@ class DynamoDBFileInfoFormat {
 
         itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
         itemValues.put(PARTITION, createStringAttribute(fileInfo.getPartitionId()));
-        itemValues.put(STATUS, createStringAttribute(fileInfo.getFileStatus().toString()));
         if (null != fileInfo.getNumberOfRecords()) {
             itemValues.put(NUMBER_LINES, createNumberAttribute(fileInfo.getNumberOfRecords()));
         }
@@ -117,7 +102,6 @@ class DynamoDBFileInfoFormat {
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
-                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()))
                 .partitionId(item.get(PARTITION).getS())
                 .filename(item.get(NAME).getS());
         if (null != item.get(NUMBER_LINES)) {

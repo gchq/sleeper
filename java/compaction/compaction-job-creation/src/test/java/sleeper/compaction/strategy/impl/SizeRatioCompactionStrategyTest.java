@@ -18,7 +18,7 @@ package sleeper.compaction.strategy.impl;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
@@ -65,7 +65,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 8; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords(i == 7 ? 100L : 50L)
                     .rowKeyTypes(new IntType())
@@ -107,7 +106,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 8; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) Math.pow(2, i + 1))
                     .rowKeyTypes(new IntType())
@@ -153,7 +151,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 10; i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .rowKeyTypes(new IntType())
@@ -216,7 +213,6 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < sizes.size(); i++) {
             FileInfo fileInfo = FileInfo.builder()
                     .filename("file-" + i)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .rowKeyTypes(new IntType())

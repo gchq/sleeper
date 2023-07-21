@@ -45,6 +45,7 @@ import sleeper.core.schema.Schema;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.FileInfoStore;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
@@ -64,10 +65,11 @@ import java.util.stream.Stream;
 
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
-import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.statestore.FileInfo.FileStatus.FILE_IN_PARTITION;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
@@ -82,6 +84,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     private final boolean stronglyConsistentReads;
     private final double garbageCollectorDelayBeforeDeletionInMinutes;
     private final DynamoDBFileInfoFormat fileInfoFormat;
+    private final DynamoDBFileLifecycleInfoFormat fileLifecycleInfoFormat;
     private Clock clock = Clock.systemUTC();
 
     private DynamoDBFileInfoStore(Builder builder) {
@@ -92,6 +95,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         stronglyConsistentReads = builder.stronglyConsistentReads;
         garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         fileInfoFormat = new DynamoDBFileInfoFormat(schema);
+        fileLifecycleInfoFormat = new DynamoDBFileLifecycleInfoFormat();
     }
 
     public static Builder builder() {
@@ -106,8 +110,15 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             throw new IllegalArgumentException("FileInfo needs non-null filename, partition, number of records: got " + fileInfo);
         }
 
-        Map<String, AttributeValue> itemValuesFileInPartition = fileInfoFormat.createRecordWithStatus(fileInfo, FILE_IN_PARTITION);
-        Map<String, AttributeValue> itemValuesFileLifecycle = fileInfoFormat.createRecordWithStatus(fileInfo, ACTIVE);
+        long now = Instant.now().toEpochMilli();
+        Map<String, AttributeValue> itemValuesFileInPartition = fileInfoFormat
+            .createRecord(fileInfo.toBuilder().lastStateStoreUpdateTime(now).build());
+        FileLifecycleInfo fileLifecycleInfo = FileLifecycleInfo.builder()
+            .filename(fileInfo.getFilename())
+            .fileStatus(ACTIVE)
+            .lastStateStoreUpdateTime(now)
+            .build();
+        Map<String, AttributeValue> itemValuesFileLifecycle = fileLifecycleInfoFormat.createRecord(fileLifecycleInfo);
         try {
             List<TransactWriteItem> writes = new ArrayList<>();
             Put fileInPartitionPut = new Put()
@@ -151,17 +162,22 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             key.put(FILE_NAME, createStringAttribute(fileInfo.getFilename()));
             key.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
             Map<String, String> expressionAttributeNames = new HashMap<>();
-            expressionAttributeNames.put("#status", STATUS);
+            expressionAttributeNames.put("#filename", FILE_NAME);
+            expressionAttributeNames.put("#partitionid", PARTITION_ID);
+            Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+            expressionAttributeValues.put(":filename", new AttributeValue().withS(fileInfo.getFilename()));
+            expressionAttributeValues.put(":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
             Delete delete = new Delete()
                     .withTableName(fileInPartitionTablename)
                     .withKey(key)
                     .withExpressionAttributeNames(expressionAttributeNames)
-                    .withConditionExpression("attribute_exists(#status)");
+                    .withExpressionAttributeValues(expressionAttributeValues)
+                    .withConditionExpression("#filename=:filename and #partitionid=:partitionid");
             writes.add(new TransactWriteItem().withDelete(delete));
         }
         // Add record for file for new status
-        Map<String, AttributeValue> newItemFileInPartition = fileInfoFormat.createRecordWithStatus(newActiveFile, FILE_IN_PARTITION);
-        Map<String, AttributeValue> newItemFileLifecycle = fileInfoFormat.createRecordWithStatus(newActiveFile, ACTIVE);
+        Map<String, AttributeValue> newItemFileInPartition = fileInfoFormat.createRecord(newActiveFile);
+        Map<String, AttributeValue> newItemFileLifecycle = fileLifecycleInfoFormat.createRecord(newActiveFile.toFileLifecycleInfo(ACTIVE));
         Put fileInPartitionPut = new Put()
                 .withTableName(fileInPartitionTablename)
                 .withItem(newItemFileInPartition);
@@ -196,17 +212,22 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             key.put(FILE_NAME, createStringAttribute(fileInfo.getFilename()));
             key.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
             Map<String, String> expressionAttributeNames = new HashMap<>();
-            expressionAttributeNames.put("#status", STATUS);
+            expressionAttributeNames.put("#filename", FILE_NAME);
+            expressionAttributeNames.put("#partitionid", PARTITION_ID);
+            Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+            expressionAttributeValues.put(":filename", new AttributeValue().withS(fileInfo.getFilename()));
+            expressionAttributeValues.put(":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
             Delete delete = new Delete()
                     .withTableName(fileInPartitionTablename)
                     .withKey(key)
                     .withExpressionAttributeNames(expressionAttributeNames)
-                    .withConditionExpression("attribute_exists(#status)");
+                    .withExpressionAttributeValues(expressionAttributeValues)
+                    .withConditionExpression("#filename=:filename and #partitionid=:partitionid");
             writes.add(new TransactWriteItem().withDelete(delete));
         }
         // Add record for file for new status
-        Map<String, AttributeValue> newItemFileInPartitionLeftFile = fileInfoFormat.createRecordWithStatus(leftFileInfo, FILE_IN_PARTITION);
-        Map<String, AttributeValue> newItemFileLifecycleLeftFile = fileInfoFormat.createRecordWithStatus(leftFileInfo, ACTIVE);
+        Map<String, AttributeValue> newItemFileInPartitionLeftFile = fileInfoFormat.createRecord(leftFileInfo);
+        Map<String, AttributeValue> newItemFileLifecycleLeftFile = fileLifecycleInfoFormat.createRecord(leftFileInfo.toFileLifecycleInfo(ACTIVE));
         Put putFileInPartitionLeftFile = new Put()
                 .withTableName(fileInPartitionTablename)
                 .withItem(newItemFileInPartitionLeftFile);
@@ -216,8 +237,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         writes.add(new TransactWriteItem().withPut(putFileInPartitionLeftFile));
         writes.add(new TransactWriteItem().withPut(putFileLifecycleLeftFile));
 
-        Map<String, AttributeValue> newItemFileInPartitionRightFile = fileInfoFormat.createRecordWithStatus(rightFileInfo, FILE_IN_PARTITION);
-        Map<String, AttributeValue> newItemFileLifecycleRightFile = fileInfoFormat.createRecordWithStatus(rightFileInfo, ACTIVE);
+        Map<String, AttributeValue> newItemFileInPartitionRightFile = fileInfoFormat.createRecord(rightFileInfo);
+        Map<String, AttributeValue> newItemFileLifecycleRightFile = fileLifecycleInfoFormat.createRecord(rightFileInfo.toFileLifecycleInfo(ACTIVE));
         Put putFileInPartitionRightFile = new Put()
                 .withTableName(fileInPartitionTablename)
                 .withItem(newItemFileInPartitionRightFile);
@@ -257,8 +278,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
         // Create list of transactions to put these new entries in
         List<TransactWriteItem> writes = new ArrayList<>();
-        Map<String, AttributeValue> newItemFileInPartitionLeftFile = fileInfoFormat.createRecordWithStatus(leftFileInfo, FILE_IN_PARTITION);
-        Map<String, AttributeValue> newItemFileInPartitionRightFile = fileInfoFormat.createRecordWithStatus(rightFileInfo, FILE_IN_PARTITION);
+        Map<String, AttributeValue> newItemFileInPartitionLeftFile = fileInfoFormat.createRecord(leftFileInfo);
+        Map<String, AttributeValue> newItemFileInPartitionRightFile = fileInfoFormat.createRecord(rightFileInfo);
         Put putFileInPartitionLeftFile = new Put()
                 .withTableName(fileInPartitionTablename)
                 .withItem(newItemFileInPartitionLeftFile);
@@ -274,15 +295,20 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         key.put(DynamoDBFileInfoFormat.NAME, fullDynamoRecord.get(DynamoDBFileInfoFormat.NAME));
         key.put(DynamoDBFileInfoFormat.PARTITION, fullDynamoRecord.get(DynamoDBFileInfoFormat.PARTITION));
         Map<String, String> expressionAttributeNames = new HashMap<>();
-        expressionAttributeNames.put("#status", STATUS);
+        expressionAttributeNames.put("#filename", FILE_NAME);
+        expressionAttributeNames.put("#partitionid", PARTITION_ID);
+        // expressionAttributeNames.put("#status", STATUS);
         expressionAttributeNames.put("#jobid", JOB_ID);
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":filename", new AttributeValue().withS(fileInPartitionRecordToBeSplit.getFilename()));
+        expressionAttributeValues.put(":partitionid", new AttributeValue().withS(fileInPartitionRecordToBeSplit.getPartitionId()));
         Delete delete = new Delete()
                 .withTableName(fileInPartitionTablename)
                 .withKey(key)
                 .withExpressionAttributeNames(expressionAttributeNames)
-                .withConditionExpression("attribute_exists(#status) and attribute_not_exists(#jobid)");
+                .withExpressionAttributeValues(expressionAttributeValues)
+                .withConditionExpression("#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)");
         writes.add(new TransactWriteItem().withDelete(delete));
-
         try {
             TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -313,7 +339,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             Map<String, AttributeValue> fileAttributeValues = fileInfoFormat.createRecordWithJobId(fileInfo, jobId);
             Map<String, String> expressionAttributeNames = new HashMap<>();
             expressionAttributeNames.put("#filename", FILE_NAME);
-            expressionAttributeNames.put("#partitionid", PARTITION_ID);
+            expressionAttributeNames.put("#partitionid", PARTITION);
             expressionAttributeNames.put("#jobid", JOB_ID);
             Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
             expressionAttributeValues.put(":filename", new AttributeValue().withS(fileInfo.getFilename()));
@@ -364,8 +390,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
-        return getFileInfosFromTable(fileLifecycleTablename);
+    public List<FileLifecycleInfo> getFileLifecycleList() throws StateStoreException {
+        return getFileLifecycleInfosFromTable();
     }
 
     private List<FileInfo> getFileInfosFromTable(String tablename) throws StateStoreException {
@@ -388,12 +414,32 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         }
     }
 
+    private List<FileLifecycleInfo> getFileLifecycleInfosFromTable() throws StateStoreException {
+        try {
+            ScanRequest scanRequest = new ScanRequest()
+                .withTableName(fileLifecycleTablename)
+                .withConsistentRead(stronglyConsistentReads)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+            AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
+            List<Map<String, AttributeValue>> results = scanTrackingCapacity(scanRequest, totalCapacity);
+            LOGGER.debug("Scanned table {}, capacity consumed = {}", fileLifecycleTablename, totalCapacity.get());
+            List<FileLifecycleInfo> fileLifecycleInfoResults = new ArrayList<>();
+            for (Map<String, AttributeValue> map : results) {
+                fileLifecycleInfoResults.add(fileLifecycleInfoFormat.getFileLifecycleInfoFromAttributeValues(map));
+            }
+            return fileLifecycleInfoResults;
+        } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
+                 | InternalServerErrorException | IOException e) {
+            throw new StateStoreException("Exception querying DynamoDB table " + fileLifecycleTablename, e);
+        }
+    }
+
     @Override
-    public List<FileInfo> getActiveFileList() throws StateStoreException {
+    public List<FileLifecycleInfo> getActiveFileList() throws StateStoreException {
         Map<String, String> expressionAttributeNames = new HashMap<>();
         expressionAttributeNames.put("#status", STATUS);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":active", new AttributeValue().withS(FileInfo.FileStatus.ACTIVE.toString()));
+        expressionAttributeValues.put(":active", new AttributeValue().withS(FileLifecycleInfo.FileStatus.ACTIVE.toString()));
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(fileLifecycleTablename)
                 .withConsistentRead(stronglyConsistentReads)
@@ -411,7 +457,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
                     return result.getItems().stream();
                 }).map(item -> {
                     try {
-                        return fileInfoFormat.getFileInfoFromAttributeValues(item);
+                        return fileLifecycleInfoFormat.getFileLifecycleInfoFromAttributeValues(item);
                     } catch (IOException e) {
                         throw new RuntimeException("IOException creating FileInfo from attribute values");
                     }
@@ -421,22 +467,22 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public Iterator<String> getReadyForGCFiles() {
-        return getReadyForGCFileInfosStream().map(FileInfo::getFilename).iterator();
+        return getReadyForGCFileInfosStream().map(FileLifecycleInfo::getFilename).iterator();
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFileInfos() {
+    public Iterator<FileLifecycleInfo> getReadyForGCFileInfos() {
         return getReadyForGCFileInfosStream().iterator();
     }
 
-    private Stream<FileInfo> getReadyForGCFileInfosStream() {
+    private Stream<FileLifecycleInfo> getReadyForGCFileInfosStream() {
         long delayInMilliseconds = (long) (1000.0 * 60.0 * garbageCollectorDelayBeforeDeletionInMinutes);
         long deleteTime = clock.millis() - delayInMilliseconds;
         Map<String, String> expressionAttributeNames = new HashMap<>();
         expressionAttributeNames.put("#status", STATUS);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":deletetime", new AttributeValue().withN("" + deleteTime));
-        expressionAttributeValues.put(":readyforgc", new AttributeValue().withS(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING.toString()));
+        expressionAttributeValues.put(":readyforgc", new AttributeValue().withS(FileLifecycleInfo.FileStatus.GARBAGE_COLLECTION_PENDING.toString()));
         // LOGGER.info("Running scan on table {} ", fileLifecycleTablename);
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(fileLifecycleTablename)
@@ -455,7 +501,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
                     return result.getItems().stream();
                 }).map(item -> {
                     try {
-                        return fileInfoFormat.getFileInfoFromAttributeValues(item);
+                        return fileLifecycleInfoFormat.getFileLifecycleInfoFromAttributeValues(item);
                     } catch (IOException e) {
                         throw new RuntimeException("IOException creating FileInfo from attribute values");
                     }
@@ -465,10 +511,10 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     @Override
     public void findFilesThatShouldHaveStatusOfGCPending() throws StateStoreException {
         // List files from file-lifecycle table
-        List<FileInfo> fileLifecycleList = getFileLifecycleList();
+        List<FileLifecycleInfo> fileLifecycleList = getFileLifecycleList();
         Set<String> filenamesFromFileLifecycleList = fileLifecycleList.stream()
             .filter(f -> f.getFileStatus().equals(ACTIVE))
-            .map(FileInfo::getFilename)
+            .map(FileLifecycleInfo::getFilename)
             .collect(Collectors.toSet());
         LOGGER.info("Found {} files in the file-lifecycle table", filenamesFromFileLifecycleList.size());
 
@@ -504,7 +550,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         expressionAttributeNames.put("#status", DynamoDBFileInfoFormat.STATUS);
         expressionAttributeNames.put("#lastupdatetime", DynamoDBFileInfoFormat.LAST_UPDATE_TIME);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":status", DynamoDBAttributes.createStringAttribute(FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING.toString()));
+        expressionAttributeValues.put(":status", DynamoDBAttributes.createStringAttribute(GARBAGE_COLLECTION_PENDING.toString()));
         expressionAttributeValues.put(":lastupdatetime", DynamoDBAttributes.createNumberAttribute(Instant.now().toEpochMilli()));
         UpdateItemRequest updateItemRequest = new UpdateItemRequest()
             .withTableName(fileLifecycleTablename)

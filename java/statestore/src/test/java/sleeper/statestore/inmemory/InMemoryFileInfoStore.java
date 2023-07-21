@@ -16,8 +16,8 @@
 package sleeper.statestore.inmemory;
 
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
 import sleeper.statestore.FileInfoStore;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStoreException;
 
 import java.util.ArrayList;
@@ -32,8 +32,8 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
-import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.GARBAGE_COLLECTION_PENDING;;
 
 /**
  * This class is intended for testing only. It is not thread-safe and should not be used
@@ -41,7 +41,7 @@ import static sleeper.statestore.FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING;
  */
 public class InMemoryFileInfoStore implements FileInfoStore {
     private final Map<String, Map<String, FileInfo>> fileInPartitionEntries = new HashMap<>(); // filename -> partition id -> fileinfo
-    private final Map<String, FileInfo> fileLifecycleEntries = new HashMap<>();
+    private final Map<String, FileLifecycleInfo> fileLifecycleEntries = new HashMap<>();
     private final long garbageCollectorDelayBeforeDeletionInSeconds;
 
     public InMemoryFileInfoStore(long garbageCollectorDelayBeforeDeletionInSeconds) {
@@ -60,8 +60,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             throw new IllegalArgumentException("FileInfo needs non-null filename, partition, number of records: got " + fileInfo);
         }
         fileInPartitionEntries.putIfAbsent(fileInfo.getFilename(), new HashMap<>());
-        fileInPartitionEntries.get(fileInfo.getFilename()).put(fileInfo.getPartitionId(), fileInfo.cloneWithStatus(FileStatus.FILE_IN_PARTITION));
-        fileLifecycleEntries.put(fileInfo.getFilename(), fileInfo.cloneWithStatus(FileStatus.ACTIVE));
+        fileInPartitionEntries.get(fileInfo.getFilename()).put(fileInfo.getPartitionId(), fileInfo);
+        fileLifecycleEntries.put(fileInfo.getFilename(), fileInfo.toFileLifecycleInfo(ACTIVE));
     }
 
     @Override
@@ -169,12 +169,12 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public List<FileInfo> getFileLifecycleList() throws StateStoreException {
+    public List<FileLifecycleInfo> getFileLifecycleList() throws StateStoreException {
         return new ArrayList<>(fileLifecycleEntries.values());
     }
 
     @Override
-    public List<FileInfo> getActiveFileList() throws StateStoreException {
+    public List<FileLifecycleInfo> getActiveFileList() throws StateStoreException {
         return fileLifecycleEntries.values().stream()
             .filter(f -> f.getFileStatus().equals(ACTIVE))
             .collect(Collectors.toList());
@@ -182,15 +182,15 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public Iterator<String> getReadyForGCFiles() {
-        return getReadyForGCFileInfoStream().map(FileInfo::getFilename).iterator();
+        return getReadyForGCFileInfoStream().map(FileLifecycleInfo::getFilename).iterator();
     }
 
     @Override
-    public Iterator<FileInfo> getReadyForGCFileInfos() throws StateStoreException {
+    public Iterator<FileLifecycleInfo> getReadyForGCFileInfos() throws StateStoreException {
         return getReadyForGCFileInfoStream().iterator();
     }
 
-    private Stream<FileInfo> getReadyForGCFileInfoStream() {
+    private Stream<FileLifecycleInfo> getReadyForGCFileInfoStream() {
         long delayInMilliseconds = 1000L * garbageCollectorDelayBeforeDeletionInSeconds;
         long deleteTime = System.currentTimeMillis() - delayInMilliseconds;
         return fileLifecycleEntries.values().stream()
@@ -207,7 +207,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
         allFilesWithLifecycleEntries.removeAll(allFilesWithFileInPartitionEntries);
         // Update the file-lifecylce records to GARBAGE_COLLECTION_PENDING.
         for (String filename : allFilesWithLifecycleEntries) {
-            FileInfo updatedFileInfo = fileLifecycleEntries.get(filename).cloneWithStatus(FileStatus.GARBAGE_COLLECTION_PENDING);
+            FileLifecycleInfo updatedFileInfo = fileLifecycleEntries.get(filename).cloneWithStatus(GARBAGE_COLLECTION_PENDING);
             fileLifecycleEntries.put(filename, updatedFileInfo);
         }
     }

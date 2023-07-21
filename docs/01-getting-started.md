@@ -153,7 +153,7 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-sleeper deployment java -cp jars/system-test-*-utility.jar sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+sleeper deployment java -cp jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run

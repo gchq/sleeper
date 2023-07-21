@@ -19,7 +19,7 @@ package sleeper.bulkimport.job.runner;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.job.BulkImportJob;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;

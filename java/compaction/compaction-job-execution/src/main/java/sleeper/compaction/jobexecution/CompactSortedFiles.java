@@ -33,7 +33,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
@@ -391,7 +391,6 @@ public class CompactSortedFiles {
                     .filename(file)
                     .partitionId(partitionId)
                     .lastStateStoreUpdateTime(finishTime)
-                    .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                     .build();
             fileInPartitionRecordsToBeDeleted.add(fileInfo);
         }
@@ -399,7 +398,6 @@ public class CompactSortedFiles {
                 .rowKeyTypes(rowKeyTypes)
                 .filename(outputFile)
                 .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .numberOfRecords(recordsWritten)
                 .minRowKey(recordsWritten > 0 ? Key.create(minRowKey0) : null)
                 .maxRowKey(recordsWritten > 0 ? Key.create(maxRowKey0) : null)
@@ -432,7 +430,6 @@ public class CompactSortedFiles {
                     .filename(file)
                     .partitionId(partition)
                     .lastStateStoreUpdateTime(finishTime)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
@@ -440,7 +437,6 @@ public class CompactSortedFiles {
                 .rowKeyTypes(rowKeyTypes)
                 .filename(outputFiles.getLeft())
                 .partitionId(childPartitions.get(0))
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
                 .minRowKey(recordsWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
                 .maxRowKey(recordsWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
@@ -450,7 +446,6 @@ public class CompactSortedFiles {
                 .rowKeyTypes(rowKeyTypes)
                 .filename(outputFiles.getRight())
                 .partitionId(childPartitions.get(1))
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getRight())
                 .minRowKey(recordsWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
                 .maxRowKey(recordsWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)

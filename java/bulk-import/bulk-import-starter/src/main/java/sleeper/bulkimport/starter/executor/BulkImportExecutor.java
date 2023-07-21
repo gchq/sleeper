@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
@@ -35,7 +35,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
@@ -80,7 +80,7 @@ public class BulkImportExecutor {
                 bulkImportJob.toIngestJob(), validationTimeSupplier.get())
                 .jobRunId(jobRunId).build());
         LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
-        writeJobToJSONFile(bulkImportJob);
+        writeJobToJSONFile(bulkImportJob, jobRunId);
         LOGGER.info("Submitting job with id {}", bulkImportJob.getId());
         platformExecutor.runJobOnPlatform(BulkImportArguments.builder()
                 .instanceProperties(instanceProperties)
@@ -141,12 +141,12 @@ public class BulkImportExecutor {
         return false;
     }
 
-    private void writeJobToJSONFile(BulkImportJob bulkImportJob) {
+    private void writeJobToJSONFile(BulkImportJob bulkImportJob, String jobRunID) {
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String key = "bulk_import/" + bulkImportJob.getId() + ".json";
+        String key = "bulk_import/" + bulkImportJob.getId() + "-" + jobRunID + ".json";
         String bulkImportJobJSON = new BulkImportJobSerDe().toJson(bulkImportJob);
         s3Client.putObject(bulkImportBucket, key, bulkImportJobJSON);
         LOGGER.info("Put object for job {} to key {} in bucket {}", bulkImportJob.getId(), key, bulkImportBucket);

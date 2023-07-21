@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
- import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
  * Initialises a {@link StateStore} from the given list of {@link Partition}s. Utility methods
@@ -56,12 +56,12 @@ public class InitialiseStateStore {
     }
 
     public static InitialiseStateStore createInitialiseStateStoreFromSplitPoints(TableProperties tableProperties,
-            StateStore stateStore, List<Object> splitPoints) {
+                                                                                 StateStore stateStore, List<Object> splitPoints) {
         return createInitialiseStateStoreFromSplitPoints(tableProperties.getSchema(), stateStore, splitPoints);
     }
 
     public static InitialiseStateStore createInitialiseStateStoreFromSplitPoints(Schema schema, StateStore stateStore,
-            List<Object> splitPoints) {
+                                                                                 List<Object> splitPoints) {
         PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
         List<Partition> initialPartitions = partitionsFromSplitPoints.construct();
 

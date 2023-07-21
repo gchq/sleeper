@@ -28,7 +28,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
@@ -37,6 +37,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 import static org.mockito.Mockito.mock;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class AdminClientITBase extends AdminClientTestBase {
@@ -47,10 +48,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
 
-    protected final AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-            .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-            .build();
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
 
     @TempDir

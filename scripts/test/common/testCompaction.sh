@@ -30,7 +30,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.util.EnsureCompactionJobCreationPaused "$INSTANCE_ID"
+ sleeper.systemtest.drivers.util.EnsureCompactionJobCreationPaused "$INSTANCE_ID"
 
 END_CHECK_PAUSED_TIME=$(record_time)
 
@@ -38,7 +38,7 @@ echo "--------------------------------------------------------------------------
 echo "Invoking compaction job creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.InvokeCompactionJobCreation "$INSTANCE_ID"
+ sleeper.systemtest.drivers.compaction.InvokeCompactionJobCreation "$INSTANCE_ID"
 
 END_CREATE_COMPACTION_JOBS_TIME=$(record_time)
 echo "Creating compaction jobs finished at $(recorded_time_str "$END_CREATE_COMPACTION_JOBS_TIME"), took $(elapsed_time_str "$END_CHECK_PAUSED_TIME" "$END_CREATE_COMPACTION_JOBS_TIME")"
@@ -47,7 +47,7 @@ echo "--------------------------------------------------------------------------
 echo "Invoking compaction task creation"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.InvokeCompactionTaskCreation "$INSTANCE_ID"
+ sleeper.systemtest.drivers.compaction.InvokeCompactionTaskCreationUntilAllJobsStarted "$INSTANCE_ID"
 
 END_CREATE_COMPACTION_TASKS_TIME=$(record_time)
 echo "Creating compaction tasks finished at $(recorded_time_str "$END_CREATE_COMPACTION_TASKS_TIME"), took $(elapsed_time_str "$END_CREATE_COMPACTION_JOBS_TIME" "$END_CREATE_COMPACTION_TASKS_TIME")"
@@ -56,10 +56,10 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for compaction jobs"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
+ sleeper.systemtest.drivers.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
 
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.CompactionPerformanceValidator "$INSTANCE_ID" "$TABLE_NAME" "10" "4400000000" "300000"
+ sleeper.systemtest.drivers.compaction.CompactionPerformanceValidator "$INSTANCE_ID" "$TABLE_NAME" "10" "4400000000" "300000"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

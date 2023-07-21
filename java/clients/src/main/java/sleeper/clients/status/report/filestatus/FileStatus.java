@@ -16,6 +16,7 @@
 package sleeper.clients.status.report.filestatus;
 
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileLifecycleInfo;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -33,8 +34,7 @@ public class FileStatus {
     private boolean reachedMax;
     private long leafPartitionCount;
     private long nonLeafPartitionCount;
-    private long readyForGCFilesInLeafPartitions;
-    private long readyForGCInNonLeafPartitions;
+    private long readyForGCFiles;
     private long activeFilesCount;
     private long activeFilesInLeafPartitions;
     private long activeFilesInNonLeafPartitions;
@@ -43,7 +43,7 @@ public class FileStatus {
     private PartitionStats nonLeafPartitionStats;
 
     private List<FileInfo> activeFiles;
-    private List<FileInfo> gcFiles;
+    private List<FileLifecycleInfo> gcFiles;
 
     public long getLeafPartitionCount() {
         return leafPartitionCount;
@@ -61,20 +61,12 @@ public class FileStatus {
         this.nonLeafPartitionCount = nonLeafPartitionCount;
     }
 
-    public long getReadyForGCFilesInLeafPartitions() {
-        return readyForGCFilesInLeafPartitions;
+    public long getReadyForGCFiles() {
+        return readyForGCFiles;
     }
 
-    public void setReadyForGCFilesInLeafPartitions(long readyForGCFilesInLeafPartitions) {
-        this.readyForGCFilesInLeafPartitions = readyForGCFilesInLeafPartitions;
-    }
-
-    public long getReadyForGCInNonLeafPartitions() {
-        return readyForGCInNonLeafPartitions;
-    }
-
-    public void setReadyForGCInNonLeafPartitions(long readyForGCInNonLeafPartitions) {
-        this.readyForGCInNonLeafPartitions = readyForGCInNonLeafPartitions;
+    public void setReadyForGCFiles(long readyForGCFiles) {
+        this.readyForGCFiles = readyForGCFiles;
     }
 
     public long getActiveFilesCount() {
@@ -133,11 +125,11 @@ public class FileStatus {
         this.activeFiles = activeFiles;
     }
 
-    public List<FileInfo> getGcFiles() {
+    public List<FileLifecycleInfo> getGcFiles() {
         return gcFiles;
     }
 
-    public void setGcFiles(List<FileInfo> gcFiles) {
+    public void setGcFiles(List<FileLifecycleInfo> gcFiles) {
         this.gcFiles = gcFiles;
     }
 

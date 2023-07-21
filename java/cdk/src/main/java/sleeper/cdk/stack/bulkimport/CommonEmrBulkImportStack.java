@@ -44,9 +44,8 @@ import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableStack;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -55,13 +54,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 
 public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole ec2Role;
@@ -103,7 +103,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
         });
 
         // The role needs to be able to access the user's jars
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(UserDefinedInstanceProperty.JARS_BUCKET));
+        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         jarsBucket.grantRead(role);
 
         // Required to enable debugging

@@ -29,6 +29,7 @@ import sleeper.core.CommonTestConstants;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 class QueueMessageCountIT {
@@ -40,10 +41,7 @@ class QueueMessageCountIT {
     );
 
     private AmazonSQS createSQSClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     }
 
     private String createQueue(AmazonSQS sqs) {

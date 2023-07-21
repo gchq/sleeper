@@ -18,7 +18,7 @@ package sleeper.ingest.impl.partitionfilewriter;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ASYNC_INGEST_CLIENT_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
+import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CLIENT_TYPE;
+import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
+import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {

@@ -24,7 +24,7 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SPLIT_FILE_IN_PARTITION_ENTRIES_IN_NON_LEAF_PARTITIONS;
+import static sleeper.configuration.properties.instance.CompactionProperty.SPLIT_FILE_IN_PARTITION_ENTRIES_IN_NON_LEAF_PARTITIONS;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 
 /**

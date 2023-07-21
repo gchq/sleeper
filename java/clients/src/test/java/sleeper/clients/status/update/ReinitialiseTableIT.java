@@ -42,7 +42,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
@@ -78,16 +78,16 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ACCOUNT;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.REGION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.FILE_IN_PARTITION_TABLENAME;
@@ -95,6 +95,7 @@ import static sleeper.configuration.properties.table.TableProperty.FILE_LIFECYCL
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
@@ -127,14 +128,8 @@ public class ReinitialiseTableIT {
 
     @BeforeEach
     public void beforeEach() {
-        dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
-        s3Client = AmazonS3ClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .build();
+        dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+        s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     @AfterEach
@@ -165,7 +160,7 @@ public class ReinitialiseTableIT {
     }
 
     @Test
-    public void shouldDeleteFileInPartitionAndFileExistenceRecordsByDefaultForDynamoStateStore() throws Exception {
+    public void shouldDeleteFileInPartitionAndFileLifecycleRecordsByDefaultForDynamoStateStore() throws Exception {
         // Given
         String tableName = UUID.randomUUID().toString();
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
@@ -187,7 +182,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
         assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
@@ -251,7 +246,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(1);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
@@ -321,7 +316,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -403,7 +398,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(5);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -485,7 +480,7 @@ public class ReinitialiseTableIT {
         reinitialiseTable.run();
 
         // Then
-        assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
+        assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
         List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
         assertThat(partitionsList).hasSize(3);
         assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
@@ -535,7 +530,7 @@ public class ReinitialiseTableIT {
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
     }
 
-    private void assertDynamoStateStoreFileInPartitionsAndFileExistenceDynamoTablesAreNowEmpty(
+    private void assertDynamoStateStoreFileInPartitionsAndFileLifecycleDynamoTablesAreNowEmpty(
             TableProperties tableProperties, DynamoDBStateStore dynamoStateStore) throws StateStoreException {
         ScanRequest scanRequest = new ScanRequest()
                 .withTableName(tableProperties.get(FILE_LIFECYCLE_TABLENAME))
@@ -676,11 +671,17 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
+        // FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.FILE_IN_PARTITION, rootPartition.getId(),
+        //         Key.create("0"), Key.create("98"));
+        // FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.FILE_IN_PARTITION, rootPartition.getId(),
+        //         Key.create("1"), Key.create("9"));
+        // FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.FILE_IN_PARTITION, rootPartition.getId(),
+        //         Key.create("1"), Key.create("9"));
+        FileInfo fileInfo1 = createFileInfo(file1, rootPartition.getId(),
                 Key.create("0"), Key.create("98"));
-        FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
+        FileInfo fileInfo2 = createFileInfo(file2, rootPartition.getId(),
                 Key.create("1"), Key.create("9"));
-        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
+        FileInfo fileInfo3 = createFileInfo(file3, rootPartition.getId(),
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition
@@ -710,12 +711,13 @@ public class ReinitialiseTableIT {
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3));
     }
 
-    private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId,
-                                    Key minRowKey, Key maxRowKey) {
+    private FileInfo createFileInfo(String filename,
+//      FileInfo.FileStatus fileStatus,
+            String partitionId, Key minRowKey, Key maxRowKey) {
         FileInfo fileInfo = FileInfo.builder()
                 .rowKeyTypes(new StringType())
                 .filename(filename)
-                .fileStatus(fileStatus)
+                // .fileStatus(fileStatus)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(minRowKey)

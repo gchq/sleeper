@@ -43,7 +43,7 @@ import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCre
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -54,7 +54,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
@@ -66,12 +66,14 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
 
 @Testcontainers
 public class CompactSortedFilesRunnerLocalStackIT {
@@ -80,25 +82,16 @@ public class CompactSortedFilesRunnerLocalStackIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
-    private AmazonS3 createS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+    private static AmazonS3 createS3Client() {
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
-    private AmazonSQS createSQSClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.SQS))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+    private static AmazonSQS createSQSClient() {
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     }
 
-    private AmazonDynamoDB createDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .build();
+    private static AmazonDynamoDB createDynamoClient() {
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     }
 
     private Schema createSchema() {
@@ -171,7 +164,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file1)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -180,7 +172,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file2)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
@@ -189,7 +180,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file3)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -198,7 +188,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo fileInfo4 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file4)
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(1L))
@@ -293,7 +282,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo expectedOutputFileInfoFromJob1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(compactionJob1.getOutputFile())
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partitionId)
                 .numberOfRecords(200L)
                 .minRowKey(Key.create(0L))
@@ -302,7 +290,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
         FileInfo expectedOutputFileInfoFromJob2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(compactionJob2.getOutputFile())
-                .fileStatus(FileInfo.FileStatus.FILE_IN_PARTITION)
                 .partitionId(partitionId)
                 .numberOfRecords(200L)
                 .minRowKey(Key.create(0L))
@@ -315,15 +302,15 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 );
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(fileInfo1.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(fileInfo2.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(fileInfo3.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(fileInfo4.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(expectedOutputFileInfoFromJob1.cloneWithStatus(FileStatus.ACTIVE));
-        expectedFileInfos.add(expectedOutputFileInfoFromJob2.cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(fileInfo1.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(fileInfo2.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(fileInfo3.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(fileInfo4.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(expectedOutputFileInfoFromJob1.toFileLifecycleInfo(ACTIVE));
+        expectedFileInfos.add(expectedOutputFileInfoFromJob2.toFileLifecycleInfo(ACTIVE));
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 }

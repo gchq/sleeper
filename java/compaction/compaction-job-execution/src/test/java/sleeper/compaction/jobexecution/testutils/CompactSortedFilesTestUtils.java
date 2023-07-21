@@ -22,14 +22,14 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.jobexecution.CompactSortedFiles;
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
-import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -40,6 +40,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.GARBAGE_COLLECTION_PENDING;;
 
 public class CompactSortedFilesTestUtils {
 
@@ -92,21 +93,18 @@ public class CompactSortedFilesTestUtils {
                 compactionJob, stateStore, jobStatusStore, taskId);
     }
 
-    public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {
+    public static void assertReadyForGC(StateStore dynamoStateStore, FileLifecycleInfo... files) {
         assertReadyForGC(dynamoStateStore, Arrays.asList(files));
     }
 
-    public static void assertReadyForGC(StateStore dynamoStateStore, List<FileInfo> files) {
+    public static void assertReadyForGC(StateStore dynamoStateStore, List<FileLifecycleInfo> files) {
         try {
             assertThat(dynamoStateStore.getReadyForGCFileInfos()).toIterable()
                     .extracting(
-                            FileInfo::getFilename,
-                            FileInfo::getRowKeyTypes,
-                            FileInfo::getPartitionId,
-                            FileInfo::getFileStatus)
+                            FileLifecycleInfo::getFilename,
+                            FileLifecycleInfo::getFileStatus)
                     .containsExactlyInAnyOrder(files.stream()
-                            .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
-                                    FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING))
+                            .map(file -> tuple(file.getFilename(), GARBAGE_COLLECTION_PENDING))
                             .toArray(Tuple[]::new));
         } catch (StateStoreException e) {
             fail("StateStoreException generated: " + e.getMessage());

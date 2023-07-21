@@ -88,7 +88,7 @@ public class StateStoreTestBuilder {
                 .rowKeyTypes(partition.getRowKeyTypes())
                 .minRowKey(minRowKey(partition)).maxRowKey(maxRowKey(partition))
                 .filename(filename).partitionId(partition.getId())
-                .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(records)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
     }

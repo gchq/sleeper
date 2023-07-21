@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.strategy;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.statestore.FileInfo;

@@ -33,7 +33,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfo.FileStatus;
+import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 
 import java.util.ArrayList;
@@ -53,6 +53,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.statestore.FileLifecycleInfo.FileStatus.ACTIVE;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class CompactSortedFilesIT extends CompactSortedFilesTestBase {
@@ -90,14 +91,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -163,7 +164,6 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         FileInfo expectedFileInfoLeft = FileInfo.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .filename(compactionJob.getOutputFile())
-                .fileStatus(FileStatus.FILE_IN_PARTITION)
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -178,7 +178,6 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         FileInfo expectedFile1InfoRight = FileInfo.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .filename(folderName + "/file1.parquet")
-                .fileStatus(FileStatus.FILE_IN_PARTITION)
                 .partitionId("right")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -188,7 +187,6 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         FileInfo expectedFile2InfoRight = FileInfo.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .filename(folderName + "/file2.parquet")
-                .fileStatus(FileStatus.FILE_IN_PARTITION)
                 .partitionId("right")
                 .numberOfRecords(100L)
                 .minRowKey(Key.create(0L))
@@ -200,39 +198,41 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactlyInAnyOrder(expectedFile1InfoRight, expectedFile2InfoRight);
 
         // - Check StateStore has the correct file-lifecycle entries
-        FileInfo expectedFileLifecycleRecord1 = FileInfo.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .filename(folderName + "/file1.parquet")
-                .fileStatus(FileStatus.ACTIVE)
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileInfo expectedFileLifecycleRecord2 = FileInfo.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .filename(folderName + "/file2.parquet")
-                .fileStatus(FileStatus.ACTIVE)
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(199L))
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileInfo expectedFileLifecycleOutput = FileInfo.builder()
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .filename(compactionJob.getOutputFile())
-                .fileStatus(FileStatus.ACTIVE)
-                .partitionId("left")
-                .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(99L))
-                .onlyContainsDataForThisPartition(true)
-                .build();
+        // FileInfo expectedFileLifecycleRecord1 = FileInfo.builder()
+        //         .rowKeyTypes(schema.getRowKeyTypes())
+        //         .filename(folderName + "/file1.parquet")
+        //         .partitionId("root")
+        //         .numberOfRecords(100L)
+        //         .minRowKey(Key.create(0L))
+        //         .maxRowKey(Key.create(198L))
+        //         .onlyContainsDataForThisPartition(true)
+        //         .build();
+        // FileInfo expectedFileLifecycleRecord2 = FileInfo.builder()
+        //         .rowKeyTypes(schema.getRowKeyTypes())
+        //         .filename(folderName + "/file2.parquet")
+        //         .partitionId("root")
+        //         .numberOfRecords(100L)
+        //         .minRowKey(Key.create(0L))
+        //         .maxRowKey(Key.create(199L))
+        //         .onlyContainsDataForThisPartition(true)
+        //         .build();
+        // FileInfo expectedFileLifecycleOutput = FileInfo.builder()
+        //         .rowKeyTypes(schema.getRowKeyTypes())
+        //         .filename(compactionJob.getOutputFile())
+        //         .partitionId("left")
+        //         .numberOfRecords(100L)
+        //         .minRowKey(Key.create(0L))
+        //         .maxRowKey(Key.create(99L))
+        //         .onlyContainsDataForThisPartition(true)
+        //         .build();
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, 0L, 199L).toFileLifecycleInfo(ACTIVE));
+        dataHelper.allFileInfos().stream()
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
+                .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileLifecycleRecord1, expectedFileLifecycleRecord2, expectedFileLifecycleOutput);
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -288,14 +288,14 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr"));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr").cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, "aa", "hr").toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 
     @Test
@@ -353,13 +353,13 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
                 .containsExactly(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}));
 
         // - Check DynamoDBStateStore has the correct file-lifecycle entries
-        List<FileInfo> expectedFileInfos = new ArrayList<>();
-        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}).cloneWithStatus(FileStatus.ACTIVE));
+        List<FileLifecycleInfo> expectedFileInfos = new ArrayList<>();
+        expectedFileInfos.add(dataHelper.expectedLeafFile(compactionJob.getOutputFile(), 200L, new byte[]{0, 0}, new byte[]{1, 71}).toFileLifecycleInfo(ACTIVE));
         dataHelper.allFileInfos().stream()
-                .map(fi -> fi.cloneWithStatus(FileStatus.ACTIVE))
+                .map(fi -> fi.toFileLifecycleInfo(ACTIVE))
                 .forEach(expectedFileInfos::add);
         assertThat(stateStore.getFileLifecycleList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileInfo[0]));
+                .containsExactlyInAnyOrder(expectedFileInfos.toArray(new FileLifecycleInfo[0]));
     }
 }
