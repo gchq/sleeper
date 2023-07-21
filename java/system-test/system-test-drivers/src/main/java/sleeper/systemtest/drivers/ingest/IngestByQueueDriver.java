@@ -41,7 +41,7 @@ public class IngestByQueueDriver {
     private final IngestJobStatusStore jobStatusStore;
     private final LambdaClient lambdaClient;
     private final PollWithRetries pollUntilTasksStarted = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5));
+            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5));
     private final PollWithRetries pollUntilJobsFinished = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5));
 

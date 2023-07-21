@@ -28,6 +28,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -48,6 +49,7 @@ public class IngestBatcherIT {
         sleeper.updateTableProperties(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1");
         });
         Record record = new Record(Map.of(
                 "key", "some-id",
