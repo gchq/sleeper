@@ -95,7 +95,7 @@ public class DrawDependencyGraph {
         return Pair.of(allInEdges, allOutEdges);
     }
 
-    public void DrawGraph(Pair<List<String>, List<List<String>>> graphData) {
+    public void drawGraph(Pair<List<String>, List<List<String>>> graphData) {
         List<String> nodeIDs = graphData.getFirst();
         List<List<String>> edges = graphData.getSecond();
         Graph<String, String> g = new DirectedSparseGraph<>();
@@ -188,7 +188,7 @@ public class DrawDependencyGraph {
     }
 
     public void produceGraphFromMaven(MavenModuleStructure maven) {
-        DrawGraph(
+        drawGraph(
                 createGraph(
                         maven.allTestedModules().collect(Collectors.toList())
                 )

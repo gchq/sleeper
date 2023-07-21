@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 class ShowInternalDependencies {
-    private String checkStylePrevent = null;
+    private String checkStylePrevent = "";
 
     public static void main(String[] args) throws IOException {
         Path repositoryRoot = Path.of("").toAbsolutePath();
@@ -32,7 +32,6 @@ class ShowInternalDependencies {
                 .mavenProjectPath(repositoryRoot.resolve("java"))
                 .workflowsPath(repositoryRoot.resolve(".github/config/workflows"))
                 .build().loadMavenStructure();
-
         mavenStructure.indexInternalModules();
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
         drawDependencyGraph.produceGraphFromMaven(mavenStructure);
