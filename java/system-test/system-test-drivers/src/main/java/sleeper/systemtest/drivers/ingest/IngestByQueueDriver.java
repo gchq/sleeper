@@ -40,7 +40,7 @@ public class IngestByQueueDriver {
     private final IngestTaskStatusStore taskStatusStore;
     private final IngestJobStatusStore jobStatusStore;
     private final LambdaClient lambdaClient;
-    private final PollWithRetries pollUntilTasksCreated = PollWithRetries
+    private final PollWithRetries pollUntilTasksStarted = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5));
     private final PollWithRetries pollUntilJobsFinished = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5));
@@ -64,10 +64,10 @@ public class IngestByQueueDriver {
     }
 
     public void invokeAndWaitForJobs(Collection<String> jobIds) throws InterruptedException {
-        int tasksBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
-        pollUntilTasksCreated.pollUntil("tasks are created", () -> {
+        int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
+        pollUntilTasksStarted.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
-            return taskStatusStore.getAllTasks().size() > tasksBefore;
+            return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
         });
         pollUntilJobsFinished.pollUntil("jobs are finished", () ->
                 jobIds.stream().map(jobStatusStore::getJob)
