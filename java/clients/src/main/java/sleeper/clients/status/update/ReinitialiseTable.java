@@ -66,7 +66,7 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
  * is reinitialised.
  */
 public class ReinitialiseTable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class.getName());
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDBClient;
     private final boolean deletePartitions;
@@ -105,17 +105,17 @@ public class ReinitialiseTable {
 
         boolean isS3StateStore = false;
         if (tableProperties.get(STATESTORE_CLASSNAME).equals("sleeper.statestore.s3.S3StateStore")) {
-            LOGGER.fine("S3 State Store detected");
+            LOGGER.info("S3 State Store detected");
             isS3StateStore = true;
         } else {
-            LOGGER.fine("Dynamo DB State Store detected");
+            LOGGER.info("Dynamo DB State Store detected");
         }
 
         if (deletePartitions) {
             deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
             deleteObjectsInTableBucket(s3TableBucketName, isS3StateStore);
 
-            LOGGER.fine("Fully reinitialising table");
+            LOGGER.info("Fully reinitialising table");
             StateStore statestore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf)
                     .getStateStore(tableProperties);
             initialiseStateStore(tableProperties, statestore);
@@ -123,7 +123,7 @@ public class ReinitialiseTable {
             deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
             deleteObjectsInTableBucket(s3TableBucketName, isS3StateStore);
             if (isS3StateStore) {
-                LOGGER.fine("Recreating files information file and adding it into the revisions table");
+                LOGGER.info("Recreating files information file and adding it into the revisions table");
                 S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties,
                         dynamoDBClient, conf);
                 s3StateStore.setInitialFileInfos();
@@ -142,7 +142,7 @@ public class ReinitialiseTable {
                 .withMaxKeys(100);
         ListObjectsV2Result result;
 
-        LOGGER.fine("Deleting all objects within partitions in the table's bucket");
+        LOGGER.info("Deleting all objects within partitions in the table's bucket");
         int totalObjectsDeleted = 0;
         do {
             objectKeysForDeletion.clear();
@@ -164,7 +164,7 @@ public class ReinitialiseTable {
             req.setContinuationToken(token);
             totalObjectsDeleted += deleteObjects(s3TableBucketName, objectKeysForDeletion);
         } while (result.isTruncated());
-        LOGGER.fine("A total of " + totalObjectsDeleted + " objects were deleted");
+        LOGGER.info("A total of {} objects were deleted", totalObjectsDeleted);
     }
 
     private int deleteObjects(String bucketName, List<String> keys) {
@@ -175,8 +175,7 @@ public class ReinitialiseTable {
                     .withQuiet(false);
             DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
             successfulDeletes = delObjRes.getDeletedObjects().size();
-            LOGGER.fine(successfulDeletes + " objects successfully deleted from the "
-                    + bucketName + " S3 bucket");
+            LOGGER.info("{} objects successfully deleted from the {} S3 bucket", successfulDeletes, bucketName);
         }
         return successfulDeletes;
     }
@@ -194,7 +193,7 @@ public class ReinitialiseTable {
     }
 
     private void deleteAllDynamoTableItems(String dynamoTableName, TableProperties tableProperties) {
-        LOGGER.fine("Deleting all items from " + dynamoTableName + " Dynamo DB Table");
+        LOGGER.info("Deleting all items from {} Dynamo DB Table", dynamoTableName);
         long countOfDeletedItems = streamPagedItems(dynamoDBClient,
                 new ScanRequest()
                         .withTableName(dynamoTableName)
@@ -210,11 +209,11 @@ public class ReinitialiseTable {
                             new DeleteItemRequest(dynamoTableName, deleteKey));
                 }).count();
 
-        LOGGER.fine(countOfDeletedItems + " items successfully deleted from " + dynamoTableName + " Dynamo DB Table");
+        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, dynamoTableName);
     }
 
     private void deleteRelevantS3StateStoreRevisionInfo(String dynamoTableName) {
-        LOGGER.fine("Deleting files info items from " + dynamoTableName + " Dynamo DB Table");
+        LOGGER.info("Deleting files info items from {} Dynamo DB Table", dynamoTableName);
         long countOfDeletedItems = streamPagedItems(dynamoDBClient,
                 new ScanRequest()
                         .withTableName(dynamoTableName)
@@ -227,7 +226,7 @@ public class ReinitialiseTable {
                                 Collections.singletonMap(REVISION_ID_KEY, item.get(REVISION_ID_KEY)))))
                 .count();
 
-        LOGGER.fine(countOfDeletedItems + " items successfully deleted from " + dynamoTableName + " Dynamo DB Table");
+        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, dynamoTableName);
     }
 
     public static void main(String[] args) {
@@ -238,12 +237,12 @@ public class ReinitialiseTable {
         String tableName = args[1];
         boolean deletePartitions = args.length == 2 ? false : Boolean.parseBoolean(args[2]);
 
-        LOGGER.info("If you continue all data will be deleted in the table.");
+        System.out.println("If you continue all data will be deleted in the table.");
         if (deletePartitions) {
-            LOGGER.info("The metadata about the partitions will be deleted and the "
+            System.out.println("The metadata about the partitions will be deleted and the "
                 + "table will be reset to consist of one root partition.");
         } else {
-            LOGGER.info("The metadata about the partitions will not be deleted.");
+            System.out.println("The metadata about the partitions will not be deleted.");
         }
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
@@ -258,7 +257,7 @@ public class ReinitialiseTable {
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
-            LOGGER.severe("\nAn Error occurred while trying to reinitialise the table. " +
+            LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }
