@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.IngestJob;
@@ -35,6 +36,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestFiles {
     private IngestFiles() {
     }
