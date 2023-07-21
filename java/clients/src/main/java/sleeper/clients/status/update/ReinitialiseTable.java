@@ -66,7 +66,7 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
  * is reinitialised.
  */
 public class ReinitialiseTable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTable.class);
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDBClient;
     private final boolean deletePartitions;
