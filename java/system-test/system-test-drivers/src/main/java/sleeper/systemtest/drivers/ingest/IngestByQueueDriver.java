@@ -17,12 +17,13 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
@@ -31,10 +32,13 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class IngestByQueueDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestByQueueDriver.class);
 
     private final InstanceProperties properties;
     private final IngestTaskStatusStore taskStatusStore;
@@ -69,10 +73,19 @@ public class IngestByQueueDriver {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
             return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
         });
-        pollUntilJobsFinished.pollUntil("jobs are finished", () ->
-                jobIds.stream().map(jobStatusStore::getJob)
-                        .allMatch(optionalJobIfStarted -> optionalJobIfStarted
-                                .map(IngestJobStatus::isFinished)
-                                .orElse(false)));
+        LOGGER.info("Waiting for jobs to finish: {}", jobIds.size());
+        pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
+            List<String> unfinishedJobIds = jobIds.stream()
+                    .filter(this::isUnfinished)
+                    .collect(Collectors.toUnmodifiableList());
+            LOGGER.info("Unfinished jobs: {}", unfinishedJobIds.size());
+            return unfinishedJobIds.size() == 0;
+        });
+    }
+
+    private boolean isUnfinished(String jobId) {
+        return jobStatusStore.getJob(jobId)
+                .map(job -> !job.isFinished())
+                .orElse(true);
     }
 }
