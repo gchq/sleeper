@@ -43,7 +43,7 @@ public class GitHubActionsChunkWorkflowYaml {
             @JsonProperty("on") On on,
             @JsonProperty("jobs") Map<String, Object> jobs) {
         this.name = Objects.requireNonNull(name, "name must not be null");
-        this.onTriggerPaths = Objects.requireNonNull(on, "on must not be null").pull_request.paths;
+        this.onTriggerPaths = Objects.requireNonNull(on, "on must not be null").trigger.paths;
         this.jobs = Objects.requireNonNull(jobs, "jobs must not be null");
     }
 
@@ -84,11 +84,11 @@ public class GitHubActionsChunkWorkflowYaml {
     }
 
     public static class On {
-        private final Trigger pull_request;
+        private final Trigger trigger;
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-        public On(@JsonProperty("pull_request") Trigger pull_request) {
-            this.pull_request = Objects.requireNonNull(pull_request, "pull_request must not be null");
+        public On(@JsonProperty("pull_request") Trigger trigger) {
+            this.trigger = Objects.requireNonNull(trigger, "trigger must not be null");
         }
     }
 
