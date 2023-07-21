@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/docker-bulk-import.yaml'
-      - 'java/bulk-import-runner/docker/**'
+      - 'java/bulk-import/bulk-import-runner/docker/**'
 
 jobs:
   build:
