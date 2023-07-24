@@ -76,7 +76,9 @@ import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStor
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class IngestRecordsIT extends IngestRecordsTestBase {
-        public void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
+
+    @Test
+    void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -137,7 +139,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
+    void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
@@ -203,7 +205,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
+    void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
         // Given
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
@@ -289,7 +291,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
+    void shouldWriteRecordsSplitByPartition2DimensionalDifferentTypeKeysWhenSplitOnDim1() throws Exception {
         // Given
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
@@ -401,7 +403,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
+    void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -445,7 +447,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteDuplicateRecords() throws Exception {
+    void shouldWriteDuplicateRecords() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
@@ -483,7 +485,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -599,7 +601,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+    void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
         Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
         Region rootRegion = new Region(rootRange);
@@ -699,7 +701,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldSortRecords() throws Exception {
+    void shouldSortRecords() throws Exception {
         // Given
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
 
@@ -738,7 +740,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     }
 
     @Test
-    public void shouldApplyIterator() throws Exception {
+    void shouldApplyIterator() throws Exception {
         // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
