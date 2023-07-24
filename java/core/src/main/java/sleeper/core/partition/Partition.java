@@ -43,7 +43,7 @@ public class Partition {
     private final boolean leafPartition;
     private final String parentPartitionId;
     private List<String> childPartitionIds;
-    private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
+    private final int dimension;
 
     private Partition(Partition.Builder builder) {
         region = builder.region;
@@ -150,7 +150,7 @@ public class Partition {
         private boolean leafPartition;
         private String parentPartitionId;
         private List<String> childPartitionIds;
-        private int dimension;
+        private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
             this.rowKeyTypes = rowKeyTypes;
