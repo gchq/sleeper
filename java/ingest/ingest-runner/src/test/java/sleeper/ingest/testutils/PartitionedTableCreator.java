@@ -84,7 +84,7 @@ public class PartitionedTableCreator {
                 .childPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()))
                 .dimension(dimensionToSplitOn)
                 .build();
-        
+
         // Update state store
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
     }
