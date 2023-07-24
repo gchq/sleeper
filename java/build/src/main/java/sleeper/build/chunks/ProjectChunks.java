@@ -15,7 +15,7 @@
  */
 package sleeper.build.chunks;
 
-import sleeper.build.github.actions.OnPushPathsDiff;
+import sleeper.build.github.actions.WorkflowTriggerPathsDiff;
 import sleeper.build.maven.InternalDependencyIndex;
 import sleeper.build.maven.MavenModuleStructure;
 
@@ -65,8 +65,8 @@ public class ProjectChunks {
             ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
         boolean failed = false;
         for (ProjectChunk chunk : chunks) {
-            OnPushPathsDiff diff = project.loadWorkflow(chunk)
-                    .getOnPushPathsDiffFromExpected(project, chunk, dependencies);
+            WorkflowTriggerPathsDiff diff = project.loadWorkflow(chunk)
+                    .getTriggerPathsDiffFromExpected(project, chunk, dependencies);
             diff.report(out, project, chunk);
             if (!diff.isValid()) {
                 failed = true;

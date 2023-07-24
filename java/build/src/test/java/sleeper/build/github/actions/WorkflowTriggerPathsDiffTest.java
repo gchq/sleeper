@@ -28,12 +28,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.github.actions.OnPushPathsDiffTestHelper.builder;
 import static sleeper.build.github.actions.OnPushPathsDiffTestHelper.identical;
 
-public class OnPushPathsDiffTest {
+public class WorkflowTriggerPathsDiffTest {
 
     private final ProjectStructure project = TestProjectStructure.example();
 
-    private OnPushPathsDiff fromExpectedAndActual(List<String> expected, List<String> actual) {
-        return OnPushPathsDiff.fromExpectedAndActual(project, expected, actual);
+    private WorkflowTriggerPathsDiff fromExpectedAndActual(List<String> expected, List<String> actual) {
+        return WorkflowTriggerPathsDiff.fromExpectedAndActual(project, expected, actual);
     }
 
     @Test
@@ -43,7 +43,7 @@ public class OnPushPathsDiffTest {
         List<String> actual = asList("a", "b");
 
         // When
-        OnPushPathsDiff diff = fromExpectedAndActual(expected, actual);
+        WorkflowTriggerPathsDiff diff = fromExpectedAndActual(expected, actual);
 
         // Then
         assertThat(diff).isEqualTo(identical(expected, actual));
@@ -57,7 +57,7 @@ public class OnPushPathsDiffTest {
         List<String> actual = singletonList("a");
 
         // When
-        OnPushPathsDiff diff = fromExpectedAndActual(expected, actual);
+        WorkflowTriggerPathsDiff diff = fromExpectedAndActual(expected, actual);
 
         // Then
         assertThat(diff).isEqualTo(builder(expected, actual).missingEntries(asList("b", "c")).build());

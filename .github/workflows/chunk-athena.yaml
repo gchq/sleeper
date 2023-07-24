@@ -1,6 +1,6 @@
 name: Build Athena Module
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-athena.yaml'
       - '.github/workflows/chunk.yaml'

@@ -24,12 +24,12 @@ public class OnPushPathsDiffTestHelper {
     private OnPushPathsDiffTestHelper() {
     }
 
-    public static OnPushPathsDiff identical(List<String> expected, List<String> actual) {
+    public static WorkflowTriggerPathsDiff identical(List<String> expected, List<String> actual) {
         return builder(expected, actual).build();
     }
 
-    public static OnPushPathsDiff.Builder builder(List<String> expected, List<String> actual) {
-        return OnPushPathsDiff.builder().expected(expected).actual(actual)
+    public static WorkflowTriggerPathsDiff.Builder builder(List<String> expected, List<String> actual) {
+        return WorkflowTriggerPathsDiff.builder().expected(expected).actual(actual)
                 .extraEntries(emptyList()).missingEntries(emptyList());
     }
 }

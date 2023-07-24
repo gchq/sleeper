@@ -87,7 +87,7 @@ public class ReinitialiseTable {
         }
     }
 
-    void run() throws IOException, StateStoreException {
+    public void run() throws IOException, StateStoreException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider =
@@ -238,7 +238,7 @@ public class ReinitialiseTable {
         System.out.println("If you continue all data will be deleted in the table.");
         if (deletePartitions) {
             System.out.println("The metadata about the partitions will be deleted and the "
-                + "table will be reset to consist of one root partition.");
+                    + "table will be reset to consist of one root partition.");
         } else {
             System.out.println("The metadata about the partitions will not be deleted.");
         }
