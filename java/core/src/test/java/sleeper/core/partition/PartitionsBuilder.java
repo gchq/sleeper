@@ -59,7 +59,7 @@ public class PartitionsBuilder {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
         }
         for (int i = 0; i < ids.size(); i++) {
-            add(factory.partition(ids.get(i), regions.get(i)));
+            put(factory.partition(ids.get(i), regions.get(i)));
         }
         return this;
     }
@@ -73,7 +73,7 @@ public class PartitionsBuilder {
         int numLeaves = partitionById.size();
         for (int i = 1; i < numLeaves; i++) {
             Partition.Builder right = mapValues.get(i);
-            left = add(factory.parentJoining(UUID.randomUUID().toString(), left, right));
+            left = put(factory.parentJoining(UUID.randomUUID().toString(), left, right));
         }
         return this;
     }
@@ -81,12 +81,12 @@ public class PartitionsBuilder {
     public PartitionsBuilder parentJoining(String parentId, String leftId, String rightId) {
         Partition.Builder left = partitionById(leftId);
         Partition.Builder right = partitionById(rightId);
-        add(factory.parentJoining(parentId, left, right));
+        put(factory.parentJoining(parentId, left, right));
         return this;
     }
 
     public PartitionsBuilder rootFirst(String rootId) {
-        add(factory.rootFirst(rootId));
+        put(factory.rootFirst(rootId));
         return this;
     }
 
@@ -109,18 +109,14 @@ public class PartitionsBuilder {
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
         Partition.Builder parent = partitionById(parentId);
         PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
-        splitResult.getChildren().forEach(this::add);
-        update(splitResult.getParent());
+        splitResult.getChildren().forEach(this::put);
+        put(splitResult.getParent());
         return this;
     }
 
-    private Partition.Builder add(Partition.Builder partition) {
+    private Partition.Builder put(Partition.Builder partition) {
         partitionById.put(partition.getId(), partition);
         return partition;
-    }
-
-    private void update(Partition.Builder newPartition) {
-        partitionById.put(newPartition.getId(), newPartition);
     }
 
     private Partition.Builder partitionById(String id) {
