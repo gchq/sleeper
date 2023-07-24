@@ -60,7 +60,7 @@ public class Partition {
     }
 
     public static Builder builder() {
-        return new Partition.Builder();
+        return new Builder();
     }
 
     public List<PrimitiveType> getRowKeyTypes() {
@@ -82,7 +82,6 @@ public class Partition {
     public String getParentPartitionId() {
         return parentPartitionId;
     }
-
 
     public List<String> getChildPartitionIds() {
         return childPartitionIds;
@@ -147,6 +146,9 @@ public class Partition {
         private String parentPartitionId;
         private List<String> childPartitionIds;
         private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
+
+        private Builder() {
+        }
 
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
             this.rowKeyTypes = rowKeyTypes;
