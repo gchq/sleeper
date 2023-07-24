@@ -1163,7 +1163,7 @@ public class S3StateStoreIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        parentPartition = parentPartition.toBuilder()
+        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
                 .leafPartition(false)
                 .childPartitionIds(Arrays.asList("child1", "child2"))
                 .build();
@@ -1185,13 +1185,13 @@ public class S3StateStoreIT {
                 .childPartitionIds(new ArrayList<>())
                 .parentPartitionId(parentPartition.getId())
                 .build();
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartitionAfterSplit, childPartition1, childPartition2);
 
         // When / Then
         //  - Attempting to split something that has already been split should fail
-        Partition finalParentPartition = parentPartition;
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(finalParentPartition, childPartition1, childPartition2))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                        parentPartitionAfterSplit, childPartition1, childPartition2))
                 .isInstanceOf(StateStoreException.class);
     }
 
