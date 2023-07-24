@@ -80,7 +80,13 @@ public class FileStatusCollector {
         long totalRecords = 0L;
         long totalRecordsInLeafPartitions = 0L;
         for (Partition partition : state.getPartitions()) {
+// <<<<<<< HEAD
+            // List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getFileInPartitionInfos());
+// =======
+            // TODO This logic simply adds the records in all the file-in-partition records. This will result in counts
+            // that are too high as file-in-partition records will be counted twice if the file is in two partitions.
             List<FileInfo> activeFilesInThisPartition = FindPartitionsToSplit.getFilesInPartition(partition, state.getFileInPartitionInfos());
+// >>>>>>> splitting-compaction-changes-stage-1
             long numRecordsInPartition = activeFilesInThisPartition.stream().map(FileInfo::getNumberOfRecords).mapToLong(Long::longValue).sum();
             totalRecords += numRecordsInPartition;
             if (partition.isLeafPartition()) {

@@ -121,8 +121,8 @@ public class CreateJobs {
         LOGGER.info("Creating jobs for table {}", tableName);
         List<FileInfo> fileInPartitionInfosWithNoJobId = fileInPartitionList.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
         List<FileInfo> fileInPartitionInfosWithJobId = fileInPartitionList.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} active files with no job id", fileInPartitionInfosWithNoJobId.size());
-        LOGGER.debug("Found {} active files with a job id", fileInPartitionInfosWithJobId.size());
+        LOGGER.debug("Found {} file-in-partition infos with no job id", fileInPartitionInfosWithNoJobId.size());
+        LOGGER.debug("Found {} file-in-partition infos with a job id", fileInPartitionInfosWithJobId.size());
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);

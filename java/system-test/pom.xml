@@ -33,5 +33,6 @@
         <module>system-test-configuration</module>
         <module>system-test-data-generation</module>
         <module>system-test-drivers</module>
+        <module>system-test-suite</module>
     </modules>
 </project>

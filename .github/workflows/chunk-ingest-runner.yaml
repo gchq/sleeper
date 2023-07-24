@@ -1,6 +1,6 @@
 name: Build Ingest Runner Module
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-ingest-runner.yaml'
       - '.github/workflows/chunk.yaml'

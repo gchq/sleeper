@@ -124,7 +124,7 @@ class NewInstanceValidatorIT {
 
     @Test
     void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTableGCFiles() throws IOException {
-        checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-file-lifecyle");
+        checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-file-lifecycle");
     }
 
     @Test

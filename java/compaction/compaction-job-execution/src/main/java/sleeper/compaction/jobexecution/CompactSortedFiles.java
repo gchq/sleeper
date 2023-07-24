@@ -408,7 +408,7 @@ public class CompactSortedFiles {
             LOGGER.debug("Called atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFile method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB while removing file-in-partition entries and creating new active file-lifecycle and file-in-partition entries: {}", e.getMessage());
+            LOGGER.error("Exception updating DynamoDB while removing file-in-partition infos and creating new active file-lifecycle and file-in-partition infos: {}", e.getMessage());
             return false;
         }
     }
@@ -456,7 +456,7 @@ public class CompactSortedFiles {
             LOGGER.debug("Called atomicallyRemoveFileInPartitionRecordsAndCreateNewActiveFiles method on DynamoDBStateStore");
             return true;
         } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB while removing file-in-partition entries and creating new active file-lifecycle and file-in-partition entries: {}", e.getMessage());
+            LOGGER.error("Exception updating DynamoDB while removing file-in-partition infos and creating new active file-lifecycle and file-in-partition infos: {}", e.getMessage());
             return false;
         }
     }

@@ -279,9 +279,6 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
         assertThat(summary.getRecordsWritten()).isEqualTo(expectedResults.size());
         assertThat(readDataFile(schema, compactionJob.getOutputFile())).isEqualTo(expectedResults);
 
-        // - Check DynamoDBStateStore has correct ready for GC files
-        // assertReadyForGC(stateStore, dataHelper.allFileInfos());
-
         // - Check DynamoDBStateStore has the correct file-in-partition entries
         assertThat(stateStore.getFileInPartitionList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
