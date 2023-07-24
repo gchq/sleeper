@@ -16,7 +16,6 @@
 package sleeper.core.partition;
 
 import sleeper.core.key.Key;
-import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ public class PartitionTree {
     private final Schema schema;
     private final Map<String, Partition> idToPartition;
     private final Partition rootPartition;
-    private Region region;
 
     public PartitionTree(Schema schema, List<Partition> partitions) {
         this.schema = schema;
@@ -58,13 +56,6 @@ public class PartitionTree {
             throw new IllegalArgumentException("No partition of id " + partitionId);
         }
         return idToPartition.get(partitionId).getChildPartitionIds();
-    }
-
-    public String getParentId(String partitionId) {
-        if (!idToPartition.containsKey(partitionId)) {
-            throw new IllegalArgumentException("No partition of id " + partitionId);
-        }
-        return idToPartition.get(partitionId).getParentPartitionId();
     }
 
     public List<String> getAllAncestorIds(String partitionId) {
