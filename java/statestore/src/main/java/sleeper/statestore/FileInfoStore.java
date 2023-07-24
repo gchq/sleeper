@@ -22,10 +22,10 @@ import java.util.Map;
 /**
  * A FileInfoStore stores metadata about the files in a Sleeper table. Two types of
  * information are stored: file-in-partition metadata which records that a file
- * contains records in a particular partition; file-lifecyle metadata which records
+ * contains records in a particular partition; file-lifecycle metadata which records
  * that a file is present in the system and its status. File-in-partition metadata
  * exists as {@link FileInfo} objects where the {@link FileInfo.FileStatus} value
- * is {@link FileInfo.FileStatus.FILE_IN_PARTITION}. File-lifecyle metadata exists
+ * is {@link FileInfo.FileStatus.FILE_IN_PARTITION}. File-lifecycle metadata exists
  * as {@link FileInfo} objects where the {@link FileInfo.FileStatus} value is
  * either {@link FileInfo.FileStatus.FILE_IN_PARTITION} or
  * {@link FileInfo.FileStatus.GARBAGE_COLLECTION_PENDING}.
@@ -138,7 +138,7 @@ public interface FileInfoStore {
             throws StateStoreException;
 
     /**
-     * Deletes the file-lifecyle record for the files with the given filenames.
+     * Deletes the file-lifecycle record for the files with the given filenames.
      *
      * @param filenames The name of the file to be deleted.
      * @throws StateStoreException if the delete fails
@@ -188,7 +188,7 @@ public interface FileInfoStore {
      * time is more than <code>delayBeforeGarbageCollectionInSeconds</code> seconds ago (where
      * <code>delayBeforeGarbageCollectionInSeconds</code> is taken from the table properties).
      *
-     * @return an {@link Iterator} of {@link FileInfo}s file-lifecyle records of files that are ready to be garbage collected
+     * @return an {@link Iterator} of {@link FileInfo}s file-lifecycle records of files that are ready to be garbage collected
      * @throws StateStoreException if query fails
      */
     Iterator<FileLifecycleInfo> getReadyForGCFileInfos() throws StateStoreException;

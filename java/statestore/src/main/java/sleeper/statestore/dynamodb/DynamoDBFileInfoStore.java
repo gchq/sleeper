@@ -527,10 +527,10 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
         // Find any files which have a file-lifecycle entry but no file-in-partition entry
         filenamesFromFileLifecycleList.removeAll(filenamesFromFileInPartitionList);
-        LOGGER.info("Found {} files which have file-lifecyle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
+        LOGGER.info("Found {} files which have file-lifecycle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
 
         changeStatusOfFileLifecycleEntriesToGCPending(filenamesFromFileLifecycleList);
-        LOGGER.info("Changed status of {} files in file-lifecyle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
+        LOGGER.info("Changed status of {} files in file-lifecycle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
     }
 
     private void changeStatusOfFileLifecycleEntriesToGCPending(Set<String> filenames) throws StateStoreException {

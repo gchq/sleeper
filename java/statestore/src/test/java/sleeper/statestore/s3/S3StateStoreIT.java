@@ -659,7 +659,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldDeleteFileLifecyleEntries() throws IOException, StateStoreException {
+    public void shouldDeleteFileLifecycleEntries() throws IOException, StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);

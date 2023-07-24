@@ -73,7 +73,7 @@ public class DynamoDBStateStoreStack implements StateStoreStack {
 
         fileInPartitionTable.grantReadData(tablesProvider.getOnEventHandler());
 
-        // DynamoDB table for file lifecyle information
+        // DynamoDB table for file lifecycle information
         Attribute partitionKeyFileLifecycleTable = Attribute.builder()
                 .name(DynamoDBStateStore.FILE_NAME)
                 .type(AttributeType.STRING)

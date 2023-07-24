@@ -190,10 +190,17 @@ public class S3FileInfoStore implements FileInfoStore {
             return updatedFiles;
         };
 
+<<<<<<< HEAD
         // Add a file-lifecyle record for newActiveFile
         Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifeCycleUpdate = list -> {
             List<FileLifecycleInfo> updatedFiles = new ArrayList<>(list);
             updatedFiles.add(newActiveFile.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE));
+=======
+        // Add a file-lifecycle record for newActiveFile
+        Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
+            List<FileInfo> updatedFiles = new ArrayList<>(list);
+            updatedFiles.add(newActiveFile.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+>>>>>>> splitting-compaction-changes-stage-1
             return updatedFiles;
         };
 
@@ -237,11 +244,19 @@ public class S3FileInfoStore implements FileInfoStore {
             return updatedFiles;
         };
 
+<<<<<<< HEAD
         // Add a file-lifecyle record for newActiveFile
         Function<List<FileLifecycleInfo>, List<FileLifecycleInfo>> fileLifeCycleUpdate = list -> {
             List<FileLifecycleInfo> updatedFiles = new ArrayList<>(list);
             updatedFiles.add(leftFileInfo.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE));
             updatedFiles.add(rightFileInfo.toBuilder().lastStateStoreUpdateTime(now).build().toFileLifecycleInfo(ACTIVE));
+=======
+        // Add a file-lifecycle record for newActiveFile
+        Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
+            List<FileInfo> updatedFiles = new ArrayList<>(list);
+            updatedFiles.add(leftFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+            updatedFiles.add(rightFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
+>>>>>>> splitting-compaction-changes-stage-1
             return updatedFiles;
         };
 
@@ -496,10 +511,10 @@ public class S3FileInfoStore implements FileInfoStore {
 
         // Find any files which have a file-lifecycle entry but no file-in-partition entry
         filenamesFromFileLifecycleList.removeAll(filenamesFromFileInPartitionList);
-        LOGGER.info("Found {} files which have file-lifecyle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
+        LOGGER.info("Found {} files which have file-lifecycle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
 
         changeStatusOfFileLifecycleEntriesToGCPending(filenamesFromFileLifecycleList);
-        LOGGER.info("Changed status of {} files in file-lifecyle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
+        LOGGER.info("Changed status of {} files in file-lifecycle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
     }
 
     private void changeStatusOfFileLifecycleEntriesToGCPending(Set<String> filenames) throws StateStoreException {

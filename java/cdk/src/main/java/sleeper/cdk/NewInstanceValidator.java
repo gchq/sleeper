@@ -69,7 +69,7 @@ class NewInstanceValidator {
     }
 
     private void checkDynamoDBConfigurationExistsForTable(String instanceName, String tableName) {
-        List<String> tableTypes = Arrays.asList("file-in-partition", "file-lifecyle", "partitions");
+        List<String> tableTypes = Arrays.asList("file-in-partition", "file-lifecycle", "partitions");
         tableTypes.forEach(tableType -> {
             String dynamodbTableName = String.join("-", "sleeper", instanceName, "table", tableName, tableType);
             if (doesDynamoTableExist(dynamodbTableName)) {
