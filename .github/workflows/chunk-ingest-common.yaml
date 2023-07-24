@@ -1,6 +1,6 @@
 name: Build Ingest Common Modules
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-ingest-common.yaml'
       - '.github/workflows/chunk.yaml'

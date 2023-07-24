@@ -155,12 +155,13 @@
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
         <sleeper.system.test.instance.id/>
+        <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
-        <sleeper.system.test.subnet.id/>
+        <sleeper.system.test.subnet.ids/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
-        <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
+        <surefire.plugin.version>3.1.2</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
@@ -831,20 +832,20 @@
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemProperties>
                             <property>
-                                <name>sleeper.system.test.version</name>
-                                <value>${project.version}</value>
-                            </property>
-                            <property>
                                 <name>sleeper.system.test.instance.id</name>
                                 <value>${sleeper.system.test.instance.id}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.short.id</name>
+                                <value>${sleeper.system.test.short.id}</value>
                             </property>
                             <property>
                                 <name>sleeper.system.test.vpc.id</name>
                                 <value>${sleeper.system.test.vpc.id}</value>
                             </property>
                             <property>
-                                <name>sleeper.system.test.subnet.id</name>
-                                <value>${sleeper.system.test.subnet.id}</value>
+                                <name>sleeper.system.test.subnet.ids</name>
+                                <value>${sleeper.system.test.subnet.ids}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>
@@ -942,6 +943,7 @@
                         <configuration>
                             <groups>SystemTest</groups>
                             <excludedGroups>none</excludedGroups>
+                            <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
                     <plugin>

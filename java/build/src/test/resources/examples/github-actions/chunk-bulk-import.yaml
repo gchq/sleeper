@@ -1,6 +1,6 @@
 name: Build Bulk Import Modules
 on:
-  push:
+  pull_request:
     paths:
       - 'github-actions/chunk-bulk-import.yaml'
       - 'github-actions/chunk.yaml'

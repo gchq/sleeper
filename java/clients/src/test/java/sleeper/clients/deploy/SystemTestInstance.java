@@ -55,7 +55,7 @@ public class SystemTestInstance implements BeforeAllCallback {
     private final Path dockerDir = scriptsDir.resolve("docker");
     private final Path generatedDir = scriptsDir.resolve("generated");
     private final String vpcId = System.getProperty("sleeper.system.test.vpc.id");
-    private final String subnetId = System.getProperty("sleeper.system.test.subnet.id");
+    private final String subnetId = System.getProperty("sleeper.system.test.subnet.ids");
     private InstanceProperties instanceProperties;
     private TableProperties singleKeyTableProperties;
 
