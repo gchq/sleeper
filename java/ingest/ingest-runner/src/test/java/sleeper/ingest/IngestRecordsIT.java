@@ -200,12 +200,23 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey() throws Exception {
         // Given
-        Field field = new Field("key", new ByteArrayType());
-        Schema schema = schemaWithRowKeys(field);
-        List<Partition> partition = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "partition1", "partition2", new byte[]{10}).buildList();
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
+        Field field1 = new Field("key1", new ByteArrayType());
+        Field field2 = new Field("key2", new ByteArrayType());
+        Schema schema = schemaWithRowKeys(field1, field2);
+        Range rootRange1 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, null);
+        Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
+        Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
+        Partition rootPartition = createRootPartition(rootRegion, new ByteArrayType(), new ByteArrayType());
+        Range range11 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, new byte[]{10});
+        Range range12 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
+        Region region1 = new Region(Arrays.asList(range11, range12));
+        Partition partition1 = createLeafPartition("partition1", region1, new ByteArrayType(), new ByteArrayType());
+        Range range21 = new Range.RangeFactory(schema).createRange(field1, new byte[]{10}, null);
+        Range range22 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
+        Region region2 = new Region(Arrays.asList(range21, range22));
+        Partition partition2 = createLeafPartition("partition2", region2, new ByteArrayType(), new ByteArrayType());
+        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getRecordsWritten();
