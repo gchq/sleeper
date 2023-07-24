@@ -636,6 +636,7 @@
                     <reportSet>
                         <reports>
                             <report>report-only</report>
+                            <report>failsafe-report-only</report>
                         </reports>
                     </reportSet>
                 </reportSets>
