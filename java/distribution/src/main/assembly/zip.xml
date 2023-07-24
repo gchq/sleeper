@@ -73,8 +73,8 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emr</directory>
-            <outputDirectory>scripts/docker/bulk-import-runner-emr</outputDirectory>
+            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emrs</directory>
+            <outputDirectory>scripts/docker/bulk-import-runner-emrs</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
             </excludes>
@@ -107,7 +107,7 @@
             <source>
                 ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
             </source>
-            <outputDirectory>scripts/docker/bulk-import-runner-emr</outputDirectory>
+            <outputDirectory>scripts/docker/bulk-import-runner-emrs</outputDirectory>
             <destName>bulk-import-runner.jar</destName>
         </file>
         <file>
