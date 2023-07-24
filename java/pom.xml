@@ -163,6 +163,7 @@
         <release.plugin.version>3.0.0-M7</release.plugin.version>
         <surefire.plugin.version>3.1.2</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
+        <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
@@ -172,6 +173,7 @@
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.3.1</dependency-check.plugin.version>
+        <site.plugin.version>3.12.1</site.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
@@ -631,7 +633,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>3.1.2</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -725,7 +726,6 @@
             <plugin>
                 <groupId>de.qaware.maven</groupId>
                 <artifactId>go-offline-maven-plugin</artifactId>
-                <version>${go-offline.plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.owasp</groupId>
@@ -734,7 +734,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.12.1</version>
             </plugin>
         </plugins>
         <pluginManagement>
@@ -890,6 +889,16 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>${surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>de.qaware.maven</groupId>
+                    <artifactId>go-offline-maven-plugin</artifactId>
+                    <version>${go-offline.plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${dependency-check.plugin.version}</version>
@@ -897,6 +906,11 @@
                         <failBuildOnAnyVulnerability>true</failBuildOnAnyVulnerability>
                         <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${site.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
