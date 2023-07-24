@@ -16,7 +16,6 @@
 package sleeper.core.partition;
 
 import sleeper.core.key.Key;
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 
@@ -45,8 +44,6 @@ public class PartitionTree {
     public PartitionTree(Schema schema, List<Partition> partitions) {
         this.schema = schema;
         this.idToPartition = new HashMap<>();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        this.region = new Region(rangeFactory.createRange("id", Long.MIN_VALUE, true, null, false));
         partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
         List<Partition> rootPartitions = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList());
         // There should be exactly one root partition.
