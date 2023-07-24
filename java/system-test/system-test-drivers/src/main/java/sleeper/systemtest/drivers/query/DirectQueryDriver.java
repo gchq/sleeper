@@ -81,7 +81,7 @@ public class DirectQueryDriver {
         try {
             QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), instance.getTableProperties(),
                     stateStore, new Configuration(), Executors.newSingleThreadExecutor());
-            executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
+            executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToFileInPartitionMap());
             return executor;
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

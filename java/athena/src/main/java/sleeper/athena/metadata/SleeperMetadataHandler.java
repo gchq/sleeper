@@ -362,9 +362,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     /**
      * Gets files from the leaf partition all the way up to the root of the tree.
      *
-     * @param leafPartition          The leaf partition which the files may relate to
-     * @param partitionTree          A tree of all the partitions
-     * @param partitionToActiveFiles A dictionary of partitions to their active files
+     * @param leafPartition               The leaf partition which the files may relate to
+     * @param partitionTree               A tree of all the partitions
+     * @param partitionToFilesInPartition A map from partition id to the names of active files
      * @return All the files that relate (or could relate to) a leaf partition
      */
     private List<String> getRelevantFilesForLeafPartition(Partition leafPartition, PartitionTree partitionTree,
