@@ -183,7 +183,7 @@ public class S3FileInfoStore implements FileInfoStore {
             return updatedFiles;
         };
 
-        // Add a file-lifecyle record for newActiveFile
+        // Add a file-lifecycle record for newActiveFile
         Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
             List<FileInfo> updatedFiles = new ArrayList<>(list);
             updatedFiles.add(newActiveFile.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
@@ -229,7 +229,7 @@ public class S3FileInfoStore implements FileInfoStore {
             return updatedFiles;
         };
 
-        // Add a file-lifecyle record for newActiveFile
+        // Add a file-lifecycle record for newActiveFile
         Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
             List<FileInfo> updatedFiles = new ArrayList<>(list);
             updatedFiles.add(leftFileInfo.cloneWithStatus(FileInfo.FileStatus.ACTIVE));
@@ -415,10 +415,10 @@ public class S3FileInfoStore implements FileInfoStore {
 
         // Find any files which have a file-lifecycle entry but no file-in-partition entry
         filenamesFromFileLifecycleList.removeAll(filenamesFromFileInPartitionList);
-        LOGGER.info("Found {} files which have file-lifecyle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
+        LOGGER.info("Found {} files which have file-lifecycle entries but no file-in-partition entries", filenamesFromFileLifecycleList.size());
 
         changeStatusOfFileLifecycleEntriesToGCPending(filenamesFromFileLifecycleList);
-        LOGGER.info("Changed status of {} files in file-lifecyle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
+        LOGGER.info("Changed status of {} files in file-lifecycle table to GARBAGE_COLLECTION_PENDING", filenamesFromFileLifecycleList.size());
     }
 
     private void changeStatusOfFileLifecycleEntriesToGCPending(Set<String> filenames) throws StateStoreException {
@@ -426,7 +426,7 @@ public class S3FileInfoStore implements FileInfoStore {
             return;
         }
 
-        // Update the file-lifecyle records for files in filenames
+        // Update the file-lifecycle records for files in filenames
         Function<List<FileInfo>, List<FileInfo>> fileLifeCycleUpdate = list -> {
             List<FileInfo> updatedFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {

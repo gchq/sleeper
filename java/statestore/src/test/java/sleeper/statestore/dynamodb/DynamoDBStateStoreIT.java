@@ -593,7 +593,7 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void shouldDeleteFileLifecyleEntries() throws StateStoreException {
+    public void shouldDeleteFileLifecycleEntries() throws StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
@@ -659,7 +659,7 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void shouldReturnCorrectFileLifecyleList() throws StateStoreException {
+    public void shouldReturnCorrectFileLifecycleList() throws StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);

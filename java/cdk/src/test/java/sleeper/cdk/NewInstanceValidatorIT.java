@@ -118,12 +118,12 @@ class NewInstanceValidatorIT {
     }
 
     @Test
-    void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsTableActiveFiles() throws IOException {
+    void shouldThrowAnErrorWhenDynamoTableExistsWithSameNameAsFileInPartitionTable() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-file-in-partition");
     }
 
     @Test
-    void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsTableGCFiles() throws IOException {
+    void shouldThrowAnErrorWhenADynamoTableExistsWithSameNameAsFileLifecycleTable() throws IOException {
         checkErrorIsThrownWhenTableExists("sleeper-valid-id-table-example-table-file-lifecycle");
     }
 
