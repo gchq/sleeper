@@ -52,18 +52,18 @@ jobs:
             -Dexec.args=${{ secrets.GITHUB_TOKEN }} -Dmaven.repo.local=../.m2/repository)" \
             >> $GITHUB_OUTPUT
       - name: Publish test report
-        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 && github.event.pull_request.head.repo.full_name == 'gchq/sleeper' }}
         uses: scacap/action-surefire-report@v1
         with:
           check_name: Tests for ${{ steps.config.outputs.chunkName }}
       - name: Publish Checkstyle report
-        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 && github.event.pull_request.head.repo.full_name == 'gchq/sleeper' }}
         uses: jwgmeligmeyling/checkstyle-github-action@v1.2
         with:
           path: '**/checkstyle-result.xml'
           name: Checkstyle for ${{ steps.config.outputs.chunkName }}
       - name: Publish Spotbugs report
-        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
+        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 && github.event.pull_request.head.repo.full_name == 'gchq/sleeper' }}
         uses: jwgmeligmeyling/spotbugs-github-action@v1.2
         with:
           path: '**/spotbugsXml.xml'
