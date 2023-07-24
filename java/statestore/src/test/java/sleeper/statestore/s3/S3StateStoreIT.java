@@ -1196,7 +1196,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIdDoesNotMatch() throws IOException, StateStoreException {
+    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsMarkedAsLeafAfterSplit() throws IOException, StateStoreException {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1212,7 +1212,7 @@ public class S3StateStoreIT {
                 .id("child1")
                 .region(region1)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
+                .parentPartitionId(parentPartition.getId())
                 .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition2 = Partition.builder()
@@ -1221,7 +1221,7 @@ public class S3StateStoreIT {
                 .id("child2")
                 .region(region2)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
+                .parentPartitionId(parentPartition.getId())
                 .build();
 
         // When / Then
@@ -1249,7 +1249,7 @@ public class S3StateStoreIT {
                 .id("child1")
                 .region(region1)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
+                .parentPartitionId(parentPartition.getId())
                 .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition2 = Partition.builder()
@@ -1258,7 +1258,7 @@ public class S3StateStoreIT {
                 .id("child2")
                 .region(region2)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
+                .parentPartitionId(parentPartition.getId())
                 .build();
 
         // When / Then
