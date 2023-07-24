@@ -195,7 +195,6 @@ public class Partition {
         }
 
         public Partition build() {
-
             return new Partition(this);
         }
 
