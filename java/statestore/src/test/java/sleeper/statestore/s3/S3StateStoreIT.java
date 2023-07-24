@@ -1204,6 +1204,7 @@ public class S3StateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
         Partition parentPartitionAfterSplit = parentPartition.toBuilder()
                 .childPartitionIds(Arrays.asList("child1", "child2"))
+                .leafPartition(true)
                 .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition1 = Partition.builder()
