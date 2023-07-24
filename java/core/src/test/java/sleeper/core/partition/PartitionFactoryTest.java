@@ -31,10 +31,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PartitionFactoryTest {
 
-    private PartitionSplitResult toPartition(Partition parent, String leftId, String rightId, int dimension, Object splitPoint, PartitionFactory partitionFactory) {
-        return partitionFactory.split(parent, leftId, rightId, dimension, splitPoint);
-    }
-
     @Test
     void shouldSpecifyParentThenChildPartition() {
         Field key = new Field("key", new StringType());
