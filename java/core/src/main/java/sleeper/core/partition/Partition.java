@@ -16,12 +16,9 @@
 package sleeper.core.partition;
 
 import sleeper.core.key.Key;
-import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionCanonicaliser;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
@@ -41,7 +38,7 @@ import java.util.Optional;
  */
 public class Partition {
     private final List<PrimitiveType> rowKeyTypes;
-    private Region region;
+    private final Region region;
     private final String id;
     private final boolean leafPartition;
     private final String parentPartitionId;
@@ -49,31 +46,16 @@ public class Partition {
     private int dimension = -1; // -1 used to indicate that it has not been split yet; when it has been split, indicates which dimension was used to split on.
 
     private Partition(Partition.Builder builder) {
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        schema.getRowKeyTypes();
-        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
-        if (builder.region == null) {
-            Region newRegion = new Region(rangeFactory
-                    .createRange(
-                            field,
-                            Long.MIN_VALUE,
-                            true,
-                            Long.MAX_VALUE,
-                            false));
-            region = newRegion;
-        } else {
-            region = builder.region;
-        }
+        region = builder.region;
         rowKeyTypes = builder.rowKeyTypes;
-        if (!RegionCanonicaliser.isRegionInCanonicalForm(region)) {
-            throw new IllegalArgumentException("Region must be in canonical form");
-        }
         id = builder.id;
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
         childPartitionIds = builder.childPartitionIds;
         dimension = builder.dimension;
+        if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
+            throw new IllegalArgumentException("Region must be in canonical form");
+        }
     }
 
     public static Builder builder() {
