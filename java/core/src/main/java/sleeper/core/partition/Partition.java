@@ -21,7 +21,6 @@ import sleeper.core.range.RegionCanonicaliser;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -182,11 +181,7 @@ public class Partition {
 
 
         public Builder childPartitionIds(List<String> childPartitionIds) {
-            this.childPartitionIds = Optional.ofNullable(
-                    childPartitionIds
-            ).orElse(
-                    new ArrayList<>()
-            );
+            this.childPartitionIds = childPartitionIds;
             return this;
         }
 
