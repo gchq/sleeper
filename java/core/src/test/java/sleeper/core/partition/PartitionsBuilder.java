@@ -129,7 +129,7 @@ public class PartitionsBuilder {
     }
 
     public List<Partition> buildList() {
-        return new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList());
+        return partitionById.values().stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
     public PartitionTree buildTree() {
