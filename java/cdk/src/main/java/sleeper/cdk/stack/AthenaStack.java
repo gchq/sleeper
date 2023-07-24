@@ -127,7 +127,6 @@ public class AthenaStack extends NestedStack {
 
             stateStoreStacks.forEach(sss -> {
                 sss.grantReadFileInPartitionMetadata(handler);
-                sss.grantReadFileLifecycleMetadata(handler);
                 sss.grantReadPartitionMetadata(handler);
             });
             dataBuckets.forEach(bucket -> bucket.grantRead(handler));

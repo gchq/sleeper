@@ -265,9 +265,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         StateStore stateStore = getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
-        Map<String, List<String>> partitionToActiveFiles = stateStore.getPartitionToFileInPartitionMap();
+        Map<String, List<String>> partitionToFilesInPartition = stateStore.getPartitionToFileInPartitionMap();
         PartitionTree partitionTree = new PartitionTree(schema, allPartitions);
-        // Filtering existing list to avoid expensive call to statestore
+        // Filter existing list to avoid expensive call to statestore
         List<Partition> leafPartitions = allPartitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
@@ -279,7 +279,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
             // First Check the partition meets the constraints
             if (isValid(partition, rowKeyFields, predicates)) {
                 LOGGER.debug("Partition {} contained relevant files", partition.getId());
-                List<String> relevantFilesForLeafPartition = getRelevantFilesForLeafPartition(partition, partitionTree, partitionToActiveFiles);
+                List<String> relevantFilesForLeafPartition = getRelevantFilesForLeafPartition(partition, partitionTree, partitionToFilesInPartition);
                 if (relevantFilesForLeafPartition.isEmpty()) {
                     return;
                 }
@@ -368,13 +368,13 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * @return All the files that relate (or could relate to) a leaf partition
      */
     private List<String> getRelevantFilesForLeafPartition(Partition leafPartition, PartitionTree partitionTree,
-                                                          Map<String, List<String>> partitionToActiveFiles) {
+                                                          Map<String, List<String>> partitionToFilesInPartition) {
         List<Partition> relevantPartitions = partitionTree.getAllAncestors(leafPartition.getId());
         relevantPartitions.add(leafPartition);
 
         return relevantPartitions.stream()
                 .map(Partition::getId)
-                .map(partitionToActiveFiles::get)
+                .map(partitionToFilesInPartition::get)
                 .filter(Objects::nonNull)
                 .flatMap(List::stream)
                 .distinct()
