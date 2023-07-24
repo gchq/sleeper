@@ -23,7 +23,6 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -48,7 +47,7 @@ public class IngestByQueueDriver {
     private final PollWithRetries pollUntilTasksStarted = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5));
     private final PollWithRetries pollUntilJobsFinished = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5));
+            .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10));
 
     public IngestByQueueDriver(SleeperInstanceContext instance,
                                AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient) {
@@ -68,12 +67,16 @@ public class IngestByQueueDriver {
         this.lambdaClient = lambdaClient;
     }
 
-    public void invokeAndWaitForJobs(BatchIngestMode mode, Collection<String> jobIds) throws InterruptedException {
+    public void invokeAndWaitForJobs(Collection<String> jobIds) throws InterruptedException {
         int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
         pollUntilTasksStarted.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
             return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
         });
+        waitForJobs(jobIds);
+    }
+
+    public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
         LOGGER.info("Waiting for jobs to finish: {}", jobIds.size());
         pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
             List<String> unfinishedJobIds = jobIds.stream()

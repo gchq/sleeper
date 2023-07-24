@@ -26,6 +26,7 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
@@ -73,6 +74,7 @@ public class IngestBatcherIT {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1");
+            tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         });
         Record record = new Record(Map.of(
                 "key", "some-id",

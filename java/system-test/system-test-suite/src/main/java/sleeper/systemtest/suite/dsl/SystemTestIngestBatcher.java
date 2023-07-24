@@ -55,7 +55,11 @@ public class SystemTestIngestBatcher {
 
     public void waitForJobs() throws InterruptedException {
         BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
-        systemTest.ingestByQueueDriver().invokeAndWaitForJobs(mode, createdJobIds);
+        if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
+            systemTest.ingestByQueueDriver().invokeAndWaitForJobs(createdJobIds);
+        } else {
+            systemTest.ingestByQueueDriver().waitForJobs(createdJobIds);
+        }
     }
 
     public void clearStore() {
