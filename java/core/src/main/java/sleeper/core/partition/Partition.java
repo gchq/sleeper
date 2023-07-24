@@ -23,6 +23,7 @@ import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,7 +43,7 @@ public class Partition {
     private final String id;
     private final boolean leafPartition;
     private final String parentPartitionId;
-    private List<String> childPartitionIds;
+    private final List<String> childPartitionIds;
     private final int dimension;
 
     private Partition(Partition.Builder builder) {
@@ -51,7 +52,7 @@ public class Partition {
         id = builder.id;
         leafPartition = builder.leafPartition;
         parentPartitionId = builder.parentPartitionId;
-        childPartitionIds = builder.childPartitionIds;
+        childPartitionIds = Optional.ofNullable(builder.childPartitionIds).orElse(Collections.emptyList());
         dimension = builder.dimension;
         if (region != null && !RegionCanonicaliser.isRegionInCanonicalForm(region)) {
             throw new IllegalArgumentException("Region must be in canonical form");
@@ -66,7 +67,6 @@ public class Partition {
         return rowKeyTypes;
     }
 
-
     public Region getRegion() {
         return region;
     }
@@ -79,16 +79,12 @@ public class Partition {
         return leafPartition;
     }
 
-
     public String getParentPartitionId() {
         return parentPartitionId;
     }
 
 
     public List<String> getChildPartitionIds() {
-        if (null == childPartitionIds) {
-            childPartitionIds = new ArrayList<>();
-        }
         return childPartitionIds;
     }
 
@@ -120,14 +116,14 @@ public class Partition {
                 && Objects.equals(region, partition.region)
                 && Objects.equals(id, partition.id)
                 && Objects.equals(parentPartitionId, partition.parentPartitionId)
-                && Objects.equals(getChildPartitionIds(), partition.getChildPartitionIds())
+                && Objects.equals(childPartitionIds, partition.childPartitionIds)
                 && dimension == partition.getDimension();
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(rowKeyTypes, region, id, leafPartition,
-                parentPartitionId, getChildPartitionIds(), dimension);
+                parentPartitionId, childPartitionIds, dimension);
     }
 
     @Override
@@ -138,7 +134,7 @@ public class Partition {
                 + ", id='" + id + '\''
                 + ", leafPartition=" + leafPartition
                 + ", parentPartitionId='" + parentPartitionId + '\''
-                + ", childPartitionIds=" + getChildPartitionIds()
+                + ", childPartitionIds=" + childPartitionIds
                 + ", dimension=" + dimension
                 + '}';
     }
@@ -213,8 +209,6 @@ public class Partition {
         public Region getRegion() {
             return region;
         }
-
-
     }
 
     public Builder toBuilder() {
