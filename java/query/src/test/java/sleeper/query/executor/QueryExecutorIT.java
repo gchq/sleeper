@@ -37,6 +37,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -45,7 +46,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
@@ -81,6 +81,7 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 @Testcontainers
 public class QueryExecutorIT {
@@ -725,7 +726,6 @@ public class QueryExecutorIT {
                 .rowKeyFields(field1, field2)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -743,113 +743,27 @@ public class QueryExecutorIT {
         //           |           |           |
         //        "" +-----------+-----------+
         //           ""         "I"          null      (Dimension 1)
-        StateStore stateStore = getStateStore(schema);
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
         // Add 4 records - record i is in the center of partition i
         Record record1 = createRecordMultidimensionalKey("D", "J", 10L, 100L);
         Record record2 = createRecordMultidimensionalKey("K", "H", 1000L, 10000L);
         Record record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
         Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
         List<Record> records = Arrays.asList(record1, record2, record3, record4);
-        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         // Split the root partition into 2: 1 and 3, and 2 and 4
-        Range leftRange1 = new RangeFactory(schema).createRange(field1, "", "I");
-        Range leftRange2 = new RangeFactory(schema).createRange(field2, "", null);
-        Partition leftPartition = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(leftRange1, leftRange2)))
-                .id("left")
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
 
-        Range rightRange1 = new RangeFactory(schema).createRange(field1, "I", null);
-        Range rightRange2 = new RangeFactory(schema).createRange(field2, "", null);
-        Partition rightPartition = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(rightRange1, rightRange2)))
-                .id("right")
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
+        PartitionsBuilder builder = new PartitionsBuilder(schema)
+                .rootFirst("root");
+        List<Partition> tree = builder.buildList();
 
-        rootPartition = rootPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("left", "right"))
-                .build();
-
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition,
-                leftPartition, rightPartition);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(tree);
+        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+        builder.splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
+                .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
+                .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T");
+        stateStore.initialise(builder.buildList());
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
-        // 4 leaf partitions
-        Range range11 = new RangeFactory(schema).createRange(field1, "", "I");
-        Range range12 = new RangeFactory(schema).createRange(field2, "", "T");
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range11, range12)))
-                .id("P1")
-                .leafPartition(true)
-                .parentPartitionId("left")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
 
-        Range range21 = new RangeFactory(schema).createRange(field1, "I", null);
-        Range range22 = new RangeFactory(schema).createRange(field2, "", "T");
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range21, range22)))
-                .id("P2")
-                .leafPartition(true)
-                .parentPartitionId("right")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-
-        Range range31 = new RangeFactory(schema).createRange(field1, "", "I");
-        Range range32 = new RangeFactory(schema).createRange(field2, "T", null);
-        Partition partition3 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range31, range32)))
-                .id("P3")
-                .leafPartition(true)
-                .parentPartitionId("left")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-
-        Range range41 = new RangeFactory(schema).createRange(field1, "I", null);
-        Range range42 = new RangeFactory(schema).createRange(field2, "T", null);
-        Partition partition4 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range41, range42)))
-                .id("P4")
-                .leafPartition(true)
-                .parentPartitionId("right")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-
-        // Split the left partition into 1 and 3
-        leftPartition = leftPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("P1", "P3"))
-                .build();
-
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(leftPartition,
-                partition1, partition3);
-        // Split the right partition into 2 and 4
-        rightPartition = rightPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("P2", "P4"))
-                .build();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rightPartition,
-                partition2, partition4);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
                 .filter(f -> List.of("P1", "left", "root").contains(f.getPartitionId()))
@@ -1081,19 +995,19 @@ public class QueryExecutorIT {
                 .findFirst()
                 .get();
         LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition1Query.getSubQueryId(), region, partition1.getId(), partition1.getRegion(), filesInLeafPartition1)
+                .Builder("myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P1")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition1)
                 .build();
         assertThat(leafPartition1Query).isEqualTo(expectedLeafPartition1Query);
         LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition2Query.getSubQueryId(), region, partition2.getId(), partition2.getRegion(), filesInLeafPartition2)
+                .Builder("myTable", "id", leafPartition2Query.getSubQueryId(), region, "P2", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P2")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition2)
                 .build();
         assertThat(leafPartition2Query).isEqualTo(expectedLeafPartition2Query);
         LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition3Query.getSubQueryId(), region, partition3.getId(), partition3.getRegion(), filesInLeafPartition3)
+                .Builder("myTable", "id", leafPartition3Query.getSubQueryId(), region, "P3", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P3")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition3)
                 .build();
         assertThat(leafPartition3Query).isEqualTo(expectedLeafPartition3Query);
         LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition4Query.getSubQueryId(), region, partition4.getId(), partition4.getRegion(), filesInLeafPartition4)
+                .Builder("myTable", "id", leafPartition4Query.getSubQueryId(), region, "P4", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P4")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition4)
                 .build();
         assertThat(leafPartition4Query).isEqualTo(expectedLeafPartition4Query);
     }
