@@ -17,19 +17,29 @@ package sleeper.clients.util;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class ClientUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
 
     private ClientUtils() {
     }
@@ -108,7 +118,32 @@ public class ClientUtils {
         }
     }
 
-    public static int runCommand(String... commands) throws IOException, InterruptedException {
+    public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", (Object) commands);
+        Process process = new ProcessBuilder(commands).start();
+        CompletableFuture<Void> logOutput = CompletableFuture.allOf(
+                CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
+                CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
+        int exitCode = process.waitFor();
+        logOutput.join();
+        LOGGER.info("Exit code: {}", exitCode);
+        return exitCode;
+    }
+
+    private static void logTo(InputStream stream, Consumer<String> logLine) {
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+            String line = reader.readLine();
+            while (line != null) {
+                logLine.accept(line);
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static int runCommandInheritIO(String... commands) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(commands).inheritIO().start();
         return process.waitFor();
     }

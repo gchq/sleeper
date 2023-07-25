@@ -1,6 +1,6 @@
 name: Build CDK Modules
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-cdk.yaml'
       - '.github/workflows/chunk.yaml'
@@ -16,6 +16,7 @@ on:
       - 'java/system-test/system-test-configuration/**'
       - 'java/system-test/system-test-data-generation/**'
       - 'java/system-test/system-test-drivers/**'
+      - 'java/system-test/system-test-suite/**'
       - 'java/bulk-import/bulk-import-common/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-batcher-store/**'

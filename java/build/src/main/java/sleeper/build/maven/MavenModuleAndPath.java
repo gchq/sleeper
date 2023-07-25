@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public class MavenModuleAndPath {
-
     private final String path;
     private final ArtifactReference parent;
     private final MavenModuleStructure structure;

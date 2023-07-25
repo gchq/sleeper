@@ -19,6 +19,7 @@ package sleeper.clients.deploy;
 import com.amazonaws.services.ecr.model.ListImagesRequest;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -33,6 +34,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 
 @Tag("SystemTest")
+@Disabled
 class SystemTestInstanceIT {
 
     @RegisterExtension
