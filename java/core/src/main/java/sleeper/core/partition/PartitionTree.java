@@ -93,6 +93,10 @@ public class PartitionTree {
         return List.copyOf(idToPartition.values());
     }
 
+    public List<Partition> getAllLeafPartitions() {
+        return List.copyOf(idToPartition.values().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
+    }
+
     public Partition getLeafPartition(Key key) {
         // Sanity check key is of the correct length
         if (key.size() != schema.getRowKeyFields().size()) {

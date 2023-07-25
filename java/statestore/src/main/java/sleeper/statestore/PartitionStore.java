@@ -36,7 +36,7 @@ public interface PartitionStore {
     void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition,
                                                    Partition newPartition1,
                                                    Partition newPartition2) throws StateStoreException;
-
+    
     /**
      * Returns all the {@link Partition}s.
      *

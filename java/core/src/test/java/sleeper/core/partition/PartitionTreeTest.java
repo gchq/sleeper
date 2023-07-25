@@ -251,7 +251,7 @@ public class PartitionTreeTest {
                 .id(ROOT)
                 .leafPartition(true)
                 .parentPartitionId(null)
-                .childPartitionIds(Arrays.asList(L1_LEFT, L1_RIGHT))
+                .childPartitionIds(new ArrayList<>())
                 .dimension(-1)
                 .build();
         PartitionTree partitionTree = new PartitionTree(schema, Collections.singletonList(root));
