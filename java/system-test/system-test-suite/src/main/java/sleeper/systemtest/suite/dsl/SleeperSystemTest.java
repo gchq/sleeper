@@ -59,11 +59,15 @@ public class SleeperSystemTest {
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
 
     private SleeperSystemTest() {
-        sourceFiles.createOrEmptySourceBucket();
     }
 
     public static SleeperSystemTest getInstance() {
-        return INSTANCE;
+        return INSTANCE.reset();
+    }
+
+    private SleeperSystemTest reset() {
+        sourceFiles.createOrEmptySourceBucket();
+        return this;
     }
 
     public void connectToInstance(SystemTestInstance testInstance) {
