@@ -72,6 +72,7 @@ public class SleeperInstanceContext {
                 currentInstance.getInstanceProperties(),
                 currentInstance.getTableProperties(),
                 s3Client);
+        currentInstance.getTablePropertiesProvider().clearCache();
     }
 
     public void reinitialise() {
