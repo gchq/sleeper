@@ -31,6 +31,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 
 public enum SystemTestInstance {
 
@@ -59,6 +61,8 @@ public enum SystemTestInstance {
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(INGEST_SOURCE_BUCKET, parameters.buildSourceBucketName());
+        properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "m6i.xlarge,m5.xlarge");
+        properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m6i.4xlarge,m5.4xlarge");
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(Schema.builder()
