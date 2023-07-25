@@ -16,10 +16,6 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.sqs.AmazonSQS;
-import software.amazon.awssdk.services.lambda.LambdaClient;
-
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
@@ -32,22 +28,19 @@ public class SystemTestIngest {
 
     private final SystemTestParameters parameters;
     private final SleeperInstanceContext instance;
-    private final AmazonDynamoDB dynamoDBClient;
-    private final AmazonSQS sqsClient;
-    private final LambdaClient lambdaClient;
+    private final SystemTestClients clients;
 
-    public SystemTestIngest(SystemTestParameters parameters, SleeperInstanceContext instance,
-                            AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, LambdaClient lambdaClient) {
+    public SystemTestIngest(SystemTestParameters parameters,
+                            SleeperInstanceContext instance,
+                            SystemTestClients clients) {
         this.parameters = parameters;
         this.instance = instance;
-        this.dynamoDBClient = dynamoDBClient;
-        this.sqsClient = sqsClient;
-        this.lambdaClient = lambdaClient;
+        this.clients = clients;
     }
 
     public SystemTestIngestBatcher batcher() {
         return new SystemTestIngestBatcher(this, parameters, instance,
-                new IngestBatcherDriver(instance, dynamoDBClient, sqsClient, lambdaClient));
+                new IngestBatcherDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getLambda()));
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
@@ -55,6 +48,6 @@ public class SystemTestIngest {
     }
 
     IngestByQueueDriver byQueueDriver() {
-        return new IngestByQueueDriver(instance, dynamoDBClient, lambdaClient);
+        return new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda());
     }
 }

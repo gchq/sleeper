@@ -16,16 +16,6 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.lambda.LambdaClient;
-import software.amazon.awssdk.services.s3.S3Client;
-
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
@@ -37,8 +27,6 @@ import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.function.Consumer;
-
-import static sleeper.systemtest.drivers.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 /**
  * This class is the entry point that all system tests use to interact with the system.
@@ -64,17 +52,12 @@ public class SleeperSystemTest {
     private static final SleeperSystemTest INSTANCE = new SleeperSystemTest();
 
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
-    private final CloudFormationClient cloudFormationClient = CloudFormationClient.create();
-    private final AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-    private final S3Client s3ClientV2 = S3Client.create();
-    private final AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-    private final AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-    private final LambdaClient lambdaClient = createSystemTestLambdaClient();
+    private final SystemTestClients clients = new SystemTestClients();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, cloudFormationClient, s3Client, dynamoDBClient);
-    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, s3ClientV2);
+            parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
 
-    public SleeperSystemTest() {
+    private SleeperSystemTest() {
         sourceFiles.createOrEmptySourceBucket();
     }
 
@@ -94,7 +77,7 @@ public class SleeperSystemTest {
     public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
         tablePropertiesConsumer.accept(instance.getTableProperties());
         try {
-            instance.getTableProperties().saveToS3(s3Client);
+            instance.getTableProperties().saveToS3(clients.getS3());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -105,7 +88,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(parameters, instance, dynamoDBClient, sqsClient, lambdaClient);
+        return new SystemTestIngest(parameters, instance, clients);
     }
 
     public SystemTestDirectQuery directQuery() {
