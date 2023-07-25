@@ -39,7 +39,7 @@ public class GenerateRangeRecords {
                         entriesForFieldType(num, KeyType.ROW, schema.getRowKeyFields()),
                         entriesForFieldType(num, KeyType.SORT, schema.getSortKeyFields()),
                         entriesForFieldType(num, KeyType.VALUE, schema.getValueFields()))
-                .flatMap(s -> s)
+                .flatMap(entryStream -> entryStream)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
