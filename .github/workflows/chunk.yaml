@@ -4,10 +4,6 @@ on:
       chunkId:
         required: true
         type: string
-      publishReports:
-        default: true
-        required: false
-        type: boolean
 
 jobs:
   build:
