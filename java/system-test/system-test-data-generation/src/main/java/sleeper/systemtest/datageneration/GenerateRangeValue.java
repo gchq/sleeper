@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.datageneration;
 
+import org.apache.commons.lang.StringUtils;
+
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -40,11 +42,11 @@ public interface GenerateRangeValue {
             switch (keyType) {
                 case ROW:
                 default:
-                    return num -> "row-" + num;
+                    return num -> "row-" + StringUtils.leftPad(num + "", 19, "0");
                 case SORT:
-                    return num -> "sort-" + num;
+                    return num -> "sort-" + StringUtils.leftPad(num + "", 19, "0");
                 case VALUE:
-                    return num -> "Value " + num;
+                    return num -> "Value " + StringUtils.leftPad(num + "", 19, "0");
             }
         }
         if (fieldType instanceof ByteArrayType) {

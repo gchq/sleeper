@@ -36,68 +36,80 @@ public class GenerateRangeRecordsTest {
     @Test
     void shouldGenerateTwoRecordsWithStringType() {
         Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
+                .rowKeyFields(new Field("rowkey", new StringType()))
+                .sortKeyFields(new Field("sortkey", new StringType()))
+                .valueFields(new Field("value", new StringType()))
                 .build();
 
-        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+        assertThat(recordsForRange(schema, LongStream.of(1, Long.MAX_VALUE)))
                 .containsExactly(
-                        new Record(Map.of("key", "row-1")),
-                        new Record(Map.of("key", "row-2")));
+                        new Record(Map.of(
+                                "rowkey", "row-0000000000000000001",
+                                "sortkey", "sort-0000000000000000001",
+                                "value", "Value 0000000000000000001")),
+                        new Record(Map.of(
+                                "rowkey", "row-9223372036854775807",
+                                "sortkey", "sort-9223372036854775807",
+                                "value", "Value 9223372036854775807")));
     }
 
     @Test
     void shouldGenerateTwoRecordsWithIntType() {
         Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
+                .rowKeyFields(new Field("rowkey", new IntType()))
+                .sortKeyFields(new Field("sortkey", new IntType()))
+                .valueFields(new Field("value", new IntType()))
                 .build();
 
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of("key", 1)),
-                        new Record(Map.of("key", 2)));
+                        new Record(Map.of(
+                                "rowkey", 1,
+                                "sortkey", 1,
+                                "value", 1)),
+                        new Record(Map.of(
+                                "rowkey", 2,
+                                "sortkey", 2,
+                                "value", 2)));
     }
 
     @Test
     void shouldGenerateTwoRecordsWithLongType() {
         Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
+                .rowKeyFields(new Field("rowkey", new LongType()))
+                .sortKeyFields(new Field("sortkey", new LongType()))
+                .valueFields(new Field("value", new LongType()))
                 .build();
 
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of("key", 1L)),
-                        new Record(Map.of("key", 2L)));
+                        new Record(Map.of(
+                                "rowkey", 1L,
+                                "sortkey", 1L,
+                                "value", 1L)),
+                        new Record(Map.of(
+                                "rowkey", 2L,
+                                "sortkey", 2L,
+                                "value", 2L)));
     }
 
     @Test
     void shouldGenerateTwoRecordsWithByteArrayType() {
         Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new ByteArrayType()))
-                .build();
-
-        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
-                .containsExactly(
-                        new Record(Map.of("key", new byte[]{0, 0, 0, 0, 0, 0, 0, 1})),
-                        new Record(Map.of("key", new byte[]{0, 0, 0, 0, 0, 0, 0, 2})));
-    }
-
-    @Test
-    void shouldGenerateTwoRecordsWithAllFieldTypes() {
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("rowKey", new StringType()))
-                .sortKeyFields(new Field("sortKey", new StringType()))
-                .valueFields(new Field("value", new StringType()))
+                .rowKeyFields(new Field("rowkey", new ByteArrayType()))
+                .sortKeyFields(new Field("sortkey", new ByteArrayType()))
+                .valueFields(new Field("value", new ByteArrayType()))
                 .build();
 
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
-                                "rowKey", "row-1",
-                                "sortKey", "sort-1",
-                                "value", "Value 1")),
+                                "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 1},
+                                "sortkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 1},
+                                "value", new byte[]{0, 0, 0, 0, 0, 0, 0, 1})),
                         new Record(Map.of(
-                                "rowKey", "row-2",
-                                "sortKey", "sort-2",
-                                "value", "Value 2")));
+                                "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 2},
+                                "sortkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 2},
+                                "value", new byte[]{0, 0, 0, 0, 0, 0, 0, 2})));
     }
 }
