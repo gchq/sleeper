@@ -33,7 +33,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for compaction jobs"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
+ sleeper.systemtest.drivers.compaction.WaitForCompactionJobs "$INSTANCE_ID" "$TABLE_NAME"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

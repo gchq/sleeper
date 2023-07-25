@@ -15,6 +15,8 @@
  */
 package sleeper.configuration.properties;
 
+import sleeper.configuration.properties.instance.SleeperProperty;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 

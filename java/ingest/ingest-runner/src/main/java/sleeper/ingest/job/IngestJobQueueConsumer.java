@@ -28,8 +28,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.iterator.IteratorException;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -43,9 +42,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 /**
  * An IngestJobQueueConsumer pulls ingest jobs off an SQS queue and runs them.
@@ -124,8 +125,8 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         }
 
         // Update metrics
-        String metricsNamespace = instanceProperties.get(UserDefinedInstanceProperty.METRICS_NAMESPACE);
-        String instanceId = instanceProperties.get(UserDefinedInstanceProperty.ID);
+        String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
+        String instanceId = instanceProperties.get(ID);
         cloudWatchClient.putMetricData(new PutMetricDataRequest()
                 .withNamespace(metricsNamespace)
                 .withMetricData(new MetricDatum()

@@ -24,9 +24,10 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.RunCommand;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -52,9 +53,10 @@ public class DeployNewInstance {
     private final String vpcId;
     private final String subnetIds;
     private final String tableName;
-    private final DeployInstanceConfiguration deployInstanceConfig;
+    private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
+    private final RunCommand runCommand;
     private final Path splitPointsFile;
     private final boolean deployPaused;
 
@@ -67,9 +69,10 @@ public class DeployNewInstance {
         vpcId = builder.vpcId;
         subnetIds = builder.subnetIds;
         tableName = builder.tableName;
-        deployInstanceConfig = builder.deployInstanceConfiguration;
+        deployInstanceConfiguration = builder.deployInstanceConfiguration;
         extraInstanceProperties = builder.extraInstanceProperties;
         instanceType = builder.instanceType;
+        runCommand = builder.runCommand;
         splitPointsFile = builder.splitPointsFile;
         deployPaused = builder.deployPaused;
         if (splitPointsFile != null && !Files.exists(splitPointsFile)) {
@@ -124,13 +127,13 @@ public class DeployNewInstance {
         LOGGER.info("deployPaused: {}", deployPaused);
         InstanceProperties instanceProperties = PopulateInstanceProperties.builder()
                 .sts(sts).regionProvider(regionProvider)
-                .deployInstanceConfig(deployInstanceConfig)
+                .deployInstanceConfig(deployInstanceConfiguration)
                 .instanceId(instanceId).vpcId(vpcId).subnetIds(subnetIds)
                 .build().populate();
         extraInstanceProperties.accept(instanceProperties);
         TableProperties tableProperties = PopulateTableProperties.builder()
                 .instanceProperties(instanceProperties)
-                .tableProperties(deployInstanceConfig.getTableProperties())
+                .tableProperties(deployInstanceConfiguration.getTableProperties())
                 .tableName(tableName).build().populate();
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
         boolean jarsChanged = SyncJars.builder().s3(s3)
@@ -141,7 +144,7 @@ public class DeployNewInstance {
                 .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
                 .skipIf(!jarsChanged)
                 .instanceProperties(instanceProperties)
-                .build().upload();
+                .build().upload(runCommand);
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
@@ -154,7 +157,7 @@ public class DeployNewInstance {
         InvokeCdkForInstance.builder()
                 .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
-                .build().invoke(instanceType, cdkCommand);
+                .build().invoke(instanceType, cdkCommand, runCommand);
         LOGGER.info("Finished deployment of new instance");
     }
 
@@ -171,6 +174,7 @@ public class DeployNewInstance {
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
+        private RunCommand runCommand = ClientUtils::runCommandInheritIO;
         private Path splitPointsFile;
         private boolean deployPaused;
 
@@ -229,6 +233,11 @@ public class DeployNewInstance {
 
         public Builder instanceType(InvokeCdkForInstance.Type instanceType) {
             this.instanceType = instanceType;
+            return this;
+        }
+
+        public Builder runCommand(RunCommand runCommand) {
+            this.runCommand = runCommand;
             return this;
         }
 

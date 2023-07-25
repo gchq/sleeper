@@ -17,7 +17,7 @@ package sleeper.clients.util.cdk;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.RunCommand;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -72,7 +72,7 @@ public class InvokeCdkForInstance {
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand) throws IOException, InterruptedException {
-        invoke(instanceType, cdkCommand, ClientUtils::runCommand);
+        invoke(instanceType, cdkCommand, ClientUtils::runCommandInheritIO);
     }
 
     public void invoke(Type instanceType, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {

@@ -1,6 +1,6 @@
 name: some-chunk
 on:
-  push:
+  pull_request:
     paths:
       - 'github-actions/chunk-extra-job.yaml'
 
