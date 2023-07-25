@@ -56,7 +56,6 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarterLambda.class);
 
     private final PropertiesReloader propertiesReloader;
-
     private final BulkImportExecutor executor;
     private final Configuration hadoopConfig;
     private final InstanceProperties instanceProperties;
