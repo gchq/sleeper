@@ -42,7 +42,7 @@ public class IngestBatcherIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.ingestBatcher().clearStore();
+        sleeper.ingest().batcher().clearStore();
     }
 
     @Test
@@ -60,7 +60,7 @@ public class IngestBatcherIT {
 
         // When
         sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
+        sleeper.ingest().batcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -83,7 +83,7 @@ public class IngestBatcherIT {
 
         // When
         sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingestBatcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
+        sleeper.ingest().batcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

@@ -28,15 +28,15 @@ import java.util.Set;
 import static sleeper.ingest.batcher.IngestBatcher.batchIngestMode;
 
 public class SystemTestIngestBatcher {
-    private final SleeperSystemTest systemTest;
+    private final SystemTestIngest ingest;
     private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
     private final String sourceBucketName;
     private final Set<String> createdJobIds = new HashSet<>();
 
-    public SystemTestIngestBatcher(SleeperSystemTest systemTest, SystemTestParameters parameters,
+    public SystemTestIngestBatcher(SystemTestIngest ingest, SystemTestParameters parameters,
                                    SleeperInstanceContext instance, IngestBatcherDriver driver) {
-        this.systemTest = systemTest;
+        this.ingest = ingest;
         this.instance = instance;
         this.driver = driver;
         this.sourceBucketName = parameters.buildSourceBucketName();
@@ -56,9 +56,9 @@ public class SystemTestIngestBatcher {
     public void waitForJobs() throws InterruptedException {
         BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
         if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
-            systemTest.ingestByQueueDriver().invokeAndWaitForJobs(createdJobIds);
+            ingest.byQueueDriver().invokeAndWaitForJobs(createdJobIds);
         } else {
-            systemTest.ingestByQueueDriver().waitForJobs(createdJobIds);
+            ingest.byQueueDriver().waitForJobs(createdJobIds);
         }
     }
 
