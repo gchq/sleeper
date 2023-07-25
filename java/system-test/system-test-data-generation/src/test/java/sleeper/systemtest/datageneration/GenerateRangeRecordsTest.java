@@ -80,4 +80,24 @@ public class GenerateRangeRecordsTest {
                         new Record(Map.of("key", new byte[]{1})),
                         new Record(Map.of("key", new byte[]{2})));
     }
+
+    @Test
+    void shouldGenerateTwoRecordsWithAllFieldTypes() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("rowKey", new StringType()))
+                .sortKeyFields(new Field("sortKey", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
+
+        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+                .containsExactly(
+                        new Record(Map.of(
+                                "rowKey", "record-1",
+                                "sortKey", "record-1",
+                                "value", "record-1")),
+                        new Record(Map.of(
+                                "rowKey", "record-2",
+                                "sortKey", "record-2",
+                                "value", "record-2")));
+    }
 }

@@ -35,8 +35,10 @@ public class GenerateRangeRecords {
 
     public static List<Record> recordsForRange(Schema schema, LongStream longStream) {
         return longStream
-                .mapToObj(i -> new Record(Map.of(
-                        "key", valueForKeyType(schema.getField("key").orElseThrow().getType(), i))))
+                .mapToObj(i -> new Record(
+                        schema.getAllFields().stream()
+                                .map(field -> Map.entry(field.getName(), valueForKeyType(field.getType(), i)))
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
                 .collect(Collectors.toUnmodifiableList());
     }
 
