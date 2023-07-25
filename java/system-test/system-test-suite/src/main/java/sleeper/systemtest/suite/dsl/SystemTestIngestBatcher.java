@@ -17,10 +17,13 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.configuration.properties.validation.BatchIngestMode;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
+import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,12 +57,16 @@ public class SystemTestIngestBatcher {
     }
 
     public void waitForJobs() throws InterruptedException {
+        waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+    }
+
+    public void waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
+        IngestByQueueDriver driver = ingest.byQueueDriver();
         BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
         if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
-            ingest.byQueueDriver().invokeAndWaitForJobs(createdJobIds);
-        } else {
-            ingest.byQueueDriver().waitForJobs(createdJobIds);
+            driver.invokeStandardIngestTasks();
         }
+        driver.waitForJobs(createdJobIds, pollUntilJobsFinished);
     }
 
     public void clearStore() {

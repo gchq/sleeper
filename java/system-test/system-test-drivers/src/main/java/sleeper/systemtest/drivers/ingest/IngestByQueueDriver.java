@@ -46,8 +46,6 @@ public class IngestByQueueDriver {
     private final LambdaClient lambdaClient;
     private final PollWithRetries pollUntilTasksStarted = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5));
-    private final PollWithRetries pollUntilJobsFinished = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10));
 
     public IngestByQueueDriver(SleeperInstanceContext instance,
                                AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient) {
@@ -67,16 +65,16 @@ public class IngestByQueueDriver {
         this.lambdaClient = lambdaClient;
     }
 
-    public void invokeAndWaitForJobs(Collection<String> jobIds) throws InterruptedException {
+    public void invokeStandardIngestTasks() throws InterruptedException {
         int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
         pollUntilTasksStarted.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
             return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
         });
-        waitForJobs(jobIds);
     }
 
-    public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
+    public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished)
+            throws InterruptedException {
         LOGGER.info("Waiting for jobs to finish: {}", jobIds.size());
         pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
             List<String> unfinishedJobIds = jobIds.stream()

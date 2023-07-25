@@ -21,8 +21,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,7 +85,8 @@ public class IngestBatcherIT {
 
         // When
         sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingest().batcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
+        sleeper.ingest().batcher().sendSourceFiles("file.parquet").invoke().waitForJobs(
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
