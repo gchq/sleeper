@@ -41,8 +41,8 @@ public class GenerateRangeRecordsTest {
 
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of("key", "record-1")),
-                        new Record(Map.of("key", "record-2")));
+                        new Record(Map.of("key", "row-1")),
+                        new Record(Map.of("key", "row-2")));
     }
 
     @Test
@@ -92,12 +92,12 @@ public class GenerateRangeRecordsTest {
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
-                                "rowKey", "record-1",
-                                "sortKey", "record-1",
-                                "value", "record-1")),
+                                "rowKey", "row-1",
+                                "sortKey", "sort-1",
+                                "value", "Value 1")),
                         new Record(Map.of(
-                                "rowKey", "record-2",
-                                "sortKey", "record-2",
-                                "value", "record-2")));
+                                "rowKey", "row-2",
+                                "sortKey", "sort-2",
+                                "value", "Value 2")));
     }
 }

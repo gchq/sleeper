@@ -41,7 +41,11 @@ public interface GenerateRangeByField {
             return num -> num;
         }
         if (type instanceof StringType) {
-            return num -> "record-" + num;
+            return RangeValueGenerator.builder()
+                    .rowKeyGenerator(num -> "row-" + num)
+                    .sortKeyGenerator(num -> "sort-" + num)
+                    .valueGenerator(num -> "Value " + num)
+                    .build();
         }
         if (type instanceof ByteArrayType) {
             return num -> new byte[]{(byte) num};
