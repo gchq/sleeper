@@ -32,7 +32,12 @@ public class SystemTestSourceFiles {
         this.sourceFilesContext = sourceFilesContext;
     }
 
-    public void create(String filename, Record... records) {
-        sourceFilesContext.writeFile(instanceContext.getTableProperties(), filename, List.of(records).iterator());
+    public SystemTestSourceFiles create(String filename, Record... records) {
+        return create(filename, List.of(records));
+    }
+
+    public SystemTestSourceFiles create(String filename, List<Record> records) {
+        sourceFilesContext.writeFile(instanceContext.getTableProperties(), filename, records.iterator());
+        return this;
     }
 }

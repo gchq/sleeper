@@ -36,6 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestRecords.recordsForRange;
 
 @Tag("SystemTest")
 public class IngestBatcherIT {
@@ -54,21 +55,23 @@ public class IngestBatcherIT {
         sleeper.updateTableProperties(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1");
+            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
         });
-        Record record = new Record(Map.of(
-                "key", "some-id",
-                "timestamp", 1234L,
-                "value", "Some value"));
 
         // When
-        sleeper.sourceFiles().create("file.parquet", record);
-        sleeper.ingest().batcher().sendSourceFiles("file.parquet").invoke().waitForJobs();
+        sleeper.sourceFiles()
+                .create("file1.parquet", recordsForRange(0, 100))
+                .create("file2.parquet", recordsForRange(100, 200))
+                .create("file3.parquet", recordsForRange(200, 300))
+                .create("file4.parquet", recordsForRange(300, 400));
+        sleeper.ingest().batcher()
+                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
+                .invoke().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactly(record);
+                .containsExactlyInAnyOrderElementsOf(recordsForRange(0, 400));
     }
 
     @Test
