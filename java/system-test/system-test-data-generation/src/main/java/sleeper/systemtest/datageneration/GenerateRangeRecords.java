@@ -54,6 +54,6 @@ public class GenerateRangeRecords {
     private static Map.Entry<String, Object> entryForField(
             long num, KeyType keyType, Field field) {
         return Map.entry(field.getName(),
-                GenerateRangeValue.forType(keyType, field.getType()).generateValue(num));
+                GenerateRangeValue.forField(keyType, field).generateValue(num));
     }
 }

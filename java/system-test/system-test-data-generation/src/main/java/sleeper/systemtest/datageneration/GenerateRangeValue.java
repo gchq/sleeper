@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.datageneration;
 
+import sleeper.core.schema.Field;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -25,7 +26,8 @@ import sleeper.core.schema.type.Type;
 public interface GenerateRangeValue {
     Object generateValue(long number);
 
-    static GenerateRangeValue forType(KeyType keyType, Type fieldType) {
+    static GenerateRangeValue forField(KeyType keyType, Field field) {
+        Type fieldType = field.getType();
         if (fieldType instanceof IntType) {
             return num -> (int) num;
         }
