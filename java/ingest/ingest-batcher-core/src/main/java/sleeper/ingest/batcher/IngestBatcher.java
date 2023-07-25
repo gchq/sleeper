@@ -119,7 +119,7 @@ public class IngestBatcher {
         }
     }
 
-    private Optional<BatchIngestMode> batchIngestMode(TableProperties properties) {
+    public static Optional<BatchIngestMode> batchIngestMode(TableProperties properties) {
         return Optional.ofNullable(properties.get(INGEST_BATCHER_INGEST_MODE))
                 .map(mode -> EnumUtils.getEnumIgnoreCase(BatchIngestMode.class, mode));
     }

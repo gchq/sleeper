@@ -310,9 +310,10 @@ public class SplitMultiDimensionalPartitionImpl {
                 .build();
 
         // Updated split partition
-        partition.setLeafPartition(false);
-        partition.setChildPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()));
-        partition.setDimension(dimension);
+        partition = partition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()))
+                .dimension(dimension).build();
 
         LOGGER.info("Updating StateStore:");
         LOGGER.info("Split partition ({}) is marked as not a leaf partition, split on field {}",
