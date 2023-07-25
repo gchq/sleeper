@@ -17,17 +17,14 @@
 package sleeper.systemtest.datageneration;
 
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.schema.type.Type;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 public class GenerateRangeRecords {
     private GenerateRangeRecords() {
@@ -35,26 +32,28 @@ public class GenerateRangeRecords {
 
     public static List<Record> recordsForRange(Schema schema, LongStream longStream) {
         return longStream
-                .mapToObj(i -> new Record(
-                        schema.getAllFields().stream()
-                                .map(field -> Map.entry(field.getName(), valueForKeyType(field.getType(), i)))
-                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
+                .mapToObj(i -> new Record(mapForNumber(schema, i)))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public static Object valueForKeyType(Type type, long num) {
-        if (type instanceof IntType) {
-            return (int) num;
-        }
-        if (type instanceof LongType) {
-            return num;
-        }
-        if (type instanceof StringType) {
-            return "record-" + num;
-        }
-        if (type instanceof ByteArrayType) {
-            return new byte[]{(byte) num};
-        }
-        throw new IllegalArgumentException("Unknown type " + type);
+    private static Map<String, Object> mapForNumber(Schema schema, long num) {
+        return Stream.of(
+                        entriesForFieldType(schema.getRowKeyFields(), num, GenerateRangeByField::rowKey),
+                        entriesForFieldType(schema.getSortKeyFields(), num, GenerateRangeByField::sortKey),
+                        entriesForFieldType(schema.getValueFields(), num, GenerateRangeByField::value))
+                .flatMap(s -> s)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static Stream<Map.Entry<String, Object>> entriesForFieldType(
+            List<Field> fields, long num, GenerateRangeValue generateValue) {
+        return fields.stream()
+                .map(field -> entryForField(field, num, generateValue));
+    }
+
+    private static Map.Entry<String, Object> entryForField(
+            Field field, long num, GenerateRangeValue generateValue) {
+        return Map.entry(field.getName(),
+                generateValue.generate(GenerateRangeByField.forType(field.getType()), num));
     }
 }
