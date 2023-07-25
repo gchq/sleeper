@@ -35,12 +35,14 @@ import static sleeper.systemtest.datageneration.GenerateRangeRecords.recordsForR
 public class GenerateRangeRecordsTest {
     @Test
     void shouldGenerateTwoRecordsWithStringType() {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new StringType()))
                 .sortKeyFields(new Field("sortkey", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
 
+        // When/Then
         assertThat(recordsForRange(schema, LongStream.of(1, Long.MAX_VALUE)))
                 .containsExactly(
                         new Record(Map.of(
@@ -55,12 +57,14 @@ public class GenerateRangeRecordsTest {
 
     @Test
     void shouldGenerateTwoRecordsWithIntType() {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new IntType()))
                 .sortKeyFields(new Field("sortkey", new IntType()))
                 .valueFields(new Field("value", new IntType()))
                 .build();
 
+        // When/Then
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
@@ -75,12 +79,14 @@ public class GenerateRangeRecordsTest {
 
     @Test
     void shouldGenerateTwoRecordsWithLongType() {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new LongType()))
                 .sortKeyFields(new Field("sortkey", new LongType()))
                 .valueFields(new Field("value", new LongType()))
                 .build();
 
+        // When/Then
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
@@ -95,12 +101,14 @@ public class GenerateRangeRecordsTest {
 
     @Test
     void shouldGenerateTwoRecordsWithByteArrayType() {
+        // Given
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("rowkey", new ByteArrayType()))
                 .sortKeyFields(new Field("sortkey", new ByteArrayType()))
                 .valueFields(new Field("value", new ByteArrayType()))
                 .build();
 
+        // When/Then
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
