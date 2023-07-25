@@ -67,6 +67,13 @@ public class SleeperInstanceContext {
         currentInstance = deployed.connectTo(identifier, deployInstanceConfiguration);
     }
 
+    public void resetProperties(DeployInstanceConfiguration configuration) {
+        ResetProperties.reset(configuration,
+                currentInstance.getInstanceProperties(),
+                currentInstance.getTableProperties(),
+                s3Client);
+    }
+
     public void reinitialise() {
         try {
             new ReinitialiseTable(s3Client, dynamoDBClient,

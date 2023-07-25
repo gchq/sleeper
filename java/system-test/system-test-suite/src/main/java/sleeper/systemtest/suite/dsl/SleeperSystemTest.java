@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
@@ -66,7 +67,9 @@ public class SleeperSystemTest {
     }
 
     public void connectToInstance(SystemTestInstance testInstance) {
-        instance.connectTo(testInstance.getIdentifier(), testInstance.getInstanceConfiguration(parameters));
+        DeployInstanceConfiguration configuration = testInstance.getInstanceConfiguration(parameters);
+        instance.connectTo(testInstance.getIdentifier(), configuration);
+        instance.resetProperties(configuration);
         instance.reinitialise();
     }
 
