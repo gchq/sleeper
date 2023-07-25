@@ -18,6 +18,11 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
 
 import java.util.List;
 import java.util.Map;
@@ -31,7 +36,23 @@ public class GenerateRangeRecords {
     public static List<Record> recordsForRange(Schema schema, LongStream longStream) {
         return longStream
                 .mapToObj(i -> new Record(Map.of(
-                        "key", "record-" + i)))
+                        "key", valueForKeyType(schema.getField("key").orElseThrow().getType(), i))))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public static Object valueForKeyType(Type type, long num) {
+        if (type instanceof IntType) {
+            return (int) num;
+        }
+        if (type instanceof LongType) {
+            return num;
+        }
+        if (type instanceof StringType) {
+            return "record-" + num;
+        }
+        if (type instanceof ByteArrayType) {
+            return new byte[]{(byte) num};
+        }
+        throw new IllegalArgumentException("Unknown type " + type);
     }
 }

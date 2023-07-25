@@ -21,6 +21,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.Map;
@@ -31,7 +34,7 @@ import static sleeper.systemtest.datageneration.GenerateRangeRecords.recordsForR
 
 public class GenerateRangeRecordsTest {
     @Test
-    void shouldGenerateTwoRecords() {
+    void shouldGenerateTwoRecordsWithStringType() {
         Schema schema = Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
                 .build();
@@ -40,5 +43,41 @@ public class GenerateRangeRecordsTest {
                 .containsExactly(
                         new Record(Map.of("key", "record-1")),
                         new Record(Map.of("key", "record-2")));
+    }
+
+    @Test
+    void shouldGenerateTwoRecordsWithIntType() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new IntType()))
+                .build();
+
+        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+                .containsExactly(
+                        new Record(Map.of("key", 1)),
+                        new Record(Map.of("key", 2)));
+    }
+
+    @Test
+    void shouldGenerateTwoRecordsWithLongType() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .build();
+
+        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+                .containsExactly(
+                        new Record(Map.of("key", 1L)),
+                        new Record(Map.of("key", 2L)));
+    }
+
+    @Test
+    void shouldGenerateTwoRecordsWithByteArrayType() {
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new ByteArrayType()))
+                .build();
+
+        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+                .containsExactly(
+                        new Record(Map.of("key", new byte[]{1})),
+                        new Record(Map.of("key", new byte[]{2})));
     }
 }
