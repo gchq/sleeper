@@ -23,6 +23,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
+import java.nio.ByteBuffer;
+
 public interface GenerateRangeValue {
     Object generateValue(long number);
 
@@ -46,7 +48,11 @@ public interface GenerateRangeValue {
             }
         }
         if (fieldType instanceof ByteArrayType) {
-            return num -> new byte[]{(byte) num};
+            return num -> {
+                ByteBuffer buf = ByteBuffer.allocate(Long.BYTES);
+                buf.putLong(num);
+                return buf.array();
+            };
         }
         throw new IllegalArgumentException("Unknown type " + fieldType);
     }

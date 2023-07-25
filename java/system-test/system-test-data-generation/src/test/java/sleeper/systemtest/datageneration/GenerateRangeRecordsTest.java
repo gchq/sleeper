@@ -77,8 +77,8 @@ public class GenerateRangeRecordsTest {
 
         assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
-                        new Record(Map.of("key", new byte[]{1})),
-                        new Record(Map.of("key", new byte[]{2})));
+                        new Record(Map.of("key", new byte[]{0, 0, 0, 0, 0, 0, 0, 1})),
+                        new Record(Map.of("key", new byte[]{0, 0, 0, 0, 0, 0, 0, 2})));
     }
 
     @Test
