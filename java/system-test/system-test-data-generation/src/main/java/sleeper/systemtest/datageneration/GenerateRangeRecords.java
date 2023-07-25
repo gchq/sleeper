@@ -30,10 +30,8 @@ public class GenerateRangeRecords {
     private GenerateRangeRecords() {
     }
 
-    public static List<Record> recordsForRange(Schema schema, LongStream longStream) {
-        return longStream
-                .mapToObj(i -> new Record(mapForNumber(schema, i)))
-                .collect(Collectors.toUnmodifiableList());
+    public static Stream<Record> recordsForRange(Schema schema, LongStream longStream) {
+        return longStream.mapToObj(i -> new Record(mapForNumber(schema, i)));
     }
 
     private static Map<String, Object> mapForNumber(Schema schema, long num) {
