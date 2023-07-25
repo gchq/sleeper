@@ -38,22 +38,22 @@ public class GenerateRangeRecords {
 
     private static Map<String, Object> mapForNumber(Schema schema, long num) {
         return Stream.of(
-                        entriesForFieldType(schema.getRowKeyFields(), num, GenerateRangeByField::rowKey),
-                        entriesForFieldType(schema.getSortKeyFields(), num, GenerateRangeByField::sortKey),
-                        entriesForFieldType(schema.getValueFields(), num, GenerateRangeByField::value))
+                        entriesForFieldType(num, KeyType.ROW, schema.getRowKeyFields()),
+                        entriesForFieldType(num, KeyType.SORT, schema.getSortKeyFields()),
+                        entriesForFieldType(num, KeyType.VALUE, schema.getValueFields()))
                 .flatMap(s -> s)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private static Stream<Map.Entry<String, Object>> entriesForFieldType(
-            List<Field> fields, long num, GenerateRangeValue generateValue) {
+            long num, KeyType keyType, List<Field> fields) {
         return fields.stream()
-                .map(field -> entryForField(field, num, generateValue));
+                .map(field -> entryForField(num, keyType, field));
     }
 
     private static Map.Entry<String, Object> entryForField(
-            Field field, long num, GenerateRangeValue generateValue) {
+            long num, KeyType keyType, Field field) {
         return Map.entry(field.getName(),
-                generateValue.generate(GenerateRangeByField.forType(field.getType()), num));
+                GenerateRangeValue.forType(keyType, field.getType()).generateValue(num));
     }
 }

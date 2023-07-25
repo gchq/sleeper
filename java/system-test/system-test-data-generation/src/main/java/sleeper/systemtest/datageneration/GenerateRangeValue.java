@@ -16,6 +16,36 @@
 
 package sleeper.systemtest.datageneration;
 
+import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.Type;
+
 public interface GenerateRangeValue {
-    Object generate(GenerateRangeByField byField, long number);
+    Object generateValue(long number);
+
+    static GenerateRangeValue forType(KeyType keyType, Type fieldType) {
+        if (fieldType instanceof IntType) {
+            return num -> (int) num;
+        }
+        if (fieldType instanceof LongType) {
+            return num -> num;
+        }
+        if (fieldType instanceof StringType) {
+            switch (keyType) {
+                case ROW:
+                default:
+                    return num -> "row-" + num;
+                case SORT:
+                    return num -> "sort-" + num;
+                case VALUE:
+                    return num -> "Value " + num;
+            }
+        }
+        if (fieldType instanceof ByteArrayType) {
+            return num -> new byte[]{(byte) num};
+        }
+        throw new IllegalArgumentException("Unknown type " + fieldType);
+    }
 }
