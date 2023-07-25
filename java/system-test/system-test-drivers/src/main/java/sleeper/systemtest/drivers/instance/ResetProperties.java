@@ -46,12 +46,17 @@ public class ResetProperties {
     private static <T extends SleeperProperty> void reset(
             SleeperProperties<T> properties,
             SleeperProperties<T> resetProperties) {
-        for (T property : properties.getPropertiesIndex().getUserDefined()) {
+        for (T property : propertiesToReset(properties)) {
             if (resetProperties.isSet(property)) {
                 properties.set(property, resetProperties.get(property));
             } else {
                 properties.unset(property);
             }
         }
+    }
+
+    private static <T extends SleeperProperty> Iterable<T> propertiesToReset(SleeperProperties<T> properties) {
+        return () -> properties.getPropertiesIndex().getUserDefined().stream()
+                .filter(SleeperProperty::isEditable).iterator();
     }
 }
