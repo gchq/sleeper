@@ -37,6 +37,7 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
@@ -751,16 +752,20 @@ public class QueryExecutorIT {
         List<Record> records = Arrays.asList(record1, record2, record3, record4);
         // Split the root partition into 2: 1 and 3, and 2 and 4
 
-        PartitionsBuilder builder = new PartitionsBuilder(schema)
-                .rootFirst("root");
-        List<Partition> tree = builder.buildList();
 
-        StateStore stateStore = inMemoryStateStoreWithPartitions(tree);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .buildList());
+
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
-        builder.splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
                 .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
-                .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T");
-        stateStore.initialise(builder.buildList());
+                .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
+                .buildTree();
+        stateStore.initialise(tree.getAllPartitions());
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
 
@@ -994,21 +999,25 @@ public class QueryExecutorIT {
                 .filter(p -> p.getLeafPartitionId().equals("P4"))
                 .findFirst()
                 .get();
-        LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P1")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition1)
-                .build();
+        LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1",
+                tree.getPartition("P1").getRegion(), filesInLeafPartition1
+        ).build();
         assertThat(leafPartition1Query).isEqualTo(expectedLeafPartition1Query);
-        LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition2Query.getSubQueryId(), region, "P2", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P2")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition2)
-                .build();
+        LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition2Query.getSubQueryId(), region, "P2",
+                tree.getPartition("P2").getRegion(), filesInLeafPartition2
+        ).build();
         assertThat(leafPartition2Query).isEqualTo(expectedLeafPartition2Query);
-        LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition3Query.getSubQueryId(), region, "P3", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P3")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition3)
-                .build();
+        LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition3Query.getSubQueryId(), region, "P3",
+                tree.getPartition("P3").getRegion(), filesInLeafPartition3
+        ).build();
         assertThat(leafPartition3Query).isEqualTo(expectedLeafPartition3Query);
-        LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition4Query.getSubQueryId(), region, "P4", stateStore.getAllPartitions().stream().filter(i -> i.getId().equals("P4")).collect(Collectors.toList()).get(0).getRegion(), filesInLeafPartition4)
-                .build();
+        LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition4Query.getSubQueryId(), region, "P4",
+                tree.getPartition("P4").getRegion(), filesInLeafPartition4
+        ).build();
         assertThat(leafPartition4Query).isEqualTo(expectedLeafPartition4Query);
     }
 
