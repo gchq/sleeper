@@ -30,6 +30,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
+import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
 import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
@@ -48,12 +49,13 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldStandardIngestOneRecord() throws InterruptedException {
+    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1");
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
         });
         Record record = new Record(Map.of(
                 "key", "some-id",
