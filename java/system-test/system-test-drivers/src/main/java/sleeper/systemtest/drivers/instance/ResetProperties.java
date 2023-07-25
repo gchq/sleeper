@@ -27,6 +27,8 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import static java.util.function.Predicate.not;
+
 public class ResetProperties {
 
     public static void reset(DeployInstanceConfiguration configuration,
@@ -57,6 +59,8 @@ public class ResetProperties {
 
     private static <T extends SleeperProperty> Iterable<T> propertiesToReset(SleeperProperties<T> properties) {
         return () -> properties.getPropertiesIndex().getUserDefined().stream()
-                .filter(SleeperProperty::isEditable).iterator();
+                .filter(SleeperProperty::isEditable)
+                .filter(not(SleeperProperty::isRunCDKDeployWhenChanged))
+                .iterator();
     }
 }
