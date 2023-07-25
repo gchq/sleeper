@@ -31,6 +31,9 @@ import static java.util.function.Predicate.not;
 
 public class ResetProperties {
 
+    private ResetProperties() {
+    }
+
     public static void reset(DeployInstanceConfiguration configuration,
                              InstanceProperties instanceProperties,
                              TableProperties tableProperties,
