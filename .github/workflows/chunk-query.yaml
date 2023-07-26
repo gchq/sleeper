@@ -1,6 +1,6 @@
 name: Build Query Module
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-query.yaml'
       - '.github/workflows/chunk.yaml'

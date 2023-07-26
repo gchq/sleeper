@@ -1,10 +1,6 @@
 name: Docker CLI Build
 on:
-  push:
-    branches-ignore:
-      - main
-    tags-ignore:
-      - v*
+  pull_request:
     paths:
       - '.github/workflows/docker-cli-branch.yaml'
       - '.github/workflows/docker-cli.yaml'

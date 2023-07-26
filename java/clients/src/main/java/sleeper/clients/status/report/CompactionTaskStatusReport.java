@@ -26,7 +26,7 @@ import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReporte
 import sleeper.clients.util.ClientUtils;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 

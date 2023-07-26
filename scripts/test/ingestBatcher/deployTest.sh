@@ -29,7 +29,7 @@ START_TIME=$(record_time)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
-  sleeper.systemtest.ingest.batcher.SystemTestForIngestBatcher \
+   sleeper.systemtest.drivers.ingest.batcher.SystemTestForIngestBatcher \
   "${SCRIPTS_DIR}" "$THIS_DIR/system-test-instance.properties" "$@"
 
 FINISH_TIME=$(record_time)
