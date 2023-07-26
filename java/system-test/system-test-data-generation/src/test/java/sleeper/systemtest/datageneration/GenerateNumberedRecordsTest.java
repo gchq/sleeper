@@ -30,9 +30,8 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.datageneration.GenerateRangeRecords.recordsForRange;
 
-public class GenerateRangeRecordsTest {
+public class GenerateNumberedRecordsTest {
     @Test
     void shouldGenerateTwoRecordsWithStringType() {
         // Given
@@ -43,7 +42,7 @@ public class GenerateRangeRecordsTest {
                 .build();
 
         // When/Then
-        assertThat(recordsForRange(schema, LongStream.of(1, Long.MAX_VALUE)))
+        assertThat(GenerateNumberedRecords.from(schema, LongStream.of(1, Long.MAX_VALUE)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", "row-0000000000000000001",
@@ -65,7 +64,7 @@ public class GenerateRangeRecordsTest {
                 .build();
 
         // When/Then
-        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+        assertThat(GenerateNumberedRecords.from(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", 1,
@@ -87,7 +86,7 @@ public class GenerateRangeRecordsTest {
                 .build();
 
         // When/Then
-        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+        assertThat(GenerateNumberedRecords.from(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", 1L,
@@ -109,7 +108,7 @@ public class GenerateRangeRecordsTest {
                 .build();
 
         // When/Then
-        assertThat(recordsForRange(schema, LongStream.rangeClosed(1, 2)))
+        assertThat(GenerateNumberedRecords.from(schema, LongStream.rangeClosed(1, 2)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 1},

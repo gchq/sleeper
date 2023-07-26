@@ -27,10 +27,10 @@ import sleeper.core.schema.type.Type;
 
 import java.nio.ByteBuffer;
 
-public interface GenerateRangeValue {
+public interface GenerateNumberedValue {
     Object generateValue(long number);
 
-    static GenerateRangeValue forField(KeyType keyType, Field field) {
+    static GenerateNumberedValue forField(KeyType keyType, Field field) {
         Type fieldType = field.getType();
         if (fieldType instanceof IntType) {
             return num -> (int) num;

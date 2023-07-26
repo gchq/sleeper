@@ -26,32 +26,36 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public class GenerateRangeRecords {
-    private GenerateRangeRecords() {
+public class GenerateNumberedRecords {
+    private GenerateNumberedRecords() {
     }
 
-    public static Stream<Record> recordsForRange(Schema schema, LongStream longStream) {
-        return longStream.mapToObj(i -> new Record(mapForNumber(schema, i)));
+    public static Stream<Record> from(Schema schema, LongStream numbers) {
+        return numbers.mapToObj(number -> numberedRecord(schema, number));
     }
 
-    private static Map<String, Object> mapForNumber(Schema schema, long num) {
+    public static Record numberedRecord(Schema schema, long number) {
+        return new Record(mapForNumber(schema, number));
+    }
+
+    private static Map<String, Object> mapForNumber(Schema schema, long number) {
         return Stream.of(
-                        entriesForFieldType(num, KeyType.ROW, schema.getRowKeyFields()),
-                        entriesForFieldType(num, KeyType.SORT, schema.getSortKeyFields()),
-                        entriesForFieldType(num, KeyType.VALUE, schema.getValueFields()))
+                        entriesForFieldType(number, KeyType.ROW, schema.getRowKeyFields()),
+                        entriesForFieldType(number, KeyType.SORT, schema.getSortKeyFields()),
+                        entriesForFieldType(number, KeyType.VALUE, schema.getValueFields()))
                 .flatMap(entryStream -> entryStream)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private static Stream<Map.Entry<String, Object>> entriesForFieldType(
-            long num, KeyType keyType, List<Field> fields) {
+            long number, KeyType keyType, List<Field> fields) {
         return fields.stream()
-                .map(field -> entryForField(num, keyType, field));
+                .map(field -> entryForField(number, keyType, field));
     }
 
     private static Map.Entry<String, Object> entryForField(
-            long num, KeyType keyType, Field field) {
+            long number, KeyType keyType, Field field) {
         return Map.entry(field.getName(),
-                GenerateRangeValue.forField(keyType, field).generateValue(num));
+                GenerateNumberedValue.forField(keyType, field).generateValue(number));
     }
 }
