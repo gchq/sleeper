@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.suite.dsl.IngestBatcherResult;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.time.Duration;
@@ -63,11 +64,12 @@ public class IngestBatcherIT {
                 .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
 
         // When
-        sleeper.ingest().batcher()
+        IngestBatcherResult result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForJobs();
+                .invoke().waitForJobs().getInvokeResult();
 
         // Then
+        assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
     }
@@ -89,12 +91,14 @@ public class IngestBatcherIT {
                 .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
 
         // When
-        sleeper.ingest().batcher()
+        IngestBatcherResult result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .invoke().waitForJobs(
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
+                .getInvokeResult();
 
         // Then
+        assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
     }
