@@ -190,7 +190,7 @@ public class DrawDependencyGraph {
     public void produceGraphFromMaven(MavenModuleStructure maven) {
         drawGraph(
                 createGraph(
-                        maven.allTestedModules().collect(Collectors.toList())
+                        maven.allModules().collect(Collectors.toList())
                 )
         );
     }
