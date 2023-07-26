@@ -52,7 +52,6 @@ public class SleeperPartitionerTest {
                 .valueFields(new Field("value", new StringType()))
                 .build();
     }
-    
 
     @Test
     public void shouldGiveCorrectResultsWith1LeafPartition() {
