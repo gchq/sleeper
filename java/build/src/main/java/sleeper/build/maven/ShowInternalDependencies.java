@@ -22,7 +22,7 @@ import sleeper.build.dependencydraw.DrawDependencyGraph;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class ShowInternalDependencies {
+public class ShowInternalDependencies {
     public static void main(String[] args) throws IOException {
         Path repositoryRoot = Path.of("").toAbsolutePath();
         MavenModuleStructure mavenStructure = ProjectStructure.builder()
