@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.CfnTag;
@@ -24,6 +23,8 @@ import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
+import software.amazon.awscdk.services.ecr.IRepository;
+import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.ImageConfigurationInputProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.NetworkConfigurationProperty;
@@ -92,8 +93,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 "EMRServerless", instanceProperties, statusStoreResources);
-        Queue bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL,
-                errorsTopicStack.getTopic());
+        Queue bulkImportJobQueue = commonHelper.createJobQueue(
+                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
@@ -112,8 +113,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         conditions.put("StringEquals", tagKeyCondition);
 
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .actions(Lists.newArrayList("elasticmapreduce:RunJobFlow")).effect(Effect.ALLOW)
-                .resources(Lists.newArrayList("*")).conditions(conditions).build());
+                .actions( List.of("elasticmapreduce:RunJobFlow")).effect(Effect.ALLOW)
+                .resources( List.of("*")).conditions(conditions).build());
     }
 
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
@@ -132,8 +133,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
                         .subnetIds(List.of(getSubnet(instanceProperties)))
-                        .securityGroupIds(List.of(createSecurityGroup(instanceProperties)))
-                        .build())
+                        .securityGroupIds(List.of(createSecurityGroup(instanceProperties))).build())
                 .tags(List.of(new CfnTag.Builder().key("DeploymentStack")
                         .value("EmrServerlessBulkImport").build()))
                 .build();
@@ -143,6 +143,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 emrServerlessCluster.getName());
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID,
                 emrServerlessCluster.getAttrApplicationId());
+        setECRRepoPermissions(instanceProperties, emrServerlessCluster.getAttrArn());
     }
 
     // ToDo test on multiple subnets
@@ -158,8 +159,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         SecurityGroup securityGroup = SecurityGroup.Builder
                 .create(this, String.join("-", "SG", "sleeper", instanceId, "EMR-Serverless"))
-                .description("Security Group used by EMR Serverless")
-                .vpc(vpc).build();
+                .description("Security Group used by EMR Serverless").vpc(vpc).build();
         // Save ID
         return securityGroup.getSecurityGroupId();
     }
@@ -170,7 +170,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
                 .description("The role assumed by the Bulk import EMR Serverless Application")
                 .managedPolicies(
-                        Lists.newArrayList(createEmrServerlessManagedPolicy(instanceProperties)))
+                         List.of(createEmrServerlessManagedPolicy(instanceProperties)))
                 .assumedBy(new ServicePrincipal("emr-serverless.amazonaws.com")).build());
 
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
@@ -180,6 +180,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     private ManagedPolicy createEmrServerlessManagedPolicy(InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
         String instanceId = instanceProperties.get(ID);
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
 
         ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(this,
                 "CustomEMRServerlessServicePolicy",
@@ -189,30 +190,29 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                         .description(
                                 "Policy required for Sleeper Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
                         .document(PolicyDocument.Builder.create()
-                                .statements(Lists.newArrayList(
+                                .statements( List.of(
                                         new PolicyStatement(PolicyStatementProps.builder()
                                                 .sid("PolicyStatementProps").effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("s3:GetObject",
+                                                .actions( List.of("s3:GetObject",
                                                         "s3:ListBucket"))
-                                                .resources(Lists.newArrayList(
+                                                .resources( List.of(
                                                         "arn:aws:s3:::*.elasticmapreduce",
                                                         "arn:aws:s3:::*.elasticmapreduce/*"))
                                                 .build()),
                                         new PolicyStatement(PolicyStatementProps.builder()
                                                 .sid("FullAccessToOutputBucket")
                                                 .effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("s3:PutObject",
+                                                .actions( List.of("s3:PutObject",
                                                         "s3:GetObject", "s3:ListBucket",
                                                         "s3:DeleteObject"))
-                                                .resources(Lists.newArrayList(
-                                                        "arn:aws:s3:::" + BULK_IMPORT_BUCKET,
-                                                        "arn:aws:s3:::" + BULK_IMPORT_BUCKET
-                                                                + "/*"))
+                                                .resources( List.of(
+                                                        "arn:aws:s3:::" + bulkImportBucket,
+                                                        "arn:aws:s3:::" + bulkImportBucket + "/*"))
                                                 .build()),
                                         new PolicyStatement(PolicyStatementProps.builder()
                                                 .sid("GlueCreateAndReadDataCatalog")
                                                 .effect(Effect.ALLOW)
-                                                .actions(Lists.newArrayList("glue:GetDatabase",
+                                                .actions( List.of("glue:GetDatabase",
                                                         "glue:CreateDatabase", "glue:GetDataBases",
                                                         "glue:CreateTable", "glue:GetTable",
                                                         "glue:UpdateTable", "glue:DeleteTable",
@@ -221,9 +221,35 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                                                         "glue:CreatePartition",
                                                         "glue:BatchCreatePartition",
                                                         "glue:GetUserDefinedFunctions"))
-                                                .resources(Lists.newArrayList("*")).build())))
+                                                .resources( List.of("*")).build())))
                                 .build())
                         .build());
         return emrServerlessManagedPolicy;
+    }
+
+    private void setECRRepoPermissions(InstanceProperties instanceProperties, String emrServerlessApplicationArn) {
+        LOGGER.info("ARN {}", emrServerlessApplicationArn);
+        Map<String, Map<String, String>> conditions = new HashMap<>();
+        Map<String, String> stringEquals = new HashMap<>();
+        stringEquals.put("aws:SourceArn", emrServerlessApplicationArn);
+        conditions.put("StringEquals", stringEquals);
+        LOGGER.info("Conditions {}", conditions.toString());
+        IRepository repository = Repository.fromRepositoryName(this,
+                "ERC-EMRS",
+                instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO));
+        LOGGER.info("Found repo {}", repository.getRepositoryArn());
+        PolicyStatement policyStatement =  PolicyStatement.Builder.create()
+                .sid("Emr-Serverless-Custom-Image-Support").effect(Effect.ALLOW)
+                .principals(
+                        List.of(new ServicePrincipal("emr-serverless.amazonaws.com")))
+                .actions(
+                        List.of("ecr:BatchGetImage",
+                        "ecr:DescribeImages",
+                        "ecr:GetDownloadUrlForLayer")).build();
+                //.conditions(conditions).build();
+
+        LOGGER.info("Valid resource policy {}", policyStatement.validateForResourcePolicy());
+        LOGGER.info("Policy statement for ecr {}", policyStatement.toStatementJson());
+        repository.addToResourcePolicy(policyStatement);
     }
 }

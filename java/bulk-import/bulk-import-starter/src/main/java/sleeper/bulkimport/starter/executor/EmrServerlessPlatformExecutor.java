@@ -26,8 +26,10 @@ import software.amazon.awssdk.services.emrserverless.model.SparkSubmit;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunResponse;
 
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
@@ -39,6 +41,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
@@ -58,21 +61,21 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
         LOGGER.info("Configuring job to be run: {}", arguments);
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        String clusterName = String.join("-",
-                instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME), "job",
-                arguments.getJobRunId());
-        String logUri = null == bulkImportBucket ? null
-                : "s3://" + clusterName + "/emr-serverless/logs";
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET); // Todo change to own
+        String clusterName = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME);
+        String jobName = String.join("-", "job", arguments.getJobRunId());
+        String logUri = bulkImportBucket.isEmpty() ? "s3://" + clusterName
+                : "s3://" + bulkImportBucket;
 
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
-                .name(clusterName + arguments.getJobRunId())
+                .name(jobName + arguments.getJobRunId())
                 .executionRoleArn(
                         instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN))
                 .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
                         .entryPoint("/workdir/bulk-import-runner.jar").entryPointArguments("1")
-                        .sparkSubmitParameters(constructArgs(instanceProperties)).build()).build())
+                        .sparkSubmitParameters(constructArgs(instanceProperties, arguments))
+                        .build()).build())
                 .configurationOverrides(
                         ConfigurationOverrides.builder()
                                 .monitoringConfiguration(MonitoringConfiguration.builder()
@@ -87,16 +90,31 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 response.applicationId());
     }
 
-    private String constructArgs(InstanceProperties instanceProperties) {
+    private String constructArgs(InstanceProperties instanceProperties,
+            BulkImportArguments arguments) {
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         String javaHome = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME);
+        String taskId = String.join("-", "sleeper", instanceProperties.get(ID),
+                bulkImportJob.getTableName(), bulkImportJob.getId());
+        if (taskId.length() > 64) {
+            taskId = taskId.substring(0, 64);
+        }
 
-        return "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME)
-                + " --conf spark.executorEnv.JAVA_HOME=" + javaHome
-                + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
-                + " --conf spark.executor.cores=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES)
-                + " --conf spark.executor.memory=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY)
-                + " --conf spark.executor.instances=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES)
-                + " --conf spark.driver.cores=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES)
-                + " --conf spark.driver.memory=" + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY);
+        String args = "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME)
+                + instanceProperties.get(CONFIG_BUCKET) + " " + bulkImportJob.getId() + " " + taskId
+                + " " + arguments.getJobRunId() + " " + " --conf spark.executorEnv.JAVA_HOME="
+                + javaHome + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
+                + " --conf spark.executor.cores="
+                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES)
+                + " --conf spark.executor.memory="
+                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY)
+                + " --conf spark.executor.instances="
+                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES)
+                + " --conf spark.driver.cores="
+                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES)
+                + " --conf spark.driver.memory="
+                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY);
+        LOGGER.info("Custom args {}", args);
+        return args;
     }
 }

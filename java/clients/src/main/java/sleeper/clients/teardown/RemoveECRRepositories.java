@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
 public class RemoveECRRepositories {
@@ -38,7 +39,7 @@ public class RemoveECRRepositories {
     }
 
     public static void remove(AmazonECR ecr, InstanceProperties properties, List<String> extraRepositories) {
-        Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO)
+        Stream.concat(Stream.of(ECR_COMPACTION_REPO, ECR_INGEST_REPO, BULK_IMPORT_REPO, BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
                                 .filter(properties::isSet)
                                 .map(properties::get),
                         extraRepositories.stream())
