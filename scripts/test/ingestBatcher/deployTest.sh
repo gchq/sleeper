@@ -20,17 +20,25 @@ if [ "$#" -ne 3 ]; then
   exit 1
 fi
 
+INSTANCE_ID=$1
+VPC=$2
+SUBNETS=$3
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
-   sleeper.systemtest.drivers.ingest.batcher.SystemTestForIngestBatcher \
-  "${SCRIPTS_DIR}" "$THIS_DIR/system-test-instance.properties" "$@"
+pushd "$JAVA_DIR/system-test/system-test-suite"
+mvn -Dtest=IngestBatcherIT -PsystemTest \
+  -Dsleeper.system.test.short.id="$INSTANCE_ID" \
+  -Dsleeper.system.test.vpc.id="$VPC" \
+  -Dsleeper.system.test.subnet.ids="$SUBNETS" verify
+popd
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
