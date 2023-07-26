@@ -56,7 +56,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -279,9 +278,10 @@ public class FindPartitionsToSplitIT {
         stateStore.getFileInPartitionList().forEach(System.out::println);
 
         // - Split the root partition
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
-        rootPartition.setLeafPartition(false);
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
+        Partition rootPartition = stateStore.getAllPartitions().get(0).toBuilder()
+            .leafPartition(false)
+            .childPartitionIds("left", "right")
+            .build();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
         Range leftRange = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), Integer.MIN_VALUE, 50);
         Region leftRegion = new Region(leftRange);

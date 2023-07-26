@@ -37,7 +37,6 @@ import sleeper.statestore.FileLifecycleInfo;
 import sleeper.statestore.StateStore;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -115,8 +114,9 @@ class CompactSortedFilesIT extends CompactSortedFilesTestBase {
 
         // - Now we have 2 files in the root partition. Split the root partition in two.
         RangeFactory rangeFactory = new RangeFactory(schema);
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
-        rootPartition.setChildPartitionIds(Arrays.asList("left", "right"));
+        Partition rootPartition = stateStore.getAllPartitions().get(0).toBuilder()
+                .childPartitionIds("left", "right")
+                .build();
         Field keyField = schema.getRowKeyFields().get(0);
         Range leftRange = rangeFactory.createRange(keyField, Long.MIN_VALUE, 100L);
         Region leftRegion = new Region(leftRange);
