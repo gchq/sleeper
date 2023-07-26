@@ -64,11 +64,14 @@ public class SystemTestIngestBatcher {
         if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
             driver.invokeStandardIngestTasks();
         }
-        driver.waitForJobs(lastInvokeResult.createdJobIds(), pollUntilJobsFinished);
+        driver.waitForJobs(getInvokeResult().createdJobIds(), pollUntilJobsFinished);
         return this;
     }
 
     public IngestBatcherResult getInvokeResult() {
+        if (lastInvokeResult == null) {
+            throw new IllegalStateException("Batcher has not been invoked");
+        }
         return lastInvokeResult;
     }
 
