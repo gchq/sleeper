@@ -46,7 +46,7 @@ public interface PartitionStore {
     List<Partition> getAllPartitions() throws StateStoreException;
 
     /**
-     * Returns all the [@link Partition}s which are leaf partitions.
+     * Returns all the {@link Partition}s which are leaf partitions.
      *
      * @return All the {@link Partition}s which are leaf partitions.
      * @throws StateStoreException if query fails

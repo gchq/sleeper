@@ -26,4 +26,6 @@ public interface IngestBatcherStore {
     List<FileIngestRequest> getAllFilesNewestFirst();
 
     List<FileIngestRequest> getPendingFilesOldestFirst();
+
+    void deleteAllPending();
 }

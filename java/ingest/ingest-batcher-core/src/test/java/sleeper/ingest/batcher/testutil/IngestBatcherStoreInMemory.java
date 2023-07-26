@@ -59,4 +59,10 @@ public class IngestBatcherStoreInMemory implements IngestBatcherStore {
                 .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void deleteAllPending() {
+        getPendingFilesOldestFirst().forEach(fileIngestRequest ->
+                requests.remove(keyFor(fileIngestRequest)));
+    }
 }

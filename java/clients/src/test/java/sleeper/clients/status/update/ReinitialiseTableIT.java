@@ -685,7 +685,7 @@ public class ReinitialiseTableIT {
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition
-        rootPartition.setLeafPartition(false);
+        rootPartition = rootPartition.toBuilder().leafPartition(false).build();
         Range leftRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "0", "eee");
         Region leftRegion = new Region(leftRange);
         Partition leftPartition = Partition.builder()
@@ -704,7 +704,10 @@ public class ReinitialiseTableIT {
                 .parentPartitionId(rootPartition.getId())
                 .childPartitionIds(new ArrayList<>())
                 .build();
-        rootPartition.setChildPartitionIds(Arrays.asList(leftPartition.getId(), rightPartition.getId()));
+
+        rootPartition = rootPartition.toBuilder().childPartitionIds(
+                Arrays.asList(leftPartition.getId(), rightPartition.getId())
+        ).build();
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
 
         //  - Update Dynamo state store with details of files
