@@ -664,7 +664,7 @@ public class ReinitialiseTableIT {
 
         return s3StateStore;
     }
-    
+
     private void setupPartitionsAndAddFileInfo(StateStore stateStore) throws IOException, StateStoreException {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
