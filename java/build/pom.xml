@@ -104,11 +104,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jgrapht</groupId>
-            <artifactId>jgrapht-core</artifactId>
-            <version>1.5.2</version>
-        </dependency>
-        <dependency>
             <groupId>net.sf.jung</groupId>
             <artifactId>jung-api</artifactId>
             <version>2.1.1</version>
