@@ -48,9 +48,8 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
-import sleeper.core.range.Range;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -665,10 +664,13 @@ public class ReinitialiseTableIT {
 
         return s3StateStore;
     }
-
+    
     private void setupPartitionsAndAddFileInfo(StateStore stateStore) throws IOException, StateStoreException {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
+        Schema schema = Schema.builder()
+                .rowKeyFields(KEY_VALUE_SCHEMA.getRowKeyFields().get(0))
+                .build();
         //  - Create two files of sorted data
         String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
@@ -683,30 +685,12 @@ public class ReinitialiseTableIT {
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition
-        rootPartition = rootPartition.toBuilder().leafPartition(false).build();
-        Range leftRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "0", "eee");
-        Region leftRegion = new Region(leftRange);
-        Partition leftPartition = Partition.builder()
-                .leafPartition(true)
-                .region(leftRegion)
-                .id("0" + "---eee")
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
-        Range rightRange = new RangeFactory(KEY_VALUE_SCHEMA).createRange(KEY_VALUE_SCHEMA.getRowKeyFields().get(0), "eee", "zzz");
-        Region rightRegion = new Region(rightRange);
-        Partition rightPartition = Partition.builder()
-                .leafPartition(true)
-                .region(rightRegion)
-                .id("eee---zzz")
-                .parentPartitionId(rootPartition.getId())
-                .childPartitionIds(new ArrayList<>())
-                .build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "0" + "---eee", "eee---zzz", "eee")
+                .buildTree();
 
-        rootPartition = rootPartition.toBuilder().childPartitionIds(
-                Arrays.asList(leftPartition.getId(), rightPartition.getId())
-        ).build();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, leftPartition, rightPartition);
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3));
