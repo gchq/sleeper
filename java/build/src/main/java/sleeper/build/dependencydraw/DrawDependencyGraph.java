@@ -109,37 +109,7 @@ public class DrawDependencyGraph {
         VisualizationViewer<Integer, String> vv = new VisualizationViewer<Integer, String>(layout);
         DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
         Function<String, Paint> edgePaint = s -> {
-            List<List<String>> edgesList = getEdges(vv, g).getInEdges();
-            List<List<String>> edgedOutList = getEdges(vv, g).getOutEdges();
-            List<String> nextNodes = new ArrayList<>();
-            for (Collection<String> edgeIn : edgedOutList) {
-                for (String edge : edgeIn) {
-                    nextNodes.add(String.valueOf(edge).split("---")[1]);
-                }
-            }
-            List<List<String>> edgeNames = getEdgesFromName(nextNodes, g).getOutEdges();
-            for (Collection<String> edgeIn : edgesList) {
-                if (edgeIn.contains(s)) {
-                    return Color.RED;
-                } else {
-                    for (Collection<String> edgeOut : edgedOutList) {
-                        if (edgeOut.contains(s)) {
-                            return Color.BLUE;
-                        } else {
-                            if (showTransitiveDependencies) {
-                                for (int k = 0; k < edgeNames.size(); k++) {
-                                    List<String> nextOutEdge = edgeNames.get(k);
-                                    if (nextOutEdge.contains(s)) {
-                                        return Color.BLACK;
-                                    }
-                                }
-                            }
-                            return Color.lightGray;
-                        }
-                    }
-                }
-            }
-            return Color.BLACK;
+            return calculateColor(s, vv, g);
         };
 
         Function<String, Paint> arrowPaint = s -> {
@@ -192,5 +162,39 @@ public class DrawDependencyGraph {
                         maven.allModules().collect(Collectors.toList())
                 )
         );
+    }
+
+    public Color calculateColor(String s, VisualizationViewer vv, Graph g) {
+        List<List<String>> edgesList = getEdges(vv, g).getInEdges();
+        List<List<String>> edgedOutList = getEdges(vv, g).getOutEdges();
+        List<String> nextNodes = new ArrayList<>();
+        for (Collection<String> edgeIn : edgedOutList) {
+            for (String edge : edgeIn) {
+                nextNodes.add(String.valueOf(edge).split("---")[1]);
+            }
+        }
+        List<List<String>> edgeNames = getEdgesFromName(nextNodes, g).getOutEdges();
+        for (Collection<String> edgeIn : edgesList) {
+            if (edgeIn.contains(s)) {
+                return Color.RED;
+            } else {
+                for (Collection<String> edgeOut : edgedOutList) {
+                    if (edgeOut.contains(s)) {
+                        return Color.BLUE;
+                    } else {
+                        if (showTransitiveDependencies) {
+                            for (int k = 0; k < edgeNames.size(); k++) {
+                                List<String> nextOutEdge = edgeNames.get(k);
+                                if (nextOutEdge.contains(s)) {
+                                    return Color.BLACK;
+                                }
+                            }
+                        }
+                        return Color.lightGray;
+                    }
+                }
+            }
+        }
+        return Color.BLACK;
     }
 }
