@@ -108,13 +108,9 @@ public class DrawDependencyGraph {
         layout.setSize(new Dimension(900, 900));
         VisualizationViewer<Integer, String> vv = new VisualizationViewer<Integer, String>(layout);
         DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
-        Function<String, Paint> edgePaint = s -> {
-            return calculateEdgeColor(s, vv, g);
-        };
+        Function<String, Paint> edgePaint = s -> calculateEdgeColor(s, vv, g);
 
-        Function<String, Paint> arrowPaint = s -> {
-            return calculateArrowColor(s, edgePaint);
-        };
+        Function<String, Paint> arrowPaint = s -> calculateArrowColor(s, edgePaint);
 
         JFrame frame = new JFrame("Dependency Graph View");
         JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
