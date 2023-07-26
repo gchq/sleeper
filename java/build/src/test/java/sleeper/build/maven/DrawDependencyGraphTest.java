@@ -24,6 +24,8 @@ import sleeper.build.dependencydraw.GraphData;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class DrawDependencyGraphTest {
     DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
     GraphData graph = drawDependencyGraph.createGraph(TestMavenModuleStructure.example().allTestedModules().collect(Collectors.toList()));
@@ -32,6 +34,6 @@ public class DrawDependencyGraphTest {
     public void checkCreateGraphCreatesCorrectNodes() {
         List<String> createGraph = TestMavenModuleStructure.example().allTestedModules().map(i -> i.artifactReference().toString()).collect(Collectors.toList());
         List<String> testGraph = graph.getNodeIds();
-        assert createGraph.equals(testGraph);
+        assertThat(createGraph.equals(testGraph));
     }
 }
