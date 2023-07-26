@@ -110,4 +110,8 @@ public class SleeperSystemTest {
                         instance.getTableProperties().getSchema(), numbers)
                 .iterator();
     }
+
+    public SystemTestStateStore stateStore() {
+        return new SystemTestStateStore(instance);
+    }
 }
