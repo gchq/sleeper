@@ -81,9 +81,19 @@ for stack in "${DOCKER_STACKS[@]}"; do
 
     # Create the docker repository if required
     if [ $STATUS -ne 0 ]; then
-      echo "Creating repository ${INSTANCE_ID}/${REPO}"
+      echo "Creating repository ${INSTANCE_ID}/${REPO} "
       aws ecr create-repository --repository-name "${INSTANCE_ID}/${REPO}" \
         --image-scanning-configuration scanOnPush=true --no-cli-pager
+
+        # Add a resource policy if the repo is EMR Servrless 
+        if [ $REPO = $Stacks_EmrServerlessBulkImportStack ]; then
+            echo "Creating repository policy for ${INSTANCE_ID}/${REPO}"
+            aws ecr set-repository-policy --repository-name "${INSTANCE_ID}/${REPO}" \
+            --policy-text "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"EmrServerlessCustomImageSupport\", \
+            \"Effect\":\"Allow\",\"Principal\":{\"Service\":\"emr-serverless.amazonaws.com\"}, \
+            \"Action\":[\"ecr:BatchGetImage\",\"ecr:DescribeImages\",\"ecr:GetDownloadUrlForLayer\"]}]}" \
+            --no-cli-pager
+        fi
     fi
 
     pushd "${BASE_DOCKERFILE_DIR}/${DIR}"

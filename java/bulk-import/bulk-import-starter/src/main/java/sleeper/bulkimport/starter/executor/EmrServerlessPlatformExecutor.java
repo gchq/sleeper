@@ -47,8 +47,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
  */
 public class EmrServerlessPlatformExecutor implements PlatformExecutor {
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(EmrServerlessPlatformExecutor.class);
     private final EmrServerlessClient emrClient;
     private final InstanceProperties instanceProperties;
 
@@ -60,7 +58,6 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
-        LOGGER.info("Configuring job to be run: {}", arguments);
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET); // Todo change to own
         String clusterName = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME);
         String jobName = String.join("-", "job", arguments.getJobRunId());
@@ -84,10 +81,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                                         .build())
                                 .build())
                 .build();
-        LOGGER.info("Job {}", job);
         StartJobRunResponse response = emrClient.startJobRun(job);
-        LOGGER.info("Job {} started on application {}", response.jobRunId(),
-                response.applicationId());
     }
 
     private String constructArgs(InstanceProperties instanceProperties,
@@ -114,7 +108,6 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES)
                 + " --conf spark.driver.memory="
                 + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY);
-        LOGGER.info("Custom args {}", args);
         return args;
     }
 }

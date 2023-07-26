@@ -428,7 +428,7 @@ sleeper.bulk.import.emr.serverless.type=Spark
 
 # The number of cores used by an Serverless executor. Used to set spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.executor.cores=5
+sleeper.bulk.import.emr.serverless.executor.cores=4
 
 # The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.
 # See https://spark.apache.org/docs/latest/configuration.html.
@@ -436,18 +436,18 @@ sleeper.bulk.import.emr.serverless.executor.memory=16g
 
 # The number of executors to be used with Serverless. Used to set spark.executor.instances.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.executor.instances=29
+sleeper.bulk.import.emr.serverless.executor.instances=28
 
 # The number of cores used by the Serverless Spark driver. Used to set spark.driver.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.driver.cores=5
+sleeper.bulk.import.emr.serverless.driver.cores=4
 
 # The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.serverless.driver.memory=16g
 
 # The path to JAVA_HOME to be used by the custom image for bulk import.
-# sleeper.bulk.import.emr.serverless.java.home=
+sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
 
 # (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
 # for bulk importing data using Spark running on EMR.
