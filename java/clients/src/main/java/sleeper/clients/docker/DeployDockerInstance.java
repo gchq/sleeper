@@ -49,6 +49,9 @@ public class DeployDockerInstance {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
+        if (System.getenv("AWS_ENDPOINT_URL") == null) {
+            throw new IllegalArgumentException("Environment variable AWS_ENDPOINT_URL not set");
+        }
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
