@@ -1048,7 +1048,6 @@ public class S3StateStoreIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "child1", "child2", 0L)
                 .buildTree();
-
         StateStore dynamoDBStateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
 
         // Then
