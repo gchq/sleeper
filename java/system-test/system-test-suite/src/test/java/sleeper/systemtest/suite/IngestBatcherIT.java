@@ -26,6 +26,7 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
@@ -36,7 +37,6 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.fixtures.SystemTestRecords.recordsForRange;
 
 @Tag("SystemTest")
 public class IngestBatcherIT {
@@ -61,17 +61,17 @@ public class IngestBatcherIT {
 
         // When
         sleeper.sourceFiles()
-                .create("file1.parquet", recordsForRange(0, 100))
-                .create("file2.parquet", recordsForRange(100, 200))
-                .create("file3.parquet", recordsForRange(200, 300))
-                .create("file4.parquet", recordsForRange(300, 400));
+                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
+                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
+                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
         sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .invoke().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyInAnyOrderElementsOf(recordsForRange(0, 400));
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
     }
 
     @Test
