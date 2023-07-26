@@ -144,10 +144,5 @@
             <version>2.17.2</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>commons-collections</groupId>
-            <artifactId>commons-collections</artifactId>
-            <version>3.0</version>
-        </dependency>
     </dependencies>
 </project>
