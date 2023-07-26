@@ -26,7 +26,7 @@ SUBNETS=$3
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd .. && pwd)
+JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
