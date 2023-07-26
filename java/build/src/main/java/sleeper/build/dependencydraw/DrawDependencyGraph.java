@@ -109,15 +109,11 @@ public class DrawDependencyGraph {
         VisualizationViewer<Integer, String> vv = new VisualizationViewer<Integer, String>(layout);
         DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
         Function<String, Paint> edgePaint = s -> {
-            return calculateColor(s, vv, g);
+            return calculateEdgeColor(s, vv, g);
         };
 
         Function<String, Paint> arrowPaint = s -> {
-            Paint edgePaintColor = edgePaint.apply(s);
-            if (edgePaintColor.equals(Color.lightGray)) {
-                return new Color(255, 255, 255, 0);
-            }
-            return edgePaintColor;
+            return calculateArrowColor(s, edgePaint);
         };
 
         JFrame frame = new JFrame("Dependency Graph View");
@@ -164,7 +160,7 @@ public class DrawDependencyGraph {
         );
     }
 
-    public Color calculateColor(String s, VisualizationViewer vv, Graph g) {
+    public Color calculateEdgeColor(String s, VisualizationViewer vv, Graph g) {
         List<List<String>> edgesList = getEdges(vv, g).getInEdges();
         List<List<String>> edgedOutList = getEdges(vv, g).getOutEdges();
         List<String> nextNodes = new ArrayList<>();
@@ -196,5 +192,13 @@ public class DrawDependencyGraph {
             }
         }
         return Color.BLACK;
+    }
+
+    public Paint calculateArrowColor(String s, Function<String, Paint> edgePaint) {
+        Paint edgePaintColor = edgePaint.apply(s);
+        if (edgePaintColor.equals(Color.lightGray)) {
+            return new Color(255, 255, 255, 0);
+        }
+        return edgePaintColor;
     }
 }
