@@ -30,7 +30,6 @@ class ShowInternalDependencies {
                 .mavenProjectPath(repositoryRoot.resolve("java"))
                 .workflowsPath(repositoryRoot.resolve(".github/config/workflows"))
                 .build().loadMavenStructure();
-        mavenStructure.indexInternalModules();
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
         drawDependencyGraph.produceGraphFromMaven(mavenStructure);
     }
