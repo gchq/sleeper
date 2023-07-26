@@ -73,13 +73,13 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldBulkImportOneRecord() throws InterruptedException {
+    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(tableProperties -> {
             tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
+            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
             tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         });
         sleeper.sourceFiles()
