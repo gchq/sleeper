@@ -300,7 +300,7 @@ public class PartitionTest {
         // When 2
         range = rangeFactory.createRange(field, Integer.MIN_VALUE, true, null, false);
         region = new Region(range);
-        partition.setRegion(region);
+        partition = partition.toBuilder().region(region).build();
         boolean isIntMinValueInPartition = partition.isRowKeyInPartition(schema, Key.create(Integer.MIN_VALUE));
 
         // Then 2
@@ -357,7 +357,7 @@ public class PartitionTest {
         // When 2
         range = rangeFactory.createRange(field, Long.MIN_VALUE, true, null, false);
         region = new Region(range);
-        partition.setRegion(region);
+        partition = partition.toBuilder().region(region).build();
         boolean isLongMinValueInPartition = partition.isRowKeyInPartition(schema, Key.create(Long.MIN_VALUE));
 
         // Then 2

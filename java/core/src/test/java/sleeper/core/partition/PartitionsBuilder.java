@@ -20,12 +20,13 @@ import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * A convenience class for specifying partitions.
@@ -37,8 +38,7 @@ public class PartitionsBuilder {
 
     private final Schema schema;
     private final PartitionFactory factory;
-    private final List<Partition> partitions = new ArrayList<>();
-    private final Map<String, Partition> partitionById = new HashMap<>();
+    private final Map<String, Partition.Builder> partitionById = new LinkedHashMap<>();
 
     public PartitionsBuilder(Schema schema) {
         this.schema = schema;
@@ -59,33 +59,34 @@ public class PartitionsBuilder {
             throw new IllegalArgumentException("Must specify IDs for all leaves before, after and in between splits");
         }
         for (int i = 0; i < ids.size(); i++) {
-            add(factory.partition(ids.get(i), regions.get(i)));
+            put(factory.partition(ids.get(i), regions.get(i)));
         }
         return this;
     }
 
     public PartitionsBuilder anyTreeJoiningAllLeaves() {
-        if (partitions.stream().anyMatch(p -> !p.isLeafPartition())) {
+        List<Partition.Builder> mapValues = new ArrayList<>(partitionById.values());
+        if (mapValues.stream().anyMatch(p -> !p.build().isLeafPartition())) {
             throw new IllegalArgumentException("Must only specify leaf partitions with no parents");
         }
-        Partition left = partitions.get(0);
-        int numLeaves = partitions.size();
+        Partition.Builder left = mapValues.get(0);
+        int numLeaves = partitionById.size();
         for (int i = 1; i < numLeaves; i++) {
-            Partition right = partitions.get(i);
-            left = add(factory.parentJoining(UUID.randomUUID().toString(), left, right));
+            Partition.Builder right = mapValues.get(i);
+            left = put(factory.parentJoining(UUID.randomUUID().toString(), left, right));
         }
         return this;
     }
 
     public PartitionsBuilder parentJoining(String parentId, String leftId, String rightId) {
-        Partition left = partitionById(leftId);
-        Partition right = partitionById(rightId);
-        add(factory.parentJoining(parentId, left, right));
+        Partition.Builder left = partitionById(leftId);
+        Partition.Builder right = partitionById(rightId);
+        put(factory.parentJoining(parentId, left, right));
         return this;
     }
 
     public PartitionsBuilder rootFirst(String rootId) {
-        add(factory.rootFirst(rootId));
+        put(factory.rootFirst(rootId));
         return this;
     }
 
@@ -106,29 +107,29 @@ public class PartitionsBuilder {
 
     public PartitionsBuilder splitToNewChildrenOnDimension(
             String parentId, String leftId, String rightId, int dimension, Object splitPoint) {
-        Partition parent = partitionById(parentId);
-        List<Partition> children = factory.split(parent, leftId, rightId, dimension, splitPoint);
-        children.forEach(this::add);
+        Partition.Builder parent = partitionById(parentId);
+        PartitionSplitResult splitResult = factory.split(parent.build(), leftId, rightId, dimension, splitPoint);
+        splitResult.getChildren().forEach(this::put);
+        put(splitResult.getParent());
         return this;
     }
 
-    private Partition add(Partition partition) {
-        partitions.add(partition);
+    private Partition.Builder put(Partition.Builder partition) {
         partitionById.put(partition.getId(), partition);
         return partition;
     }
 
-    private Partition partitionById(String id) {
+    private Partition.Builder partitionById(String id) {
         return Optional.ofNullable(partitionById.get(id))
                 .orElseThrow(() -> new IllegalArgumentException("Partition not specified: " + id));
     }
 
     public List<Partition> buildList() {
-        return new ArrayList<>(partitions);
+        return partitionById.values().stream().map(Partition.Builder::build).collect(Collectors.toList());
     }
 
     public PartitionTree buildTree() {
-        return new PartitionTree(schema, partitions);
+        return new PartitionTree(schema, new ArrayList<>(partitionById.values()).stream().map(Partition.Builder::build).collect(Collectors.toList()));
     }
 
     public class Splitter {

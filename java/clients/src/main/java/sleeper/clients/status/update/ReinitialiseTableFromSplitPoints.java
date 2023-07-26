@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.type.ByteArrayType;
@@ -47,6 +49,7 @@ import java.util.List;
  * is reinitialised using the split points in the provided file.
  */
 public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromSplitPoints.class);
     private final boolean splitPointStringsBase64Encoded;
     private final String splitPointsFileLocation;
 
@@ -103,7 +106,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
                     throw new RuntimeException("Unknown key type " + rowKey1Type);
                 }
             }
-            System.out.println("Read " + splitPoints.size() + " split points from file");
+            LOGGER.info("Read {} split points from file", splitPoints.size());
         }
         return splitPoints;
     }
@@ -134,9 +137,9 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(amazonS3, dynamoDBClient, instanceId, tableName,
                 true, splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
-            System.out.println("Table reinitialised successfully");
+            LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
-            System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
+            LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }

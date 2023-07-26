@@ -30,6 +30,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -54,6 +55,7 @@ import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate
 public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarterLambda.class);
 
+    private final PropertiesReloader propertiesReloader;
     private final BulkImportExecutor executor;
     private final Configuration hadoopConfig;
     private final InstanceProperties instanceProperties;
@@ -75,6 +77,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                 ingestJobStatusStore, s3, platformExecutor, Instant::now);
         invalidJobIdSupplier = () -> UUID.randomUUID().toString();
         timeSupplier = Instant::now;
+        propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
     }
 
     public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
@@ -90,11 +93,13 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.invalidJobIdSupplier = invalidJobIdSupplier;
         this.timeSupplier = timeSupplier;
+        this.propertiesReloader = PropertiesReloader.neverReload();
     }
 
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
         LOGGER.info("Received request: {}", event);
+        propertiesReloader.reloadIfNeeded();
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
                 .map(message -> deserialiseAndValidate(message, new BulkImportJobSerDe()::fromJson,

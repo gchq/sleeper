@@ -57,7 +57,7 @@ public class SetupInstanceIT {
                 "value", "Some value"));
 
         // When
-        sleeper.directIngest(tempDir).records(record);
+        sleeper.ingest().direct(tempDir).records(record);
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

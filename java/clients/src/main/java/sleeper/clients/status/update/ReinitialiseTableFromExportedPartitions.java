@@ -47,7 +47,6 @@ import java.util.List;
  */
 public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
-
     private final String partitionsFile;
 
     public ReinitialiseTableFromExportedPartitions(
@@ -104,9 +103,9 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         try {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(amazonS3, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
-            System.out.println("Table reinitialised successfully");
+            LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
-            System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
+            LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }
