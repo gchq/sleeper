@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 public class DrawDependencyGraph {
     public boolean showTransitiveDependencies = false;
 
-    public Pair<List<String>, List<List<String>>> createGraph(List<MavenModuleAndPath> dependencies) {
+    public GraphData createGraph(List<MavenModuleAndPath> dependencies) {
         List<String> nodeIds = new ArrayList<>();
         List<List<String>> edges = new ArrayList<>();
         for (MavenModuleAndPath maven : dependencies) {
@@ -68,7 +68,8 @@ public class DrawDependencyGraph {
                 edges.add(listToAdd);
             }
         }
-        return new Pair<>(nodeIds, edges);
+        return new GraphData(nodeIds, edges);
+        //return new Pair<>(nodeIds, edges);
     }
 
     public Pair<List<Collection<String>>, List<Collection<String>>> getEdges(VisualizationViewer vv, Graph g) {
@@ -95,9 +96,9 @@ public class DrawDependencyGraph {
         return Pair.of(allInEdges, allOutEdges);
     }
 
-    public void drawGraph(Pair<List<String>, List<List<String>>> graphData) {
-        List<String> nodeIDs = graphData.getFirst();
-        List<List<String>> edges = graphData.getSecond();
+    public void drawGraph(GraphData graphData) {
+        List<String> nodeIDs = graphData.getNodeIds();
+        List<List<String>> edges = graphData.getEdges();
         Graph<String, String> g = new DirectedSparseGraph<>();
         for (String node : nodeIDs) {
             g.addVertex(node);
