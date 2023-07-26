@@ -122,6 +122,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .quantile(0.4, 1L).quantile(0.5, 1L)
                 .quantile(0.6, 1L).quantile(0.7, 1L)
                 .quantile(0.8, 1L).quantile(0.9, 1L).verify();
+        
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(1).getFilename()).getQuantilesSketch("key"))
                 .min(3L).max(3L)
                 .quantile(0.0, 3L).quantile(0.1, 3L)
