@@ -1017,7 +1017,7 @@ public class S3StateStoreIT {
                 .buildTree();
         // When
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getRootPartition(), expectedTree.getPartition("id1"), expectedTree.getPartition("id2"));
-        
+
         // Then
         assertThat(dynamoDBStateStore.getLeafPartitions())
                 .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
@@ -1078,8 +1078,7 @@ public class S3StateStoreIT {
                 .splitToNewChildren("root", "child1", "child2", Long.MIN_VALUE)
                 .buildTree();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2"));
-
-
+        
         // When / Then
         assertThatThrownBy(() ->
                 dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
