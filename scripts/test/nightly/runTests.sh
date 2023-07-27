@@ -105,8 +105,7 @@ runIngestBatcherTest() {
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
 runSystemTest compactionPerformance "compaction-$START_TIME" "compaction" 
 runSystemTest partitionSplitting "splitting-$START_TIME" "partition"
-#runStandardTest ingestBatcher "ingst-batch-$START_TIME" "ingest"
-runIngestBatcherTest "ingst-batcher" $START_TIME
+runIngestBatcherTest "ingst-batcher"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
