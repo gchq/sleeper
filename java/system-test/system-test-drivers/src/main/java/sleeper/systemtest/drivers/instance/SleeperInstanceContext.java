@@ -139,11 +139,9 @@ public class SleeperInstanceContext {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-            TableProperties tableProperties = new TableProperties(instanceProperties);
-            tableProperties.loadFromS3(s3Client, tableName);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            return new Instance(instanceProperties, tableProperties, tablePropertiesProvider, stateStoreProvider);
+            return new Instance(instanceProperties, tablePropertiesProvider.getTableProperties(tableName), tablePropertiesProvider, stateStoreProvider);
         } catch (IOException e) {
             throw new RuntimeIOException(e);
         }
