@@ -906,11 +906,11 @@ public class DynamoDBStateStoreIT {
         // When / Then
         //  - Attempting to split something that has already been split should fail
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getAllPartitions().get(0), tree.getAllPartitions().get(1), tree.getAllPartitions().get(2)))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2")))
                 .isInstanceOf(StateStoreException.class);
     }
 
-
+    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsLeaf() throws StateStoreException {
         // Given
         Field field = new Field("key", new LongType());
@@ -1036,7 +1036,7 @@ public class DynamoDBStateStoreIT {
 
         // When / Then
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getAllPartitions().get(0), tree.getAllPartitions().get(1), tree.getAllPartitions().get(2)))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2")))
                 .isInstanceOf(StateStoreException.class);
     }
 
