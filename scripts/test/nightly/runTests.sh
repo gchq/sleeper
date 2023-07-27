@@ -93,6 +93,7 @@ runMavenSystemTests() {
     SHORT_ID=$1
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
     ./../deploy/tearDown.sh "$SHORT_ID-main" &> "$OUTPUT_DIR/maven-main.tearDown.log"
+    aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
