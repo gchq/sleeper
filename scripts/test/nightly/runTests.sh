@@ -17,7 +17,6 @@ set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -90,23 +89,16 @@ runStandardTest() {
     ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
-runIngestBatcherTest() {
-    TEST_NAME="ingestBatcher"
-    INSTANCE_ID=$1
-    pushd "$JAVA_DIR/system-test/system-test-suite"
-    mvn --log-file "$OUTPUT_DIR/$TEST_NAME.log" \
-      -Dtest=IngestBatcherIT -PsystemTest \
-      -Dsleeper.system.test.short.id="$INSTANCE_ID" \
-      -Dsleeper.system.test.vpc.id="$VPC" \
-      -Dsleeper.system.test.subnet.ids="$SUBNETS" verify
-    popd
-    runReport "$INSTANCE_ID-main" "ingest"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
+runMavenSystemTests() {
+    SHORT_ID=$1
+    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
+    ./../deploy/tearDown.sh "$SHORT_ID-main" &> "$OUTPUT_DIR/maven-main.tearDown.log"
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
 runSystemTest compactionPerformance "compaction-$START_TIME" "compaction" 
 runSystemTest partitionSplitting "splitting-$START_TIME" "partition"
-runIngestBatcherTest "ingst-batcher"
+runMavenSystemTests "mvn-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
