@@ -18,23 +18,17 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.Partition;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.schema.type.LongType;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
@@ -47,17 +41,12 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteMultipleRecords() throws Exception {
         // Given
-        Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
-        Region rootRegion = new Region(rootRange);
-        Partition rootPartition = createRootPartition(rootRegion, new LongType());
-        Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
-        Region region1 = new Region(range1);
-        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
-        Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
-        Region region2 = new Region(range2);
-        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
-        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "partition1", "partition2", 2L)
+                        .buildList()
+        );
 
         // When
         long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
@@ -75,12 +64,12 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
-        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         fileInfo = activeFiles.get(1);
         assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(3L);
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
-        assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo("partition2");
         //  - Read files and check they have the correct records
         List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(0));
@@ -106,17 +95,12 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteSingleRecord() throws Exception {
         // Given
-        Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
-        Region rootRegion = new Region(rootRange);
-        Partition rootPartition = createRootPartition(rootRegion, new LongType());
-        Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
-        Region region1 = new Region(range1);
-        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
-        Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
-        Region region2 = new Region(range2);
-        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
-        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "partition1", "partition2", 2L)
+                        .buildList()
+        );
 
         // When
         long numWritten = ingestFromRecordIterator(schema, stateStore, getSingleRecord().iterator()).getRecordsWritten();
@@ -134,7 +118,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
         assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
-        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
 
         //  - Read files and check they have the correct records
         List<Record> readRecords = readRecordsFromParquetFile(activeFiles.get(0).getFilename(), schema);
