@@ -16,10 +16,10 @@
 package sleeper.ingest.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.key.Key;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -44,6 +44,7 @@ import java.util.function.Function;
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class IngestTestHelper<T> {
 
@@ -103,9 +104,9 @@ public class IngestTestHelper<T> {
 
     public IngestTestHelper<T> createStateStore(
             AmazonDynamoDB dynamoDbClient,
-            List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder) throws Exception {
-        return stateStore(PartitionedTableCreator.createStateStore(
-                dynamoDbClient, schema, keyAndDimensionToSplitOnInOrder));
+            PartitionTree tree) throws Exception {
+        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+        return stateStore(stateStore);
     }
 
     public IngestTestHelper<T> stateStoreInMemory(

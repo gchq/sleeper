@@ -25,6 +25,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.key.Key;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
@@ -76,7 +78,12 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        test(recordListAndSchema, keyAndDimensionToSplitOnInOrder, arrow -> arrow
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+
+        test(recordListAndSchema, tree, arrow -> arrow
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
@@ -95,8 +102,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
 
-        test(recordListAndSchema, keyAndDimensionToSplitOnInOrder, arrow -> arrow
+
+        test(recordListAndSchema, tree, arrow -> arrow
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
@@ -115,7 +127,12 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                         new AbstractMap.SimpleEntry<>(0, 2),
                         new AbstractMap.SimpleEntry<>(1, 2))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        IngestTestHelper<Record> test = test(recordListAndSchema, keyAndDimensionToSplitOnInOrder, arrow -> arrow
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+
+        IngestTestHelper<Record> test = test(recordListAndSchema, tree, arrow -> arrow
                 .workingBufferAllocatorBytes(32 * 1024L)
                 .batchBufferAllocatorBytes(1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
@@ -126,12 +143,12 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
     }
 
     private IngestTestHelper<Record> test(RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                          List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder,
+                                          PartitionTree tree,
                                           Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
         return IngestTestHelper.from(temporaryFolder,
                         AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                         recordListAndSchema)
-                .createStateStore(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), keyAndDimensionToSplitOnInOrder)
+                .createStateStore(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), tree)
                 .directWrite()
                 .backedByArrow(arrowConfig);
     }

@@ -25,12 +25,13 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.key.Key;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
-import sleeper.ingest.testutils.PartitionedTableCreator;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
@@ -50,6 +51,7 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     @RegisterExtension
@@ -82,9 +84,15 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+
         ingestAndVerifyUsingDirectWriteBackedByArrayList(
                 recordListAndSchema,
-                keyAndDimensionToSplitOnInOrder,
+                tree,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
                 5,
@@ -103,9 +111,15 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                         new AbstractMap.SimpleEntry<>(0, 20),
                         new AbstractMap.SimpleEntry<>(1, 20))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+
         ingestAndVerifyUsingDirectWriteBackedByArrayList(
                 recordListAndSchema,
-                keyAndDimensionToSplitOnInOrder,
+                tree,
                 keyToPartitionNoMappingFn,
                 partitionNoToExpectedNoOfFilesMap,
                 5,
@@ -114,15 +128,13 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
     private void ingestAndVerifyUsingDirectWriteBackedByArrayList(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder,
+            PartitionTree tree,
             Function<Key, Integer> keyToPartitionNoMappingFn,
             Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore) throws IOException, StateStoreException, IteratorException {
-        StateStore stateStore = PartitionedTableCreator.createStateStore(
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
-                recordListAndSchema.sleeperSchema,
-                keyAndDimensionToSplitOnInOrder);
+
+        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
