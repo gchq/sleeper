@@ -15,8 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
@@ -24,7 +22,6 @@ import software.amazon.awssdk.services.emrserverless.model.MonitoringConfigurati
 import software.amazon.awssdk.services.emrserverless.model.S3MonitoringConfiguration;
 import software.amazon.awssdk.services.emrserverless.model.SparkSubmit;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
-import software.amazon.awssdk.services.emrserverless.model.StartJobRunResponse;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -81,7 +78,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                                         .build())
                                 .build())
                 .build();
-        StartJobRunResponse response = emrClient.startJobRun(job);
+        emrClient.startJobRun(job);
     }
 
     private String constructArgs(InstanceProperties instanceProperties,
@@ -94,7 +91,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
             taskId = taskId.substring(0, 64);
         }
 
-        String args = "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME)
+        String args = "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME) + " "
                 + instanceProperties.get(CONFIG_BUCKET) + " " + bulkImportJob.getId() + " " + taskId
                 + " " + arguments.getJobRunId() + " " + " --conf spark.executorEnv.JAVA_HOME="
                 + javaHome + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
