@@ -99,7 +99,7 @@ runIngestBatcherTest() {
       -Dsleeper.system.test.vpc.id="$VPC" \
       -Dsleeper.system.test.subnet.ids="$SUBNETS" verify &> "$OUTPUT_DIR/$TEST_NAME.log"
     popd
-    runReport "$INSTANCE_ID" "ingest"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
+    runReport "$INSTANCE_ID-main" "ingest"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
