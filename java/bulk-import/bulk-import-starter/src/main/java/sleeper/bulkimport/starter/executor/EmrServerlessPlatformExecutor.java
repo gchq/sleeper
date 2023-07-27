@@ -48,7 +48,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     private final InstanceProperties instanceProperties;
 
     public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
-            InstanceProperties instanceProperties) {
+                                         InstanceProperties instanceProperties) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
     }
@@ -70,7 +70,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
-                .name(jobName + arguments.getJobRunId())
+                .name(jobName)
                 .executionRoleArn(
                         instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN))
                 .jobDriver(JobDriver.builder()
