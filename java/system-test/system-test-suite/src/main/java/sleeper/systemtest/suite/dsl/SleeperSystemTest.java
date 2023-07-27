@@ -19,6 +19,8 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.record.Record;
+import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
@@ -28,6 +30,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.function.Consumer;
+import java.util.stream.LongStream;
 
 /**
  * This class is the entry point that all system tests use to interact with the system.
@@ -100,5 +103,15 @@ public class SleeperSystemTest {
 
     public SystemTestDirectQuery directQuery() {
         return new SystemTestDirectQuery(new DirectQueryDriver(instance));
+    }
+
+    public Iterable<Record> generateNumberedRecords(LongStream numbers) {
+        return () -> GenerateNumberedRecords.from(
+                        instance.getTableProperties().getSchema(), numbers)
+                .iterator();
+    }
+
+    public SystemTestStateStore stateStore() {
+        return new SystemTestStateStore(instance);
     }
 }
