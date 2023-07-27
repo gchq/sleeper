@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -44,6 +45,7 @@ public class BulkImportIT {
     @Test
     void shouldBulkImportOneRecordWithEmrServerless() throws InterruptedException {
         // Given
+        sleeper.updateTableProperties(properties -> properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
