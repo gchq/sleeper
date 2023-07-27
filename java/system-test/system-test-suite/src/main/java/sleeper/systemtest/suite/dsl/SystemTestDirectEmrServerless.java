@@ -16,10 +16,9 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.IngestJob;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -29,35 +28,31 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class SystemTestIngestByQueue {
+public class SystemTestDirectEmrServerless {
 
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
-    private final IngestByQueueDriver driver;
+    private final DirectEmrServerlessDriver driver;
     private final WaitForIngestJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(SleeperInstanceContext instance,
-                                   IngestSourceFilesContext sourceFiles,
-                                   IngestByQueueDriver driver,
-                                   WaitForIngestJobsDriver waitForJobsDriver) {
+    public SystemTestDirectEmrServerless(SleeperInstanceContext instance,
+                                         IngestSourceFilesContext sourceFiles,
+                                         DirectEmrServerlessDriver driver,
+                                         WaitForIngestJobsDriver waitForJobsDriver) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
         this.waitForJobsDriver = waitForJobsDriver;
     }
 
-    public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
-        return sendSourceFiles(queueProperty, Stream.of(files));
-    }
-
-    private SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, Stream<String> files) {
+    public SystemTestDirectEmrServerless sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
         sentJobIds.add(jobId);
-        driver.sendJob(queueProperty, IngestJob.builder()
+        driver.sendJob(BulkImportJob.builder()
                 .id(jobId)
                 .tableName(instance.getTableName())
-                .files(sourceFiles.getIngestJobFilesInBucket(files))
+                .files(sourceFiles.getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
         return this;
     }

@@ -32,6 +32,7 @@ import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class IngestSourceFilesContext {
     private final String sourceBucketName;
@@ -44,6 +45,11 @@ public class IngestSourceFilesContext {
 
     public String getSourceBucketName() {
         return sourceBucketName;
+    }
+
+    public List<String> getIngestJobFilesInBucket(Stream<String> files) {
+        return files.map(file -> sourceBucketName + "/" + file)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public void createOrEmptySourceBucket() {

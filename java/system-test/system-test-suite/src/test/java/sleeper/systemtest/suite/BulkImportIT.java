@@ -43,7 +43,7 @@ public class BulkImportIT {
     }
 
     @Test
-    void shouldBulkImportOneRecordWithEmrServerless() throws InterruptedException {
+    void shouldBulkImportOneRecordWithEmrServerlessByQueue() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(properties -> properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
@@ -54,6 +54,24 @@ public class BulkImportIT {
         // When
         sleeper.sourceFiles().create("file.parquet", record);
         sleeper.ingest().byQueue().sendSourceFiles(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, "file.parquet")
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactly(record);
+    }
+
+    @Test
+    void shouldBulkImportOneRecordWithEmrServerlessDirectly() throws InterruptedException {
+        // Given
+        Record record = new Record(Map.of(
+                "key", "some-id",
+                "timestamp", 1234L,
+                "value", "Some value"));
+
+        // When
+        sleeper.sourceFiles().create("file.parquet", record);
+        sleeper.ingest().directEmrServerless().sendSourceFiles("file.parquet")
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then

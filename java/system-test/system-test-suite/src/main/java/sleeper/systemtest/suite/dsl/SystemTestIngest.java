@@ -16,10 +16,12 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.nio.file.Path;
@@ -48,10 +50,20 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestByQueue byQueue() {
-        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver());
+        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
     }
 
     IngestByQueueDriver byQueueDriver() {
         return new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
+    }
+
+    WaitForIngestJobsDriver waitForIngestJobsDriver() {
+        return new WaitForIngestJobsDriver(instance, clients.getDynamoDB());
+    }
+
+    public SystemTestDirectEmrServerless directEmrServerless() {
+        return new SystemTestDirectEmrServerless(instance, sourceFiles,
+                new DirectEmrServerlessDriver(instance, clients.getDynamoDB(), clients.getEmrServerless()),
+                waitForIngestJobsDriver());
     }
 }
