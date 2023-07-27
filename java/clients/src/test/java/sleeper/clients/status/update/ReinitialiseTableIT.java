@@ -668,9 +668,6 @@ public class ReinitialiseTableIT {
     private void setupPartitionsAndAddFileInfo(StateStore stateStore) throws IOException, StateStoreException {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
-        Schema schema = Schema.builder()
-                .rowKeyFields(KEY_VALUE_SCHEMA.getRowKeyFields().get(0))
-                .build();
         //  - Create two files of sorted data
         String folderName = createTempDirectory(folder, null).toString();
         String file1 = folderName + "/file1.parquet";
@@ -685,7 +682,7 @@ public class ReinitialiseTableIT {
                 Key.create("1"), Key.create("9"));
 
         //  - Split root partition
-        PartitionTree tree = new PartitionsBuilder(schema)
+        PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
                 .rootFirst("root")
                 .splitToNewChildren("root", "0" + "---eee", "eee---zzz", "eee")
                 .buildTree();
