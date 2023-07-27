@@ -94,10 +94,11 @@ runIngestBatcherTest() {
     TEST_NAME="ingestBatcher"
     INSTANCE_ID=$1
     pushd "$JAVA_DIR/system-test/system-test-suite"
-    mvn -Dtest=IngestBatcherIT -PsystemTest \
+    mvn --log-file "$OUTPUT_DIR/$TEST_NAME.log" \
+      -Dtest=IngestBatcherIT -PsystemTest \
       -Dsleeper.system.test.short.id="$INSTANCE_ID" \
       -Dsleeper.system.test.vpc.id="$VPC" \
-      -Dsleeper.system.test.subnet.ids="$SUBNETS" verify &> "$OUTPUT_DIR/$TEST_NAME.log"
+      -Dsleeper.system.test.subnet.ids="$SUBNETS" verify
     popd
     runReport "$INSTANCE_ID-main" "ingest"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
 }
