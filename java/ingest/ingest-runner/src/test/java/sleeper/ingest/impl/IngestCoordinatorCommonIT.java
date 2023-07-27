@@ -536,7 +536,6 @@ public class IngestCoordinatorCommonIT {
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100).boxed().collect(Collectors.toList()),
                 LongStream.range(-100L, 100).mapToObj(Long::toString).collect(Collectors.toList()));
-        
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (key.size() > 1 && ((String) key.get(1)).compareTo("2") < 0) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
