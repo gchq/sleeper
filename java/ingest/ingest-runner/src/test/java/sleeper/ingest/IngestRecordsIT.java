@@ -28,8 +28,6 @@ import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -49,7 +47,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -61,8 +58,6 @@ import static sleeper.configuration.properties.instance.ArrayListIngestProperty.
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createLeafPartition;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.createRootPartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords2DimByteArrayKey;
@@ -74,16 +69,17 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
-        List<Partition> partition = new PartitionsBuilder(schema)
+        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "partition1", "partition2", 2L).buildList();
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
+                .splitToNewChildren("root", "partition1", "partition2", 2L)
+                .buildList()
+        );
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
@@ -136,17 +132,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
-        Range rootRange = new Range.RangeFactory(schema).createRange(field, new byte[]{}, null);
-        Region rootRegion = new Region(rootRange);
-        Partition rootPartition = createRootPartition(rootRegion, new ByteArrayType());
-        Range range1 = new Range.RangeFactory(schema).createRange(field, new byte[]{}, new byte[]{64, 64});
-        Region region1 = new Region(range1);
-        Partition partition1 = createLeafPartition("partition1", region1, new ByteArrayType());
-        Range range2 = new Range.RangeFactory(schema).createRange(field, new byte[]{64, 64}, null);
-        Region region2 = new Region(range2);
-        Partition partition2 = createLeafPartition("partition2", region2, new ByteArrayType());
-        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "partition1", "partition2", new byte[]{64, 64})
+                .buildList());
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecordsByteArrayKey()).getRecordsWritten();
@@ -166,12 +155,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{2, 2});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
-        assertThat(fileInfo.getPartitionId()).isEqualTo(partition1.getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         fileInfo = activeFilesSortedByNumberOfRecords.get(0);
         assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
-        assertThat(fileInfo.getPartitionId()).isEqualTo(partition2.getId());
+        assertThat(fileInfo.getPartitionId()).isEqualTo("partition2");
         //  - Read files and check they have the correct records
         List<Record> readRecords1 = readRecordsFromParquetFile(activeFilesSortedByNumberOfRecords.get(1).getFilename(), schema);
         assertThat(readRecords1).hasSize(2);
@@ -203,20 +192,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field1, field2);
-        Range rootRange1 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, null);
-        Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
-        Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        Partition rootPartition = createRootPartition(rootRegion, new ByteArrayType(), new ByteArrayType());
-        Range range11 = new Range.RangeFactory(schema).createRange(field1, new byte[]{}, new byte[]{10});
-        Range range12 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
-        Region region1 = new Region(Arrays.asList(range11, range12));
-        Partition partition1 = createLeafPartition("partition1", region1, new ByteArrayType(), new ByteArrayType());
-        Range range21 = new Range.RangeFactory(schema).createRange(field1, new byte[]{10}, null);
-        Range range22 = new Range.RangeFactory(schema).createRange(field2, new byte[]{}, null);
-        Region region2 = new Region(Arrays.asList(range21, range22));
-        Partition partition2 = createLeafPartition("partition2", region2, new ByteArrayType(), new ByteArrayType());
-        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "partition1", "partition2", new byte[]{10})
+                .buildList());
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getRecordsWritten();
@@ -315,23 +294,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         // Long.MIN_VALUE |----------------------------
         //               Long.MIN_VALUE            null   Dimension 1
 
-        Range rootRange1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
-        Range rootRange2 = new Range.RangeFactory(schema).createRange(field2, Long.MIN_VALUE, null);
-        Region rootRegion = new Region(Arrays.asList(rootRange1, rootRange2));
-        Partition rootPartition = createRootPartition(rootRegion, new IntType(), new LongType());
-        rootPartition = rootPartition.toBuilder().dimension(1).build();
-        Range partition1Range1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
-        Range partition1Range2 = new Range.RangeFactory(schema).createRange(field2, Long.MIN_VALUE, 10L);
-        Region region1 = new Region(Arrays.asList(partition1Range1, partition1Range2));
-        Partition partition1 = createLeafPartition("partition1", region1, new IntType(), new LongType());
-        partition1 = partition1.toBuilder().dimension(-1).build();
-        Range partition2Range1 = new Range.RangeFactory(schema).createRange(field1, Integer.MIN_VALUE, null);
-        Range partition2Range2 = new Range.RangeFactory(schema).createRange(field2, 10L, null);
-        Region region2 = new Region(Arrays.asList(partition2Range1, partition2Range2));
-        Partition partition2 = createLeafPartition("partition2", region2, new IntType(), new LongType());
-        partition2 = partition2.toBuilder().dimension(-1).build();
-        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "partition1", "partition2", 1, 10L)
+                .buildList());
+
+
         // When
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
@@ -481,8 +449,8 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L).buildList();
         StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
-
         List<Record> records = getLotsOfRecords();
+
         // When
         long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
             instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
@@ -586,19 +554,6 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
-        /*
-        Range rootRange = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, null);
-        Region rootRegion = new Region(rootRange);
-        Partition rootPartition = createRootPartition(rootRegion, new LongType());
-        Range range1 = new Range.RangeFactory(schema).createRange(field, Long.MIN_VALUE, 2L);
-        Region region1 = new Region(range1);
-        Partition partition1 = createLeafPartition("partition1", region1, new LongType());
-        Range range2 = new Range.RangeFactory(schema).createRange(field, 2L, null);
-        Region region2 = new Region(range2);
-        Partition partition2 = createLeafPartition("partition2", region2, new LongType());
-        rootPartition = rootPartition.toBuilder().childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId())).build();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(rootPartition, partition1, partition2);
-*/
         Field field = new Field("key", new LongType());
         Schema schema = schemaWithRowKeys(field);
         List<Partition> partition = new PartitionsBuilder(schema)
