@@ -68,6 +68,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -992,18 +993,9 @@ public class S3StateStoreIT {
                 .splitToNewChildren("left", "id0", "id2", 1L)
                 .splitToNewChildren("right", "id1", "id3", 200L)
                 .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
         // When
-        List<Partition> retrievedPartitions = new ArrayList<>(tree.getAllPartitions());
-        retrievedPartitions.sort((p1, p2) -> {
-            long p1Key = (long) p1.getRegion().getRange("key").getMin();
-            long p2Key = (long) p2.getRegion().getRange("key").getMin();
-            if (p1Key < p2Key) {
-                return -1;
-            } else if (p1Key == p2Key) {
-                return 0;
-            }
-            return 1;
-        });
+        List<Partition> retrievedPartitions = new ArrayList<>(stateStore.getAllPartitions());
 
         // Then
         assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
@@ -1020,21 +1012,21 @@ public class S3StateStoreIT {
                 .splitToNewChildren("root", "id1", "id2", 1L)
                 .splitToNewChildren("id2", "id3", "id4", 9L)
                 .buildTree();
-        StateStore dynamoDBStateStore = inMemoryStateStoreWithPartitions(tree.getAllLeafPartitions());
+        StateStore dynamoDBStateStore = inMemoryStateStoreWithPartitions(
+                tree.getAllPartitions()
+                        .stream()
+                        .filter(Partition::isLeafPartition)
+                        .collect(Collectors.toList()));
         // When
         List<Partition> retrievedPartitions = new ArrayList<>(dynamoDBStateStore.getLeafPartitions());
-        retrievedPartitions.sort((p1, p2) -> {
-            long p1Key = (long) p1.getRegion().getRange("key").getMin();
-            long p2Key = (long) p2.getRegion().getRange("key").getMin();
-            if (p1Key < p2Key) {
-                return -1;
-            } else if (p1Key == p2Key) {
-                return 0;
-            }
-            return 1;
-        });
+
         // Then
-        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllLeafPartitions());
+        assertThat(retrievedPartitions)
+                .containsExactlyInAnyOrderElementsOf(
+                        tree.getAllPartitions()
+                                .stream()
+                                .filter(Partition::isLeafPartition)
+                                .collect(Collectors.toList()));
     }
 
     @Test
