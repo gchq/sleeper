@@ -17,13 +17,17 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
@@ -44,25 +48,32 @@ public class IngestByQueueDriver {
     private final IngestTaskStatusStore taskStatusStore;
     private final IngestJobStatusStore jobStatusStore;
     private final LambdaClient lambdaClient;
+    private final AmazonSQS sqsClient;
     private final PollWithRetries pollUntilTasksStarted = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3));
 
     public IngestByQueueDriver(SleeperInstanceContext instance,
-                               AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient) {
+                               AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
         this(instance.getInstanceProperties(),
                 IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                lambdaClient);
+                lambdaClient, sqsClient);
     }
 
     public IngestByQueueDriver(InstanceProperties properties,
                                IngestTaskStatusStore taskStatusStore,
                                IngestJobStatusStore jobStatusStore,
-                               LambdaClient lambdaClient) {
+                               LambdaClient lambdaClient,
+                               AmazonSQS sqsClient) {
         this.properties = properties;
         this.taskStatusStore = taskStatusStore;
         this.jobStatusStore = jobStatusStore;
         this.lambdaClient = lambdaClient;
+        this.sqsClient = sqsClient;
+    }
+
+    public void sendJob(InstanceProperty queueUrl, IngestJob job) {
+        sqsClient.sendMessage(properties.get(queueUrl), new IngestJobSerDe().toJson(job));
     }
 
     public void invokeStandardIngestTasks() throws InterruptedException {

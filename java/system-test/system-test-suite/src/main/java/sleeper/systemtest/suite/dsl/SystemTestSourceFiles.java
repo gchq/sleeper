@@ -38,6 +38,10 @@ public class SystemTestSourceFiles {
         return create(filename, GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
     }
 
+    public SystemTestSourceFiles create(String filename, Record... records) {
+        return create(filename, Stream.of(records));
+    }
+
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
         sourceFilesContext.writeFile(instanceContext.getTableProperties(), filename, records.iterator());
         return this;

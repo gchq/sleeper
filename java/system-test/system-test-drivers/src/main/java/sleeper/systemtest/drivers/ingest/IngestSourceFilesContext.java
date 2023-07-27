@@ -42,6 +42,10 @@ public class IngestSourceFilesContext {
         this.s3Client = s3Client;
     }
 
+    public String getSourceBucketName() {
+        return sourceBucketName;
+    }
+
     public void createOrEmptySourceBucket() {
         try {
             s3Client.headBucket(builder -> builder.bucket(sourceBucketName));
