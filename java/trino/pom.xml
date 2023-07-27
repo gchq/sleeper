@@ -118,6 +118,20 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-runner</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.trino</groupId>
             <artifactId>trino-testing</artifactId>
             <version>${trino.version}</version>
@@ -171,42 +185,34 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>utility</shadedClassifierName>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>io.trino:*</exclude>
-                                </excludes>
-                            </artifactSet>
-                            <filters>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-annotations</artifact>
-                                    <excludes>
-                                        <exclude>com/faster/jackson/annotations/JsonCreator*</exclude>
-                                        <exclude>com/faster/jackson/annotations/JsonProperty*</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>sleeper.trino.com.fasterxml.jackson</shadedPattern>
-                                    <excludes>
-                                        <exclude>com.fasterxml.jackson.annotation.JsonCreator*</exclude>
-                                        <exclude>com.fasterxml.jackson.annotation.JsonProperty*</exclude>
-                                    </excludes>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
+                <configuration>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <shadedClassifierName>utility</shadedClassifierName>
+                    <artifactSet>
+                        <excludes>
+                            <exclude>io.trino:*</exclude>
+                        </excludes>
+                    </artifactSet>
+                    <filters>
+                        <filter>
+                            <artifact>com.fasterxml.jackson.core:jackson-annotations</artifact>
+                            <excludes>
+                                <exclude>com/faster/jackson/annotations/JsonCreator*</exclude>
+                                <exclude>com/faster/jackson/annotations/JsonProperty*</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                    <relocations>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson</pattern>
+                            <shadedPattern>sleeper.trino.com.fasterxml.jackson</shadedPattern>
+                            <excludes>
+                                <exclude>com.fasterxml.jackson.annotation.JsonCreator*</exclude>
+                                <exclude>com.fasterxml.jackson.annotation.JsonProperty*</exclude>
+                            </excludes>
+                        </relocation>
+                    </relocations>
+                </configuration>
             </plugin>
         </plugins>
     </build>

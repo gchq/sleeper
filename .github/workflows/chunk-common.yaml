@@ -1,6 +1,6 @@
 name: Build Common Modules
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-common.yaml'
       - '.github/workflows/chunk.yaml'

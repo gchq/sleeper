@@ -15,7 +15,7 @@
  */
 package sleeper.clients.deploy;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
@@ -23,7 +23,7 @@ import sleeper.core.schema.SchemaSerDe;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -33,7 +33,6 @@ public class PopulateTableProperties {
     private final TableProperties tableProperties;
     private final String schemaJson;
     private final String tableName;
-
 
     private PopulateTableProperties(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");

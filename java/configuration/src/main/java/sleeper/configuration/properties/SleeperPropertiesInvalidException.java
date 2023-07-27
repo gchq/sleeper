@@ -15,6 +15,8 @@
  */
 package sleeper.configuration.properties;
 
+import sleeper.configuration.properties.instance.SleeperProperty;
+
 import java.util.Map;
 
 public class SleeperPropertiesInvalidException extends IllegalArgumentException {

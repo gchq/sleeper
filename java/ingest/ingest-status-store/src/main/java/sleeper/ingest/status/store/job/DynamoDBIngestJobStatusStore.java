@@ -29,8 +29,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.IngestStatusStoreException;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
@@ -46,10 +45,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
 public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStore.class);
@@ -58,14 +59,10 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private final String statusTableName;
     private final DynamoDBIngestJobStatusFormat format;
 
-    public DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        this(dynamoDB, properties, Instant::now);
-    }
-
-    public DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+    DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = jobStatusTableName(properties.get(ID));
-        int timeToLiveInSeconds = properties.getInt(UserDefinedInstanceProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS);
+        int timeToLiveInSeconds = properties.getInt(INGEST_JOB_STATUS_TTL_IN_SECONDS);
         this.format = new DynamoDBIngestJobStatusFormat(timeToLiveInSeconds, getTimeNow);
     }
 
@@ -159,9 +156,20 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<IngestJobStatus> getInvalidJobs() {
+        return DynamoDBIngestJobStatusFormat.streamJobStatuses(
+                        streamPagedItems(dynamoDB, createScanRequest()))
+                .filter(job -> job.getFurthestStatusType().equals(REJECTED))
+                .collect(Collectors.toList());
+    }
+
+    private ScanRequest createScanRequest() {
+        return new ScanRequest().withTableName(statusTableName);
+    }
+
     private ScanRequest createScanRequestByTable(String tableName) {
-        return new ScanRequest()
-                .withTableName(statusTableName)
+        return createScanRequest()
                 .addScanFilterEntry(DynamoDBIngestJobStatusFormat.TABLE_NAME, new Condition()
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ));

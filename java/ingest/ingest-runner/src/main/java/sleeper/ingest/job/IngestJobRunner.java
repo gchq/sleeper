@@ -23,7 +23,8 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertiesReloader;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
@@ -44,7 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -56,15 +57,18 @@ public class IngestJobRunner implements IngestJobHandler {
     private final String fs;
     private final Configuration hadoopConfiguration;
     private final IngestFactory ingestFactory;
+    private final PropertiesReloader propertiesReloader;
 
     public IngestJobRunner(ObjectFactory objectFactory,
                            InstanceProperties instanceProperties,
                            TablePropertiesProvider tablePropertiesProvider,
+                           PropertiesReloader propertiesReloader,
                            StateStoreProvider stateStoreProvider,
                            String localDir,
                            S3AsyncClient s3AsyncClient,
                            Configuration hadoopConfiguration) {
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.propertiesReloader = propertiesReloader;
         this.fs = instanceProperties.get(FILE_SYSTEM);
         this.hadoopConfiguration = hadoopConfiguration;
         this.ingestFactory = IngestFactory.builder()
@@ -79,6 +83,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
     @Override
     public IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException {
+        propertiesReloader.reloadIfNeeded();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
         Schema schema = tableProperties.getSchema();
 

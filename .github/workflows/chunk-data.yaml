@@ -1,6 +1,6 @@
 name: Build Data Modules
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-data.yaml'
       - '.github/workflows/chunk.yaml'

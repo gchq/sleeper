@@ -21,13 +21,13 @@ import software.amazon.awscdk.services.sns.subscriptions.EmailSubscription;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 /**
- * The {@link Stack} that creates an SNS {@link Topic} that emails alerts if
+ * The {@link NestedStack} that creates an SNS {@link Topic} that emails alerts if
  * messages arrive on a dead-letter queue.
  */
 public class TopicStack extends NestedStack {

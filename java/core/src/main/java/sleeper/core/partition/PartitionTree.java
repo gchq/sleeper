@@ -19,7 +19,6 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,13 +57,6 @@ public class PartitionTree {
         return idToPartition.get(partitionId).getChildPartitionIds();
     }
 
-    public String getParentId(String partitionId) {
-        if (!idToPartition.containsKey(partitionId)) {
-            throw new IllegalArgumentException("No partition of id " + partitionId);
-        }
-        return idToPartition.get(partitionId).getParentPartitionId();
-    }
-
     public List<String> getAllAncestorIds(String partitionId) {
         if (!idToPartition.containsKey(partitionId)) {
             throw new IllegalArgumentException("No partition of id " + partitionId);
@@ -98,7 +90,7 @@ public class PartitionTree {
     }
 
     public List<Partition> getAllPartitions() {
-        return Collections.unmodifiableList(new ArrayList<>(idToPartition.values()));
+        return List.copyOf(idToPartition.values());
     }
 
     public Partition getLeafPartition(Key key) {

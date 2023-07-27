@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
@@ -25,6 +24,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import java.io.IOException;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedUnfinishedJobStatuses;
 import static sleeper.clients.testutil.ClientTestUtils.example;
@@ -36,7 +36,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> mixedJobs = mixedJobStatuses();
 
         // When / Then
-        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2)).hasToString(
                 IngestJobStatusReporterTestHelper.replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/range/mixedJobs.txt")));
     }
 
@@ -46,7 +46,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> mixedJobs = mixedUnfinishedJobStatuses();
 
         // When / Then
-        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, mixedJobs, 2)).hasToString(
                 IngestJobStatusReporterTestHelper.replaceBracketedJobIds(mixedJobs, example("reports/ingest/job/standard/range/unfinishedJobs.txt")));
     }
 
@@ -56,7 +56,7 @@ class StandardIngestJobStatusReporterRangeQueryTest {
         List<IngestJobStatus> noJobs = List.of();
 
         // When / Then
-        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, noJobs, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.RANGE, noJobs, 0)).hasToString(
                 IngestJobStatusReporterTestHelper.replaceBracketedJobIds(noJobs, example("reports/ingest/job/standard/range/noJobs.txt")));
     }
 }

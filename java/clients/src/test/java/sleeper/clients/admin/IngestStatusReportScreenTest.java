@@ -25,8 +25,8 @@ import org.mockito.Mockito;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -52,6 +52,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_REJECTED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -59,7 +60,9 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestJob;
 import static sleeper.job.common.QueueMessageCountsInMemory.visibleMessages;
 
@@ -74,7 +77,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         private final QueueMessageCount.Client queueCounts = visibleMessages(INGEST_JOB_QUEUE_URL, 10);
 
         @Test
-        void shouldRunIngestJobStatusReportWithQueryTypeAll() throws Exception {
+        void shouldRunReportWithQueryTypeAll() throws Exception {
             // Given
             when(ingestJobStatusStore.getAllJobs("test-table"))
                     .thenReturn(oneStartedJobStatus());
@@ -98,7 +101,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldRunIngestJobStatusReportWithQueryTypeUnfinished() throws Exception {
+        void shouldRunReportWithQueryTypeUnfinished() throws Exception {
             // Given
             when(ingestJobStatusStore.getUnfinishedJobs("test-table"))
                     .thenReturn(oneStartedJobStatus());
@@ -122,7 +125,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldRunIngestJobStatusReportWithQueryTypeDetailed() throws Exception {
+        void shouldRunReportWithQueryTypeDetailed() throws Exception {
             // Given
             when(ingestJobStatusStore.getJob("test-job"))
                     .thenReturn(Optional.of(startedJobStatus("test-job")));
@@ -143,7 +146,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         @Test
-        void shouldRunIngestJobStatusReportWithQueryTypeRange() throws Exception {
+        void shouldRunReportWithQueryTypeRange() throws Exception {
             // Given
             when(ingestJobStatusStore.getJobsInTimePeriod("test-table",
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
@@ -167,6 +170,29 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             verifyWithNumberOfInvocations(6);
         }
 
+        @Test
+        void shouldRunReportWithQueryTypeRejected() throws Exception {
+            // Given
+            when(ingestJobStatusStore.getInvalidJobs())
+                    .thenReturn(oneRejectedJobStatus());
+
+            // When/Then
+            String output = runIngestJobStatusReport()
+                    .enterPrompts(JOB_QUERY_REJECTED_OPTION, CONFIRM_PROMPT)
+                    .exitGetOutput();
+            assertThat(output)
+                    .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
+                    .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                    .contains("" +
+                            "Ingest Job Status Report\n" +
+                            "------------------------\n" +
+                            "Jobs waiting in ingest queue (excluded from report): 10\n" +
+                            "Total jobs waiting across all queues: 10\n" +
+                            "Total jobs rejected: 1");
+
+            verifyWithNumberOfInvocations(4);
+        }
+
         private RunAdminClient runIngestJobStatusReport() {
             setInstanceProperties(instanceProperties, tableProperties);
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
@@ -176,6 +202,12 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
 
         private List<IngestJobStatus> oneStartedJobStatus() {
             return List.of(startedJobStatus("test-job"));
+        }
+
+        private List<IngestJobStatus> oneRejectedJobStatus() {
+            return List.of(jobStatus("test-job",
+                    rejectedRun("test-job", "{}", Instant.parse("2023-07-05T11:59:00Z"),
+                            "Test reason")));
         }
 
         private IngestJobStatus startedJobStatus(String jobId) {

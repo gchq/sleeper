@@ -35,9 +35,10 @@ You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
 
 ### Deployment environment
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. The Sleeper CLI 
-can do this for you, and will automatically configure pre-authentication for the EC2 instance with administrator access. 
-Run these commands to create the EC2 using the Sleeper CLI (note that cdk bootstrap only needs to be done once in a given AWS account):
+You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. The Sleeper CLI
+can do this for you, and will automatically configure pre-authentication for the EC2 instance with administrator access.
+Run these commands to create the EC2 using the Sleeper CLI (note that cdk bootstrap only needs to be done once in a
+given AWS account):
 
 ```bash
 sleeper aws configure
@@ -76,7 +77,7 @@ The Sleeper Git repository will also be cloned, and you can access it by running
 That will get you a shell inside a Docker container similar to the `sleeper deployment` one, but with the dependencies
 for building Sleeper. The whole working directory will be persisted between executions of `sleeper builder`.
 
-If you want someone else to be able to access the same environment EC2, they can run `sleeper environment deploy <id>`
+If you want someone else to be able to access the same environment EC2, they can run `sleeper environment add <id>`
 with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
 can set up separate users with `sleeper environment adduser <username>`, and switch users with
 `sleeper environment setuser <username>`. If you call `sleeper environment setuser` with no arguments, you'll switch
@@ -152,7 +153,7 @@ You will also see the number of leaf partitions increase. This functionality is 
 To ingest more random data, run:
 
 ```bash
-sleeper deployment java -cp jars/system-test-*-utility.jar sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
+sleeper deployment java -cp jars/system-test-*-utility.jar  sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS ${ID} system-test
 ```
 
 To tear all the infrastructure down, run

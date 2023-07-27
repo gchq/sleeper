@@ -30,9 +30,11 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.bulkimport.starter.executor.PlatformExecutor;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertiesReloader;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopPathUtils;
 
@@ -40,8 +42,11 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link BulkImportJob} messages from SQS and starts executes them using
@@ -50,10 +55,13 @@ import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CON
 public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportStarterLambda.class);
 
+    private final PropertiesReloader propertiesReloader;
     private final BulkImportExecutor executor;
     private final Configuration hadoopConfig;
-    private final BulkImportJobSerDe bulkImportJobSerDe = new BulkImportJobSerDe();
     private final InstanceProperties instanceProperties;
+    private final IngestJobStatusStore ingestJobStatusStore;
+    private final Supplier<String> invalidJobIdSupplier;
+    private final Supplier<Instant> timeSupplier;
 
     public BulkImportStarterLambda() throws IOException {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
@@ -63,24 +71,42 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         hadoopConfig = new Configuration();
+        ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new StateStoreProvider(dynamo, instanceProperties),
-                new DynamoDBIngestJobStatusStore(dynamo, instanceProperties),
-                s3, platformExecutor, Instant::now);
+                ingestJobStatusStore, s3, platformExecutor, Instant::now);
+        invalidJobIdSupplier = () -> UUID.randomUUID().toString();
+        timeSupplier = Instant::now;
+        propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
     }
 
-    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig) {
+    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
+                                   IngestJobStatusStore ingestJobStatusStore) {
+        this(executor, properties, hadoopConfig, ingestJobStatusStore, () -> UUID.randomUUID().toString(), Instant::now);
+    }
+
+    public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
+                                   IngestJobStatusStore ingestJobStatusStore, Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
         this.executor = executor;
         this.instanceProperties = properties;
         this.hadoopConfig = hadoopConfig;
+        this.ingestJobStatusStore = ingestJobStatusStore;
+        this.invalidJobIdSupplier = invalidJobIdSupplier;
+        this.timeSupplier = timeSupplier;
+        this.propertiesReloader = PropertiesReloader.neverReload();
     }
 
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
         LOGGER.info("Received request: {}", event);
+        propertiesReloader.reloadIfNeeded();
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
-                .map(bulkImportJobSerDe::fromJson)
+                .map(message -> deserialiseAndValidate(message, new BulkImportJobSerDe()::fromJson,
+                        job -> job.toIngestJob().getValidationFailures(), ingestJobStatusStore,
+                        invalidJobIdSupplier, timeSupplier))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .map(this::expandDirectories)
                 .filter(Optional::isPresent)
                 .map(Optional::get)

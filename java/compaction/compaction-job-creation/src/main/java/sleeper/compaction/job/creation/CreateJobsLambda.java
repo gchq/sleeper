@@ -32,7 +32,8 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.PropertiesReloader;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
@@ -43,7 +44,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function for executing {@link CreateJobs}.
@@ -55,6 +56,7 @@ public class CreateJobsLambda {
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
     private final StateStoreProvider stateStoreProvider;
     private final TableLister tableLister;
     private final CompactionJobStatusStore jobStatusStore;
@@ -79,6 +81,7 @@ public class CreateJobsLambda {
         this.dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         this.tableLister = new TableLister(s3Client, instanceProperties);
@@ -103,6 +106,7 @@ public class CreateJobsLambda {
                 .withEndpointConfiguration(endpointConfiguration)
                 .build();
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
         this.tableLister = new TableLister(s3Client, instanceProperties);
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
@@ -111,6 +115,7 @@ public class CreateJobsLambda {
     public void eventHandler(ScheduledEvent event, Context context) {
         LocalDateTime start = LocalDateTime.now();
         LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
+        propertiesReloader.reloadIfNeeded();
 
         CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, tableLister, jobStatusStore);
         try {

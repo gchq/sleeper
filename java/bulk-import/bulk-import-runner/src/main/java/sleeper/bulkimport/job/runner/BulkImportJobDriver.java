@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -46,7 +46,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
@@ -183,7 +183,7 @@ public class BulkImportJobDriver {
         if (null == bulkImportBucket) {
             throw new RuntimeException("sleeper.bulk.import.bucket was not set. Has one of the bulk import stacks been deployed?");
         }
-        String jsonJobKey = "bulk_import/" + jobId + ".json";
+        String jsonJobKey = "bulk_import/" + jobId + "-" + jobRunId + ".json";
         LOGGER.info("Loading bulk import job from key {} in bulk import bucket {}", jsonJobKey, bulkImportBucket);
         String jsonJob = amazonS3.getObjectAsString(bulkImportBucket, jsonJobKey);
         BulkImportJob bulkImportJob;

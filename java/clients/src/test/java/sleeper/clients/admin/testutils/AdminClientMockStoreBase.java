@@ -16,7 +16,7 @@
 package sleeper.clients.admin.testutils;
 
 import sleeper.clients.admin.AdminClientPropertiesStore;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.StateStore;
 
@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientMockStoreBase extends AdminClientTestBase {

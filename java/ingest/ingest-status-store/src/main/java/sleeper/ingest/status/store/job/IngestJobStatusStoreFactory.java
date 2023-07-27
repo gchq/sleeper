@@ -18,10 +18,13 @@ package sleeper.ingest.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.INGEST_STATUS_STORE_ENABLED;
+import java.time.Instant;
+import java.util.function.Supplier;
+
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
 public class IngestJobStatusStoreFactory {
 
@@ -29,8 +32,12 @@ public class IngestJobStatusStoreFactory {
     }
 
     public static IngestJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        return getStatusStore(dynamoDB, properties, Instant::now);
+    }
+
+    public static IngestJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            return new DynamoDBIngestJobStatusStore(dynamoDB, properties);
+            return new DynamoDBIngestJobStatusStore(dynamoDB, properties, getTimeNow);
         } else {
             return IngestJobStatusStore.NONE;
         }

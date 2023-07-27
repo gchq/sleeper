@@ -44,9 +44,9 @@ public class FixedPartitionStore implements PartitionStore {
 
     @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
-        return Collections.unmodifiableList(partitions.stream()
+        return partitions.stream()
                 .filter(Partition::isLeafPartition)
-                .collect(Collectors.toList()));
+                .collect(Collectors.toUnmodifiableList());
     }
 
     @Override

@@ -24,6 +24,8 @@ import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * Splits a partition by calling {@link SplitMultiDimensionalPartitionImpl}.
@@ -32,18 +34,27 @@ public class SplitPartition {
     private final StateStore stateStore;
     private final Schema schema;
     private final Configuration conf;
+    private final Supplier<String> idSupplier;
 
     public SplitPartition(StateStore stateStore,
                           Schema schema,
                           Configuration conf) {
+        this(stateStore, schema, conf, () -> UUID.randomUUID().toString());
+    }
+
+    public SplitPartition(StateStore stateStore,
+                          Schema schema,
+                          Configuration conf,
+                          Supplier<String> idSupplier) {
         this.stateStore = stateStore;
         this.schema = schema;
         this.conf = conf;
+        this.idSupplier = idSupplier;
     }
 
     public void splitPartition(Partition partition, List<String> fileNames)
             throws StateStoreException, IOException {
-        new SplitMultiDimensionalPartitionImpl(stateStore, schema, partition, fileNames, conf)
+        new SplitMultiDimensionalPartitionImpl(stateStore, schema, partition, fileNames, conf, idSupplier)
                 .splitPartition();
     }
 }

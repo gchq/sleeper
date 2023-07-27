@@ -46,7 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -76,12 +76,14 @@ public class SplitMultiDimensionalPartitionImpl {
     private final List<String> fileNames; // These should be active files for the partition
     private final Configuration conf;
     private final RangeFactory rangeFactory;
+    private final Supplier<String> idSupplier;
 
     public SplitMultiDimensionalPartitionImpl(StateStore stateStore,
                                               Schema schema,
                                               Partition partition,
                                               List<String> fileNames,
-                                              Configuration conf) {
+                                              Configuration conf,
+                                              Supplier<String> idSupplier) {
         this.stateStore = stateStore;
         this.schema = schema;
         this.rowKeyTypes = schema.getRowKeyTypes();
@@ -89,6 +91,7 @@ public class SplitMultiDimensionalPartitionImpl {
         this.fileNames = fileNames;
         this.conf = conf;
         this.rangeFactory = new RangeFactory(schema);
+        this.idSupplier = idSupplier;
     }
 
     void splitPartition() throws StateStoreException, IOException {
@@ -285,10 +288,11 @@ public class SplitMultiDimensionalPartitionImpl {
         Partition leftChild = Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(leftChildRegion)
-                .id(UUID.randomUUID().toString())
+                .id(idSupplier.get())
                 .leafPartition(true)
                 .parentPartitionId(partition.getId())
                 .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
                 .build();
 
         List<Range> rightChildRanges = removeRange(partition.getRegion().getRanges(), fieldToSplitOn.getName());
@@ -298,16 +302,18 @@ public class SplitMultiDimensionalPartitionImpl {
         Partition rightChild = Partition.builder()
                 .rowKeyTypes(schema.getRowKeyTypes())
                 .region(rightChildRegion)
-                .id(UUID.randomUUID().toString())
+                .id(idSupplier.get())
                 .leafPartition(true)
                 .parentPartitionId(partition.getId())
                 .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
                 .build();
 
         // Updated split partition
-        partition.setLeafPartition(false);
-        partition.setChildPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()));
-        partition.setDimension(dimension);
+        partition = partition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList(leftChild.getId(), rightChild.getId()))
+                .dimension(dimension).build();
 
         LOGGER.info("Updating StateStore:");
         LOGGER.info("Split partition ({}) is marked as not a leaf partition, split on field {}",

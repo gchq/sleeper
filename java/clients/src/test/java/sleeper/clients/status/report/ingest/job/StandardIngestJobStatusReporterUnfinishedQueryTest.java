@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
@@ -25,6 +24,7 @@ import sleeper.ingest.job.status.IngestJobStatus;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardIngestJobStatusReporterUnfinishedQueryTest {
@@ -34,7 +34,7 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest {
         List<IngestJobStatus> noJobs = Collections.emptyList();
 
         // When / Then
-        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, noJobs, 0)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, noJobs, 0)).hasToString(
                 example("reports/ingest/job/standard/unfinished/noJobs.txt"));
     }
 
@@ -44,7 +44,7 @@ public class StandardIngestJobStatusReporterUnfinishedQueryTest {
         List<IngestJobStatus> mixedUnfinishedJobStatuses = IngestJobStatusReporterTestData.mixedUnfinishedJobStatuses();
 
         // When / Then
-        Assertions.assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
+        assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.UNFINISHED, mixedUnfinishedJobStatuses, 2)).hasToString(
                 example("reports/ingest/job/standard/unfinished/mixedUnfinishedJobs.txt"));
     }
 }
