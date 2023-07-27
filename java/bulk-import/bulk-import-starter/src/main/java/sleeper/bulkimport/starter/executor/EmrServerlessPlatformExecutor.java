@@ -61,15 +61,27 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
         String logUri = bulkImportBucket.isEmpty() ? "s3://" + clusterName
                 : "s3://" + bulkImportBucket;
 
+        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
+        String taskId = String.join("-", "sleeper", instanceProperties.get(ID),
+                bulkImportJob.getTableName(), bulkImportJob.getId());
+        if (taskId.length() > 64) {
+            taskId = taskId.substring(0, 64);
+        }
+
         StartJobRunRequest job = StartJobRunRequest.builder()
                 .applicationId(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID))
                 .name(jobName + arguments.getJobRunId())
                 .executionRoleArn(
                         instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN))
-                .jobDriver(JobDriver.builder().sparkSubmit(SparkSubmit.builder()
-                        .entryPoint("/workdir/bulk-import-runner.jar").entryPointArguments("1")
-                        .sparkSubmitParameters(constructArgs(instanceProperties, arguments))
-                        .build()).build())
+                .jobDriver(JobDriver.builder()
+                        .sparkSubmit(SparkSubmit.builder()
+                                .entryPoint("/workdir/bulk-import-runner.jar")
+                                .entryPointArguments("--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME),
+                                        instanceProperties.get(CONFIG_BUCKET),
+                                        bulkImportJob.getId(), taskId, arguments.getJobRunId())
+                                .sparkSubmitParameters(constructSparkArgs(instanceProperties))
+                                .build())
+                        .build())
                 .configurationOverrides(
                         ConfigurationOverrides.builder()
                                 .monitoringConfiguration(MonitoringConfiguration.builder()
@@ -81,20 +93,10 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
         emrClient.startJobRun(job);
     }
 
-    private String constructArgs(InstanceProperties instanceProperties,
-            BulkImportArguments arguments) {
-        BulkImportJob bulkImportJob = arguments.getBulkImportJob();
+    private String constructSparkArgs(InstanceProperties instanceProperties) {
         String javaHome = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME);
-        String taskId = String.join("-", "sleeper", instanceProperties.get(ID),
-                bulkImportJob.getTableName(), bulkImportJob.getId());
-        if (taskId.length() > 64) {
-            taskId = taskId.substring(0, 64);
-        }
-
-        String args = "--class " + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME) + " "
-                + instanceProperties.get(CONFIG_BUCKET) + " " + bulkImportJob.getId() + " " + taskId
-                + " " + arguments.getJobRunId() + " " + " --conf spark.executorEnv.JAVA_HOME="
-                + javaHome + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
+        String args = "--conf spark.executorEnv.JAVA_HOME=" + javaHome
+                + " --conf spark.emr-serverless.driverEnv.JAVA_HOME=" + javaHome
                 + " --conf spark.executor.cores="
                 + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES)
                 + " --conf spark.executor.memory="
