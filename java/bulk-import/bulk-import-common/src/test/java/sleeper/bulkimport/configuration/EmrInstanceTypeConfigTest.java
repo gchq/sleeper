@@ -15,12 +15,20 @@
  */
 package sleeper.bulkimport.configuration;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
 
 public class EmrInstanceTypeConfigTest {
 
@@ -81,6 +89,22 @@ public class EmrInstanceTypeConfigTest {
         assertThatThrownBy(() -> EmrInstanceTypeConfig.readInstanceTypesProperty(
                 List.of("12", "some-type")))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Nested
+    @DisplayName("Filter by architecture")
+    class FilterByArchitecture {
+        private final InstanceProperties instanceProperties = new InstanceProperties();
+        private final TableProperties tableProperties = new TableProperties(instanceProperties);
+
+        @Test
+        void shouldIncludeX86InstanceTypes() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypes(instanceProperties,
+                    BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                    BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
+                    BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES));
+
+        }
     }
 
     private EmrInstanceTypeConfig instanceType(String instanceType) {

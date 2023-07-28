@@ -15,6 +15,9 @@
  */
 package sleeper.bulkimport.configuration;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +31,12 @@ public class EmrInstanceTypeConfig {
     private EmrInstanceTypeConfig(Builder builder) {
         instanceType = Objects.requireNonNull(builder.instanceType, "instanceType must not be null");
         weightedCapacity = builder.weightedCapacity;
+    }
+
+    public static Stream<EmrInstanceTypeConfig> readInstanceTypes(
+            InstanceProperties properties, UserDefinedInstanceProperty architectureProperty,
+            UserDefinedInstanceProperty x86Property, UserDefinedInstanceProperty armProperty) {
+        return null;
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
