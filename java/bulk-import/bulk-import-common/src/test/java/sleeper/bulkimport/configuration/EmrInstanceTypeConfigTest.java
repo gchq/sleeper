@@ -153,17 +153,15 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
                     .containsExactly(
-                            instanceType("type-a"),
-                            instanceType("type-b"),
-                            instanceType("type-c"),
-                            instanceType("type-d"));
+                            instanceType("type-a"), instanceType("type-b"),
+                            instanceType("type-c"), instanceType("type-d"));
         }
 
         @Test
         void shouldReturnInstanceTypesByTableProperties() {
             // Given
             TableProperties properties = new TableProperties(instanceProperties);
-            properties.set(BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, "x86");
+            properties.set(BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, "x86,arm64");
             properties.set(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             properties.set(BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -172,7 +170,9 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE,
                     BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES))
-                    .containsExactly(instanceType("type-a"), instanceType("type-b"));
+                    .containsExactly(
+                            instanceType("type-a"), instanceType("type-b"),
+                            instanceType("type-c"), instanceType("type-d"));
         }
     }
 
