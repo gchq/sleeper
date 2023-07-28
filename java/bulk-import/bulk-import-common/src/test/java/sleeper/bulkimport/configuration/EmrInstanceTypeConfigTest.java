@@ -24,6 +24,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,16 +43,14 @@ public class EmrInstanceTypeConfigTest {
 
         @Test
         void shouldReadSingleInstanceType() {
-            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                    List.of("some-type")))
+            assertThat(readInstanceTypesProperty(List.of("some-type")))
                     .containsExactly(
                             instanceType("some-type"));
         }
 
         @Test
         void shouldReadMultipleInstanceTypes() {
-            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                    List.of("some-type", "other-type", "another-type")))
+            assertThat(readInstanceTypesProperty(List.of("some-type", "other-type", "another-type")))
                     .containsExactly(
                             instanceType("some-type"),
                             instanceType("other-type"),
@@ -60,7 +59,7 @@ public class EmrInstanceTypeConfigTest {
 
         @Test
         void shouldReadNoInstanceTypes() {
-            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(List.of()))
+            assertThat(readInstanceTypesProperty(List.of()))
                     .isEmpty();
         }
     }
@@ -71,16 +70,14 @@ public class EmrInstanceTypeConfigTest {
 
         @Test
         void shouldReadSingleInstanceTypeWithWeight() {
-            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                    List.of("some-type", "12")))
+            assertThat(readInstanceTypesProperty(List.of("some-type", "12")))
                     .containsExactly(
                             instanceTypeWithWeight("some-type", 12));
         }
 
         @Test
         void shouldReadMultipleInstanceTypesWhereMiddleOneHasWeight() {
-            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                    List.of("some-type", "other-type", "42", "another-type")))
+            assertThat(readInstanceTypesProperty(List.of("some-type", "other-type", "42", "another-type")))
                     .containsExactly(
                             instanceType("some-type"),
                             instanceTypeWithWeight("other-type", 42),
@@ -89,8 +86,7 @@ public class EmrInstanceTypeConfigTest {
 
         @Test
         void shouldReadMultipleInstanceTypesWhereAllHaveWeight() {
-            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                    List.of("type-a", "1", "type-b", "2", "type-c", "3")))
+            assertThat(readInstanceTypesProperty(List.of("type-a", "1", "type-b", "2", "type-c", "3")))
                     .containsExactly(
                             instanceTypeWithWeight("type-a", 1),
                             instanceTypeWithWeight("type-b", 2),
@@ -99,8 +95,7 @@ public class EmrInstanceTypeConfigTest {
 
         @Test
         void shouldFailWhenWeightSpecifiedBeforeType() {
-            assertThatThrownBy(() -> EmrInstanceTypeConfig.readInstanceTypesProperty(
-                    List.of("12", "some-type")))
+            assertThatThrownBy(() -> readInstanceTypesProperty(List.of("12", "some-type")))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }
@@ -178,15 +173,21 @@ public class EmrInstanceTypeConfigTest {
         }
     }
 
+    public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
+        return EmrInstanceTypeConfig.readInstanceTypesProperty(instanceTypeEntries, EmrInstanceArchitecture.X86);
+    }
+
     private EmrInstanceTypeConfig instanceType(String instanceType) {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
+                .architecture(EmrInstanceArchitecture.X86)
                 .build();
     }
 
     private EmrInstanceTypeConfig instanceTypeWithWeight(String instanceType, int weightedCapacity) {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
+                .architecture(EmrInstanceArchitecture.X86)
                 .weightedCapacity(weightedCapacity)
                 .build();
     }

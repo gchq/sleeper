@@ -116,7 +116,6 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                 BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
                 .map(config -> new InstanceTypeConfig()
                         .withInstanceType(config.getInstanceType())
-                        .withWeightedCapacity(config.getWeightedCapacity())
                         .withEbsConfiguration(ebsConfiguration)
                         .withConfigurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture()))))
                 .collect(Collectors.toList());

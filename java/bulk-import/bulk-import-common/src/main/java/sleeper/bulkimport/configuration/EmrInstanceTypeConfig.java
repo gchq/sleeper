@@ -34,7 +34,7 @@ public class EmrInstanceTypeConfig {
     private final Integer weightedCapacity;
 
     private EmrInstanceTypeConfig(Builder builder) {
-        architecture = builder.architecture;
+        architecture = Objects.requireNonNull(builder.architecture, "architecture must not be null");
         instanceType = Objects.requireNonNull(builder.instanceType, "instanceType must not be null");
         weightedCapacity = builder.weightedCapacity;
     }
@@ -45,14 +45,14 @@ public class EmrInstanceTypeConfig {
                 .map(value -> EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
                 .flatMap(architecture -> {
                     if (architecture == ARM64) {
-                        return readInstanceTypesProperty(properties.getList(armProperty));
+                        return readInstanceTypesProperty(properties.getList(armProperty), architecture);
                     } else {
-                        return readInstanceTypesProperty(properties.getList(x86Property));
+                        return readInstanceTypesProperty(properties.getList(x86Property), architecture);
                     }
                 });
     }
 
-    public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
+    public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries, EmrInstanceArchitecture architecture) {
         Builder builder = null;
         List<Builder> builders = new ArrayList<>();
         for (String entry : instanceTypeEntries) {
@@ -61,9 +61,9 @@ public class EmrInstanceTypeConfig {
                 if (builder == null) {
                     throw new IllegalArgumentException("Instance type capacity given without an instance type: " + entry);
                 }
-                builder.weightedCapacity(capacity);
+                builder.weightedCapacity(capacity).architecture(architecture);
             } catch (NumberFormatException e) {
-                builder = builder().instanceType(entry);
+                builder = builder().instanceType(entry).architecture(architecture);
                 builders.add(builder);
             }
         }
