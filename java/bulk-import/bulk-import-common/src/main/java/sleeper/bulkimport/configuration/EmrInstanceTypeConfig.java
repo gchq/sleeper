@@ -36,7 +36,7 @@ public class EmrInstanceTypeConfig {
     public static Stream<EmrInstanceTypeConfig> readInstanceTypes(
             InstanceProperties properties, UserDefinedInstanceProperty architectureProperty,
             UserDefinedInstanceProperty x86Property, UserDefinedInstanceProperty armProperty) {
-        return null;
+        return readInstanceTypesProperty(properties.getList(x86Property));
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
