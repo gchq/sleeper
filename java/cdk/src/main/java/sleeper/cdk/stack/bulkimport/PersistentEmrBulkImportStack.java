@@ -45,10 +45,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
-import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
+import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypes;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
@@ -58,6 +57,7 @@ import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
@@ -186,41 +186,27 @@ public class PersistentEmrBulkImportStack extends NestedStack {
 
     private static List<CfnCluster.InstanceTypeConfigProperty> readExecutorInstanceTypes(
             InstanceProperties instanceProperties, EbsConfigurationProperty ebsConf) {
-        return Stream.concat(
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
-                                        .build()),
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
-                                        .build()))
+        return readInstanceTypes(instanceProperties, BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
+                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                        .instanceType(config.getInstanceType())
+                        .weightedCapacity(config.getWeightedCapacity())
+                        .ebsConfiguration(ebsConf)
+                        .configurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture())))
+                        .build())
                 .collect(Collectors.toList());
     }
 
     private static List<CfnCluster.InstanceTypeConfigProperty> readMasterInstanceTypes(
             InstanceProperties instanceProperties, EbsConfigurationProperty ebsConf) {
-        return Stream.concat(
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
-                                        .build()),
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
-                                        .build()))
+        return readInstanceTypes(instanceProperties, BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES)
+                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                        .instanceType(config.getInstanceType())
+                        .weightedCapacity(config.getWeightedCapacity())
+                        .ebsConfiguration(ebsConf)
+                        .configurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture())))
+                        .build())
                 .collect(Collectors.toList());
     }
 
