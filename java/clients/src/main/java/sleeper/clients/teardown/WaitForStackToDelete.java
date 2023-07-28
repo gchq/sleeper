@@ -58,7 +58,7 @@ public class WaitForStackToDelete {
             Stack stack = cloudFormationClient.describeStacks(builder -> builder.stackName(stackName)).stacks()
                     .stream().findFirst().orElseThrow();
             if (StackStatus.DELETE_FAILED.equals(stack.stackStatus())) {
-                throw new DeleteFailedException(stack.stackName());
+                throw new DeleteFailedException(stackName);
             }
             LOGGER.info("Stack {} is currently in state {}", stackName, stack.stackStatus());
             return stack.stackStatus().equals(StackStatus.DELETE_COMPLETE);
