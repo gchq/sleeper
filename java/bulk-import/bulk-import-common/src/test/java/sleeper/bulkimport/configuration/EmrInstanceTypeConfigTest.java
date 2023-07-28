@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.List;
 
@@ -28,6 +29,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 
 public class EmrInstanceTypeConfigTest {
 
@@ -153,6 +157,22 @@ public class EmrInstanceTypeConfigTest {
                             instanceType("type-b"),
                             instanceType("type-c"),
                             instanceType("type-d"));
+        }
+
+        @Test
+        void shouldReturnInstanceTypesByTableProperties() {
+            // Given
+            TableProperties properties = new TableProperties(instanceProperties);
+            properties.set(BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, "x86");
+            properties.set(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
+            properties.set(BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
+
+            // When / Then
+            assertThat(EmrInstanceTypeConfig.readInstanceTypes(properties,
+                    BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE,
+                    BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES,
+                    BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES))
+                    .containsExactly(instanceType("type-a"), instanceType("type-b"));
         }
     }
 

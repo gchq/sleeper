@@ -17,8 +17,8 @@ package sleeper.bulkimport.configuration;
 
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
@@ -38,9 +38,8 @@ public class EmrInstanceTypeConfig {
         weightedCapacity = builder.weightedCapacity;
     }
 
-    public static Stream<EmrInstanceTypeConfig> readInstanceTypes(
-            InstanceProperties properties, UserDefinedInstanceProperty architectureProperty,
-            UserDefinedInstanceProperty x86Property, UserDefinedInstanceProperty armProperty) {
+    public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
+            SleeperProperties<T> properties, T architectureProperty, T x86Property, T armProperty) {
         return properties.getList(architectureProperty).stream()
                 .map(value -> EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
                 .flatMap(architecture -> {
