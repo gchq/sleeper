@@ -115,6 +115,10 @@ sleeper.task.runner.timeout.seconds=900
 # The namespaces for the metrics used in the metrics stack.
 sleeper.metrics.namespace=Sleeper
 
+# If true, properties will be reloaded every time a long running job is started or a lambda is run.
+# This will mainly be used in test scenarios to ensure properties are up to date.
+sleeper.properties.force.reload=false
+
 
 ## The following properties relate to standard ingest.
 
@@ -172,6 +176,19 @@ sleeper.ingest.record.batch.type=arrow
 # The direct method is simpler but the async method should provide better performance when the number
 # of partitions is large.
 sleeper.ingest.partition.file.writer.type=async
+
+# Flag to enable/disable storage of tracking information for ingest jobs and tasks.
+sleeper.ingest.status.store.enabled=true
+
+# The time to live in seconds for ingest job updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
+sleeper.ingest.job.status.ttl=604800
+
+# The time to live in seconds for ingest task updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
+sleeper.ingest.task.status.ttl=604800
 
 # The maximum number of records written to local file in an ingest job. (Records are written in sorted
 # order to local disk before being uploaded to S3. Increasing this value increases the amount of time
@@ -234,19 +251,6 @@ sleeper.ingest.async.crt.part.size.bytes=134217728
 # simultaneously.
 # (CRT async ingest only)
 sleeper.ingest.async.crt.target.throughput.gbps=10
-
-# Flag to enable/disable storage of tracking information for ingest jobs and tasks.
-sleeper.ingest.status.store.enabled=true
-
-# The time to live in seconds for ingest job updates in the status store. Default is 1 week.
-# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
-# data.
-sleeper.ingest.job.status.ttl=604800
-
-# The time to live in seconds for ingest task updates in the status store. Default is 1 week.
-# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
-# data.
-sleeper.ingest.task.status.ttl=604800
 
 # The amount of memory in MB for the lambda that receives submitted requests to ingest files.
 sleeper.ingest.batcher.submitter.memory.mb=1024
@@ -413,6 +417,11 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 # import job specification.
 sleeper.default.bulk.import.emr.release.label=emr-6.10.0
 
+# (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
+# cluster. Must be either "x86" "arm64" or "x86,arm64". For more information, see the Bulk import
+# using EMR - Instance types section in docs/05-ingest.md
+sleeper.default.bulk.import.emr.instance.architecture=x86
+
 # (Non-persistent EMR mode only) The default EC2 x86 instance types to be used for the master node of
 # the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
@@ -426,12 +435,12 @@ sleeper.default.bulk.import.emr.executor.x86.instance.types=m6i.4xlarge
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master node
 # of the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-# sleeper.default.bulk.import.emr.master.arm.instance.types=
+sleeper.default.bulk.import.emr.master.arm.instance.types=
 
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the executor
 # nodes of the EMR cluster. For more information, see the Bulk import using EMR - Instance types
 # section in docs/05-ingest.md
-# sleeper.default.bulk.import.emr.executor.arm.instance.types=
+sleeper.default.bulk.import.emr.executor.arm.instance.types=
 
 # (Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of
 # the EMR cluster.
@@ -461,6 +470,11 @@ sleeper.default.bulk.import.emr.executor.max.instances=10
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 
+# (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
+# Must be either "x86" "arm64" or "x86,arm64". For more information, see the Bulk import using EMR -
+# Instance types section in docs/05-ingest.md
+sleeper.bulk.import.persistent.emr.instance.architecture=x86
+
 # (Persistent EMR mode only) The EC2 x86 instance types used for the master node of the persistent EMR
 # cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
@@ -469,17 +483,17 @@ sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 # (Persistent EMR mode only) The EC2 x86 instance types used for the executor nodes of the persistent
 # EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-# sleeper.bulk.import.persistent.emr.executor.x86.instance.types=
+sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types used for the master node of the persistent
 # EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-# sleeper.bulk.import.persistent.emr.master.arm.instance.types=
+sleeper.bulk.import.persistent.emr.master.arm.instance.types=
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types used for the executor nodes of the
 # persistent EMR cluster. For more information, see the Bulk import using EMR - Instance types section
 # in docs/05-ingest.md
-# sleeper.bulk.import.persistent.emr.executor.arm.instance.types=
+sleeper.bulk.import.persistent.emr.executor.arm.instance.types=
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true
