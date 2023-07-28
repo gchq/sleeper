@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.List;
 
@@ -32,70 +31,80 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 
 public class EmrInstanceTypeConfigTest {
 
-    @Test
-    void shouldReadSingleInstanceType() {
-        assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                List.of("some-type")))
-                .containsExactly(
-                        instanceType("some-type"));
+
+    @Nested
+    @DisplayName("Read instance types")
+    class ReadInstanceTypes {
+
+        @Test
+        void shouldReadSingleInstanceType() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
+                    List.of("some-type")))
+                    .containsExactly(
+                            instanceType("some-type"));
+        }
+
+        @Test
+        void shouldReadMultipleInstanceTypes() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
+                    List.of("some-type", "other-type", "another-type")))
+                    .containsExactly(
+                            instanceType("some-type"),
+                            instanceType("other-type"),
+                            instanceType("another-type"));
+        }
+
+        @Test
+        void shouldReadNoInstanceTypes() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(List.of()))
+                    .isEmpty();
+        }
     }
 
-    @Test
-    void shouldReadSingleInstanceTypeWithWeight() {
-        assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                List.of("some-type", "12")))
-                .containsExactly(
-                        instanceTypeWithWeight("some-type", 12));
-    }
+    @Nested
+    @DisplayName("Read instance weights")
+    class ReadInstanceWeights {
 
-    @Test
-    void shouldReadMultipleInstanceTypes() {
-        assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                List.of("some-type", "other-type", "another-type")))
-                .containsExactly(
-                        instanceType("some-type"),
-                        instanceType("other-type"),
-                        instanceType("another-type"));
-    }
+        @Test
+        void shouldReadSingleInstanceTypeWithWeight() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
+                    List.of("some-type", "12")))
+                    .containsExactly(
+                            instanceTypeWithWeight("some-type", 12));
+        }
 
-    @Test
-    void shouldReadMultipleInstanceTypesWhereMiddleOneHasWeight() {
-        assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                List.of("some-type", "other-type", "42", "another-type")))
-                .containsExactly(
-                        instanceType("some-type"),
-                        instanceTypeWithWeight("other-type", 42),
-                        instanceType("another-type"));
-    }
+        @Test
+        void shouldReadMultipleInstanceTypesWhereMiddleOneHasWeight() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
+                    List.of("some-type", "other-type", "42", "another-type")))
+                    .containsExactly(
+                            instanceType("some-type"),
+                            instanceTypeWithWeight("other-type", 42),
+                            instanceType("another-type"));
+        }
 
-    @Test
-    void shouldReadMultipleInstanceTypesWhereAllHaveWeight() {
-        assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
-                List.of("type-a", "1", "type-b", "2", "type-c", "3")))
-                .containsExactly(
-                        instanceTypeWithWeight("type-a", 1),
-                        instanceTypeWithWeight("type-b", 2),
-                        instanceTypeWithWeight("type-c", 3));
-    }
+        @Test
+        void shouldReadMultipleInstanceTypesWhereAllHaveWeight() {
+            assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(
+                    List.of("type-a", "1", "type-b", "2", "type-c", "3")))
+                    .containsExactly(
+                            instanceTypeWithWeight("type-a", 1),
+                            instanceTypeWithWeight("type-b", 2),
+                            instanceTypeWithWeight("type-c", 3));
+        }
 
-    @Test
-    void shouldReadNoInstanceTypes() {
-        assertThat(EmrInstanceTypeConfig.readInstanceTypesProperty(List.of()))
-                .isEmpty();
-    }
-
-    @Test
-    void failWhenWeightSpecifiedBeforeType() {
-        assertThatThrownBy(() -> EmrInstanceTypeConfig.readInstanceTypesProperty(
-                List.of("12", "some-type")))
-                .isInstanceOf(IllegalArgumentException.class);
+        @Test
+        void shouldFailWhenWeightSpecifiedBeforeType() {
+            assertThatThrownBy(() -> EmrInstanceTypeConfig.readInstanceTypesProperty(
+                    List.of("12", "some-type")))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
     }
 
     @Nested
     @DisplayName("Filter by architecture")
     class FilterByArchitecture {
         private final InstanceProperties instanceProperties = new InstanceProperties();
-        private final TableProperties tableProperties = new TableProperties(instanceProperties);
 
         @Test
         void shouldIncludeX86InstanceTypes() {
