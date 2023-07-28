@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+
 public class EmrInstanceTypeConfig {
 
     private final String instanceType;
@@ -39,15 +41,15 @@ public class EmrInstanceTypeConfig {
     public static Stream<EmrInstanceTypeConfig> readInstanceTypes(
             InstanceProperties properties, UserDefinedInstanceProperty architectureProperty,
             UserDefinedInstanceProperty x86Property, UserDefinedInstanceProperty armProperty) {
-        EmrInstanceArchitecture architecture = EnumUtils.getEnumIgnoreCase(
-                EmrInstanceArchitecture.class, properties.get(architectureProperty));
-        switch (architecture) {
-            case X86:
-            default:
-                return readInstanceTypesProperty(properties.getList(x86Property));
-            case ARM64:
-                return readInstanceTypesProperty(properties.getList(armProperty));
-        }
+        return properties.getList(architectureProperty).stream()
+                .map(value -> EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
+                .flatMap(architecture -> {
+                    if (architecture == ARM64) {
+                        return readInstanceTypesProperty(properties.getList(armProperty));
+                    } else {
+                        return readInstanceTypesProperty(properties.getList(x86Property));
+                    }
+                });
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
