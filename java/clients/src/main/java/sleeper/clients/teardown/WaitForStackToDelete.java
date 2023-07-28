@@ -68,7 +68,7 @@ public class WaitForStackToDelete {
         }
     }
 
-    static class DeleteFailedException extends RuntimeException {
+    public static class DeleteFailedException extends RuntimeException {
         DeleteFailedException(String stackName) {
             super("Failed to delete stack \"" + stackName + "\"");
         }
