@@ -16,6 +16,7 @@
 package sleeper.bulkimport.configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,7 +55,17 @@ import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_
  */
 public class ConfigurationUtils {
     public enum Architecture {
-        X86_64, ARM64
+        X86_64, ARM64;
+
+        public static Architecture from(EmrInstanceArchitecture arch) {
+            if (arch == EmrInstanceArchitecture.X86) {
+                return X86_64;
+            } else if (arch == EmrInstanceArchitecture.ARM64) {
+                return ARM64;
+            } else {
+                throw new IllegalArgumentException("Unrecognised architecture");
+            }
+        }
     }
 
     private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.%s";
