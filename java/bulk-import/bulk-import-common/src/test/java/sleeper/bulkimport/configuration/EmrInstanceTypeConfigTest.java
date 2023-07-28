@@ -120,6 +120,21 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
                     .containsExactly(instanceType("type-a"), instanceType("type-b"));
         }
+
+        @Test
+        void shouldReturnArmInstanceTypes() {
+            // Given
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "arm64");
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
+
+            // When / Then
+            assertThat(EmrInstanceTypeConfig.readInstanceTypes(instanceProperties,
+                    BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                    BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
+                    BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
+                    .containsExactly(instanceType("type-c"), instanceType("type-d"));
+        }
     }
 
     private EmrInstanceTypeConfig instanceType(String instanceType) {

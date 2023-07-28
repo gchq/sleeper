@@ -15,8 +15,11 @@
  */
 package sleeper.bulkimport.configuration;
 
+import org.apache.commons.lang3.EnumUtils;
+
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +39,15 @@ public class EmrInstanceTypeConfig {
     public static Stream<EmrInstanceTypeConfig> readInstanceTypes(
             InstanceProperties properties, UserDefinedInstanceProperty architectureProperty,
             UserDefinedInstanceProperty x86Property, UserDefinedInstanceProperty armProperty) {
-        return readInstanceTypesProperty(properties.getList(x86Property));
+        EmrInstanceArchitecture architecture = EnumUtils.getEnumIgnoreCase(
+                EmrInstanceArchitecture.class, properties.get(architectureProperty));
+        switch (architecture) {
+            case X86:
+            default:
+                return readInstanceTypesProperty(properties.getList(x86Property));
+            case ARM64:
+                return readInstanceTypesProperty(properties.getList(armProperty));
+        }
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -154,10 +155,8 @@ public class Utils {
         if (input == null) {
             return false;
         }
-        return List.of("x86", "arm64").containsAll(
-                SleeperProperties.readList(input).stream()
-                        .map(String::toLowerCase)
-                        .collect(Collectors.toList()));
+        return SleeperProperties.readList(input).stream()
+                .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
     public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
