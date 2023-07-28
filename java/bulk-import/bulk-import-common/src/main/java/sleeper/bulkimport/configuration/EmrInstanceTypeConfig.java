@@ -24,29 +24,36 @@ import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 
 public class EmrInstanceTypeConfig {
-
+    private final EmrInstanceArchitecture architecture;
     private final String instanceType;
     private final Integer weightedCapacity;
 
     private EmrInstanceTypeConfig(Builder builder) {
+        architecture = builder.architecture;
         instanceType = Objects.requireNonNull(builder.instanceType, "instanceType must not be null");
         weightedCapacity = builder.weightedCapacity;
     }
 
     public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
             SleeperProperties<T> properties, T architectureProperty, T x86Property, T armProperty) {
+        return readInstanceTypes(properties, architectureProperty, properties::getList, x86Property, armProperty);
+    }
+
+    public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
+            SleeperProperties<T> properties, T architectureProperty, Function<T, List<String>> getInstanceTypeEntries, T x86Property, T armProperty) {
         return properties.getList(architectureProperty).stream()
                 .map(value -> EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
                 .flatMap(architecture -> {
                     if (architecture == ARM64) {
-                        return readInstanceTypesProperty(properties.getList(armProperty));
+                        return readInstanceTypesProperty(getInstanceTypeEntries.apply(armProperty));
                     } else {
-                        return readInstanceTypesProperty(properties.getList(x86Property));
+                        return readInstanceTypesProperty(getInstanceTypeEntries.apply(x86Property));
                     }
                 });
     }
@@ -79,6 +86,10 @@ public class EmrInstanceTypeConfig {
 
     public Integer getWeightedCapacity() {
         return weightedCapacity;
+    }
+
+    public EmrInstanceArchitecture getArchitecture() {
+        return architecture;
     }
 
     @Override
@@ -116,6 +127,7 @@ public class EmrInstanceTypeConfig {
     public static final class Builder {
         private String instanceType;
         private Integer weightedCapacity;
+        private EmrInstanceArchitecture architecture;
 
         private Builder() {
         }
@@ -127,6 +139,11 @@ public class EmrInstanceTypeConfig {
 
         public Builder weightedCapacity(Integer weightedCapacity) {
             this.weightedCapacity = weightedCapacity;
+            return this;
+        }
+
+        public Builder architecture(EmrInstanceArchitecture architecture) {
+            this.architecture = architecture;
             return this;
         }
 

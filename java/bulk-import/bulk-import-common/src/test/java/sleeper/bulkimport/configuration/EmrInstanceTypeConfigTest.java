@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
 
@@ -34,7 +35,6 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 
 public class EmrInstanceTypeConfigTest {
-
 
     @Nested
     @DisplayName("Read instance types")
@@ -122,7 +122,8 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
-                    .containsExactly(instanceType("type-a"), instanceType("type-b"));
+                    .containsExactly(
+                            x86Instance("type-a"), x86Instance("type-b"));
         }
 
         @Test
@@ -137,7 +138,8 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
-                    .containsExactly(instanceType("type-c"), instanceType("type-d"));
+                    .containsExactly(
+                            armInstance("type-c"), armInstance("type-d"));
         }
 
         @Test
@@ -153,8 +155,8 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
                     .containsExactly(
-                            instanceType("type-a"), instanceType("type-b"),
-                            instanceType("type-c"), instanceType("type-d"));
+                            x86Instance("type-a"), x86Instance("type-b"),
+                            armInstance("type-c"), armInstance("type-d"));
         }
 
         @Test
@@ -171,8 +173,8 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES,
                     BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES))
                     .containsExactly(
-                            instanceType("type-a"), instanceType("type-b"),
-                            instanceType("type-c"), instanceType("type-d"));
+                            x86Instance("type-a"), x86Instance("type-b"),
+                            armInstance("type-c"), armInstance("type-d"));
         }
     }
 
@@ -186,6 +188,21 @@ public class EmrInstanceTypeConfigTest {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
                 .weightedCapacity(weightedCapacity)
+                .build();
+    }
+
+    private EmrInstanceTypeConfig x86Instance(String instanceType) {
+        return instanceTypeWithArchitecture(instanceType, EmrInstanceArchitecture.X86);
+    }
+
+    private EmrInstanceTypeConfig armInstance(String instanceType) {
+        return instanceTypeWithArchitecture(instanceType, EmrInstanceArchitecture.ARM64);
+    }
+
+    private EmrInstanceTypeConfig instanceTypeWithArchitecture(String instanceType, EmrInstanceArchitecture architecture) {
+        return EmrInstanceTypeConfig.builder()
+                .instanceType(instanceType)
+                .architecture(architecture)
                 .build();
     }
 }
