@@ -24,6 +24,7 @@ import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
@@ -42,7 +43,8 @@ public class EmrInstanceTypeConfig {
     public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
             SleeperProperties<T> properties, T architectureProperty, T x86Property, T armProperty) {
         return properties.getList(architectureProperty).stream()
-                .map(value -> EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
+                .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised architecture: " + value)))
                 .flatMap(architecture -> {
                     if (architecture == ARM64) {
                         return readInstanceTypesProperty(properties.getList(armProperty), architecture);

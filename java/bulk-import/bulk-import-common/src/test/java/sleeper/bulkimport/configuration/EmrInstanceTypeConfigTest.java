@@ -108,7 +108,7 @@ public class EmrInstanceTypeConfigTest {
         @Test
         void shouldReturnX86InstanceTypes() {
             // Given
-            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86");
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86_64");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -140,7 +140,7 @@ public class EmrInstanceTypeConfigTest {
         @Test
         void shouldReturnX86AndArmInstanceTypes() {
             // Given
-            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86,arm64");
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "x86_64,arm64");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -158,7 +158,7 @@ public class EmrInstanceTypeConfigTest {
         void shouldReturnInstanceTypesByTableProperties() {
             // Given
             TableProperties properties = new TableProperties(instanceProperties);
-            properties.set(BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, "x86,arm64");
+            properties.set(BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, "x86_64,arm64");
             properties.set(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
             properties.set(BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
 
@@ -170,6 +170,22 @@ public class EmrInstanceTypeConfigTest {
                     .containsExactly(
                             x86Instance("type-a"), x86Instance("type-b"),
                             armInstance("type-c"), armInstance("type-d"));
+        }
+
+        @Test
+        void shouldFailWithUnrecognisedArchitecture() {
+            // Given
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, "abc");
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, "type-a,type-b");
+            instanceProperties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES, "type-c,type-d");
+
+            // When / Then
+            assertThatThrownBy(() -> EmrInstanceTypeConfig.readInstanceTypes(instanceProperties,
+                    BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                    BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES,
+                    BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES).toArray())
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Unrecognised architecture: abc");
         }
     }
 
