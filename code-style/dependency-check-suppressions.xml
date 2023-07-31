@@ -169,4 +169,13 @@
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
         <cve>CVE-2023-35116</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Spark uses OkHttp, and there's a vulnerability with OkHttp's integration with the Brotli library.
+        This is a false positive. According to the linked issue, the CVE was intended to be limited to use of the
+        okhttp-brotli library, which we don't use.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
+        <cve>CVE-2023-3782</cve>
+    </suppress>
 </suppressions>
