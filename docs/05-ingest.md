@@ -253,7 +253,7 @@ sleeper.bulk.import.persistent.emr.master.arm.instance.types=m6g.xlarge # The EC
 sleeper.bulk.import.persistent.emr.executor.arm.instance.types=m6g.4xlarge # The EC2 ARM64 instance types to be used for the executor nodes of the EMR cluster.
 ```
 
-Multiple instance types can be specified separated by commas. One instance will be chosen depending on the capacity
+Multiple instance types can be specified separated by commas. Instances will be chosen depending on the capacity
 available.
 
 For executor nodes, you can assign weights to instance types to define the amount of capacity that each instance type
