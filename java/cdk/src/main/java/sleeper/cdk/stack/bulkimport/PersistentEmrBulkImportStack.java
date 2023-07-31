@@ -39,6 +39,7 @@ import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
 import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypes;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
@@ -192,7 +192,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .instanceType(config.getInstanceType())
                         .weightedCapacity(config.getWeightedCapacity())
                         .ebsConfiguration(ebsConf)
-                        .configurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture())))
+                        .configurations(getConfigurations(instanceProperties, config.getArchitecture()))
                         .build())
                 .collect(Collectors.toList());
     }
@@ -205,7 +205,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                         .instanceType(config.getInstanceType())
                         .weightedCapacity(config.getWeightedCapacity())
                         .ebsConfiguration(ebsConf)
-                        .configurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture())))
+                        .configurations(getConfigurations(instanceProperties, config.getArchitecture()))
                         .build())
                 .collect(Collectors.toList());
     }
@@ -220,7 +220,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
     }
 
     private static List<CfnCluster.ConfigurationProperty> getConfigurations(
-            InstanceProperties instanceProperties, ConfigurationUtils.Architecture architecture) {
+            InstanceProperties instanceProperties, EmrInstanceArchitecture architecture) {
         List<CfnCluster.ConfigurationProperty> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
