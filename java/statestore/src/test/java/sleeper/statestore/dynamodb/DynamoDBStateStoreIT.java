@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -865,7 +866,7 @@ public class DynamoDBStateStoreIT {
         });
 
         // Then
-        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllLeafPartitions());
+        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(List.copyOf(tree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList())));
     }
 
     @Test
