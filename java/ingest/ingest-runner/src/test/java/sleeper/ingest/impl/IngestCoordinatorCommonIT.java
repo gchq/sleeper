@@ -312,7 +312,6 @@ public class IngestCoordinatorCommonIT {
                 .splitToNewChildren("root", "left", "right", 2)
                 .buildTree();
 
-
         ingestAndVerify(recordListAndSchema,
                 tree,
                 recordListAndSchema.recordList,
@@ -452,7 +451,7 @@ public class IngestCoordinatorCommonIT {
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", splitPoint)
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, splitPoint)
                 .buildTree();
 
         ingestAndVerify(recordListAndSchema,
@@ -484,7 +483,7 @@ public class IngestCoordinatorCommonIT {
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", new byte[]{10})
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, new byte[]{10})
                 .buildTree();
 
         ingestAndVerify(recordListAndSchema,
@@ -515,9 +514,7 @@ public class IngestCoordinatorCommonIT {
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0)
-                .splitToNewChildrenOnDimension("left", "p1", "p2", 1, 10L)
-                .splitToNewChildrenOnDimension("right", "p3", "p4", 1, 10L)
+                .splitToNewChildrenOnDimension("root", "left", "right", 1, 10L)
                 .buildTree();
 
         ingestAndVerify(recordListAndSchema,
