@@ -825,16 +825,6 @@ public class DynamoDBStateStoreIT {
 
         // When
         List<Partition> retrievedPartitions = dynamoDBStateStore.getAllPartitions();
-        retrievedPartitions.sort((p1, p2) -> {
-            long p1Key = (long) p1.getRegion().getRange("key").getMin();
-            long p2Key = (long) p2.getRegion().getRange("key").getMin();
-            if (p1Key < p2Key) {
-                return -1;
-            } else if (p1Key == p2Key) {
-                return 0;
-            }
-            return 1;
-        });
 
         // Then
         assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
