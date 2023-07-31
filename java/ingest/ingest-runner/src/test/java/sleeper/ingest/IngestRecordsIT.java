@@ -75,7 +75,7 @@ import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStor
 class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L)
                 .buildList()
@@ -194,7 +194,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         Schema schema = schemaWithRowKeys(field1, field2);
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "partition1", "partition2", new byte[]{10})
+                .splitToNewChildrenOnDimension("root", "partition1", "partition2", 0, new byte[]{10})
                 .buildList());
 
         // When
@@ -293,12 +293,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //                |
         // Long.MIN_VALUE |----------------------------
         //               Long.MIN_VALUE            null   Dimension 1
-
         StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "partition1", "partition2", 1, 10L)
                 .buildList());
-
 
         // When
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
@@ -560,8 +558,6 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L).buildList();
         StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
-
-
         List<Record> records = getLotsOfRecords();
 
         // When
