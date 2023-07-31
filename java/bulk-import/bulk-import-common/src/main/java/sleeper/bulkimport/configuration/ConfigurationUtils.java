@@ -21,8 +21,6 @@ import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import java.util.HashMap;
 import java.util.Map;
 
-import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture.ARM64;
-import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture.X86_64;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_SPARK_SPECULATION_QUANTILE;
@@ -48,42 +46,22 @@ import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
 /**
  * Properties in this class are based on the recommended values in this blog:
  * https://aws.amazon.com/blogs/big-data/best-practices-for-successfully-managing-memory-for-apache-spark-applications-on-amazon-emr/
  */
 public class ConfigurationUtils {
-    public enum Architecture {
-        X86_64, ARM64;
-
-        public static Architecture from(EmrInstanceArchitecture arch) {
-            if (arch == EmrInstanceArchitecture.X86_64) {
-                return X86_64;
-            } else if (arch == EmrInstanceArchitecture.ARM64) {
-                return ARM64;
-            } else {
-                throw new IllegalArgumentException("Unrecognised architecture");
-            }
-        }
-    }
 
     private static final String JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto.%s";
 
     private ConfigurationUtils() {
     }
 
-    public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties) {
-        return getSparkConfigurationFromInstanceProperties(instanceProperties, X86_64);
-    }
-
     public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
                                                                                   EmrInstanceArchitecture arch) {
-        return getSparkConfigurationFromInstanceProperties(instanceProperties, Architecture.from(arch));
-    }
-
-    public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
-                                                                                  Architecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
 
         // spark.driver properties
@@ -169,26 +147,18 @@ public class ConfigurationUtils {
     }
 
     public static Map<String, String> getJavaHomeConfiguration(EmrInstanceArchitecture arch) {
-        return getJavaHomeConfiguration(Architecture.from(arch));
-    }
-
-    public static Map<String, String> getJavaHomeConfiguration(Architecture arch) {
         Map<String, String> javaHomeConf = new HashMap<>();
         javaHomeConf.put("JAVA_HOME", getJavaHome(arch));
         return javaHomeConf;
     }
 
     public static String getJavaHome(EmrInstanceArchitecture arch) {
-        return getJavaHome(Architecture.from(arch));
-    }
-
-    public static String getJavaHome(Architecture arch) {
-        if (X86_64.equals(arch)) {
+        if (arch == X86_64) {
             return String.format(JAVA_HOME, "x86_64");
-        } else if (ARM64.equals(arch)) {
+        } else if (arch == ARM64) {
             return String.format(JAVA_HOME, "aarch64");
         } else {
-            throw new IllegalArgumentException("Unrecognised architecture: " + arch.toString());
+            throw new IllegalArgumentException("Unrecognised architecture: " + arch);
         }
     }
 }
