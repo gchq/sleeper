@@ -15,23 +15,17 @@
  */
 package sleeper.query.executor;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AgeOffIterator;
@@ -39,7 +33,6 @@ import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -56,8 +49,6 @@ import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -68,7 +59,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -81,31 +71,21 @@ import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_C
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
-@Testcontainers
 public class QueryExecutorIT {
-    protected static final int DYNAMO_PORT = 8000;
-    protected static AmazonDynamoDB dynamoDBClient;
     protected static ExecutorService executorService;
-
-    @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
 
     @TempDir
     public Path folder;
 
     @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+    public static void initExecutorService() {
         executorService = Executors.newFixedThreadPool(10);
     }
 
     @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
+    public static void shutdownExecutorService() {
         executorService.shutdown();
     }
 
@@ -117,7 +97,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
@@ -158,7 +138,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -228,7 +208,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
         List<String> files = stateStore.getActiveFiles().stream()
@@ -290,7 +270,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -354,7 +334,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
@@ -486,7 +466,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         Partition leftPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key").getMin() == Long.MIN_VALUE))
                 .findFirst()
@@ -601,7 +586,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         Partition leftPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
                 .findFirst()
@@ -1041,7 +1031,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -1100,7 +1095,7 @@ public class QueryExecutorIT {
         tableProperties.setSchema(schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Record> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -1163,7 +1158,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
@@ -1194,7 +1194,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1226,7 +1226,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1369,18 +1369,6 @@ public class QueryExecutorIT {
             records.add(record);
         }
         return records;
-    }
-
-    protected StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, Collections.emptyList());
-    }
-
-    protected StateStore getStateStore(Schema schema,
-                                       List<Object> splitPoints) throws StateStoreException {
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
-        return dynamoStateStore;
     }
 
     private static Record createRecordMultidimensionalKey(String key1, String key2, long value1, long value2) {
