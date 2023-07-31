@@ -27,5 +27,4 @@
     <suppress files="[\\/]src[\\/]test[\\/].*" id="methodLengthMax"/>
     <suppress files="[\\/]src[\\/]test[\\/].*" id="parameterNumber"/>
     <suppress files=".*Application.java" id="hideUtilityClassConstructor"/>
-    <suppress files="ShowInternalDependencies.java" checks="HideUtilityClassConstructor"/>
 </suppressions>

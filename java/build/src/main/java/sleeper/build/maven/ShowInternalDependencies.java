@@ -23,6 +23,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 public class ShowInternalDependencies {
+    private ShowInternalDependencies() {
+
+    }
+
     public static void main(String[] args) throws IOException {
         Path repositoryRoot = Path.of("").toAbsolutePath();
         MavenModuleStructure mavenStructure = ProjectStructure.builder()
