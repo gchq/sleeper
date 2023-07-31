@@ -896,7 +896,6 @@ public class S3StateStoreIT {
                 .childPartitionIds(new ArrayList<>())
                 .dimension(-1)
                 .build();
-
         StateStore stateStore = getStateStore(schema, Collections.singletonList(partition));
 
         // When
@@ -1021,7 +1020,6 @@ public class S3StateStoreIT {
         // When
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(stepOneTree.getRootPartition(), stepOneTree.getPartition("id1"), stepOneTree.getPartition("id2"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getPartition("id2"), expectedTree.getPartition("id3"), expectedTree.getPartition("id4"));
-
 
         // Then
         assertThat(stateStore.getLeafPartitions())
@@ -1231,7 +1229,6 @@ public class S3StateStoreIT {
 
         // Then
         assertThat(partitions).hasSize(1);
-
         Partition expectedPartition = new PartitionsBuilder(schema)
                 .rootFirst(partitions.get(0).getId())
                 .buildTree()
