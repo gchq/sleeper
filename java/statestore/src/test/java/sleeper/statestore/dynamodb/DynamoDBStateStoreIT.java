@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 @Testcontainers
 public class DynamoDBStateStoreIT {
@@ -851,22 +850,13 @@ public class DynamoDBStateStoreIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "id1", "id2", 1L)
                 .splitToNewChildren("id2", "id3", "id4", 9L).buildTree();
-        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+        DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions());
         // When
-        List<Partition> retrievedPartitions = new ArrayList<>(stateStore.getLeafPartitions());
-        retrievedPartitions.sort((p1, p2) -> {
-            long p1Key = (long) p1.getRegion().getRange("key").getMin();
-            long p2Key = (long) p2.getRegion().getRange("key").getMin();
-            if (p1Key < p2Key) {
-                return -1;
-            } else if (p1Key == p2Key) {
-                return 0;
-            }
-            return 1;
-        });
+        List<Partition> retrievedPartitions = stateStore.getLeafPartitions();
+        //stateStore.atomicallyUpdatePartitionAndCreateNewOnes();
 
         // Then
-        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(List.copyOf(tree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList())));
+        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
     }
 
     @Test
