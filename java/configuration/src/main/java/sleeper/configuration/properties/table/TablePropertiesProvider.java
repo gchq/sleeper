@@ -61,4 +61,8 @@ public class TablePropertiesProvider {
         }
         return tableProperties;
     }
+
+    public void clearCache() {
+        tableNameToPropertiesCache.clear();
+    }
 }

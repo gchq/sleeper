@@ -16,7 +16,7 @@
 set -e
 
 if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <shortId> <vpc> <subnet>"
+  echo "Usage: $0 <shortId> <vpc> <subnet> <optional-maven-params>"
   exit 1
 fi
 
@@ -24,15 +24,21 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
+SHORT_ID="$1"
+VPC="$2"
+SUBNETS="$3"
+shift 3
+
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 pushd "$MAVEN_DIR"
 
 mvn verify -PsystemTest \
-  -Dsleeper.system.test.short.id="$1" \
-  -Dsleeper.system.test.vpc.id="$2" \
-  -Dsleeper.system.test.subnet.ids="$3"
+  -Dsleeper.system.test.short.id="$SHORT_ID" \
+  -Dsleeper.system.test.vpc.id="$VPC" \
+  -Dsleeper.system.test.subnet.ids="$SUBNETS" \
+  "$@"
 
 popd
 

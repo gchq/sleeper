@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
@@ -105,10 +106,13 @@ public class ECSIngestTask {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(
+                s3Client, instanceProperties, tablePropertiesProvider);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(
                 objectFactory,
                 instanceProperties,
                 tablePropertiesProvider,
+                propertiesReloader,
                 stateStoreProvider,
                 localDir,
                 s3AsyncClient,
