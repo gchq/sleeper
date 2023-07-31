@@ -87,14 +87,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        The version of Hadoop we're using uses an old version of OkHttp, with old Maven artifacts that don't have a
-        fixed version.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp/okhttp@.*$</packageUrl>
-        <cve>CVE-2023-3782</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         The version of Athena we're using uses an old version of Bouncy Castle Provider, with an old Maven artifact that
         doesn't have a fixed version.
         ]]></notes>
@@ -171,11 +163,10 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        Spark uses OkHttp, and there's a vulnerability with OkHttp's integration with the Brotli library.
-        This is a false positive. According to the linked issue, the CVE was intended to be limited to use of the
+        This is a false positive. According to the issue linked on the CVE, the problem is limited to the
         okhttp-brotli library, which we don't use.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.(okhttp3|okhttp)/okhttp@.*$</packageUrl>
         <cve>CVE-2023-3782</cve>
     </suppress>
 </suppressions>
