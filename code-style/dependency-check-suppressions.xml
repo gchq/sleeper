@@ -133,7 +133,7 @@
         <notes><![CDATA[
         This seems to be a false positive as the CVE is for the Go implementation of Avro, which we're not using.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-ipc@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-(ipc|mapred)@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
     </suppress>
     <suppress>
