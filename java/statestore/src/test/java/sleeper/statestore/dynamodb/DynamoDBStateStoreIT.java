@@ -848,12 +848,22 @@ public class DynamoDBStateStoreIT {
 
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
+                .buildTree();
+
+        PartitionTree intermediateTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "id1", "id2", 1L)
+                .buildTree();
+
+        PartitionTree expectedTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
                 .splitToNewChildren("root", "id1", "id2", 1L)
                 .splitToNewChildren("id2", "id3", "id4", 9L).buildTree();
         DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions());
         // When
         List<Partition> retrievedPartitions = stateStore.getLeafPartitions();
-        //stateStore.atomicallyUpdatePartitionAndCreateNewOnes();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(intermediateTree.getRootPartition(), intermediateTree.getPartition("id1"), intermediateTree.getPartition("id2"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getPartition("id2"), expectedTree.getPartition("id3"), expectedTree.getPartition("id4"));
 
         // Then
         assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
@@ -871,7 +881,9 @@ public class DynamoDBStateStoreIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "child1", "child2", 0L)
                 .buildTree();
-        dynamoDBStateStore.initialise(tree.getAllPartitions());
+
+        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getRootPartition(), tree.getPartition("child1"), tree.getPartition("child2"));
+
 
         // Then
         assertThat(dynamoDBStateStore.getAllPartitions())
@@ -1040,7 +1052,6 @@ public class DynamoDBStateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(partitions).hasSize(1);
         Partition expectedPartition = new PartitionsBuilder(schema).rootFirst(partitions.get(0).getId()).buildTree().getPartition(partitions.get(0).getId());
         assertThat(partitions).containsExactly(expectedPartition);
     }
@@ -1057,10 +1068,7 @@ public class DynamoDBStateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(partitions).hasSize(1);
-
         Partition expectedPartition = new PartitionsBuilder(schema).rootFirst(partitions.get(0).getId()).buildTree().getPartition(partitions.get(0).getId());
-
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1070,13 +1078,12 @@ public class DynamoDBStateStoreIT {
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
+
         // When
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+
         // Then
-        assertThat(partitions).hasSize(1);
-
         Partition expectedPartition = new PartitionsBuilder(schema).rootFirst(partitions.get(0).getId()).buildTree().getPartition(partitions.get(0).getId());
-
         assertThat(partitions).containsExactly(expectedPartition);
     }
 
@@ -1091,6 +1098,7 @@ public class DynamoDBStateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
         Partition expectedPartition = new PartitionsBuilder(schema).rootFirst(partitions.get(0).getId()).buildTree().getPartition(partitions.get(0).getId());
 
+        //Then
         assertThat(partitions).containsExactly(expectedPartition);
     }
 }
