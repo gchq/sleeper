@@ -93,6 +93,8 @@
         <json-smart.version>2.4.11</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
         <kerby.version>2.0.3</kerby.version>
+        <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
+        <okhttp3.version>4.11.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
@@ -428,6 +430,11 @@
                 <groupId>org.apache.kerby</groupId>
                 <artifactId>kerb-simplekdc</artifactId>
                 <version>${kerby.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp3.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
