@@ -25,6 +25,7 @@ import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -100,7 +101,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
     }
 
     private Map<String, String> getDefaultSparkConfig(BulkImportJob bulkImportJob, Map<String, String> platformSpec, TableProperties tableProperties, InstanceProperties instanceProperties) {
-        Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties));
+        Map<String, String> defaultConfig = new HashMap<>(ConfigurationUtils.getSparkConfigurationFromInstanceProperties(instanceProperties, EmrInstanceArchitecture.X86_64));
         String imageName = instanceProperties.get(ACCOUNT) + ".dkr.ecr." +
                 instanceProperties.get(REGION) + ".amazonaws.com/" +
                 instanceProperties.get(BULK_IMPORT_REPO) + ":" + instanceProperties.get(VERSION);

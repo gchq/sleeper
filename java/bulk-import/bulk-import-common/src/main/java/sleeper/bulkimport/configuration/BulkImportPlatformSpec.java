@@ -57,4 +57,8 @@ public class BulkImportPlatformSpec {
             return value;
         }
     }
+
+    public TableProperties getTableProperties() {
+        return tableProperties;
+    }
 }

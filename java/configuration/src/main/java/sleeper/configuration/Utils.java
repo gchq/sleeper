@@ -18,7 +18,9 @@ package sleeper.configuration;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,6 +149,14 @@ public class Utils {
             return false;
         }
         return parseAndCheckInteger(string, num -> num >= 1 && num <= maxValue);
+    }
+
+    public static boolean isValidArchitecture(String input) {
+        if (input == null) {
+            return false;
+        }
+        return SleeperProperties.readList(input).stream()
+                .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
     public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
