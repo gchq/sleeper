@@ -69,8 +69,8 @@ import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getSketches;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getUnsortedRecords;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.readRecordsFromParquetFile;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
+import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
@@ -132,7 +132,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", new byte[]{64, 64})
                 .buildList());
@@ -192,7 +192,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field1, field2);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "partition1", "partition2", 0, new byte[]{10})
                 .buildList());
@@ -293,7 +293,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //                |
         // Long.MIN_VALUE |----------------------------
         //               Long.MIN_VALUE            null   Dimension 1
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "partition1", "partition2", 1, 10L)
                 .buildList());
@@ -369,7 +369,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<Partition> partition = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L).buildList();
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
+        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(partition);
 
         // When
         long numWritten = ingestRecords(schema, stateStore, getRecordsInFirstPartitionOnly()).getRecordsWritten();
@@ -446,7 +446,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<Partition> partition = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L).buildList();
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
+        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(partition);
         List<Record> records = getLotsOfRecords();
 
         // When
@@ -557,7 +557,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<Partition> partition = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L).buildList();
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithPartitions(partition);
+        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(partition);
         List<Record> records = getLotsOfRecords();
 
         // When
