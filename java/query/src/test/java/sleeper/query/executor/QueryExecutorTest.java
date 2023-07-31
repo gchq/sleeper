@@ -73,7 +73,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLAS
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
-public class QueryExecutorIT {
+public class QueryExecutorTest {
     protected static ExecutorService executorService;
 
     @TempDir
