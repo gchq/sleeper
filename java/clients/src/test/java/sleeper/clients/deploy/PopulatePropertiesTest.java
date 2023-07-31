@@ -120,7 +120,7 @@ class PopulatePropertiesTest {
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr");
+        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emrs");
         expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
         expected.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionTasksCreationRule");
         expected.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-SplittingCompactionTasksCreationRule");
