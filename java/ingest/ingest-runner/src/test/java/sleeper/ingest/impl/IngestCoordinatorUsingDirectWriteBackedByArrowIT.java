@@ -100,7 +100,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
 
-
         test(recordListAndSchema, tree, arrow -> arrow
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
