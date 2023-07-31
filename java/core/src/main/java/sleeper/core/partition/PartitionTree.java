@@ -93,7 +93,6 @@ public class PartitionTree {
         return List.copyOf(idToPartition.values());
     }
 
-
     public Partition getLeafPartition(Key key) {
         // Sanity check key is of the correct length
         if (key.size() != schema.getRowKeyFields().size()) {

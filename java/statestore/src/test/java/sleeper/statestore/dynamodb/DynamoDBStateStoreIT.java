@@ -824,10 +824,9 @@ public class DynamoDBStateStoreIT {
         StateStore dynamoDBStateStore = getStateStore(schema, tree.getAllPartitions());
 
         // When
-        List<Partition> retrievedPartitions = dynamoDBStateStore.getAllPartitions();
 
         // Then
-        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
+        assertThat(dynamoDBStateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
     }
 
     @Test
@@ -874,7 +873,6 @@ public class DynamoDBStateStoreIT {
                 .buildTree();
 
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getRootPartition(), tree.getPartition("child1"), tree.getPartition("child2"));
-
 
         // Then
         assertThat(dynamoDBStateStore.getAllPartitions())
@@ -1088,7 +1086,7 @@ public class DynamoDBStateStoreIT {
         List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
         Partition expectedPartition = new PartitionsBuilder(schema).rootFirst(partitions.get(0).getId()).buildTree().getPartition(partitions.get(0).getId());
 
-        //Then
+        // Then
         assertThat(partitions).containsExactly(expectedPartition);
     }
 }
