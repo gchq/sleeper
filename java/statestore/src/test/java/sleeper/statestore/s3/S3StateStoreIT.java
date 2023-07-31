@@ -1078,7 +1078,6 @@ public class S3StateStoreIT {
                 .splitToNewChildren("root", "child1", "child2", Long.MIN_VALUE)
                 .buildTree();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2"));
-        
         // When / Then
         assertThatThrownBy(() ->
                 dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
