@@ -14,13 +14,4 @@
 
 FROM apache/spark:3.3.1
 
-USER root
-
-# Install JDK 11
-RUN yum update -y && \
-    yum install java-11-amazon-corretto -y
-
 COPY ./bulk-import-runner.jar /opt/spark/workdir
-
-# Spark user from base image
-USER 185
