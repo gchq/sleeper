@@ -41,7 +41,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Paint;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -116,16 +115,9 @@ public class DrawDependencyGraph {
         JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
         JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
         JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
-        transitiveCheckBox.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent e) {
-                if (e.getStateChange() == 1) {
-                    showTransitiveDependencies = true;
-                } else {
-                    showTransitiveDependencies = false;
-                }
-                SwingUtilities.updateComponentTreeUI(frame);
-            }
+        transitiveCheckBox.addItemListener(e -> {
+            showTransitiveDependencies = e.getStateChange() == ItemEvent.SELECTED;
+            SwingUtilities.updateComponentTreeUI(frame);
         });
 
         vv.setPreferredSize(new Dimension(350, 350));
