@@ -27,6 +27,7 @@ import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
 import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypes;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
@@ -97,7 +97,7 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                         .withInstanceType(config.getInstanceType())
                         .withWeightedCapacity(config.getWeightedCapacity())
                         .withEbsConfiguration(ebsConfiguration)
-                        .withConfigurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture()))))
+                        .withConfigurations(getConfigurations(instanceProperties, config.getArchitecture())))
                 .collect(Collectors.toList());
     }
 
@@ -117,12 +117,12 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
                 .map(config -> new InstanceTypeConfig()
                         .withInstanceType(config.getInstanceType())
                         .withEbsConfiguration(ebsConfiguration)
-                        .withConfigurations(getConfigurations(instanceProperties, Architecture.from(config.getArchitecture()))))
+                        .withConfigurations(getConfigurations(instanceProperties, config.getArchitecture())))
                 .collect(Collectors.toList());
     }
 
     private static List<Configuration> getConfigurations(
-            InstanceProperties instanceProperties, Architecture architecture) {
+            InstanceProperties instanceProperties, EmrInstanceArchitecture architecture) {
         List<Configuration> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();

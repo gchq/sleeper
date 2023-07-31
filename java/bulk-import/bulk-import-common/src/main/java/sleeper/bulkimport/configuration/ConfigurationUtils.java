@@ -78,6 +78,11 @@ public class ConfigurationUtils {
     }
 
     public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
+                                                                                  EmrInstanceArchitecture arch) {
+        return getSparkConfigurationFromInstanceProperties(instanceProperties, Architecture.from(arch));
+    }
+
+    public static Map<String, String> getSparkConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
                                                                                   Architecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
 
@@ -163,10 +168,18 @@ public class ConfigurationUtils {
         return mapRedSiteConf;
     }
 
+    public static Map<String, String> getJavaHomeConfiguration(EmrInstanceArchitecture arch) {
+        return getJavaHomeConfiguration(Architecture.from(arch));
+    }
+
     public static Map<String, String> getJavaHomeConfiguration(Architecture arch) {
         Map<String, String> javaHomeConf = new HashMap<>();
         javaHomeConf.put("JAVA_HOME", getJavaHome(arch));
         return javaHomeConf;
+    }
+
+    public static String getJavaHome(EmrInstanceArchitecture arch) {
+        return getJavaHome(Architecture.from(arch));
     }
 
     public static String getJavaHome(Architecture arch) {
