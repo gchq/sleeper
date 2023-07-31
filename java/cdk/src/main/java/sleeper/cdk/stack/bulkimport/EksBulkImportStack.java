@@ -206,6 +206,7 @@ public final class EksBulkImportStack extends NestedStack {
         ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
         bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
+                .vpc(vpc)
                 .subnetSelection(SubnetSelection.builder()
                         .subnets(List.of(subnet))
                         .build())
