@@ -195,9 +195,6 @@ public class Partition {
         }
 
         public Partition build() {
-            if (childPartitionIds != null) {
-                this.leafPartition = childPartitionIds.isEmpty();
-            }
             return new Partition(this);
         }
 
