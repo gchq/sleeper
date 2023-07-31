@@ -69,8 +69,7 @@ public class SleeperPartitionerTest {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
-            Key key = Key.create(objs);
-            keys.add(key);
+            keys.add(Key.create(objs));
         }
         Set<Integer> partitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(partitionIds).hasSize(1);
@@ -100,8 +99,7 @@ public class SleeperPartitionerTest {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
-            Key key = Key.create(objs);
-            keys.add(key);
+            keys.add(Key.create(objs));
         }
         Set<Integer> leftPartitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(leftPartitionIds).hasSize(1);
@@ -111,8 +109,7 @@ public class SleeperPartitionerTest {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
-            Key key = Key.create(objs);
-            keys.add(key);
+            keys.add(Key.create(objs));
         }
         Set<Integer> rightPartitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(rightPartitionIds).hasSize(1);
@@ -149,8 +146,7 @@ public class SleeperPartitionerTest {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
-                Key key = Key.create(objs);
-                keys.add(key);
+                keys.add(Key.create(objs));
             }
         }
         Set<Integer> leftUpperPartitionIds = getPartitionNumbers(keys, partitioner);
@@ -162,8 +158,7 @@ public class SleeperPartitionerTest {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
-                Key key = Key.create(objs);
-                keys.add(key);
+                keys.add(Key.create(objs));
             }
         }
         Set<Integer> leftLowerPartitionIds = getPartitionNumbers(keys, partitioner);
@@ -175,8 +170,7 @@ public class SleeperPartitionerTest {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
-                Key key = Key.create(objs);
-                keys.add(key);
+                keys.add(Key.create(objs));
             }
         }
         Set<Integer> rightPartitionIds = getPartitionNumbers(keys, partitioner);
