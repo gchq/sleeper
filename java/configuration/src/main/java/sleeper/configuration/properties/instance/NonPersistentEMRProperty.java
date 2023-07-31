@@ -53,13 +53,13 @@ public interface NonPersistentEMRProperty {
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master " +
                     "node of the EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("")
+            .defaultValue("m6g.xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.arm.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the executor " +
                     "nodes of the EMR cluster. " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("")
+            .defaultValue("m6g.4xlarge")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.market.type")
             .description("(Non-persistent EMR mode only) The default purchasing option to be used for the executor " +
