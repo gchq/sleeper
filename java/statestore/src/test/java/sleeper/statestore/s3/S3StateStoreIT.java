@@ -1035,7 +1035,7 @@ public class S3StateStoreIT {
                 .rootFirst("root")
                 .buildTree();
         S3StateStore stateStore = getStateStore(schema, tree.getAllPartitions());
-        
+
         // When
         PartitionTree expectedTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
@@ -1081,6 +1081,10 @@ public class S3StateStoreIT {
                 .buildTree();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2"));
         // When / Then
+        // TODO This fails for the wrong reason. There's actually no validation of the leafPartition flag.
+        //      It's failing because the parent partition ID doesn't match.
+        //      We could implement the validation and improve the assertion, but we probably don't actually
+        //      need validation here at all as long as the code that calls this method is well tested.
         assertThatThrownBy(() ->
                 dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
                         tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2")))

@@ -126,8 +126,15 @@
         We don't expose that page, so it won't be a problem.
         This is a provided dependency for the module bulk-import/bulk-import-runner.
         ]]></notes>
-        <filePath regex="true">^.*/avro-ipc-1\.11\.1\.jar/.*/jquery-.*\.js$</filePath>
+        <filePath regex="true">^.*/avro-ipc-1\.11\.2\.jar/.*/jquery-.*\.js$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This seems to be a false positive as the CVE is for the Go implementation of Avro, which we're not using.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-(ipc|mapred)@.*$</packageUrl>
+        <cve>CVE-2023-37475</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -153,5 +160,13 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
         <cve>CVE-2023-35116</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This is a false positive. According to the issue linked on the CVE, the problem is limited to the
+        okhttp-brotli library, which we don't use.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.(okhttp3|okhttp)/okhttp@.*$</packageUrl>
+        <cve>CVE-2023-3782</cve>
     </suppress>
 </suppressions>

@@ -16,26 +16,36 @@
 set -e
 
 if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+  echo "Usage: $0 <shortId> <vpc> <subnet> <optional-maven-params>"
   exit 1
 fi
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
+
+SHORT_ID="$1"
+VPC="$2"
+SUBNETS="$3"
+shift 3
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+pushd "$MAVEN_DIR"
 
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
-   sleeper.systemtest.drivers.ingest.batcher.SystemTestForIngestBatcher \
-  "${SCRIPTS_DIR}" "$THIS_DIR/system-test-instance.properties" "$@"
+mvn verify -PsystemTest \
+  -Dsleeper.system.test.short.id="$SHORT_ID" \
+  -Dsleeper.system.test.vpc.id="$VPC" \
+  -Dsleeper.system.test.subnet.ids="$SUBNETS" \
+  "$@"
+
+popd
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"
-echo "Finished paused deploy & test"
+echo "Finished tests"
 echo "-------------------------------------------------------------------------------"
 echo "Started at $(recorded_time_str "$START_TIME")"
-echo "Tests finished at $(recorded_time_str "$FINISH_TIME")"
-echo "Overall, deploy & paused test took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"
+echo "Finished at $(recorded_time_str "$FINISH_TIME")"
+echo "Overall, took $(elapsed_time_str "$START_TIME" "$FINISH_TIME")"

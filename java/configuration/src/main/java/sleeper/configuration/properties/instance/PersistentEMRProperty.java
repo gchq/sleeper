@@ -34,6 +34,13 @@ public interface PersistentEMRProperty {
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.instance.architecture")
+            .description("(Persistent EMR mode only) Which architecture to be used for EC2 instance types " +
+                    "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+            .defaultValue("x86_64")
+            .validationPredicate(Utils::isValidArchitecture)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master.x86.instance.types")
             .description("(Persistent EMR mode only) The EC2 x86 instance types used for the master node of the " +
                     "persistent EMR cluster. " +

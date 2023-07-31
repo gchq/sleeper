@@ -36,6 +36,7 @@ import sleeper.query.model.QuerySerDe;
 
 import java.io.IOException;
 
+import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -95,7 +96,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private void updateStateIfNecessary() throws ObjectFactoryException {
         double timeSinceLastUpdatedInSeconds = (System.currentTimeMillis() - lastUpdateTime) / 1000.0;
         int stateRefreshingPeriod = instanceProperties.getInt(QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS);
-        if (timeSinceLastUpdatedInSeconds > stateRefreshingPeriod) {
+        if (timeSinceLastUpdatedInSeconds > stateRefreshingPeriod || instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
             LOGGER.info("Mapping of partition to files was last updated {} seconds ago, so refreshing", timeSinceLastUpdatedInSeconds);
             updateProperties(instanceProperties.get(CONFIG_BUCKET));
         }
