@@ -1031,12 +1031,12 @@ public class S3StateStoreIT {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        // When
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .buildTree();
         S3StateStore stateStore = getStateStore(schema, tree.getAllPartitions());
+        
+        // When
         PartitionTree expectedTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "child1", "child2", 0L)
