@@ -47,7 +47,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  */
 public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String DEFAULT_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
-    private static final String DEFAULT_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
     private static final String EKS_JAVA_HOME = "/usr/local/openjdk-11";
     private static final Map<String, String> DEFAULT_CONFIG;
 
@@ -66,8 +65,6 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         // up the scheduler
         defaultConf.put("spark.driver.memoryOverhead", "1g");
         defaultConf.put("spark.executor.memoryOverhead", "1g");
-        defaultConf.put("spark.driver.extraJavaOptions", "-Dlog4j.configuration=" + DEFAULT_LOG4J_LOCATION);
-        defaultConf.put("spark.executor.extraJavaOptions", "-Dlog4j.configuration=" + DEFAULT_LOG4J_LOCATION);
         defaultConf.put("spark.kubernetes.authenticate.driver.serviceAccountName", "spark");
         // Hadoop Configuration
         defaultConf.put("spark.hadoop.fs.s3a.aws.credentials.provider",
