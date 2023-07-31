@@ -26,7 +26,7 @@ if [ "$#" -ne 3 ]; then
 fi
 
 VPC=$1
-SUBNET=$2
+SUBNETS=$2
 RESULTS_BUCKET=$3
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
@@ -70,7 +70,7 @@ runTest() {
   REPORT_TYPES=( "$@" )
 
   echo "[$(time_str)] Running $TEST_NAME test"
-  "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNET" &> "$OUTPUT_DIR/$TEST_NAME.log"
+  "./$TEST_NAME/deployTest.sh" "$INSTANCE_ID" "$VPC" "$SUBNETS" &> "$OUTPUT_DIR/$TEST_NAME.log"
   EXIT_CODE=$?
   runReport "$INSTANCE_ID" "${REPORT_TYPES[@]}"  &> "$OUTPUT_DIR/$TEST_NAME.report.log"
   echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
@@ -89,10 +89,17 @@ runStandardTest() {
     ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
+runMavenSystemTests() {
+    SHORT_ID=$1
+    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
+    ./../deploy/tearDown.sh "$SHORT_ID-main" &> "$OUTPUT_DIR/maven-main.tearDown.log"
+    aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
+}
+
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
 runSystemTest compactionPerformance "compaction-$START_TIME" "compaction" 
 runSystemTest partitionSplitting "splitting-$START_TIME" "partition"
-runStandardTest ingestBatcher "ingst-batch-$START_TIME" "ingest"
+runMavenSystemTests "mvn-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \

@@ -74,6 +74,18 @@ class WaitForStackToDeleteIT {
                 .isInstanceOf(PollWithRetries.TimedOutException.class);
     }
 
+    @Test
+    void shouldThrowExceptionWhenDeleteFailed(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(describeStacksRequestWithStackName("test-stack")
+                .willReturn(aResponseWithStackName("test-stack", StackStatus.DELETE_FAILED)));
+
+        // When/Then
+        assertThatThrownBy(() -> waitForStacksToDelete(runtimeInfo, "test-stack"))
+                .isInstanceOf(WaitForStackToDelete.DeleteFailedException.class)
+                .hasMessage("Failed to delete stack \"test-stack\"");
+    }
+
     private static void waitForStacksToDelete(WireMockRuntimeInfo runtimeInfo, String stackName) throws InterruptedException {
         WaitForStackToDelete.from(
                         PollWithRetries.intervalAndMaxPolls(0, 1),

@@ -25,6 +25,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
+import java.util.Map;
 import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -37,7 +38,7 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 
 public enum SystemTestInstance {
 
-    MAIN("main", SystemTestInstance::buildDefaultConfiguration);
+    MAIN("main", SystemTestInstance::buildMainConfiguration);
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
@@ -55,7 +56,7 @@ public enum SystemTestInstance {
         return instanceConfiguration.apply(parameters);
     }
 
-    private static DeployInstanceConfiguration buildDefaultConfiguration(SystemTestParameters parameters) {
+    private static DeployInstanceConfiguration buildMainConfiguration(SystemTestParameters parameters) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
         properties.set(OPTIONAL_STACKS, "" +
@@ -66,6 +67,13 @@ public enum SystemTestInstance {
         properties.set(INGEST_SOURCE_BUCKET, parameters.buildSourceBucketName());
         properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "m6i.xlarge,m5.xlarge");
         properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m6i.4xlarge,m5.4xlarge");
+        properties.setTags(Map.of(
+                "Description", "Maven system test main instance",
+                "Environment", "DEV",
+                "Product", "Sleeper",
+                "ApplicationID", "SLEEPER",
+                "Project", "SystemTest",
+                "SystemTestInstance", "main"));
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(Schema.builder()
