@@ -74,7 +74,6 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 @Testcontainers
 public class S3StateStoreIT {
@@ -993,7 +992,7 @@ public class S3StateStoreIT {
                 .splitToNewChildren("left", "id0", "id2", 1L)
                 .splitToNewChildren("right", "id1", "id3", 200L)
                 .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+        S3StateStore stateStore = getStateStore(schema, tree.getAllPartitions());
         // When / Then
         assertThat(stateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
     }
@@ -1007,7 +1006,7 @@ public class S3StateStoreIT {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .buildTree();
-        StateStore dynamoDBStateStore = inMemoryStateStoreWithPartitions(List.of(tree.getRootPartition()));
+        S3StateStore stateStore = getStateStore(schema, List.of(tree.getRootPartition()));
         PartitionTree stepOneTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "id1", "id2", 1L)
@@ -1020,12 +1019,12 @@ public class S3StateStoreIT {
                 .buildTree();
 
         // When
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(stepOneTree.getRootPartition(), stepOneTree.getPartition("id1"), stepOneTree.getPartition("id2"));
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getPartition("id2"), expectedTree.getPartition("id3"), expectedTree.getPartition("id4"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(stepOneTree.getRootPartition(), stepOneTree.getPartition("id1"), stepOneTree.getPartition("id2"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getPartition("id2"), expectedTree.getPartition("id3"), expectedTree.getPartition("id4"));
 
 
         // Then
-        assertThat(dynamoDBStateStore.getLeafPartitions())
+        assertThat(stateStore.getLeafPartitions())
                 .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
     }
 
@@ -1039,16 +1038,15 @@ public class S3StateStoreIT {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .buildTree();
-        StateStore dynamoDBStateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
-
+        S3StateStore stateStore = getStateStore(schema, tree.getAllPartitions());
         PartitionTree expectedTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "child1", "child2", 0L)
                 .buildTree();
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getRootPartition(), expectedTree.getPartition("child1"), expectedTree.getPartition("child2"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getRootPartition(), expectedTree.getPartition("child1"), expectedTree.getPartition("child2"));
 
         // Then
-        assertThat(dynamoDBStateStore.getAllPartitions())
+        assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions());
     }
 
