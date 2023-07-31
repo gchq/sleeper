@@ -24,9 +24,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.time.Duration;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static sleeper.ingest.batcher.IngestBatcher.batchIngestMode;
 
@@ -35,7 +33,7 @@ public class SystemTestIngestBatcher {
     private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
     private final String sourceBucketName;
-    private final Set<String> createdJobIds = new HashSet<>();
+    private IngestBatcherResult lastInvokeResult;
 
     public SystemTestIngestBatcher(SystemTestIngest ingest, SystemTestParameters parameters,
                                    SleeperInstanceContext instance, IngestBatcherDriver driver) {
@@ -52,21 +50,29 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invoke() {
-        createdJobIds.addAll(driver.invokeGetJobIds());
+        lastInvokeResult = new IngestBatcherResult(driver.invokeGetJobIds());
         return this;
     }
 
-    public void waitForJobs() throws InterruptedException {
-        waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+    public SystemTestIngestBatcher waitForJobs() throws InterruptedException {
+        return waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 
-    public void waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
+    public SystemTestIngestBatcher waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
         IngestByQueueDriver driver = ingest.byQueueDriver();
         BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
         if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
             driver.invokeStandardIngestTasks();
         }
-        driver.waitForJobs(createdJobIds, pollUntilJobsFinished);
+        driver.waitForJobs(getInvokeResult().createdJobIds(), pollUntilJobsFinished);
+        return this;
+    }
+
+    public IngestBatcherResult getInvokeResult() {
+        if (lastInvokeResult == null) {
+            throw new IllegalStateException("Batcher has not been invoked");
+        }
+        return lastInvokeResult;
     }
 
     public void clearStore() {

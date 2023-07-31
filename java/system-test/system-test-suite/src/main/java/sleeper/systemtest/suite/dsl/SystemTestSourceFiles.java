@@ -17,10 +17,12 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.record.Record;
+import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import java.util.List;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
 
@@ -32,7 +34,12 @@ public class SystemTestSourceFiles {
         this.sourceFilesContext = sourceFilesContext;
     }
 
-    public void create(String filename, Record... records) {
-        sourceFilesContext.writeFile(instanceContext.getTableProperties(), filename, List.of(records).iterator());
+    public SystemTestSourceFiles createWithNumberedRecords(String filename, LongStream numbers) {
+        return create(filename, GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
+    }
+
+    private SystemTestSourceFiles create(String filename, Stream<Record> records) {
+        sourceFilesContext.writeFile(instanceContext.getTableProperties(), filename, records.iterator());
+        return this;
     }
 }

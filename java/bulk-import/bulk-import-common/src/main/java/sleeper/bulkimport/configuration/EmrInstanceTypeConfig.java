@@ -15,22 +15,46 @@
  */
 package sleeper.bulkimport.configuration;
 
+import org.apache.commons.lang3.EnumUtils;
+
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
-public class EmrInstanceTypeConfig {
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 
+public class EmrInstanceTypeConfig {
+    private final EmrInstanceArchitecture architecture;
     private final String instanceType;
     private final Integer weightedCapacity;
 
     private EmrInstanceTypeConfig(Builder builder) {
+        architecture = Objects.requireNonNull(builder.architecture, "architecture must not be null");
         instanceType = Objects.requireNonNull(builder.instanceType, "instanceType must not be null");
         weightedCapacity = builder.weightedCapacity;
     }
 
-    public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
+    public static <T extends SleeperProperty> Stream<EmrInstanceTypeConfig> readInstanceTypes(
+            SleeperProperties<T> properties, T architectureProperty, T x86Property, T armProperty) {
+        return properties.getList(architectureProperty).stream()
+                .map(value -> Optional.ofNullable(EnumUtils.getEnumIgnoreCase(EmrInstanceArchitecture.class, value))
+                        .orElseThrow(() -> new IllegalArgumentException("Unrecognised architecture: " + value)))
+                .flatMap(architecture -> {
+                    if (architecture == ARM64) {
+                        return readInstanceTypesProperty(properties.getList(armProperty), architecture);
+                    } else {
+                        return readInstanceTypesProperty(properties.getList(x86Property), architecture);
+                    }
+                });
+    }
+
+    public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries, EmrInstanceArchitecture architecture) {
         Builder builder = null;
         List<Builder> builders = new ArrayList<>();
         for (String entry : instanceTypeEntries) {
@@ -39,9 +63,9 @@ public class EmrInstanceTypeConfig {
                 if (builder == null) {
                     throw new IllegalArgumentException("Instance type capacity given without an instance type: " + entry);
                 }
-                builder.weightedCapacity(capacity);
+                builder.weightedCapacity(capacity).architecture(architecture);
             } catch (NumberFormatException e) {
-                builder = builder().instanceType(entry);
+                builder = builder().instanceType(entry).architecture(architecture);
                 builders.add(builder);
             }
         }
@@ -58,6 +82,10 @@ public class EmrInstanceTypeConfig {
 
     public Integer getWeightedCapacity() {
         return weightedCapacity;
+    }
+
+    public EmrInstanceArchitecture getArchitecture() {
+        return architecture;
     }
 
     @Override
@@ -95,6 +123,7 @@ public class EmrInstanceTypeConfig {
     public static final class Builder {
         private String instanceType;
         private Integer weightedCapacity;
+        private EmrInstanceArchitecture architecture;
 
         private Builder() {
         }
@@ -106,6 +135,11 @@ public class EmrInstanceTypeConfig {
 
         public Builder weightedCapacity(Integer weightedCapacity) {
             this.weightedCapacity = weightedCapacity;
+            return this;
+        }
+
+        public Builder architecture(EmrInstanceArchitecture architecture) {
+            this.architecture = architecture;
             return this;
         }
 

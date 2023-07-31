@@ -45,7 +45,7 @@ public class IngestByQueueDriver {
     private final IngestJobStatusStore jobStatusStore;
     private final LambdaClient lambdaClient;
     private final PollWithRetries pollUntilTasksStarted = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5));
+            .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3));
 
     public IngestByQueueDriver(SleeperInstanceContext instance,
                                AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient) {
