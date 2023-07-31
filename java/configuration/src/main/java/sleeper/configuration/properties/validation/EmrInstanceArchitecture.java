@@ -17,5 +17,5 @@
 package sleeper.configuration.properties.validation;
 
 public enum EmrInstanceArchitecture {
-    X86, ARM64
+    X86_64, ARM64
 }

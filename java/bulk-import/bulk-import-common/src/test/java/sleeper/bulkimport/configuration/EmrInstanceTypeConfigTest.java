@@ -174,26 +174,26 @@ public class EmrInstanceTypeConfigTest {
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
-        return EmrInstanceTypeConfig.readInstanceTypesProperty(instanceTypeEntries, EmrInstanceArchitecture.X86);
+        return EmrInstanceTypeConfig.readInstanceTypesProperty(instanceTypeEntries, EmrInstanceArchitecture.X86_64);
     }
 
     private EmrInstanceTypeConfig instanceType(String instanceType) {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
-                .architecture(EmrInstanceArchitecture.X86)
+                .architecture(EmrInstanceArchitecture.X86_64)
                 .build();
     }
 
     private EmrInstanceTypeConfig instanceTypeWithWeight(String instanceType, int weightedCapacity) {
         return EmrInstanceTypeConfig.builder()
                 .instanceType(instanceType)
-                .architecture(EmrInstanceArchitecture.X86)
+                .architecture(EmrInstanceArchitecture.X86_64)
                 .weightedCapacity(weightedCapacity)
                 .build();
     }
 
     private EmrInstanceTypeConfig x86Instance(String instanceType) {
-        return instanceTypeWithArchitecture(instanceType, EmrInstanceArchitecture.X86);
+        return instanceTypeWithArchitecture(instanceType, EmrInstanceArchitecture.X86_64);
     }
 
     private EmrInstanceTypeConfig armInstance(String instanceType) {

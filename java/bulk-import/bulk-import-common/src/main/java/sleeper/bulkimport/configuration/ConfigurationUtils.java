@@ -58,7 +58,7 @@ public class ConfigurationUtils {
         X86_64, ARM64;
 
         public static Architecture from(EmrInstanceArchitecture arch) {
-            if (arch == EmrInstanceArchitecture.X86) {
+            if (arch == EmrInstanceArchitecture.X86_64) {
                 return X86_64;
             } else if (arch == EmrInstanceArchitecture.ARM64) {
                 return ARM64;
