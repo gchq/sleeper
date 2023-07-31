@@ -75,6 +75,7 @@ import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStor
 class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
+        // Given
         StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "partition1", "partition2", 2L)
