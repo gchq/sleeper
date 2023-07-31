@@ -48,7 +48,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 public class StateMachinePlatformExecutor implements PlatformExecutor {
     private static final String DEFAULT_JAR_LOCATION = "local:///opt/spark/workdir/bulk-import-runner.jar";
     private static final String DEFAULT_LOG4J_LOCATION = "file:///opt/spark/workdir/log4j.properties";
-    private static final String EKS_JAVA_HOME = "/usr/lib/jvm/java-11-amazon-corretto";
+    private static final String EKS_JAVA_HOME = "/usr/local/openjdk-11";
     private static final Map<String, String> DEFAULT_CONFIG;
 
     private final AWSStepFunctions stepFunctions;
