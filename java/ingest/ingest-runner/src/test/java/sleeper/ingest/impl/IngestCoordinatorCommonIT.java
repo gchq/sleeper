@@ -504,8 +504,6 @@ public class IngestCoordinatorCommonIT {
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
                 Arrays.asList(1L, 20L, 1L, 50L));
-        List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
-                Pair.of(Key.create(Arrays.asList(0, 10L)), 1));
         Function<Key, Integer> keyToPartitionNoMappingFn = key -> (key.size() > 1 && ((Long) key.get(1)) < 10L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
