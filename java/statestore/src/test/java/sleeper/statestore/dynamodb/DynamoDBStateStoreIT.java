@@ -27,7 +27,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -813,15 +812,48 @@ public class DynamoDBStateStoreIT {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-
-        List<Partition> allPartitions = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 100L)
-                .splitToNewChildren("left", "id1", "id2", 1L)
-                .splitToNewChildren("right", "id3", "id4", 200L)
-                .buildList();
-
-        StateStore dynamoDBStateStore = getStateStore(schema, allPartitions);
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region0 = new Region(rangeFactory.createRange(field, Long.MIN_VALUE, 1L));
+        Partition partition0 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region0)
+                .id("id0")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region1 = new Region(rangeFactory.createRange(field, 1L, 100L));
+        Partition partition1 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region1)
+                .id("id1")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region2 = new Region(rangeFactory.createRange(field, 100L, 200L));
+        Partition partition2 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region2)
+                .id("id2")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        Region region3 = new Region(rangeFactory.createRange(field, 200L, null));
+        Partition partition3 = Partition.builder()
+                .rowKeyTypes(schema.getRowKeyTypes())
+                .region(region3)
+                .id("id3")
+                .leafPartition(true)
+                .parentPartitionId("root")
+                .childPartitionIds(new ArrayList<>())
+                .dimension(-1)
+                .build();
+        StateStore dynamoDBStateStore = getStateStore(schema, Arrays.asList(partition0, partition1, partition2, partition3));
 
         // When
         List<Partition> retrievedPartitions = dynamoDBStateStore.getAllPartitions();
@@ -837,7 +869,7 @@ public class DynamoDBStateStoreIT {
         });
 
         // Then
-        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(allPartitions);
+        assertThat(retrievedPartitions).containsExactly(partition0, partition1, partition2, partition3);
     }
 
     @Test
