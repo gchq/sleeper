@@ -24,7 +24,6 @@ import java.nio.file.Path;
 
 public class ShowInternalDependencies {
     private ShowInternalDependencies() {
-
     }
 
     public static void main(String[] args) throws IOException {
