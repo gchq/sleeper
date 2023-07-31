@@ -32,19 +32,21 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 import sleeper.statestore.StateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.inmemory.StateStoreTestBuilder;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class IngestTestHelper<T> {
 
@@ -105,7 +107,8 @@ public class IngestTestHelper<T> {
     public IngestTestHelper<T> createStateStore(
             AmazonDynamoDB dynamoDbClient,
             PartitionTree tree) throws Exception {
-        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema, dynamoDbClient).create();
+        stateStore.initialise(tree.getAllPartitions());
         return stateStore(stateStore);
     }
 

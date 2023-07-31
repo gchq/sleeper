@@ -48,6 +48,8 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -57,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -66,7 +69,6 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class IngestCoordinatorCommonIT {
     @RegisterExtension
@@ -686,12 +688,8 @@ public class IngestCoordinatorCommonIT {
             String sleeperIteratorClassName,
             QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn) throws IOException, StateStoreException, IteratorException {
 
-        /*StateStore stateStore = PartitionedTableCreator.createStateStore(
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient(),
-                recordListAndSchema.sleeperSchema,
-                keyAndDimensionToSplitOnInOrder);*/
-
-        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        stateStore.initialise(tree.getAllPartitions());
 
         // A deep working directory forces the ingest coordinator to create a deep tree of directories
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";

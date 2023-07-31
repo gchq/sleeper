@@ -34,8 +34,9 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,6 +44,7 @@ import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -51,7 +53,6 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     @RegisterExtension
@@ -134,7 +135,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore) throws IOException, StateStoreException, IteratorException {
 
-        StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        stateStore.initialise(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
