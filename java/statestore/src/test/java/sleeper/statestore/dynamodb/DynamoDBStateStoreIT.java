@@ -850,13 +850,14 @@ public class DynamoDBStateStoreIT {
                 .splitToNewChildren("root", "id1", "id2", 1L)
                 .splitToNewChildren("id2", "id3", "id4", 9L).buildTree();
         DynamoDBStateStore stateStore = getStateStore(schema, tree.getAllPartitions());
+
         // When
-        List<Partition> retrievedPartitions = stateStore.getLeafPartitions();
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(intermediateTree.getRootPartition(), intermediateTree.getPartition("id1"), intermediateTree.getPartition("id2"));
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(expectedTree.getPartition("id2"), expectedTree.getPartition("id3"), expectedTree.getPartition("id4"));
 
         // Then
-        assertThat(retrievedPartitions).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
+        assertThat(stateStore.getLeafPartitions())
+                .containsExactlyInAnyOrderElementsOf(expectedTree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList()));
     }
 
     @Test
