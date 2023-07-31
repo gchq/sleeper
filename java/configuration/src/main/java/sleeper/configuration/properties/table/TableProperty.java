@@ -64,7 +64,7 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 /**
  * These contain the table properties which are stored separately to the instance properties.
  */
-// Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
+// Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface TableProperty extends SleeperProperty {
     // User defined
