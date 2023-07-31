@@ -25,6 +25,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.FileIngestRequest;
@@ -39,6 +40,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
+    private final PropertiesReloader propertiesReloader;
     private final IngestBatcherStore store;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -58,6 +60,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
                 instanceProperties, tablePropertiesProvider);
         this.configuration = new Configuration();
+        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     public IngestBatcherSubmitterLambda(IngestBatcherStore store, InstanceProperties instanceProperties,
@@ -66,10 +69,12 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.configuration = conf;
+        this.propertiesReloader = PropertiesReloader.neverReload();
     }
 
     @Override
     public Void handleRequest(SQSEvent input, Context context) {
+        propertiesReloader.reloadIfNeeded();
         input.getRecords().forEach(message ->
                 handleMessage(message.getBody(), Instant.now()));
         return null;

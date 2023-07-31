@@ -17,7 +17,9 @@
 package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.DeleteRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -25,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -44,6 +47,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.FILE_PATH;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.JOB_ID;
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIGNED_TO_JOB;
+import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.createUnassignedKey;
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
@@ -111,5 +115,19 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                 .map(DynamoDBIngestRequestFormat::readRecord)
                 .sorted(comparing(FileIngestRequest::getReceivedTime))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteAllPending() {
+        List<FileIngestRequest> pendingFiles = getPendingFilesOldestFirst();
+        if (!pendingFiles.isEmpty()) {
+            dynamoDB.batchWriteItem(new BatchWriteItemRequest()
+                    .addRequestItemsEntry(requestsTableName,
+                            pendingFiles.stream()
+                                    .map(request -> new WriteRequest()
+                                            .withDeleteRequest(new DeleteRequest()
+                                                    .withKey(createUnassignedKey(request)))
+                                    ).collect(Collectors.toList())));
+        }
     }
 }

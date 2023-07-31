@@ -23,19 +23,27 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
+import java.util.Map;
+import java.util.function.Function;
+
+import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
+import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 
 public enum SystemTestInstance {
 
-    MAIN("main", buildDefaultConfiguration());
+    MAIN("main", SystemTestInstance::buildMainConfiguration);
 
     private final String identifier;
-    private final DeployInstanceConfiguration instanceConfiguration;
+    private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
 
-    SystemTestInstance(String identifier, DeployInstanceConfiguration instanceConfiguration) {
+    SystemTestInstance(String identifier, Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration) {
         this.identifier = identifier;
         this.instanceConfiguration = instanceConfiguration;
     }
@@ -44,16 +52,27 @@ public enum SystemTestInstance {
         return identifier;
     }
 
-    public DeployInstanceConfiguration getInstanceConfiguration() {
-        return instanceConfiguration;
+    public DeployInstanceConfiguration getInstanceConfiguration(SystemTestParameters parameters) {
+        return instanceConfiguration.apply(parameters);
     }
 
-    private static DeployInstanceConfiguration buildDefaultConfiguration() {
+    private static DeployInstanceConfiguration buildMainConfiguration(SystemTestParameters parameters) {
         InstanceProperties properties = new InstanceProperties();
         properties.set(LOGGING_LEVEL, "debug");
         properties.set(OPTIONAL_STACKS, "IngestStack,EmrBulkImportStack,IngestBatcherStack," +
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
+        properties.set(FORCE_RELOAD_PROPERTIES, "true");
+        properties.set(INGEST_SOURCE_BUCKET, parameters.buildSourceBucketName());
+        properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "m6i.xlarge,m5.xlarge");
+        properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m6i.4xlarge,m5.4xlarge");
+        properties.setTags(Map.of(
+                "Description", "Maven system test main instance",
+                "Environment", "DEV",
+                "Product", "Sleeper",
+                "ApplicationID", "SLEEPER",
+                "Project", "SystemTest",
+                "SystemTestInstance", "main"));
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(Schema.builder()

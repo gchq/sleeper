@@ -34,7 +34,6 @@ public class PopulateTableProperties {
     private final String schemaJson;
     private final String tableName;
 
-
     private PopulateTableProperties(Builder builder) {
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         tableProperties = Objects.requireNonNullElse(builder.tableProperties, new TableProperties(instanceProperties));

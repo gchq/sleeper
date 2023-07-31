@@ -221,6 +221,41 @@ class IngestBatcherStoreInMemoryTest {
         }
     }
 
+    @Nested
+    @DisplayName("Delete all pending")
+    class DeleteAllPending {
+        final FileIngestRequest fileIngestRequest = fileRequest()
+                .file("test-bucket/first.parquet")
+                .tableName("test-table").build();
+
+        @Test
+        void shouldDeletePendingFile() {
+            // Given
+            store.addFile(fileIngestRequest);
+
+            // When
+            store.deleteAllPending();
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldNotDeleteAssignedFile() {
+            // Given
+            store.addFile(fileIngestRequest);
+            store.assignJob("test-job", List.of(fileIngestRequest));
+
+            // When
+            store.deleteAllPending();
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(fileIngestRequest.toBuilder().jobId("test-job").build());
+        }
+    }
+
     private FileIngestRequest.Builder fileRequest() {
         return requests.fileRequest();
     }

@@ -27,22 +27,21 @@ import com.amazonaws.services.elasticmapreduce.model.JobFlowInstancesConfig;
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
 import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
-import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
+import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypes;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
@@ -92,23 +91,13 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private static List<InstanceTypeConfig> readExecutorInstanceTypes(
             InstanceProperties instanceProperties, EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        return Stream.concat(
-                        readInstanceTypesProperty(
-                                Optional.ofNullable(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES))
-                                        .orElse(List.of()))
-                                .map(config -> new InstanceTypeConfig()
-                                        .withInstanceType(config.getInstanceType())
-                                        .withWeightedCapacity(config.getWeightedCapacity())
-                                        .withEbsConfiguration(ebsConfiguration)
-                                        .withConfigurations(getConfigurations(instanceProperties, Architecture.X86_64))),
-                        readInstanceTypesProperty(
-                                Optional.ofNullable(platformSpec.getList(BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES))
-                                        .orElse(List.of()))
-                                .map(config -> new InstanceTypeConfig()
-                                        .withInstanceType(config.getInstanceType())
-                                        .withWeightedCapacity(config.getWeightedCapacity())
-                                        .withEbsConfiguration(ebsConfiguration)
-                                        .withConfigurations(getConfigurations(instanceProperties, Architecture.ARM64))))
+        return readInstanceTypes(platformSpec.getTableProperties(), BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE,
+                BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
+                .map(config -> new InstanceTypeConfig()
+                        .withInstanceType(config.getInstanceType())
+                        .withWeightedCapacity(config.getWeightedCapacity())
+                        .withEbsConfiguration(ebsConfiguration)
+                        .withConfigurations(getConfigurations(instanceProperties, config.getArchitecture())))
                 .collect(Collectors.toList());
     }
 
@@ -123,24 +112,17 @@ public class EmrInstanceFleets implements EmrInstanceConfiguration {
 
     private List<InstanceTypeConfig> readMasterInstanceTypes(
             EbsConfiguration ebsConfiguration, BulkImportPlatformSpec platformSpec) {
-        return Stream.concat(
-                        Optional.ofNullable(platformSpec.getList(BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES))
-                                .orElse(List.of()).stream()
-                                .map(type -> new InstanceTypeConfig()
-                                        .withInstanceType(type)
-                                        .withEbsConfiguration(ebsConfiguration)
-                                        .withConfigurations(getConfigurations(instanceProperties, Architecture.X86_64))),
-                        Optional.ofNullable(platformSpec.getList(BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES))
-                                .orElse(List.of()).stream()
-                                .map(type -> new InstanceTypeConfig()
-                                        .withInstanceType(type)
-                                        .withEbsConfiguration(ebsConfiguration)
-                                        .withConfigurations(getConfigurations(instanceProperties, Architecture.ARM64))))
+        return readInstanceTypes(platformSpec.getTableProperties(), BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE,
+                BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
+                .map(config -> new InstanceTypeConfig()
+                        .withInstanceType(config.getInstanceType())
+                        .withEbsConfiguration(ebsConfiguration)
+                        .withConfigurations(getConfigurations(instanceProperties, config.getArchitecture())))
                 .collect(Collectors.toList());
     }
 
     private static List<Configuration> getConfigurations(
-            InstanceProperties instanceProperties, Architecture architecture) {
+            InstanceProperties instanceProperties, EmrInstanceArchitecture architecture) {
         List<Configuration> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();
