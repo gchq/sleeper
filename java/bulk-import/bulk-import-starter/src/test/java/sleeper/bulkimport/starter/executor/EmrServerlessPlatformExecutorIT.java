@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.job.BulkImportJob;
@@ -87,6 +88,7 @@ public class EmrServerlessPlatformExecutorIT {
         return EmrServerlessClient.builder()
                 .endpointOverride(wiremockEndpointOverride(runtimeInfo))
                 .credentialsProvider(wiremockCredentialsProvider())
+                .region(Region.AWS_GLOBAL)
                 .build();
     }
 
