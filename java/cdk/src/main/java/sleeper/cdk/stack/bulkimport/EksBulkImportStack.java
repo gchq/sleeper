@@ -58,6 +58,7 @@ import software.amazon.awscdk.services.stepfunctions.Choice;
 import software.amazon.awscdk.services.stepfunctions.Condition;
 import software.amazon.awscdk.services.stepfunctions.CustomState;
 import software.amazon.awscdk.services.stepfunctions.CustomStateProps;
+import software.amazon.awscdk.services.stepfunctions.DefinitionBody;
 import software.amazon.awscdk.services.stepfunctions.Fail;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
@@ -293,15 +294,15 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         return StateMachine.Builder.create(this, "EksBulkImportStateMachine")
-                .definition(
+                .definitionBody(DefinitionBody.fromChainable(
                         new CustomState(this, "RunSparkJob", CustomStateProps.builder().stateJson(runJobState).build())
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
                                                 Succeed.Builder.create(this, "FinishedJobState").build())
                                         .otherwise(createErrorMessage.next(publishError).next(
                                                 Fail.Builder.create(this, "FailedJobState")
-                                                        .cause("Spark job failed").build()))))
-                .build();
+                                                        .cause("Spark job failed").build())))
+                )).build();
     }
 
     private void grantAccesses(List<IBucket> dataBuckets,
