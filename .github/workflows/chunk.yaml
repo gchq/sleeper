@@ -41,7 +41,10 @@ jobs:
         working-directory: ./java
       - name: Generate site
         if: always()
-        run: mvn --batch-mode site -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository
+        run: |
+          mvn --batch-mode site site:deploy -pl sleeper:aws,${{ steps.config.outputs.moduleList }} \
+            -Dmaven.repo.local=.m2/repository \
+            -DskipTests=true
         working-directory: ./java
       - name: Upload site as artifact
         if: always()
@@ -49,4 +52,4 @@ jobs:
         with:
           name: site
           path: |
-            **/target/site
+            /tmp/sleeper/site

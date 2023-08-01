@@ -640,6 +640,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <distributionManagement>
+        <site>
+            <id>sleeper</id>
+            <name>Sleeper site</name>
+            <url>file:///tmp/sleeper/site</url>
+        </site>
+    </distributionManagement>
     <reporting>
         <plugins>
             <plugin>
@@ -653,10 +660,25 @@
                         </reports>
                     </reportSet>
                 </reportSets>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregate</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>checkstyle-aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+                <configuration>
+                    <failsOnError>false</failsOnError>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
