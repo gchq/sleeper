@@ -88,7 +88,7 @@ runMavenSystemTests() {
     SHORT_ID=$1
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
     pushd "$MAVEN_DIR"
-    mvn --batch-mode site site:stage -PsystemTest \
+    mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$OUTPUT_DIR/site"
     popd
