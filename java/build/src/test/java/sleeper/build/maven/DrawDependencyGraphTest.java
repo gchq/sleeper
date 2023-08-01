@@ -28,12 +28,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class DrawDependencyGraphTest {
     DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
-    GraphData graph = drawDependencyGraph.createGraph(TestMavenModuleStructure.example().allTestedModules().collect(Collectors.toList()));
+    GraphData graph = drawDependencyGraph.createGraph(TestMavenModuleStructure.example().allModules().collect(Collectors.toList()));
 
     @Test
-    public void checkCreateGraphCreatesCorrectNodes() {
-        List<String> createGraph = TestMavenModuleStructure.example().allTestedModules().map(i -> i.artifactReference().toString()).collect(Collectors.toList());
-        List<String> testGraph = graph.getNodeIds();
-        assertThat(createGraph.equals(testGraph));
+    public void shouldCreateNodesForAllModules() {
+        List<String> expectedNodeIds = TestMavenModuleStructure.example().allModules().map(i -> i.artifactReference().toString()).collect(Collectors.toList());
+        assertThat(graph.getNodeIds()).isEqualTo(expectedNodeIds);
     }
 }
