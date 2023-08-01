@@ -20,30 +20,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.Utils.combineLists;
 
 class UtilsTest {
 
     @Nested
     @DisplayName("Validate lists")
     class ValidateLists {
-        @Test
-        void shouldCombineLists() {
-            // Given
-            List<String> list1 = List.of("test1", "test2");
-            List<String> list2 = List.of("test3", "test4");
-
-            // When
-            List<String> combinedList = combineLists(list1, list2);
-
-            // Then
-            assertThat(combinedList)
-                    .containsExactly("test1", "test2", "test3", "test4");
-        }
-
         @Test
         void shouldValidateListWithUniqueElements() {
             assertThat(Utils.isUniqueList("test-a,test-b,test-c"))
