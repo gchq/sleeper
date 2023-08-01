@@ -277,8 +277,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .replace("cluster-placeholder", cluster.getClusterName())
                 .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
 
-        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, new TypeToken<>() {
-        }.getType());
+        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, new StateMachineJsonTypeToken());
 
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
@@ -379,5 +378,8 @@ public final class EksBulkImportStack extends NestedStack {
 
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
+    }
+
+    public static class StateMachineJsonTypeToken extends TypeToken<Map<String, Object>> {
     }
 }
