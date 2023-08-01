@@ -52,3 +52,24 @@ jobs:
           name: site
           path: |
             /tmp/sleeper/site
+      - name: Upload surefire report as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: surefire-report.html
+          path: |
+            /tmp/sleeper/site/surefire-report.html
+      - name: Upload failsafe report as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: failsafe-report.html
+          path: |
+            /tmp/sleeper/site/failsafe-report.html
+      - name: Upload checkstyle report as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: checkstyle-report.html
+          path: |
+            /tmp/sleeper/site/checkstyle-aggregate.html
