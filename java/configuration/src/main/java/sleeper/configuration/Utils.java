@@ -159,6 +159,14 @@ public class Utils {
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
+    public static boolean isUniqueList(String input) {
+        if (input == null) {
+            return false;
+        }
+        List<String> inputList = SleeperProperties.readList(input);
+        return inputList.stream().distinct().count() == inputList.size();
+    }
+
     public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
         List<T> combinedList = new ArrayList<>(list1);
         combinedList.addAll(list2);
