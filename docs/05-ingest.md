@@ -539,9 +539,8 @@ logical ID like `BulkImportEKS.EksBulkImportCluster.Resource.Resource.EksBulkImp
 To access the Spark UI, you'll need to install `kubectl`, a command line utility for Kubernetes. Once you've done that,
 run this command in a terminal: `aws eks update-kubeconfig --name <cluster name>`
 
-This should give you access to your cluster with `kubectl`. From there you'll be able to inspect logs, list pods and
-connect remotely to the Spark UI. The driver pods all use the job ID as the name. If you don't set this manually, it
-will be a random UUID.
+You should now be able to inspect logs, list pods and connect remotely to the Spark UI. The driver pods all use the job
+ID as the name. If you don't set this manually, it will be a random UUID.
 
 ```bash
 instance_id=abc1234
