@@ -29,7 +29,6 @@ public interface EKSProperty {
     UserDefinedInstanceProperty EKS_CLUSTER_ADMIN_ROLES = Index.propertyBuilder("sleeper.bulk.import.eks.cluster.admin.roles")
             .description("(EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .defaultValue("OrganizationAccountAccessRole")
             .runCDKDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
