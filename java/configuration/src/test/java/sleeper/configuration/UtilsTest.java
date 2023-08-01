@@ -58,8 +58,8 @@ class UtilsTest {
     }
 
     @Nested
-    @DisplayName("Validate integers")
-    class ValidateIntegers {
+    @DisplayName("Validate numbers")
+    class ValidateNumbers {
         @Test
         void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
             // When/Then
