@@ -46,6 +46,7 @@ import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -93,6 +94,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
@@ -235,6 +237,7 @@ public final class EksBulkImportStack extends NestedStack {
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
                 .groups(Lists.newArrayList())
                 .build());
+        addClusterAdminRoles(bulkImportCluster, instanceProperties);
 
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
@@ -314,6 +317,16 @@ public final class EksBulkImportStack extends NestedStack {
     private KubernetesManifest createNamespace(Cluster bulkImportCluster, String bulkImportNamespace) {
         return createManifestFromResource(bulkImportCluster, "EksBulkImportNamespace", bulkImportNamespace,
                 "/k8s/namespace.json");
+    }
+
+    private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
+        List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
+        if (roles == null) {
+            return;
+        }
+        for (String role : roles) {
+            cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessFor" + role, role));
+        }
     }
 
     private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
