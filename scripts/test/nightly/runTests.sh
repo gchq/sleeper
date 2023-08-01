@@ -17,6 +17,7 @@ set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
@@ -86,9 +87,11 @@ runSystemTest() {
 runMavenSystemTests() {
     SHORT_ID=$1
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
+    pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -PsystemTest \
        -DskipTests=true \
        -DstagingDirectory="$OUTPUT_DIR/site"
+    popd
     zip -r "$OUTPUT_DIR/site.zip" "$OUTPUT_DIR/site"
     ./../deploy/tearDown.sh "$SHORT_ID-main" &> "$OUTPUT_DIR/maven-main.tearDown.log"
     aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
