@@ -4,13 +4,12 @@
     "sparkSubmit": {
       "entryPoint": "/workdir/bulk-import-runner.jar",
       "entryPointArguments": [
-        "--class sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver",
         "config-bucket",
         "my-job",
         "sleeper-instance-table-name-my-job",
         "run-id"
       ],
-      "sparkSubmitParameters": "--conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/jre-11 --conf spark.emr-serverless.driverEnv.JAVA_HOME=/usr/lib/jvm/jre-11 --conf spark.executor.cores=4 --conf spark.executor.memory=16g --conf spark.executor.instances=28 --conf spark.driver.cores=4 --conf spark.driver.memory=16g"
+      "sparkSubmitParameters": "--class sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver --conf spark.executorEnv.JAVA_HOME=/usr/lib/jvm/jre-11 --conf spark.emr-serverless.driverEnv.JAVA_HOME=/usr/lib/jvm/jre-11 --conf spark.executor.cores=4 --conf spark.executor.memory=16g --conf spark.executor.instances=28 --conf spark.driver.cores=4 --conf spark.driver.memory=16g"
     }
   },
   "configurationOverrides": {
