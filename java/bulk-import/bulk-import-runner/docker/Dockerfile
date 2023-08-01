@@ -14,4 +14,4 @@
 
 FROM apache/spark:3.3.1
 
-COPY ./bulk-import-runner.jar /opt/spark/workdir
+COPY ./bulk-import-runner.jar /opt/spark/work-dir
