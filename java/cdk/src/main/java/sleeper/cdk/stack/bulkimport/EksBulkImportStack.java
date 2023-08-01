@@ -15,9 +15,9 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.facebook.collections.Pair;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -85,6 +85,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -260,15 +261,13 @@ public final class EksBulkImportStack extends NestedStack {
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
                                             ITopic errorsTopic) {
-        String imageName = new StringBuilder()
-                .append(instanceProperties.get(ACCOUNT))
-                .append(".dkr.ecr.")
-                .append(instanceProperties.get(REGION))
-                .append(".amazonaws.com/")
-                .append(instanceProperties.get(BULK_IMPORT_REPO))
-                .append(":")
-                .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
-                .toString();
+        String imageName = instanceProperties.get(ACCOUNT) +
+                ".dkr.ecr." +
+                instanceProperties.get(REGION) +
+                ".amazonaws.com/" +
+                instanceProperties.get(BULK_IMPORT_REPO) +
+                ":" +
+                instanceProperties.get(SystemDefinedInstanceProperty.VERSION);
 
         String sparkJobJson = parseJsonFile("/step-functions/run-job.json",
                 instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE));
@@ -278,7 +277,8 @@ public final class EksBulkImportStack extends NestedStack {
                 .replace("cluster-placeholder", cluster.getClusterName())
                 .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
 
-        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, Map.class);
+        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, new TypeToken<>() {
+        }.getType());
 
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
@@ -341,15 +341,19 @@ public final class EksBulkImportStack extends NestedStack {
                         createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
                         createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
                                 "/k8s/step-function-role-binding.json",
-                                Pair.of("user-placeholder", stateMachineRole.getRoleArn())))
+                                Map.of("user-placeholder", stateMachineRole.getRoleArn())))
                 .forEach(manifest -> manifest.getNode().addDependency(namespace));
     }
 
+    private KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource) {
+        return createManifestFromResource(cluster, id, namespace, resource, Map.of());
+    }
+
     private KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
-                                                          Pair<String, String>... replacements) {
+                                                          Map<String, String> replacements) {
         String json = parseJsonFile(resource, namespace);
-        for (Pair<String, String> replacement : replacements) {
-            json = json.replace(replacement.getFirst(), replacement.getSecond());
+        for (Map.Entry<String, String> replacement : replacements.entrySet()) {
+            json = json.replace(replacement.getKey(), replacement.getValue());
         }
 
         return cluster.addManifest(id, new Gson().fromJson(json, Map.class));
@@ -358,7 +362,7 @@ public final class EksBulkImportStack extends NestedStack {
     private String parseJsonFile(String resource, String namespace) {
         String json;
         try {
-            json = IOUtils.toString(getClass().getResourceAsStream(resource), StandardCharsets.UTF_8);
+            json = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream(resource)), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
