@@ -18,8 +18,8 @@ package sleeper.build.maven;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.build.dependencydraw.DrawDependencyGraph;
-import sleeper.build.dependencydraw.GraphData;
+import sleeper.build.maven.dependencydraw.DrawDependencyGraph;
+import sleeper.build.maven.dependencydraw.GraphData;
 
 import java.util.List;
 import java.util.stream.Collectors;

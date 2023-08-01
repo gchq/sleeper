@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.build.dependencydraw;
+package sleeper.build.maven.dependencydraw;
 
 import java.util.List;
 

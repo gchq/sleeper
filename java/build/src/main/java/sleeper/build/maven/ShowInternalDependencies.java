@@ -17,7 +17,7 @@
 package sleeper.build.maven;
 
 import sleeper.build.chunks.ProjectStructure;
-import sleeper.build.dependencydraw.DrawDependencyGraph;
+import sleeper.build.maven.dependencydraw.DrawDependencyGraph;
 
 import java.io.IOException;
 import java.nio.file.Path;

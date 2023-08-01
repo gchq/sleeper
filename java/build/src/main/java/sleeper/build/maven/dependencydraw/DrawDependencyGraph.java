@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.build.dependencydraw;
+package sleeper.build.maven.dependencydraw;
 
 import com.google.common.base.Function;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
