@@ -148,6 +148,7 @@
         <jetty.version>9.4.51.v20230217</jetty.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jung.version>2.1.1</jung.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
@@ -176,7 +177,6 @@
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.3.1</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>
-        <jung.version>2.1.1</jung.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
