@@ -107,7 +107,7 @@
             <source>
                 ${project.basedir}/../bulk-import/bulk-import-runner/target/bulk-import-runner-${project.version}-utility.jar
             </source>
-            <outputDirectory>scripts/docker/bulk-import-runner-emrs</outputDirectory>
+            <outputDirectory>scripts/docker/bulk-import-runner-emr-serverless</outputDirectory>
             <destName>bulk-import-runner.jar</destName>
         </file>
         <file>
