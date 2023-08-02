@@ -48,6 +48,16 @@ cd java
 mvn clean install -Pquick
 ```
 
+## Exploring the code base
+
+Look in the [design document](10-design.md) for an idea of what to expect in the project. The elements of the design
+largely correspond to Maven modules. Core or common modules are used to separate shared model code from integrations
+with libraries which are not needed by all components of the system.
+
+If you'd like to look at how the modules relate to one another in terms of their dependencies, in the `build` module
+there's a main method in the class `sleeper.build.maven.ShowInternalDependencies` to display the internal dependencies
+as a graph.
+
 ## System Tests
 
 Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of
