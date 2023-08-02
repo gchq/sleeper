@@ -5,8 +5,9 @@ This is a brief guide to developing Sleeper.
 
 ## Get your environment setup
 
-Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in the [deployment guide](02-deployment-guide.md)
-as exactly the same will apply here, especially for running the system tests.
+Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
+the [deployment guide](02-deployment-guide.md) as exactly the same will apply here, especially for running the system
+tests.
 
 ### Install Prerequisite Software
 
@@ -39,7 +40,7 @@ into the scripts directory so that the scripts work.
 ./scripts/build/buildForTest.sh
 ```
 
-maven (removing the '-Pquick' option will cause the unit and integration tests
+Maven (removing the '-Pquick' option will cause the unit and integration tests
 to run):
 
 ```bash
@@ -49,12 +50,12 @@ mvn clean install -Pquick
 
 ## System Tests
 
-Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of Sleeper.
-This is useful to ensure that performance degradations have not been introduced when we release new versions. 
+Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of
+Sleeper. This is useful to ensure that performance degradations have not been introduced when we release new versions.
 More information about the performance tests can be found in [12-performance-test.md](12-performance-test.md).
 
-They can also be used to test the functionality of different components, and provide a way to create an instance 
-quickly for testing purposes, which generates random test data for you to work with.
+They can also be used to test the functionality of different components, and provide a way to create an instance quickly
+for testing purposes, which generates random test data for you to work with.
 
 The easiest test to run if you are not sure about what stacks you need deployed is the deployAll system test. This test
 deploys most of the stacks. To run the deployAll system test, run the following command:
@@ -72,16 +73,17 @@ This will generate everything for you including:
 
 Once generated, it deploys Sleeper using CDK.
 
-Each system test has an instance properties file next to the deploy script called `system-test-instance.properties`. 
-When running the deploy script, the `scripts/test/<test-name>` directory is scanned for `table.properties`, 
-`tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test. 
-If they are not present, then the template files in `scripts/templates` are used. Note that properties in these 
+Each system test has an instance properties file next to the deploy script called `system-test-instance.properties`.
+When running the deploy script, the `scripts/test/<test-name>` directory is scanned for `table.properties`,
+`tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test.
+If they are not present, then the template files in `scripts/templates` are used. Note that properties in these
 files with the value `changeme` will be overwritten by the script.
 
-You can also change any system test specific properties in the file `scripts/test/<test-name>/system-test-instance.properties`. 
+You can also change any system test specific properties in the
+file `scripts/test/<test-name>/system-test-instance.properties`.
 This includes the optional stacks property - you may want to customise this to experiment with different stacks.
 
-All resources are tagged with the tags defined in the file `deploy/templates/tags.template`, or a `tags.properties` file 
+All resources are tagged with the tags defined in the file `deploy/templates/tags.template`, or a `tags.properties` file
 placed next to the `system-test-instance.properties`.
 
 You can get a report of your instance by running:
@@ -96,7 +98,7 @@ Finally, when you are ready to tear down the instance, run:
 ./scripts/test/tearDown.sh
 ```
 
-Note you will still need the files in the `/generated` folder that are created during deployment for this tear down 
+Note you will still need the files in the `/generated` folder that are created during deployment for this tear down
 script to work correctly.
 
 This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
@@ -129,7 +131,7 @@ SUBNETS=<your-subnet-ids>
 ./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions have completed. 
+Wait for the deployment to finish. Then wait until the ingest processes have run and the compactions have completed.
 Use the following command to check the status of the table called 'system-test':
 
 ```bash
@@ -141,6 +143,7 @@ Run this occasionally until it reports that there are 440 million records in the
 6. Publish the performance statistics.
 
 Record the ingest and compaction rate in the [performance figures](12-performance-test.md) documentation.
+
 ```bash
 # Ingest performance figures can be found by running the following reports
 ./scripts/utility/ingestTaskStatusReport.sh ${ID} standard -a
@@ -157,8 +160,8 @@ Record the ingest and compaction rate in the [performance figures](12-performanc
 ./scripts/test/tearDown.sh ${ID}
 ```
 
-8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to 
-provide an instance ID that's different from the compactionPerformance test:
+8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
+   provide an instance ID that's different from the compactionPerformance test:
 
 ```bash
 ID=<a-unique-id>
@@ -167,8 +170,8 @@ SUBNETS=<your-subnet-ids>
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-The following tests can be used as a quick check that all is working correctly. They are not intended to fully test 
-all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS 
+The following tests can be used as a quick check that all is working correctly. They are not intended to fully test
+all aspects of the system. Any changes made by pull requests should be tested by doing a system test deployment on AWS
 if they are likely to either affect performance or involve changes to the way the system is deployed to AWS.
 
 9. Test a simple query:
@@ -177,8 +180,8 @@ if they are likely to either affect performance or involve changes to the way th
 ./scripts/utility/query.sh ${ID}
 ```
 
-Choose a range query, choose 'y' for the first two questions and then choose a range such as 'aaaaaa' to 'aaaazz'. 
-As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it 
+Choose a range query, choose 'y' for the first two questions and then choose a range such as 'aaaaaa' to 'aaaazz'.
+As the data that is ingested is random, it is not possible to say exactly how many results will be returned, but it
 should be in the region of 900 results.
 
 10. Test a query that will be executed by lambda:
@@ -188,7 +191,7 @@ should be in the region of 900 results.
 ```
 
 Choose the S3 results bucket option and then choose the same options as above. It should say "COMPLETED".
-The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query 
+The first query executed by lambda is a little slower than subsequent ones due to the start-up costs. The second query
 should be quicker.
 
 11. Test a query that will be executed by lambda with the results being returned over a websocket:
