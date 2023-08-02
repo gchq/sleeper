@@ -18,32 +18,48 @@ package sleeper.build.maven.dependencydraw;
 
 import sleeper.build.maven.ArtifactReference;
 import sleeper.build.maven.DependencyReference;
+import sleeper.build.maven.InternalModuleIndex;
 import sleeper.build.maven.MavenModuleAndPath;
+import sleeper.build.maven.MavenModuleStructure;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
 
 public class GraphNode {
 
     private final MavenModuleAndPath module;
 
-    private final List<DependencyReference> internalDependencies;
+    private final List<ArtifactReference> edgeDependencies;
 
-    private GraphNode(MavenModuleAndPath module, List<DependencyReference> internalDependencies) {
+    private GraphNode(MavenModuleAndPath module, List<ArtifactReference> edgeDependencies) {
         this.module = module;
-        this.internalDependencies = internalDependencies;
+        this.edgeDependencies = edgeDependencies;
     }
 
-    public static GraphNode from(MavenModuleAndPath module) {
-        return new GraphNode(module, module.dependencies()
-                .filter(DependencyReference::isSleeper)
-                .filter(DependencyReference::isExported)
-                .collect(Collectors.toUnmodifiableList()));
+    public static List<GraphNode> allModulesFrom(MavenModuleStructure structure) {
+        InternalModuleIndex moduleIndex = structure.indexInternalModules();
+        return structure.allModules()
+                .map(module -> from(module, moduleIndex))
+                .collect(Collectors.toUnmodifiableList());
     }
 
-    public String getName() {
+    public static GraphNode from(MavenModuleAndPath module, InternalModuleIndex moduleIndex) {
+        Set<ArtifactReference> transitiveDependencies = module.transitiveInternalDependencies(moduleIndex)
+                .map(MavenModuleAndPath::artifactReference)
+                .collect(Collectors.toSet());
+        List<ArtifactReference> edgeDependencies = module.internalExportedDependencies()
+                .map(DependencyReference::artifactReference)
+                .filter(not(transitiveDependencies::contains))
+                .collect(Collectors.toUnmodifiableList());
+        return new GraphNode(module, edgeDependencies);
+    }
+
+    public String toString() {
         return module.getPath();
     }
 
@@ -51,12 +67,9 @@ public class GraphNode {
         return module.getStructure().artifactReference();
     }
 
-    public List<DependencyReference> getInternalDependencies() {
-        return internalDependencies;
-    }
-
     Stream<GraphEdge> buildEdges(Map<ArtifactReference, GraphNode> nodeByRef) {
-        return internalDependencies.stream()
-                .map(dependency -> new GraphEdge(this, nodeByRef.get(dependency.artifactReference()), dependency));
+        return edgeDependencies.stream()
+                .filter(nodeByRef::containsKey)
+                .map(dependency -> new GraphEdge(this, nodeByRef.get(dependency)));
     }
 }

@@ -28,19 +28,19 @@ public class GraphModel {
     private final List<GraphNode> nodes;
     private final List<GraphEdge> edges;
 
-    private GraphModel(List<GraphNode> nodes) {
+    private GraphModel(List<GraphNode> nodes, List<GraphEdge> edges) {
         this.nodes = nodes;
-        Map<ArtifactReference, GraphNode> nodeByRef = nodes.stream()
-                .collect(Collectors.toMap(GraphNode::getArtifactReference, node -> node));
-        this.edges = nodes.stream()
-                .flatMap(node -> node.buildEdges(nodeByRef))
-                .collect(Collectors.toUnmodifiableList());
+        this.edges = edges;
     }
 
     public static GraphModel from(MavenModuleStructure structure) {
-        return new GraphModel(structure.allModules()
-                .map(GraphNode::from)
-                .collect(Collectors.toUnmodifiableList()));
+        List<GraphNode> nodes = GraphNode.allModulesFrom(structure);
+        Map<ArtifactReference, GraphNode> nodeByRef = nodes.stream()
+                .collect(Collectors.toMap(GraphNode::getArtifactReference, node -> node));
+        List<GraphEdge> edges = nodes.stream()
+                .flatMap(node -> node.buildEdges(nodeByRef))
+                .collect(Collectors.toUnmodifiableList());
+        return new GraphModel(nodes, edges);
     }
 
     public List<GraphNode> getNodes() {

@@ -16,22 +16,18 @@
 
 package sleeper.build.maven.dependencydraw;
 
-import sleeper.build.maven.DependencyReference;
-
 public class GraphEdge {
 
     private final GraphNode from;
     private final GraphNode to;
-    private final DependencyReference dependency;
 
-    public GraphEdge(GraphNode from, GraphNode to, DependencyReference dependency) {
+    public GraphEdge(GraphNode from, GraphNode to) {
         this.from = from;
         this.to = to;
-        this.dependency = dependency;
     }
 
     @Override
     public String toString() {
-        return from.getName() + " > " + to.getName();
+        return from + " > " + to;
     }
 }

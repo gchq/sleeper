@@ -21,6 +21,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.build.maven.TestMavenModuleStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.build.maven.TestMavenModuleStructure.dependency;
+import static sleeper.build.maven.TestMavenModuleStructure.rootBuilder;
+import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
 
 public class GraphModelTest {
 
@@ -29,7 +32,7 @@ public class GraphModelTest {
         GraphModel model = GraphModel.from(TestMavenModuleStructure.example());
 
         assertThat(model.getNodes())
-                .extracting(GraphNode::getName)
+                .extracting(GraphNode::toString)
                 .containsExactly(
                         "core",
                         "configuration",
@@ -41,7 +44,7 @@ public class GraphModelTest {
     }
 
     @Test
-    void shouldCreateEdgesForAllInternalDependencies() {
+    void shouldCreateEdgesForInternalDependenciesWhichAreNotAlsoTransitive() {
         GraphModel model = GraphModel.from(TestMavenModuleStructure.example());
 
         assertThat(model.getEdges())
@@ -52,7 +55,72 @@ public class GraphModelTest {
                         "bulk-import/bulk-import-common > configuration",
                         "bulk-import/bulk-import-runner > bulk-import/bulk-import-common",
                         "bulk-import/bulk-import-runner > ingest",
-                        "bulk-import/bulk-import-runner > configuration",
                         "bulk-import/bulk-import-starter > bulk-import/bulk-import-common");
+    }
+
+    @Test
+    void shouldCreateEdgesForTwoChainedInternalDependencies() {
+        GraphModel model = GraphModel.from(rootBuilder().modulesArray(
+                testedModuleBuilder("core").build(),
+                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
+        ).build());
+
+        assertThat(model.getEdges())
+                .extracting(GraphEdge::toString)
+                .containsExactly(
+                        "configuration > core",
+                        "ingest > configuration");
+    }
+
+    @Test
+    void shouldNotCreateEdgeForInternalDependencyWhichIsAlsoTransitive() {
+        GraphModel model = GraphModel.from(rootBuilder().modulesArray(
+                testedModuleBuilder("core").build(),
+                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                testedModuleBuilder("ingest").dependenciesArray(
+                        dependency("sleeper:configuration"),
+                        dependency("sleeper:core")).build()
+        ).build());
+
+        assertThat(model.getEdges())
+                .extracting(GraphEdge::toString)
+                .containsExactly(
+                        "configuration > core",
+                        "ingest > configuration");
+    }
+
+    @Test
+    void shouldNotCreateEdgeForInternalDependencyWhichIsAlsoIndirectlyTransitive() {
+        GraphModel model = GraphModel.from(rootBuilder().modulesArray(
+                testedModuleBuilder("core").build(),
+                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build(),
+                testedModuleBuilder("bulk-import").dependenciesArray(
+                        dependency("sleeper:ingest"),
+                        dependency("sleeper:core")).build()
+        ).build());
+
+        assertThat(model.getEdges())
+                .extracting(GraphEdge::toString)
+                .containsExactly(
+                        "configuration > core",
+                        "ingest > configuration",
+                        "bulk-import > ingest");
+    }
+
+    @Test
+    void shouldNotCreateEdgeForInternalDependencyWhichDoesNotExist() {
+        GraphModel model = GraphModel.from(rootBuilder().modulesArray(
+                testedModuleBuilder("core").build(),
+                testedModuleBuilder("configuration").dependenciesArray(
+                        dependency("sleeper:core"),
+                        dependency("sleeper:not-a-module")).build()
+        ).build());
+
+        assertThat(model.getEdges())
+                .extracting(GraphEdge::toString)
+                .containsExactly(
+                        "configuration > core");
     }
 }
