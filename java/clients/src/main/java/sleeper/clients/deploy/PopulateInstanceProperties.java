@@ -95,7 +95,7 @@ public class PopulateInstanceProperties {
         properties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
         properties.set(ECR_INGEST_REPO, instanceId + "/ingest");
         properties.set(BULK_IMPORT_REPO, instanceId + "/bulk-import-runner");
-        properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, instanceId + "/bulk-import-runner-emrs");
+        properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, instanceId + "/bulk-import-runner-emr-serverless");
         return properties;
     }
 
