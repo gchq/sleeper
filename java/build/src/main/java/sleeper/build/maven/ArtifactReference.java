@@ -51,4 +51,8 @@ public class ArtifactReference {
     public String toString() {
         return groupId + ":" + artifactId;
     }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
 }
