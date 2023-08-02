@@ -69,26 +69,26 @@ public class DrawDependencyGraph {
         return new GraphData(nodeIds, edges);
     }
 
-    public NodeData getEdges(VisualizationViewer vv, Graph g) {
+    public NodeData getEdges(VisualizationViewer<String, String> vv, Graph<String, String> g) {
         List<List<String>> allInEdges = new ArrayList<>();
         List<List<String>> allOutEdges = new ArrayList<>();
-        Set<Integer> pickedNodes = vv.getPickedVertexState().getPicked();
-        List<Integer> selectedNodesList = pickedNodes.stream().collect(Collectors.toList());
+        Set<String> pickedNodes = vv.getPickedVertexState().getPicked();
+        List<String> selectedNodesList = new ArrayList<>(pickedNodes);
 
-        for (int i = 0; i < selectedNodesList.size(); i++) {
-            allInEdges.add(new ArrayList<>(g.getInEdges(String.valueOf(selectedNodesList.get(i)))));
-            allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(selectedNodesList.get(i)))));
+        for (String s : selectedNodesList) {
+            allInEdges.add(new ArrayList<>(g.getInEdges(String.valueOf(s))));
+            allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(s))));
         }
         return new NodeData(allInEdges, allOutEdges);
     }
 
-    public NodeData getEdgesFromName(List<String> selectedNodesList, Graph g) {
+    public NodeData getEdgesFromName(List<String> selectedNodesList, Graph<String, String> g) {
         List<List<String>> allInEdges = new ArrayList<>();
         List<List<String>> allOutEdges = new ArrayList<>();
 
-        for (int i = 0; i < selectedNodesList.size(); i++) {
-            allInEdges.add(new ArrayList<>(g.getInEdges(String.valueOf(selectedNodesList.get(i)))));
-            allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(selectedNodesList.get(i)))));
+        for (String s : selectedNodesList) {
+            allInEdges.add(new ArrayList<>(g.getInEdges(String.valueOf(s))));
+            allOutEdges.add(new ArrayList<>(g.getOutEdges(String.valueOf(s))));
         }
         return new NodeData(allInEdges, allOutEdges);
     }
@@ -103,10 +103,10 @@ public class DrawDependencyGraph {
         for (List<String> edge : edges) {
             g.addEdge(edge.get(0) + "---" + edge.get(1), edge.get(0), edge.get(1));
         }
-        Layout<Integer, String> layout = new CircleLayout(g);
+        Layout<String, String> layout = new CircleLayout<>(g);
         layout.setSize(new Dimension(900, 900));
-        VisualizationViewer<Integer, String> vv = new VisualizationViewer<Integer, String>(layout);
-        DefaultModalGraphMouse gm = new DefaultModalGraphMouse();
+        VisualizationViewer<String, String> vv = new VisualizationViewer<>(layout);
+        DefaultModalGraphMouse<String, String> gm = new DefaultModalGraphMouse<>();
         Function<String, Paint> edgePaint = s -> calculateEdgeColor(s, vv, g);
 
         Function<String, Paint> arrowPaint = s -> calculateArrowColor(s, edgePaint);
@@ -148,7 +148,7 @@ public class DrawDependencyGraph {
         );
     }
 
-    public Color calculateEdgeColor(String s, VisualizationViewer vv, Graph g) {
+    public Color calculateEdgeColor(String s, VisualizationViewer<String, String> vv, Graph<String, String> g) {
         List<List<String>> edgesList = getEdges(vv, g).getInEdges();
         List<List<String>> edgedOutList = getEdges(vv, g).getOutEdges();
         List<String> nextNodes = new ArrayList<>();
@@ -167,8 +167,7 @@ public class DrawDependencyGraph {
                         return Color.BLUE;
                     } else {
                         if (showTransitiveDependencies) {
-                            for (int k = 0; k < edgeNames.size(); k++) {
-                                List<String> nextOutEdge = edgeNames.get(k);
+                            for (List<String> nextOutEdge : edgeNames) {
                                 if (nextOutEdge.contains(s)) {
                                     return Color.BLACK;
                                 }
