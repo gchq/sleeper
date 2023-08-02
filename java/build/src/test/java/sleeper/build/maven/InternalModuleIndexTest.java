@@ -22,12 +22,12 @@ import static sleeper.build.maven.TestMavenModuleStructure.dependency;
 import static sleeper.build.maven.TestMavenModuleStructure.dependencyBuilder;
 import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
 
-public class InternalDependencyIndexTest {
+public class InternalModuleIndexTest {
 
     @Test
     public void shouldProduceListOfDependenciesFromModuleWithNoInternalDependencies() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
+        InternalModuleIndex index = TestMavenModuleStructure.example().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("core")).containsExactly("core");
@@ -37,7 +37,7 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldProduceListOfDependenciesFromModulesWithNoOtherInternalDependencies() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
+        InternalModuleIndex index = TestMavenModuleStructure.example().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("core", "configuration"))
@@ -49,7 +49,7 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldProduceListOfDependenciesFromModulesWithInternalDependencies() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
+        InternalModuleIndex index = TestMavenModuleStructure.example().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("ingest"))
@@ -61,7 +61,7 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldProduceListOfDependenciesFromNestedModulesWithInternalDependencies() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.example().internalDependencies();
+        InternalModuleIndex index = TestMavenModuleStructure.example().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules(
@@ -85,11 +85,11 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldIncludeTransitiveOnlyDependency() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
                 testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
@@ -99,13 +99,13 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldIncludeDeeplyTransitiveDependency() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(dependency("sleeper:a")).build(),
                 testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build(),
                 testedModuleBuilder("d").dependenciesArray(dependency("sleeper:c")).build(),
                 testedModuleBuilder("e").dependenciesArray(dependency("sleeper:d")).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("e"))
@@ -115,12 +115,12 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldIncludeUnexportedTransitiveAsCompileDependency() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(
                         dependencyBuilder("sleeper:a").exported(false).build()).build(),
                 testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("c"))
@@ -130,12 +130,12 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldExcludeUnexportedTransitiveWhenSpecified() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(
                         dependencyBuilder("sleeper:a").exported(false).build()).build(),
                 testedModuleBuilder("c").dependenciesArray(dependency("sleeper:b")).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("c"))
@@ -145,11 +145,11 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldIncludeUnexportedDependencyDirectlyWhenExcludingUnexportedTransitives() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(
                         dependencyBuilder("sleeper:a").exported(false).build()).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("b"))
@@ -159,11 +159,11 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldIncludeDependencyWithExplicitlyDeclaredScopeWhenExcludingUnexportedTransitives() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(
                         dependencyBuilder("sleeper:a").scope("something").exported(true).build()).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModulesExcludingUnexportedTransitives("b"))
@@ -173,10 +173,10 @@ public class InternalDependencyIndexTest {
     @Test
     public void shouldExcludeDependencyWithWrongGroup() {
         // Given
-        InternalDependencyIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
+        InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 testedModuleBuilder("a").build(),
                 testedModuleBuilder("b").dependenciesArray(dependency("abc:a")).build()
-        ).build().internalDependencies();
+        ).build().indexInternalModules();
 
         // When / Then
         assertThat(index.dependencyPathsForModules("b"))

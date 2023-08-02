@@ -70,7 +70,7 @@ class PopulatePropertiesTest {
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emrs");
+        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "aws-global");
 

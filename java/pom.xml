@@ -148,6 +148,7 @@
         <jetty.version>9.4.51.v20230217</jetty.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jung.version>2.1.1</jung.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>

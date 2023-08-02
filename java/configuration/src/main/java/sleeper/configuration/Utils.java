@@ -22,7 +22,6 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.DoublePredicate;
@@ -159,10 +158,12 @@ public class Utils {
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
-    public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
-        List<T> combinedList = new ArrayList<>(list1);
-        combinedList.addAll(list2);
-        return combinedList;
+    public static boolean isUniqueList(String input) {
+        if (input == null) {
+            return false;
+        }
+        List<String> inputList = SleeperProperties.readList(input);
+        return inputList.stream().distinct().count() == inputList.size();
     }
 
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {
