@@ -17,7 +17,7 @@ package sleeper.build.github.actions;
 
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -29,13 +29,13 @@ public class GitHubActionsChunkWorkflow {
     private final String chunkId;
     private final String name;
     private final Path usesWorkflowPath;
-    private final List<String> onPushPaths;
+    private final List<String> onTriggerPaths;
 
     private GitHubActionsChunkWorkflow(Builder builder) {
         chunkId = Objects.requireNonNull(builder.chunkId, "chunkId must not be null");
         name = Objects.requireNonNull(builder.name, "name must not be null");
         usesWorkflowPath = Objects.requireNonNull(builder.usesWorkflowPath, "usesWorkflowPath must not be null");
-        onPushPaths = Objects.requireNonNull(builder.onPushPaths, "onPushPaths must not be null");
+        onTriggerPaths = Objects.requireNonNull(builder.onTriggerPaths, "onTriggerPaths must not be null");
     }
 
     public static Builder builder() {
@@ -46,11 +46,11 @@ public class GitHubActionsChunkWorkflow {
         return usesWorkflowPath;
     }
 
-    public OnPushPathsDiff getOnPushPathsDiffFromExpected(
-            ProjectStructure project, ProjectChunk chunk, InternalDependencyIndex index) {
-        return OnPushPathsDiff.fromExpectedAndActual(project,
-                ExpectedOnPushPaths.from(project, index, chunk, this),
-                onPushPaths);
+    public WorkflowTriggerPathsDiff getTriggerPathsDiffFromExpected(
+            ProjectStructure project, ProjectChunk chunk, InternalModuleIndex index) {
+        return WorkflowTriggerPathsDiff.fromExpectedAndActual(project,
+                ExpectedWorkflowTriggerPaths.from(project, index, chunk, this),
+                onTriggerPaths);
     }
 
     @Override
@@ -62,12 +62,12 @@ public class GitHubActionsChunkWorkflow {
             return false;
         }
         GitHubActionsChunkWorkflow that = (GitHubActionsChunkWorkflow) o;
-        return chunkId.equals(that.chunkId) && name.equals(that.name) && usesWorkflowPath.equals(that.usesWorkflowPath) && onPushPaths.equals(that.onPushPaths);
+        return chunkId.equals(that.chunkId) && name.equals(that.name) && usesWorkflowPath.equals(that.usesWorkflowPath) && onTriggerPaths.equals(that.onTriggerPaths);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(chunkId, name, usesWorkflowPath, onPushPaths);
+        return Objects.hash(chunkId, name, usesWorkflowPath, onTriggerPaths);
     }
 
     @Override
@@ -76,12 +76,12 @@ public class GitHubActionsChunkWorkflow {
                 "chunkId='" + chunkId + '\'' +
                 ", name='" + name + '\'' +
                 ", usesWorkflowPath=" + usesWorkflowPath +
-                ", onPushPaths=" + onPushPaths +
+                ", onPushPaths=" + onTriggerPaths +
                 '}';
     }
 
     public static final class Builder {
-        private List<String> onPushPaths;
+        private List<String> onTriggerPaths;
         private String chunkId;
         private String name;
         private Path usesWorkflowPath;
@@ -108,13 +108,13 @@ public class GitHubActionsChunkWorkflow {
             return this;
         }
 
-        public Builder onPushPaths(List<String> onPushPaths) {
-            this.onPushPaths = onPushPaths;
+        public Builder onTriggerPaths(List<String> onTriggerPaths) {
+            this.onTriggerPaths = onTriggerPaths;
             return this;
         }
 
-        public Builder onPushPathsArray(String... onPushPaths) {
-            return onPushPaths(Arrays.asList(onPushPaths));
+        public Builder onTriggerPathsArray(String... onTriggerPaths) {
+            return onTriggerPaths(Arrays.asList(onTriggerPaths));
         }
 
         public GitHubActionsChunkWorkflow build() {

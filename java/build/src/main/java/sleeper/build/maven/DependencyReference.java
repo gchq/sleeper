@@ -45,6 +45,10 @@ public class DependencyReference {
         return exported;
     }
 
+    public boolean isSleeper() {
+        return groupId.equals("sleeper");
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

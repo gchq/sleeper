@@ -1213,7 +1213,7 @@ public class S3StateStoreIT {
                 .id("child1")
                 .region(region1)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId(parentPartition.getId())
+                .parentPartitionId("parent")
                 .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition2 = Partition.builder()
@@ -1222,10 +1222,14 @@ public class S3StateStoreIT {
                 .id("child2")
                 .region(region2)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId(parentPartition.getId())
+                .parentPartitionId("parent")
                 .build();
 
         // When / Then
+        // TODO This fails for the wrong reason. There's actually no validation of the leafPartition flag.
+        //      It's failing because the parent partition ID doesn't match.
+        //      We could implement the validation and improve the assertion, but we probably don't actually
+        //      need validation here at all as long as the code that calls this method is well tested.
         assertThatThrownBy(() ->
                 dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
                         parentPartitionAfterSplit, childPartition1, childPartition2))

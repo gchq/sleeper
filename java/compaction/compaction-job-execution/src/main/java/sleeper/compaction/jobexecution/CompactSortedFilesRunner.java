@@ -41,6 +41,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -79,6 +80,7 @@ public class CompactSortedFilesRunner {
     private final InstanceProperties instanceProperties;
     private final ObjectFactory objectFactory;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final PropertiesReloader propertiesReloader;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
@@ -97,6 +99,7 @@ public class CompactSortedFilesRunner {
             InstanceProperties instanceProperties,
             ObjectFactory objectFactory,
             TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
             CompactionTaskStatusStore taskStatusStore,
@@ -110,6 +113,7 @@ public class CompactSortedFilesRunner {
         this.instanceProperties = instanceProperties;
         this.objectFactory = objectFactory;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.propertiesReloader = propertiesReloader;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.taskStatusStore = taskStatusStore;
@@ -128,6 +132,7 @@ public class CompactSortedFilesRunner {
             InstanceProperties instanceProperties,
             ObjectFactory objectFactory,
             TablePropertiesProvider tablePropertiesProvider,
+            PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
             CompactionTaskStatusStore taskStatusStore,
@@ -136,7 +141,7 @@ public class CompactSortedFilesRunner {
             AmazonSQS sqsClient,
             AmazonECS ecsClient,
             CompactionTaskType type) {
-        this(instanceProperties, objectFactory, tablePropertiesProvider, stateStoreProvider,
+        this(instanceProperties, objectFactory, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 jobStatusStore, taskStatusStore, taskId, sqsJobQueueUrl, sqsClient, ecsClient, type, 3, 20);
     }
 
@@ -150,10 +155,9 @@ public class CompactSortedFilesRunner {
         if (instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE).equalsIgnoreCase("EC2")) {
             try {
                 if (this.ecsClient != null) {
-                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info -> {
-                        LOGGER.info("Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
-                                info.instanceID, info.az, info.instanceARN, info.clusterName, info.status);
-                    });
+                    CommonJobUtils.retrieveContainerMetadata(ecsClient).ifPresent(info ->
+                            LOGGER.info("Task running on EC2 instance ID {} in AZ {} with ARN {} in cluster {} with status {}",
+                                    info.instanceID, info.az, info.instanceARN, info.clusterName, info.status));
                 } else {
                     LOGGER.warn("ECS client is null");
                 }
@@ -215,6 +219,7 @@ public class CompactSortedFilesRunner {
         LOGGER.info("Compaction job {}: Created background thread to keep SQS messages alive (period is {} seconds)",
                 compactionJob.getId(), keepAliveFrequency);
 
+        propertiesReloader.reloadIfNeeded();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(compactionJob.getTableName());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
@@ -250,6 +255,7 @@ public class CompactSortedFilesRunner {
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
@@ -274,6 +280,7 @@ public class CompactSortedFilesRunner {
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, objectFactory,
                 tablePropertiesProvider,
+                propertiesReloader,
                 stateStoreProvider,
                 jobStatusStore,
                 taskStatusStore,

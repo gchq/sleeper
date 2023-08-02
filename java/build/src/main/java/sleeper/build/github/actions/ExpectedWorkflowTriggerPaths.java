@@ -17,19 +17,19 @@ package sleeper.build.github.actions;
 
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ExpectedOnPushPaths {
+public class ExpectedWorkflowTriggerPaths {
 
-    private ExpectedOnPushPaths() {
+    private ExpectedWorkflowTriggerPaths() {
     }
 
     public static List<String> from(
-            ProjectStructure project, InternalDependencyIndex maven,
+            ProjectStructure project, InternalModuleIndex maven,
             ProjectChunk chunk, GitHubActionsChunkWorkflow actualWorkflow) {
 
         List<String> paths = new ArrayList<>(Arrays.asList(

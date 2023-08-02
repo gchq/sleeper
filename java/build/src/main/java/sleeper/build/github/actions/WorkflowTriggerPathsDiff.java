@@ -23,14 +23,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class OnPushPathsDiff {
+public class WorkflowTriggerPathsDiff {
 
     private final List<String> expected;
     private final List<String> actual;
     private final List<String> missingEntries;
     private final List<String> extraEntries;
 
-    private OnPushPathsDiff(Builder builder) {
+    private WorkflowTriggerPathsDiff(Builder builder) {
         expected = Objects.requireNonNull(builder.expected, "expected must not be null");
         actual = Objects.requireNonNull(builder.actual, "actual must not be null");
         missingEntries = Objects.requireNonNull(builder.missingEntries, "missingEntries must not be null");
@@ -41,7 +41,7 @@ public class OnPushPathsDiff {
         return new Builder();
     }
 
-    public static OnPushPathsDiff fromExpectedAndActual(
+    public static WorkflowTriggerPathsDiff fromExpectedAndActual(
             ProjectStructure project, List<String> expected, List<String> actual) {
         List<String> missingEntries = expected.stream()
                 .filter(entry -> !actual.contains(entry))
@@ -100,7 +100,7 @@ public class OnPushPathsDiff {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        OnPushPathsDiff that = (OnPushPathsDiff) o;
+        WorkflowTriggerPathsDiff that = (WorkflowTriggerPathsDiff) o;
         return expected.equals(that.expected) && actual.equals(that.actual) && missingEntries.equals(that.missingEntries) && extraEntries.equals(that.extraEntries);
     }
 
@@ -148,8 +148,8 @@ public class OnPushPathsDiff {
             return this;
         }
 
-        public OnPushPathsDiff build() {
-            return new OnPushPathsDiff(this);
+        public WorkflowTriggerPathsDiff build() {
+            return new WorkflowTriggerPathsDiff(this);
         }
     }
 }
