@@ -46,7 +46,6 @@ public class DrawDependencyGraph {
         layout.setLengthFactor(1.2);
         layout.setSize(new Dimension(900, 900));
 
-        JFrame frame = new JFrame("Dependency Graph View");
         VisualizationViewer<GraphNode, GraphEdge> vv = new VisualizationViewer<>(layout);
         PickedNodeState picked = new PickedNodeState(model);
         vv.getPickedVertexState().addItemListener(event ->
@@ -66,6 +65,7 @@ public class DrawDependencyGraph {
         vv.addKeyListener(gm.getModeKeyListener());
         gm.setMode(ModalGraphMouse.Mode.TRANSFORMING);
 
+        JFrame frame = new JFrame("Dependency Graph View");
         JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
         JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
         JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
