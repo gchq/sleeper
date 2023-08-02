@@ -63,7 +63,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
@@ -130,7 +129,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .name(String.join("-", "sleeper", instanceId, "emr", "serverless"))
                 .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
-                .type(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_TYPE))
+                .type("Spark")
                 .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
                         .subnetIds(List.of(getSubnet(instanceProperties)))

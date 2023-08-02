@@ -30,6 +30,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CLASS_NAME;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
@@ -55,7 +56,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET); // Todo change to own
+        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String clusterName = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME);
         String jobName = String.join("-", "job", arguments.getJobRunId());
         String logUri = bulkImportBucket.isEmpty() ? "s3://" + clusterName
@@ -107,6 +108,8 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 + " --conf spark.driver.cores="
                 + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES)
                 + " --conf spark.driver.memory="
-                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY);
+                + instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY)
+                + " --conf spark.dynamicAllocation.enabled="
+                + instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION);
     }
 }

@@ -50,7 +50,7 @@ Stacks_CompactionStack="compaction-job-execution"
 Stacks_IngestStack="ingest"
 Stacks_SystemTestStack="system-test"
 Stacks_EksBulkImportStack="bulk-import-runner"
-Stacks_EmrServerlessBulkImportStack="bulk-import-runner-emrs"
+Stacks_EmrServerlessBulkImportStack="bulk-import-runner-emr-serverless"
 
 echo "Beginning docker build and push of images for the following stacks: ${DOCKER_STACKS}"
 

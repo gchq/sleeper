@@ -73,8 +73,8 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emrs</directory>
-            <outputDirectory>scripts/docker/bulk-import-runner-emrs</outputDirectory>
+            <directory>${project.basedir}/../bulk-import/bulk-import-runner/docker/emr-serverless</directory>
+            <outputDirectory>scripts/docker/bulk-import-runner-emr-serverless</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
             </excludes>

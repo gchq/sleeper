@@ -26,7 +26,7 @@ import java.util.List;
  * have a validation predicate for determining if the value a user has provided is valid. By default, the predicate
  * always returns true indicating the property is valid.
  */
-// Suppress as this class will always be referenced before impl class, so initialization behavior will be deterministic
+// Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface UserDefinedInstanceProperty extends InstanceProperty {
 
