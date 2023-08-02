@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.build.maven;
+package sleeper.build.maven.dependencydraw;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.build.maven.dependencydraw.DrawDependencyGraph;
-import sleeper.build.maven.dependencydraw.GraphData;
+import sleeper.build.maven.TestMavenModuleStructure;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +30,13 @@ public class DrawDependencyGraphTest {
 
     @Test
     public void shouldCreateNodesForAllModules() {
-        List<String> expectedNodeIds = TestMavenModuleStructure.example().allModules().map(i -> i.artifactReference().toString()).collect(Collectors.toList());
-        assertThat(graph.getNodeIds()).isEqualTo(expectedNodeIds);
+        assertThat(graph.getNodeIds()).containsExactly(
+                "sleeper:core",
+                "sleeper:configuration",
+                "sleeper:ingest",
+                "sleeper:bulk-import-common",
+                "sleeper:bulk-import-runner",
+                "sleeper:bulk-import-starter",
+                "sleeper:distribution");
     }
 }
