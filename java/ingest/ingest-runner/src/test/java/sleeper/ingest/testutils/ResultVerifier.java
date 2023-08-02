@@ -74,14 +74,14 @@ public class ResultVerifier {
                               Configuration hadoopConfiguration,
                               List<Record> expectedRecords,
                               String localWorkingDirectory,
-                              Integer maxNoRecords) throws StateStoreException, IOException {
+                              Integer maxNoOfRecordsInMemory) throws StateStoreException, IOException {
         verifyCalculation(
                 stateStore,
                 sleeperSchema,
                 hadoopConfiguration,
                 expectedRecords,
                 localWorkingDirectory,
-                maxNoRecords);
+                maxNoOfRecordsInMemory);
 
     }
 
@@ -107,7 +107,7 @@ public class ResultVerifier {
                                           Configuration hadoopConfiguration,
                                           List<Record> expectedRecords,
                                           String localWorkingDirectory,
-                                          Integer maxNoRecords) throws StateStoreException, IOException {
+                                          Integer maxNoOfRecordsInMemory) throws StateStoreException, IOException {
         java.nio.file.Path localWorkingDirectoryPath = Paths.get(localWorkingDirectory);  //Gets the path of the local directory of the file
 
         List<String> filesLeftInWorkingDirectory = (Files.exists(localWorkingDirectoryPath)) ?
@@ -149,10 +149,10 @@ public class ResultVerifier {
 
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = new HashMap<>();
         int i = 0;
-        for (Partition partition : partitionTree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList())) {
+        for (Partition partition : getLeafPartitions(partitionTree)) {
             List<Record> recordsInRange = new ArrayList<>();
             for (Record record : expectedRecords) {
-                Boolean thisPartition = false;
+                boolean thisPartition = false;
                 for (Range range : partition.getRegion().getRanges()) {
                     thisPartition = range.doesRangeContainObject(record.get(range.getFieldName()));
                     if (!thisPartition) {
@@ -163,11 +163,8 @@ public class ResultVerifier {
                     recordsInRange.add(record);
                 }
             }
+            Integer numberOfFiles = calculateNumberOfFiles(recordsInRange.size(), maxNoOfRecordsInMemory);
 
-            Integer numberOfFiles =
-                    recordsInRange.size() == 0
-                            ? 0
-                            : 1 + ((recordsInRange.size() - (recordsInRange.size() % maxNoRecords)) / maxNoRecords);
 
             partitionNoToExpectedNoOfFilesMap.put(i, numberOfFiles);
             i += 1;
@@ -192,6 +189,16 @@ public class ResultVerifier {
                 partitionNoToExpectedNoOfFilesMap.get(partitionNo), //Passes in the value in partitionNoToExpectedNoOfFilesMap
                 partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList()), //Passes in the value in partitionNoToExpectedRecordsMap or if it doesn't exist give empty list
                 hadoopConfiguration));
+    }
+
+    private static List<Partition> getLeafPartitions(PartitionTree tree) {
+        return tree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList());
+    }
+
+    public static int calculateNumberOfFiles(int numberOfRecords, int maxNumRecordsInMemory) {
+        return numberOfRecords == 0
+                        ? 0
+                        : 1 + ((numberOfRecords - (numberOfRecords % maxNumRecordsInMemory)) / maxNumRecordsInMemory);
     }
 
     private static void verifyPartition(Schema sleeperSchema,
