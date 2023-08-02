@@ -163,7 +163,6 @@ public class ResultVerifier {
                     recordsInRange.add(record);
                 }
             }
-            System.out.println(2);
 
             Integer numberOfFiles =
                     recordsInRange.size() == 0
