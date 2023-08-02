@@ -22,6 +22,7 @@ import sleeper.build.maven.InternalModuleIndex;
 import sleeper.build.maven.MavenModuleAndPath;
 import sleeper.build.maven.MavenModuleStructure;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,11 +36,15 @@ public class GraphModel {
     private final List<GraphNode> nodes;
     private final List<GraphEdge> edges;
     private final Map<ArtifactReference, GraphNode> nodeByRef;
+    private final Map<ArtifactReference, List<GraphEdge>> edgeByToRef;
+    private final Map<ArtifactReference, List<GraphEdge>> edgeByFromRef;
 
     private GraphModel(List<GraphNode> nodes, List<GraphEdge> edges) {
         this.nodes = nodes;
         this.edges = edges;
         this.nodeByRef = nodes.stream().collect(Collectors.toMap(GraphNode::getArtifactReference, node -> node));
+        this.edgeByToRef = edges.stream().collect(Collectors.groupingBy(GraphEdge::getToRef));
+        this.edgeByFromRef = edges.stream().collect(Collectors.groupingBy(GraphEdge::getFromRef));
     }
 
     public static GraphModel from(MavenModuleStructure structure) {
@@ -80,5 +85,13 @@ public class GraphModel {
 
     public GraphNode getNode(ArtifactReference artifactReference) {
         return nodeByRef.get(artifactReference);
+    }
+
+    public List<GraphEdge> getEdgesTo(ArtifactReference artifactReference) {
+        return edgeByToRef.getOrDefault(artifactReference, Collections.emptyList());
+    }
+
+    public List<GraphEdge> getEdgesFrom(ArtifactReference artifactReference) {
+        return edgeByFromRef.getOrDefault(artifactReference, Collections.emptyList());
     }
 }
