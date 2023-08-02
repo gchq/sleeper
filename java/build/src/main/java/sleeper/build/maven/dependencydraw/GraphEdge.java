@@ -19,6 +19,8 @@ package sleeper.build.maven.dependencydraw;
 import sleeper.build.maven.ArtifactReference;
 import sleeper.build.maven.MavenModuleAndPath;
 
+import java.util.stream.Stream;
+
 public class GraphEdge {
 
     private final MavenModuleAndPath from;
@@ -43,6 +45,12 @@ public class GraphEdge {
 
     public ArtifactReference getToRef() {
         return to.artifactReference();
+    }
+
+    public Stream<GraphEdge> thisAndTransitives(GraphModel model) {
+        return Stream.concat(Stream.of(this),
+                model.getEdgesFrom(getToRef()).stream()
+                        .flatMap(edge -> edge.thisAndTransitives(model)));
     }
 
     @Override

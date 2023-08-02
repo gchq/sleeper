@@ -34,13 +34,13 @@ public class PickedNodeEdges {
 
     public PickedNodeEdges(GraphModel model, Collection<GraphNode> picked) {
         edgesFromPicked = picked.stream()
-                .flatMap(node -> model.getEdgesFrom(node.getArtifactReference()).stream())
+                .flatMap(model::edgesFrom)
                 .collect(Collectors.toUnmodifiableList());
-        transitiveEdgesFromPicked = edgesFromPicked.stream()
-                .flatMap(edgeFromPicked -> model.getEdgesFrom(edgeFromPicked.getToRef()).stream())
+        transitiveEdgesFromPicked = picked.stream()
+                .flatMap(model::transitiveInternalDependencies)
                 .collect(Collectors.toUnmodifiableList());
         edgesToPicked = picked.stream()
-                .flatMap(node -> model.getEdgesTo(node.getArtifactReference()).stream())
+                .flatMap(model::edgesTo)
                 .collect(Collectors.toUnmodifiableList());
     }
 

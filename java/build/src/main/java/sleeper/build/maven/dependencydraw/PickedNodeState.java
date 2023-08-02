@@ -37,15 +37,15 @@ public class PickedNodeState {
         if (pickedNodeEdges.isDirectDependency(edge)) {
             return Color.BLUE;
         }
+        if (pickedNodeEdges.isDirectDependent(edge)) {
+            return Color.RED;
+        }
         if (showTransitiveDependencies) {
             if (pickedNodeEdges.isTransitiveDependency(edge)) {
                 return Color.BLACK;
             } else {
                 return Color.lightGray;
             }
-        }
-        if (pickedNodeEdges.isDirectDependent(edge)) {
-            return Color.RED;
         }
         return Color.BLACK;
     }

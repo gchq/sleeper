@@ -94,4 +94,17 @@ public class GraphModel {
     public List<GraphEdge> getEdgesFrom(ArtifactReference artifactReference) {
         return edgeByFromRef.getOrDefault(artifactReference, Collections.emptyList());
     }
+
+    public Stream<GraphEdge> edgesTo(GraphNode node) {
+        return getEdgesTo(node.getArtifactReference()).stream();
+    }
+
+    public Stream<GraphEdge> edgesFrom(GraphNode node) {
+        return getEdgesFrom(node.getArtifactReference()).stream();
+    }
+
+    public Stream<GraphEdge> transitiveInternalDependencies(GraphNode node) {
+        return edgesFrom(node)
+                .flatMap(edge -> edge.thisAndTransitives(this));
+    }
 }
