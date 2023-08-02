@@ -74,14 +74,14 @@ public class ResultVerifier {
                               Configuration hadoopConfiguration,
                               List<Record> expectedRecords,
                               String localWorkingDirectory,
-                              Integer maxNoOfRecordsInMemory) throws StateStoreException, IOException {
+                              Integer maxNoRecords) throws StateStoreException, IOException {
         verifyCalculation(
                 stateStore,
                 sleeperSchema,
                 hadoopConfiguration,
                 expectedRecords,
                 localWorkingDirectory,
-                maxNoOfRecordsInMemory);
+                maxNoRecords);
 
     }
 
@@ -107,7 +107,7 @@ public class ResultVerifier {
                                           Configuration hadoopConfiguration,
                                           List<Record> expectedRecords,
                                           String localWorkingDirectory,
-                                          Integer maxNoOfRecordsInMemory) throws StateStoreException, IOException {
+                                          Integer maxNoRecords) throws StateStoreException, IOException {
         java.nio.file.Path localWorkingDirectoryPath = Paths.get(localWorkingDirectory);  //Gets the path of the local directory of the file
 
         List<String> filesLeftInWorkingDirectory = (Files.exists(localWorkingDirectoryPath)) ?
@@ -168,7 +168,7 @@ public class ResultVerifier {
             Integer numberOfFiles =
                     recordsInRange.size() == 0
                             ? 0
-                            : 1 + ((recordsInRange.size() - (recordsInRange.size() % maxNoOfRecordsInMemory)) / maxNoOfRecordsInMemory);
+                            : 1 + ((recordsInRange.size() - (recordsInRange.size() % maxNoRecords)) / maxNoRecords);
 
             partitionNoToExpectedNoOfFilesMap.put(i, numberOfFiles);
             i += 1;
