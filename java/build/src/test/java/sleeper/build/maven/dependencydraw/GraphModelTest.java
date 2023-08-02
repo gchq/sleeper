@@ -22,6 +22,7 @@ import sleeper.build.maven.TestMavenModuleStructure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.maven.TestMavenModuleStructure.dependency;
+import static sleeper.build.maven.TestMavenModuleStructure.moduleRef;
 import static sleeper.build.maven.TestMavenModuleStructure.rootBuilder;
 import static sleeper.build.maven.TestMavenModuleStructure.testedModuleBuilder;
 
@@ -122,5 +123,21 @@ public class GraphModelTest {
                 .extracting(GraphEdge::toString)
                 .containsExactly(
                         "configuration > core");
+    }
+
+    @Test
+    void shouldFindEdgeByFromTo() {
+        GraphModel model = GraphModel.from(rootBuilder().modulesArray(
+                testedModuleBuilder("core").build(),
+                testedModuleBuilder("configuration").dependenciesArray(dependency("sleeper:core")).build(),
+                testedModuleBuilder("ingest").dependenciesArray(dependency("sleeper:configuration")).build()
+        ).build());
+
+        assertThat(model.edgeByFromTo(moduleRef("configuration"), moduleRef("core")))
+                .map(GraphEdge::toString)
+                .contains("configuration > core");
+        assertThat(model.edgeByFromTo(moduleRef("ingest"), moduleRef("configuration")))
+                .map(GraphEdge::toString)
+                .contains("ingest > configuration");
     }
 }

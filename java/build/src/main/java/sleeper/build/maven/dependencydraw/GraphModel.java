@@ -25,6 +25,7 @@ import sleeper.build.maven.MavenModuleStructure;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -106,5 +107,15 @@ public class GraphModel {
     public Stream<GraphEdge> transitiveInternalDependencies(GraphNode node) {
         return edgesFrom(node)
                 .flatMap(edge -> edge.thisAndTransitives(this));
+    }
+
+    public Optional<GraphEdge> edgeByFromTo(ArtifactReference from, ArtifactReference to) {
+        return edges.stream()
+                .filter(edge -> from.equals(edge.getFromRef()) && to.equals(edge.getToRef()))
+                .findAny();
+    }
+
+    public GraphEdge getEdgeByFromTo(ArtifactReference from, ArtifactReference to) {
+        return edgeByFromTo(from, to).orElseThrow();
     }
 }

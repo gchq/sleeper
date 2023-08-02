@@ -18,7 +18,7 @@ package sleeper.build.maven.dependencydraw;
 
 import java.awt.Color;
 import java.awt.Paint;
-import java.util.Set;
+import java.util.Collection;
 
 public class PickedNodeState {
 
@@ -29,7 +29,7 @@ public class PickedNodeState {
         this.model = model;
     }
 
-    public void updatePicked(Set<GraphNode> picked) {
+    public void updatePicked(Collection<GraphNode> picked) {
         pickedNodeEdges = new PickedNodeEdges(model, picked);
     }
 
