@@ -82,7 +82,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+        ).ingestAndVerify();
     }
 
     @Test
@@ -90,11 +90,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 2),
-                        new AbstractMap.SimpleEntry<>(1, 2))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
@@ -104,7 +99,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+        ).ingestAndVerify();
     }
 
     @Test
@@ -127,7 +122,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .batchBufferAllocatorBytes(1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
         assertThatThrownBy(() ->
-                test.ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
+                test.ingestAndVerify())
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }

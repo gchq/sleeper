@@ -21,7 +21,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
@@ -32,15 +31,11 @@ import sleeper.ingest.testutils.IngestTestHelper;
 import sleeper.ingest.testutils.RecordGenerator;
 
 import java.nio.file.Path;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -53,16 +48,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1),
-                        new AbstractMap.SimpleEntry<>(1, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         test(recordListAndSchema, arrow -> arrow
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(16 * 1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+        ).ingestAndVerify();
     }
 
     @Test
@@ -70,16 +60,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 2),
-                        new AbstractMap.SimpleEntry<>(1, 2))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         test(recordListAndSchema, arrow -> arrow
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(16 * 1024 * 1024L)
                 .maxNoOfBytesToWriteLocally(2 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+        ).ingestAndVerify();
     }
 
     @Test
@@ -87,17 +72,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 2),
-                        new AbstractMap.SimpleEntry<>(1, 2))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         IngestTestHelper<RecordList> test = test(recordListAndSchema, arrow -> arrow
                 .workingBufferAllocatorBytes(32 * 1024L)
                 .batchBufferAllocatorBytes(32 * 1024L)
                 .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
-        assertThatThrownBy(() ->
-                test.ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
+        assertThatThrownBy(test::ingestAndVerify)
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }

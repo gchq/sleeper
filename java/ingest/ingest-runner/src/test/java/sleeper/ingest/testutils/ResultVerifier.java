@@ -69,6 +69,22 @@ public class ResultVerifier {
     private ResultVerifier() {
     }
 
+    public static void verify(StateStore stateStore,
+                              Schema sleeperSchema,
+                              Configuration hadoopConfiguration,
+                              List<Record> expectedRecords,
+                              String localWorkingDirectory,
+                              Integer maxNoOfRecordsInMemory) throws StateStoreException, IOException {
+        verifyCalculation(
+                stateStore,
+                sleeperSchema,
+                hadoopConfiguration,
+                expectedRecords,
+                localWorkingDirectory,
+                maxNoOfRecordsInMemory);
+
+    }
+
     public static void verify(
             StateStore stateStore,
             Schema sleeperSchema,
@@ -76,6 +92,22 @@ public class ResultVerifier {
             List<Record> expectedRecords,
             String localWorkingDirectory) throws StateStoreException, IOException {
 
+        verifyCalculation(
+                stateStore,
+                sleeperSchema,
+                hadoopConfiguration,
+                expectedRecords,
+                localWorkingDirectory,
+                MAXIMUM_RECORDS_IN_FILE);
+    }
+
+
+    private static void verifyCalculation(StateStore stateStore,
+                                          Schema sleeperSchema,
+                                          Configuration hadoopConfiguration,
+                                          List<Record> expectedRecords,
+                                          String localWorkingDirectory,
+                                          Integer maxNoOfRecordsInMemory) throws StateStoreException, IOException {
         java.nio.file.Path localWorkingDirectoryPath = Paths.get(localWorkingDirectory);  //Gets the path of the local directory of the file
 
         List<String> filesLeftInWorkingDirectory = (Files.exists(localWorkingDirectoryPath)) ?
@@ -131,11 +163,12 @@ public class ResultVerifier {
                     recordsInRange.add(record);
                 }
             }
+            System.out.println(2);
 
             Integer numberOfFiles =
                     recordsInRange.size() == 0
                             ? 0
-                            : 1 + ((recordsInRange.size() - (recordsInRange.size() % MAXIMUM_RECORDS_IN_FILE)) / MAXIMUM_RECORDS_IN_FILE);
+                            : 1 + ((recordsInRange.size() - (recordsInRange.size() % maxNoOfRecordsInMemory)) / maxNoOfRecordsInMemory);
 
             partitionNoToExpectedNoOfFilesMap.put(i, numberOfFiles);
             i += 1;

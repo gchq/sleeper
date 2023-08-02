@@ -595,15 +595,13 @@ public class IngestCoordinatorCommonIT {
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getRowKeyFieldNames().get(0), new byte[]{11, 12});
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getSortKeyFieldNames().get(0), 2L);
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getValueFieldNames().get(0), 7L);
-        List<Record> expectedAggregatedRecords = Arrays.asList(expectedRecord1, expectedRecord2);
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        ingestAndVerify(recordListAndSchema,
+
+        recordListAndSchema.recordList = Arrays.asList(expectedRecord1, expectedRecord2);
+        ingestAndVerify(
+                recordListAndSchema,
                 tree,
                 AdditionIterator.class.getName(),
                 ingestCoordinatorFactoryFn);

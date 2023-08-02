@@ -18,7 +18,6 @@ package sleeper.ingest.testutils;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -39,10 +38,8 @@ import sleeper.statestore.inmemory.StateStoreTestBuilder;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static java.nio.file.Files.createTempDirectory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -83,9 +80,7 @@ public class IngestTestHelper<T> {
         return new IngestTestHelper<>(temporaryFolder, hadoopConfiguration, schema, records, records);
     }
 
-    public void ingestAndVerify(
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws Exception {
+    public void ingestAndVerify() throws Exception {
 
         try (IngestCoordinator<T> ingestCoordinator = standardIngestCoordinator(
                 stateStore, schema, recordBatchFactory, partitionFileWriterFactory)) {
