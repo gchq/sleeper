@@ -112,12 +112,12 @@ public class ResultVerifier {
         // Creates a map of with of the partitionIDs as keys, and an array of FileInfos'
 
         Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
-                .map(entry -> {
-                    int partitionNo = entry.getKey();
-                    Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(sleeperSchema.getRowKeyFieldNames()));
-                    Partition partitionOfFirstRecord = partitionTree.getLeafPartition(keyOfFirstRecord);
-                    return new AbstractMap.SimpleEntry<>(partitionOfFirstRecord.getId(), partitionNo);
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .map(entry -> new AbstractMap.SimpleEntry<>(
+                        partitionTree.getLeafPartition(
+                                Key.create(entry.getValue().get(0).getValues(sleeperSchema.getRowKeyFieldNames()))
+                        ).getId(),
+                        entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         // Gets the key of the partition of the first record, and creates, and creates a map with the partitionID and the number that said partition is
 
         Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
