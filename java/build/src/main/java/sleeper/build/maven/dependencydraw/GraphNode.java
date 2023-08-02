@@ -17,59 +17,25 @@
 package sleeper.build.maven.dependencydraw;
 
 import sleeper.build.maven.ArtifactReference;
-import sleeper.build.maven.DependencyReference;
-import sleeper.build.maven.InternalModuleIndex;
 import sleeper.build.maven.MavenModuleAndPath;
-import sleeper.build.maven.MavenModuleStructure;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.function.Predicate.not;
 
 public class GraphNode {
 
     private final MavenModuleAndPath module;
 
-    private final List<ArtifactReference> edgeDependencies;
-
-    private GraphNode(MavenModuleAndPath module, List<ArtifactReference> edgeDependencies) {
+    public GraphNode(MavenModuleAndPath module) {
         this.module = module;
-        this.edgeDependencies = edgeDependencies;
-    }
-
-    public static List<GraphNode> allModulesFrom(MavenModuleStructure structure) {
-        InternalModuleIndex moduleIndex = structure.indexInternalModules();
-        return structure.allModules()
-                .map(module -> from(module, moduleIndex))
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public static GraphNode from(MavenModuleAndPath module, InternalModuleIndex moduleIndex) {
-        Set<ArtifactReference> transitiveDependencies = module.transitiveInternalDependencies(moduleIndex)
-                .map(MavenModuleAndPath::artifactReference)
-                .collect(Collectors.toSet());
-        List<ArtifactReference> edgeDependencies = module.internalExportedDependencies()
-                .map(DependencyReference::artifactReference)
-                .filter(not(transitiveDependencies::contains))
-                .collect(Collectors.toUnmodifiableList());
-        return new GraphNode(module, edgeDependencies);
     }
 
     public String toString() {
         return module.getPath();
     }
 
-    public ArtifactReference getArtifactReference() {
-        return module.getStructure().artifactReference();
+    public MavenModuleAndPath getModule() {
+        return module;
     }
 
-    Stream<GraphEdge> buildEdges(Map<ArtifactReference, GraphNode> nodeByRef) {
-        return edgeDependencies.stream()
-                .filter(nodeByRef::containsKey)
-                .map(dependency -> new GraphEdge(this, nodeByRef.get(dependency)));
+    public ArtifactReference getArtifactReference() {
+        return module.artifactReference();
     }
 }

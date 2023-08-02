@@ -16,14 +16,33 @@
 
 package sleeper.build.maven.dependencydraw;
 
+import sleeper.build.maven.ArtifactReference;
+import sleeper.build.maven.MavenModuleAndPath;
+
 public class GraphEdge {
 
-    private final GraphNode from;
-    private final GraphNode to;
+    private final MavenModuleAndPath from;
+    private final MavenModuleAndPath to;
 
-    public GraphEdge(GraphNode from, GraphNode to) {
+    public GraphEdge(MavenModuleAndPath from, MavenModuleAndPath to) {
         this.from = from;
         this.to = to;
+    }
+
+    public GraphNode getFrom(GraphModel model) {
+        return model.getNode(getFromRef());
+    }
+
+    public GraphNode getTo(GraphModel model) {
+        return model.getNode(getToRef());
+    }
+
+    public ArtifactReference getFromRef() {
+        return from.artifactReference();
+    }
+
+    public ArtifactReference getToRef() {
+        return to.artifactReference();
     }
 
     @Override

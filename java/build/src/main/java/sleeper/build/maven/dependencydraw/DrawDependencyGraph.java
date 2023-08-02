@@ -18,7 +18,9 @@ package sleeper.build.maven.dependencydraw;
 
 import com.google.common.base.Function;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.DAGLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
@@ -126,6 +128,40 @@ public class DrawDependencyGraph {
         vv.getRenderContext().setArrowFillPaintTransformer(arrowPaint);
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
+        vv.setGraphMouse(gm);
+        vv.addKeyListener(gm.getModeKeyListener());
+        vv.setVertexToolTipTransformer(new ToStringLabeller());
+        vv.setEdgeToolTipTransformer(new ToStringLabeller());
+        gm.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+        vv.add(text, BorderLayout.CENTER);
+        vv.add(text2, BorderLayout.CENTER);
+        vv.add(transitiveCheckBox);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.getContentPane().add(vv);
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    public void drawGraph(GraphModel model) {
+        DirectedGraph<GraphNode, GraphEdge> g = new DirectedSparseGraph<>();
+        model.getNodes().forEach(g::addVertex);
+        model.getEdges().forEach(edge -> g.addEdge(edge, edge.getFrom(model), edge.getTo(model)));
+        Layout<GraphNode, GraphEdge> layout = new DAGLayout<>(g);
+        layout.setSize(new Dimension(900, 900));
+        VisualizationViewer<GraphNode, GraphEdge> vv = new VisualizationViewer<>(layout);
+        DefaultModalGraphMouse<GraphNode, GraphEdge> gm = new DefaultModalGraphMouse<>();
+
+        JFrame frame = new JFrame("Dependency Graph View");
+        JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
+        JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
+        JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
+        transitiveCheckBox.addItemListener(e -> {
+            showTransitiveDependencies = e.getStateChange() == ItemEvent.SELECTED;
+            SwingUtilities.updateComponentTreeUI(frame);
+        });
+
+        vv.setPreferredSize(new Dimension(350, 350));
+        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         vv.setGraphMouse(gm);
         vv.addKeyListener(gm.getModeKeyListener());
         vv.setVertexToolTipTransformer(new ToStringLabeller());
