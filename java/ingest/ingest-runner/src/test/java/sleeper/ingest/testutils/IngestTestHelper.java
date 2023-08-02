@@ -97,10 +97,8 @@ public class IngestTestHelper<T> {
         ResultVerifier.verify(
                 stateStore,
                 schema,
-                keyToPartitionNoMappingFn,
-                expectedRecords,
-                partitionNoToExpectedNoOfFilesMap,
                 hadoopConfiguration,
+                expectedRecords,
                 localWorkingDirectory);
     }
 

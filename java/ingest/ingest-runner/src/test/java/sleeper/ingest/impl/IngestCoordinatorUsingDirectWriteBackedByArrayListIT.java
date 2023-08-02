@@ -89,8 +89,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         ingestAndVerifyUsingDirectWriteBackedByArrayList(
                 recordListAndSchema,
                 tree,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 5,
                 1000L);
     }
@@ -114,8 +112,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         ingestAndVerifyUsingDirectWriteBackedByArrayList(
                 recordListAndSchema,
                 tree,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 5,
                 10L);
     }
@@ -123,8 +119,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private void ingestAndVerifyUsingDirectWriteBackedByArrayList(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             PartitionTree tree,
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore) throws IOException, StateStoreException, IteratorException {
 
@@ -152,10 +146,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         ResultVerifier.verify(
                 stateStore,
                 recordListAndSchema.sleeperSchema,
-                keyToPartitionNoMappingFn,
-                recordListAndSchema.recordList,
-                partitionNoToExpectedNoOfFilesMap,
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
+                recordListAndSchema.recordList,
                 ingestLocalWorkingDirectory);
     }
 }

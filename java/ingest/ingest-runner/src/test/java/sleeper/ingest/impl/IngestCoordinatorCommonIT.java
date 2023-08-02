@@ -60,7 +60,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -249,7 +248,6 @@ public class IngestCoordinatorCommonIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> 0;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -260,9 +258,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -275,7 +270,6 @@ public class IngestCoordinatorCommonIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> 0;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -284,9 +278,6 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -299,9 +290,6 @@ public class IngestCoordinatorCommonIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
-                Pair.of(Key.create(2), 0));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Integer) key.get(0)) < 2) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -314,9 +302,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -329,7 +314,6 @@ public class IngestCoordinatorCommonIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 2L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -342,9 +326,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -365,7 +346,6 @@ public class IngestCoordinatorCommonIT {
                         .mapToObj(longValue -> String.format("%09d-%s", longValue, randomStringGenerator.generate(random.nextInt(25))))
                         .collect(Collectors.toList()));
         String splitPoint = String.format("%09d", 2);
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((String) key.get(0)).compareTo(splitPoint) < 0) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -378,9 +358,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -396,10 +373,6 @@ public class IngestCoordinatorCommonIT {
                         new byte[]{1, 1},
                         new byte[]{2, 2},
                         new byte[]{64, 65}));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> {
-            byte[] byteArray = (byte[]) key.get(0);
-            return (byteArray[0] < 64 && byteArray[1] < 64) ? 0 : 1;
-        };
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -412,9 +385,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -443,7 +413,6 @@ public class IngestCoordinatorCommonIT {
         String splitPoint = String.format("%09d", 2);
         List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
                 Pair.of(Key.create(splitPoint), 0));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((String) key.get(0)).compareTo(splitPoint) < 0) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -456,9 +425,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -472,10 +438,6 @@ public class IngestCoordinatorCommonIT {
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
                 Arrays.asList(new byte[]{2, 3}, new byte[]{2, 2}, new byte[]{67, 68}, new byte[]{99}));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> {
-            byte[] byteArray = (byte[]) key.get(0);
-            return (byteArray[0] < 10) ? 0 : 1;
-        };
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -488,9 +450,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -504,7 +463,6 @@ public class IngestCoordinatorCommonIT {
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
                 Arrays.asList(1L, 20L, 1L, 50L));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (key.size() > 1 && ((Long) key.get(1)) < 10L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -517,9 +475,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -533,7 +488,6 @@ public class IngestCoordinatorCommonIT {
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100).boxed().collect(Collectors.toList()),
                 LongStream.range(-100L, 100).mapToObj(Long::toString).collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (key.size() > 1 && ((String) key.get(1)).compareTo("2") < 0) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 1))
@@ -546,9 +500,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -562,7 +513,6 @@ public class IngestCoordinatorCommonIT {
                 new LongType(),
                 Arrays.asList(1L, 0L));
 
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 2L) ? 0 : 1;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1),
                         new AbstractMap.SimpleEntry<>(1, 0))
@@ -575,9 +525,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -595,7 +542,6 @@ public class IngestCoordinatorCommonIT {
                         .flatMap(List::stream)
                         .collect(Collectors.toList()),
                 recordListAndSchema.sleeperSchema);
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> 0;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -606,9 +552,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(duplicatedRecordListAndSchema,
                 tree,
-                duplicatedRecordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -621,7 +564,6 @@ public class IngestCoordinatorCommonIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 Collections.emptyList());
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> 0;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 0))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -632,9 +574,6 @@ public class IngestCoordinatorCommonIT {
 
         ingestAndVerify(recordListAndSchema,
                 tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 null,
                 ingestCoordinatorFactoryFn);
     }
@@ -657,7 +596,6 @@ public class IngestCoordinatorCommonIT {
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getSortKeyFieldNames().get(0), 2L);
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getValueFieldNames().get(0), 7L);
         List<Record> expectedAggregatedRecords = Arrays.asList(expectedRecord1, expectedRecord2);
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> 0;
         Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>(0, 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -667,9 +605,6 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         ingestAndVerify(recordListAndSchema,
                 tree,
-                expectedAggregatedRecords,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 AdditionIterator.class.getName(),
                 ingestCoordinatorFactoryFn);
     }
@@ -677,9 +612,6 @@ public class IngestCoordinatorCommonIT {
     private void ingestAndVerify(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             PartitionTree tree,
-            List<Record> expectedRecordsList,
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             String sleeperIteratorClassName,
             QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn) throws IOException, StateStoreException, IteratorException {
 
@@ -702,10 +634,8 @@ public class IngestCoordinatorCommonIT {
         ResultVerifier.verify(
                 stateStore,
                 recordListAndSchema.sleeperSchema,
-                keyToPartitionNoMappingFn,
-                expectedRecordsList,
-                partitionNoToExpectedNoOfFilesMap,
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
+                recordListAndSchema.recordList,
                 ingestLocalWorkingDirectory);
     }
 }

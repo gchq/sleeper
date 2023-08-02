@@ -65,10 +65,8 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         ResultVerifier.verify(
                 stateStore,
                 sleeperSchema,
-                key -> 0,
-                expectedRecordList,
-                Collections.singletonMap(0, expectedNoOfFiles),
                 AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
+                expectedRecordList,
                 createTempDirectory(temporaryFolder, null).toString());
     }
 
