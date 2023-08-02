@@ -127,7 +127,7 @@ public class ResultVerifier {
         // Creates a map of the array position of the partition, and the FileInfo
 
 
-        Map<Integer, Integer> partNo = new HashMap<>();
+        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = new HashMap<>();
         int i = 0;
         for (Partition partition : partitionTree.getAllPartitions().stream().filter(Partition::isLeafPartition).collect(Collectors.toList())) {
             List<Record> recordsInRange = new ArrayList<>();
@@ -149,17 +149,17 @@ public class ResultVerifier {
                             ? 0
                             : 1 + ((recordsInRange.size() - (recordsInRange.size() % MAXIMUM_RECORDS_IN_FILE)) / MAXIMUM_RECORDS_IN_FILE);
 
-            partNo.put(i, numberOfFiles);
+            partitionNoToExpectedNoOfFilesMap.put(i, numberOfFiles);
             i += 1;
         }
-        int expectedTotalNoOfFiles = partNo.values().stream()
+        int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
                 .mapToInt(Integer::valueOf)
                 .sum();
         //Gets the expected number of files
 
         Set<Integer> allPartitionNoSet = Stream.of(
                         partitionNoToFileInfosMap.keySet().stream(),
-                        partNo.keySet().stream(),
+                        partitionNoToExpectedNoOfFilesMap.keySet().stream(),
                         partitionNoToExpectedRecordsMap.keySet().stream())
                 .flatMap(Function.identity())
                 .collect(Collectors.toSet());
@@ -167,13 +167,13 @@ public class ResultVerifier {
 
         assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
         //Asserts the active files in stateStore has the same length as the expected number of files is
-        assertThat(allPartitionNoSet).allMatch(partNo::containsKey);
+        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
         //Asserts that the set of all partition numbers match exactly to the expected partition numbers (the key of the partition no to expected no of files map)
 
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(
                 sleeperSchema,
                 partitionNoToFileInfosMap.getOrDefault(partitionNo, Collections.emptyList()), //Passes in the value in partitionNoToFileInfosMap or if it doesn't exist give empty list
-                partNo.get(partitionNo), //Passes in the value in partitionNoToExpectedNoOfFilesMap
+                partitionNoToExpectedNoOfFilesMap.get(partitionNo), //Passes in the value in partitionNoToExpectedNoOfFilesMap
                 partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList()), //Passes in the value in partitionNoToExpectedRecordsMap or if it doesn't exist give empty list
                 hadoopConfiguration));
         //Iterates through the set of all partition numbers, calling verify partition for each partition number
