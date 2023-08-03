@@ -76,7 +76,7 @@ public class MavenModuleStructure {
 
     private Stream<String> allTestedModulesForProjectList(MavenModuleAndPath parent) {
         MavenModuleAndPath projectListPath = parent.child(this);
-        if ("pom".equals(packaging)) {
+        if (isPomPackage()) {
             return modules.stream()
                     .flatMap(module -> module.allTestedModulesForProjectList(projectListPath));
         } else if (hasSrcTestFolder) {
@@ -114,6 +114,10 @@ public class MavenModuleStructure {
                     .moduleRef(moduleRef).build());
         }
         return modules;
+    }
+
+    public boolean isPomPackage() {
+        return "pom".equals(packaging);
     }
 
     @Override
