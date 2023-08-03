@@ -91,10 +91,10 @@ runStandardTest() {
 
 runMavenSystemTests() {
     SHORT_ID=$1
-    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
+    TEST_NAME="maven"
+    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
     INSTANCE_ID="$SHORT_ID-main"
-    TEST_NAME="maven-main"
     echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
