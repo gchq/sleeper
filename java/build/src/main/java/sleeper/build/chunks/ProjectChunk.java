@@ -15,7 +15,7 @@
  */
 package sleeper.build.chunks;
 
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 import sleeper.build.maven.MavenModuleAndPath;
 
 import java.util.Arrays;
@@ -69,7 +69,7 @@ public class ProjectChunk {
         return workflowOnlyProperties;
     }
 
-    public Stream<MavenModuleAndPath> dependencies(InternalDependencyIndex index) {
+    public Stream<MavenModuleAndPath> dependencies(InternalModuleIndex index) {
         return index.dependenciesForModules(modules);
     }
 
