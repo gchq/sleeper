@@ -28,8 +28,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.splitter.FindPartitionsToSplitIT.TestTablePropertiesProvider;
 import sleeper.core.statestore.FileInfo;
+import sleeper.splitter.FindPartitionsToSplitIT.TestTablePropertiesProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;

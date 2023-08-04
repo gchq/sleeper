@@ -26,10 +26,10 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
-import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.ingest.testutils.IngestRecordsTestDataHelper;
+import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;
 import java.nio.file.Path;

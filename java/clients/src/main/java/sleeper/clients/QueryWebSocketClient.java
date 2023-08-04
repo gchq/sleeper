@@ -35,9 +35,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
-import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -93,8 +93,8 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         private final Gson serde = new GsonBuilder().create();
         private final Set<String> outstandingQueries = new HashSet<>();
         private final Map<String, JsonArray> records = new HashMap<>();
-        private QuerySerDe querySerDe;
-        private Query query;
+        private final QuerySerDe querySerDe;
+        private final Query query;
         private boolean queryComplete = false;
         private long totalRecordsReturned = 0L;
 

@@ -18,8 +18,8 @@ package sleeper.ingest;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
-import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.core.statestore.FileInfo;
+import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.file.Files;
