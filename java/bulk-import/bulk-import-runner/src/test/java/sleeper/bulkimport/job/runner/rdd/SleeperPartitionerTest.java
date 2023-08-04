@@ -21,10 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.range.Range;
-import sleeper.core.range.Range.RangeFactory;
-import sleeper.core.range.Region;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
@@ -33,8 +30,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,7 +54,9 @@ public class SleeperPartitionerTest {
         Schema schema = getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
-        PartitionTree partitionTree = PartitionsFromSplitPoints.treeFrom(schema, Collections.emptyList());
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildTree();
         when(mockedBroadcast.getValue()).thenReturn(partitionTree.getAllPartitions());
 
         // When
@@ -72,8 +69,7 @@ public class SleeperPartitionerTest {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
-            Key key = Key.create(objs);
-            keys.add(key);
+            keys.add(Key.create(objs));
         }
         Set<Integer> partitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(partitionIds).hasSize(1);
@@ -86,7 +82,10 @@ public class SleeperPartitionerTest {
         Schema schema = getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
-        PartitionTree partitionTree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList(50));
+        PartitionTree partitionTree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 50)
+                .buildTree();
         when(mockedBroadcast.getValue()).thenReturn(partitionTree.getAllPartitions());
 
         // When
@@ -100,8 +99,7 @@ public class SleeperPartitionerTest {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
-            Key key = Key.create(objs);
-            keys.add(key);
+            keys.add(Key.create(objs));
         }
         Set<Integer> leftPartitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(leftPartitionIds).hasSize(1);
@@ -111,8 +109,7 @@ public class SleeperPartitionerTest {
             List<Object> objs = new ArrayList<>();
             objs.add(i);
             objs.add(new byte[]{(byte) i});
-            Key key = Key.create(objs);
-            keys.add(key);
+            keys.add(Key.create(objs));
         }
         Set<Integer> rightPartitionIds = getPartitionNumbers(keys, partitioner);
         assertThat(rightPartitionIds).hasSize(1);
@@ -128,49 +125,14 @@ public class SleeperPartitionerTest {
         // Given
         Schema schema = getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
-        RangeFactory rangeFactory = new RangeFactory(schema);
-
-        PartitionTree partitionTree = PartitionsFromSplitPoints.treeFrom(schema, Collections.singletonList(50));
-        Partition leftLeafPartition = partitionTree.getLeafPartition(Key.create(Arrays.asList(0, new byte[]{0})));
-        //  - Split the left-hand partition on the second dimension
-        Region leftLeafRegion = leftLeafPartition.getRegion();
-
-        List<Range> leftUpperRanges = new ArrayList<>();
-        leftUpperRanges.add(leftLeafRegion.getRange("key1"));
-        leftUpperRanges.add(rangeFactory.createRange(schema.getRowKeyFields().get(1), new byte[]{20}, null));
-        Region leftUpperRegion = new Region(leftUpperRanges);
-        Partition leftUpperPartition = Partition.builder()
-                .id("leftupper")
-                .parentPartitionId(leftLeafPartition.getId())
-                .region(leftUpperRegion)
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .leafPartition(true)
-                .build();
-
-        List<Range> leftLowerRanges = new ArrayList<>();
-        leftLowerRanges.add(leftLeafRegion.getRange("key1"));
-        leftLowerRanges.add(rangeFactory.createRange(schema.getRowKeyFields().get(1), new byte[]{}, new byte[]{20}));
-        Region leftLowerRegion = new Region(leftLowerRanges);
-        Partition leftLowerPartition = Partition.builder()
-                .id("leftlower")
-                .parentPartitionId(leftLeafPartition.getId())
-                .region(leftLowerRegion)
-                .rowKeyTypes(schema.getRowKeyTypes())
-                .leafPartition(true)
-                .build();
-
-        leftLeafPartition = leftLeafPartition.toBuilder().leafPartition(false).childPartitionIds(Arrays.asList("leftupper", "leftlower")).build();
-
-        List<Partition> partitionsAfterSplit = new ArrayList<>();
-        partitionsAfterSplit.add(partitionTree.getRootPartition());
-        partitionsAfterSplit.add(leftLeafPartition);
-        partitionsAfterSplit.add(partitionTree.getLeafPartition(Key.create(Arrays.asList(100, new byte[]{0}))));
-        partitionsAfterSplit.add(leftUpperPartition);
-        partitionsAfterSplit.add(leftLowerPartition);
-        PartitionTree newPartitionTree = new PartitionTree(schema, partitionsAfterSplit);
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "leftPartition", "rightPartition", 0, 50)
+                .splitToNewChildrenOnDimension("leftPartition", "leftLower", "leftUpper", 1, new byte[]{20})
+                .buildTree();
 
         Broadcast<List<Partition>> mockedBroadcast = mock(Broadcast.class);
-        when(mockedBroadcast.getValue()).thenReturn(newPartitionTree.getAllPartitions());
+        when(mockedBroadcast.getValue()).thenReturn(tree.getAllPartitions());
 
         // When
         SleeperPartitioner partitioner = new SleeperPartitioner(schemaAsString, mockedBroadcast);
@@ -184,8 +146,7 @@ public class SleeperPartitionerTest {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
-                Key key = Key.create(objs);
-                keys.add(key);
+                keys.add(Key.create(objs));
             }
         }
         Set<Integer> leftUpperPartitionIds = getPartitionNumbers(keys, partitioner);
@@ -197,8 +158,7 @@ public class SleeperPartitionerTest {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
-                Key key = Key.create(objs);
-                keys.add(key);
+                keys.add(Key.create(objs));
             }
         }
         Set<Integer> leftLowerPartitionIds = getPartitionNumbers(keys, partitioner);
@@ -210,8 +170,7 @@ public class SleeperPartitionerTest {
                 List<Object> objs = new ArrayList<>();
                 objs.add(i);
                 objs.add(new byte[]{b});
-                Key key = Key.create(objs);
-                keys.add(key);
+                keys.add(Key.create(objs));
             }
         }
         Set<Integer> rightPartitionIds = getPartitionNumbers(keys, partitioner);

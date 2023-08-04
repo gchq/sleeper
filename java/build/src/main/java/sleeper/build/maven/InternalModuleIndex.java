@@ -121,7 +121,12 @@ public class InternalModuleIndex {
                 .flatMap(module -> Stream.concat(traverseAncestors(module), Stream.of(module)));
     }
 
-    private Stream<MavenModuleAndPath> streamByArtifactRef(ArtifactReference reference) {
+    public Stream<MavenModuleAndPath> lookupDependencies(Stream<DependencyReference> dependencies) {
+        return dependencies.map(DependencyReference::artifactReference)
+                .flatMap(this::streamByArtifactRef);
+    }
+
+    public Stream<MavenModuleAndPath> streamByArtifactRef(ArtifactReference reference) {
         return Stream.of(moduleByArtifactRef(reference))
                 .filter(Optional::isPresent)
                 .map(Optional::get);
