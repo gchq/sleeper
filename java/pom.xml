@@ -655,21 +655,15 @@
                 <reportSets>
                     <reportSet>
                         <id>aggregated</id>
+                        <inherited>false</inherited>
                         <reports>
                             <report>report-only</report>
                             <report>failsafe-report-only</report>
                         </reports>
+                        <configuration>
+                            <aggregate>true</aggregate>
+                        </configuration>
                     </reportSet>
-                </reportSets>
-                <inherited>false</inherited>
-                <configuration>
-                    <aggregate>true</aggregate>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <reportSets>
                     <reportSet>
                         <reports>
                             <report>report-only</report>
