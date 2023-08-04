@@ -88,8 +88,10 @@ public class ResultVerifier {
         Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
                 .collect(Collectors.groupingBy(
                         record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(sleeperSchema.getRowKeyFieldNames())))));
+
         Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileInfo::getPartitionId));
+
         Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
                 .map(entry -> {
                     int partitionNo = entry.getKey();
@@ -97,10 +99,12 @@ public class ResultVerifier {
                     Partition partitionOfFirstRecord = partitionTree.getLeafPartition(keyOfFirstRecord);
                     return new AbstractMap.SimpleEntry<>(partitionOfFirstRecord.getId(), partitionNo);
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
                         Map.Entry::getValue));
+
         int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
                 .mapToInt(Integer::valueOf)
                 .sum();
@@ -114,6 +118,7 @@ public class ResultVerifier {
 
         assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
         assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
+
 
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(
                 sleeperSchema,
@@ -134,8 +139,8 @@ public class ResultVerifier {
                 .collect(Collectors.toList());
         List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
 
-        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles);
-        assertListsIdentical(expectedSortedRecordList, savedRecordList);
+        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
+        assertListsIdentical(expectedSortedRecordList, savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
 
         // In some situations, check that the file min and max match the min and max of dimension 0
         if (expectedNoOfFiles == 1 &&
@@ -194,7 +199,7 @@ public class ResultVerifier {
         }
     }
 
-    private static void assertListsIdentical(List<?> list1, List<?> list2) {
+    public static void assertListsIdentical(List<?> list1, List<?> list2) {
         assertThat(list2).hasSameSizeAs(list1);
         IntStream.range(0, list1.size()).forEach(i ->
                 assertThat(list2.get(i)).as(String.format("First difference found at element %d (of %d)", i, list1.size())).isEqualTo(list1.get(i)));
