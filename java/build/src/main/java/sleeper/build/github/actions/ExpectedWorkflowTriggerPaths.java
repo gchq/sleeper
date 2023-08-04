@@ -41,6 +41,7 @@ public class ExpectedWorkflowTriggerPaths {
                 .map(module -> module.pomPathInRepository(project).toString())
                 .forEach(paths::add);
         maven.dependenciesForModules(chunk.getModules())
+                .filter(module -> !module.getStructure().isPomPackage())
                 .map(module -> module.pathInRepository(project).toString() + "/**")
                 .forEach(paths::add);
         return paths;
