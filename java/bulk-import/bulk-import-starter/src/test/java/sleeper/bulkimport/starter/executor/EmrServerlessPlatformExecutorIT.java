@@ -33,7 +33,9 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -41,6 +43,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static sleeper.bulkimport.starter.testutil.TestResources.exampleString;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
@@ -64,6 +67,7 @@ public class EmrServerlessPlatformExecutorIT {
         properties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, "cluster-name");
         properties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, "application-id");
         properties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, "cluster-role");
+        properties.set(BULK_IMPORT_CLASS_NAME, "BulkImportClass");
         BulkImportJob job = BulkImportJob.builder()
                 .id("my-job")
                 .files(List.of("file.parquet"))
@@ -81,7 +85,9 @@ public class EmrServerlessPlatformExecutorIT {
 
         verify(postRequestedFor(urlEqualTo("/applications/application-id/jobruns"))
                 .withRequestBody(equalToJson(
-                        exampleString("example/emr-serverless/jobrun-request.json"), false, true)));
+                        exampleString("example/emr-serverless/jobrun-request.json"), false, true))
+                .withRequestBody(matchingJsonPath("$.jobDriver.sparkSubmit.sparkSubmitParameters",
+                        containing("--class BulkImportClass"))));
     }
 
     private static EmrServerlessClient wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
