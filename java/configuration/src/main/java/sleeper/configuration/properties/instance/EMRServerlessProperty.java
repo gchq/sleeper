@@ -45,7 +45,7 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.executor.cores")
             .description(
-                    "The number of cores used by an Serverless executor. Used to set spark.executor.cores.\n"
+                    "The number of cores used by a Serverless executor. Used to set spark.executor.cores.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("4")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -126,7 +126,7 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_DEFAULT_PARALLELISM = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.default.parallelism")
             .description("The default parallelism for Spark job. Used to set spark.default.parallelism.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("290")
+            .defaultValue("288")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SQL_SHUFFLE_PARTITIONS = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions")

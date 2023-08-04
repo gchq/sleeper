@@ -421,7 +421,7 @@ sleeper.bulk.import.emr.serverless.architecture=X86_64
 # The version of EMR Serverless to use.
 sleeper.bulk.import.emr.serverless.release=emr-6.10.0
 
-# The number of cores used by an Serverless executor. Used to set spark.executor.cores.
+# The number of cores used by a Serverless executor. Used to set spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.serverless.executor.cores=4
 
@@ -465,12 +465,12 @@ sleeper.bulk.import.emr.serverless.spark.shuffle.spill.compress=true
 
 # The default parallelism for Spark job. Used to set spark.default.parallelism.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.spark.default.parallelism=290
+sleeper.bulk.import.emr.serverless.spark.default.parallelism=288
 
 # The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to set
 # spark.sql.shuffle.partitions.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions=290
+sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
 
 # The default timeout for network interactions in Spark. Used to set spark.network.timeout.
 # See https://spark.apache.org/docs/latest/configuration.html.
