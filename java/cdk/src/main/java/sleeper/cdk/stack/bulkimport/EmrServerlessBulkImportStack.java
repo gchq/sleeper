@@ -15,9 +15,9 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.ec2.IVpc;
 import software.amazon.awscdk.services.ec2.SecurityGroup;
@@ -115,6 +115,12 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
                 .actions(List.of("elasticmapreduce:RunJobFlow")).effect(Effect.ALLOW)
                 .resources(List.of("*")).conditions(conditions).build());
+
+        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("EmrServerlessStartJobRun")
+                .actions(Lists.newArrayList("emr-serverless:StartJobRun"))
+                .resources(Lists.newArrayList("*"))
+                .build());
     }
 
     public void createEmrServerlessApplication(InstanceProperties instanceProperties) {
@@ -132,10 +138,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .type("Spark")
                 .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
-                        .subnetIds(List.of(getSubnet(instanceProperties)))
+                        .subnetIds(instanceProperties.getList(SUBNETS))
                         .securityGroupIds(List.of(createSecurityGroup(instanceProperties))).build())
-                .tags(List.of(new CfnTag.Builder().key("DeploymentStack")
-                        .value("EmrServerlessBulkImport").build()))
                 .build();
 
         CfnApplication emrServerlessCluster = new CfnApplication(this, getArtifactId(), props);
@@ -145,20 +149,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 emrServerlessCluster.getAttrApplicationId());
     }
 
-    private String getSubnet(InstanceProperties instanceProperties) {
-        List<String> subnets = instanceProperties.getList(SUBNETS);
-        return subnets.get(0);
-    }
-
     private String createSecurityGroup(InstanceProperties instanceProperties) {
-        String instanceId = instanceProperties.get(ID);
         IVpc vpc = Vpc.fromLookup(this, "VPC",
                 VpcLookupOptions.builder().vpcId(instanceProperties.get(VPC_ID)).build());
 
         SecurityGroup securityGroup = SecurityGroup.Builder
-                .create(this, String.join("-", "SG", "sleeper", instanceId, "EMR-Serverless"))
+                .create(this, "EMR-Serverless")
                 .description("Security Group used by EMR Serverless").vpc(vpc).build();
-        // Save ID
         return securityGroup.getSecurityGroupId();
     }
 

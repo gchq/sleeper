@@ -154,21 +154,6 @@ public class CommonEmrBulkImportHelper {
                         .collect(Collectors.toUnmodifiableList()))
                 .build());
 
-        function.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CreateCleanupRole")
-                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
-                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
-                                "elasticmapreduce.amazonaws.com.cn"))))
-                .build());
-
-        function.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("EmrServerlessStartJobRun")
-                .actions(Lists.newArrayList("emr-serverless:StartJobRun"))
-                .resources(Lists.newArrayList("*"))
-                .build());
-
         return function;
     }
 }
