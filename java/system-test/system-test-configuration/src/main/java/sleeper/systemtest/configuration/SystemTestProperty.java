@@ -102,13 +102,7 @@ public interface SystemTestProperty extends InstanceProperty {
         private Index() {
         }
 
-        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = createInstance();
-
-        private static SleeperPropertyIndex<InstanceProperty> createInstance() {
-            SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();
-            index.addAll(InstanceProperty.getAll());
-            return index;
-        }
+        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
         private static SystemTestPropertyImpl.Builder propertyBuilder(String propertyName) {
             return SystemTestPropertyImpl.named(propertyName)
