@@ -18,6 +18,7 @@ package sleeper.build.maven;
 
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.maven.dependencydraw.DrawDependencyGraph;
+import sleeper.build.maven.dependencydraw.GraphModel;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -34,6 +35,6 @@ public class ShowInternalDependencies {
                 .workflowsPath(repositoryRoot.resolve(".github/config/workflows"))
                 .build().loadMavenStructure();
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
-        drawDependencyGraph.produceGraphFromMaven(mavenStructure);
+        drawDependencyGraph.drawGraph(GraphModel.from(mavenStructure));
     }
 }

@@ -79,10 +79,6 @@ public class MavenModuleAndPath {
         return project.relativizeMavenPathInRepository(getPomPath());
     }
 
-    public String getModuleRef() {
-        return structure.getModuleRef();
-    }
-
     public MavenModuleStructure getStructure() {
         return structure;
     }
@@ -93,6 +89,22 @@ public class MavenModuleAndPath {
 
     public Stream<DependencyReference> exportedDependencies() {
         return dependencies().filter(DependencyReference::isExported);
+    }
+
+    public Stream<DependencyReference> internalExportedDependencies() {
+        return exportedDependencies().filter(DependencyReference::isSleeper);
+    }
+
+    public Stream<MavenModuleAndPath> transitiveInternalDependencies(InternalModuleIndex moduleIndex) {
+        return moduleIndex.lookupDependencies(internalExportedDependencies())
+                .flatMap(dependency -> moduleIndex.lookupDependencies(dependency.internalExportedDependencies()))
+                .flatMap(module -> module.transitiveInternalDependenciesFromHere(moduleIndex));
+    }
+
+    private Stream<MavenModuleAndPath> transitiveInternalDependenciesFromHere(InternalModuleIndex moduleIndex) {
+        return Stream.concat(Stream.of(this),
+                moduleIndex.lookupDependencies(internalExportedDependencies())
+                        .flatMap(dependency -> dependency.transitiveInternalDependenciesFromHere(moduleIndex)));
     }
 
     private static String projectListPathFromParent(MavenModuleAndPath parent, MavenModuleStructure structure) {
