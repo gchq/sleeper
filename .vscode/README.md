@@ -36,7 +36,7 @@ There are a number of locations where `settings.json` can live but for this setu
 
 To update the settings in VSCode navigate to `Code - Settings ... - Settings - Workspace`. To the top right of the tab is a file symbol with a hover text `Open Settings (JSON)`.  Clicking this button will open a JSON editor and merge the the `settings.json` file from this repository with the current one.
 
-Note: The following JSON paths will need updating to include the location of your installed Java JDKs.
+Note: The following JSON paths will need updating to include the location of your installed Java JDKs. Remove `comment.` from the start of the keys.
 - `java.configuration.runtimes.[].path`
 - `java.jdt.ls.java.home`
 

@@ -100,7 +100,7 @@ public class TestResult {
 
     public static final class Builder {
         private String testName;
-        private int exitCode;
+        private int exitCode = 1;
         private String instanceId;
         private final List<Path> logFiles = new ArrayList<>();
 
