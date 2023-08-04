@@ -16,7 +16,8 @@
 package sleeper.build.chunks;
 
 import sleeper.build.github.actions.WorkflowTriggerPathsDiff;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
+import sleeper.build.maven.MavenModuleAndPath;
 import sleeper.build.maven.MavenModuleStructure;
 
 import java.io.IOException;
@@ -44,14 +45,14 @@ public class ProjectChunks {
     public void validate(ProjectStructure project, PrintStream out) throws IOException {
         MavenModuleStructure maven = project.loadMavenStructure();
         validateAllConfigured(project, maven, out);
-        validateChunkWorkflows(project, maven.internalDependencies(), out);
+        validateChunkWorkflows(project, maven.indexInternalModules(), out);
     }
 
     public void validateAllConfigured(ProjectStructure project, MavenModuleStructure maven, PrintStream out) {
         Set<String> configuredModuleRefs = stream()
                 .flatMap(chunk -> chunk.getModules().stream())
                 .collect(Collectors.toSet());
-        List<String> unconfiguredModuleRefs = maven.allTestedModulesForProjectList()
+        List<String> unconfiguredModuleRefs = maven.allTestedModules().map(MavenModuleAndPath::getPath)
                 .filter(moduleRef -> !configuredModuleRefs.contains(moduleRef))
                 .collect(Collectors.toList());
         if (!unconfiguredModuleRefs.isEmpty()) {
@@ -62,7 +63,7 @@ public class ProjectChunks {
     }
 
     private void validateChunkWorkflows(
-            ProjectStructure project, InternalDependencyIndex dependencies, PrintStream out) throws IOException {
+            ProjectStructure project, InternalModuleIndex dependencies, PrintStream out) throws IOException {
         boolean failed = false;
         for (ProjectChunk chunk : chunks) {
             WorkflowTriggerPathsDiff diff = project.loadWorkflow(chunk)

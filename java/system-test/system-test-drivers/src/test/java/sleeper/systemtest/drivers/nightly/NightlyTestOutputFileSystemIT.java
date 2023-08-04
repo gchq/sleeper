@@ -114,6 +114,17 @@ class NightlyTestOutputFileSystemIT {
             assertThat(NightlyTestOutput.from(tempDir))
                     .isEqualTo(NightlyTestOutputTestHelper.emptyOutput());
         }
+
+        @Test
+        void shouldDefaultStatusCodeTo1WhenStatusFileNotPresent() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir).getTests())
+                    .extracting(TestResult::getExitCode)
+                    .containsExactly(1);
+        }
     }
 
     @Test
