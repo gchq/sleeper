@@ -36,7 +36,7 @@ import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopPathUtils;
 

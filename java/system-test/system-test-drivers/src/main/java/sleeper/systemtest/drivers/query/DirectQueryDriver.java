@@ -26,8 +26,8 @@ import sleeper.core.record.Record;
 import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;

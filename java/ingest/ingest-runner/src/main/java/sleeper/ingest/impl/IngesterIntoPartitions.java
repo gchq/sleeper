@@ -26,7 +26,7 @@ import sleeper.core.range.Range;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriter;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.ArrayList;

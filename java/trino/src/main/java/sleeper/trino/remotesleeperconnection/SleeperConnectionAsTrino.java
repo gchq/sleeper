@@ -40,7 +40,7 @@ import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;

@@ -28,8 +28,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;

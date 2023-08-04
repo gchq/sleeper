@@ -37,7 +37,7 @@ import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.File;

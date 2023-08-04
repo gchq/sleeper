@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.IngestResultTestData;
 import sleeper.ingest.job.FixedIngestJobHandler;
@@ -28,7 +29,6 @@ import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -43,6 +43,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
+import static sleeper.core.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
 import static sleeper.ingest.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
@@ -52,7 +53,6 @@ import static sleeper.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJob;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobNoFiles;
 import static sleeper.ingest.task.IngestTaskStatusTestData.finishedOneJobOneFile;
-import static sleeper.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
 
 public class IngestTaskTest {
     private final IngestJobHandler jobRunner = FixedIngestJobHandler.makingDefaultFiles();

@@ -41,8 +41,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.PartitionStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.PartitionStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.ArrayList;

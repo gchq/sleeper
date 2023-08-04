@@ -30,7 +30,7 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.Collections;

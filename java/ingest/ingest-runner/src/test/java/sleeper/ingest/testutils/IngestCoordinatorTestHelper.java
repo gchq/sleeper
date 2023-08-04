@@ -26,7 +26,7 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 

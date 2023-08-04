@@ -44,8 +44,8 @@ import sleeper.query.model.output.WebSocketResultsOutput;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryStatusReportListeners;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 

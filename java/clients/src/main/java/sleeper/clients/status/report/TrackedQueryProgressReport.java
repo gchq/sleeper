@@ -24,7 +24,7 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 

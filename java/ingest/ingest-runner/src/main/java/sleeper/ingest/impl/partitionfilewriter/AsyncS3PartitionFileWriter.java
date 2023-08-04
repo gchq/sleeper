@@ -35,7 +35,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.File;
 import java.io.IOException;

@@ -19,8 +19,8 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;

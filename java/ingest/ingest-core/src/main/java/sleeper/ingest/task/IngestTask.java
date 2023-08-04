@@ -26,7 +26,7 @@ import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobHandler;
 import sleeper.ingest.job.IngestJobSource;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.time.Instant;

@@ -17,9 +17,9 @@ package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
 import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.HashSet;
 import java.util.List;

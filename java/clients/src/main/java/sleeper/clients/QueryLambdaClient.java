@@ -34,7 +34,7 @@ import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

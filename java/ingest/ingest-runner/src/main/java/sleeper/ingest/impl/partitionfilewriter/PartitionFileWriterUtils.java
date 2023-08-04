@@ -28,8 +28,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -48,7 +49,7 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Create a {@link FileInfo} object to use to add the file to a {@link sleeper.statestore.StateStore}
+     * Create a {@link FileInfo} object to use to add the file to a {@link StateStore}
      *
      * @param sleeperSchema   -
      * @param filename        -

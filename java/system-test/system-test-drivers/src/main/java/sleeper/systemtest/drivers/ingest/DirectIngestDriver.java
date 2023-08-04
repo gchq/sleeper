@@ -20,7 +20,7 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;

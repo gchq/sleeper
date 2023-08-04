@@ -28,7 +28,7 @@ import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
 

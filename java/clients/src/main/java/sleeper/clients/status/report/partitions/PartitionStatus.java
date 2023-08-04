@@ -23,7 +23,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.splitter.FindPartitionsToSplit;
 import sleeper.splitter.PartitionSplitCheck;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.util.List;
 

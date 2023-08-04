@@ -29,7 +29,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;

@@ -21,8 +21,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.util.PollWithRetries;
 import sleeper.splitter.FindPartitionToSplitResult;
 import sleeper.splitter.FindPartitionsToSplit;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 import java.util.Set;

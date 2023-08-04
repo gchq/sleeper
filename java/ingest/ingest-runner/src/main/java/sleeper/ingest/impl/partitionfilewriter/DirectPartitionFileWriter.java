@@ -28,7 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.Map;

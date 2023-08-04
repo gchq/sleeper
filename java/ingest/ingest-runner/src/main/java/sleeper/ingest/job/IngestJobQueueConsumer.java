@@ -36,7 +36,7 @@ import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;
