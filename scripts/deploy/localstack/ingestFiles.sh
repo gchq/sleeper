@@ -27,7 +27,7 @@ JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 pushd "$JAVA_DIR"
 VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
 popd
-DOCKER_DIR="$JAVA_DIR/distribution/target/distribution-$VERSION-bin/scripts/docker"
+DOCKER_DIR="$SCRIPTS_DIR/docker"
 
 INGEST_TASK_IMAGE="sleeper-ingest-runner"
 echo "Uploading files to source bucket and sending ingest job to queue"
