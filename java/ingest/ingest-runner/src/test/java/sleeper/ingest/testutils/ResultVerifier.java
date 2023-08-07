@@ -25,7 +25,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.record.Record;
@@ -88,18 +87,15 @@ public class ResultVerifier {
         Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
                 .collect(Collectors.groupingBy(
                         record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(sleeperSchema.getRowKeyFieldNames())))));
-
+        
         Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileInfo::getPartitionId));
 
         Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
                 .map(entry -> {
-                    int partitionNo = entry.getKey();
                     Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(sleeperSchema.getRowKeyFieldNames()));
-                    Partition partitionOfFirstRecord = partitionTree.getLeafPartition(keyOfFirstRecord);
-                    return new AbstractMap.SimpleEntry<>(partitionOfFirstRecord.getId(), partitionNo);
+                    return new AbstractMap.SimpleEntry<>(partitionTree.getLeafPartition(keyOfFirstRecord).getId(), entry.getKey());
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
@@ -128,11 +124,12 @@ public class ResultVerifier {
                 hadoopConfiguration));
     }
 
-    private static void verifyPartition(Schema sleeperSchema,
-                                        List<FileInfo> partitionFileInfoList,
-                                        int expectedNoOfFiles,
-                                        List<Record> expectedRecordList,
-                                        Configuration hadoopConfiguration) {
+
+    public static void verifyPartition(Schema sleeperSchema,
+                                       List<FileInfo> partitionFileInfoList,
+                                       int expectedNoOfFiles,
+                                       List<Record> expectedRecordList,
+                                       Configuration hadoopConfiguration) {
         Comparator<Record> recordComparator = new RecordComparator(sleeperSchema);
         List<Record> expectedSortedRecordList = expectedRecordList.stream()
                 .sorted(recordComparator)
@@ -250,9 +247,9 @@ public class ResultVerifier {
         return itemsSketch;
     }
 
-    private static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
-                                                                        List<FileInfo> fileInfoList,
-                                                                        Configuration hadoopConfiguration) {
+    public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
+                                                                       List<FileInfo> fileInfoList,
+                                                                       Configuration hadoopConfiguration) {
         List<CloseableIterator<Record>> inputIterators = fileInfoList.stream()
                 .map(fileInfo -> createParquetReaderIterator(
                         sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration))

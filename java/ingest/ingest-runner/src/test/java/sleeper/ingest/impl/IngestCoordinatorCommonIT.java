@@ -48,6 +48,7 @@ import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.QuinFunction;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -59,7 +60,6 @@ import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -74,6 +74,8 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
+import static sleeper.ingest.testutils.ResultVerifier.assertListsIdentical;
+import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestCoordinatorCommonIT {
     @RegisterExtension
@@ -251,12 +253,14 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsCorrectly(
             QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
             throws StateStoreException, IOException, IteratorException {
+
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
+        Function<Key, String> keyToPartitionNoMappingFn = key -> "root";
 
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-        Map<String, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
+        Map<String, Integer> partitionIdToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>("root", 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -276,24 +280,28 @@ public class IngestCoordinatorCommonIT {
                 ingestCoordinatorFactoryFn
         );
 
-        Comparator<Record> recordComparator = new RecordComparator(recordListAndSchema.sleeperSchema);
-        List<Record> expectedSortedRecordList = recordListAndSchema.recordList.stream()
-                .sorted(recordComparator)
-                .collect(Collectors.toList());
-        //List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-
         assertThat(localWorkingDirectoryPath).isEmptyDirectory();
-        assertThat(stateStore.getActiveFiles()).hasSize(partitionNoToExpectedNoOfFilesMap.values().stream().mapToInt(Integer::intValue).sum());
-        assertThat(tree.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
+        assertThat(stateStore.getActiveFiles()).hasSize(partitionIdToExpectedNoOfFilesMap.values().stream().mapToInt(Integer::intValue).sum());
+        assertThat(tree.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionIdToExpectedNoOfFilesMap::containsKey);
 
+        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
+                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
 
-        tree.getAllPartitions().forEach(x -> {
-            partitionNoToExpectedNoOfFilesMap.get(x.getId());
-            List<Record> partitionNoToExpectedRecordsMap = recordListAndSchema.recordList.stream()
-                    .collect(Collectors.groupingBy(
-                            record -> x.getId())).getOrDefault(x, Collections.emptyList());
-            //assertListsIdentical(expectedSortedRecordList, savedRecordList);
-        });
+        stateStore.getAllPartitions().forEach(partitionId -> {
+                    List<FileInfo> partitionFileInfoList = partitionIdToFileInfosMap.getOrDefault(partitionId, Collections.emptyList());
+                    Map<String, List<Record>> partitionIdToExpectedRecordsMap = recordListAndSchema.recordList.stream()
+                            .collect(Collectors.groupingBy(
+                                    record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(recordListAndSchema.sleeperSchema.getRowKeyFieldNames())))));
+                    List<Record> expectedRecordList = partitionIdToExpectedRecordsMap.getOrDefault(partitionId, Collections.emptyList());
+                    List<Record> expectedSortedRecordList = expectedRecordList.stream()
+                            .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
+                            .collect(Collectors.toList());
+                    List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+
+                    assertListsIdentical(expectedSortedRecordList, savedRecordList);
+                    //assertThat(partitionFileInfoList).hasSize(partitionIdToExpectedNoOfFilesMap.get(partitionId));
+                }
+        );
 
 
     }
