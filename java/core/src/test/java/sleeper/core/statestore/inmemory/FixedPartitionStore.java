@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.inmemory;
+package sleeper.core.statestore.inmemory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.PartitionStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.PartitionStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;

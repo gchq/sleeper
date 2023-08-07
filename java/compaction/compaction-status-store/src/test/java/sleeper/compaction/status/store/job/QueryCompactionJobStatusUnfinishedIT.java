@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileInfoFactory;
 
 import java.util.Collections;
 

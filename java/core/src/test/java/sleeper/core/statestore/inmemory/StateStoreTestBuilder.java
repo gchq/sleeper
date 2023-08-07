@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore.inmemory;
+package sleeper.core.statestore.inmemory;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class StateStoreTestBuilder {
 
@@ -56,7 +54,7 @@ public class StateStoreTestBuilder {
     }
 
     public StateStore buildStateStore() {
-        return setupStateStore(inMemoryStateStoreWithFixedPartitions(partitions));
+        return setupStateStore(StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions(partitions));
     }
 
     public StateStore setupStateStore(StateStore store) {
