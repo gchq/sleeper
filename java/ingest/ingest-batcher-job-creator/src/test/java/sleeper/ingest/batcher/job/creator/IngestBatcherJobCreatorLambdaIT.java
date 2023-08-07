@@ -103,6 +103,7 @@ public class IngestBatcherJobCreatorLambdaIT {
                 .fileSizeBytes(1024)
                 .receivedTime(Instant.parse("2023-05-25T14:43:00Z"))
                 .build());
+        store.getAllFilesNewestFirst(); // Use consistent reads to ensure PutItem is completed
 
         // When
         lambdaWithTimesAndJobIds(
