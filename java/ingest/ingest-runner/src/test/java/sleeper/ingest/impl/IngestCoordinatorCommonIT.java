@@ -17,6 +17,8 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
+import org.apache.datasketches.quantiles.ItemsSketch;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
@@ -75,6 +77,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 import static sleeper.ingest.testutils.ResultVerifier.assertListsIdentical;
+import static sleeper.ingest.testutils.ResultVerifier.createFieldToItemSketchMap;
+import static sleeper.ingest.testutils.ResultVerifier.readFieldToItemSketchMap;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestCoordinatorCommonIT {
@@ -85,6 +89,7 @@ public class IngestCoordinatorCommonIT {
     private static final String DATA_BUCKET_NAME = "databucket";
     @TempDir
     public Path temporaryFolder;
+    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
 
     private static String newTemporaryDirectory(Path temporaryFolder) {
         try {
@@ -259,6 +264,8 @@ public class IngestCoordinatorCommonIT {
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         Function<Key, String> keyToPartitionNoMappingFn = key -> "root";
 
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
         Map<String, Integer> partitionIdToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>("root", 1))
@@ -280,29 +287,43 @@ public class IngestCoordinatorCommonIT {
                 ingestCoordinatorFactoryFn
         );
 
-        assertThat(localWorkingDirectoryPath).isEmptyDirectory();
-        assertThat(stateStore.getActiveFiles()).hasSize(partitionIdToExpectedNoOfFilesMap.values().stream().mapToInt(Integer::intValue).sum());
-        assertThat(tree.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionIdToExpectedNoOfFilesMap::containsKey);
 
         Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileInfo::getPartitionId));
 
-        stateStore.getAllPartitions().forEach(partitionId -> {
-                    List<FileInfo> partitionFileInfoList = partitionIdToFileInfosMap.getOrDefault(partitionId, Collections.emptyList());
-                    Map<String, List<Record>> partitionIdToExpectedRecordsMap = recordListAndSchema.recordList.stream()
-                            .collect(Collectors.groupingBy(
-                                    record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(recordListAndSchema.sleeperSchema.getRowKeyFieldNames())))));
-                    List<Record> expectedRecordList = partitionIdToExpectedRecordsMap.getOrDefault(partitionId, Collections.emptyList());
-                    List<Record> expectedSortedRecordList = expectedRecordList.stream()
-                            .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
-                            .collect(Collectors.toList());
-                    List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
 
-                    assertListsIdentical(expectedSortedRecordList, savedRecordList);
-                    //assertThat(partitionFileInfoList).hasSize(partitionIdToExpectedNoOfFilesMap.get(partitionId));
-                }
-        );
+        assertThat(localWorkingDirectoryPath).isEmptyDirectory();
+        assertThat(stateStore.getActiveFiles()).hasSize(partitionIdToExpectedNoOfFilesMap.values().stream().mapToInt(Integer::intValue).sum());
+        assertThat(tree.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionIdToExpectedNoOfFilesMap::containsKey);
 
+        tree.getAllPartitions().forEach(partition -> {
+            List<FileInfo> partitionFileInfoList = partitionIdToFileInfosMap.getOrDefault(partition.getId(), Collections.emptyList());
+            Map<String, List<Record>> partitionIdToExpectedRecordsMap = recordListAndSchema.recordList.stream()
+                    .collect(Collectors.groupingBy(
+                            record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(recordListAndSchema.sleeperSchema.getRowKeyFieldNames())))));
+            List<Record> expectedSortedRecordList = partitionIdToExpectedRecordsMap.getOrDefault(partition.getId(), Collections.emptyList()).stream()
+                    .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
+                    .collect(Collectors.toList());
+            List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration);
+
+            assertListsIdentical(expectedSortedRecordList, savedRecordList);
+            assertThat(partitionFileInfoList).hasSize(partitionIdToExpectedNoOfFilesMap.get(partition.getId()));
+
+            recordListAndSchema.sleeperSchema.getRowKeyFields().forEach(field -> {
+                ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
+                ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration).get(field);
+                assertThat(savedSketch.getMinValue()).isEqualTo(expectedSketch.getMinValue());
+                assertThat(savedSketch.getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
+                IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
+                    ResultVerifier.assertSketch(
+                            quantileNo,
+                            field,
+                            savedSketch,
+                            expectedSketch
+                    );
+                });
+            });
+        });
 
     }
 
