@@ -85,7 +85,7 @@ for stack in "${DOCKER_STACKS[@]}"; do
       aws ecr create-repository --repository-name "${INSTANCE_ID}/${REPO}" \
         --image-scanning-configuration scanOnPush=true --no-cli-pager
 
-        # Add a resource policy if the repo is EMR Servrless 
+        # Add a resource policy if the repo is EMR Serverless 
         if [ $REPO = $Stacks_EmrServerlessBulkImportStack ]; then
             echo "Creating repository policy for ${INSTANCE_ID}/${REPO}"
             aws ecr set-repository-policy --repository-name "${INSTANCE_ID}/${REPO}" \
