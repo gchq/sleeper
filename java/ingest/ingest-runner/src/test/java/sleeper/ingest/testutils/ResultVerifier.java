@@ -277,7 +277,7 @@ public class ResultVerifier {
     }
 
 
-    public static void assertSketch(
+    public static void assertOnSketch(
             Integer quantileNo,
             Field field,
             ItemsSketch savedSketch,

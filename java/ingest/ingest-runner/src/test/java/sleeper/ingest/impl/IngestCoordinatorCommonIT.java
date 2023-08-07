@@ -258,19 +258,15 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsCorrectly(
             QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
             throws StateStoreException, IOException, IteratorException {
-
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         Function<Key, String> keyToPartitionNoMappingFn = key -> "root";
-
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
         Map<String, Integer> partitionIdToExpectedNoOfFilesMap = Stream.of(
                         new AbstractMap.SimpleEntry<>("root", 1))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -287,26 +283,23 @@ public class IngestCoordinatorCommonIT {
                 ingestCoordinatorFactoryFn
         );
 
-
-        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
-
-
         assertThat(localWorkingDirectoryPath).isEmptyDirectory();
         assertThat(stateStore.getActiveFiles()).hasSize(partitionIdToExpectedNoOfFilesMap.values().stream().mapToInt(Integer::intValue).sum());
         assertThat(tree.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionIdToExpectedNoOfFilesMap::containsKey);
 
+        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
+                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
         tree.getAllPartitions().forEach(partition -> {
             List<FileInfo> partitionFileInfoList = partitionIdToFileInfosMap.getOrDefault(partition.getId(), Collections.emptyList());
             Map<String, List<Record>> partitionIdToExpectedRecordsMap = recordListAndSchema.recordList.stream()
                     .collect(Collectors.groupingBy(
                             record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(recordListAndSchema.sleeperSchema.getRowKeyFieldNames())))));
+
             List<Record> expectedSortedRecordList = partitionIdToExpectedRecordsMap.getOrDefault(partition.getId(), Collections.emptyList()).stream()
                     .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                     .collect(Collectors.toList());
-            List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration);
 
-            assertListsIdentical(expectedSortedRecordList, savedRecordList);
+            assertListsIdentical(expectedSortedRecordList, readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration));
             assertThat(partitionFileInfoList).hasSize(partitionIdToExpectedNoOfFilesMap.get(partition.getId()));
 
             recordListAndSchema.sleeperSchema.getRowKeyFields().forEach(field -> {
@@ -315,7 +308,7 @@ public class IngestCoordinatorCommonIT {
                 assertThat(savedSketch.getMinValue()).isEqualTo(expectedSketch.getMinValue());
                 assertThat(savedSketch.getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
                 IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
-                    ResultVerifier.assertSketch(
+                    ResultVerifier.assertOnSketch(
                             quantileNo,
                             field,
                             savedSketch,
