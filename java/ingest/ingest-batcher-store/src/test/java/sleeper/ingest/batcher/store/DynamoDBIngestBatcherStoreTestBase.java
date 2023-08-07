@@ -43,7 +43,7 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(
             List.of(table1, table2));
     protected final String requestsTableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID));
-    protected final IngestBatcherStore store = new DynamoDBIngestBatcherStore(
+    protected final IngestBatcherStore store = DynamoDBIngestBatcherStore.withConsistentReads(
             dynamoDBClient, instanceProperties, tablePropertiesProvider);
 
     @BeforeEach
