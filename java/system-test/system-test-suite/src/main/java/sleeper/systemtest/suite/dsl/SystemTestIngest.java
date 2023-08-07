@@ -63,7 +63,8 @@ public class SystemTestIngest {
 
     public SystemTestDirectEmrServerless directEmrServerless() {
         return new SystemTestDirectEmrServerless(instance, sourceFiles,
-                new DirectEmrServerlessDriver(instance, clients.getDynamoDB(), clients.getEmrServerless()),
+                new DirectEmrServerlessDriver(instance,
+                        clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
                 waitForIngestJobsDriver());
     }
 }
