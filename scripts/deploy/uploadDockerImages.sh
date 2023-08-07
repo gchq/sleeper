@@ -86,6 +86,7 @@ for stack in "${DOCKER_STACKS[@]}"; do
         --image-scanning-configuration scanOnPush=true --no-cli-pager
 
         # Add a resource policy if the repo is EMR Serverless 
+        # See https://aws.amazon.com/ru/blogs/big-data/add-your-own-libraries-and-application-dependencies-to-spark-and-hive-on-amazon-emr-serverless-with-custom-images/
         if [ $REPO = $Stacks_EmrServerlessBulkImportStack ]; then
             echo "Creating repository policy for ${INSTANCE_ID}/${REPO}"
             aws ecr set-repository-policy --repository-name "${INSTANCE_ID}/${REPO}" \

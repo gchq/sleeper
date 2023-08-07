@@ -217,15 +217,6 @@ public class PersistentEmrBulkImportStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .resources(Lists.newArrayList("*"))
                 .build());
-
-        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CreateCleanupRole")
-                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
-                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
-                                "elasticmapreduce.amazonaws.com.cn"))))
-                .build());
     }
 
     private static List<CfnCluster.ConfigurationProperty> getConfigurations(

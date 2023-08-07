@@ -81,6 +81,15 @@ public class EmrBulkImportStack extends NestedStack {
                 .resources(Lists.newArrayList("*"))
                 .conditions(conditions)
                 .build());
+
+        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("CreateCleanupRole")
+                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
+                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
+                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
+                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
+                                "elasticmapreduce.amazonaws.com.cn"))))
+                .build());
     }
 
     public Queue getBulkImportJobQueue() {
