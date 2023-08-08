@@ -140,7 +140,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     topicStack,
-                    tableStack.getStateStoreStacks(),
+                    tableStack,
                     ingestStatusStoreStack.getResources()
             );
         }
