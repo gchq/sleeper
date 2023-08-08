@@ -17,9 +17,7 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -35,7 +33,6 @@ import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEIN
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class TableStack {
     private final InstanceProperties instanceProperties;
@@ -54,10 +51,12 @@ public class TableStack {
         return new Builder();
     }
 
-    public static TableStack from(InstanceProperties instanceProperties, TableProperties tableProperties) {
+    public static TableStack from(InstanceProperties instanceProperties, TableProperties tableProperties,
+                                  AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
         return builder().instanceProperties(instanceProperties)
                 .tableProperties(tableProperties)
-                .withDefaultClients();
+                .s3Client(s3Client).dynamoDB(dynamoDB)
+                .build();
     }
 
     public void deploy() throws IOException, StateStoreException {
@@ -107,12 +106,6 @@ public class TableStack {
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
-        }
-
-        public TableStack withDefaultClients() {
-            return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
-                    .dynamoDB(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
-                    .build();
         }
 
         public TableStack build() {

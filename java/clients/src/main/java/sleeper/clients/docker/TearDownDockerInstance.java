@@ -16,6 +16,8 @@
 
 package sleeper.clients.docker;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
@@ -40,13 +42,14 @@ public class TearDownDockerInstance {
         }
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "system-test");
 
-        ConfigurationStack.from(instanceProperties).tearDown();
-        TableStack.from(instanceProperties, tableProperties).tearDown();
+        ConfigurationStack.from(instanceProperties, s3Client).tearDown();
+        TableStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).tearDown();
     }
 }
