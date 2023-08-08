@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.core.statestore;
 
 /**
  * Stores information about the data files and their status (i.e. {@link FileInfo}s,

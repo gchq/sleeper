@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.statestore.inmemory;
+package sleeper.core.statestore.inmemory;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,7 +26,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.PartitionStore;
+import sleeper.core.statestore.PartitionStore;
 
 import java.util.Arrays;
 import java.util.Collections;

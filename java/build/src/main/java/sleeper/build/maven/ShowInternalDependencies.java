@@ -18,6 +18,7 @@ package sleeper.build.maven;
 
 import sleeper.build.chunks.ProjectStructure;
 import sleeper.build.maven.dependencydraw.DrawDependencyGraph;
+import sleeper.build.maven.dependencydraw.GraphModel;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -27,13 +28,21 @@ public class ShowInternalDependencies {
     }
 
     public static void main(String[] args) throws IOException {
-        Path repositoryRoot = Path.of("").toAbsolutePath();
+        Path repositoryRoot = getRepositoryRoot(args);
         MavenModuleStructure mavenStructure = ProjectStructure.builder()
                 .chunksYamlPath(repositoryRoot.resolve(".github/config/chunks.yaml"))
                 .mavenProjectPath(repositoryRoot.resolve("java"))
                 .workflowsPath(repositoryRoot.resolve(".github/config/workflows"))
                 .build().loadMavenStructure();
         DrawDependencyGraph drawDependencyGraph = new DrawDependencyGraph();
-        drawDependencyGraph.produceGraphFromMaven(mavenStructure);
+        drawDependencyGraph.drawGraph(GraphModel.from(mavenStructure));
+    }
+
+    private static Path getRepositoryRoot(String[] args) {
+        if (args.length > 0) {
+            return Path.of(args[0]);
+        } else {
+            return Path.of("").toAbsolutePath();
+        }
     }
 }

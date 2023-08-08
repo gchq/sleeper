@@ -24,8 +24,8 @@ import sleeper.clients.status.report.partitions.PartitionsStatus;
 import sleeper.clients.status.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 

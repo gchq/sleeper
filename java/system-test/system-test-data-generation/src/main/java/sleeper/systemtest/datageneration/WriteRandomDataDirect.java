@@ -24,8 +24,8 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestProperties;
 

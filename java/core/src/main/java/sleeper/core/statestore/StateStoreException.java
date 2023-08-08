@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.core.statestore;
 
-package sleeper.build.maven.dependencydraw;
+/**
+ * An {@link Exception} for issues calling methods on the {@link StateStore}.
+ */
+public class StateStoreException extends Exception {
+    private static final long serialVersionUID = -3745911189033191252L;
 
-import java.util.List;
-
-public class NodeData {
-    List<List<String>> inEdges;
-    List<List<String>> outEdges;
-
-    NodeData(List<List<String>> inEdges, List<List<String>> outEdges) {
-        this.inEdges = inEdges;
-        this.outEdges = outEdges;
+    public StateStoreException(Throwable cause) {
+        super(cause);
     }
 
-    public List<List<String>> getInEdges() {
-        return inEdges;
+    public StateStoreException(String message, Throwable e) {
+        super(message, e);
     }
 
-    public List<List<String>> getOutEdges() {
-        return outEdges;
+    public StateStoreException(String message) {
+        super(message);
     }
 }
