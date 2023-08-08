@@ -18,7 +18,6 @@ package sleeper.ingest.batcher.store;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -293,7 +292,6 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        @Disabled("TODO")
         void shouldSuccessfullyAssignFilesWhenNumberOfTransactionsExceedsTheTransactionLimit() {
             // Given
             List<FileIngestRequest> fileIngestRequests = new ArrayList<>();
