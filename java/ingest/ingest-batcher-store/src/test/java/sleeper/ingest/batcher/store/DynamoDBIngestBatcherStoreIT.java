@@ -254,12 +254,6 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                         fileIngestRequests.add(fileIngestRequest);
                     });
 
-            // Scan with consistent reads waits for PutItems to complete.
-            // TransactWriteItems will fail if a PutItem has not yet been committed.
-            // In production, a scan will happen before the update, so only files that exist in the store will be
-            // assigned to jobs.
-            store.getAllFilesNewestFirst();
-
             // When / Then
             assertThatThrownBy(() -> store.assignJob("test-job", fileIngestRequests))
                     .isInstanceOf(TooManyFilesException.class);
