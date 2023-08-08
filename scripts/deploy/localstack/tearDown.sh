@@ -23,3 +23,9 @@ VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
 popd
 
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.TearDownDockerInstance "$@"
+EXIT_CODE=$?
+if [[ $EXIT_CODE -eq 0 ]]; then
+  echo "Successfully tore down instance"
+else
+  echo "Failed to tear down instance"
+fi
