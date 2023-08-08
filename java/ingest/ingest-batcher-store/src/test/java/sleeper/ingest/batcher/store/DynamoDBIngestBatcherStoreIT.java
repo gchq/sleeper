@@ -18,6 +18,7 @@ package sleeper.ingest.batcher.store;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,9 +27,13 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -285,6 +290,36 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("duplicate-job", fileIngestRequest),
                     fileIngestRequest);
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldSuccessfullyAssignFilesWhenNumberOfTransactionsExceedsTheTransactionLimit() {
+            // Given
+            List<FileIngestRequest> fileIngestRequests = new ArrayList<>();
+            // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
+            IntStream.range(0, 51)
+                    .forEach(i -> {
+                        FileIngestRequest fileIngestRequest = fileRequest()
+                                .file("test-bucket/file-" + i + ".parquet").build();
+                        store.addFile(fileIngestRequest);
+                        fileIngestRequests.add(fileIngestRequest);
+                    });
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
+            // When / Then
+            assertThatCode(() -> store.assignJob("test-job", fileIngestRequests))
+                    .doesNotThrowAnyException();
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactlyInAnyOrderElementsOf(
+                            fileIngestRequests.stream()
+                                    .map(file -> onJob("test-job", file))
+                                    .collect(Collectors.toList()));
         }
     }
 
