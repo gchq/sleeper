@@ -30,6 +30,7 @@ import sleeper.table.job.TableCreator;
 
 import java.io.IOException;
 
+import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
@@ -72,7 +73,7 @@ public class TableStack {
         dynamoDB.deleteTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME));
         dynamoDB.deleteTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
         dynamoDB.deleteTable(tableProperties.get(PARTITION_TABLENAME));
-        s3Client.deleteBucket(tableProperties.get(DATA_BUCKET));
+        tearDownBucket(s3Client, tableProperties.get(DATA_BUCKET));
     }
 
     public TableProperties getTableProperties() {
