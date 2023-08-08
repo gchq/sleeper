@@ -24,30 +24,30 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 
-import java.util.function.Function;
-
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
-public class IngestCoordinatorFactory {
+public interface IngestCoordinatorFactory {
 
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile() {
+    IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
+
+    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile() {
         return parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix());
     }
 
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrowWriteToS3() {
+    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrowWriteToS3() {
         return parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getAsyncS3Prefix());
     }
 
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorAsyncWriteBackedByArrow() {
+    static IngestCoordinatorFactory createIngestCoordinatorAsyncWriteBackedByArrow() {
         return IngestCoordinatorFactory::ingestCoordinatorAsyncWriteBackedByArrow;
     }
 
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrayListWriteToLocalFile() {
+    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrayListWriteToLocalFile() {
         return parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix());
     }
 
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrayListWriteToS3() {
+    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrayListWriteToS3() {
         return parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getAsyncS3Prefix());
     }
 
@@ -73,7 +73,7 @@ public class IngestCoordinatorFactory {
         }
     }
 
-    public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(IngestCoordinatorTestParameters parameters) {
+    private static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(IngestCoordinatorTestParameters parameters) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
             return standardIngestCoordinatorBuilder(parameters,
