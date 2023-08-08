@@ -18,7 +18,9 @@ package sleeper.core.statestore.inmemory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.statestore.DelegatingStateStoreV2;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreV2;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +36,10 @@ public class StateStoreTestHelper {
 
     public static StateStore inMemoryStateStoreWithFixedPartitions(List<Partition> partitions) {
         return new DelegatingStateStore(new InMemoryFileInfoStore(), new FixedPartitionStore(partitions));
+    }
+
+    public static StateStoreV2 inMemoryStateStoreV2WithFixedPartitions(List<Partition> partitions) {
+        return new DelegatingStateStoreV2(new FixedPartitionStore(partitions));
     }
 
     public static StateStore inMemoryStateStoreWithFixedSinglePartition(Schema schema) {
