@@ -95,9 +95,9 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     @Override
     public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
         for (int i = 0; i < filesInJob.size(); i += BATCH_SIZE) {
-            List<FileIngestRequest> filesToBatch = filesInJob.subList(i, Math.min(i + BATCH_SIZE, filesInJob.size()));
+            List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + BATCH_SIZE, filesInJob.size()));
             dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
-                    .withTransactItems(filesToBatch.stream()
+                    .withTransactItems(filesInBatch.stream()
                             .flatMap(file -> Stream.of(
                                     new TransactWriteItem().withDelete(new Delete()
                                             .withTableName(requestsTableName)
