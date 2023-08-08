@@ -61,6 +61,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
@@ -287,10 +288,14 @@ public class IngestCoordinatorCommonIT {
 
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         ingestRecords(
-                stateStore,
                 recordListAndSchema,
-                ingestLocalWorkingDirectory,
-                null,
+                createTestParameterBuilder()
+                        .fileNames(List.of("rootFile"))
+                        .fileUpdatedTimes(List.of(Instant.parse("2023-08-08T11:20:00Z")))
+                        .stateStore(stateStore)
+                        .schema(recordListAndSchema.sleeperSchema)
+                        .workingDir(ingestLocalWorkingDirectory)
+                        .build(),
                 ingestCoordinatorFactoryFn
         );
 
@@ -763,26 +768,25 @@ public class IngestCoordinatorCommonIT {
     }
 
     private void ingestRecords(
-            StateStore stateStore,
             RecordGenerator.RecordListAndSchema recordListAndSchema,
-            String ingestLocalWorkingDirectory,
-            String sleeperIteratorClassName,
+            IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
             IngestCoordinatorFactory ingestCoordinatorFactoryFn
     ) throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator =
                      ingestCoordinatorFactoryFn.createIngestCoordinator(
-                             IngestCoordinatorTestParameters.builder()
-                                     .stateStore(stateStore)
-                                     .schema(recordListAndSchema.sleeperSchema)
-                                     .iteratorClassName(sleeperIteratorClassName)
-                                     .workingDir(ingestLocalWorkingDirectory)
-                                     .temporaryFolder(temporaryFolder)
-                                     .awsResource(AWS_EXTERNAL_RESOURCE)
-                                     .dataBucketName(DATA_BUCKET_NAME)
-                                     .build())) {
+                             ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
+
         }
+    }
+
+    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
+        return IngestCoordinatorTestParameters
+                .builder()
+                .temporaryFolder(temporaryFolder)
+                .awsResource(AWS_EXTERNAL_RESOURCE)
+                .dataBucketName(DATA_BUCKET_NAME);
     }
 }

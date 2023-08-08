@@ -25,6 +25,9 @@ import sleeper.statestore.StateStore;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
+import java.util.function.Supplier;
 
 import static java.nio.file.Files.createTempDirectory;
 
@@ -37,6 +40,8 @@ public class IngestCoordinatorTestParameters {
     private final String dataBucketName;
     private final Path temporaryFolder;
     private final AwsExternalResource awsResource;
+    private final List<String> fileNames;
+    private final List<Instant> fileUpdatedTimes;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -46,6 +51,8 @@ public class IngestCoordinatorTestParameters {
         dataBucketName = builder.dataBucketName;
         temporaryFolder = builder.temporaryFolder;
         awsResource = builder.awsResource;
+        fileNames = builder.fileNames;
+        fileUpdatedTimes = builder.fileUpdatedTimes;
     }
 
     public static Builder builder() {
@@ -92,6 +99,14 @@ public class IngestCoordinatorTestParameters {
         return awsResource.getS3AsyncClient();
     }
 
+    public Supplier<String> getFileNameGenerator() {
+        return fileNames.iterator()::next;
+    }
+
+    public Supplier<Instant> getFileUpdatedTimeSupplier() {
+        return fileUpdatedTimes.iterator()::next;
+    }
+
     public static final class Builder {
         private StateStore stateStore;
         private Schema schema;
@@ -100,12 +115,10 @@ public class IngestCoordinatorTestParameters {
         private String dataBucketName;
         private Path temporaryFolder;
         private AwsExternalResource awsResource;
+        private List<String> fileNames;
+        private List<Instant> fileUpdatedTimes;
 
         private Builder() {
-        }
-
-        public static Builder builder() {
-            return new Builder();
         }
 
         public Builder stateStore(StateStore stateStore) {
@@ -140,6 +153,16 @@ public class IngestCoordinatorTestParameters {
 
         public Builder awsResource(AwsExternalResource awsResource) {
             this.awsResource = awsResource;
+            return this;
+        }
+
+        public Builder fileNames(List<String> fileNames) {
+            this.fileNames = fileNames;
+            return this;
+        }
+
+        public Builder fileUpdatedTimes(List<Instant> fileUpdatedTimes) {
+            this.fileUpdatedTimes = fileUpdatedTimes;
             return this;
         }
 

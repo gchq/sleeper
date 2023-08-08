@@ -111,7 +111,7 @@ public interface IngestCoordinatorFactory {
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .buildAcceptingRecords(),
                     DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix))
+                            parquetConfiguration, filePathPrefix, parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
