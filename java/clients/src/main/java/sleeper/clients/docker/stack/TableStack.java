@@ -26,15 +26,13 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableCreator;
 
-import java.io.IOException;
-
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
-public class TableStack {
+public class TableStack implements DockerStack {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final AmazonS3 s3Client;
@@ -59,12 +57,16 @@ public class TableStack {
                 .build();
     }
 
-    public void deploy() throws IOException, StateStoreException {
+    public void deploy() {
         s3Client.createBucket(tableProperties.get(DATA_BUCKET));
 
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
-        stateStore.initialise();
+        try {
+            DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
+            stateStore.initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void tearDown() {
