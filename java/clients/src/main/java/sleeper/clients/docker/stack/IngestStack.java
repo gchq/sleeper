@@ -52,9 +52,11 @@ public class IngestStack {
         return new Builder();
     }
 
-    public static IngestStack from(InstanceProperties instanceProperties) {
+    public static IngestStack from(InstanceProperties instanceProperties,
+                                   AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         return builder().instanceProperties(instanceProperties)
-                .withDefaultClients();
+                .s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
+                .build();
     }
 
     public void deploy() {

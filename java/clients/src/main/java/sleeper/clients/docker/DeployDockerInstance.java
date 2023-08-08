@@ -64,7 +64,7 @@ public class DeployDockerInstance {
 
         ConfigurationStack.from(instanceProperties, s3Client).deploy();
         TableStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
-        IngestStack.from(instanceProperties).deploy();
+        IngestStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }
 
     private static InstanceProperties generateInstanceProperties(String instanceId) {
