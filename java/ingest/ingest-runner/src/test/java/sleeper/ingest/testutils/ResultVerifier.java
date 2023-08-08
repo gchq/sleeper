@@ -137,7 +137,7 @@ public class ResultVerifier {
         List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
 
         assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
-        assertListsIdentical(expectedSortedRecordList, savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
+        assertThat(expectedSortedRecordList).containsExactlyElementsOf(savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
 
 
         // In some situations, check that the file min and max match the min and max of dimension 0
