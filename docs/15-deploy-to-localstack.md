@@ -30,6 +30,13 @@ To go back to using the default AWS endpoint, you can unset this environment var
 unset AWS_ENDPOINT_URL
 ```
 
+Before you can run any localstack scripts, you need to build the project. You can do this by running the
+following command:
+
+```shell
+./scripts/build/build.sh
+```
+
 To deploy an instance of sleeper to your localstack container, you can run the following command in the
 `scripts/deploy/localstack` folder. Note that you will not be able to run this command unless you have the
 AWS_ENDPOINT_URL environment variable set as described in the previous section.
