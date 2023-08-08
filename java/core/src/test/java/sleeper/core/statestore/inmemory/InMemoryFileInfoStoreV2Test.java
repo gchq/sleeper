@@ -18,13 +18,21 @@ package sleeper.core.statestore.inmemory;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileDataStatistics;
+import sleeper.core.statestore.FileInfoV2;
 import sleeper.core.statestore.StateStoreV2;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.AddFileRequest.addFile;
+import static sleeper.core.statestore.AddFilesRequest.addFiles;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreV2WithFixedPartitions;
 
 public class InMemoryFileInfoStoreV2Test {
@@ -37,5 +45,26 @@ public class InMemoryFileInfoStoreV2Test {
                 .rootFirst("root")
                 .buildTree();
         StateStoreV2 store = inMemoryStateStoreV2WithFixedPartitions(tree.getAllPartitions());
+        FileDataStatistics statistics = FileDataStatistics.builder()
+                .numberOfRecords(12)
+                .minRowKey(Key.create("abc"))
+                .maxRowKey(Key.create("def"))
+                .build();
+
+        // When
+        store.completeIngest(addFiles(request -> request
+                .jobId("test-job")
+                .files(List.of(addFile(file -> file
+                        .partitionId("root")
+                        .filename("test-file.parquet")
+                        .statistics(statistics))))));
+
+        // Then
+        assertThat(store.getPartitionFiles()).containsExactly(
+                FileInfoV2.builder()
+                        .partitionId("root")
+                        .filename("test-file.parquet")
+                        .statistics(statistics)
+                        .build());
     }
 }

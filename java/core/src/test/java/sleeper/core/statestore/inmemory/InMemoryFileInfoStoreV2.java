@@ -14,12 +14,26 @@
  * limitations under the License.
  */
 
-package sleeper.core.statestore;
+package sleeper.core.statestore.inmemory;
 
+import sleeper.core.statestore.AddFilesRequest;
+import sleeper.core.statestore.FileInfoStoreV2;
+import sleeper.core.statestore.FileInfoV2;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public interface FileInfoStoreV2 {
-    void completeIngest(AddFilesRequest request);
+public class InMemoryFileInfoStoreV2 implements FileInfoStoreV2 {
 
-    List<FileInfoV2> getPartitionFiles();
+    private final List<FileInfoV2> files = new ArrayList<>();
+
+    @Override
+    public void completeIngest(AddFilesRequest request) {
+        request.buildFileInfos().forEach(files::add);
+    }
+
+    @Override
+    public List<FileInfoV2> getPartitionFiles() {
+        return files;
+    }
 }

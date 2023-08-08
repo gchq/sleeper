@@ -22,9 +22,11 @@ import java.util.List;
 
 public class DelegatingStateStoreV2 implements StateStoreV2 {
     private final PartitionStore partitionStore;
+    private final FileInfoStoreV2 fileStore;
 
-    public DelegatingStateStoreV2(PartitionStore partitionStore) {
+    public DelegatingStateStoreV2(PartitionStore partitionStore, FileInfoStoreV2 fileStore) {
         this.partitionStore = partitionStore;
+        this.fileStore = fileStore;
     }
 
     @Override
@@ -50,5 +52,15 @@ public class DelegatingStateStoreV2 implements StateStoreV2 {
     @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
         partitionStore.initialise(partitions);
+    }
+
+    @Override
+    public void completeIngest(AddFilesRequest request) {
+        fileStore.completeIngest(request);
+    }
+
+    @Override
+    public List<FileInfoV2> getPartitionFiles() {
+        return fileStore.getPartitionFiles();
     }
 }
