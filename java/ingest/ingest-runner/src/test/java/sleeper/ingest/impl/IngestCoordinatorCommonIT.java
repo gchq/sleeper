@@ -47,6 +47,7 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
+import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.QuinFunction;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
@@ -151,6 +152,21 @@ public class IngestCoordinatorCommonIT {
                                                 sleeperIteratorClassName,
                                                 workingDir
                                         )))
+        );
+    }
+
+    private static Stream<Arguments> parameterObjsForTests() {
+        return Stream.of(
+                Arguments.of(Named.of("Direct write, backed by Arrow, no S3",
+                        IngestCoordinatorTestParameters.createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile())),
+                Arguments.of(Named.of("Direct write, backed by Arrow, using S3",
+                        IngestCoordinatorTestParameters.createIngestCoordinatorDirectWriteBackedByArrowWriteToS3())),
+                Arguments.of(Named.of("Async write, backed by Arrow",
+                        IngestCoordinatorTestParameters.createIngestCoordinatorAsyncWriteBackedByArrow())),
+                Arguments.of(Named.of("Direct write, backed by ArrayList, no S3",
+                        IngestCoordinatorTestParameters.createIngestCoordinatorDirectWriteBackedByArrayListWriteToLocalFile())),
+                Arguments.of(Named.of("Direct write, backed by ArrayList, using S3",
+                        IngestCoordinatorTestParameters.createIngestCoordinatorDirectWriteBackedByArrayListWriteToS3()))
         );
     }
 
