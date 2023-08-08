@@ -28,11 +28,9 @@ import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -292,7 +290,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        void shouldSuccessfullyAssignFilesWhenNumberOfTransactionsExceedsTheTransactionLimit() {
+        void shouldFailToAssignFilesWhenNumberOfTransactionsExceedsTheTransactionLimit() {
             // Given
             List<FileIngestRequest> fileIngestRequests = new ArrayList<>();
             // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
@@ -311,13 +309,10 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.getAllFilesNewestFirst();
 
             // When / Then
-            assertThatCode(() -> store.assignJob("test-job", fileIngestRequests))
-                    .doesNotThrowAnyException();
+            assertThatThrownBy(() -> store.assignJob("test-job", fileIngestRequests))
+                    .isInstanceOf(TooManyFilesException.class);
             assertThat(store.getAllFilesNewestFirst())
-                    .containsExactlyInAnyOrderElementsOf(
-                            fileIngestRequests.stream()
-                                    .map(file -> onJob("test-job", file))
-                                    .collect(Collectors.toList()));
+                    .containsExactlyInAnyOrderElementsOf(fileIngestRequests);
         }
     }
 

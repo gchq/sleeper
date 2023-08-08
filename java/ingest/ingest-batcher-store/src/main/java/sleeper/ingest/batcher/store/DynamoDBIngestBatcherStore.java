@@ -51,7 +51,6 @@ import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.createUna
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
-    private static final int BATCH_SIZE = 50;
     private final AmazonDynamoDB dynamoDB;
     private final String requestsTableName;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -94,10 +93,11 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
-        for (int i = 0; i < filesInJob.size(); i += BATCH_SIZE) {
-            List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + BATCH_SIZE, filesInJob.size()));
+        if (filesInJob.size() > 50) {
+            throw new TooManyFilesException();
+        } else {
             dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
-                    .withTransactItems(filesInBatch.stream()
+                    .withTransactItems(filesInJob.stream()
                             .flatMap(file -> Stream.of(
                                     new TransactWriteItem().withDelete(new Delete()
                                             .withTableName(requestsTableName)
