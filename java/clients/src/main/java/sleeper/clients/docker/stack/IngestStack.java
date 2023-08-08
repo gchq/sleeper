@@ -31,7 +31,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class IngestStack {
+public class IngestStack implements DockerStack {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
