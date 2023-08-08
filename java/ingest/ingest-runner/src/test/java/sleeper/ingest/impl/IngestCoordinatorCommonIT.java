@@ -303,8 +303,11 @@ public class IngestCoordinatorCommonIT {
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree).lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema).build();
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+
         assertThat(actualFiles).containsExactlyInAnyOrder(
                 fileInfoFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200, -100L, 99L));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
@@ -313,7 +316,7 @@ public class IngestCoordinatorCommonIT {
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
 
-        Field field = recordListAndSchema.sleeperSchema.getRowKeyFields().get(0);
+        Field field = recordListAndSchema.sleeperSchema.getField(0);
         ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         ResultVerifier.assertOnSketch(
@@ -338,6 +341,8 @@ public class IngestCoordinatorCommonIT {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
+
+
         ingestAndVerify(recordListAndSchema,
                 tree,
                 recordListAndSchema.recordList,
