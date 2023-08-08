@@ -38,7 +38,7 @@ public class IngestCoordinatorTestParameters {
     private final String iteratorClassName;
     private final String workingDir;
     private final String dataBucketName;
-    private final Path temporaryFolder;
+    private final String localFilePrefix;
     private final AwsExternalResource awsResource;
     private final List<String> fileNames;
     private final List<Instant> fileUpdatedTimes;
@@ -49,7 +49,7 @@ public class IngestCoordinatorTestParameters {
         iteratorClassName = builder.iteratorClassName;
         workingDir = builder.workingDir;
         dataBucketName = builder.dataBucketName;
-        temporaryFolder = builder.temporaryFolder;
+        localFilePrefix = builder.localFilePrefix;
         awsResource = builder.awsResource;
         fileNames = builder.fileNames;
         fileUpdatedTimes = builder.fileUpdatedTimes;
@@ -60,18 +60,14 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getLocalFilePrefix() {
-        try {
-            return createTempDirectory(temporaryFolder, null).toString();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return localFilePrefix;
     }
 
     public String getAsyncS3Prefix() {
         return "s3a://" + dataBucketName;
     }
 
-    public String getDirectS3Prefix() {
+    public String getDataBucketName() {
         return dataBucketName;
     }
 
@@ -113,7 +109,7 @@ public class IngestCoordinatorTestParameters {
         private String iteratorClassName;
         private String workingDir;
         private String dataBucketName;
-        private Path temporaryFolder;
+        private String localFilePrefix;
         private AwsExternalResource awsResource;
         private List<String> fileNames;
         private List<Instant> fileUpdatedTimes;
@@ -146,9 +142,17 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder temporaryFolder(Path temporaryFolder) {
-            this.temporaryFolder = temporaryFolder;
+        public Builder localFilePrefix(String localFilePrefix) {
+            this.localFilePrefix = localFilePrefix;
             return this;
+        }
+
+        public Builder temporaryFolder(Path temporaryFolder) {
+            try {
+                return localFilePrefix(createTempDirectory(temporaryFolder, null).toString());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         public Builder awsResource(AwsExternalResource awsResource) {

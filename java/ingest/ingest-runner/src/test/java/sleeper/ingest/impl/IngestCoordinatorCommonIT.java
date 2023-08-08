@@ -35,7 +35,6 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -47,12 +46,13 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
-import sleeper.ingest.testutils.IngestCoordinatorFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.QuinFunction;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.ingest.testutils.TestIngestType;
 import sleeper.statestore.FileInfo;
+import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -159,15 +159,15 @@ public class IngestCoordinatorCommonIT {
     private static Stream<Arguments> parameterObjsForTests() {
         return Stream.of(
                 Arguments.of(Named.of("Direct write, backed by Arrow, no S3",
-                        IngestCoordinatorFactory.createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile())),
+                        TestIngestType.directWriteBackedByArrowWriteToLocalFile())),
                 Arguments.of(Named.of("Direct write, backed by Arrow, using S3",
-                        IngestCoordinatorFactory.createIngestCoordinatorDirectWriteBackedByArrowWriteToS3())),
+                        TestIngestType.directWriteBackedByArrowWriteToS3())),
                 Arguments.of(Named.of("Async write, backed by Arrow",
-                        IngestCoordinatorFactory.createIngestCoordinatorAsyncWriteBackedByArrow())),
+                        TestIngestType.asyncWriteBackedByArrow())),
                 Arguments.of(Named.of("Direct write, backed by ArrayList, no S3",
-                        IngestCoordinatorFactory.createIngestCoordinatorDirectWriteBackedByArrayListWriteToLocalFile())),
+                        TestIngestType.directWriteBackedByArrayListWriteToLocalFile())),
                 Arguments.of(Named.of("Direct write, backed by ArrayList, using S3",
-                        IngestCoordinatorFactory.createIngestCoordinatorDirectWriteBackedByArrayListWriteToS3()))
+                        TestIngestType.directWriteBackedByArrayListWriteToS3()))
         );
     }
 
@@ -272,9 +272,9 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsCorrectly(
-            IngestCoordinatorFactory ingestCoordinatorFactoryFn)
+    public void shouldWriteRecordsCorrectly(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        // Given
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
@@ -285,44 +285,42 @@ public class IngestCoordinatorCommonIT {
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
-        ingestRecords(
-                recordListAndSchema,
-                createTestParameterBuilder()
-                        .fileNames(List.of("rootFile"))
-                        .fileUpdatedTimes(List.of(Instant.parse("2023-08-08T11:20:00Z")))
-                        .stateStore(stateStore)
-                        .schema(recordListAndSchema.sleeperSchema)
-                        .workingDir(ingestLocalWorkingDirectory)
-                        .build(),
-                ingestCoordinatorFactoryFn
-        );
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("rootFile"))
+                .fileUpdatedTimes(List.of(stateStoreUpdateTime))
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
 
+        // When
+        ingestRecords(recordListAndSchema, parameters, ingestType);
+
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(stateStore.getActiveFiles()).hasSize(1);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree).lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema).build();
+        assertThat(actualFiles).containsExactlyInAnyOrder(
+                fileInfoFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200, -100L, 99L));
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
+                        .map(List::<Object>of)
+                        .collect(Collectors.toList()));
 
-        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
-
-        stateStore.getAllPartitions().forEach(partition -> {
-            List<FileInfo> partitionFileInfoList = partitionIdToFileInfosMap.getOrDefault(partition.getId(), Collections.emptyList());
-
-            List<Record> expectedSortedRecordList = Map.of("root", recordListAndSchema.recordList).getOrDefault(partition.getId(), Collections.emptyList()).stream()
-                    .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
-                    .collect(Collectors.toList());
-
-            assertThat(expectedSortedRecordList).containsExactlyElementsOf(readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration));
-
-            Field field = recordListAndSchema.sleeperSchema.getRowKeyFields().get(0);
-            ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
-            ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration).get(field);
-            ResultVerifier.assertOnSketch(
-                    field,
-                    savedSketch,
-                    expectedSketch
-            );
-        });
+        Field field = recordListAndSchema.sleeperSchema.getRowKeyFields().get(0);
+        ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
+        ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
+        ResultVerifier.assertOnSketch(
+                field,
+                savedSketch,
+                expectedSketch
+        );
     }
 
     @ParameterizedTest
@@ -770,10 +768,10 @@ public class IngestCoordinatorCommonIT {
     private void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
-            IngestCoordinatorFactory ingestCoordinatorFactoryFn
+            TestIngestType ingestType
     ) throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator =
-                     ingestCoordinatorFactoryFn.createIngestCoordinator(
+                     ingestType.createIngestCoordinator(
                              ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);

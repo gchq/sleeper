@@ -27,32 +27,12 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
-public interface IngestCoordinatorFactory {
+public class IngestCoordinatorFactory {
 
-
-    IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
-
-    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile() {
-        return parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix());
+    private IngestCoordinatorFactory() {
     }
 
-    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrowWriteToS3() {
-        return parameters -> ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getAsyncS3Prefix());
-    }
-
-    static IngestCoordinatorFactory createIngestCoordinatorAsyncWriteBackedByArrow() {
-        return IngestCoordinatorFactory::ingestCoordinatorAsyncWriteBackedByArrow;
-    }
-
-    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrayListWriteToLocalFile() {
-        return parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getLocalFilePrefix());
-    }
-
-    static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrayListWriteToS3() {
-        return parameters -> ingestCoordinatorDirectWriteBackedByArrayList(parameters, parameters.getAsyncS3Prefix());
-    }
-
-    private static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrow(
+    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrow(
             IngestCoordinatorTestParameters parameters, String filePathPrefix) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
@@ -67,14 +47,15 @@ public interface IngestCoordinatorFactory {
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .buildAcceptingRecords(),
                     DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix))
+                            parquetConfiguration, filePathPrefix,
+                            parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(IngestCoordinatorTestParameters parameters) {
+    public static IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow(IngestCoordinatorTestParameters parameters) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
             return standardIngestCoordinatorBuilder(parameters,
@@ -91,7 +72,9 @@ public interface IngestCoordinatorFactory {
                             .parquetConfiguration(parquetConfiguration)
                             .s3AsyncClient(parameters.getS3AsyncClient())
                             .localWorkingDirectory(parameters.getWorkingDir())
-                            .s3BucketName(parameters.getDirectS3Prefix())
+                            .s3BucketName(parameters.getDataBucketName())
+                            .fileNameGenerator(parameters.getFileNameGenerator())
+                            .timeSupplier(parameters.getFileUpdatedTimeSupplier())
                             .build())
                     .build();
         } catch (Exception e) {
@@ -99,7 +82,7 @@ public interface IngestCoordinatorFactory {
         }
     }
 
-    private static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
+    public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(
             IngestCoordinatorTestParameters parameters, String filePathPrefix) {
         try {
             ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
@@ -111,7 +94,8 @@ public interface IngestCoordinatorFactory {
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .buildAcceptingRecords(),
                     DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix, parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
+                            parquetConfiguration, filePathPrefix,
+                            parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
