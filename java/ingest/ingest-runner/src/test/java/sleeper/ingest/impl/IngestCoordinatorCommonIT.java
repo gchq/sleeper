@@ -17,7 +17,6 @@ package sleeper.ingest.impl;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.RandomStringGenerator;
-import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +34,6 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -79,8 +77,6 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
-import static sleeper.ingest.testutils.ResultVerifier.createFieldToItemSketchMap;
-import static sleeper.ingest.testutils.ResultVerifier.readFieldToItemSketchMap;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestCoordinatorCommonIT {
@@ -301,13 +297,13 @@ public class IngestCoordinatorCommonIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
                 .partitionTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
 
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrder(
                 fileInfoFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200, -100L, 99L));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
@@ -316,13 +312,11 @@ public class IngestCoordinatorCommonIT {
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
 
-        Field field = recordListAndSchema.sleeperSchema.getField(0);
-        ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
-        ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         ResultVerifier.assertOnSketch(
-                field,
-                savedSketch,
-                expectedSketch
+                recordListAndSchema.sleeperSchema.getField(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
         );
     }
 

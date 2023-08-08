@@ -279,9 +279,12 @@ public class ResultVerifier {
 
     public static void assertOnSketch(
             Field field,
-            ItemsSketch savedSketch,
-            ItemsSketch expectedSketch
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            List<FileInfo> actualFiles,
+            Configuration hadoopConfiguration
     ) {
+        ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
+        ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
             double quantile = 0.1 * quantileNo;
             double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
