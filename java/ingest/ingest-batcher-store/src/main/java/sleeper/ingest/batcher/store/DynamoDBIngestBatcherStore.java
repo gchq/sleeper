@@ -54,29 +54,13 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private final AmazonDynamoDB dynamoDB;
     private final String requestsTableName;
     private final TablePropertiesProvider tablePropertiesProvider;
-    private final boolean consistentReads;
 
     public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
                                       InstanceProperties instanceProperties,
                                       TablePropertiesProvider tablePropertiesProvider) {
-        this(dynamoDB, instanceProperties, tablePropertiesProvider, false);
-    }
-
-    private DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
-                                       InstanceProperties instanceProperties,
-                                       TablePropertiesProvider tablePropertiesProvider,
-                                       boolean consistentReads) {
         this.dynamoDB = dynamoDB;
         this.requestsTableName = ingestRequestsTableName(instanceProperties.get(ID));
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.consistentReads = consistentReads;
-    }
-
-    public static DynamoDBIngestBatcherStore withConsistentReads(
-            AmazonDynamoDB dynamoDB,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider) {
-        return new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties, tablePropertiesProvider, true);
     }
 
     public static String ingestRequestsTableName(String instanceId) {
@@ -117,8 +101,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     @Override
     public List<FileIngestRequest> getAllFilesNewestFirst() {
         return streamPagedItems(dynamoDB, new ScanRequest()
-                .withTableName(requestsTableName)
-                .withConsistentRead(consistentReads))
+                .withTableName(requestsTableName))
                 .map(DynamoDBIngestRequestFormat::readRecord)
                 .sorted(comparing(FileIngestRequest::getReceivedTime).reversed())
                 .collect(Collectors.toList());
@@ -128,7 +111,6 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     public List<FileIngestRequest> getPendingFilesOldestFirst() {
         return streamPagedItems(dynamoDB, new QueryRequest()
                 .withTableName(requestsTableName)
-                .withConsistentRead(consistentReads)
                 .withKeyConditionExpression("#JobId = :not_assigned")
                 .withExpressionAttributeNames(Map.of("#JobId", JOB_ID))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
