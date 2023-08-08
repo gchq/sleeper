@@ -17,7 +17,9 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -28,7 +30,11 @@ import sleeper.table.job.TableCreator;
 
 import java.io.IOException;
 
+import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class TableStack {
     private final InstanceProperties instanceProperties;
@@ -47,12 +53,26 @@ public class TableStack {
         return new Builder();
     }
 
+    public static TableStack from(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return builder().instanceProperties(instanceProperties)
+                .tableProperties(tableProperties)
+                .withDefaultClients();
+    }
+
     public void deploy() throws IOException, StateStoreException {
+        tableProperties.saveToS3(s3Client);
         s3Client.createBucket(tableProperties.get(DATA_BUCKET));
 
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
         stateStore.initialise();
+    }
+
+    public void tearDown() {
+        dynamoDB.deleteTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(tableProperties.get(PARTITION_TABLENAME));
+        s3Client.deleteBucket(tableProperties.get(DATA_BUCKET));
     }
 
     public TableProperties getTableProperties() {
@@ -86,6 +106,12 @@ public class TableStack {
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
+        }
+
+        public TableStack withDefaultClients() {
+            return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
+                    .dynamoDB(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
+                    .build();
         }
 
         public TableStack build() {

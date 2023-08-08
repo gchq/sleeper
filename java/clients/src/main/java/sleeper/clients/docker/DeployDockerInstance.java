@@ -16,11 +16,6 @@
 
 package sleeper.clients.docker;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.deploy.PopulateTableProperties;
 import sleeper.clients.docker.stack.ConfigurationStack;
@@ -36,7 +31,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class DeployDockerInstance {
     private DeployDockerInstance() {
@@ -50,23 +44,12 @@ public class DeployDockerInstance {
             throw new IllegalArgumentException("Environment variable AWS_ENDPOINT_URL not set");
         }
         String instanceId = args[0];
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
-        instanceProperties.saveToS3(s3Client);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
-        tableProperties.saveToS3(s3Client);
 
-        ConfigurationStack.builder()
-                .instanceProperties(instanceProperties)
-                .s3Client(s3Client)
-                .build().deploy();
-        TableStack.builder().instanceProperties(instanceProperties)
-                .tableProperties(tableProperties)
-                .s3Client(s3Client)
-                .dynamoDB(dynamoDB)
-                .build().deploy();
+        ConfigurationStack.from(instanceProperties).deploy();
+        TableStack.from(instanceProperties, tableProperties).deploy();
     }
 
     private static InstanceProperties generateInstanceProperties(String instanceId) {
