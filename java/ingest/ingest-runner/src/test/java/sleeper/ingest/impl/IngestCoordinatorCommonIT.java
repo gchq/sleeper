@@ -351,15 +351,15 @@ public class IngestCoordinatorCommonIT {
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+        FileInfo fileInfo = FileInfoFactory.builder()
                 .partitionTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
-                .build();
+                .build()
+                .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 20000, -10000L, 9999L);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrder(
-                fileInfoFactory.rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 20000, -10000L, 9999L));
+        assertThat(actualFiles).containsExactlyInAnyOrder(fileInfo);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
@@ -375,61 +375,121 @@ public class IngestCoordinatorCommonIT {
     }
 
     @ParameterizedTest
-    @MethodSource("parametersForTests")
+    @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionIntKey(
-            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder = Collections.singletonList(
-                Pair.of(Key.create(2), 0));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Integer) key.get(0)) < 2) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1),
-                        new AbstractMap.SimpleEntry<>(1, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2)
                 .buildTree();
+        stateStore.initialise(tree.getAllPartitions());
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("leftFile", "rightFile"))
+                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
 
-        ingestAndVerify(recordListAndSchema,
-                tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                null,
-                ingestCoordinatorFactoryFn);
+        // When
+        ingestRecords(recordListAndSchema, parameters, ingestType);
+
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        List<FileInfo> fileInfoList = List.of(
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, 2, 99),
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, -100, 1)
+        );
+
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(IntStream.range(-100, 100).boxed()
+                        .map(List::<Object>of)
+                        .collect(Collectors.toList()));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+
     }
 
     @ParameterizedTest
-    @MethodSource("parametersForTests")
+    @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionLongKey(
-            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 2L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1),
-                        new AbstractMap.SimpleEntry<>(1, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
+        stateStore.initialise(tree.getAllPartitions());
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("leftFile", "rightFile"))
+                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
 
-        ingestAndVerify(recordListAndSchema,
-                tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                null,
-                ingestCoordinatorFactoryFn);
+        // When
+        ingestRecords(recordListAndSchema, parameters, ingestType);
+
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        List<FileInfo> fileInfoList = List.of(
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, 2L, 99L),
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, -100L, 1L)
+        );
+
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
+                        .map(List::<Object>of)
+                        .collect(Collectors.toList()));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+
     }
 
     @ParameterizedTest
