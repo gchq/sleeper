@@ -73,8 +73,8 @@ public class IngestBatcherJobCreatorLambdaIT {
         properties.set(DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE, "0");
     });
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3);
-    private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
-            new TablePropertiesProvider(s3, instanceProperties));
+    private final IngestBatcherStore store = DynamoDBIngestBatcherStore.withConsistentReads(
+            dynamoDB, instanceProperties, new TablePropertiesProvider(s3, instanceProperties));
 
     private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
         return new IngestBatcherJobCreatorLambda(
@@ -103,6 +103,7 @@ public class IngestBatcherJobCreatorLambdaIT {
                 .fileSizeBytes(1024)
                 .receivedTime(Instant.parse("2023-05-25T14:43:00Z"))
                 .build());
+        store.getAllFilesNewestFirst(); // Use consistent reads to ensure PutItem is completed
 
         // When
         lambdaWithTimesAndJobIds(
