@@ -34,6 +34,10 @@ public class IngestCoordinatorTestHelper {
     private IngestCoordinatorTestHelper() {
     }
 
+    public static ParquetConfiguration parquetConfiguration(IngestCoordinatorTestParameters parameters) {
+        return parquetConfiguration(parameters.getSchema(), parameters.getHadoopConfiguration());
+    }
+
     public static ParquetConfiguration parquetConfiguration(Schema schema, Configuration hadoopConfiguration) {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(COMPRESSION_CODEC, "zstd");
@@ -48,6 +52,14 @@ public class IngestCoordinatorTestHelper {
             StateStore stateStore, Schema schema,
             RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
         return standardIngestCoordinatorBuilder(stateStore, schema, recordBatchFactory, partitionFileWriterFactory).build();
+    }
+
+    public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(
+            IngestCoordinatorTestParameters parameters,
+            RecordBatchFactory<T> recordBatchFactory, PartitionFileWriterFactory partitionFileWriterFactory) {
+        return standardIngestCoordinatorBuilder(parameters.getStateStore(), parameters.getSchema(),
+                recordBatchFactory, partitionFileWriterFactory)
+                .iteratorClassName(parameters.getIteratorClassName());
     }
 
     public static <T> IngestCoordinator.Builder<T> standardIngestCoordinatorBuilder(

@@ -16,24 +16,17 @@
 
 package sleeper.ingest.testutils;
 
-import sleeper.core.record.Record;
+import org.apache.hadoop.conf.Configuration;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+
 import sleeper.core.schema.Schema;
-import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.ingest.impl.ParquetConfiguration;
-import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
-import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
-import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStore;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.function.Function;
 
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
-import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 
 public class IngestCoordinatorTestParameters {
 
@@ -59,27 +52,7 @@ public class IngestCoordinatorTestParameters {
         return new Builder();
     }
 
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile() {
-        return parameters -> parameters.ingestCoordinatorDirectWriteBackedByArrow(parameters.localFilePrefix());
-    }
-
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrowWriteToS3() {
-        return parameters -> parameters.ingestCoordinatorDirectWriteBackedByArrow(parameters.asyncS3Prefix());
-    }
-
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorAsyncWriteBackedByArrow() {
-        return IngestCoordinatorTestParameters::ingestCoordinatorAsyncWriteBackedByArrow;
-    }
-
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrayListWriteToLocalFile() {
-        return parameters -> parameters.ingestCoordinatorDirectWriteBackedByArrayList(parameters.localFilePrefix());
-    }
-
-    public static Function<IngestCoordinatorTestParameters, IngestCoordinator<Record>> createIngestCoordinatorDirectWriteBackedByArrayListWriteToS3() {
-        return parameters -> parameters.ingestCoordinatorDirectWriteBackedByArrayList(parameters.asyncS3Prefix());
-    }
-
-    public String localFilePrefix() {
+    public String getLocalFilePrefix() {
         try {
             return createTempDirectory(temporaryFolder, null).toString();
         } catch (IOException e) {
@@ -87,82 +60,36 @@ public class IngestCoordinatorTestParameters {
         }
     }
 
-    public String asyncS3Prefix() {
+    public String getAsyncS3Prefix() {
         return "s3a://" + dataBucketName;
     }
 
-    private IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrow(String filePathPrefix) {
-        try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(
-                    schema, awsResource.getHadoopConfiguration());
-            return standardIngestCoordinatorBuilder(
-                    stateStore, schema,
-                    ArrowRecordBatchFactory.builder()
-                            .schema(schema)
-                            .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                            .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .maxNoOfBytesToWriteLocally(512 * 1024 * 1024L)
-                            .localWorkingDirectory(workingDir)
-                            .buildAcceptingRecords(),
-                    DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix))
-                    .iteratorClassName(iteratorClassName)
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public String getDirectS3Prefix() {
+        return dataBucketName;
     }
 
-
-    private IngestCoordinator<Record> ingestCoordinatorAsyncWriteBackedByArrow() {
-        try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(
-                    schema, awsResource.getHadoopConfiguration());
-            return standardIngestCoordinatorBuilder(
-                    stateStore, schema,
-                    ArrowRecordBatchFactory.builder()
-                            .schema(schema)
-                            .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                            .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                            .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
-                            .localWorkingDirectory(workingDir)
-                            .buildAcceptingRecords(),
-                    AsyncS3PartitionFileWriterFactory.builder()
-                            .parquetConfiguration(parquetConfiguration)
-                            .s3AsyncClient(awsResource.getS3AsyncClient())
-                            .localWorkingDirectory(workingDir)
-                            .s3BucketName(dataBucketName)
-                            .build())
-                    .iteratorClassName(iteratorClassName)
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public Configuration getHadoopConfiguration() {
+        return awsResource.getHadoopConfiguration();
     }
 
-    private IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrayList(String filePathPrefix) {
-        try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(
-                    schema, awsResource.getHadoopConfiguration());
-            return standardIngestCoordinatorBuilder(
-                    stateStore, schema,
-                    ArrayListRecordBatchFactory.builder()
-                            .parquetConfiguration(parquetConfiguration)
-                            .maxNoOfRecordsInLocalStore(1000)
-                            .maxNoOfRecordsInMemory(100000)
-                            .localWorkingDirectory(workingDir)
-                            .buildAcceptingRecords(),
-                    DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix))
-                    .iteratorClassName(iteratorClassName)
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public StateStore getStateStore() {
+        return stateStore;
+    }
+
+    public Schema getSchema() {
+        return schema;
+    }
+
+    public String getIteratorClassName() {
+        return iteratorClassName;
+    }
+
+    public String getWorkingDir() {
+        return workingDir;
+    }
+
+    public S3AsyncClient getS3AsyncClient() {
+        return awsResource.getS3AsyncClient();
     }
 
     public static final class Builder {
