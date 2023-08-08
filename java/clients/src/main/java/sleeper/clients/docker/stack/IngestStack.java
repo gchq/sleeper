@@ -17,15 +17,23 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 
+import static sleeper.clients.docker.Utils.tearDownBucket;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class IngestStack {
     private final InstanceProperties instanceProperties;
@@ -44,11 +52,23 @@ public class IngestStack {
         return new Builder();
     }
 
+    public static IngestStack from(InstanceProperties instanceProperties) {
+        return builder().instanceProperties(instanceProperties)
+                .withDefaultClients();
+    }
+
     public void deploy() {
         s3Client.createBucket(instanceProperties.get(INGEST_SOURCE_BUCKET));
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         sqsClient.createQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
+    }
+
+    public void tearDown() {
+        tearDownBucket(s3Client, instanceProperties.get(INGEST_SOURCE_BUCKET));
+        dynamoDB.deleteTable(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID)));
+        dynamoDB.deleteTable(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceProperties.get(ID)));
+        sqsClient.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
     }
 
     public static final class Builder {
@@ -78,6 +98,13 @@ public class IngestStack {
         public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
+        }
+
+        public IngestStack withDefaultClients() {
+            return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard()))
+                    .dynamoDB(buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()))
+                    .sqsClient(buildAwsV1Client(AmazonSQSClientBuilder.standard()))
+                    .build();
         }
 
         public IngestStack build() {

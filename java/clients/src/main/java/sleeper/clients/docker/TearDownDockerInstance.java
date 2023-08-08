@@ -18,19 +18,13 @@ package sleeper.clients.docker;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.docker.stack.ConfigurationStack;
+import sleeper.clients.docker.stack.IngestStack;
 import sleeper.clients.docker.stack.TableStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -47,8 +41,6 @@ public class TearDownDockerInstance {
         }
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
@@ -57,16 +49,6 @@ public class TearDownDockerInstance {
 
         ConfigurationStack.from(instanceProperties).tearDown();
         TableStack.from(instanceProperties, tableProperties).tearDown();
-        tearDownBucket(s3Client, instanceProperties.get(INGEST_SOURCE_BUCKET));
-        dynamoDB.listTables().getTableNames()
-                .stream().filter(table -> table.startsWith("sleeper-" + instanceId))
-                .forEach(dynamoDB::deleteTable);
-        sqsClient.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
-    }
-
-    public static void tearDownBucket(AmazonS3 s3Client, String bucketName) {
-        S3Objects.inBucket(s3Client, bucketName)
-                .forEach(object -> s3Client.deleteObject(bucketName, object.getKey()));
-        s3Client.deleteBucket(bucketName);
+        IngestStack.from(instanceProperties).tearDown();
     }
 }
