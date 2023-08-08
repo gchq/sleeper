@@ -42,8 +42,7 @@ This will create a config bucket and a table bucket in localstack, and upload th
 A single table will be created with the name `system-test`.
 
 Once the instance is deployed, you can launch the admin client to view the instance and table properties of the
-instance,
-as well as running partition and file status reports.
+instance, as well as running partition and file status reports.
 
 ```shell
 ./scripts/utility/adminClient.sh <instance-id>
@@ -55,4 +54,12 @@ You can tear down an existing instance by running the following command in the `
 
 ```shell
 ./tearDown.sh <instance-id>
+```
+
+## Stop Localstack container
+
+To stop the localstack container, you can run the following command in the `scripts/deploy/localstack` folder.
+
+```shell
+./stopContainer.sh
 ```
