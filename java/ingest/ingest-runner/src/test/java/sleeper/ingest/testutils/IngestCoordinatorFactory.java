@@ -29,6 +29,7 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardInges
 
 public interface IngestCoordinatorFactory {
 
+
     IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
 
     static IngestCoordinatorFactory createIngestCoordinatorDirectWriteBackedByArrowWriteToLocalFile() {

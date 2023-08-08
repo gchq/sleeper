@@ -48,6 +48,7 @@ import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.IngestCoordinatorFactory;
+import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.QuinFunction;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
@@ -269,9 +270,9 @@ public class IngestCoordinatorCommonIT {
     }
 
     @ParameterizedTest
-    @MethodSource("parametersForTests")
+    @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsCorrectly(
-            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            IngestCoordinatorFactory ingestCoordinatorFactoryFn)
             throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
@@ -766,15 +767,19 @@ public class IngestCoordinatorCommonIT {
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             String ingestLocalWorkingDirectory,
             String sleeperIteratorClassName,
-            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn
+            IngestCoordinatorFactory ingestCoordinatorFactoryFn
     ) throws StateStoreException, IteratorException, IOException {
         try (IngestCoordinator<Record> ingestCoordinator =
-                     ingestCoordinatorFactoryFn.apply(
-                             stateStore,
-                             recordListAndSchema.sleeperSchema,
-                             sleeperIteratorClassName,
-                             ingestLocalWorkingDirectory,
-                             temporaryFolder)) {
+                     ingestCoordinatorFactoryFn.createIngestCoordinator(
+                             IngestCoordinatorTestParameters.builder()
+                                     .stateStore(stateStore)
+                                     .schema(recordListAndSchema.sleeperSchema)
+                                     .iteratorClassName(sleeperIteratorClassName)
+                                     .workingDir(ingestLocalWorkingDirectory)
+                                     .temporaryFolder(temporaryFolder)
+                                     .awsResource(AWS_EXTERNAL_RESOURCE)
+                                     .dataBucketName(DATA_BUCKET_NAME)
+                                     .build())) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
