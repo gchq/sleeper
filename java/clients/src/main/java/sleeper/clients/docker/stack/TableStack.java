@@ -60,7 +60,6 @@ public class TableStack {
     }
 
     public void deploy() throws IOException, StateStoreException {
-        tableProperties.saveToS3(s3Client);
         s3Client.createBucket(tableProperties.get(DATA_BUCKET));
 
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
