@@ -17,12 +17,14 @@
 package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class ConfigurationStack {
     private final AmazonS3 s3Client;
@@ -37,8 +39,18 @@ public class ConfigurationStack {
         return new Builder();
     }
 
+    public static ConfigurationStack from(InstanceProperties instanceProperties) {
+        return builder().instanceProperties(instanceProperties)
+                .withDefaultClients();
+    }
+
     public void deploy() throws IOException {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        instanceProperties.saveToS3(s3Client);
+    }
+
+    public void tearDown() {
+        s3Client.deleteBucket(instanceProperties.get(CONFIG_BUCKET));
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -60,6 +72,10 @@ public class ConfigurationStack {
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             return this;
+        }
+
+        public ConfigurationStack withDefaultClients() {
+            return s3Client(buildAwsV1Client(AmazonS3ClientBuilder.standard())).build();
         }
 
         public ConfigurationStack build() {

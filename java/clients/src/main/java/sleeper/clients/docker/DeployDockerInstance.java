@@ -60,19 +60,10 @@ public class DeployDockerInstance {
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
-        instanceProperties.saveToS3(s3Client);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
-        tableProperties.saveToS3(s3Client);
 
-        ConfigurationStack.builder()
-                .instanceProperties(instanceProperties)
-                .s3Client(s3Client)
-                .build().deploy();
-        TableStack.builder().instanceProperties(instanceProperties)
-                .tableProperties(tableProperties)
-                .s3Client(s3Client)
-                .dynamoDB(dynamoDB)
-                .build().deploy();
+        ConfigurationStack.from(instanceProperties).deploy();
+        TableStack.from(instanceProperties, tableProperties).deploy();
         IngestStack.builder()
                 .instanceProperties(instanceProperties)
                 .s3Client(s3Client)

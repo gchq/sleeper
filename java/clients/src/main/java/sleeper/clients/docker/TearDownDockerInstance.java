@@ -16,14 +16,14 @@
 
 package sleeper.clients.docker;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
+import sleeper.clients.docker.stack.ConfigurationStack;
+import sleeper.clients.docker.stack.TableStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -31,6 +31,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class TearDownDockerInstance {
@@ -50,12 +51,12 @@ public class TearDownDockerInstance {
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
+        instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "system-test");
 
-        tearDownBucket(s3Client, instanceProperties.get(CONFIG_BUCKET));
-        tearDownBucket(s3Client, tableProperties.get(DATA_BUCKET));
+        ConfigurationStack.from(instanceProperties).tearDown();
+        TableStack.from(instanceProperties, tableProperties).tearDown();
         tearDownBucket(s3Client, instanceProperties.get(INGEST_SOURCE_BUCKET));
         dynamoDB.listTables().getTableNames()
                 .stream().filter(table -> table.startsWith("sleeper-" + instanceId))
