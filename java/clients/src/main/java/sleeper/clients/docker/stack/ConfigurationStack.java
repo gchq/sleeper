@@ -44,7 +44,6 @@ public class ConfigurationStack {
 
     public void deploy() throws IOException {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        instanceProperties.saveToS3(s3Client);
     }
 
     public void tearDown() {
