@@ -20,12 +20,10 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
-
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class ConfigurationStack {
+public class ConfigurationStack implements DockerStack {
     private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
 
@@ -42,7 +40,7 @@ public class ConfigurationStack {
         return builder().instanceProperties(instanceProperties).s3Client(s3Client).build();
     }
 
-    public void deploy() throws IOException {
+    public void deploy() {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
     }
 
