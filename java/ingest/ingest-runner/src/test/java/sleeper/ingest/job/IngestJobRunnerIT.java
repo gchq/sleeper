@@ -38,12 +38,12 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -67,8 +67,8 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class IngestJobRunnerIT {
     @RegisterExtension

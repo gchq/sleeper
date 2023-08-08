@@ -33,7 +33,7 @@ public class AwsV1ClientHelper {
             }
             return builder
                     .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                            System.getenv(AWS_ENDPOINT_ENV_VAR), "us-east-1"))
+                            endpoint, "us-east-1"))
                     .build();
         } else {
             return builder.build();

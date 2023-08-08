@@ -20,7 +20,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.util.List;
 import java.util.UUID;

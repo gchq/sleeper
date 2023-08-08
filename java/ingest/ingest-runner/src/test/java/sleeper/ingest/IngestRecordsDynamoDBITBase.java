@@ -24,7 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 

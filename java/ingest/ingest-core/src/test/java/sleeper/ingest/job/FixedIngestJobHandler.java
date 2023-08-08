@@ -15,8 +15,8 @@
  */
 package sleeper.ingest.job;
 
+import sleeper.core.statestore.FileInfoTestData;
 import sleeper.ingest.IngestResult;
-import sleeper.statestore.FileInfoTestData;
 
 import java.util.Arrays;
 import java.util.Iterator;

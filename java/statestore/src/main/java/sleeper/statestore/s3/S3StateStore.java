@@ -21,8 +21,8 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 

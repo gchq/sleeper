@@ -118,6 +118,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // When
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
 
             // Then
@@ -137,6 +144,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When
             store.addFile(fileIngestRequest1);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("test-job", List.of(fileIngestRequest1));
             store.addFile(fileIngestRequest2);
 
@@ -159,6 +173,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When
             store.addFile(fileIngestRequest);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("test-job", List.of(fileIngestRequest));
 
             // Then
@@ -178,6 +199,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet").build();
             store.addFile(fileIngestRequest);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("test-job-1", List.of(fileIngestRequest));
 
             // When / Then
@@ -197,6 +225,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     .file("test-bucket/test-2.parquet").build();
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("test-job-1", List.of(fileIngestRequest1));
 
             // When / Then
@@ -227,8 +262,21 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/sendTwice.parquet").build();
             store.addFile(fileIngestRequest);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("duplicate-job", List.of(fileIngestRequest));
             store.addFile(fileIngestRequest);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
 
             // When / Then
             List<FileIngestRequest> duplicateJob = List.of(fileIngestRequest);
@@ -300,7 +348,8 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.addFile(fileIngestRequest);
 
             // Then
-            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest().withTableName(requestsTableName)))
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(requestsTableName).withConsistentRead(true)))
                     .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
                     .containsExactly(expectedExpiryTime.getEpochSecond());
         }
@@ -316,10 +365,18 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When
             store.addFile(fileIngestRequest);
+
+            // Scan with consistent reads waits for PutItems to complete.
+            // TransactWriteItems will fail if a PutItem has not yet been committed.
+            // In production, a scan will happen before the update, so only files that exist in the store will be
+            // assigned to jobs.
+            store.getAllFilesNewestFirst();
+
             store.assignJob("test-job", List.of(fileIngestRequest));
 
             // Then
-            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest().withTableName(requestsTableName)))
+            assertThat(streamPagedItems(dynamoDBClient, new ScanRequest()
+                    .withTableName(requestsTableName).withConsistentRead(true)))
                     .extracting(item -> getLongAttribute(item, EXPIRY_TIME, 0L))
                     .containsExactly(expectedExpiryTime.getEpochSecond());
         }

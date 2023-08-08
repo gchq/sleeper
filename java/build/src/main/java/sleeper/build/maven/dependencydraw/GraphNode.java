@@ -16,22 +16,26 @@
 
 package sleeper.build.maven.dependencydraw;
 
-import java.util.List;
+import sleeper.build.maven.ArtifactReference;
+import sleeper.build.maven.MavenModuleAndPath;
 
-public class GraphData {
-    List<String> nodeIds;
-    List<List<String>> edges;
+public class GraphNode {
 
-    GraphData(List<String> nodeIds, List<List<String>> edges) {
-        this.nodeIds = nodeIds;
-        this.edges = edges;
+    private final MavenModuleAndPath module;
+
+    public GraphNode(MavenModuleAndPath module) {
+        this.module = module;
     }
 
-    public List<String> getNodeIds() {
-        return nodeIds;
+    public String toString() {
+        return module.getPath();
     }
 
-    public List<List<String>> getEdges() {
-        return edges;
+    public MavenModuleAndPath getModule() {
+        return module;
+    }
+
+    public ArtifactReference getArtifactReference() {
+        return module.artifactReference();
     }
 }
