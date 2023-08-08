@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,29 +13,13 @@
 # limitations under the License.
 
 set -e
-
-if [ "$#" -lt 1 ]; then
-  echo "Usage: $0 <instance-id> <files>"
-  exit 1
-fi
-INSTANCE_ID=$1;
-
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 pushd "$JAVA_DIR"
 VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
 popd
-DOCKER_DIR="$SCRIPTS_DIR/docker"
 
 INGEST_TASK_IMAGE="sleeper-ingest-runner"
-echo "Uploading files to source bucket and sending ingest job to queue"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.IngestFiles "$@"
-
-CONTAINER_NAME="sleeper-$INSTANCE_ID-ingest"
-echo "Running ingest task in docker. You can follow the logs by viewing the docker container \"$CONTAINER_NAME\""
-docker run --rm \
-  -e AWS_ENDPOINT_URL=http://host.docker.internal:4566 \
-  -e AWS_ACCESS_KEY_ID=test-access-key \
-  -e AWS_SECRET_ACCESS_KEY=test-secret-key \
-  -d --name="$CONTAINER_NAME" $INGEST_TASK_IMAGE "sleeper-$INSTANCE_ID-config"
+echo "Building ingest-runner docker image"
+docker build -t "$INGEST_TASK_IMAGE" "$DOCKER_DIR/ingest"
