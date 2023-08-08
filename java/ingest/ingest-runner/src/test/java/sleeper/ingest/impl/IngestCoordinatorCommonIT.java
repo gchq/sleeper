@@ -52,7 +52,6 @@ import sleeper.ingest.testutils.QuinFunction;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfoFactory;
 import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -285,10 +284,7 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
 
-        FileInfoFactory fileInfoFactory = new FileInfoFactory(recordListAndSchema.sleeperSchema, tree.getAllPartitions());
-
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
-        Path localWorkingDirectoryPath = Paths.get(ingestLocalWorkingDirectory);
         ingestRecords(
                 stateStore,
                 recordListAndSchema,
@@ -297,7 +293,7 @@ public class IngestCoordinatorCommonIT {
                 ingestCoordinatorFactoryFn
         );
 
-        assertThat(localWorkingDirectoryPath).isEmptyDirectory();
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(stateStore.getActiveFiles()).hasSize(1);
 
         Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
@@ -315,16 +311,12 @@ public class IngestCoordinatorCommonIT {
             Field field = recordListAndSchema.sleeperSchema.getRowKeyFields().get(0);
             ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
             ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, partitionFileInfoList, hadoopConfiguration).get(field);
-            IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
-                ResultVerifier.assertOnSketch(
-                        quantileNo,
-                        field,
-                        savedSketch,
-                        expectedSketch
-                );
-            });
+            ResultVerifier.assertOnSketch(
+                    field,
+                    savedSketch,
+                    expectedSketch
+            );
         });
-
     }
 
     @ParameterizedTest
