@@ -264,14 +264,11 @@ public class IngestCoordinatorCommonIT {
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         Function<Key, String> keyToPartitionNoMappingFn = key -> "root";
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-        Map<String, Integer> partitionIdToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>("root", 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
+        Map<String, Integer> partitionIdToExpectedNoOfFilesMap = Map.of("root", 1);
 
-        stateStore.initialise(tree.getAllPartitions());
+        stateStore.initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .buildList());
 
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         Path localWorkingDirectoryPath = Paths.get(ingestLocalWorkingDirectory);
@@ -285,12 +282,13 @@ public class IngestCoordinatorCommonIT {
 
         assertThat(localWorkingDirectoryPath).isEmptyDirectory();
         assertThat(stateStore.getActiveFiles()).hasSize(partitionIdToExpectedNoOfFilesMap.values().stream().mapToInt(Integer::intValue).sum());
-        assertThat(tree.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionIdToExpectedNoOfFilesMap::containsKey);
+        assertThat(stateStore.getAllPartitions().stream().map(Partition::getId).collect(Collectors.toList())).allMatch(partitionIdToExpectedNoOfFilesMap::containsKey);
 
         Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileInfo::getPartitionId));
-        tree.getAllPartitions().forEach(partition -> {
+        stateStore.getAllPartitions().forEach(partition -> {
             List<FileInfo> partitionFileInfoList = partitionIdToFileInfosMap.getOrDefault(partition.getId(), Collections.emptyList());
+
             Map<String, List<Record>> partitionIdToExpectedRecordsMap = recordListAndSchema.recordList.stream()
                     .collect(Collectors.groupingBy(
                             record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(recordListAndSchema.sleeperSchema.getRowKeyFieldNames())))));
