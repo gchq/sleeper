@@ -23,6 +23,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 
+import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -50,7 +51,7 @@ public class ConfigurationStack {
     }
 
     public void tearDown() {
-        s3Client.deleteBucket(instanceProperties.get(CONFIG_BUCKET));
+        tearDownBucket(s3Client, instanceProperties.get(CONFIG_BUCKET));
     }
 
     public InstanceProperties getInstanceProperties() {
