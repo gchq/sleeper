@@ -38,6 +38,8 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.RoleProps;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
@@ -48,13 +50,11 @@ import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
@@ -63,14 +63,12 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * An {@link EmrServerlessBulkImportStack} creates an SQS queue that bulk import jobs can be sent
@@ -90,7 +88,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         LOGGER.info("Starting to create application.\nScope: {}", scope);
         createEmrServerlessApplication(instanceProperties);
 
-        IRole emrRole = createEmrServerlessRole(scope, instanceProperties);
+        IRole emrRole = createEmrServerlessRole(scope, instanceProperties, importBucketStack, statusStoreResources, stateStoreStacks);
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 "EMRServerless", instanceProperties, statusStoreResources);
@@ -98,13 +96,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));
-        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
-        configureJobStarterFunction(instanceProperties, jobStarter);
+        configureJobStarterFunction(scope, instanceProperties, jobStarter, importBucketStack, statusStoreResources);
         Utils.addStackTagIfSet(this, instanceProperties);
+        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
     }
 
-    private static void configureJobStarterFunction(InstanceProperties instanceProperties,
-            IFunction bulkImportJobStarter) {
+    private static void configureJobStarterFunction(Construct scope, InstanceProperties instanceProperties,
+            IFunction bulkImportJobStarter, BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources) {
         Map<String, Map<String, String>> conditions = new HashMap<>();
         Map<String, String> tagKeyCondition = new HashMap<>();
         instanceProperties.getTags().forEach(
@@ -159,7 +157,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         return securityGroup.getSecurityGroupId();
     }
 
-    private IRole createEmrServerlessRole(Construct scope, InstanceProperties instanceProperties) {
+    private IRole createEmrServerlessRole(Construct scope, InstanceProperties instanceProperties,
+            BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources,
+            List<StateStoreStack> stateStoreStacks) {
         String instanceId = instanceProperties.get(ID);
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
@@ -169,6 +169,17 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("emr-serverless.amazonaws.com")).build());
 
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
+
+        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+        IBucket importBucket = bulkImportBucketStack.getImportBucket();
+
+        configBucket.grantRead(role);
+        importBucket.grantReadWrite(role);
+
+        addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
+                .forEach(ingestBucket -> ingestBucket.grantRead(role));
+        statusStoreResources.grantWriteJobEvent(role);
+        stateStoreStacks.forEach(sss -> sss.grantReadWritePartitionMetadata(role));
         return role;
     }
 
@@ -176,29 +187,6 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties) {
         // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
         String instanceId = instanceProperties.get(ID);
-        String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
-        String ingestSourceBucket = instanceProperties.get(INGEST_SOURCE_BUCKET);
-        String configBucket = String.join("-", "sleeper", instanceId, "config");
-
-        List<String> buckets = Stream.of("arn:aws:s3:::" + bulkImportBucket,
-                "arn:aws:s3:::" + bulkImportBucket + "/*",
-                "arn:aws:s3:::" + ingestSourceBucket,
-                "arn:aws:s3:::" + ingestSourceBucket + "/*",
-                "arn:aws:s3:::" + configBucket,
-                "arn:aws:s3:::" + configBucket + "/*").collect(Collectors.toList());
-
-        List<String> tables = new ArrayList<>();
-        String base = "arn:aws:dynamodb:" + instanceProperties.get(REGION) + ":" + instanceProperties.get(ACCOUNT) + ":table/";
-        tables.add(base + String.join("-", "sleeper", instanceId, "ingest-job-status"));
-
-        Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties -> {
-            String table = String.join("-", "sleeper", instanceId, "table", tableProperties.get(TABLE_NAME));
-            String bucketArn = "arn:aws:s3:::" + table;
-            buckets.add(bucketArn);
-            buckets.add(bucketArn + "/*");
-            tables.add(base + table + "-partitions");
-            tables.add(base + table + "-active-files");
-        });
 
         ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(this,
                 "CustomEMRServerlessServicePolicy",
@@ -215,11 +203,6 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                                                 "arn:aws:s3:::*.elasticmapreduce/*"))
                                         .build()),
                                 new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("AccessToBuckets").effect(Effect.ALLOW)
-                                        .actions(List.of("s3:PutObject", "s3:GetObject",
-                                                "s3:ListBucket", "s3:DeleteObject"))
-                                        .resources(buckets).build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
                                         .sid("GlueCreateAndReadDataCatalog").effect(Effect.ALLOW)
                                         .actions(List.of("glue:GetDatabase", "glue:CreateDatabase",
                                                 "glue:GetDataBases", "glue:CreateTable",
@@ -228,13 +211,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                                                 "glue:GetPartition", "glue:GetPartitions",
                                                 "glue:CreatePartition", "glue:BatchCreatePartition",
                                                 "glue:GetUserDefinedFunctions"))
-                                        .resources(List.of("*")).build()),
-
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("AccessToDynamo").effect(Effect.ALLOW)
-                                        .actions(List.of("dynamodb:Scan",
-                                        "dynamodb:PutItem"))
-                                        .resources(tables).build())))
+                                        .resources(List.of("*")).build())))
                                 .build())
                         .build());
         return emrServerlessManagedPolicy;
