@@ -30,7 +30,7 @@ Environment:
 Deployment:
 
 - Added ability to deploy to multiple subnets.
-- Split properties templating from the deployment process, allowing you to specifify your own configuration file
+- Split properties templating from the deployment process, allowing you to specify your own configuration file
   while still defaulting to the templates if a configuration file is not provided.
 - Added retry and wait for running ECS tasks when capacity is unavailable.
 - Updated performance test documentation.
@@ -66,6 +66,7 @@ Bugfixes:
 - Fixed issues where passing one CDK parameter into the environment CLI commands would ignore the parameter.
 - Fixed an issue where if a stack failed to delete during the tear down process, it would keep waiting for the
   state to update until it timed out.
+- Stopped Docker CLI wrapping terminal commands onto the same line.
 
 ## Version 0.17.0
 
