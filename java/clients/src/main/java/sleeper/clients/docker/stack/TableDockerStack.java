@@ -33,13 +33,13 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
-public class TableStack implements DockerStack {
+public class TableDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDB;
 
-    private TableStack(Builder builder) {
+    private TableDockerStack(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableProperties = builder.tableProperties;
         s3Client = builder.s3Client;
@@ -50,8 +50,8 @@ public class TableStack implements DockerStack {
         return new Builder();
     }
 
-    public static TableStack from(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                  AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
+    public static TableDockerStack from(InstanceProperties instanceProperties, TableProperties tableProperties,
+                                        AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
         return builder().instanceProperties(instanceProperties)
                 .tableProperties(tableProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB)
@@ -109,8 +109,8 @@ public class TableStack implements DockerStack {
             return this;
         }
 
-        public TableStack build() {
-            return new TableStack(this);
+        public TableDockerStack build() {
+            return new TableDockerStack(this);
         }
     }
 }

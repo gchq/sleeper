@@ -23,8 +23,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.deploy.PopulateTableProperties;
-import sleeper.clients.docker.stack.ConfigurationStack;
-import sleeper.clients.docker.stack.TableStack;
+import sleeper.clients.docker.stack.ConfigurationDockerStack;
+import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
@@ -60,8 +60,8 @@ public class DeployDockerInstance {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
 
-        ConfigurationStack.from(instanceProperties, s3Client).deploy();
-        TableStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
+        ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
+        TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
 
         instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
