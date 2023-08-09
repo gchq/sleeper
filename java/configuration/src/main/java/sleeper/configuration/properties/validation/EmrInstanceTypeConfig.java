@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.configuration;
+package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.List;
