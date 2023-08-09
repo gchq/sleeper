@@ -59,14 +59,24 @@ public class CommonEmrBulkImportHelper {
     private final String shortId;
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
+    private final IBucket configBucket;
+
+        public CommonEmrBulkImportHelper(Construct scope, String shortId,
+                                     InstanceProperties instanceProperties,
+                                     IngestStatusStoreResources ingestStatusStoreResources) {
+        this(scope, shortId, instanceProperties, ingestStatusStoreResources,
+        Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET)));
+    }
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
-                                     IngestStatusStoreResources ingestStatusStoreResources) {
+                                     IngestStatusStoreResources ingestStatusStoreResources,
+                                     IBucket configBucket) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.statusStoreResources = ingestStatusStoreResources;
+        this.configBucket = configBucket;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -123,8 +133,6 @@ public class CommonEmrBulkImportHelper {
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
-
-        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));

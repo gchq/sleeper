@@ -70,6 +70,7 @@ public class SleeperCdkApp extends Stack {
     private BulkImportBucketStack bulkImportBucketStack;
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
+    private EmrServerlessBulkImportStack emrServerlessBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
@@ -136,7 +137,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack to run bulk import jobs via EMR Serverless
         if (optionalStacks.contains(EmrServerlessBulkImportStack.class.getSimpleName())) {
-            new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
+            emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     topicStack,
@@ -263,6 +264,10 @@ public class SleeperCdkApp extends Stack {
 
     public TableStack getTableStack() {
         return tableStack;
+    }
+
+    public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {
+        return emrServerlessBulkImportStack;
     }
 
     public EmrBulkImportStack getEmrBulkImportStack() {

@@ -82,11 +82,13 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
-        IRole emrRole = createEmrServerlessRole(instanceProperties, importBucketStack, statusStoreResources, tableStack);
+        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
+        IRole emrRole = createEmrServerlessRole(instanceProperties, importBucketStack, statusStoreResources, tableStack, configBucket);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, statusStoreResources);
+                "EMRServerless", instanceProperties, statusStoreResources, configBucket);
         Queue bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, errorsTopicStack.getTopic());
+
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));
         configureJobStarterFunction(instanceProperties, jobStarter);
@@ -151,7 +153,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
     private IRole createEmrServerlessRole(InstanceProperties instanceProperties,
             BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources,
-            TableStack tableStack) {
+            TableStack tableStack, IBucket configBucket) {
         String instanceId = instanceProperties.get(ID);
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
@@ -162,9 +164,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         instanceProperties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, role.getRoleArn());
 
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         IBucket importBucket = bulkImportBucketStack.getImportBucket();
-
         configBucket.grantRead(role);
         importBucket.grantReadWrite(role);
 
