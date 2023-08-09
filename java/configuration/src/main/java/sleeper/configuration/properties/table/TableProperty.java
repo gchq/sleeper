@@ -235,29 +235,29 @@ public interface TableProperty extends SleeperProperty {
             .build();
     TableProperty BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.x86.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES)
-            .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types to be used for the master node of the " +
-                    "EMR cluster. " +
+            .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types and weights to be used for " +
+                    "the master node of the EMR cluster.\n" +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.x86.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES)
-            .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types to be used for the executor nodes of " +
-                    "the EMR cluster. " +
+            .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types and weights to be used for " +
+                    "the executor nodes of the EMR cluster.\n" +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.arm.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
-            .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types to be used for the master node of the " +
-                    "EMR cluster. " +
+            .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types and weights to be used for the " +
+                    "master node of the EMR cluster.\n" +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.arm.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
-            .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types to be used for the executor nodes of " +
-                    "the EMR cluster. " +
+            .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types and weights to be used for the " +
+                    "executor nodes of the EMR cluster.\n" +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
