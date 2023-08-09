@@ -174,7 +174,10 @@ public class EmrServerlessBulkImportStack extends NestedStack {
 
         ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(role));
         statusStoreResources.grantWriteJobEvent(role);
-        tableStack.getStateStoreStacks().forEach(sss -> sss.grantReadWritePartitionMetadata(role));
+        tableStack.getStateStoreStacks().forEach(sss -> {
+            sss.grantReadPartitionMetadata(role);
+            sss.grantReadWriteActiveFileMetadata(role);
+        });
         tableStack.getDataBuckets().forEach(b -> b.grantReadWrite(role));
         return role;
     }
