@@ -28,7 +28,7 @@ public class InMemoryFileInfoStoreV2 implements FileInfoStoreV2 {
     private final List<FileInfoV2> files = new ArrayList<>();
 
     @Override
-    public void completeIngest(AddFilesRequest request) {
+    public void finishIngest(AddFilesRequest request) {
         request.buildFileInfos().forEach(files::add);
     }
 

@@ -55,8 +55,8 @@ public class DelegatingStateStoreV2 implements StateStoreV2 {
     }
 
     @Override
-    public void completeIngest(AddFilesRequest request) {
-        fileStore.completeIngest(request);
+    public void finishIngest(AddFilesRequest request) {
+        fileStore.finishIngest(request);
     }
 
     @Override

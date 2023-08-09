@@ -16,6 +16,8 @@
 
 package sleeper.core.statestore.inmemory;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.key.Key;
@@ -37,34 +39,38 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 
 public class InMemoryFileInfoStoreV2Test {
 
-    @Test
-    public void shouldAddAndReadActiveFiles() {
-        // Given
-        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .buildTree();
-        StateStoreV2 store = inMemoryStateStoreV2WithFixedPartitions(tree.getAllPartitions());
-        FileDataStatistics statistics = FileDataStatistics.builder()
-                .numberOfRecords(12)
-                .minRowKey(Key.create("abc"))
-                .maxRowKey(Key.create("def"))
-                .build();
+    @Nested
+    @DisplayName("Ingest")
+    class Ingest {
 
-        // When
-        store.completeIngest(addFiles(request -> request
-                .jobId("test-job")
-                .files(List.of(addFile(file -> file
-                        .partitionId("root")
-                        .filename("test-file.parquet")
-                        .statistics(statistics))))));
+        @Test
+        public void shouldAddAndReadAFile() {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+            PartitionTree tree = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .buildTree();
+            StateStoreV2 store = inMemoryStateStoreV2WithFixedPartitions(tree.getAllPartitions());
+            FileDataStatistics statistics = FileDataStatistics.builder()
+                    .numberOfRecords(12)
+                    .minRowKey(Key.create("abc"))
+                    .maxRowKey(Key.create("def"))
+                    .build();
 
-        // Then
-        assertThat(store.getPartitionFiles()).containsExactly(
-                FileInfoV2.builder()
-                        .partitionId("root")
-                        .filename("test-file.parquet")
-                        .statistics(statistics)
-                        .build());
+            // When
+            store.finishIngest(addFiles(request -> request
+                    .files(List.of(addFile(file -> file
+                            .partitionId("root")
+                            .filename("test-file.parquet")
+                            .statistics(statistics))))));
+
+            // Then
+            assertThat(store.getPartitionFiles()).containsExactly(
+                    FileInfoV2.builder()
+                            .partitionId("root")
+                            .filename("test-file.parquet")
+                            .statistics(statistics)
+                            .build());
+        }
     }
 }

@@ -19,7 +19,7 @@ package sleeper.core.statestore;
 import java.util.List;
 
 public interface FileInfoStoreV2 {
-    void completeIngest(AddFilesRequest request);
+    void finishIngest(AddFilesRequest request);
 
     List<FileInfoV2> getPartitionFiles();
 }

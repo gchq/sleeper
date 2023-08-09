@@ -21,11 +21,9 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class AddFilesRequest {
-    private final String jobId;
     private final List<AddFileRequest> files;
 
     private AddFilesRequest(Builder builder) {
-        jobId = builder.jobId;
         files = builder.files;
     }
 
@@ -45,15 +43,9 @@ public class AddFilesRequest {
     }
 
     public static final class Builder {
-        private String jobId;
         private List<AddFileRequest> files;
 
         private Builder() {
-        }
-
-        public Builder jobId(String jobId) {
-            this.jobId = jobId;
-            return this;
         }
 
         public Builder files(List<AddFileRequest> files) {
