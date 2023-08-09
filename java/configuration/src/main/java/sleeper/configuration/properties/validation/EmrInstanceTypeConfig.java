@@ -24,9 +24,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperProperties.readList;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
 public class EmrInstanceTypeConfig {
     private final EmrInstanceArchitecture architecture;
@@ -69,6 +72,17 @@ public class EmrInstanceTypeConfig {
             }
         }
         return builders.stream().map(Builder::build);
+    }
+
+    public static boolean isValidInstanceTypes(String value) {
+        try {
+            List<String> instanceTypes = readInstanceTypesProperty(readList(value), X86_64)
+                    .map(EmrInstanceTypeConfig::getInstanceType)
+                    .collect(Collectors.toUnmodifiableList());
+            return instanceTypes.size() == instanceTypes.stream().distinct().count();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public static Builder builder() {

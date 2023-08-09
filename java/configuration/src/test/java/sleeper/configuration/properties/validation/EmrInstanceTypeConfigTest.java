@@ -188,6 +188,29 @@ public class EmrInstanceTypeConfigTest {
         }
     }
 
+    @Nested
+    @DisplayName("Validate values")
+    class ValidateValue {
+
+        @Test
+        void shouldFailValidationWhenSameInstanceTypeIsSpecifiedTwice() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("type-a,type-b,type-c,type-b"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldPassValidationWhenTwoInstanceTypesHaveSameWeight() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("type-a,1,type-b,2,type-c,2"))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldFailValidationWhenWeightSpecifiedBeforeAnInstanceType() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("1,type-a"))
+                    .isFalse();
+        }
+    }
+
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
         return EmrInstanceTypeConfig.readInstanceTypesProperty(instanceTypeEntries, EmrInstanceArchitecture.X86_64);
     }
