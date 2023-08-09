@@ -30,7 +30,11 @@ import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.StateStore;
+import sleeper.statestore.StateStoreProvider;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -41,10 +45,8 @@ public class DeployDockerInstanceIT {
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     private final AmazonS3 s3Client = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-
 
     @Test
     void shouldDeployInstance() throws Exception {
@@ -61,5 +63,12 @@ public class DeployDockerInstanceIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         assertThatCode(() -> tableProperties.loadFromS3(s3Client, "system-test"))
                 .doesNotThrowAnyException();
+        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties).getStateStore(tableProperties);
+        assertThat(stateStore.getActiveFiles()).isEmpty();
+        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
+        assertThat(stateStore.getAllPartitions())
+                .isEqualTo(new PartitionsBuilder(tableProperties.getSchema())
+                        .rootFirst("root")
+                        .buildList());
     }
 }
