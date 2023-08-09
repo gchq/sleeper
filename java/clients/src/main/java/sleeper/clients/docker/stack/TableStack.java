@@ -58,8 +58,6 @@ public class TableStack implements DockerStack {
     }
 
     public void deploy() {
-        s3Client.createBucket(tableProperties.get(DATA_BUCKET));
-
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
