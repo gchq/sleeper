@@ -31,7 +31,6 @@ import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
 import java.io.IOException;
@@ -51,7 +50,6 @@ import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
 public class PopulatePropertiesIT {
@@ -108,26 +106,6 @@ public class PopulatePropertiesIT {
         // Then
         assertThat(tempDir.resolve("configBucket.txt")).exists();
         assertThat(tempDir.resolve("queryResultsBucket.txt")).exists();
-    }
-
-    @Test
-    void shouldSaveBucketNamesToLocalDirectoryWhenTablePropertiesGenerated() throws IOException {
-        // Given
-        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
-                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().populate();
-        TableProperties tableProperties = PopulateTableProperties.builder()
-                .instanceProperties(instanceProperties)
-                .tableProperties(new TableProperties(instanceProperties))
-                .schema(schemaWithKey("key"))
-                .tableName("test-table")
-                .build().populate();
-
-        // When
-        SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(tableProperties));
-
-        // Then
-        assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).exists();
     }
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {

@@ -16,10 +16,12 @@
 
 package sleeper.clients.deploy.docker;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.HeadBucketRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -28,6 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.docker.DeployDockerInstance;
+import sleeper.clients.docker.TearDownDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -45,6 +48,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -72,6 +77,23 @@ public class DockerInstanceIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "system-test");
         assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
+    }
+
+    @Test
+    void shouldTearDownInstance() throws Exception {
+        // Given
+        DeployDockerInstance.deploy("test-instance-2", s3Client, dynamoDB);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-2");
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.loadFromS3(s3Client, "system-test");
+
+        // When
+        TearDownDockerInstance.tearDown("test-instance-2", s3Client, dynamoDB);
+
+        // Then
+        assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
+                .isInstanceOf(AmazonServiceException.class);
     }
 
     private CloseableIterator<Record> queryAllRecords(
