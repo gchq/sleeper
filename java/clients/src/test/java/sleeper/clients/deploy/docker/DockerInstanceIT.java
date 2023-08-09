@@ -45,7 +45,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -69,11 +68,9 @@ public class DockerInstanceIT {
 
         // Then
         InstanceProperties instanceProperties = new InstanceProperties();
-        assertThatCode(() -> instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance"))
-                .doesNotThrowAnyException();
+        instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance");
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        assertThatCode(() -> tableProperties.loadFromS3(s3Client, "system-test"))
-                .doesNotThrowAnyException();
+        tableProperties.loadFromS3(s3Client, "system-test");
         assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
     }
 
