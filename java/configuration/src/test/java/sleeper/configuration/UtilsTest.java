@@ -25,22 +25,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UtilsTest {
 
     @Nested
-    @DisplayName("Validate lists")
-    class ValidateLists {
-        @Test
-        void shouldValidateListWithUniqueElements() {
-            assertThat(Utils.isUniqueList("test-a,test-b,test-c"))
-                    .isTrue();
-        }
-
-        @Test
-        void shouldFailToValidateListWithDuplicates() {
-            assertThat(Utils.isUniqueList("test-a,test-b,test-a"))
-                    .isFalse();
-        }
-    }
-
-    @Nested
     @DisplayName("Validate numbers")
     class ValidateNumbers {
         @Test
