@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -27,15 +28,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.docker.DeployDockerInstance;
+import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
+import sleeper.query.executor.QueryExecutor;
+import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -63,12 +74,22 @@ public class DockerInstanceIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         assertThatCode(() -> tableProperties.loadFromS3(s3Client, "system-test"))
                 .doesNotThrowAnyException();
+        assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
+    }
+
+    private CloseableIterator<Record> queryAllRecords(
+            InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
         StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties).getStateStore(tableProperties);
-        assertThat(stateStore.getActiveFiles()).isEmpty();
-        assertThat(stateStore.getReadyForGCFiles()).isExhausted();
-        assertThat(stateStore.getAllPartitions())
-                .isEqualTo(new PartitionsBuilder(tableProperties.getSchema())
-                        .rootFirst("root")
-                        .buildList());
+        PartitionTree tree = new PartitionTree(tableProperties.getSchema(), stateStore.getAllPartitions());
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
+                stateStore, new Configuration(), Executors.newSingleThreadExecutor());
+        executor.init(tree.getAllPartitions(), stateStore.getPartitionToActiveFilesMap());
+        return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
+    }
+
+    private static Query createQueryAllRecords(PartitionTree tree, String tableName) {
+        return new Query.Builder(tableName,
+                UUID.randomUUID().toString(),
+                List.of(tree.getRootPartition().getRegion())).build();
     }
 }
