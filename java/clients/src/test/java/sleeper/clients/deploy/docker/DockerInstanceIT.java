@@ -19,6 +19,7 @@ package sleeper.clients.deploy.docker;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
@@ -50,6 +51,10 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -65,11 +70,8 @@ public class DockerInstanceIT {
 
     @Test
     void shouldDeployInstance() throws Exception {
-        // Given
-        String instanceId = "test-instance";
-
-        // When
-        DeployDockerInstance.deploy(instanceId, s3Client, dynamoDB);
+        // Given / When
+        DeployDockerInstance.deploy("test-instance", s3Client, dynamoDB);
 
         // Then
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -94,6 +96,14 @@ public class DockerInstanceIT {
         // Then
         assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
                 .isInstanceOf(AmazonServiceException.class);
+        assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(tableProperties.get(DATA_BUCKET))))
+                .isInstanceOf(AmazonServiceException.class);
+        assertThatThrownBy(() -> dynamoDB.describeTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME)))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> dynamoDB.describeTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME)))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> dynamoDB.describeTable(tableProperties.get(PARTITION_TABLENAME)))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     private CloseableIterator<Record> queryAllRecords(
