@@ -209,6 +209,12 @@ public class EmrInstanceTypeConfigTest {
             assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("1,type-a"))
                     .isFalse();
         }
+
+        @Test
+        void shouldFailValidationWhenInstanceTypesPropertyIsNull() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes(null))
+                    .isFalse();
+        }
     }
 
     public static Stream<EmrInstanceTypeConfig> readInstanceTypesProperty(List<String> instanceTypeEntries) {
