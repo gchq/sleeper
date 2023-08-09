@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class WaitForIngestJobsDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestByQueueDriver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestJobsDriver.class);
 
     private final IngestJobStatusStore jobStatusStore;
 
