@@ -39,6 +39,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>bulk-import-starter</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>cdk</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
