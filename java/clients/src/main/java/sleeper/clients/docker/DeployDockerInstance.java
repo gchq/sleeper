@@ -54,12 +54,13 @@ public class DeployDockerInstance {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
-        instanceProperties.saveToS3(s3Client);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
-        tableProperties.saveToS3(s3Client);
 
         ConfigurationStack.from(instanceProperties, s3Client).deploy();
         TableStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
+
+        instanceProperties.saveToS3(s3Client);
+        tableProperties.saveToS3(s3Client);
     }
 
     private static InstanceProperties generateInstanceProperties(String instanceId) {

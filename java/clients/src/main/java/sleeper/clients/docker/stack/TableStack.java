@@ -18,12 +18,13 @@ package sleeper.clients.docker.stack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.table.job.TableCreator;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
@@ -60,7 +61,8 @@ public class TableStack implements DockerStack {
     public void deploy() {
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
         try {
-            DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
+            StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, new Configuration())
+                    .getStateStore(tableProperties);
             stateStore.initialise();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
