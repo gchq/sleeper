@@ -27,9 +27,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -47,7 +47,6 @@ import java.util.List;
  */
 public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
-
     private final String partitionsFile;
 
     public ReinitialiseTableFromExportedPartitions(
@@ -92,7 +91,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
 
         System.out.println("If you continue all data will be deleted in the table.");
         System.out.println("The metadata about the partitions will be deleted and replaced "
-            + "by new partitions derived from the provided partitions file.");
+                + "by new partitions derived from the provided partitions file.");
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
         if (!choice.equalsIgnoreCase("y")) {
@@ -104,9 +103,9 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         try {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(amazonS3, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
-            System.out.println("Table reinitialised successfully");
+            LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
-            System.out.println("\nAn Error occurred while trying to reinitialise the table. " +
+            LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
         }

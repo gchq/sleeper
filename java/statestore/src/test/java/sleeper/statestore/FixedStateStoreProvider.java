@@ -16,6 +16,7 @@
 package sleeper.statestore;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.StateStore;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 

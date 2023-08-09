@@ -1,6 +1,6 @@
 name: Build Compaction Modules
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-compaction.yaml'
       - '.github/workflows/chunk.yaml'

@@ -4,10 +4,6 @@ on:
       chunkId:
         required: true
         type: string
-      publishReports:
-        default: true
-        required: false
-        type: boolean
 
 jobs:
   build:
@@ -43,28 +39,16 @@ jobs:
       - name: Test
         run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository -e
         working-directory: ./java
-      - name: Check rate limits
-        id: rate-limit
-        if: ${{ always() }}
-        working-directory: ./java/build
+      - name: Generate site
+        if: always()
         run: |
-          echo "remaining=$(mvn compile exec:java -q -Dexec.mainClass=sleeper.build.ratelimit.GetRemainingRateLimit \
-            -Dexec.args=${{ secrets.GITHUB_TOKEN }} -Dmaven.repo.local=../.m2/repository)" \
-            >> $GITHUB_OUTPUT
-      - name: Publish test report
-        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
-        uses: scacap/action-surefire-report@v1
+          mvn --batch-mode clean site-deploy -PcleanForSite -pl sleeper:aws,${{ steps.config.outputs.moduleList }} \
+            -Dmaven.repo.local=.m2/repository
+        working-directory: ./java
+      - name: Upload site as artifact
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
-          check_name: Tests for ${{ steps.config.outputs.chunkName }}
-      - name: Publish Checkstyle report
-        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
-        uses: jwgmeligmeyling/checkstyle-github-action@v1.2
-        with:
-          path: '**/checkstyle-result.xml'
-          name: Checkstyle for ${{ steps.config.outputs.chunkName }}
-      - name: Publish Spotbugs report
-        if: ${{ always() && inputs.publishReports && steps.rate-limit.outputs.remaining > 50 }}
-        uses: jwgmeligmeyling/spotbugs-github-action@v1.2
-        with:
-          path: '**/spotbugsXml.xml'
-          name: Spotbugs for ${{ steps.config.outputs.chunkName }}
+          name: site
+          path: |
+            /tmp/sleeper/site

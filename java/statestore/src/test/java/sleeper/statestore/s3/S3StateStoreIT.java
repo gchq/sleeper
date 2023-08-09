@@ -15,9 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -50,9 +47,9 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -73,6 +70,7 @@ import java.util.concurrent.Executors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class S3StateStoreIT {
@@ -88,13 +86,7 @@ public class S3StateStoreIT {
 
     @BeforeAll
     public static void initDynamoClient() {
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration =
-                new AwsClientBuilder.EndpointConfiguration("http://" + dynamoDb.getContainerIpAddress() + ":"
-                        + dynamoDb.getMappedPort(DYNAMO_PORT), "us-west-2");
-        dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials("12345", "6789")))
-                .withEndpointConfiguration(endpointConfiguration)
-                .build();
+        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
@@ -1075,8 +1067,10 @@ public class S3StateStoreIT {
                 .childPartitionIds(new ArrayList<>())
                 .dimension(-1)
                 .build();
-        rootPartition.setLeafPartition(false);
-        rootPartition.setChildPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()));
+        rootPartition = rootPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList(partition1.getId(), partition2.getId()))
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition, partition1, partition2);
         Region region3 = new Region(new RangeFactory(schema).createRange(field, 1L, 9L));
         Partition partition3 = Partition.builder()
@@ -1098,8 +1092,10 @@ public class S3StateStoreIT {
                 .childPartitionIds(new ArrayList<>())
                 .dimension(-1)
                 .build();
-        partition2.setLeafPartition(false);
-        partition2.setChildPartitionIds(Arrays.asList(partition3.getId(), partition4.getId()));
+        partition2 = partition2.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList(partition3.getId(), partition4.getId()))
+                .build();
         dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(partition2, partition3, partition4);
 
         // When
@@ -1128,9 +1124,11 @@ public class S3StateStoreIT {
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
 
         // When
-        parentPartition.setLeafPartition(false);
-        parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
-        parentPartition.setDimension(1);
+        parentPartition = parentPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("child1", "child2"))
+                .build();
+        parentPartition = parentPartition.toBuilder().dimension(1).build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
         Partition childPartition1 = Partition.builder()
                 .rowKeyTypes(new LongType())
@@ -1165,8 +1163,10 @@ public class S3StateStoreIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        parentPartition.setLeafPartition(false);
-        parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
+        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("child1", "child2"))
+                .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
         Partition childPartition1 = Partition.builder()
                 .rowKeyTypes(new LongType())
@@ -1185,23 +1185,27 @@ public class S3StateStoreIT {
                 .childPartitionIds(new ArrayList<>())
                 .parentPartitionId(parentPartition.getId())
                 .build();
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2);
+        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartitionAfterSplit, childPartition1, childPartition2);
 
         // When / Then
         //  - Attempting to split something that has already been split should fail
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                        parentPartitionAfterSplit, childPartition1, childPartition2))
                 .isInstanceOf(StateStoreException.class);
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsLeaf() throws IOException, StateStoreException {
+    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsMarkedAsLeafAfterSplit() throws IOException, StateStoreException {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
+        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
+                .childPartitionIds(Arrays.asList("child1", "child2"))
+                .leafPartition(true)
+                .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition1 = Partition.builder()
                 .rowKeyTypes(new LongType())
@@ -1222,8 +1226,13 @@ public class S3StateStoreIT {
                 .build();
 
         // When / Then
+        // TODO This fails for the wrong reason. There's actually no validation of the leafPartition flag.
+        //      It's failing because the parent partition ID doesn't match.
+        //      We could implement the validation and improve the assertion, but we probably don't actually
+        //      need validation here at all as long as the code that calls this method is well tested.
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                        parentPartitionAfterSplit, childPartition1, childPartition2))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -1234,8 +1243,10 @@ public class S3StateStoreIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        parentPartition.setLeafPartition(false);
-        parentPartition.setChildPartitionIds(Arrays.asList("child3", "child2")); // Wrong children
+        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("child3", "child2")) // Wrong children
+                .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition1 = Partition.builder()
                 .rowKeyTypes(new LongType())
@@ -1243,7 +1254,7 @@ public class S3StateStoreIT {
                 .id("child1")
                 .region(region1)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
+                .parentPartitionId(parentPartition.getId())
                 .build();
         Region region2 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition2 = Partition.builder()
@@ -1252,12 +1263,13 @@ public class S3StateStoreIT {
                 .id("child2")
                 .region(region2)
                 .childPartitionIds(new ArrayList<>())
-                .parentPartitionId("parent")
+                .parentPartitionId(parentPartition.getId())
                 .build();
 
         // When / Then
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                        parentPartitionAfterSplit, childPartition1, childPartition2))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -1268,8 +1280,10 @@ public class S3StateStoreIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        parentPartition.setLeafPartition(false);
-        parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
+        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("child1", "child2"))
+                .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, null));
         Partition childPartition1 = Partition.builder()
                 .rowKeyTypes(new LongType())
@@ -1291,7 +1305,8 @@ public class S3StateStoreIT {
 
         // When / Then
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                        parentPartitionAfterSplit, childPartition1, childPartition2))
                 .isInstanceOf(StateStoreException.class);
     }
 
@@ -1302,8 +1317,10 @@ public class S3StateStoreIT {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         StateStore dynamoDBStateStore = getStateStore(schema);
         Partition parentPartition = dynamoDBStateStore.getAllPartitions().get(0);
-        parentPartition.setLeafPartition(false);
-        parentPartition.setChildPartitionIds(Arrays.asList("child1", "child2"));
+        Partition parentPartitionAfterSplit = parentPartition.toBuilder()
+                .leafPartition(false)
+                .childPartitionIds(Arrays.asList("child1", "child2"))
+                .build();
         Region region1 = new Region(new RangeFactory(schema).createRange(field, Long.MIN_VALUE, 0L));
         Partition childPartition1 = Partition.builder()
                 .rowKeyTypes(new LongType())
@@ -1325,7 +1342,8 @@ public class S3StateStoreIT {
 
         // When / Then
         assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, childPartition1, childPartition2))
+                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                        parentPartitionAfterSplit, childPartition1, childPartition2))
                 .isInstanceOf(StateStoreException.class);
     }
 

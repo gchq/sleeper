@@ -27,7 +27,7 @@ public class TestGitHubActionsChunkWorkflows {
                 .chunkId("bulk-import")
                 .name("Build Bulk Import Modules")
                 .usesWorkflowPath(Paths.get("./github-actions/chunk.yaml"))
-                .onPushPathsArray(
+                .onTriggerPathsArray(
                         "github-actions/chunk-bulk-import.yaml",
                         "github-actions/chunk.yaml",
                         "config/chunks.yaml",
@@ -47,7 +47,7 @@ public class TestGitHubActionsChunkWorkflows {
                 .chunkId("common")
                 .name("Build Common Modules")
                 .usesWorkflowPath(Paths.get("./github-actions/chunk.yaml"))
-                .onPushPathsArray(
+                .onTriggerPathsArray(
                         "github-actions/chunk-common.yaml",
                         "github-actions/chunk.yaml",
                         "config/chunks.yaml",
@@ -61,7 +61,7 @@ public class TestGitHubActionsChunkWorkflows {
         return GitHubActionsChunkWorkflow.builder()
                 .chunkId(chunkId).name(chunkId)
                 .usesWorkflowPath(Paths.get("./github-actions/chunk.yaml"))
-                .onPushPathsArray(paths)
+                .onTriggerPathsArray(paths)
                 .build();
     }
 

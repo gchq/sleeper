@@ -30,19 +30,21 @@ import software.amazon.cloudwatchlogs.emf.model.Unit;
 import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
-import sleeper.configuration.properties.InstanceProperties;
-import sleeper.configuration.properties.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<String, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
@@ -111,12 +113,12 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         long leafPartitionCount = partitions.stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("Found {} partitions and {} leaf partitions for table {}", partitionCount, leafPartitionCount, tableName);
 
-        String metricsNamespace = instanceProperties.get(UserDefinedInstanceProperty.METRICS_NAMESPACE);
+        String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
         metricsLogger.setDimensions(DimensionSet.of(
-                "instanceId", instanceProperties.get(UserDefinedInstanceProperty.ID),
+                "instanceId", instanceProperties.get(ID),
                 "tableName", tableName
         ));
 

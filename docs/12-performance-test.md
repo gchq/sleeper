@@ -1,86 +1,66 @@
 Performance tests
 =================
 
-The following notes describe how to conduct some manual tests of performance to help understand whether changes to the
-code have increased or decreased the performance. These tests are based on the system tests described in
-[09-dev-guide#System-tests](09-dev-guide.md#System-tests). Note that currently the following needs to be run on
-an x86 machine.
+The following notes describe how to run the system tests that measure performance, to help understand whether changes 
+to the code have increased or decreased the performance. These tests are based on the system tests described in
+[09-dev-guide#System-tests](09-dev-guide.md#System-tests).
 
-Under `scripts/test` we have system tests for deploying everything, and for compaction performance testing. The
-compaction tests take control of when compactions run in order to produce more deterministic results. The tests for
-deploying everything test direct ingest, while the compaction performance tests currently use a queue.
-
-## Deploy all
-
-Run the tests:
-
-```bash
-ID=<a-unique-id-for-the-test>
-VPC=<id-of-the-VPC-to-deploy-to>
-SUBNET=<id-of-the-subnet-to-deploy-to>
-./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
-```
-
-Find the ECS cluster that is running the containers that are writing data for ingest. It will have the name
-`sleeper-${ID}-system-test-cluster`. There should be 11 running tasks. Wait until all those tasks have finished.
-Click on one of the tasks and find the corresponding Cloudwatch log group. Use the following command in
-Cloudwatch Log Insights with the above log group selected:
-
-```
-fields @message 
-| filter @message like "to S3"
-# If you want to see all the results, comment out the next two lines
-| parse @message '* * - * at * per second' as class, level, msg, rate
-| stats avg(rate)
-```
-
-This should result in a single value which summarises the performance of the containers that are ingesting data
-(these are direct standard ingest tasks, i.e. they are writing data directly to Sleeper using the standard ingest
-approach - they are not using the ingest queue). The table below records the performance for various versions of
-Sleeper.
-
-Now find the ECS cluster that runs compaction tasks. It will be named `sleeper-${ID}-merge-compaction-cluster`.
-Click on one of the tasks and find the corresponding Cloudwatch log group. Use the following command in Cloudwatch
-Log Insights with the above log group selected:
-
-```
-fields @message | filter @message like "compaction read"
-# If you want to see all the results, comment out the next two lines
-| parse @message '* * - * at * per second' as class, level, msg, rate
-| stats avg(rate)
-```
-
-This should result a single value summarising the performance of the containers that are performing a compaction. See
-the table below for the results for various versions of Sleeper.
+Under `scripts/test` we have system tests for testing performance of compaction and bulk import.
+The performance tests take control of when compactions run in order to produce more deterministic results.
 
 ## Compaction performance
 
-This test will continue running and wait for each operation in the tests to run. This will take around an hour. This
-can be used to measure performance of compaction with a fixed order of partition splitting and compaction job creation.
-This is intended to avoid any variance that may be caused by the number of input files or the amount of data processed
-at once.
+This will test the performance of standard ingest, standard compactions and compaction job creation. It will not 
+perform any partition splitting. This will take around an hour. This is intended to avoid any variance that may be 
+caused by the number of input files or the amount of data processed at once.
 
-This avoids situations like when compaction & partition splitting happens halfway through ingest. The first few files
-may be picked up by a standard compaction, then the partition is split. More files are picked up by a splitting
-compaction, and then a second splitting compaction picks up the output of the standard compaction after it finishes.
-
-There are a variety of scenarios like this that can occur when compaction and partition splitting occurs on scheduled
-jobs (as in the deploy all system test, or normal system functioning). The compaction performance test avoids this by
-disabling the scheduled jobs and triggering those processes directly.
+There are a variety of scenarios that can occur when compaction is performed on scheduled jobs (as in the deployAll 
+system test, or normal system functioning), such as compactions happening halfway through ingest. The compaction 
+performance test avoids this by disabling the scheduled jobs and triggering those processes directly.
 
 Run the tests:
 
 ```bash
 ID=<a-unique-id-for-the-test>
 VPC=<id-of-the-VPC-to-deploy-to>
-SUBNET=<id-of-the-subnet-to-deploy-to>
-./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+SUBNETS=<ids-of-the-subnets-to-deploy-to>
+./scripts/test/compactionPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 Report the results:
 
 ```bash
+# Ingest performance figures can be found by running the following reports
+./scripts/utility/ingestTaskStatusReport.sh ${ID} standard -a
+./scripts/utility/ingestJobStatusReport.sh ${ID} system-test standard -a
+
+# Compaction performance figures can be found by running the following reports
+./scripts/utility/compactionTaskStatusReport.sh ${ID} standard -a
 ./scripts/utility/compactionJobStatusReport.sh ${ID} system-test standard -a
+```
+
+## Bulk import performance
+This will test the performance of bulk import using EMR. A bulk import job for 1 billion records will be created and 
+sent to the bulk import queue 5 times. It will then wait for all EMR steps to finish, then check that there are 
+5 billion records in the table. This will take about 30 minutes.
+
+The system test table is pre-split into 512 leaf partitions using the `scripts/test/splitpoints/512-partitions.txt` 
+splitpoints file.
+
+The standard ingest, compaction, and partition splitting stacks are not enabled, so the test finishes when all 
+records are ingested through bulk import.
+
+Run the tests
+```bash
+ID=<a-unique-id-for-the-test>
+VPC=<id-of-the-VPC-to-deploy-to>
+SUBNETS=<ids-of-the-subnets-to-deploy-to>
+./scripts/test/bulkImportPerformance/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
+```
+
+Report the results:
+```bash
+./scripts/utility/ingestTaskStatusReport.sh ${ID} standard -a
 ./scripts/utility/ingestJobStatusReport.sh ${ID} system-test standard -a
 ```
 

@@ -88,16 +88,23 @@
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.31</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
-        <avro.version>1.11.1</avro.version>
+        <avro.version>1.11.2</avro.version>
         <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
         <json-smart.version>2.4.11</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
         <kerby.version>2.0.3</kerby.version>
+        <!-- Spark declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
+        <okhttp3.version>4.11.0</okhttp3.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
         -->
         <kotlin.version>1.6.20</kotlin.version>
+        <!--
+        OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
+        Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
+        -->
+        <okio.version>3.4.0</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <logback.version>1.4.8</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
@@ -141,6 +148,7 @@
         <jetty.version>9.4.51.v20230217</jetty.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jung.version>2.1.1</jung.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
@@ -150,13 +158,15 @@
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
         <sleeper.system.test.instance.id/>
+        <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
-        <sleeper.system.test.subnet.id/>
+        <sleeper.system.test.subnet.ids/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
-        <surefire.plugin.version>3.0.0-M7</surefire.plugin.version>
+        <surefire.plugin.version>3.1.2</surefire.plugin.version>
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
+        <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
@@ -166,6 +176,7 @@
         <spotbugs.plugin.version>4.7.3.0</spotbugs.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.3.1</dependency-check.plugin.version>
+        <site.plugin.version>3.12.1</site.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
@@ -402,6 +413,11 @@
                 <version>${avro.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-mapred</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
                 <version>${json-smart.version}</version>
@@ -417,6 +433,11 @@
                 <version>${kerby.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>${okhttp3.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-jdk8</artifactId>
                 <version>${kotlin.version}</version>
@@ -430,6 +451,16 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-stdlib-common</artifactId>
                 <version>${kotlin.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${okio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio-jvm</artifactId>
+                <version>${okio.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -610,7 +641,68 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
+    <distributionManagement>
+        <site>
+            <id>sleeper</id>
+            <name>Sleeper site</name>
+            <url>file:///tmp/sleeper/site</url>
+        </site>
+    </distributionManagement>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregated</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>report-only</report>
+                            <report>failsafe-report-only</report>
+                        </reports>
+                        <configuration>
+                            <aggregate>true</aggregate>
+                        </configuration>
+                    </reportSet>
+                    <reportSet>
+                        <reports>
+                            <report>report-only</report>
+                            <report>failsafe-report-only</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <id>aggregate</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>checkstyle-aggregate</report>
+                        </reports>
+                        <configuration>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        </configuration>
+                    </reportSet>
+                    <reportSet>
+                        <reports>
+                            <report>checkstyle</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+                <configuration>
+                    <failsOnError>false</failsOnError>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
     <build>
         <plugins>
             <plugin>
@@ -685,11 +777,14 @@
             <plugin>
                 <groupId>de.qaware.maven</groupId>
                 <artifactId>go-offline-maven-plugin</artifactId>
-                <version>${go-offline.plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
             </plugin>
         </plugins>
         <pluginManagement>
@@ -816,20 +911,20 @@
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemProperties>
                             <property>
-                                <name>sleeper.system.test.version</name>
-                                <value>${project.version}</value>
-                            </property>
-                            <property>
                                 <name>sleeper.system.test.instance.id</name>
                                 <value>${sleeper.system.test.instance.id}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.short.id</name>
+                                <value>${sleeper.system.test.short.id}</value>
                             </property>
                             <property>
                                 <name>sleeper.system.test.vpc.id</name>
                                 <value>${sleeper.system.test.vpc.id}</value>
                             </property>
                             <property>
-                                <name>sleeper.system.test.subnet.id</name>
-                                <value>${sleeper.system.test.subnet.id}</value>
+                                <name>sleeper.system.test.subnet.ids</name>
+                                <value>${sleeper.system.test.subnet.ids}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>
@@ -845,6 +940,16 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>${surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>de.qaware.maven</groupId>
+                    <artifactId>go-offline-maven-plugin</artifactId>
+                    <version>${go-offline.plugin.version}</version>
+                </plugin>
+                <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${dependency-check.plugin.version}</version>
@@ -852,6 +957,11 @@
                         <failBuildOnAnyVulnerability>true</failBuildOnAnyVulnerability>
                         <suppressionFile>../code-style/dependency-check-suppressions.xml</suppressionFile>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>${site.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -927,6 +1037,7 @@
                         <configuration>
                             <groups>SystemTest</groups>
                             <excludedGroups>none</excludedGroups>
+                            <forkedProcessTimeoutInSeconds>0</forkedProcessTimeoutInSeconds>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -967,6 +1078,30 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>cleanForSite</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>checkstyle**</include>
+                                        <include>spotbugs/**</include>
+                                        <include>spotbugs.xml</include>
+                                    </includes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

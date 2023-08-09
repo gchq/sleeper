@@ -18,7 +18,7 @@ package sleeper.clients;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.key.Key;
@@ -32,8 +32,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
-import sleeper.statestore.StateStoreException;
 import sleeper.table.job.TableLister;
 
 import java.nio.charset.StandardCharsets;

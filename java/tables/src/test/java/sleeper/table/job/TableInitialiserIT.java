@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
@@ -41,7 +41,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.io.IOException;
@@ -52,11 +52,12 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class TableInitialiserIT {
@@ -65,17 +66,11 @@ public class TableInitialiserIT {
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     private AmazonS3 getS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.S3))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     private AmazonDynamoDB getDynamoClient() {
-        return AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(localStackContainer.getEndpointConfiguration(LocalStackContainer.Service.DYNAMODB))
-                .withCredentials(localStackContainer.getDefaultCredentialsProvider())
-                .build();
+        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     }
 
     private Schema schemaWithKeyValueTypes(PrimitiveType rowKeyType, Type valueType) {
@@ -159,9 +154,9 @@ public class TableInitialiserIT {
         String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
         String tableName = "MyTable";
         s3Client.createBucket(configBucket);
-        String content = String.join("\n", new String(Base64.encodeBase64("a".getBytes())),
-                new String(Base64.encodeBase64("b".getBytes())),
-                new String(Base64.encodeBase64("c".getBytes())));
+        String content = String.join("\n", new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
         s3Client.putObject(configBucket, "splits/" + tableName, content);
 
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -268,9 +263,9 @@ public class TableInitialiserIT {
         String tableName = "MyTable";
         s3Client.createBucket(configBucket);
         String content = String.join("\n",
-                new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_16))),
-                new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_16))),
-                new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_16))));
+                new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8),
+                new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8));
         s3Client.putObject(configBucket, "splits/" + tableName, content);
 
         InstanceProperties instanceProperties = new InstanceProperties();

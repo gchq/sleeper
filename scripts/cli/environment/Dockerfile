@@ -29,7 +29,7 @@ RUN set -eux; \
 RUN dpkg -i session-manager-plugin.deb
 
 # Set command line prompt to show you're in the environment Docker container
-RUN echo 'export PS1="🐳 \e[0;36m\u@sleeper-environment\e[0m: \w # "' >> ~/.bashrc
+RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-environment\[\e[0m\]: \w # "' >> ~/.bashrc
 
 WORKDIR /sleeper
 COPY . .

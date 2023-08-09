@@ -17,15 +17,15 @@
 package sleeper.clients.status.report.partitions;
 
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.Arrays;
 import java.util.Collections;

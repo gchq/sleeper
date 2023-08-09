@@ -60,13 +60,17 @@ public class MavenModuleStructure {
         return builderFromPath(mapper, path).build();
     }
 
-    public Stream<String> allTestedModulesForProjectList() {
-        return allTestedModulesForProjectList(MavenModuleAndPath.root(this));
+    public Stream<MavenModuleAndPath> allTestedModules() {
+        return allTestedModules(MavenModuleAndPath.root(this));
     }
 
-    public InternalDependencyIndex internalDependencies() {
+    public Stream<MavenModuleAndPath> allModules() {
+        return allModules(MavenModuleAndPath.root(this));
+    }
+
+    public InternalModuleIndex indexInternalModules() {
         MavenModuleAndPath root = MavenModuleAndPath.root(this);
-        return new InternalDependencyIndex(
+        return new InternalModuleIndex(
                 root.thisAndDescendents().collect(Collectors.toList()));
     }
 
@@ -74,15 +78,17 @@ public class MavenModuleStructure {
         return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }
 
-    private Stream<String> allTestedModulesForProjectList(MavenModuleAndPath parent) {
+    private Stream<MavenModuleAndPath> allTestedModules(MavenModuleAndPath parent) {
+        return allModules(parent).filter(module -> module.getStructure().hasSrcTestFolder);
+    }
+
+    private Stream<MavenModuleAndPath> allModules(MavenModuleAndPath parent) {
         MavenModuleAndPath projectListPath = parent.child(this);
-        if ("pom".equals(packaging)) {
+        if (isPomPackage()) {
             return modules.stream()
-                    .flatMap(module -> module.allTestedModulesForProjectList(projectListPath));
-        } else if (hasSrcTestFolder) {
-            return Stream.of(projectListPath.getPath());
+                    .flatMap(module -> module.allModules(projectListPath));
         } else {
-            return Stream.empty();
+            return Stream.of(projectListPath);
         }
     }
 
@@ -114,6 +120,10 @@ public class MavenModuleStructure {
                     .moduleRef(moduleRef).build());
         }
         return modules;
+    }
+
+    public boolean isPomPackage() {
+        return "pom".equals(packaging);
     }
 
     @Override

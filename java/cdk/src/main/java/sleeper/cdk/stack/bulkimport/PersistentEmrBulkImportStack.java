@@ -38,36 +38,36 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TopicStack;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static sleeper.bulkimport.configuration.ConfigurationUtils.Architecture;
-import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypesProperty;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.SUBNETS;
+import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypes;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUMES_PER_INSTANCE;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_SIZE_IN_GB;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EBS_VOLUME_TYPE;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_MASTER_ADDITIONAL_SECURITY_GROUP;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_RELEASE_LABEL;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_STEP_CONCURRENCY_LEVEL;
+import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS;
 
 
 /**
@@ -186,41 +186,27 @@ public class PersistentEmrBulkImportStack extends NestedStack {
 
     private static List<CfnCluster.InstanceTypeConfigProperty> readExecutorInstanceTypes(
             InstanceProperties instanceProperties, EbsConfigurationProperty ebsConf) {
-        return Stream.concat(
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
-                                        .build()),
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
-                                        .build()))
+        return readInstanceTypes(instanceProperties, BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
+                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                        .instanceType(config.getInstanceType())
+                        .weightedCapacity(config.getWeightedCapacity())
+                        .ebsConfiguration(ebsConf)
+                        .configurations(getConfigurations(instanceProperties, config.getArchitecture()))
+                        .build())
                 .collect(Collectors.toList());
     }
 
     private static List<CfnCluster.InstanceTypeConfigProperty> readMasterInstanceTypes(
             InstanceProperties instanceProperties, EbsConfigurationProperty ebsConf) {
-        return Stream.concat(
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.X86_64))
-                                        .build()),
-                        readInstanceTypesProperty(instanceProperties.getList(BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES))
-                                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
-                                        .instanceType(config.getInstanceType())
-                                        .weightedCapacity(config.getWeightedCapacity())
-                                        .ebsConfiguration(ebsConf)
-                                        .configurations(getConfigurations(instanceProperties, Architecture.ARM64))
-                                        .build()))
+        return readInstanceTypes(instanceProperties, BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE,
+                BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES)
+                .map(config -> new CfnCluster.InstanceTypeConfigProperty.Builder()
+                        .instanceType(config.getInstanceType())
+                        .weightedCapacity(config.getWeightedCapacity())
+                        .ebsConfiguration(ebsConf)
+                        .configurations(getConfigurations(instanceProperties, config.getArchitecture()))
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -234,7 +220,7 @@ public class PersistentEmrBulkImportStack extends NestedStack {
     }
 
     private static List<CfnCluster.ConfigurationProperty> getConfigurations(
-            InstanceProperties instanceProperties, ConfigurationUtils.Architecture architecture) {
+            InstanceProperties instanceProperties, EmrInstanceArchitecture architecture) {
         List<CfnCluster.ConfigurationProperty> configurations = new ArrayList<>();
 
         Map<String, String> emrSparkProps = ConfigurationUtils.getSparkEMRConfiguration();

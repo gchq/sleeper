@@ -28,13 +28,13 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TopicStack;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 
 /**
  * An {@link EmrBulkImportStack} creates an SQS queue that bulk import jobs can

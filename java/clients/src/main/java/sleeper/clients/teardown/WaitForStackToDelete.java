@@ -57,11 +57,20 @@ public class WaitForStackToDelete {
         try {
             Stack stack = cloudFormationClient.describeStacks(builder -> builder.stackName(stackName)).stacks()
                     .stream().findFirst().orElseThrow();
+            if (StackStatus.DELETE_FAILED.equals(stack.stackStatus())) {
+                throw new DeleteFailedException(stackName);
+            }
             LOGGER.info("Stack {} is currently in state {}", stackName, stack.stackStatus());
             return stack.stackStatus().equals(StackStatus.DELETE_COMPLETE);
         } catch (CloudFormationException e) {
             LOGGER.info("Exception checking status of stack {}: {}", stackName, e.getMessage());
             return true;
+        }
+    }
+
+    public static class DeleteFailedException extends RuntimeException {
+        DeleteFailedException(String stackName) {
+            super("Failed to delete stack \"" + stackName + "\"");
         }
     }
 }

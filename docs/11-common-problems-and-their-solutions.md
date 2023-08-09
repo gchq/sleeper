@@ -10,7 +10,7 @@ Caused by: java.io.EOFException
      at java.io.DataInputStream.readFully(DataInputStream.java:197)
      at java.io.DataInputStream.readUTF(DataInputStream.java:609)
      at java.io.DataInputStream.readUTF(DataInputStream.java:564)
-Exception in thread "main" sleeper.statestore.StateStoreException: Exception querying DynamoDB
+Exception in thread "main" sleeper.core.statestore.StateStoreException: Exception querying DynamoDB
 ```
 
 When cdk deploy is used to deploy a table, the state store is initialised. This initialisation writes the initial

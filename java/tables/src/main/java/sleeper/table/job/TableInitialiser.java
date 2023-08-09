@@ -20,16 +20,16 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.BufferedReader;
@@ -47,8 +47,8 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
  * unlike the {@link TableCreator}, this class may be used as part of main code.
  */
 public class TableInitialiser {
-    private AmazonS3 s3;
-    private AmazonDynamoDB dynamoDB;
+    private final AmazonS3 s3;
+    private final AmazonDynamoDB dynamoDB;
 
     public TableInitialiser(AmazonS3 s3, AmazonDynamoDB dynamoDB) {
         this.s3 = s3;

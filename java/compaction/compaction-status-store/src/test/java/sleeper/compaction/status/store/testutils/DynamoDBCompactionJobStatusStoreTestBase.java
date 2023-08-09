@@ -26,7 +26,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
@@ -34,8 +34,8 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
-import sleeper.statestore.FileInfoFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,8 +50,8 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompacti
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createSchema;
 import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createTableProperties;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.configuration.properties.UserDefinedInstanceProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {

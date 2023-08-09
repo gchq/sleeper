@@ -28,10 +28,10 @@ import sleeper.clients.status.report.filestatus.FileStatusReporter;
 import sleeper.clients.status.report.filestatus.JsonFileStatusReporter;
 import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.util.ClientUtils;
-import sleeper.configuration.properties.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;

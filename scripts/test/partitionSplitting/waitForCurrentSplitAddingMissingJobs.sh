@@ -33,7 +33,7 @@ echo "--------------------------------------------------------------------------
 echo "Waiting for current partition split"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.compaction.WaitForCurrentSplitAddingMissingJobs "$INSTANCE_ID" "$TABLE_NAME"
+ sleeper.systemtest.drivers.compaction.WaitForCurrentSplitAddingMissingJobs "$INSTANCE_ID" "$TABLE_NAME"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

@@ -43,9 +43,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfoStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -60,12 +60,13 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
+import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
-import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 
@@ -242,12 +243,18 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         for (FileInfo fileInfo : files) {
             Map<String, AttributeValue> fileAttributeValues = fileInfoFormat.createRecordWithJobId(fileInfo, jobId);
             Map<String, String> expressionAttributeNames = new HashMap<>();
+            expressionAttributeNames.put("#filename", FILE_NAME);
+            expressionAttributeNames.put("#partitionid", PARTITION);
             expressionAttributeNames.put("#jobid", JOB_ID);
+            Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+            expressionAttributeValues.put(":filename", new AttributeValue().withS(fileInfo.getFilename()));
+            expressionAttributeValues.put(":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
             Put put = new Put()
                     .withTableName(activeTablename)
                     .withItem(fileAttributeValues)
                     .withExpressionAttributeNames(expressionAttributeNames)
-                    .withConditionExpression("attribute_not_exists(#jobid)");
+                    .withExpressionAttributeValues(expressionAttributeValues)
+                    .withConditionExpression("#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)");
             writes.add(new TransactWriteItem().withPut(put));
         }
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()

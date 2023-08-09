@@ -18,11 +18,11 @@ package sleeper.ingest;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.getRecords;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class IngestResultIT extends IngestRecordsTestBase {
     @Test

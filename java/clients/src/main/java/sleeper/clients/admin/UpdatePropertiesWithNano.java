@@ -17,11 +17,11 @@ package sleeper.clients.admin;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.RunCommand;
-import sleeper.configuration.properties.InstanceProperties;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
-import sleeper.configuration.properties.SleeperProperty;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.BufferedWriter;
@@ -41,7 +41,7 @@ public class UpdatePropertiesWithNano {
     private final RunCommand runCommand;
 
     public UpdatePropertiesWithNano(Path tempDirectory) {
-        this(tempDirectory, ClientUtils::runCommand);
+        this(tempDirectory, ClientUtils::runCommandInheritIO);
     }
 
     public UpdatePropertiesWithNano(Path tempDirectory, RunCommand runCommand) {

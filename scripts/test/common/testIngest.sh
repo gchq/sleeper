@@ -36,7 +36,7 @@ echo "--------------------------------------------------------------------------
 echo "Writing Random Data"
 echo "-------------------------------------------------------------------------------"
 java -cp "${SYSTEM_TEST_JAR}" \
-sleeper.systemtest.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
+ sleeper.systemtest.drivers.ingest.RunWriteRandomDataTaskOnECS "${INSTANCE_ID}" "${TABLE_NAME}" "${WRITE_DATA_OUTPUT_FILE}"
 
 END_RUN_TASKS=$(record_time)
 echo "Starting ingest tasks took $(elapsed_time_str "$START_TIME" "$END_RUN_TASKS")"
