@@ -60,23 +60,27 @@ public class CommonEmrBulkImportHelper {
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
     private final IBucket configBucket;
+    private final List<IBucket> ingestBuckets;
 
-        public CommonEmrBulkImportHelper(Construct scope, String shortId,
+    public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
                                      IngestStatusStoreResources ingestStatusStoreResources) {
         this(scope, shortId, instanceProperties, ingestStatusStoreResources,
-        Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET)));
+                Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET)),
+                addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties));
     }
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
                                      IngestStatusStoreResources ingestStatusStoreResources,
-                                     IBucket configBucket) {
+                                     IBucket configBucket,
+                                     List<IBucket> ingestBuckets) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.statusStoreResources = ingestStatusStoreResources;
         this.configBucket = configBucket;
+        this.ingestBuckets = ingestBuckets;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -150,8 +154,7 @@ public class CommonEmrBulkImportHelper {
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);
-        addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
-                .forEach(ingestBucket -> ingestBucket.grantRead(function));
+        ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(function));
         statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()

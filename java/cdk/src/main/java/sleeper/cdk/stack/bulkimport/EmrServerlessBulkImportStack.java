@@ -75,7 +75,8 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  */
 public class EmrServerlessBulkImportStack extends NestedStack {
 
-    public EmrServerlessBulkImportStack(Construct scope, String id,
+    public EmrServerlessBulkImportStack(
+            Construct scope, String id,
             InstanceProperties instanceProperties, BuiltJars jars,
             BulkImportBucketStack importBucketStack, TopicStack errorsTopicStack,
             TableStack tableStack,
@@ -83,9 +84,11 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
-        IRole emrRole = createEmrServerlessRole(instanceProperties, importBucketStack, statusStoreResources, tableStack, configBucket);
+        List<IBucket> ingestBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
+        IRole emrRole = createEmrServerlessRole(
+                instanceProperties, importBucketStack, statusStoreResources, tableStack, configBucket, ingestBuckets);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
-                "EMRServerless", instanceProperties, statusStoreResources, configBucket);
+                "EMRServerless", instanceProperties, statusStoreResources, configBucket, ingestBuckets);
         Queue bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, errorsTopicStack.getTopic());
 
@@ -151,9 +154,10 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         return securityGroup.getSecurityGroupId();
     }
 
-    private IRole createEmrServerlessRole(InstanceProperties instanceProperties,
+    private IRole createEmrServerlessRole(
+            InstanceProperties instanceProperties,
             BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources,
-            TableStack tableStack, IBucket configBucket) {
+            TableStack tableStack, IBucket configBucket, List<IBucket> ingestBuckets) {
         String instanceId = instanceProperties.get(ID);
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
@@ -168,8 +172,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         configBucket.grantRead(role);
         importBucket.grantReadWrite(role);
 
-        addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties)
-                .forEach(ingestBucket -> ingestBucket.grantRead(role));
+        ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(role));
         statusStoreResources.grantWriteJobEvent(role);
         tableStack.getStateStoreStacks().forEach(sss -> sss.grantReadWritePartitionMetadata(role));
         tableStack.getDataBuckets().forEach(b -> b.grantReadWrite(role));
@@ -188,22 +191,22 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                         .description(
                                 "Policy required for Sleeper Bulk import EMR Serverless cluster, based on the AmazonEMRServicePolicy_v2 policy")
                         .document(PolicyDocument.Builder.create().statements(List.of(
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("PolicyStatementProps").effect(Effect.ALLOW)
-                                        .actions(List.of("s3:GetObject", "s3:ListBucket"))
-                                        .resources(List.of("arn:aws:s3:::*.elasticmapreduce",
-                                                "arn:aws:s3:::*.elasticmapreduce/*"))
-                                        .build()),
-                                new PolicyStatement(PolicyStatementProps.builder()
-                                        .sid("GlueCreateAndReadDataCatalog").effect(Effect.ALLOW)
-                                        .actions(List.of("glue:GetDatabase", "glue:CreateDatabase",
-                                                "glue:GetDataBases", "glue:CreateTable",
-                                                "glue:GetTable", "glue:UpdateTable",
-                                                "glue:DeleteTable", "glue:GetTables",
-                                                "glue:GetPartition", "glue:GetPartitions",
-                                                "glue:CreatePartition", "glue:BatchCreatePartition",
-                                                "glue:GetUserDefinedFunctions"))
-                                        .resources(List.of("*")).build())))
+                                        new PolicyStatement(PolicyStatementProps.builder()
+                                                .sid("PolicyStatementProps").effect(Effect.ALLOW)
+                                                .actions(List.of("s3:GetObject", "s3:ListBucket"))
+                                                .resources(List.of("arn:aws:s3:::*.elasticmapreduce",
+                                                        "arn:aws:s3:::*.elasticmapreduce/*"))
+                                                .build()),
+                                        new PolicyStatement(PolicyStatementProps.builder()
+                                                .sid("GlueCreateAndReadDataCatalog").effect(Effect.ALLOW)
+                                                .actions(List.of("glue:GetDatabase", "glue:CreateDatabase",
+                                                        "glue:GetDataBases", "glue:CreateTable",
+                                                        "glue:GetTable", "glue:UpdateTable",
+                                                        "glue:DeleteTable", "glue:GetTables",
+                                                        "glue:GetPartition", "glue:GetPartitions",
+                                                        "glue:CreatePartition", "glue:BatchCreatePartition",
+                                                        "glue:GetUserDefinedFunctions"))
+                                                .resources(List.of("*")).build())))
                                 .build())
                         .build());
         return emrServerlessManagedPolicy;
