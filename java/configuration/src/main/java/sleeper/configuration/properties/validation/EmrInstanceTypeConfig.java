@@ -75,6 +75,9 @@ public class EmrInstanceTypeConfig {
     }
 
     public static boolean isValidInstanceTypes(String value) {
+        if (value == null) {
+            return false;
+        }
         try {
             List<String> instanceTypes = readInstanceTypesProperty(readList(value), X86_64)
                     .map(EmrInstanceTypeConfig::getInstanceType)
