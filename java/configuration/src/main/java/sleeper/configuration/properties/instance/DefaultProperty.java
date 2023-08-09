@@ -118,7 +118,7 @@ public interface DefaultProperty {
                     "An ingest job will be created if the batcher runs while this many files are waiting, and the " +
                     "minimum size of files is also met.")
             .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
+            .validationPredicate(value -> Utils.isPositiveIntLtEqValue(value, 50))
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.files")
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
