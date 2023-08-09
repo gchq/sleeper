@@ -77,25 +77,21 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
 
     @Override
     public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
-        if (filesInJob.size() > 50) {
-            throw new TooManyFilesException();
-        } else {
-            dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
-                    .withTransactItems(filesInJob.stream()
-                            .flatMap(file -> Stream.of(
-                                    new TransactWriteItem().withDelete(new Delete()
-                                            .withTableName(requestsTableName)
-                                            .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
-                                            .withConditionExpression("attribute_exists(#filepath)")
-                                            .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))),
-                                    new TransactWriteItem().withPut(new Put()
-                                            .withTableName(requestsTableName)
-                                            .withItem(DynamoDBIngestRequestFormat.createRecord(
-                                                    tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
-                                            .withConditionExpression("attribute_not_exists(#filepath)")
-                                            .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
-                            ).collect(Collectors.toList())));
-        }
+        dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
+                .withTransactItems(filesInJob.stream()
+                        .flatMap(file -> Stream.of(
+                                new TransactWriteItem().withDelete(new Delete()
+                                        .withTableName(requestsTableName)
+                                        .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
+                                        .withConditionExpression("attribute_exists(#filepath)")
+                                        .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))),
+                                new TransactWriteItem().withPut(new Put()
+                                        .withTableName(requestsTableName)
+                                        .withItem(DynamoDBIngestRequestFormat.createRecord(
+                                                tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
+                                        .withConditionExpression("attribute_not_exists(#filepath)")
+                                        .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
+                        ).collect(Collectors.toList())));
     }
 
     @Override
