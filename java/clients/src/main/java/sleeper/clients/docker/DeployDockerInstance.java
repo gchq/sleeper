@@ -40,6 +40,7 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class DeployDockerInstance {
     private DeployDockerInstance() {
+
     }
 
     public static void main(String[] args) throws Exception {
@@ -52,7 +53,10 @@ public class DeployDockerInstance {
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        deploy(instanceId, s3Client, dynamoDB);
+    }
 
+    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) throws Exception {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
 
