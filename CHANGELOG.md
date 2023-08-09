@@ -17,6 +17,11 @@ Bulk Import:
 - Support use of instance fleets in bulk import EMR.
 - Updated default x86 instance types to use m6i equivalents.
 
+Build:
+
+- Converted GitHub Actions to run on pull requests from forks.
+- Use Maven site to generate HTML reports on tests and linting failures.
+
 Environment:
 
 - Allow multiple users to access cdk-environment EC2.
@@ -43,10 +48,12 @@ Documentation:
 
 Misc:
 
+- Split user defined instance property declarations by property groups.
 - Added issue and pull request templates.
 - Added VSCode configuration files.
 - Update and manage several dependencies to resolve CVEs found by dependency check.
 - Added a way to visualise internal dependencies between Maven modules.
+- Added a property to force reload the configuration whenever a Lambda is executed.
 
 Bugfixes:
 
@@ -56,7 +63,9 @@ Bugfixes:
 - Raised timeout for Lambda starting bulk import jobs
 - Stopped Lambda starting bulk import jobs processing multiple jobs at once.
 - Fixed an issue where submitting a bulk import job twice with the same ID twice would overwrite the first one.
-- Fixed issues where passing one parameter into the environment CLI CDK commands would ignore the parameter.
+- Fixed issues where passing one CDK parameter into the environment CLI commands would ignore the parameter.
+- Fixed an issue where if a stack failed to delete during the tear down process, it would keep waiting for the
+  state to update until it timed out.
 
 ## Version 0.17.0
 
