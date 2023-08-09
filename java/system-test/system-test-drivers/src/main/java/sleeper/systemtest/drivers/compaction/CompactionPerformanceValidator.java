@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.systemtest.configuration.SystemTestProperties;
 

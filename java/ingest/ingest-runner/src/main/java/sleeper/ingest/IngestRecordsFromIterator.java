@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.Record;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.Iterator;

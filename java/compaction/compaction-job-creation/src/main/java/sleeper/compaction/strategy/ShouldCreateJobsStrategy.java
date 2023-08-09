@@ -18,7 +18,7 @@ package sleeper.compaction.strategy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.util.List;
 

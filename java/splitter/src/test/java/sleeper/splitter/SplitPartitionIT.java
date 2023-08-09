@@ -32,14 +32,14 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestRecordsFromIterator;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestHelper;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -56,7 +56,7 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class SplitPartitionIT {
     @TempDir

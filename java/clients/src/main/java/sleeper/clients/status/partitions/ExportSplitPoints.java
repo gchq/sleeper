@@ -35,8 +35,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.BufferedWriter;

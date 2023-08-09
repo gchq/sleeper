@@ -22,13 +22,13 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
-import sleeper.statestore.StateStore;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.SleeperRawAwsConnection;
 

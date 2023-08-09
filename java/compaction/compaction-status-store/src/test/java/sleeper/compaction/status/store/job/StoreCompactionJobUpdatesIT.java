@@ -22,7 +22,7 @@ import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStor
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileInfoFactory;
 
 import java.time.Instant;
 import java.util.Collections;

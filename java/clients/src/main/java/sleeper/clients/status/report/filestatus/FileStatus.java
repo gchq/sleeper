@@ -15,7 +15,7 @@
  */
 package sleeper.clients.status.report.filestatus;
 
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;

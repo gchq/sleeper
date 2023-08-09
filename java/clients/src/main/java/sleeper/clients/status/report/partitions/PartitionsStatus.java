@@ -18,9 +18,9 @@ package sleeper.clients.status.report.partitions;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;

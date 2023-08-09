@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 public class SystemTestStateStore {

@@ -13,23 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.statestore;
+package sleeper.core.statestore;
 
 /**
- * An {@link Exception} for issues calling methods on the {@link StateStore}.
+ * Stores information about the data files and their status (i.e. {@link FileInfo}s,
+ * and the {@link sleeper.core.partition.Partition}s).
  */
-public class StateStoreException extends Exception {
-    private static final long serialVersionUID = -3745911189033191252L;
-
-    public StateStoreException(Throwable cause) {
-        super(cause);
-    }
-
-    public StateStoreException(String message, Throwable e) {
-        super(message, e);
-    }
-
-    public StateStoreException(String message) {
-        super(message);
-    }
+public interface StateStore extends FileInfoStore, PartitionStore {
 }

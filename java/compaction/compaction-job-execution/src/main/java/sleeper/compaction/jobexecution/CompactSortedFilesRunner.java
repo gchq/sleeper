@@ -47,12 +47,12 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.StateStore;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 

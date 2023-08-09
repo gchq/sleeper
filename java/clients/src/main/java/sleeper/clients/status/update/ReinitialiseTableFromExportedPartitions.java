@@ -27,9 +27,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -91,7 +91,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
 
         System.out.println("If you continue all data will be deleted in the table.");
         System.out.println("The metadata about the partitions will be deleted and replaced "
-            + "by new partitions derived from the provided partitions file.");
+                + "by new partitions derived from the provided partitions file.");
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
         if (!choice.equalsIgnoreCase("y")) {

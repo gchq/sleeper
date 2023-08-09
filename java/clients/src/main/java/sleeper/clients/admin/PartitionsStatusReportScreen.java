@@ -21,7 +21,7 @@ import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.UserExitedException;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 
 import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen;
 
