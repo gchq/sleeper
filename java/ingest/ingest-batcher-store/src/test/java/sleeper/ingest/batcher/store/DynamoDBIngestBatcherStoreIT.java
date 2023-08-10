@@ -224,6 +224,21 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
+        void shouldFailToAssignFileWhenFileHasBeenDeleted() {
+            // Given
+            FileIngestRequest fileIngestRequest = fileRequest()
+                    .file("test-bucket/test.parquet").build();
+            store.addFile(fileIngestRequest);
+            store.deleteAllPending();
+
+            // When / Then
+            List<FileIngestRequest> job = List.of(fileIngestRequest);
+            assertThatThrownBy(() -> store.assignJob("test-job", job))
+                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
+
+        @Test
         void shouldFailToAssignFileWhenAssignmentAlreadyExists() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
