@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.batcher.store;
 
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,8 @@ import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -237,6 +240,38 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("duplicate-job", fileIngestRequest),
                     fileIngestRequest);
+        }
+
+        @Test
+        void shouldAssignFilesWhenNumberOfFilesMeetsTheDynamoDBTransactionLimit() {
+            // Given
+            // Transaction limit is 100. 2 transactions are performed per job, so send 50 files
+            List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 50)
+                    .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
+                    .collect(Collectors.toUnmodifiableList());
+            fileIngestRequests.forEach(store::addFile);
+
+            // When
+            store.assignJob("test-job", fileIngestRequests);
+
+            // Then
+            assertThat(store.getPendingFilesOldestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() {
+            // Given
+            // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
+            List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
+                    .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
+                    .collect(Collectors.toUnmodifiableList());
+            fileIngestRequests.forEach(store::addFile);
+
+            // When / Then
+            assertThatThrownBy(() -> store.assignJob("test-job", fileIngestRequests))
+                    .isInstanceOf(AmazonDynamoDBException.class);
+            assertThat(store.getPendingFilesOldestFirst())
+                    .containsExactlyInAnyOrderElementsOf(fileIngestRequests);
         }
     }
 
