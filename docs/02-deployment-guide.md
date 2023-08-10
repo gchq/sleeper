@@ -320,7 +320,8 @@ properties:
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
 
-You will also need to set values for whichever ECR repositories you have uploaded Docker images to:
+You will also need to set values for whichever ECR repositories you have uploaded Docker images to. These should be set
+to the ECR repository name, eg. `my-instance-id/ingest`.
 
 * `sleeper.ingest.repo`
 * `sleeper.compaction.repo`
