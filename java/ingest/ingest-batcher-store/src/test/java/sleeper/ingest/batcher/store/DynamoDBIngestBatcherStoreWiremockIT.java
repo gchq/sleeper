@@ -19,7 +19,7 @@ package sleeper.ingest.batcher.store;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import org.junit.jupiter.api.Disabled;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -55,18 +55,23 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @Test
-    @Disabled("TODO: need to simulate successful retry")
     void shouldRetryTransactionOnInternalServerError(WireMockRuntimeInfo runtimeInfo) {
         // Given
         stubFor(post("/").withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.TransactWriteItems"))
+                .inScenario("retry transaction")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("retry success")
                 .willReturn(aResponse().withStatus(500)));
+        stubFor(post("/").withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.TransactWriteItems"))
+                .inScenario("retry transaction")
+                .whenScenarioStateIs("retry success")
+                .willReturn(aResponse().withStatus(200)));
 
         // When
         store(runtimeInfo).assignJob("test-job", List.of(fileRequest().tableName(tableName).build()));
 
         // Then
-        verify(1, writeItemsRequested());
-        verify(1, postRequestedFor(urlEqualTo("/")));
+        verify(2, writeItemsRequested());
     }
 
     private RequestPatternBuilder writeItemsRequested() {
