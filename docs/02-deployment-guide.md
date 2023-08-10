@@ -148,7 +148,7 @@ deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-ids> <table-na
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
-Multiple subnet ids can be specified with commas in between, ie. `subnet-a,subnet-b`.
+Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 
 This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
 ECR.
@@ -317,7 +317,7 @@ properties:
 * `sleeper.account`
 * `sleeper.region`
 * `sleeper.vpc`
-* `sleeper.subnets` - multiple subnet ids can be specified with commas in between, ie. `subnet-a,subnet-b`.
+* `sleeper.subnets` - multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
 
