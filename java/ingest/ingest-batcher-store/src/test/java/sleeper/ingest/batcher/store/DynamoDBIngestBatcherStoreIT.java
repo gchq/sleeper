@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.batcher.store;
 
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -268,10 +268,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             fileIngestRequests.forEach(store::addFile);
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJob("test-job", fileIngestRequests))
-                    .isInstanceOf(AmazonDynamoDBException.class);
-            assertThat(store.getPendingFilesOldestFirst())
-                    .containsExactlyInAnyOrderElementsOf(fileIngestRequests);
+            assertThatCode(() -> store.assignJob("test-job", fileIngestRequests))
+                    .doesNotThrowAnyException();
+            assertThat(store.getPendingFilesOldestFirst()).isEmpty();
         }
     }
 
