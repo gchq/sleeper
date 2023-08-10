@@ -16,7 +16,7 @@
 package sleeper.ingest.impl.partitionfilewriter;
 
 import sleeper.core.record.Record;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;

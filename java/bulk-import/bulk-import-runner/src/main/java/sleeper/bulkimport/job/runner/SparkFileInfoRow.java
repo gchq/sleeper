@@ -19,7 +19,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 public class SparkFileInfoRow {
 

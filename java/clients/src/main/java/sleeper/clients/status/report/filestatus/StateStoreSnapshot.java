@@ -16,9 +16,9 @@
 package sleeper.clients.status.report.filestatus;
 
 import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 import java.util.stream.Stream;

@@ -34,8 +34,8 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
-import sleeper.statestore.FileInfoFactory;
 
 import java.time.Duration;
 import java.time.Instant;

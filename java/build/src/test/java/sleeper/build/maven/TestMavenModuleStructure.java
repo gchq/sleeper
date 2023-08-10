@@ -15,6 +15,8 @@
  */
 package sleeper.build.maven;
 
+import static sleeper.build.maven.ArtifactReference.groupAndArtifact;
+
 public class TestMavenModuleStructure {
 
     private TestMavenModuleStructure() {
@@ -82,6 +84,10 @@ public class TestMavenModuleStructure {
 
     public static DependencyReference dependency(String ref) {
         return dependencyBuilder(ref).exported(true).build();
+    }
+
+    public static ArtifactReference moduleRef(String artifactId) {
+        return groupAndArtifact("sleeper", artifactId);
     }
 
     public static DependencyReference.Builder dependencyBuilder(String ref) {

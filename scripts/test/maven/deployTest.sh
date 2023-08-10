@@ -15,7 +15,7 @@
 
 set -e
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -lt 3 ]; then
   echo "Usage: $0 <shortId> <vpc> <subnet> <optional-maven-params>"
   exit 1
 fi

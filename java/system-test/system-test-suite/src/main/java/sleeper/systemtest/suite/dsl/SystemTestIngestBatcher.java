@@ -19,9 +19,8 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.time.Duration;
 import java.util.List;
@@ -32,20 +31,20 @@ public class SystemTestIngestBatcher {
     private final SystemTestIngest ingest;
     private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
-    private final String sourceBucketName;
+    private final IngestSourceFilesContext sourceFiles;
     private IngestBatcherResult lastInvokeResult;
 
-    public SystemTestIngestBatcher(SystemTestIngest ingest, SystemTestParameters parameters,
+    public SystemTestIngestBatcher(SystemTestIngest ingest, IngestSourceFilesContext sourceFiles,
                                    SleeperInstanceContext instance, IngestBatcherDriver driver) {
         this.ingest = ingest;
         this.instance = instance;
         this.driver = driver;
-        this.sourceBucketName = parameters.buildSourceBucketName();
+        this.sourceFiles = sourceFiles;
     }
 
     public SystemTestIngestBatcher sendSourceFiles(String... filenames) throws InterruptedException {
         driver.sendFiles(instance.getInstanceProperties(), instance.getTableProperties(),
-                sourceBucketName, List.of(filenames));
+                sourceFiles.getSourceBucketName(), List.of(filenames));
         return this;
     }
 
@@ -59,12 +58,12 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
-        IngestByQueueDriver driver = ingest.byQueueDriver();
         BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
         if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
-            driver.invokeStandardIngestTasks();
+            ingest.byQueueDriver().invokeStandardIngestTasks();
         }
-        driver.waitForJobs(getInvokeResult().createdJobIds(), pollUntilJobsFinished);
+        ingest.waitForIngestJobsDriver()
+                .waitForJobs(getInvokeResult().createdJobIds(), pollUntilJobsFinished);
         return this;
     }
 

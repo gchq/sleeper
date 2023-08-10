@@ -21,8 +21,8 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.Arrays;
 import java.util.List;
