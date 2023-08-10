@@ -37,8 +37,8 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-public class IngestFiles {
-    private IngestFiles() {
+public class SendFilesToIngest {
+    private SendFilesToIngest() {
     }
 
     public static void main(String[] args) throws Exception {
@@ -46,15 +46,29 @@ public class IngestFiles {
             throw new IllegalArgumentException("Usage: <instance-id> <files>");
         }
         String instanceId = args[0];
-        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3GivenInstanceId(s3Client, instanceId);
         List<Path> filePaths = Stream.of(args).skip(1)
                 .map(Path::of)
                 .filter(Files::isRegularFile)
                 .collect(Collectors.toList());
-        filePaths.forEach(filePath -> ingestFile(s3Client, properties, filePath));
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        InstanceProperties properties = new InstanceProperties();
+        properties.loadFromS3GivenInstanceId(s3Client, instanceId);
+        uploadFilesAndSendJob(properties, filePaths, s3Client, sqsClient);
+    }
+
+    public static void uploadFilesAndSendJob(
+            InstanceProperties properties, List<Path> filePaths, AmazonS3 s3Client, AmazonSQS sqsClient) {
+        uploadFiles(properties, filePaths, s3Client);
+        sendJobForFiles(properties, filePaths, sqsClient);
+    }
+
+    public static void uploadFiles(InstanceProperties properties, List<Path> filePaths, AmazonS3 s3Client) {
+        filePaths.forEach(filePath -> s3Client.putObject(properties.get(INGEST_SOURCE_BUCKET),
+                "ingest/" + filePath.getFileName().toString(), filePath.toFile()));
+    }
+
+    public static void sendJobForFiles(InstanceProperties properties, List<Path> filePaths, AmazonSQS sqsClient) {
         IngestJob job = IngestJob.builder()
                 .files(filePaths.stream()
                         .map(filePath -> properties.get(INGEST_SOURCE_BUCKET) + "/ingest/" + filePath.getFileName().toString())
@@ -62,10 +76,5 @@ public class IngestFiles {
                 .tableName("system-test")
                 .build();
         sqsClient.sendMessage(properties.get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(job));
-    }
-
-    private static void ingestFile(AmazonS3 s3Client, InstanceProperties properties, Path sourceFile) {
-        s3Client.putObject(properties.get(INGEST_SOURCE_BUCKET),
-                "ingest/" + sourceFile.getFileName().toString(), sourceFile.toFile());
     }
 }

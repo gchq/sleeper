@@ -15,7 +15,7 @@
 
 set -e
 
-if [ "$#" -lt 1 ]; then
+if [ "$#" -lt 2 ]; then
   echo "Usage: $0 <instance-id> <files>"
   exit 1
 fi
@@ -23,16 +23,13 @@ INSTANCE_ID=$1;
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
-JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
-pushd "$JAVA_DIR"
-VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
-popd
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 DOCKER_DIR="$SCRIPTS_DIR/docker"
 
-INGEST_TASK_IMAGE="sleeper-ingest-runner"
 echo "Uploading files to source bucket and sending ingest job to queue"
-java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.IngestFiles "$@"
+java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.SendFilesToIngest "$@"
 
+INGEST_TASK_IMAGE="sleeper-ingest-runner"
 CONTAINER_NAME="sleeper-$INSTANCE_ID-ingest"
 echo "Running ingest task in docker. You can follow the logs by viewing the docker container \"$CONTAINER_NAME\""
 docker run --rm \
