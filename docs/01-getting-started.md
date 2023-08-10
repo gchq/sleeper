@@ -116,16 +116,16 @@ Avoid reusing the same instance id, as log groups from a deleted instance will s
 An instance will fail to deploy if it would replace log groups from a deleted instance.
 
 Create an environment variable called `VPC` which is the id of the VPC you want to deploy Sleeper to, and create an
-environment variable called `SUBNET` with the id of the subnet you wish to deploy Sleeper to (note that this is only
+environment variable called `SUBNETS` with the ids of subnets you wish to deploy Sleeper to (note that this is only
 relevant to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability
-zones).
+zones). Multiple subnet ids can be specified with commas in between, ie. `subnet-a,subnet-b`.
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
 While connected to your EC2 instance run:
 
 ```bash
-sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNET}
+sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.

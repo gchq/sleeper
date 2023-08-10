@@ -144,10 +144,11 @@ editor templates/instanceproperties.template
 editor templates/schema.template
 editor templates/tableproperties.template
 editor templates/tags.template
-deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
+deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-ids> <table-name>
 ```
 
-Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper will be deployed into.
+Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
+Multiple subnet ids can be specified with commas in between, ie. `subnet-a,subnet-b`.
 
 This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
 ECR.
