@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.configuration;
+package sleeper.configuration.properties.validation;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -186,6 +185,35 @@ public class EmrInstanceTypeConfigTest {
                     BULK_IMPORT_PERSISTENT_EMR_MASTER_ARM_INSTANCE_TYPES).toArray())
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Unrecognised architecture: abc");
+        }
+    }
+
+    @Nested
+    @DisplayName("Validate values")
+    class ValidateValue {
+
+        @Test
+        void shouldFailValidationWhenSameInstanceTypeIsSpecifiedTwice() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("type-a,type-b,type-c,type-b"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldPassValidationWhenTwoInstanceTypesHaveSameWeight() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("type-a,1,type-b,2,type-c,2"))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldFailValidationWhenWeightSpecifiedBeforeAnInstanceType() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes("1,type-a"))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldFailValidationWhenInstanceTypesPropertyIsNull() {
+            assertThat(EmrInstanceTypeConfig.isValidInstanceTypes(null))
+                    .isFalse();
         }
     }
 
