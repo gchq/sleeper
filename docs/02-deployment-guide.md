@@ -320,6 +320,14 @@ properties:
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
 
+You will also need to set values for whichever ECR repositories you have uploaded Docker images to:
+
+* `sleeper.ingest.repo`
+* `sleeper.compaction.repo`
+* `sleeper.bulk.import.emr.serverless.repo`
+* `sleeper.bulk.import.eks.repo`
+* `sleeper.systemtest.repo`
+
 To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
 You can add more than one by creating a `tables` directory, with a subfolder for each table.
 
