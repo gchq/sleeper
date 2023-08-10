@@ -36,7 +36,8 @@ export AWS_PROFILE=named-profile-123456789
 export AWS_REGION=eu-west-2
 ```
 
-Also see the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
+Also see
+the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
 
 ### Bootstrapping CDK
 
@@ -184,25 +185,30 @@ the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
 These instructions will assume you're using a development environment, so see [dev guide](09-dev-guide.md) for how to
-set that up.
+set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
+the CLI configured and authenticated with AWS.
 
 #### Upload the Docker images to ECR
 
-There are potentially three ECR images that need to be created and pushed
-to an ECR repo, depending on the stacks you want to deploy. One is for
-ingest, one is for compaction and the last is for bulk import. You may
-not wish to use the bulk import stack so don't upload the image if you
-aren't.
+There are multiple ECR images that need to be created and pushed to an ECR repo, depending on the stacks you want to
+deploy. There's one for ingest, one for compaction and two for bulk import (for EKS and EMR Serverless). You may not
+wish to use the bulk import stacks so don't upload the images if you aren't. There's also an image for data generation
+for system tests.
 
-The below assumes you start in the project root directory. First create some
-environment variables for convenience:
+The below assumes you start in the project root directory. First build the system:
 
 ```bash
-cd java
-INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-DOCKER_REGISTRY=<insert-your-account-id-here>.dkr.ecr.eu-west-2.amazonaws.com
-REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
+./scripts/build/buildForTest.sh
+```
+
+Next, create some environment variables for convenience:
+
+```bash
+export INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
+export VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+export DOCKER_REGISTRY=<insert-your-account-id-here>.dkr.ecr.eu-west-2.amazonaws.com
+export REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
+export DOCKER_BASE_DIR=./scripts/docker
 ```
 
 Then log in to ECR:
@@ -214,19 +220,28 @@ aws ecr get-login-password --region eu-west-2 | docker login --username AWS --pa
 Upload the container for ingest:
 
 ```bash
-aws ecr create-repository --repository-name ${INSTANCE_ID}/ingest
-cp ingest/target/ingest-${VERSION}-utility.jar ingest/docker/ingest.jar
-docker build -t ${REPO_PREFIX}/ingest:${VERSION} ./ingest/docker
-docker push ${REPO_PREFIX}/ingest:${VERSION}
+export TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/ingest
+docker build -t $TAG $DOCKER_BASE_DIR/ingest
+docker push $TAG
 ```
 
 Upload the container for compaction:
 
 ```bash
-aws ecr create-repository --repository-name ${INSTANCE_ID}/compaction-job-execution
-cp compaction-job-execution/target/compaction-job-execution-${VERSION}-utility.jar compaction-job-execution/docker/compaction-job-execution.jar
-docker build -t ${REPO_PREFIX}/compaction-job-execution:${VERSION} ./compaction-job-execution/docker
-docker push ${REPO_PREFIX}/compaction-job-execution:${VERSION}
+export TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/compaction-job-execution
+docker build -t $TAG $DOCKER_BASE_DIR/compaction-job-execution
+docker push $TAG
+```
+
+If you will be bulk import using EMR Serverless then upload the container as follows:
+
+```bash
+export TAG=$REPO_PREFIX/bulk-import-runner-emr-serverless:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/bulk-import-runner-emr-serverless
+docker build -t $TAG $DOCKER_BASE_DIR/bulk-import-runner-emr-serverless
+docker push $TAG
 ```
 
 If you will be using the experimental bulk import using EKS then upload the container as
@@ -234,12 +249,28 @@ follows (note this container will take around 35 minutes to build and it is not 
 importing data using EMR):
 
 ```bash
-aws ecr create-repository --repository-name ${INSTANCE_ID}/bulk-import-runner
-cp bulk-import/bulk-import-runner/target/bulk-import-runner-${VERSION}-utility.jar bulk-import/bulk-import-runner/docker/bulk-import-runner.jar
-docker build -t ${REPO_PREFIX}/bulk-import-runner:${VERSION} ./bulk-import/bulk-import-runner/docker
-docker push ${REPO_PREFIX}/bulk-import-runner:${VERSION}
+export TAG=$REPO_PREFIX/bulk-import-runner:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/bulk-import-runner
+docker build -t $TAG $DOCKER_BASE_DIR/bulk-import-runner
+docker push $TAG
+```
 
-cd ..
+#### Building for Graviton
+
+If you'd like to run operations in AWS Graviton-based instances, in ARM64 architecture, you can use Docker BuildX to
+build multiplatform images.
+
+These commands will create or recreate a builder:
+
+```bash
+docker buildx rm sleeper || true
+docker buildx create --name sleeper --use
+```
+
+This command should replace the `docker build` and `docker push` commands documented above:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BASE_DIR/<image directory>
 ```
 
 #### Upload the jars to a bucket
@@ -378,10 +409,12 @@ sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ```
 
 ### Utility Scripts
+
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
 
 #### Update Existing Instance
-The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars 
+
+The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
 that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
@@ -389,7 +422,8 @@ sleeper deployment deploy/deployExisting.sh <instance-id>
 ```
 
 #### Add Table
-The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with 
+
+The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with
 properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
 
 ```bash
