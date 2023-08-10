@@ -95,12 +95,16 @@ roles updated so that they can interact with these resources. This is done using
 
 ## I created an instance, destroyed it and then recreating it failed
 
-If you create an instance and destroy it then some remnants of the previous instance may still be present. This
-is because the cdk deployment process can be configured to not delete the buckets for the tables, or the bucket
-for the results of queries. It may also be because the cdk destroy command partially failed due to there being
-some tasks running on ECS clusters. In this case the ECS cluster cannot be destroyed. If there are some remnants
-present then attempting to deploy Sleeper again with the same instance id will fail as it will complain that some
-resources it needs to create already exist.
+If you create an instance and destroy it then some remnants of the previous instance will still be present. Usually this
+should be log groups containing logs of the previous instance.
+
+The CDK deployment process can also be configured to not delete the buckets for the tables, or the bucket for the
+results of queries. This is set in the `sleeper.retain.infra.after.destroy` instance property. It may also be because
+the `cdk destroy` command partially failed due to there being some tasks running on ECS or EMR clusters. In this case
+the cluster cannot be destroyed.
+
+If there are some remnants present then attempting to deploy Sleeper again with the same instance id will fail as it
+will complain that some resources it needs to create already exist.
 
 If you want to recreate an instance with the same instance id as one that was previously deleted, then check
 that all resources with a name containing that instance id have been deleted.

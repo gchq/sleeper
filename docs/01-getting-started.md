@@ -112,6 +112,9 @@ use the instance id as part of the name of all the resources that are deployed. 
 that Sleeper has deployed within each service (go to the service in the AWS console and type the instance id into the
 search box).
 
+Avoid reusing the same instance id, as log groups from a deleted instance will still be present unless you delete them.
+An instance will fail to deploy if it would replace log groups from a deleted instance.
+
 Create an environment variable called `VPC` which is the id of the VPC you want to deploy Sleeper to, and create an
 environment variable called `SUBNET` with the id of the subnet you wish to deploy Sleeper to (note that this is only
 relevant to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability
