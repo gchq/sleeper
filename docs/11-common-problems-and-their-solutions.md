@@ -101,7 +101,7 @@ should be log groups containing logs of the previous instance.
 The CDK deployment process can also be configured to not delete the buckets for the tables, or the bucket for the
 results of queries. This is set in the `sleeper.retain.infra.after.destroy` instance property. It may also be because
 the `cdk destroy` command partially failed due to there being some tasks running on ECS or EMR clusters. In this case
-the cluster cannot be destroyed.
+the cluster cannot be destroyed until the tasks are completed or terminated.
 
 If there are some remnants present then attempting to deploy Sleeper again with the same instance id will fail as it
 will complain that some resources it needs to create already exist.
