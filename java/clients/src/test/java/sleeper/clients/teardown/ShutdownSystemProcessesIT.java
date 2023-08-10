@@ -41,10 +41,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningApplications;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningClusters;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationsRequest;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -72,7 +75,7 @@ class ShutdownSystemProcessesIT {
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
         shutdown = new ShutdownSystemProcesses(wiremockCloudWatchClient(runtimeInfo), wiremockEcsClient(runtimeInfo),
-                wiremockEmrClient(runtimeInfo));
+                wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo));
     }
 
     private void shutdown(InstanceProperties instanceProperties) throws Exception {
@@ -100,6 +103,8 @@ class ShutdownSystemProcessesIT {
                 .willReturn(aResponse().withStatus(200)));
         stubFor(listActiveClustersRequest()
                 .willReturn(aResponseWithNumRunningClusters(0)));
+        stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(0)));
 
         // When
         shutdown(properties);

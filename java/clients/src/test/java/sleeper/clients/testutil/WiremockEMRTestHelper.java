@@ -43,6 +43,11 @@ public class WiremockEMRTestHelper {
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
     }
 
+    public static MappingBuilder listActiveApplicationsRequest() {
+        return post("/applications")
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION);
+    }
+
     public static MappingBuilder listStepsRequestWithClusterId(String clusterId) {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_STEPS_OPERATION)
@@ -70,5 +75,22 @@ public class WiremockEMRTestHelper {
         }
         clustersBody.append("]}");
         return aResponse().withStatus(200).withBody(clustersBody.toString());
+    }
+
+
+    public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications) {
+        StringBuilder applicationBody = new StringBuilder("{\"applications\": [");
+        for (int i = 1; i <= numRunningApplications; i++) {
+            applicationBody.append("{" +
+                    "\"name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
+                    "\"id\": \"test-cluster-id-" + i + "\"," +
+                    "\"status\": {\"State\": \"RUNNING\"}" +
+                    "}");
+            if (i != numRunningApplications) {
+                applicationBody.append(",");
+            }
+        }
+        applicationBody.append("]}");
+        return aResponse().withStatus(200).withBody(applicationBody.toString());
     }
 }

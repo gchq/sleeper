@@ -29,6 +29,7 @@ import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -62,6 +63,13 @@ public class ClientWiremockTestHelper {
                 .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
                 .withCredentials(wiremockCredentialsProvider())
                 .build();
+    }
+
+    public static EmrServerlessClient wiremockEmrServerlessClient(WireMockRuntimeInfo runtimeInfo) {
+        return EmrServerlessClient.builder()
+            .endpointOverride(wiremockEndpointOverride(runtimeInfo))
+            .credentialsProvider(wiremockCredentialsProviderV2())
+        .build();
     }
 
     public static CloudWatchLogsClient wiremockLogsClient(WireMockRuntimeInfo runtimeInfo) {
