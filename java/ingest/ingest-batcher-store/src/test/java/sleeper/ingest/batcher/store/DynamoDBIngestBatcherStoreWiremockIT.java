@@ -16,6 +16,8 @@
 
 package sleeper.ingest.batcher.store;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -31,6 +33,8 @@ import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -39,11 +43,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDBClient;
+import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDBClientBuilder;
 
 @WireMockTest
 public class DynamoDBIngestBatcherStoreWiremockIT {
@@ -74,6 +80,32 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
         verify(2, writeItemsRequested());
     }
 
+    @Test
+    void shouldAssignFirstBatchAndFailSecondBatchReturningAssignedFiles(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        stubFor(post("/").withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.TransactWriteItems"))
+                .inScenario("fail second batch")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("second batch")
+                .willReturn(aResponse().withStatus(200)));
+        stubFor(post("/").withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.TransactWriteItems"))
+                .inScenario("fail second batch")
+                .whenScenarioStateIs("second batch")
+                .willReturn(aResponse().withStatus(500)));
+
+        List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
+                .mapToObj(i -> fileRequest().tableName(tableName).build())
+                .collect(Collectors.toUnmodifiableList());
+
+        // When
+        List<FileIngestRequest> assignedFiles = storeWithNoRetry(runtimeInfo).assignJob("test-job", fileIngestRequests);
+
+        // Then
+        verify(2, writeItemsRequested());
+        assertThat(assignedFiles)
+                .containsExactlyElementsOf(fileIngestRequests.subList(0, 50));
+    }
+
     private RequestPatternBuilder writeItemsRequested() {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", equalTo("DynamoDB_20120810.TransactWriteItems"));
@@ -82,6 +114,14 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
     private IngestBatcherStore store(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
                 wiremockDynamoDBClient(runtimeInfo), instanceProperties, tablePropertiesProvider);
+    }
+
+    private IngestBatcherStore storeWithNoRetry(WireMockRuntimeInfo runtimeInfo) {
+        return new DynamoDBIngestBatcherStore(
+                wiremockDynamoDBClientBuilder(runtimeInfo)
+                        .withClientConfiguration(new ClientConfiguration()
+                                .withRetryPolicy(PredefinedRetryPolicies.NO_RETRY_POLICY)).build(),
+                instanceProperties, tablePropertiesProvider);
     }
 
     private FileIngestRequest.Builder fileRequest() {

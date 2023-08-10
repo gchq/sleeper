@@ -17,6 +17,7 @@
 package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteRequest;
@@ -28,6 +29,8 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -35,6 +38,7 @@ import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +54,7 @@ import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.NOT_ASSIG
 import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.createUnassignedKey;
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestBatcherStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String requestsTableName;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -76,25 +80,32 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     }
 
     @Override
-    public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
+    public List<FileIngestRequest> assignJob(String jobId, List<FileIngestRequest> filesInJob) {
+        List<FileIngestRequest> assignedFiles = new ArrayList<>();
         for (int i = 0; i < filesInJob.size(); i += 50) {
             List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + 50, filesInJob.size()));
-            dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
-                    .withTransactItems(filesInBatch.stream()
-                            .flatMap(file -> Stream.of(
-                                    new TransactWriteItem().withDelete(new Delete()
-                                            .withTableName(requestsTableName)
-                                            .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
-                                            .withConditionExpression("attribute_exists(#filepath)")
-                                            .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))),
-                                    new TransactWriteItem().withPut(new Put()
-                                            .withTableName(requestsTableName)
-                                            .withItem(DynamoDBIngestRequestFormat.createRecord(
-                                                    tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
-                                            .withConditionExpression("attribute_not_exists(#filepath)")
-                                            .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
-                            ).collect(Collectors.toList())));
+            try {
+                dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
+                        .withTransactItems(filesInBatch.stream()
+                                .flatMap(file -> Stream.of(
+                                        new TransactWriteItem().withDelete(new Delete()
+                                                .withTableName(requestsTableName)
+                                                .withKey(DynamoDBIngestRequestFormat.createUnassignedKey(file))
+                                                .withConditionExpression("attribute_exists(#filepath)")
+                                                .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))),
+                                        new TransactWriteItem().withPut(new Put()
+                                                .withTableName(requestsTableName)
+                                                .withItem(DynamoDBIngestRequestFormat.createRecord(
+                                                        tablePropertiesProvider, file.toBuilder().jobId(jobId).build()))
+                                                .withConditionExpression("attribute_not_exists(#filepath)")
+                                                .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
+                                ).collect(Collectors.toList())));
+                assignedFiles.addAll(filesInBatch);
+            } catch (AmazonDynamoDBException e) {
+                LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size(), e);
+            }
         }
+        return assignedFiles;
     }
 
     @Override

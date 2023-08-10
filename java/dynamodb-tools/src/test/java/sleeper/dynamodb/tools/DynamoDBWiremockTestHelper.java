@@ -34,10 +34,14 @@ public class DynamoDBWiremockTestHelper {
     private DynamoDBWiremockTestHelper() {
     }
 
-    public static AmazonDynamoDB wiremockDynamoDBClient(WireMockRuntimeInfo runtimeInfo) {
+    public static AmazonDynamoDBClientBuilder wiremockDynamoDBClientBuilder(WireMockRuntimeInfo runtimeInfo) {
         return AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider())
+                .withCredentials(wiremockCredentialsProvider());
+    }
+
+    public static AmazonDynamoDB wiremockDynamoDBClient(WireMockRuntimeInfo runtimeInfo) {
+        return wiremockDynamoDBClientBuilder(runtimeInfo)
                 .build();
     }
 

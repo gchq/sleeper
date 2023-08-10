@@ -21,7 +21,7 @@ import java.util.List;
 public interface IngestBatcherStore {
     void addFile(FileIngestRequest fileIngestRequest);
 
-    void assignJob(String jobId, List<FileIngestRequest> filesInJob);
+    List<FileIngestRequest> assignJob(String jobId, List<FileIngestRequest> filesInJob);
 
     List<FileIngestRequest> getAllFilesNewestFirst();
 
