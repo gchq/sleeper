@@ -33,16 +33,35 @@ you use `sleeper`.
 
 You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
 
+#### Authentication
+
+To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. You can do this by running
+`sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS Environment variables
+will also be propagated to the Sleeper CLI.
+
 ### Deployment environment
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. The Sleeper CLI
-can do this for you, and will automatically configure pre-authentication for the EC2 instance with administrator access.
-Run these commands to create the EC2 using the Sleeper CLI (note that cdk bootstrap only needs to be done once in a
-given AWS account):
+If the CDK has never been bootstrapped in your AWS account, this must be done first. This only needs to be done
+once in a given AWS account.
 
 ```bash
-sleeper aws configure
 sleeper cdk bootstrap
+```
+
+Next, you'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance to deploy from, to
+avoid lengthy uploads of large jar files and Docker images. You can use the Sleeper CLI to create both of these.
+
+If you'd prefer to use your own, you'll need to install the Sleeper CLI on your EC2, which should run on an x86_64
+architecture. You'll need to authenticate with AWS as described above. You'll need to ensure your VPC meets Sleeper's
+requirements, but you can also deploy a fresh VPC with the CLI. This is documented in
+the [deployment guide](02-deployment-guide.md#deployment-environment).
+
+#### Sleeper CLI environment
+
+The Sleeper CLI can create an EC2 instance in a VPC that is suitable for deploying Sleeper. This will automatically
+configure authentication such that once you're in the EC2 instance you'll have administrator access to your AWS account.
+
+```bash
 sleeper environment deploy TestEnvironment
 ```
 
