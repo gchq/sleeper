@@ -102,16 +102,15 @@ The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk
 While connected to your EC2 instance run:
 
 ```bash
-sleeper deployment test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNET}
 ```
 
-This will use Maven to build Sleeper (this will take around 3 minutes, and the script will be silent during this time).
-After that, an S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
+An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
 Note that this script currently needs to be run from an x86 machine as we do not yet have cross-architecture Docker
-builds. Then CDK will be used to deploy a Sleeper instance. This will take around 10 minutes. Once that is complete,
-some code is run to start some tasks running on an ECS cluster. These tasks generate some random data and write it to
-Sleeper. 11 ECS tasks will be created. Each of these will write 40 million records. As all writes to Sleeper are
-asynchronous it will take a while before the data appears (around 8 minutes).
+builds. Then CDK will be used to deploy a Sleeper instance. This will take around 20 minutes. Once that is complete,
+some task are started on an ECS cluster. These tasks generate some random data and write it to Sleeper. 11 ECS tasks
+will be created. Each of these will write 40 million records. As all writes to Sleeper are asynchronous, it will take a
+while before the data appears (around 8 minutes).
 
 You can watch what the ECS tasks that are writing data are doing by going to the ECS cluster named
 sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
