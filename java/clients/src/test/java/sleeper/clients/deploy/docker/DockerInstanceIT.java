@@ -23,6 +23,8 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.HeadBucketRequest;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -76,11 +78,13 @@ public class DockerInstanceIT {
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final AmazonSQS sqsClient = buildAwsV1Client(
+            localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonSQSClientBuilder.standard());
 
     @Test
     void shouldDeployInstance() throws Exception {
         // Given / When
-        DeployDockerInstance.deploy("test-instance", s3Client, dynamoDB);
+        DeployDockerInstance.deploy("test-instance", s3Client, dynamoDB, sqsClient);
 
         // Then
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -93,14 +97,14 @@ public class DockerInstanceIT {
     @Test
     void shouldTearDownInstance() throws Exception {
         // Given
-        DeployDockerInstance.deploy("test-instance-2", s3Client, dynamoDB);
+        DeployDockerInstance.deploy("test-instance-2", s3Client, dynamoDB, sqsClient);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-2");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "system-test");
 
         // When
-        TearDownDockerInstance.tearDown("test-instance-2", s3Client, dynamoDB);
+        TearDownDockerInstance.tearDown("test-instance-2", s3Client, dynamoDB, sqsClient);
 
         // Then
         assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
@@ -124,7 +128,7 @@ public class DockerInstanceIT {
         @Test
         void shouldStoreRecords() throws Exception {
             // Given
-            DeployDockerInstance.deploy("test-instance-3", s3Client, dynamoDB);
+            DeployDockerInstance.deploy("test-instance-3", s3Client, dynamoDB, sqsClient);
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-3");
             TableProperties tableProperties = new TableProperties(instanceProperties);

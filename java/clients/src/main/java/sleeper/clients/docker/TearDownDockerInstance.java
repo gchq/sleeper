@@ -24,6 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
+import sleeper.clients.docker.stack.IngestStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -49,10 +50,10 @@ public class TearDownDockerInstance {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
-        tearDown(instanceId, s3Client, dynamoDB);
+        tearDown(instanceId, s3Client, dynamoDB, sqsClient);
     }
 
-    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) throws IOException {
+    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
         TableProperties tableProperties = new TableProperties(instanceProperties);

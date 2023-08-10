@@ -58,10 +58,10 @@ public class DeployDockerInstance {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
-        deploy(instanceId, s3Client, dynamoDB);
+        deploy(instanceId, s3Client, dynamoDB, sqsClient);
     }
 
-    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) throws Exception {
+    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) throws Exception {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
 
@@ -71,8 +71,6 @@ public class DeployDockerInstance {
         instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
 
-        ConfigurationStack.from(instanceProperties, s3Client).deploy();
-        TableStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
         IngestStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }
 
