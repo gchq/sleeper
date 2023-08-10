@@ -49,12 +49,9 @@ import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDB
 public class DynamoDBIngestBatcherStoreWiremockIT {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final TableProperties table1 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    protected final TableProperties table2 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    protected final String tableName1 = table1.get(TABLE_NAME);
-    protected final String tableName2 = table2.get(TABLE_NAME);
-    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(
-            List.of(table1, table2));
+    protected final TableProperties table = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    protected final String tableName = table.get(TABLE_NAME);
+    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(table);
     private final FileIngestRequestTestHelper requests = new FileIngestRequestTestHelper();
 
     @Test
@@ -65,7 +62,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .willReturn(aResponse().withStatus(500)));
 
         // When
-        store(runtimeInfo).assignJob("test-job", List.of(fileRequest().tableName(tableName1).build()));
+        store(runtimeInfo).assignJob("test-job", List.of(fileRequest().tableName(tableName).build()));
 
         // Then
         verify(1, writeItemsRequested());
