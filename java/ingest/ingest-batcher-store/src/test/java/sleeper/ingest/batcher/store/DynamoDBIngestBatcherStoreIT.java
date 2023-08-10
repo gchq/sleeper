@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
@@ -259,7 +258,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        void shouldFailToAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() {
+        void shouldAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() {
             // Given
             // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
@@ -267,9 +266,10 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     .collect(Collectors.toUnmodifiableList());
             fileIngestRequests.forEach(store::addFile);
 
-            // When / Then
-            assertThatCode(() -> store.assignJob("test-job", fileIngestRequests))
-                    .doesNotThrowAnyException();
+            // When
+            store.assignJob("test-job", fileIngestRequests);
+
+            // Then
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();
         }
     }
