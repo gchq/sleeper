@@ -23,11 +23,12 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.clients.docker.stack.ConfigurationStack;
-import sleeper.clients.docker.stack.IngestStack;
-import sleeper.clients.docker.stack.TableStack;
+import sleeper.clients.docker.stack.ConfigurationDockerStack;
+import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+
+import java.io.IOException;
 
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -48,13 +49,17 @@ public class TearDownDockerInstance {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
 
+        tearDown(instanceId, s3Client, dynamoDB);
+    }
+
+    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "system-test");
 
-        ConfigurationStack.from(instanceProperties, s3Client).tearDown();
-        TableStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).tearDown();
+        ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
+        TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).tearDown();
         IngestStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).tearDown();
     }
 }

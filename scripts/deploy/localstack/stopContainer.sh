@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-docker stop sleeper-localstack
+set -e
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+docker-compose -f "$THIS_DIR/docker-compose.yml" down
 echo "Stopped localstack container"

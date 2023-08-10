@@ -25,9 +25,9 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.deploy.PopulateTableProperties;
-import sleeper.clients.docker.stack.ConfigurationStack;
+import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestStack;
-import sleeper.clients.docker.stack.TableStack;
+import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
@@ -58,10 +58,17 @@ public class DeployDockerInstance {
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        deploy(instanceId, s3Client, dynamoDB);
+    }
 
+    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) throws Exception {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
-        instanceProperties.saveToS3(s3Client);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
+
+        ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
+        TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
+
+        instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
 
         ConfigurationStack.from(instanceProperties, s3Client).deploy();

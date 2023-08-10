@@ -44,7 +44,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -147,7 +146,6 @@ class PopulatePropertiesTest {
         TableProperties expected = new TableProperties(instanceProperties);
         expected.setSchema(schemaWithKey("key"));
         expected.set(TABLE_NAME, "test-table");
-        expected.set(DATA_BUCKET, "sleeper-test-instance-table-test-table");
 
         assertThat(tableProperties).isEqualTo(expected);
     }
@@ -175,7 +173,6 @@ class PopulatePropertiesTest {
         expected.setSchema(schemaWithKey("key"));
         expected.set(SCHEMA, schemaWithNewlines);
         expected.set(TABLE_NAME, "test-table");
-        expected.set(DATA_BUCKET, "sleeper-test-instance-table-test-table");
 
         assertThat(tableProperties).isEqualTo(expected);
     }

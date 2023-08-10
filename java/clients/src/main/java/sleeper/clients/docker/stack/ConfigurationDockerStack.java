@@ -23,11 +23,11 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class ConfigurationStack implements DockerStack {
+public class ConfigurationDockerStack implements DockerStack {
     private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
 
-    private ConfigurationStack(Builder builder) {
+    private ConfigurationDockerStack(Builder builder) {
         s3Client = builder.s3Client;
         instanceProperties = builder.instanceProperties;
     }
@@ -36,7 +36,7 @@ public class ConfigurationStack implements DockerStack {
         return new Builder();
     }
 
-    public static ConfigurationStack from(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+    public static ConfigurationDockerStack from(InstanceProperties instanceProperties, AmazonS3 s3Client) {
         return builder().instanceProperties(instanceProperties).s3Client(s3Client).build();
     }
 
@@ -69,8 +69,8 @@ public class ConfigurationStack implements DockerStack {
             return this;
         }
 
-        public ConfigurationStack build() {
-            return new ConfigurationStack(this);
+        public ConfigurationDockerStack build() {
+            return new ConfigurationDockerStack(this);
         }
     }
 }
