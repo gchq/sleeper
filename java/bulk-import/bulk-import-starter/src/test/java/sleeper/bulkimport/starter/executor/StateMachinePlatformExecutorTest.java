@@ -308,6 +308,6 @@ class StateMachinePlatformExecutorTest {
     }
 
     private StateMachinePlatformExecutor createPlatformExecutor() {
-        return new StateMachinePlatformExecutor(stepFunctions, instanceProperties, tablePropertiesProvider);
+        return new StateMachinePlatformExecutor(stepFunctions, instanceProperties);
     }
 }
