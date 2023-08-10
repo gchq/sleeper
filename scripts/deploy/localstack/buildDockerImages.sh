@@ -16,6 +16,7 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+DOCKER_DIR="$SCRIPTS_DIR/docker"
 
 INGEST_TASK_IMAGE="sleeper-ingest-runner"
 echo "Building ingest-runner docker image"

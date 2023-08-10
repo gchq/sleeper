@@ -24,7 +24,6 @@ INSTANCE_ID=$1;
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
-DOCKER_DIR="$SCRIPTS_DIR/docker"
 
 echo "Uploading files to source bucket and sending ingest job to queue"
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.SendFilesToIngest "$@"
