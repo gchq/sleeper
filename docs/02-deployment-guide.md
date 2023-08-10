@@ -205,7 +205,7 @@ Next, create some environment variables for convenience:
 
 ```bash
 INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+VERSION=$(cat "./scripts/templates/version.txt")
 DOCKER_REGISTRY=<insert-your-account-id-here>.dkr.ecr.eu-west-2.amazonaws.com
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
 DOCKER_BASE_DIR=./scripts/docker
@@ -364,19 +364,25 @@ for running bulk import jobs.
 
 #### Deploy with the CDK
 
-Now you have your configuration in place and your environment set
-up, you can deploy your Sleeper instance using AWS CDK.
+Now you have your configuration in place and your environment set up, you can deploy your Sleeper instance using AWS
+CDK.
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
-cd java
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-cd ..
+VERSION=$(cat "./scripts/templates/version.txt")
 cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks,
 add "--require-approval never" to the command.
+
+If you'd like to include data generation for system tests, use the system test CDK app instead.
+
+```bash
+INSTANCE_PROPERTIES=/path/to/instance.properties
+VERSION=$(cat "./scripts/templates/version.txt")
+cdk -a "java -cp scripts/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
+```
 
 #### Customising the Stacks
 
@@ -408,7 +414,7 @@ The following stacks are optional and experimental:
 * `AthenaStack` - for running SQL analytics over the data
 * `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
 
-By default all the optional stacks are included but to customise
+By default most of the optional stacks are included but to customise
 it, set the `sleeper.optional.stacks` sleeper property to a
 comma separated list of stack names, for example:
 
