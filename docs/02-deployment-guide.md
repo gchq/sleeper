@@ -188,6 +188,12 @@ These instructions will assume you're using a development environment, so see [d
 set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
 the CLI configured and authenticated with AWS.
 
+This guide assumes you start in the project root directory. First build the system:
+
+```bash
+./scripts/build/buildForTest.sh
+```
+
 #### Upload the Docker images to ECR
 
 There are multiple ECR images that need to be created and pushed to an ECR repo, depending on the stacks you want to
@@ -195,20 +201,14 @@ deploy. There's one for ingest, one for compaction and two for bulk import (for 
 wish to use the bulk import stacks so don't upload the images if you aren't. There's also an image for data generation
 for system tests.
 
-The below assumes you start in the project root directory. First build the system:
-
-```bash
-./scripts/build/buildForTest.sh
-```
-
 Next, create some environment variables for convenience:
 
 ```bash
-export INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
-export VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-export DOCKER_REGISTRY=<insert-your-account-id-here>.dkr.ecr.eu-west-2.amazonaws.com
-export REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
-export DOCKER_BASE_DIR=./scripts/docker
+INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
+VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+DOCKER_REGISTRY=<insert-your-account-id-here>.dkr.ecr.eu-west-2.amazonaws.com
+REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
+DOCKER_BASE_DIR=./scripts/docker
 ```
 
 Then log in to ECR:
@@ -220,7 +220,7 @@ aws ecr get-login-password --region eu-west-2 | docker login --username AWS --pa
 Upload the container for ingest:
 
 ```bash
-export TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
+TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
 aws ecr create-repository --repository-name $INSTANCE_ID/ingest
 docker build -t $TAG $DOCKER_BASE_DIR/ingest
 docker push $TAG
@@ -229,16 +229,16 @@ docker push $TAG
 Upload the container for compaction:
 
 ```bash
-export TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
+TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
 aws ecr create-repository --repository-name $INSTANCE_ID/compaction-job-execution
 docker build -t $TAG $DOCKER_BASE_DIR/compaction-job-execution
 docker push $TAG
 ```
 
-If you will be bulk import using EMR Serverless then upload the container as follows:
+If you will be using bulk import on EMR Serverless then upload the container as follows:
 
 ```bash
-export TAG=$REPO_PREFIX/bulk-import-runner-emr-serverless:$VERSION
+TAG=$REPO_PREFIX/bulk-import-runner-emr-serverless:$VERSION
 aws ecr create-repository --repository-name $INSTANCE_ID/bulk-import-runner-emr-serverless
 docker build -t $TAG $DOCKER_BASE_DIR/bulk-import-runner-emr-serverless
 docker push $TAG
@@ -249,9 +249,18 @@ follows (note this container will take around 35 minutes to build and it is not 
 importing data using EMR):
 
 ```bash
-export TAG=$REPO_PREFIX/bulk-import-runner:$VERSION
+TAG=$REPO_PREFIX/bulk-import-runner:$VERSION
 aws ecr create-repository --repository-name $INSTANCE_ID/bulk-import-runner
 docker build -t $TAG $DOCKER_BASE_DIR/bulk-import-runner
+docker push $TAG
+```
+
+If you will be using the data generation that's used in system tests then upload the container as follows:
+
+```bash
+TAG=$REPO_PREFIX/system-test:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/system-test
+docker build -t $TAG $DOCKER_BASE_DIR/system-test
 docker push $TAG
 ```
 
@@ -275,24 +284,14 @@ docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BA
 
 #### Upload the jars to a bucket
 
-We need to upload jars to a S3 bucket so that they can be used by various resources. The code
-below assumes you start in the project root directory.
+We need to upload jars to a S3 bucket so that they can be used by various resources. The code below assumes you start
+in the project root directory, and you've already built the system with `scripts/build/buildForTest.sh`.
 
 ```bash
-cd java
 INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-SLEEPER_JARS=sleeper-${INSTANCE_ID}-jars
+JARS_BUCKET=sleeper-${INSTANCE_ID}-jars
 REGION=<insert-the-AWS-region-you-want-to-use-here>
-
-aws s3api create-bucket --acl private --bucket ${SLEEPER_JARS} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION}
-
-rm -rf temp-jars
-mkdir -p temp-jars
-cp distribution/target/distribution-${VERSION}-bin/scripts/jars/* temp-jars/
-aws s3 sync --size-only temp-jars s3://${SLEEPER_JARS}
-rm -rf temp-jars
-cd ..
+./scripts/deploy/syncJars.sh $JARS_BUCKET $REGION
 ```
 
 #### Configuration
@@ -454,7 +453,7 @@ destroy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=false "*"
 To delete the jars bucket and all the jars in it:
 
 ```bash
-aws s3 rb s3://${SLEEPER_JARS} --force
+aws s3 rb s3://${JARS_BUCKET} --force
 ```
 
 To delete the ECR repositories use the following where INSTANCE_ID is the instance id of the cluster.
