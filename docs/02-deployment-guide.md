@@ -414,13 +414,14 @@ The following stacks are optional and experimental:
 * `AthenaStack` - for running SQL analytics over the data
 * `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
 
-By default most of the optional stacks are included but to customise
-it, set the `sleeper.optional.stacks` sleeper property to a
-comma separated list of stack names, for example:
+By default most of the optional stacks are included but to customise it, set the `sleeper.optional.stacks` sleeper
+property to a comma separated list of stack names, for example:
 
 ```properties
 sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ```
+
+Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
 
 ### Utility Scripts
 
