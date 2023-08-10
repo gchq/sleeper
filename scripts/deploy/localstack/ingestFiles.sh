@@ -30,9 +30,10 @@ java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.do
 
 INGEST_TASK_IMAGE="sleeper-ingest-runner"
 CONTAINER_NAME="sleeper-$INSTANCE_ID-ingest"
-echo "Running ingest task in docker. You can follow the logs by viewing the docker container \"$CONTAINER_NAME\""
+echo "Running ingest task in docker."
 docker run --rm \
   -e AWS_ENDPOINT_URL=http://host.docker.internal:4566 \
   -e AWS_ACCESS_KEY_ID=test-access-key \
   -e AWS_SECRET_ACCESS_KEY=test-secret-key \
-  -d --name="$CONTAINER_NAME" $INGEST_TASK_IMAGE "sleeper-$INSTANCE_ID-config"
+  --name="$CONTAINER_NAME" $INGEST_TASK_IMAGE "sleeper-$INSTANCE_ID-config"
+echo "Ingest task complete"
