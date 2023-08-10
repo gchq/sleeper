@@ -18,8 +18,6 @@ set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 JAVA_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
-pushd "$JAVA_DIR"
-VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
-popd
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.DeployDockerInstance "$@"
