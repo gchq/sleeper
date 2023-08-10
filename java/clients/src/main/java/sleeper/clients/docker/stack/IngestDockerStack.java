@@ -31,13 +31,13 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class IngestStack implements DockerStack {
+public class IngestDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final AmazonDynamoDB dynamoDB;
 
-    private IngestStack(Builder builder) {
+    private IngestDockerStack(Builder builder) {
         instanceProperties = builder.instanceProperties;
         s3Client = builder.s3Client;
         sqsClient = builder.sqsClient;
@@ -48,8 +48,8 @@ public class IngestStack implements DockerStack {
         return new Builder();
     }
 
-    public static IngestStack from(InstanceProperties instanceProperties,
-                                   AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
+    public static IngestDockerStack from(InstanceProperties instanceProperties,
+                                         AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         return builder().instanceProperties(instanceProperties)
                 .s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
                 .build();
@@ -98,8 +98,8 @@ public class IngestStack implements DockerStack {
             return this;
         }
 
-        public IngestStack build() {
-            return new IngestStack(this);
+        public IngestDockerStack build() {
+            return new IngestDockerStack(this);
         }
     }
 }

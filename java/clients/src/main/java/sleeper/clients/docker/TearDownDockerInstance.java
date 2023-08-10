@@ -24,7 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
-import sleeper.clients.docker.stack.IngestStack;
+import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -61,6 +61,6 @@ public class TearDownDockerInstance {
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).tearDown();
         TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).tearDown();
-        IngestStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).tearDown();
+        IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).tearDown();
     }
 }

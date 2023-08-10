@@ -26,7 +26,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.deploy.PopulateTableProperties;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
-import sleeper.clients.docker.stack.IngestStack;
+import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -71,7 +71,7 @@ public class DeployDockerInstance {
         instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
 
-        IngestStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
+        IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }
 
     private static InstanceProperties generateInstanceProperties(String instanceId) {
