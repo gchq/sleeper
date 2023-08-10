@@ -33,16 +33,35 @@ you use `sleeper`.
 
 You can also upgrade the CLI to a different version with `sleeper cli upgrade`.
 
+#### Authentication
+
+To use the Sleeper CLI against AWS, you need to authenticate against your AWS account. You can do this by running
+`sleeper aws configure`, or other `sleeper aws` commands according to your AWS setup. AWS Environment variables
+will also be propagated to the Sleeper CLI.
+
 ### Deployment environment
 
-You can use the AWS CDK to create an EC2 instance in a VPC that is suitable for deploying Sleeper. The Sleeper CLI
-can do this for you, and will automatically configure pre-authentication for the EC2 instance with administrator access.
-Run these commands to create the EC2 using the Sleeper CLI (note that cdk bootstrap only needs to be done once in a
-given AWS account):
+If the CDK has never been bootstrapped in your AWS account, this must be done first. This only needs to be done
+once in a given AWS account.
 
 ```bash
-sleeper aws configure
 sleeper cdk bootstrap
+```
+
+Next, you'll need a VPC that is suitable for deploying Sleeper. You'll also want an EC2 instance to deploy from, to
+avoid lengthy uploads of large jar files and Docker images. You can use the Sleeper CLI to create both of these.
+
+If you'd prefer to use your own, you'll need to install the Sleeper CLI on your EC2, which should run on an x86_64
+architecture. You'll need to authenticate with AWS as described above. You'll need to ensure your VPC meets Sleeper's
+requirements, but you can also deploy a fresh VPC with the CLI. This is documented in
+the [deployment guide](02-deployment-guide.md#deployment-environment).
+
+#### Sleeper CLI environment
+
+The Sleeper CLI can create an EC2 instance in a VPC that is suitable for deploying Sleeper. This will automatically
+configure authentication such that once you're in the EC2 instance you'll have administrator access to your AWS account.
+
+```bash
 sleeper environment deploy TestEnvironment
 ```
 
@@ -66,7 +85,8 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-Once it has finished the instance might restart.
+Once it has finished the EC2 will restart. Once it's restarted you can use the Sleeper CLI. Reconnect to the EC2
+with `sleeper environment connect`.
 
 You can access a built copy of the Sleeper scripts by running `sleeper deployment` in the EC2. That will get you a shell
 inside a Docker container inside the EC2. You can run all the deployment scripts there as explained below. If you run it
@@ -92,26 +112,28 @@ use the instance id as part of the name of all the resources that are deployed. 
 that Sleeper has deployed within each service (go to the service in the AWS console and type the instance id into the
 search box).
 
+Avoid reusing the same instance id, as log groups from a deleted instance will still be present unless you delete them.
+An instance will fail to deploy if it would replace log groups from a deleted instance.
+
 Create an environment variable called `VPC` which is the id of the VPC you want to deploy Sleeper to, and create an
-environment variable called `SUBNET` with the id of the subnet you wish to deploy Sleeper to (note that this is only
+environment variable called `SUBNETS` with the ids of subnets you wish to deploy Sleeper to (note that this is only
 relevant to the ephemeral parts of Sleeper - all of the main components use services which naturally span availability
-zones).
+zones). Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 
 The VPC _must_ have an S3 Gateway endpoint associated with it otherwise the `cdk deploy` step will fail.
 
 While connected to your EC2 instance run:
 
 ```bash
-sleeper deployment test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNET}
+sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
-This will use Maven to build Sleeper (this will take around 3 minutes, and the script will be silent during this time).
-After that, an S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
+An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
 Note that this script currently needs to be run from an x86 machine as we do not yet have cross-architecture Docker
-builds. Then CDK will be used to deploy a Sleeper instance. This will take around 10 minutes. Once that is complete,
-some code is run to start some tasks running on an ECS cluster. These tasks generate some random data and write it to
-Sleeper. 11 ECS tasks will be created. Each of these will write 40 million records. As all writes to Sleeper are
-asynchronous it will take a while before the data appears (around 8 minutes).
+builds. Then CDK will be used to deploy a Sleeper instance. This will take around 20 minutes. Once that is complete,
+some task are started on an ECS cluster. These tasks generate some random data and write it to Sleeper. 11 ECS tasks
+will be created. Each of these will write 40 million records. As all writes to Sleeper are asynchronous, it will take a
+while before the data appears (around 8 minutes).
 
 You can watch what the ECS tasks that are writing data are doing by going to the ECS cluster named
 sleeper-${ID}-system-test-cluster, finding a task and viewing the logs.
