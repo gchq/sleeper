@@ -286,7 +286,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .replace("cluster-placeholder", cluster.getClusterName())
                 .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
 
-        Map<String, Object> deleteJobState = new Gson().fromJson(parsedDeleteJob, Map.class);
+        Map<String, Object> deleteJobState = new Gson().fromJson(parsedDeleteJob, new StateMachineJsonTypeToken());
 
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
