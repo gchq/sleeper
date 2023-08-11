@@ -174,12 +174,12 @@ class BulkImportJobDriverIT {
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, dir);
-        instanceProperties.set(JARS_BUCKET, "");
-        instanceProperties.set(ACCOUNT, "");
-        instanceProperties.set(REGION, "");
-        instanceProperties.set(VERSION, "");
-        instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNETS, "");
+        instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
+        instanceProperties.set(ACCOUNT, "test-account");
+        instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(VERSION, "1.2.3");
+        instanceProperties.set(VPC_ID, "test-vpc");
+        instanceProperties.set(SUBNETS, "test-subnet");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 

@@ -725,7 +725,7 @@ public class ReinitialiseTableIT {
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
         if (isS3StateStore) {
-            instanceProperties.set(FILE_SYSTEM, "");
+            instanceProperties.set(FILE_SYSTEM, "file://");
         } else {
             instanceProperties.set(FILE_SYSTEM, "s3a://");
         }

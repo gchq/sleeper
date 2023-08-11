@@ -63,12 +63,12 @@ public class InstancePropertiesTestHelper {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(id));
-        instanceProperties.set(JARS_BUCKET, "");
-        instanceProperties.set(ACCOUNT, "");
-        instanceProperties.set(REGION, "");
-        instanceProperties.set(VERSION, "");
-        instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNETS, "");
+        instanceProperties.set(JARS_BUCKET, "test-bucket");
+        instanceProperties.set(ACCOUNT, "test-account");
+        instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(VERSION, "1.2.3");
+        instanceProperties.set(VPC_ID, "test-vpc");
+        instanceProperties.set(SUBNETS, "test-subnet");
         return instanceProperties;
     }
 
