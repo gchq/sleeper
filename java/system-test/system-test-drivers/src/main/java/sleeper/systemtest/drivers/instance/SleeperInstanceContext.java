@@ -153,7 +153,7 @@ public class SleeperInstanceContext {
 
         public Instance connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
             if (failureById.containsKey(identifier)) {
-                throw new IllegalStateException("Instance did not deploy: " + instanceById, failureById.get(identifier));
+                throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
             }
             try {
                 return instanceById.computeIfAbsent(identifier,
