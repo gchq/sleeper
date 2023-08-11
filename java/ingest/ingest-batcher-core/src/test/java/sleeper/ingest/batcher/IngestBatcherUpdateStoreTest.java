@@ -69,14 +69,14 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
         IngestBatcherStore store = mock(IngestBatcherStore.class);
         when(store.getPendingFilesOldestFirst()).thenReturn(List.of(request));
         doThrow(new RuntimeException("Failed assigning job"))
-                .when(store).assignJob("fail-job-id", List.of(request));
+                .when(store).assignJobGetAssigned("fail-job-id", List.of(request));
 
         // When
         batchFilesWithJobIds(List.of("fail-job-id"), builder -> builder.store(store));
 
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEmpty();
-        verify(store).assignJob("fail-job-id", List.of(request));
+        verify(store).assignJobGetAssigned("fail-job-id", List.of(request));
     }
 
     @Test

@@ -28,6 +28,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +81,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     }
 
     @Override
-    public List<FileIngestRequest> assignJob(String jobId, List<FileIngestRequest> filesInJob) {
+    public List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
         List<FileIngestRequest> assignedFiles = new ArrayList<>();
         for (int i = 0; i < filesInJob.size(); i += 50) {
             List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + 50, filesInJob.size()));
@@ -101,11 +102,16 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                                                 .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
                                 ).collect(Collectors.toList())));
                 assignedFiles.addAll(filesInBatch);
+            } catch (TransactionCanceledException e) {
+                LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size());
+                LOGGER.error("Cancellation reasons: {}", e.getCancellationReasons(), e);
             } catch (AmazonDynamoDBException e) {
                 LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size(), e);
             }
         }
-        return assignedFiles;
+        return assignedFiles.stream()
+                .map(FileIngestRequest::getFile)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     @Override

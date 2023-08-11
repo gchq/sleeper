@@ -106,7 +106,7 @@ public class IngestBatcher {
                         .collect(toList()))
                 .build();
         try {
-            store.assignJob(job.getId(), batch);
+            store.assignJobGetAssigned(job.getId(), batch);
             String jobQueueUrl = jobQueueUrl(batchIngestMode);
             if (jobQueueUrl == null) {
                 LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);

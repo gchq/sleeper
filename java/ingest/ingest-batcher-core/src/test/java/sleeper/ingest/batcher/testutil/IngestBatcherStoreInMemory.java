@@ -37,13 +37,15 @@ public class IngestBatcherStoreInMemory implements IngestBatcherStore {
     }
 
     @Override
-    public List<FileIngestRequest> assignJob(String jobId, List<FileIngestRequest> filesInJob) {
+    public List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
         filesInJob.forEach(file -> {
             requests.remove(keyFor(file));
             FileIngestRequest fileWithJob = file.toBuilder().jobId(jobId).build();
             requests.put(keyFor(fileWithJob), fileWithJob);
         });
-        return filesInJob;
+        return filesInJob.stream()
+                .map(FileIngestRequest::getFile)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     @Override

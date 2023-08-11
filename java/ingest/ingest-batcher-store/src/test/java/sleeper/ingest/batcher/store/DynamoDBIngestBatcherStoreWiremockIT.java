@@ -74,7 +74,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .willReturn(aResponse().withStatus(200)));
 
         // When
-        store(runtimeInfo).assignJob("test-job", List.of(fileRequest().tableName(tableName).build()));
+        store(runtimeInfo).assignJobGetAssigned("test-job", List.of(fileRequest().tableName(tableName).build()));
 
         // Then
         verify(2, writeItemsRequested());
@@ -98,12 +98,14 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .collect(Collectors.toUnmodifiableList());
 
         // When
-        List<FileIngestRequest> assignedFiles = storeWithNoRetry(runtimeInfo).assignJob("test-job", fileIngestRequests);
+        List<String> assignedFiles = storeWithNoRetry(runtimeInfo).assignJobGetAssigned("test-job", fileIngestRequests);
 
         // Then
         verify(2, writeItemsRequested());
         assertThat(assignedFiles)
-                .containsExactlyElementsOf(fileIngestRequests.subList(0, 50));
+                .containsExactlyElementsOf(fileIngestRequests.subList(0, 50).stream()
+                        .map(FileIngestRequest::getFile)
+                        .collect(Collectors.toUnmodifiableList()));
     }
 
     private RequestPatternBuilder writeItemsRequested() {
