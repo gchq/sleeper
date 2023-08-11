@@ -258,7 +258,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 50)
                     .mapToObj(i -> fileRequest().build())
                     .collect(Collectors.toUnmodifiableList());
-            addFiles(fileIngestRequests);
+            addFiles(fileIngestRequests); // Add files transactionally as DynamoDB local is inconsistent otherwise
 
             // When
             store.assignJobGetAssigned("test-job", fileIngestRequests);
@@ -274,7 +274,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
                     .mapToObj(i -> fileRequest().build())
                     .collect(Collectors.toUnmodifiableList());
-            addFiles(fileIngestRequests);
+            addFiles(fileIngestRequests); // Add files transactionally as DynamoDB local is inconsistent otherwise
 
             // When
             store.assignJobGetAssigned("test-job", fileIngestRequests);
