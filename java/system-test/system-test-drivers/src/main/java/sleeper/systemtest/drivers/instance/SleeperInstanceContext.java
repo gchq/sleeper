@@ -148,11 +148,20 @@ public class SleeperInstanceContext {
     }
 
     private class DeployedInstances {
+        private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, Instance> instanceById = new HashMap<>();
 
         public Instance connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
-            return instanceById.computeIfAbsent(identifier,
-                    id -> createInstanceIfMissing(id, deployInstanceConfiguration));
+            if (failureById.containsKey(identifier)) {
+                throw new IllegalStateException("Instance did not deploy: " + instanceById, failureById.get(identifier));
+            }
+            try {
+                return instanceById.computeIfAbsent(identifier,
+                        id -> createInstanceIfMissing(id, deployInstanceConfiguration));
+            } catch (RuntimeException e) {
+                failureById.put(identifier, e);
+                throw e;
+            }
         }
     }
 
