@@ -44,6 +44,7 @@ import sleeper.ingest.batcher.IngestBatcherStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -105,7 +106,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
                                                 .withConditionExpression("attribute_not_exists(#filepath)")
                                                 .withExpressionAttributeNames(Map.of("#filepath", FILE_PATH))))
                                 ).collect(Collectors.toList())));
-                List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+                List<ConsumedCapacity> consumedCapacity = Optional.ofNullable(result.getConsumedCapacity()).orElse(List.of());
                 double totalConsumed = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
                 LOGGER.debug("Assigned {} files to job {}, capacity consumed = {}",
                         filesInBatch.size(), jobId, totalConsumed);
