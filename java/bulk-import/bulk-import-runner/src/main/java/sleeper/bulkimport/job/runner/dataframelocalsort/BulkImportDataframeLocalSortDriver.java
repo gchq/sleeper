@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 /**
  * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
  * uses Spark's Dataframe API to efficiently sort and write out the data split by
- * Sleeoer partition.
+ * Sleeper partition.
  */
 public class BulkImportDataframeLocalSortDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportDataframeLocalSortDriver.class);

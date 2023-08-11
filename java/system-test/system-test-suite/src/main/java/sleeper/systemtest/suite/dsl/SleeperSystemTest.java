@@ -98,7 +98,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(parameters, instance, clients);
+        return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
     public SystemTestDirectQuery directQuery() {

@@ -22,7 +22,6 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
-import java.util.List;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -156,14 +155,6 @@ public class Utils {
         }
         return SleeperProperties.readList(input).stream()
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
-    }
-
-    public static boolean isUniqueList(String input) {
-        if (input == null) {
-            return false;
-        }
-        List<String> inputList = SleeperProperties.readList(input);
-        return inputList.stream().distinct().count() == inputList.size();
     }
 
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {

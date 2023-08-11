@@ -15,9 +15,9 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.facebook.collections.Pair;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -46,6 +46,7 @@ import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -57,6 +58,7 @@ import software.amazon.awscdk.services.stepfunctions.Choice;
 import software.amazon.awscdk.services.stepfunctions.Condition;
 import software.amazon.awscdk.services.stepfunctions.CustomState;
 import software.amazon.awscdk.services.stepfunctions.CustomStateProps;
+import software.amazon.awscdk.services.stepfunctions.DefinitionBody;
 import software.amazon.awscdk.services.stepfunctions.Fail;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
@@ -83,6 +85,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -93,6 +96,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
@@ -206,6 +210,7 @@ public final class EksBulkImportStack extends NestedStack {
         ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
         bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
+                .vpc(vpc)
                 .subnetSelection(SubnetSelection.builder()
                         .subnets(List.of(subnet))
                         .build())
@@ -234,6 +239,7 @@ public final class EksBulkImportStack extends NestedStack {
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
                 .groups(Lists.newArrayList())
                 .build());
+        addClusterAdminRoles(bulkImportCluster, instanceProperties);
 
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
@@ -255,15 +261,13 @@ public final class EksBulkImportStack extends NestedStack {
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
                                             ITopic errorsTopic) {
-        String imageName = new StringBuilder()
-                .append(instanceProperties.get(ACCOUNT))
-                .append(".dkr.ecr.")
-                .append(instanceProperties.get(REGION))
-                .append(".amazonaws.com/")
-                .append(instanceProperties.get(BULK_IMPORT_REPO))
-                .append(":")
-                .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
-                .toString();
+        String imageName = instanceProperties.get(ACCOUNT) +
+                ".dkr.ecr." +
+                instanceProperties.get(REGION) +
+                ".amazonaws.com/" +
+                instanceProperties.get(BULK_IMPORT_REPO) +
+                ":" +
+                instanceProperties.get(SystemDefinedInstanceProperty.VERSION);
 
         String sparkJobJson = parseJsonFile("/step-functions/run-job.json",
                 instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE));
@@ -273,7 +277,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .replace("cluster-placeholder", cluster.getClusterName())
                 .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
 
-        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, Map.class);
+        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, new StateMachineJsonTypeToken());
 
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
@@ -289,15 +293,15 @@ public final class EksBulkImportStack extends NestedStack {
                 .build();
 
         return StateMachine.Builder.create(this, "EksBulkImportStateMachine")
-                .definition(
+                .definitionBody(DefinitionBody.fromChainable(
                         new CustomState(this, "RunSparkJob", CustomStateProps.builder().stateJson(runJobState).build())
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
                                                 Succeed.Builder.create(this, "FinishedJobState").build())
                                         .otherwise(createErrorMessage.next(publishError).next(
                                                 Fail.Builder.create(this, "FailedJobState")
-                                                        .cause("Spark job failed").build()))))
-                .build();
+                                                        .cause("Spark job failed").build())))
+                )).build();
     }
 
     private void grantAccesses(List<IBucket> dataBuckets,
@@ -315,6 +319,16 @@ public final class EksBulkImportStack extends NestedStack {
                 "/k8s/namespace.json");
     }
 
+    private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
+        List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
+        if (roles == null) {
+            return;
+        }
+        for (String role : roles) {
+            cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessFor" + role, role));
+        }
+    }
+
     private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
                                  IRole stateMachineRole) {
         Lists.newArrayList(
@@ -326,15 +340,19 @@ public final class EksBulkImportStack extends NestedStack {
                         createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
                         createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
                                 "/k8s/step-function-role-binding.json",
-                                Pair.of("user-placeholder", stateMachineRole.getRoleArn())))
+                                Map.of("user-placeholder", stateMachineRole.getRoleArn())))
                 .forEach(manifest -> manifest.getNode().addDependency(namespace));
     }
 
+    private KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource) {
+        return createManifestFromResource(cluster, id, namespace, resource, Map.of());
+    }
+
     private KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
-                                                          Pair<String, String>... replacements) {
+                                                          Map<String, String> replacements) {
         String json = parseJsonFile(resource, namespace);
-        for (Pair<String, String> replacement : replacements) {
-            json = json.replace(replacement.getFirst(), replacement.getSecond());
+        for (Map.Entry<String, String> replacement : replacements.entrySet()) {
+            json = json.replace(replacement.getKey(), replacement.getValue());
         }
 
         return cluster.addManifest(id, new Gson().fromJson(json, Map.class));
@@ -343,7 +361,7 @@ public final class EksBulkImportStack extends NestedStack {
     private String parseJsonFile(String resource, String namespace) {
         String json;
         try {
-            json = IOUtils.toString(getClass().getResourceAsStream(resource), StandardCharsets.UTF_8);
+            json = IOUtils.toString(Objects.requireNonNull(getClass().getResourceAsStream(resource)), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -360,5 +378,8 @@ public final class EksBulkImportStack extends NestedStack {
 
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
+    }
+
+    public static class StateMachineJsonTypeToken extends TypeToken<Map<String, Object>> {
     }
 }

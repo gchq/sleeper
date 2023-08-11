@@ -54,6 +54,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(BatcherProperty.getAll());
             index.addAll(BulkImportProperty.getAll());
             index.addAll(EMRProperty.getAll());
+            index.addAll(EMRServerlessProperty.getAll());
             index.addAll(NonPersistentEMRProperty.getAll());
             index.addAll(PersistentEMRProperty.getAll());
             index.addAll(EKSProperty.getAll());
@@ -65,7 +66,6 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(LoggingLevelsProperty.getAll());
             index.addAll(AthenaProperty.getAll());
             index.addAll(DefaultProperty.getAll());
-
 
             return index;
         }
