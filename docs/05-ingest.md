@@ -470,6 +470,17 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 The `EksBulkImportStack` option requires the bulk import Docker image to be pushed to ECR - see the instructions in the
 [deployment guide](02-deployment-guide.md).
 
+It's also important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
+with `kubectl` and access Kubernetes resources in the AWS console. Look in AWS IAM, and choose a role that gets assigned
+to your user, or users with administrator access. This may be in the form AWSReservedSSO_AdministratorAccess_abc123 if
+you log in with SSO, or OrganizationAccountAccessRole if you log in with an AWS Organisation.
+
+Any roles you want to give access to the cluster should be set in an instance property like this:
+
+```properties
+sleeper.bulk.import.eks.cluster.admin.roles=AWSReservedSSO_AdministratorAccess_abc123,OrganizationAccountAccessRole
+```
+
 You can submit a job in a similar way to the methods above, e.g.
 
 ```JSON
@@ -513,13 +524,23 @@ sent to the errors email.
 
 ##### Debugging and UI access
 
-While a Spark job is running you'll be able to monitor it with the Spark UI. To access this, you'll need to
-install `kubectl`, a command line utility for Kubernetes. Once you've done that, have a look at the outputs of
-the `EksBulkImportStack`. There should be one with a value like:
-`BulkImportStack.BulkImportClusterConfigCommandABCD1234 = aws eks update-kubeconfig --name ...`. Copy and paste this
-command into a terminal. This will give you access to your cluster. From there you'll be able to inspect logs, list pods
-and connect remotely to the Spark UI. The driver pods all use the job ID as the name. If you don't set this manually,
-it will be a random UUID.
+While a Spark job is running you'll be able to monitor it with the Spark UI. You can also monitor jobs in the AWS
+console for EKS and Step Functions.
+
+To use the Spark UI, or access the EKS cluster, ensure you've configured the instance
+property `sleeper.bulk.import.eks.cluster.admin.roles` as explained earlier. Without this, you'll need to use Step
+Functions to monitor your jobs as you won't have access to Kubernetes.
+
+Once the `EksBulkImportStack` is deployed, there should be an EKS cluster with a name
+like `sleeper-<my instance ID>-eksBulkImportCluster`. You can find the name of the cluster in the EKS console, or in
+CloudFormation in the nested stack linked from the root stack at `BulkImportEKS.NestedStack`, in a resource with a
+logical ID like `BulkImportEKS.EksBulkImportCluster.Resource.Resource.EksBulkImportClusterABCD1234`.
+
+To access the Spark UI, you'll need to install `kubectl`, a command line utility for Kubernetes. Once you've done that,
+run this command in a terminal: `aws eks update-kubeconfig --name <cluster name>`
+
+You should now be able to inspect logs, list pods and connect remotely to the Spark UI. The driver pods all use the job
+ID as the name. If you don't set this manually, it will be a random UUID.
 
 ```bash
 instance_id=abc1234
