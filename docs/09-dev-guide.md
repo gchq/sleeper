@@ -48,15 +48,19 @@ cd java
 mvn clean install -Pquick
 ```
 
-## Exploring the code base
+## Using the codebase
 
-Look in the [design document](10-design.md) for an idea of what to expect in the project. The elements of the design
-largely correspond to Maven modules. Core or common modules are used to separate shared model code from integrations
-with libraries which are not needed by all components of the system.
+The codebase is structured around the components explained in the [design document](10-design.md). The elements of the
+design largely correspond to Maven modules. Core or common modules contain shared model code. Other modules contain
+integrations with libraries which are not needed by all components of the system, eg. AWS API clients.
 
 If you'd like to look at how the modules relate to one another in terms of their dependencies, in the `build` module
 there's a main method in the class `sleeper.build.maven.ShowInternalDependencies` to display the internal dependencies
 as a graph.
+
+### IDE setup
+
+Configuration is available for various development environments.
 
 ## System Tests
 
