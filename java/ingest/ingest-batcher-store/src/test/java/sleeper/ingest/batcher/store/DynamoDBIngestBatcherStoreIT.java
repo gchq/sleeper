@@ -16,7 +16,6 @@
 package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,9 +26,10 @@ import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
@@ -118,9 +118,13 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // When
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
-            store.assignJob("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
+            List<String> assigned = store.assignJobGetAssigned("test-job",
+                    List.of(fileIngestRequest1, fileIngestRequest2));
 
             // Then
+            assertThat(assigned).containsExactlyInAnyOrder(
+                    "test-bucket/test-1.parquet",
+                    "test-bucket/test-2.parquet");
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job", fileIngestRequest1),
                     onJob("test-job", fileIngestRequest2));
@@ -137,7 +141,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When
             store.addFile(fileIngestRequest1);
-            store.assignJob("test-job", List.of(fileIngestRequest1));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1));
             store.addFile(fileIngestRequest2);
 
             // Then
@@ -159,7 +163,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
@@ -178,12 +182,11 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/test.parquet").build();
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job-1", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job-1", List.of(fileIngestRequest));
 
             // When / Then
             List<FileIngestRequest> job2 = List.of(fileIngestRequest);
-            assertThatThrownBy(() -> store.assignJob("test-job-2", job2))
-                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.assignJobGetAssigned("test-job-2", job2)).isEmpty();
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     onJob("test-job-1", fileIngestRequest));
         }
@@ -197,12 +200,11 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     .file("test-bucket/test-2.parquet").build();
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
-            store.assignJob("test-job-1", List.of(fileIngestRequest1));
+            store.assignJobGetAssigned("test-job-1", List.of(fileIngestRequest1));
 
             // When / Then
-            List<FileIngestRequest> job2 = List.of(fileIngestRequest1, fileIngestRequest2);
-            assertThatThrownBy(() -> store.assignJob("test-job-2", job2))
-                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.assignJobGetAssigned("test-job-2", List.of(fileIngestRequest1, fileIngestRequest2)))
+                    .isEmpty();
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("test-job-1", fileIngestRequest1),
                     fileIngestRequest2);
@@ -215,28 +217,70 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
                     .file("test-bucket/test.parquet").build();
 
             // When / Then
-            List<FileIngestRequest> job = List.of(fileIngestRequest);
-            assertThatThrownBy(() -> store.assignJob("test-job", job))
-                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.assignJobGetAssigned("test-job", List.of(fileIngestRequest))).isEmpty();
             assertThat(store.getAllFilesNewestFirst()).isEmpty();
         }
 
         @Test
-        void shouldFailToAssignFileWhenAssignmentAlreadyExists() {
+        void shouldFailToAssignFileWhenFileHasBeenDeleted() {
+            // Given
+            FileIngestRequest fileIngestRequest = fileRequest()
+                    .file("test-bucket/test.parquet").build();
+            store.addFile(fileIngestRequest);
+            store.deleteAllPending();
+
+            // When / Then
+            List<FileIngestRequest> job = List.of(fileIngestRequest);
+            assertThat(store.assignJobGetAssigned("test-job", job)).isEmpty();
+            assertThat(store.getAllFilesNewestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToAssignFileToSameJobTwice() {
             // Given
             FileIngestRequest fileIngestRequest = fileRequest()
                     .file("test-bucket/sendTwice.parquet").build();
             store.addFile(fileIngestRequest);
-            store.assignJob("duplicate-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("duplicate-job", List.of(fileIngestRequest));
             store.addFile(fileIngestRequest);
 
             // When / Then
-            List<FileIngestRequest> duplicateJob = List.of(fileIngestRequest);
-            assertThatThrownBy(() -> store.assignJob("duplicate-job", duplicateJob))
-                    .isInstanceOf(TransactionCanceledException.class);
+            assertThat(store.assignJobGetAssigned("duplicate-job", List.of(fileIngestRequest))).isEmpty();
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
                     onJob("duplicate-job", fileIngestRequest),
                     fileIngestRequest);
+        }
+
+        @Test
+        void shouldAssignFilesWhenNumberOfFilesMeetsTheDynamoDBTransactionLimit() {
+            // Given
+            // Transaction limit is 100. 2 transactions are performed per job, so send 50 files
+            List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 50)
+                    .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
+                    .collect(Collectors.toUnmodifiableList());
+            fileIngestRequests.forEach(store::addFile);
+
+            // When
+            store.assignJobGetAssigned("test-job", fileIngestRequests);
+
+            // Then
+            assertThat(store.getPendingFilesOldestFirst()).isEmpty();
+        }
+
+        @Test
+        void shouldAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() {
+            // Given
+            // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
+            List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
+                    .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
+                    .collect(Collectors.toUnmodifiableList());
+            fileIngestRequests.forEach(store::addFile);
+
+            // When
+            store.assignJobGetAssigned("test-job", fileIngestRequests);
+
+            // Then
+            assertThat(store.getPendingFilesOldestFirst()).isEmpty();
         }
     }
 
@@ -276,7 +320,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         @Test
         void shouldReportAllFilesInOrderRequestsReceivedMostRecentFirstWhenOneHasBeenAssignedToAJob() {
             // Given
-            store.assignJob("test-job", List.of(fileIngestRequest2));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest2));
 
             // When / Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
@@ -316,7 +360,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
 
             // When
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // Then
             assertThat(streamPagedItems(dynamoDBClient, new ScanRequest().withTableName(requestsTableName)))
@@ -349,7 +393,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         void shouldNotDeleteAssignedFile() {
             // Given
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // When
             store.deleteAllPending();
