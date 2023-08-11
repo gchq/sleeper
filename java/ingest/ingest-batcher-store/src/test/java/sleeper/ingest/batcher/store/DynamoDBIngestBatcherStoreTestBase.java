@@ -15,6 +15,10 @@
  */
 package sleeper.ingest.batcher.store;
 
+import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -23,9 +27,11 @@ import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
+import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -54,5 +60,15 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
     @AfterEach
     void tearDown() {
         DynamoDBIngestBatcherStoreCreator.tearDown(instanceProperties, dynamoDBClient);
+    }
+
+    protected void addFiles(List<FileIngestRequest> fileIngestRequests) {
+        dynamoDBClient.transactWriteItems(new TransactWriteItemsRequest()
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTransactItems(fileIngestRequests.stream()
+                        .map(file -> new TransactWriteItem().withPut(new Put()
+                                .withTableName(requestsTableName)
+                                .withItem(DynamoDBIngestRequestFormat.createRecord(tablePropertiesProvider, file)))
+                        ).collect(Collectors.toList())));
     }
 }
