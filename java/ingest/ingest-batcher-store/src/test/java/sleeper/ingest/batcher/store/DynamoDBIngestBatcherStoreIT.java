@@ -256,9 +256,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Given
             // Transaction limit is 100. 2 transactions are performed per job, so send 50 files
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 50)
-                    .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
+                    .mapToObj(i -> fileRequest().build())
                     .collect(Collectors.toUnmodifiableList());
-            fileIngestRequests.forEach(store::addFile);
+            addFiles(fileIngestRequests); // Add files transactionally as DynamoDB local is inconsistent otherwise
 
             // When
             store.assignJobGetAssigned("test-job", fileIngestRequests);
@@ -272,9 +272,9 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             // Given
             // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
-                    .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
+                    .mapToObj(i -> fileRequest().build())
                     .collect(Collectors.toUnmodifiableList());
-            fileIngestRequests.forEach(store::addFile);
+            addFiles(fileIngestRequests); // Add files transactionally as DynamoDB local is inconsistent otherwise
 
             // When
             store.assignJobGetAssigned("test-job", fileIngestRequests);
