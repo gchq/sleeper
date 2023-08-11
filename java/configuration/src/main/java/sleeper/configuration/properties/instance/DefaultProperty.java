@@ -118,15 +118,15 @@ public interface DefaultProperty {
                     "An ingest job will be created if the batcher runs while this many files are waiting, and the " +
                     "minimum size of files is also met.")
             .defaultValue("1")
-            .validationPredicate(value -> Utils.isPositiveIntLtEqValue(value, 50))
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_JOB_FILES = Index.propertyBuilder("sleeper.default.ingest.batcher.job.max.files")
             .description("Specifies the maximum number of files for a job in the ingest batcher. " +
                     "If more files are waiting than this, they will be split into multiple jobs. " +
                     "It's possible some data may be left for a future run of the batcher if some recent files " +
                     "overflow the size of a job but aren't enough to create a job on their own.")
-            .defaultValue("50")
-            .validationPredicate(value -> Utils.isPositiveIntLtEqValue(value, 50))
+            .defaultValue("100")
+            .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS = Index.propertyBuilder("sleeper.default.ingest.batcher.file.max.age.seconds")
             .description("Specifies the maximum time in seconds that a file can be held in the batcher before it " +
