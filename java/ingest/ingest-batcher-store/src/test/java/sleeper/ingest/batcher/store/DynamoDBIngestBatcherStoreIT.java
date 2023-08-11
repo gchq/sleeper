@@ -252,13 +252,14 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        void shouldAssignFilesWhenNumberOfFilesMeetsTheDynamoDBTransactionLimit() {
+        void shouldAssignFilesWhenNumberOfFilesMeetsTheDynamoDBTransactionLimit() throws Exception {
             // Given
             // Transaction limit is 100. 2 transactions are performed per job, so send 50 files
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 50)
                     .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
                     .collect(Collectors.toUnmodifiableList());
             fileIngestRequests.forEach(store::addFile);
+            Thread.sleep(100); // DynamoDB local is not consistent, need to wait for puts to apply
 
             // When
             store.assignJobGetAssigned("test-job", fileIngestRequests);
@@ -268,13 +269,14 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        void shouldAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() {
+        void shouldAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() throws Exception {
             // Given
             // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
             List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
                     .mapToObj(i -> fileRequest().file("test-bucket/file-" + i + ".parquet").build())
                     .collect(Collectors.toUnmodifiableList());
             fileIngestRequests.forEach(store::addFile);
+            Thread.sleep(100); // DynamoDB local is not consistent, need to wait for puts to apply
 
             // When
             store.assignJobGetAssigned("test-job", fileIngestRequests);
