@@ -62,7 +62,6 @@ import software.amazon.awscdk.services.stepfunctions.DefinitionBody;
 import software.amazon.awscdk.services.stepfunctions.Fail;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
-import software.amazon.awscdk.services.stepfunctions.Succeed;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
@@ -279,6 +278,16 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, new StateMachineJsonTypeToken());
 
+        String deleteJobJson = parseJsonFile("/step-functions/delete-driver-pod.json",
+                instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE));
+        String parsedDeleteJob = deleteJobJson
+                .replace("endpoint-placeholder", instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
+                .replace("image-placeholder", imageName)
+                .replace("cluster-placeholder", cluster.getClusterName())
+                .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
+
+        Map<String, Object> deleteJobState = new Gson().fromJson(parsedDeleteJob, Map.class);
+
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
                 .message(TaskInput.fromJsonPathAt("$.errorMessage"))
@@ -297,11 +306,11 @@ public final class EksBulkImportStack extends NestedStack {
                         new CustomState(this, "RunSparkJob", CustomStateProps.builder().stateJson(runJobState).build())
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
-                                                Succeed.Builder.create(this, "FinishedJobState").build())
-                                        .otherwise(createErrorMessage.next(publishError).next(
-                                                Fail.Builder.create(this, "FailedJobState")
-                                                        .cause("Spark job failed").build())))
-                )).build();
+                                                CustomState.Builder.create(this, "DeleteDriverPod")
+                                                        .stateJson(deleteJobState).build())
+                                        .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
+                                                .create(this, "FailedJobState").cause("Spark job failed").build()))))
+                ).build();
     }
 
     private void grantAccesses(List<IBucket> dataBuckets,
