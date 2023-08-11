@@ -92,6 +92,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
             List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + 50, filesInJob.size()));
             try {
                 TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
+                        .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                         .withTransactItems(filesInBatch.stream()
                                 .flatMap(file -> Stream.of(
                                         new TransactWriteItem().withDelete(new Delete()
