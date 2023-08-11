@@ -98,15 +98,18 @@ public class IngestBatcher {
     }
 
     private void sendBatch(String tableName, BatchIngestMode batchIngestMode, List<FileIngestRequest> batch) {
+        String jobId = jobIdSupplier.get();
+        List<String> files = store.assignJobGetAssigned(jobId, batch);
+        if (files.isEmpty()) {
+            LOGGER.error("Not sending job, no files were successfully assigned");
+            return;
+        }
         IngestJob job = IngestJob.builder()
-                .id(jobIdSupplier.get())
+                .id(jobId)
                 .tableName(tableName)
-                .files(batch.stream()
-                        .map(FileIngestRequest::getFile)
-                        .collect(toList()))
+                .files(files)
                 .build();
         try {
-            store.assignJobGetAssigned(job.getId(), batch);
             String jobQueueUrl = jobQueueUrl(batchIngestMode);
             if (jobQueueUrl == null) {
                 LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
@@ -115,7 +118,7 @@ public class IngestBatcher {
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
-            LOGGER.error("Failed assigning/sending job: {}", job, e);
+            LOGGER.error("Failed sending job: {}", job, e);
         }
     }
 

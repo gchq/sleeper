@@ -17,7 +17,6 @@
 package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.DeleteRequest;
@@ -105,7 +104,7 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
             } catch (TransactionCanceledException e) {
                 LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size());
                 LOGGER.error("Cancellation reasons: {}", e.getCancellationReasons(), e);
-            } catch (AmazonDynamoDBException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("{} files could not be batched, leaving them for next batcher run.", filesInBatch.size(), e);
             }
         }

@@ -93,7 +93,7 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
                 .whenScenarioStateIs("second batch")
                 .willReturn(aResponse().withStatus(500)));
 
-        List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
+        List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 100)
                 .mapToObj(i -> fileRequest().tableName(tableName).build())
                 .collect(Collectors.toUnmodifiableList());
 
