@@ -278,7 +278,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, new StateMachineJsonTypeToken());
 
-        String deleteJobJson = parseJsonFile("/step-functions/delete-driver-pod.json",
+        String deleteJobJson = parseJsonFile("/step-functions/delete-job.json",
                 instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE));
         String parsedDeleteJob = deleteJobJson
                 .replace("endpoint-placeholder", instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
@@ -306,7 +306,7 @@ public final class EksBulkImportStack extends NestedStack {
                         new CustomState(this, "RunSparkJob", CustomStateProps.builder().stateJson(runJobState).build())
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
-                                                CustomState.Builder.create(this, "DeleteDriverPod")
+                                                CustomState.Builder.create(this, "DeleteJob")
                                                         .stateJson(deleteJobState).build())
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build()))))
