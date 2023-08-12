@@ -213,7 +213,7 @@ Eclipse Jetty (org.eclipse.jetty:*:9.4.51.v20230217):
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
 
-Java Universal Network/Graph Framework (JUNG) (net.sf.jung:*:2.1.1):
+Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-visualization:1.4):
 
 - The 3-Clause BSD License
 
