@@ -105,19 +105,15 @@ public class NightlyTestOutput {
 
     private static void loadReportFiles(Path directory, Map<String, TestResult.Builder> resultByTestName) throws IOException {
         for (String testName : resultByTestName.keySet()) {
-            if (Files.isDirectory(directory.resolve(testName))) {
-                addReportFiles(directory.resolve(testName), resultByTestName.get(testName));
+            Path testDirectory = directory.resolve(testName);
+            if (!Files.isDirectory(testDirectory)) {
+                continue;
             }
-        }
-    }
-
-    private static void addReportFiles(Path directory, TestResult.Builder builder) throws IOException {
-        try (Stream<Path> files = Files.walk(directory)) {
-            files.forEach(path -> {
-                if (LOG_FILE_MATCHER.matches(path)) {
-                    builder.logFile(path);
-                }
-            });
+            TestResult.Builder result = resultByTestName.get(testName);
+            try (Stream<Path> files = Files.list(testDirectory)) {
+                files.filter(LOG_FILE_MATCHER::matches)
+                        .forEach(result::logFile);
+            }
         }
     }
 
