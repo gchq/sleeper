@@ -271,6 +271,10 @@ public final class EksBulkImportStack extends NestedStack {
                 "/step-functions/run-job.json", instanceProperties, cluster,
                 replacements(Map.of("image-placeholder", imageName)));
 
+        // Deleting the driver pod is necessary as a Spark job does not delete the pod afterwards:
+        // https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html#how-it-works
+        // Although the Spark documentation says it doesn't use up resources in the completed state, it does when it's
+        // scheduled into AWS Fargate.
         Map<String, Object> deleteDriverPodState = parseEksStepDefinition(
                 "/step-functions/delete-driver-pod.json", instanceProperties, cluster);
 
