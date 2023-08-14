@@ -79,7 +79,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         }
     }
 
-    public static S3AsyncClient buildCrtClient(S3CrtAsyncClientBuilder builder) {
+    private static S3AsyncClient buildCrtClient(S3CrtAsyncClientBuilder builder) {
         URI customEndpoint = getCustomEndpoint();
         if (customEndpoint != null) {
             return builder
@@ -92,19 +92,20 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         }
     }
 
-    public static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
+    private static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
         URI customEndpoint = getCustomEndpoint();
         if (customEndpoint != null) {
             return builder
                     .endpointOverride(customEndpoint)
                     .region(Region.US_EAST_1)
+                    .forcePathStyle(true)
                     .build();
         } else {
             return builder.build();
         }
     }
 
-    public static URI getCustomEndpoint() {
+    private static URI getCustomEndpoint() {
         String endpoint = System.getenv("AWS_ENDPOINT_URL");
         if (endpoint != null) {
             return URI.create(endpoint);
