@@ -16,9 +16,11 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.suite.dsl.IngestBatcherResult;
@@ -36,6 +38,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class IngestBatcherIT {
@@ -47,6 +50,11 @@ public class IngestBatcherIT {
         sleeper.connectToInstance(MAIN);
         sleeper.ingest().batcher().clearStore();
         sleeper.ingest().statusStores().clear();
+    }
+
+    @AfterEach
+    void tearDown(TestInfo testInfo) {
+        sleeper.ingest().printReports(testContext(testInfo));
     }
 
     @Test

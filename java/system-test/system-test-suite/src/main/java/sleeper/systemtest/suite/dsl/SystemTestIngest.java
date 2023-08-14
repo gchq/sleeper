@@ -24,6 +24,7 @@ import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.IngestStatusStoreDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.suite.util.TestContext;
 
 import java.nio.file.Path;
 
@@ -72,5 +73,9 @@ public class SystemTestIngest {
     public SystemTestIngestStatusStores statusStores() {
         return new SystemTestIngestStatusStores(
                 new IngestStatusStoreDriver(clients.getDynamoDB(), instance.getInstanceProperties()));
+    }
+
+    public void printReports(TestContext testContext) {
+        
     }
 }
