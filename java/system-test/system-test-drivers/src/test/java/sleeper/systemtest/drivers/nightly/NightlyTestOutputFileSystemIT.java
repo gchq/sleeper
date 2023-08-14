@@ -71,6 +71,11 @@ class NightlyTestOutputFileSystemIT {
                     .extracting(TestResult::getTestName)
                     .containsExactly("bulkImportPerformance");
         }
+    }
+
+    @Nested
+    @DisplayName("Find nested report log files")
+    class FindNestedReportLogFiles {
 
         @Test
         void shouldIncludeReportLogFilesInsideDirectories() throws Exception {
