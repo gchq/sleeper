@@ -27,13 +27,13 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.RecordBatch;
 import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.ArrayList;

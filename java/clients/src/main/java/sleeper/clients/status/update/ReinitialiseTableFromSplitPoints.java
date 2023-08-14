@@ -29,9 +29,9 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -120,11 +120,11 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
         String instanceId = args[0];
         String tableName = args[1];
         String splitPointsFile = args[2];
-        boolean splitPointsFileBase64Encoded = args.length == 3 ? false : Boolean.parseBoolean(args[3]);
+        boolean splitPointsFileBase64Encoded = args.length != 3 && Boolean.parseBoolean(args[3]);
 
         System.out.println("If you continue all data will be deleted in the table.");
         System.out.println("The metadata about the partitions will be deleted and replaced "
-            + "by new partitions derived from the provided split points.");
+                + "by new partitions derived from the provided split points.");
         String choice = System.console().readLine("Are you sure you want to delete the data and " +
                 "reinitialise this table?\nPlease enter Y or N: ");
         if (!choice.equalsIgnoreCase("y")) {
@@ -135,7 +135,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
 
         try {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(amazonS3, dynamoDBClient, instanceId, tableName,
-                true, splitPointsFile, splitPointsFileBase64Encoded);
+                    true, splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {

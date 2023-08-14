@@ -16,30 +16,32 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.nio.file.Path;
 
 public class SystemTestIngest {
 
-    private final SystemTestParameters parameters;
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
+    private final IngestSourceFilesContext sourceFiles;
 
-    public SystemTestIngest(SystemTestParameters parameters,
-                            SleeperInstanceContext instance,
-                            SystemTestClients clients) {
-        this.parameters = parameters;
+    public SystemTestIngest(SleeperInstanceContext instance,
+                            SystemTestClients clients,
+                            IngestSourceFilesContext sourceFiles) {
         this.instance = instance;
         this.clients = clients;
+        this.sourceFiles = sourceFiles;
     }
 
     public SystemTestIngestBatcher batcher() {
-        return new SystemTestIngestBatcher(this, parameters, instance,
+        return new SystemTestIngestBatcher(this, sourceFiles, instance,
                 new IngestBatcherDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getLambda()));
     }
 
@@ -47,7 +49,22 @@ public class SystemTestIngest {
         return new SystemTestDirectIngest(new DirectIngestDriver(instance, tempDir));
     }
 
+    public SystemTestIngestByQueue byQueue() {
+        return new SystemTestIngestByQueue(instance, sourceFiles, byQueueDriver(), waitForIngestJobsDriver());
+    }
+
     IngestByQueueDriver byQueueDriver() {
-        return new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda());
+        return new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
+    }
+
+    WaitForIngestJobsDriver waitForIngestJobsDriver() {
+        return new WaitForIngestJobsDriver(instance, clients.getDynamoDB());
+    }
+
+    public SystemTestDirectEmrServerless directEmrServerless() {
+        return new SystemTestDirectEmrServerless(instance, sourceFiles,
+                new DirectEmrServerlessDriver(instance,
+                        clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
+                waitForIngestJobsDriver());
     }
 }

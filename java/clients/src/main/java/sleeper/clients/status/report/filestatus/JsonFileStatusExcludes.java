@@ -18,7 +18,7 @@ package sleeper.clients.status.report.filestatus;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 public class JsonFileStatusExcludes implements ExclusionStrategy {
     @Override

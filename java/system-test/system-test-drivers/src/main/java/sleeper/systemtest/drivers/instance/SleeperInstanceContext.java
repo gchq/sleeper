@@ -34,8 +34,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -148,11 +148,20 @@ public class SleeperInstanceContext {
     }
 
     private class DeployedInstances {
+        private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, Instance> instanceById = new HashMap<>();
 
         public Instance connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
-            return instanceById.computeIfAbsent(identifier,
-                    id -> createInstanceIfMissing(id, deployInstanceConfiguration));
+            if (failureById.containsKey(identifier)) {
+                throw new InstanceDidNotDeployException(identifier, failureById.get(identifier));
+            }
+            try {
+                return instanceById.computeIfAbsent(identifier,
+                        id -> createInstanceIfMissing(id, deployInstanceConfiguration));
+            } catch (RuntimeException e) {
+                failureById.put(identifier, e);
+                throw e;
+            }
         }
     }
 

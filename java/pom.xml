@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.18.0-SNAPSHOT</version>
+    <version>0.19.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -148,6 +148,7 @@
         <jetty.version>9.4.51.v20230217</jetty.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <jung.version>2.1.1</jung.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
@@ -156,7 +157,6 @@
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
-        <sleeper.system.test.instance.id/>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -654,16 +654,23 @@
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <reportSets>
                     <reportSet>
+                        <id>aggregated</id>
+                        <inherited>false</inherited>
+                        <reports>
+                            <report>report-only</report>
+                            <report>failsafe-report-only</report>
+                        </reports>
+                        <configuration>
+                            <aggregate>true</aggregate>
+                        </configuration>
+                    </reportSet>
+                    <reportSet>
                         <reports>
                             <report>report-only</report>
                             <report>failsafe-report-only</report>
                         </reports>
                     </reportSet>
                 </reportSets>
-                <inherited>false</inherited>
-                <configuration>
-                    <aggregate>true</aggregate>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -674,6 +681,14 @@
                         <inherited>false</inherited>
                         <reports>
                             <report>checkstyle-aggregate</report>
+                        </reports>
+                        <configuration>
+                            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        </configuration>
+                    </reportSet>
+                    <reportSet>
+                        <reports>
+                            <report>checkstyle</report>
                         </reports>
                     </reportSet>
                 </reportSets>
@@ -895,10 +910,6 @@
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemProperties>
                             <property>
-                                <name>sleeper.system.test.instance.id</name>
-                                <value>${sleeper.system.test.instance.id}</value>
-                            </property>
-                            <property>
                                 <name>sleeper.system.test.short.id</name>
                                 <value>${sleeper.system.test.short.id}</value>
                             </property>
@@ -1062,6 +1073,30 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>cleanForSite</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>checkstyle**</include>
+                                        <include>spotbugs/**</include>
+                                        <include>spotbugs.xml</include>
+                                    </includes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

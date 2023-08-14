@@ -117,7 +117,7 @@ class IngestBatcherStoreInMemoryTest {
             // When
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
-            store.assignJob("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
@@ -138,7 +138,7 @@ class IngestBatcherStoreInMemoryTest {
 
             // When
             store.addFile(fileIngestRequest1);
-            store.assignJob("test-job", List.of(fileIngestRequest1));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1));
             store.addFile(fileIngestRequest2);
 
             // Then
@@ -160,7 +160,7 @@ class IngestBatcherStoreInMemoryTest {
 
             // When
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
@@ -213,7 +213,7 @@ class IngestBatcherStoreInMemoryTest {
         @Test
         void shouldReportAllFilesInOrderRequestsReceivedMostRecentFirstWhenOneHasBeenAssignedToAJob() {
             // Given
-            store.assignJob("test-job", List.of(fileIngestRequest2));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest2));
 
             // When / Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
@@ -245,7 +245,7 @@ class IngestBatcherStoreInMemoryTest {
         void shouldNotDeleteAssignedFile() {
             // Given
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // When
             store.deleteAllPending();

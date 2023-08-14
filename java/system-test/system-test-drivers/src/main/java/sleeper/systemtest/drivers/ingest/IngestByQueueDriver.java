@@ -17,52 +17,51 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.amazonaws.services.sqs.AmazonSQS;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.job.IngestJob;
+import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class IngestByQueueDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestByQueueDriver.class);
 
     private final InstanceProperties properties;
     private final IngestTaskStatusStore taskStatusStore;
-    private final IngestJobStatusStore jobStatusStore;
     private final LambdaClient lambdaClient;
+    private final AmazonSQS sqsClient;
     private final PollWithRetries pollUntilTasksStarted = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3));
 
     public IngestByQueueDriver(SleeperInstanceContext instance,
-                               AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient) {
+                               AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
         this(instance.getInstanceProperties(),
                 IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                lambdaClient);
+                lambdaClient, sqsClient);
     }
 
     public IngestByQueueDriver(InstanceProperties properties,
                                IngestTaskStatusStore taskStatusStore,
-                               IngestJobStatusStore jobStatusStore,
-                               LambdaClient lambdaClient) {
+                               LambdaClient lambdaClient,
+                               AmazonSQS sqsClient) {
         this.properties = properties;
         this.taskStatusStore = taskStatusStore;
-        this.jobStatusStore = jobStatusStore;
         this.lambdaClient = lambdaClient;
+        this.sqsClient = sqsClient;
+    }
+
+    public void sendJob(InstanceProperty queueUrl, IngestJob job) {
+        sqsClient.sendMessage(properties.get(queueUrl), new IngestJobSerDe().toJson(job));
     }
 
     public void invokeStandardIngestTasks() throws InterruptedException {
@@ -71,23 +70,5 @@ public class IngestByQueueDriver {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
             return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
         });
-    }
-
-    public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished)
-            throws InterruptedException {
-        LOGGER.info("Waiting for jobs to finish: {}", jobIds.size());
-        pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
-            List<String> unfinishedJobIds = jobIds.stream()
-                    .filter(this::isUnfinished)
-                    .collect(Collectors.toUnmodifiableList());
-            LOGGER.info("Unfinished jobs: {}", unfinishedJobIds.size());
-            return unfinishedJobIds.size() == 0;
-        });
-    }
-
-    private boolean isUnfinished(String jobId) {
-        return jobStatusStore.getJob(jobId)
-                .map(job -> !job.isFinished())
-                .orElse(true);
     }
 }

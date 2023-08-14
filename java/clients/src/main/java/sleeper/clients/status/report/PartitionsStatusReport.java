@@ -24,10 +24,12 @@ import sleeper.clients.status.report.partitions.PartitionsStatus;
 import sleeper.clients.status.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
+
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to report information about the partitions in the system and
@@ -59,8 +61,8 @@ public class PartitionsStatusReport {
             return;
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         arguments.runReport(amazonS3, dynamoDBClient, System.out);
         amazonS3.shutdown();
         dynamoDBClient.shutdown();

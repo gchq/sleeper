@@ -19,7 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.DelegatingStateStore;
+import sleeper.core.statestore.DelegatingStateStore;
 
 import java.time.Instant;
 

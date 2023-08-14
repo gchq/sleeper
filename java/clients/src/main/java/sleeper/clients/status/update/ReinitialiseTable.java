@@ -35,9 +35,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
@@ -235,12 +235,12 @@ public class ReinitialiseTable {
         }
         String instanceId = args[0];
         String tableName = args[1];
-        boolean deletePartitions = args.length == 2 ? false : Boolean.parseBoolean(args[2]);
+        boolean deletePartitions = args.length != 2 && Boolean.parseBoolean(args[2]);
 
         System.out.println("If you continue all data will be deleted in the table.");
         if (deletePartitions) {
             System.out.println("The metadata about the partitions will be deleted and the "
-                + "table will be reset to consist of one root partition.");
+                    + "table will be reset to consist of one root partition.");
         } else {
             System.out.println("The metadata about the partitions will not be deleted.");
         }

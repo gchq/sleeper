@@ -68,15 +68,35 @@ class IngestBatcherUpdateStoreTest extends IngestBatcherTestBase {
         FileIngestRequest request = ingestRequest().build();
         IngestBatcherStore store = mock(IngestBatcherStore.class);
         when(store.getPendingFilesOldestFirst()).thenReturn(List.of(request));
-        doThrow(new RuntimeException("Failed assigning job"))
-                .when(store).assignJob("fail-job-id", List.of(request));
+        when(store.assignJobGetAssigned("fail-job-id", List.of(request)))
+                .thenReturn(List.of());
 
         // When
         batchFilesWithJobIds(List.of("fail-job-id"), builder -> builder.store(store));
 
         // Then
         assertThat(queues.getMessagesByQueueUrl()).isEmpty();
-        verify(store).assignJob("fail-job-id", List.of(request));
+        verify(store).assignJobGetAssigned("fail-job-id", List.of(request));
+    }
+
+    @Test
+    void shouldSendPartialJobIfNotAllFilesWereAssigned() {
+        // Given
+        FileIngestRequest request1 = ingestRequest().file("file-1.parquet").build();
+        FileIngestRequest request2 = ingestRequest().file("file-2.parquet").build();
+        IngestBatcherStore store = mock(IngestBatcherStore.class);
+        when(store.getPendingFilesOldestFirst()).thenReturn(List.of(request1, request2));
+        when(store.assignJobGetAssigned("partial-job-id", List.of(request1, request2)))
+                .thenReturn(List.of("file-1.parquet"));
+
+        // When
+        batchFilesWithJobIds(List.of("partial-job-id"), builder -> builder.store(store));
+
+        // Then
+        assertThat(queues.getMessagesByQueueUrl())
+                .hasSize(1)
+                .containsValue(List.of(jobWithFiles("partial-job-id", "file-1.parquet")));
+        verify(store).assignJobGetAssigned("partial-job-id", List.of(request1, request2));
     }
 
     @Test

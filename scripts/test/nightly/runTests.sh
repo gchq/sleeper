@@ -83,17 +83,27 @@ runSystemTest() {
     runTest "$@"
     ./tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
+runStandardTest() {
+    TEST_NAME=$1
+    INSTANCE_ID=$2
+    runTest "$@"
+    ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+}
 
 runMavenSystemTests() {
     SHORT_ID=$1
-    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/maven.log"
+    TEST_NAME="maven"
+    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/$TEST_NAME.log"
+    EXIT_CODE=$?
+    INSTANCE_ID="$SHORT_ID-main"
+    echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
        -DstagingDirectory="$OUTPUT_DIR/site"
     popd
     zip -r "$OUTPUT_DIR/site.zip" "$OUTPUT_DIR/site"
-    ./../deploy/tearDown.sh "$SHORT_ID-main" &> "$OUTPUT_DIR/maven-main.tearDown.log"
+    ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
 }
 

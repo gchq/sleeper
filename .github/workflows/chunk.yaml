@@ -42,9 +42,8 @@ jobs:
       - name: Generate site
         if: always()
         run: |
-          mvn --batch-mode site site:deploy -pl sleeper:aws,${{ steps.config.outputs.moduleList }} \
-            -Dmaven.repo.local=.m2/repository \
-            -DskipTests=true
+          mvn --batch-mode clean site-deploy -PcleanForSite -pl sleeper:aws,${{ steps.config.outputs.moduleList }} \
+            -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Upload site as artifact
         if: always()

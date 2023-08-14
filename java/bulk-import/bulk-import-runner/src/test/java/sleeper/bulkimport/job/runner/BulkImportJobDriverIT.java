@@ -52,13 +52,13 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
@@ -174,12 +174,12 @@ class BulkImportJobDriverIT {
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, dir);
-        instanceProperties.set(JARS_BUCKET, "");
-        instanceProperties.set(ACCOUNT, "");
-        instanceProperties.set(REGION, "");
-        instanceProperties.set(VERSION, "");
-        instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNETS, "");
+        instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
+        instanceProperties.set(ACCOUNT, "test-account");
+        instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(VERSION, "1.2.3");
+        instanceProperties.set(VPC_ID, "test-vpc");
+        instanceProperties.set(SUBNETS, "test-subnet");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 

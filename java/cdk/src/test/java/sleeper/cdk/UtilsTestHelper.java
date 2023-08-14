@@ -57,11 +57,11 @@ public class UtilsTestHelper {
         String id = UUID.randomUUID().toString();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
-        instanceProperties.set(JARS_BUCKET, "");
-        instanceProperties.set(ACCOUNT, "");
-        instanceProperties.set(REGION, "");
-        instanceProperties.set(VPC_ID, "");
-        instanceProperties.set(SUBNETS, "");
+        instanceProperties.set(JARS_BUCKET, "test-bucket");
+        instanceProperties.set(ACCOUNT, "test-account");
+        instanceProperties.set(REGION, "test-region");
+        instanceProperties.set(VPC_ID, "test-vpc");
+        instanceProperties.set(SUBNETS, "test-subnet");
         return instanceProperties;
     }
 

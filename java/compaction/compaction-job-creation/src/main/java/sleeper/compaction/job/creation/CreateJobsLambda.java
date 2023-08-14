@@ -35,7 +35,7 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
 import sleeper.utils.HadoopConfigurationProvider;

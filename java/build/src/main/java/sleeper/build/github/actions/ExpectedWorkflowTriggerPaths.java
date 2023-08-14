@@ -17,7 +17,7 @@ package sleeper.build.github.actions;
 
 import sleeper.build.chunks.ProjectChunk;
 import sleeper.build.chunks.ProjectStructure;
-import sleeper.build.maven.InternalDependencyIndex;
+import sleeper.build.maven.InternalModuleIndex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +29,7 @@ public class ExpectedWorkflowTriggerPaths {
     }
 
     public static List<String> from(
-            ProjectStructure project, InternalDependencyIndex maven,
+            ProjectStructure project, InternalModuleIndex maven,
             ProjectChunk chunk, GitHubActionsChunkWorkflow actualWorkflow) {
 
         List<String> paths = new ArrayList<>(Arrays.asList(
@@ -41,6 +41,7 @@ public class ExpectedWorkflowTriggerPaths {
                 .map(module -> module.pomPathInRepository(project).toString())
                 .forEach(paths::add);
         maven.dependenciesForModules(chunk.getModules())
+                .filter(module -> !module.getStructure().isPomPackage())
                 .map(module -> module.pathInRepository(project).toString() + "/**")
                 .forEach(paths::add);
         return paths;

@@ -16,13 +16,15 @@
 package sleeper.ingest.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.key.Key;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
@@ -31,13 +33,14 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -103,9 +106,10 @@ public class IngestTestHelper<T> {
 
     public IngestTestHelper<T> createStateStore(
             AmazonDynamoDB dynamoDbClient,
-            List<Pair<Key, Integer>> keyAndDimensionToSplitOnInOrder) throws Exception {
-        return stateStore(PartitionedTableCreator.createStateStore(
-                dynamoDbClient, schema, keyAndDimensionToSplitOnInOrder));
+            PartitionTree tree) throws Exception {
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema, dynamoDbClient).create();
+        stateStore.initialise(tree.getAllPartitions());
+        return stateStore(stateStore);
     }
 
     public IngestTestHelper<T> stateStoreInMemory(

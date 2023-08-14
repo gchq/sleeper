@@ -30,14 +30,16 @@ import sleeper.clients.status.report.filestatus.StandardFileStatusReporter;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A utility class to report information about the files in the system and their
@@ -117,10 +119,10 @@ public class FilesStatusReport {
             reporterType = args[4].toUpperCase(Locale.ROOT);
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
 
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);

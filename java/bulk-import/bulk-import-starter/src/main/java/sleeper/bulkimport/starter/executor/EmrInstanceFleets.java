@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.bulkimport.configuration.EmrInstanceTypeConfig.readInstanceTypes;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -45,6 +44,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_E
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
+import static sleeper.configuration.properties.validation.EmrInstanceTypeConfig.readInstanceTypes;
 
 public class EmrInstanceFleets implements EmrInstanceConfiguration {
 

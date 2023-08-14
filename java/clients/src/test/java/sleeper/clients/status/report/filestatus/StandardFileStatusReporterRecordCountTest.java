@@ -22,9 +22,9 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfoFactory;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.Collections;
