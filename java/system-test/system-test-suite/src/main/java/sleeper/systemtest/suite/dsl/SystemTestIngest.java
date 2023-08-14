@@ -21,6 +21,7 @@ import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestStatusStoreDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -66,5 +67,10 @@ public class SystemTestIngest {
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
                 waitForIngestJobsDriver());
+    }
+
+    public SystemTestIngestStatusStores statusStores() {
+        return new SystemTestIngestStatusStores(
+                new IngestStatusStoreDriver(clients.getDynamoDB(), instance.getInstanceProperties()));
     }
 }

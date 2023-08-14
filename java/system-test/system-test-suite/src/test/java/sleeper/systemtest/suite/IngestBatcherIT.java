@@ -46,6 +46,7 @@ public class IngestBatcherIT {
     void setUp() {
         sleeper.connectToInstance(MAIN);
         sleeper.ingest().batcher().clearStore();
+        sleeper.ingest().statusStores().clear();
     }
 
     @Test
