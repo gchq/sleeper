@@ -17,7 +17,7 @@
         "backoffLimit": 0,
         "template": {
           "metadata": {
-            "name.$": "$.job.id"
+            "name.$": "$.jobPodPrefix"
           },
           "spec": {
             "serviceAccountName": "spark-submit",
@@ -36,7 +36,9 @@
     "LogOptions": {
       "RetrieveLogs": true,
       "LogParameters": {
-        "tailLines": [ "10" ]
+        "tailLines": [
+          "10"
+        ]
       }
     }
   },
