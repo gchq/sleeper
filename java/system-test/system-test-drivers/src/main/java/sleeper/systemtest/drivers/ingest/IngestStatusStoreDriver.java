@@ -34,6 +34,7 @@ public class IngestStatusStoreDriver {
     }
 
     public void clearStores() {
-        // TODO implement clear method on status stores
+        ingestJobStatusStore.clear();
+        ingestTaskStatusStore.clear();
     }
 }
