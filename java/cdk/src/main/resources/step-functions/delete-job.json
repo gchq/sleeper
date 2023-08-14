@@ -6,7 +6,7 @@
     "CertificateAuthority": "ca-placeholder",
     "Endpoint": "endpoint-placeholder",
     "Method": "DELETE",
-    "Path.$": "States.Format('/apis/batch/v1/namespaces/namespace-placeholder/jobs/{}', $.job.id)"
+    "Path.$": "States.Format('/apis/batch/v1/namespaces/namespace-placeholder/jobs/{}?propagationPolicy=Foreground', $.job.id)"
   },
   "ResultPath": "$.deleteJobOutput"
 }

@@ -16,9 +16,6 @@
         "ttlSecondsAfterFinished": 600,
         "backoffLimit": 0,
         "template": {
-          "metadata": {
-            "name.$": "$.jobPodPrefix"
-          },
           "spec": {
             "serviceAccountName": "spark-submit",
             "containers": [
