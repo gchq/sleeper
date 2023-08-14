@@ -271,6 +271,9 @@ public final class EksBulkImportStack extends NestedStack {
                 "/step-functions/run-job.json", instanceProperties, cluster,
                 replacements(Map.of("image-placeholder", imageName)));
 
+        Map<String, Object> deleteDriverPodState = parseEksStepDefinition(
+                "/step-functions/delete-driver-pod.json", instanceProperties, cluster);
+
         Map<String, Object> deleteJobState = parseEksStepDefinition(
                 "/step-functions/delete-job.json", instanceProperties, cluster);
 
@@ -290,8 +293,10 @@ public final class EksBulkImportStack extends NestedStack {
                         CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
-                                                CustomState.Builder.create(this, "DeleteJob")
-                                                        .stateJson(deleteJobState).build())
+                                                CustomState.Builder.create(this, "DeleteDriverPod")
+                                                        .stateJson(deleteDriverPodState).build()
+                                                        .next(CustomState.Builder.create(this, "DeleteJob")
+                                                                .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build()))))
                 ).build();
