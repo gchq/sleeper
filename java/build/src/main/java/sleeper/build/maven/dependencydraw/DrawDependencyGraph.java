@@ -103,7 +103,7 @@ public class DrawDependencyGraph {
                                     }
                                  }));
 
-        layoutComboBox.setSelectedItem(LayoutHelper.Layouts.SUGIYAMA);
+        layoutComboBox.setSelectedItem(LayoutHelperDirectedGraphs.Layouts.SUGIYAMA);
 
         JFrame frame = new JFrame("Dependency Graph View");
         JPanel controlPanel = new JPanel();
