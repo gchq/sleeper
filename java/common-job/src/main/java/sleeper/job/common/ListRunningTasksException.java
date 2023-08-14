@@ -15,17 +15,17 @@
  */
 package sleeper.job.common;
 
-public class DescribeClusterException extends RuntimeException {
+public class ListRunningTasksException extends RuntimeException {
 
-    public DescribeClusterException(Throwable cause) {
+    public ListRunningTasksException(Throwable cause) {
         super(cause);
     }
 
-    public DescribeClusterException(String message, Throwable e) {
+    public ListRunningTasksException(String message, Throwable e) {
         super(message, e);
     }
 
-    public DescribeClusterException(String message) {
+    public ListRunningTasksException(String message) {
         super(message);
     }
 }
