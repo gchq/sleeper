@@ -150,7 +150,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
 
     private static String jobPodPrefix(BulkImportJob job) {
         /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
-         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/latest/running-on-kubernetes.html)
+         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html)
          * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
          * After adding a "job-" prefix, maximum id length = 47-(17+4) = 26 characters
          */
