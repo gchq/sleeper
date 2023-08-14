@@ -17,6 +17,7 @@ package sleeper.ingest.impl.partitionfilewriter;
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
@@ -34,8 +35,6 @@ import static sleeper.configuration.properties.instance.AsyncIngestPartitionFile
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.utils.AwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.configuration.utils.AwsV2ClientHelper.getCustomEndpoint;
 
 public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFactory {
 
@@ -70,7 +69,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
         String clientType = properties.get(ASYNC_INGEST_CLIENT_TYPE).toLowerCase(Locale.ROOT);
         if ("java".equals(clientType)) {
-            return buildAwsV2Client(S3AsyncClient.builder());
+            return buildS3Client(S3AsyncClient.builder());
         } else if ("crt".equals(clientType)) {
             return buildCrtClient(S3AsyncClient.crtBuilder()
                     .minimumPartSizeInBytes(properties.getLong(ASYNC_INGEST_CRT_PART_SIZE_BYTES))
@@ -91,6 +90,26 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         } else {
             return builder.build();
         }
+    }
+
+    public static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
+        URI customEndpoint = getCustomEndpoint();
+        if (customEndpoint != null) {
+            return builder
+                    .endpointOverride(customEndpoint)
+                    .region(Region.US_EAST_1)
+                    .build();
+        } else {
+            return builder.build();
+        }
+    }
+
+    public static URI getCustomEndpoint() {
+        String endpoint = System.getenv("AWS_ENDPOINT_URL");
+        if (endpoint != null) {
+            return URI.create(endpoint);
+        }
+        return null;
     }
 
     @Override
