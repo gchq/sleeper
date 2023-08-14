@@ -18,26 +18,26 @@ package sleeper.build.maven.dependencydraw;
 
 import org.jgrapht.Graph;
 import org.jgrapht.graph.builder.GraphTypeBuilder;
+import org.jungrapht.samples.util.LayoutHelper;
+import org.jungrapht.samples.util.LayoutHelperDirectedGraphs;
 import org.jungrapht.visualization.VisualizationViewer;
-import org.jungrapht.visualization.decorators.EllipseShapeFunction;
-import org.jungrapht.visualization.decorators.IconShapeFunction;
+import org.jungrapht.visualization.layout.algorithms.BalloonLayoutAlgorithm;
+import org.jungrapht.visualization.layout.algorithms.LayoutAlgorithm;
+import org.jungrapht.visualization.layout.algorithms.RadialTreeLayoutAlgorithm;
 import org.jungrapht.visualization.layout.algorithms.SugiyamaLayoutAlgorithm;
-import org.jungrapht.visualization.renderers.JLabelEdgeLabelRenderer;
-import org.jungrapht.visualization.renderers.JLabelVertexLabelRenderer;
 import org.jungrapht.visualization.renderers.Renderer;
-import org.jungrapht.visualization.util.AWT;
-import org.jungrapht.visualization.util.IconCache;
+import org.jungrapht.visualization.util.LayoutAlgorithmTransition;
+import org.jungrapht.visualization.util.LayoutPaintable;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.awt.geom.AffineTransform;
 
 public class DrawDependencyGraph {
     public boolean showTransitiveDependencies = false;
+
+    LayoutPaintable.BalloonRings balloonLayoutRings;
+    LayoutPaintable.RadialRings radialLayoutRings;
 
     public void drawGraph(GraphModel model) {
         Graph<GraphNode, GraphEdge> g =
@@ -51,68 +51,10 @@ public class DrawDependencyGraph {
                         .viewSize(size)
                         .layoutSize(size).build();
 
-        IconCache<GraphNode> iconCache =
-                IconCache.<GraphNode>builder(
-                                n -> "<html>"+n.toString().replaceAll("/", "<br>")
-                        )
-                        .vertexShapeFunction(vv.getRenderContext().getVertexShapeFunction())
-                        .colorFunction(
-                                n -> {
-                                    if (g.degreeOf(n) > 9) return Color.red;
-                                    if (g.degreeOf(n) < 7) return Color.green;
-                                    return Color.lightGray;
-                                })
-                        .stylist(
-                                (label, vertex, colorFunction) -> {
-                                    label.setFont(new Font("Serif", Font.BOLD, 20));
-                                    label.setForeground(Color.black);
-                                    label.setBackground(Color.white);
-                                    Border lineBorder =
-                                            BorderFactory.createEtchedBorder(); //Border(BevelBorder.RAISED);
-                                    Border marginBorder = BorderFactory.createEmptyBorder(4, 4, 4, 4);
-                                    label.setBorder(new CompoundBorder(lineBorder, marginBorder));
-                                })
-                        .preDecorator(
-                                (graphics, vertex, labelBounds, vertexShapeFunction, colorFunction) -> {
-                                    // save off the old color
-                                    Color oldColor = graphics.getColor();
-                                    // fill the image background with white
-                                    graphics.setPaint(Color.white);
-                                    graphics.fill(labelBounds);
-
-                                    Shape shape = vertexShapeFunction.apply(vertex);
-                                    Rectangle shapeBounds = shape.getBounds();
-
-                                    AffineTransform scale =
-                                            AffineTransform.getScaleInstance(
-                                                    1.3 * labelBounds.width / shapeBounds.getWidth(),
-                                                    1.3 * labelBounds.height / shapeBounds.getHeight());
-                                    AffineTransform translate =
-                                            AffineTransform.getTranslateInstance(
-                                                    labelBounds.width / 2., labelBounds.height / 2.);
-                                    translate.concatenate(scale);
-                                    shape = translate.createTransformedShape(shape);
-                                    graphics.setColor(Color.pink);
-                                    graphics.fill(shape);
-                                    graphics.setColor(oldColor);
-                                })
-                        .build();
-
-        vv.getRenderContext().setVertexLabelRenderer(new JLabelVertexLabelRenderer(Color.cyan));
-        vv.getRenderContext().setEdgeLabelRenderer(new JLabelEdgeLabelRenderer(Color.cyan));
-
-        final IconShapeFunction<GraphNode> vertexImageShapeFunction =
-                new IconShapeFunction<>(new EllipseShapeFunction<>());
-        vertexImageShapeFunction.setIconFunction(iconCache);
-        vv.getRenderContext().setVertexShapeFunction(vertexImageShapeFunction);
-        vv.getRenderContext().setVertexIconFunction(iconCache);
-
+        vv.getRenderContext().setVertexLabelFunction(Object::toString);
 
         SugiyamaLayoutAlgorithm<GraphNode, GraphEdge> layout =
                 new SugiyamaLayoutAlgorithm<>();
-        layout.setVertexBoundsFunction(
-                v -> (org.jungrapht.visualization.layout.model.Rectangle)
-                        vv.getRenderContext().getVertexShapeFunction().andThen(s -> AWT.convert(s.getBounds2D())));
         vv.getVisualizationModel().setLayoutAlgorithm(layout);
 
         PickedNodeState picked = new PickedNodeState(model);
@@ -126,19 +68,58 @@ public class DrawDependencyGraph {
         vv.setVertexToolTipFunction(Object::toString);
         vv.setEdgeToolTipFunction(Object::toString);
 
+        LayoutHelperDirectedGraphs.Layouts[] combos = LayoutHelperDirectedGraphs.getCombos();
+        final JRadioButton animateLayoutTransition = new JRadioButton("Animate Layout Transition", true);
+
+        final JComboBox layoutComboBox = new JComboBox(combos);
+        layoutComboBox.addActionListener(
+                e ->
+                        SwingUtilities.invokeLater(
+                                () -> {
+                                    LayoutHelperDirectedGraphs.Layouts layoutBuilderType =
+                                            (LayoutHelperDirectedGraphs.Layouts) layoutComboBox.getSelectedItem();
+                                    LayoutAlgorithm.Builder layoutAlgorithmBuilder =
+                                            layoutBuilderType.getLayoutAlgorithmBuilder();
+                                    LayoutAlgorithm<GraphNode> layoutAlgorithm = layoutAlgorithmBuilder.build();
+                                    vv.removePreRenderPaintable(balloonLayoutRings);
+                                    vv.removePreRenderPaintable(radialLayoutRings);
+                                    layoutAlgorithm.setAfter(vv::scaleToLayout);
+                                    if (animateLayoutTransition.isSelected()) {
+                                        LayoutAlgorithmTransition.animate(vv, layoutAlgorithm, vv::scaleToLayout);
+                                    } else {
+                                        LayoutAlgorithmTransition.apply(vv, layoutAlgorithm, vv::scaleToLayout);
+                                    }
+                                    if (layoutAlgorithm instanceof BalloonLayoutAlgorithm) {
+                                        balloonLayoutRings =
+                                                new LayoutPaintable.BalloonRings(
+                                                        vv, (BalloonLayoutAlgorithm) layoutAlgorithm);
+                                        vv.addPreRenderPaintable(balloonLayoutRings);
+                                    }
+                                    if (layoutAlgorithm instanceof RadialTreeLayoutAlgorithm) {
+                                        radialLayoutRings =
+                                                new LayoutPaintable.RadialRings(
+                                                        vv, (RadialTreeLayoutAlgorithm) layoutAlgorithm);
+                                        vv.addPreRenderPaintable(radialLayoutRings);
+                                    }
+                                 }));
+
+        layoutComboBox.setSelectedItem(LayoutHelper.Layouts.SUGIYAMA);
+
         JFrame frame = new JFrame("Dependency Graph View");
-        JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
+        JPanel controlPanel = new JPanel();
         JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
         JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
         transitiveCheckBox.addItemListener(e -> {
             showTransitiveDependencies = e.getStateChange() == ItemEvent.SELECTED;
             SwingUtilities.updateComponentTreeUI(frame);
         });
-        vv.add(text, BorderLayout.CENTER);
-        vv.add(text2, BorderLayout.CENTER);
-        vv.add(transitiveCheckBox);
+        controlPanel.add(layoutComboBox);
+        controlPanel.add(animateLayoutTransition);
+        controlPanel.add(text2);
+        controlPanel.add(transitiveCheckBox);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(vv.getComponent());
+        frame.getContentPane().add(controlPanel, BorderLayout.NORTH);
         frame.pack();
         frame.setVisible(true);
         frame.requestFocus();

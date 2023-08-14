@@ -109,5 +109,10 @@
             <artifactId>jungrapht-visualization</artifactId>
             <version>${jungrapht.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.tomnelson</groupId>
+            <artifactId>jungrapht-visualization-samples</artifactId>
+            <version>${jungrapht.version}</version>
+        </dependency>
     </dependencies>
 </project>
