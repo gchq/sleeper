@@ -71,6 +71,25 @@ class NightlyTestOutputFileSystemIT {
                     .extracting(TestResult::getTestName)
                     .containsExactly("bulkImportPerformance");
         }
+
+        @Test
+        void shouldIncludeReportLogFilesInsideDirectories() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("maven.log"), "test");
+            Files.createDirectories(tempDir.resolve("maven/IngestBatcherIT"));
+            Files.writeString(tempDir.resolve("maven/IngestBatcherIT/shouldCreateTwoJobs.report.log"), "test");
+
+            // When
+            NightlyTestOutput output = NightlyTestOutput.from(tempDir);
+
+            // Then
+            assertThat(output.streamLogFiles()).containsExactly(
+                    tempDir.resolve("maven.log"),
+                    tempDir.resolve("maven/IngestBatcherIT/shouldCreateTwoJobs.report.log"));
+            assertThat(output.getTests())
+                    .extracting(TestResult::getTestName)
+                    .containsExactly("maven");
+        }
     }
 
     @Nested

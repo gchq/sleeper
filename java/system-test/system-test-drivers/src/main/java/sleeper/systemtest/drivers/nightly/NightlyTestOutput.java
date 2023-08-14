@@ -77,7 +77,7 @@ public class NightlyTestOutput {
                 statusFiles.add(file);
             }
         });
-        return fromLogAndStatusFiles(logFiles, statusFiles);
+        return fromLogAndStatusFiles(directory, logFiles, statusFiles);
     }
 
     private static void forEachFileIn(Path directory, Consumer<Path> action) throws IOException {
@@ -87,7 +87,7 @@ public class NightlyTestOutput {
     }
 
     private static NightlyTestOutput fromLogAndStatusFiles(
-            List<Path> logFiles, List<Path> statusFiles) throws IOException {
+            Path directory, List<Path> logFiles, List<Path> statusFiles) throws IOException {
         Map<String, TestResult.Builder> resultByTestName = new HashMap<>();
         for (Path logFile : logFiles) {
             getResultBuilder(logFile, resultByTestName)
@@ -96,10 +96,29 @@ public class NightlyTestOutput {
         for (Path statusFile : statusFiles) {
             readStatusFile(statusFile, getResultBuilder(statusFile, resultByTestName));
         }
+        loadReportFiles(directory, resultByTestName);
         return new NightlyTestOutput(resultByTestName.values().stream()
                 .map(TestResult.Builder::build)
                 .sorted(Comparator.comparing(TestResult::getTestName))
                 .collect(Collectors.toList()));
+    }
+
+    private static void loadReportFiles(Path directory, Map<String, TestResult.Builder> resultByTestName) throws IOException {
+        for (String testName : resultByTestName.keySet()) {
+            if (Files.isDirectory(directory.resolve(testName))) {
+                addReportFiles(directory.resolve(testName), resultByTestName.get(testName));
+            }
+        }
+    }
+
+    private static void addReportFiles(Path directory, TestResult.Builder builder) throws IOException {
+        try (Stream<Path> files = Files.walk(directory)) {
+            files.forEach(path -> {
+                if (LOG_FILE_MATCHER.matches(path)) {
+                    builder.logFile(path);
+                }
+            });
+        }
     }
 
     private static TestResult.Builder getResultBuilder(
