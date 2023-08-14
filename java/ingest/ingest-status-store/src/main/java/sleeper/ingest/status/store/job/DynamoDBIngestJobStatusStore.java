@@ -51,6 +51,8 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.JOB_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStore.class);
@@ -175,4 +177,11 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                         .withComparisonOperator(ComparisonOperator.EQ));
     }
 
+    @Override
+    public void clear() {
+        streamPagedItems(dynamoDB, createScanRequest()).forEach(item ->
+                dynamoDB.deleteItem(statusTableName, Map.of(
+                        JOB_ID, item.get(JOB_ID),
+                        UPDATE_TIME, item.get(UPDATE_TIME))));
+    }
 }

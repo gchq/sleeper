@@ -56,4 +56,7 @@ public interface IngestJobStatusStore {
     default List<IngestJobStatus> getInvalidJobs() {
         throw new UnsupportedOperationException("Instance has no ingest job status store");
     }
+
+    default void clear() {
+    }
 }
