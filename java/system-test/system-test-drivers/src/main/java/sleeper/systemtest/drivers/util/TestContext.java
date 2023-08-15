@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.util;
+package sleeper.systemtest.drivers.util;
 
 import java.lang.reflect.Method;
 import java.util.Objects;

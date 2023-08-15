@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.testutil;
 
 import org.junit.jupiter.api.TestInfo;
 
-import sleeper.systemtest.suite.util.TestContext;
+import sleeper.systemtest.drivers.util.TestContext;
 
 public class TestContextFactory {
 

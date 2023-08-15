@@ -29,11 +29,17 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.util.TestContext;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.function.Consumer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class IngestReportsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestStatusStoreDriver.class);
@@ -41,24 +47,87 @@ public class IngestReportsDriver {
     private final IngestJobStatusStore ingestJobStatusStore;
     private final IngestTaskStatusStore ingestTaskStatusStore;
     private final SleeperInstanceContext instance;
+    private final SystemTestParameters parameters;
 
-    public IngestReportsDriver(AmazonDynamoDB dynamoDB, SleeperInstanceContext instance) {
+    public IngestReportsDriver(AmazonDynamoDB dynamoDB, SleeperInstanceContext instance, SystemTestParameters parameters) {
         InstanceProperties properties = instance.getInstanceProperties();
         this.ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, properties);
         this.ingestTaskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, properties);
         this.instance = instance;
+        this.parameters = parameters;
     }
 
-    public void printReports() {
-        printReport(out -> new IngestTaskStatusReport(ingestTaskStatusStore,
-                new StandardIngestTaskStatusReporter(out),
-                IngestTaskQuery.ALL).run());
+    public void printReports(TestContext testContext) {
+        try (ReportHandle handle = openReport(testContext)) {
+            PrintStream out = handle.getPrintStream();
+            new IngestTaskStatusReport(ingestTaskStatusStore,
+                    new StandardIngestTaskStatusReporter(out),
+                    IngestTaskQuery.ALL).run();
+        }
     }
 
-    private void printReport(Consumer<PrintStream> writer) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        PrintStream printStream = new PrintStream(os, false, StandardCharsets.UTF_8);
-        writer.accept(printStream);
-        LOGGER.info(os.toString(StandardCharsets.UTF_8));
+    private ReportHandle openReport(TestContext testContext) {
+        Path outputDirectory = parameters.getOutputDirectory();
+        if (outputDirectory != null) {
+            return new FileWriter(outputDirectory.resolve(testFileName(testContext)));
+        } else {
+            return new LogWriter();
+        }
+    }
+
+    private static String testFileName(TestContext context) {
+        return context.getTestClass().orElseThrow().getSimpleName()
+                + "." + context.getTestMethod().orElseThrow().getName();
+    }
+
+    interface ReportHandle extends AutoCloseable {
+        PrintStream getPrintStream();
+
+        void close();
+    }
+
+    private static class FileWriter implements ReportHandle {
+        private final OutputStream outputStream;
+        private final PrintStream printStream;
+
+        public FileWriter(Path file) {
+            try {
+                outputStream = Files.newOutputStream(file);
+                printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public PrintStream getPrintStream() {
+            return printStream;
+        }
+
+        @Override
+        public void close() {
+            try {
+                printStream.flush();
+                outputStream.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private static class LogWriter implements ReportHandle {
+        private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        private final PrintStream printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
+
+        @Override
+        public PrintStream getPrintStream() {
+            return printStream;
+        }
+
+        @Override
+        public void close() {
+            printStream.close();
+            LOGGER.info("Reports:\n{}", outputStream.toString(StandardCharsets.UTF_8));
+        }
     }
 }

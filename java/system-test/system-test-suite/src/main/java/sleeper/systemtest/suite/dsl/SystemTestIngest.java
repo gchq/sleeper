@@ -20,11 +20,13 @@ import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.IngestStatusStoreDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.suite.util.TestContext;
+import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.util.TestContext;
 
 import java.nio.file.Path;
 
@@ -32,13 +34,16 @@ public class SystemTestIngest {
 
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
+    private final SystemTestParameters parameters;
     private final IngestSourceFilesContext sourceFiles;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
+                            SystemTestParameters parameters,
                             IngestSourceFilesContext sourceFiles) {
         this.instance = instance;
         this.clients = clients;
+        this.parameters = parameters;
         this.sourceFiles = sourceFiles;
     }
 
@@ -76,6 +81,7 @@ public class SystemTestIngest {
     }
 
     public void printReports(TestContext testContext) {
-        
+        new IngestReportsDriver(clients.getDynamoDB(), instance, parameters)
+                .printReports(testContext);
     }
 }

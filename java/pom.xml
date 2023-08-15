@@ -160,6 +160,7 @@
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
+        <sleeper.system.test.output.dir/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -920,6 +921,10 @@
                             <property>
                                 <name>sleeper.system.test.subnet.ids</name>
                                 <value>${sleeper.system.test.subnet.ids}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.output.dir</name>
+                                <value>${sleeper.system.test.output.dir}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>
