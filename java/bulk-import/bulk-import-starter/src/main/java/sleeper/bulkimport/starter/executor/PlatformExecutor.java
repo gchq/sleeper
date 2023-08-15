@@ -38,7 +38,7 @@ public interface PlatformExecutor {
             case "EKS":
                 return new StateMachinePlatformExecutor(
                         AWSStepFunctionsClientBuilder.defaultClient(),
-                        instanceProperties, tablePropertiesProvider);
+                        instanceProperties);
             case "PersistentEMR":
                 return new PersistentEmrPlatformExecutor(
                         AmazonElasticMapReduceClientBuilder.defaultClient(),

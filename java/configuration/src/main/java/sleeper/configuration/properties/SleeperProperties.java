@@ -88,7 +88,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public String get(T property) {
-        return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
+        String value = properties.getProperty(property.getPropertyName(), property.getDefaultValue());
+        if ("".equals(value)) {
+            return property.getDefaultValue();
+        }
+        return value;
     }
 
     public boolean getBoolean(T property) {
@@ -117,8 +121,6 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
 
     public static List<String> readList(String value) {
         if (value == null) {
-            return null;
-        } else if ("".equals(value)) {
             return List.of();
         } else {
             return Lists.newArrayList(value.split(","));
@@ -146,7 +148,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public boolean isSet(T property) {
-        return properties.containsKey(property.getPropertyName());
+        return properties.containsKey(property.getPropertyName()) &&
+                !"".equals(properties.getProperty(property.getPropertyName()));
     }
 
     public Properties getProperties() {

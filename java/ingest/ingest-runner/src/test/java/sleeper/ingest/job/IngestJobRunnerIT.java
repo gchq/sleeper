@@ -88,10 +88,10 @@ class IngestJobRunnerIT {
         return Stream.of(
                 Arguments.of("arrow", "async", "s3a://"),
                 Arguments.of("arrow", "direct", "s3a://"),
-                Arguments.of("arrow", "direct", ""),
+                Arguments.of("arrow", "direct", "file://"),
                 Arguments.of("arraylist", "async", "s3a://"),
                 Arguments.of("arraylist", "direct", "s3a://"),
-                Arguments.of("arraylist", "direct", "")
+                Arguments.of("arraylist", "direct", "file://")
         );
     }
 
@@ -139,7 +139,7 @@ class IngestJobRunnerIT {
         switch (fileSystemPrefix.toLowerCase(Locale.ROOT)) {
             case "s3a://":
                 return TABLE_DATA_BUCKET_NAME;
-            case "":
+            case "file://":
                 return currentLocalTableDataDirectory;
             default:
                 throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
@@ -150,7 +150,7 @@ class IngestJobRunnerIT {
         switch (fileSystemPrefix.toLowerCase(Locale.ROOT)) {
             case "s3a://":
                 return INGEST_DATA_BUCKET_NAME;
-            case "":
+            case "file://":
                 return currentLocalIngestDirectory;
             default:
                 throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));

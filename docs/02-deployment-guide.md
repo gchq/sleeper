@@ -36,7 +36,8 @@ export AWS_PROFILE=named-profile-123456789
 export AWS_REGION=eu-west-2
 ```
 
-Also see the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
+Also see
+the [AWS IAM guide for CLI access](https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html).
 
 ### Bootstrapping CDK
 
@@ -143,10 +144,11 @@ editor templates/instanceproperties.template
 editor templates/schema.template
 editor templates/tableproperties.template
 editor templates/tags.template
-deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-id> <table-name>
+deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-ids> <table-name>
 ```
 
-Here `vpc-id` and `subnet-id` are the ids of the VPC and subnet that some components of Sleeper will be deployed into.
+Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
+Multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 
 This script will upload the necessary jars to a bucket in S3 and push the Docker container images to respositories in
 ECR.
@@ -184,25 +186,30 @@ the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
 These instructions will assume you're using a development environment, so see [dev guide](09-dev-guide.md) for how to
-set that up.
+set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
+the CLI configured and authenticated with AWS.
+
+This guide assumes you start in the project root directory. First build the system:
+
+```bash
+./scripts/build/buildForTest.sh
+```
 
 #### Upload the Docker images to ECR
 
-There are potentially three ECR images that need to be created and pushed
-to an ECR repo, depending on the stacks you want to deploy. One is for
-ingest, one is for compaction and the last is for bulk import. You may
-not wish to use the bulk import stack so don't upload the image if you
-aren't.
+There are multiple ECR images that need to be created and pushed to an ECR repo, depending on the stacks you want to
+deploy. There's one for ingest, one for compaction and two for bulk import (for EKS and EMR Serverless). You may not
+wish to use the bulk import stacks so don't upload the images if you aren't. There's also an image for data generation
+for system tests.
 
-The below assumes you start in the project root directory. First create some
-environment variables for convenience:
+Next, create some environment variables for convenience:
 
 ```bash
-cd java
 INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+VERSION=$(cat "./scripts/templates/version.txt")
 DOCKER_REGISTRY=<insert-your-account-id-here>.dkr.ecr.eu-west-2.amazonaws.com
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
+DOCKER_BASE_DIR=./scripts/docker
 ```
 
 Then log in to ECR:
@@ -214,19 +221,28 @@ aws ecr get-login-password --region eu-west-2 | docker login --username AWS --pa
 Upload the container for ingest:
 
 ```bash
-aws ecr create-repository --repository-name ${INSTANCE_ID}/ingest
-cp ingest/target/ingest-${VERSION}-utility.jar ingest/docker/ingest.jar
-docker build -t ${REPO_PREFIX}/ingest:${VERSION} ./ingest/docker
-docker push ${REPO_PREFIX}/ingest:${VERSION}
+TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/ingest
+docker build -t $TAG $DOCKER_BASE_DIR/ingest
+docker push $TAG
 ```
 
 Upload the container for compaction:
 
 ```bash
-aws ecr create-repository --repository-name ${INSTANCE_ID}/compaction-job-execution
-cp compaction-job-execution/target/compaction-job-execution-${VERSION}-utility.jar compaction-job-execution/docker/compaction-job-execution.jar
-docker build -t ${REPO_PREFIX}/compaction-job-execution:${VERSION} ./compaction-job-execution/docker
-docker push ${REPO_PREFIX}/compaction-job-execution:${VERSION}
+TAG=$REPO_PREFIX/compaction-job-execution:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/compaction-job-execution
+docker build -t $TAG $DOCKER_BASE_DIR/compaction-job-execution
+docker push $TAG
+```
+
+If you will be using bulk import on EMR Serverless then upload the container as follows:
+
+```bash
+TAG=$REPO_PREFIX/bulk-import-runner-emr-serverless:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/bulk-import-runner-emr-serverless
+docker build -t $TAG $DOCKER_BASE_DIR/bulk-import-runner-emr-serverless
+docker push $TAG
 ```
 
 If you will be using the experimental bulk import using EKS then upload the container as
@@ -234,34 +250,49 @@ follows (note this container will take around 35 minutes to build and it is not 
 importing data using EMR):
 
 ```bash
-aws ecr create-repository --repository-name ${INSTANCE_ID}/bulk-import-runner
-cp bulk-import/bulk-import-runner/target/bulk-import-runner-${VERSION}-utility.jar bulk-import/bulk-import-runner/docker/bulk-import-runner.jar
-docker build -t ${REPO_PREFIX}/bulk-import-runner:${VERSION} ./bulk-import/bulk-import-runner/docker
-docker push ${REPO_PREFIX}/bulk-import-runner:${VERSION}
+TAG=$REPO_PREFIX/bulk-import-runner:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/bulk-import-runner
+docker build -t $TAG $DOCKER_BASE_DIR/bulk-import-runner
+docker push $TAG
+```
 
-cd ..
+If you will be using the data generation that's used in system tests then upload the container as follows:
+
+```bash
+TAG=$REPO_PREFIX/system-test:$VERSION
+aws ecr create-repository --repository-name $INSTANCE_ID/system-test
+docker build -t $TAG $DOCKER_BASE_DIR/system-test
+docker push $TAG
+```
+
+#### Building for Graviton
+
+If you'd like to run operations in AWS Graviton-based instances, in ARM64 architecture, you can use Docker BuildX to
+build multiplatform images.
+
+These commands will create or recreate a builder:
+
+```bash
+docker buildx rm sleeper || true
+docker buildx create --name sleeper --use
+```
+
+This command should replace the `docker build` and `docker push` commands documented above:
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t $TAG --push $DOCKER_BASE_DIR/<image directory>
 ```
 
 #### Upload the jars to a bucket
 
-We need to upload jars to a S3 bucket so that they can be used by various resources. The code
-below assumes you start in the project root directory.
+We need to upload jars to a S3 bucket so that they can be used by various resources. The code below assumes you start
+in the project root directory, and you've already built the system with `scripts/build/buildForTest.sh`.
 
 ```bash
-cd java
 INSTANCE_ID=<insert-a-unique-id-for-the-sleeper-instance-here>
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-SLEEPER_JARS=sleeper-${INSTANCE_ID}-jars
+JARS_BUCKET=sleeper-${INSTANCE_ID}-jars
 REGION=<insert-the-AWS-region-you-want-to-use-here>
-
-aws s3api create-bucket --acl private --bucket ${SLEEPER_JARS} --region ${REGION} --create-bucket-configuration LocationConstraint=${REGION}
-
-rm -rf temp-jars
-mkdir -p temp-jars
-cp distribution/target/distribution-${VERSION}-bin/scripts/jars/* temp-jars/
-aws s3 sync --size-only temp-jars s3://${SLEEPER_JARS}
-rm -rf temp-jars
-cd ..
+./scripts/deploy/syncJars.sh $JARS_BUCKET $REGION
 ```
 
 #### Configuration
@@ -286,9 +317,18 @@ properties:
 * `sleeper.account`
 * `sleeper.region`
 * `sleeper.vpc`
-* `sleeper.subnets`
+* `sleeper.subnets` - multiple subnet ids can be specified with commas in between, e.g. `subnet-a,subnet-b`.
 * `sleeper.retain.infra.after.destroy` - set to false to cause resources such as the S3
   buckets and Dynamo tables to be destroyed after running CDK destroy.
+
+You will also need to set values for whichever ECR repositories you have uploaded Docker images to. These should be set
+to the ECR repository name, eg. `my-instance-id/ingest`.
+
+* `sleeper.ingest.repo`
+* `sleeper.compaction.repo`
+* `sleeper.bulk.import.emr.serverless.repo`
+* `sleeper.bulk.import.eks.repo`
+* `sleeper.systemtest.repo`
 
 To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
 You can add more than one by creating a `tables` directory, with a subfolder for each table.
@@ -325,19 +365,25 @@ for running bulk import jobs.
 
 #### Deploy with the CDK
 
-Now you have your configuration in place and your environment set
-up, you can deploy your Sleeper instance using AWS CDK.
+Now you have your configuration in place and your environment set up, you can deploy your Sleeper instance using AWS
+CDK.
 
 ```bash
 INSTANCE_PROPERTIES=/path/to/instance.properties
-cd java
-VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-cd ..
+VERSION=$(cat "./scripts/templates/version.txt")
 cdk -a "java -cp scripts/jars/cdk-${VERSION}.jar sleeper.cdk.SleeperCdkApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
 ```
 
 To avoid having to explicitly give approval for deploying all the stacks,
 add "--require-approval never" to the command.
+
+If you'd like to include data generation for system tests, use the system test CDK app instead.
+
+```bash
+INSTANCE_PROPERTIES=/path/to/instance.properties
+VERSION=$(cat "./scripts/templates/version.txt")
+cdk -a "java -cp scripts/jars/system-test-${VERSION}-utility.jar sleeper.systemtest.cdk.SystemTestApp" deploy -c propertiesfile=${INSTANCE_PROPERTIES} -c newinstance=true "*"
+```
 
 #### Customising the Stacks
 
@@ -369,19 +415,22 @@ The following stacks are optional and experimental:
 * `AthenaStack` - for running SQL analytics over the data
 * `EksBulkImportStack` - for running bulk import jobs using Spark running on EKS
 
-By default all the optional stacks are included but to customise
-it, set the `sleeper.optional.stacks` sleeper property to a
-comma separated list of stack names, for example:
+By default most of the optional stacks are included but to customise it, set the `sleeper.optional.stacks` sleeper
+property to a comma separated list of stack names, for example:
 
 ```properties
 sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 ```
 
+Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
+
 ### Utility Scripts
+
 There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
 
 #### Update Existing Instance
-The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars 
+
+The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
 that have changed, update all the docker images, and perform a `cdk deploy`.
 
 ```bash
@@ -389,7 +438,8 @@ sleeper deployment deploy/deployExisting.sh <instance-id>
 ```
 
 #### Add Table
-The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with 
+
+The `addTable.sh` script can be used to add a new table to sleeper. This will create a new table with
 properties defined in `templates/tableproperties.template`, and a schema defined in `templates/schema.template`.
 
 ```bash
@@ -420,7 +470,7 @@ destroy -c propertiesfile=${INSTANCE_PROPERTIES} -c validate=false "*"
 To delete the jars bucket and all the jars in it:
 
 ```bash
-aws s3 rb s3://${SLEEPER_JARS} --force
+aws s3 rb s3://${JARS_BUCKET} --force
 ```
 
 To delete the ECR repositories use the following where INSTANCE_ID is the instance id of the cluster.
