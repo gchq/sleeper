@@ -92,7 +92,10 @@ runStandardTest() {
 runMavenSystemTests() {
     SHORT_ID=$1
     TEST_NAME="maven"
-    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" --log-file "$OUTPUT_DIR/$TEST_NAME.log"
+    mkdir "$OUTPUT_DIR/$TEST_NAME"
+    ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
+      -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
+      &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
     INSTANCE_ID="$SHORT_ID-main"
     echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
