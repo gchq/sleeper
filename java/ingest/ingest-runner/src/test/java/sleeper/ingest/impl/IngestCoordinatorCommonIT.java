@@ -732,22 +732,19 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 2, List.of(0, 12L), List.of(100, 12L)),
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, List.of(0, 12L), List.of(100, 12L))
+                fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+                        "/partition_right/rightFile.parquet", 2, 0, 100),
+                fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+                        "/partition_left/leftFile.parquet", 2, 0, 100)
         );
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        List<List<Object>> recordList = LongStream.range(-100, 100)
-                .mapToObj(longValue -> List.of((Object) String.format("%09d", longValue)))
-                .collect(Collectors.toList());
-        List<List<Object>> recordListCopy = List.copyOf(recordList);
-        recordList.addAll(recordListCopy);
-        recordList.addAll(recordListCopy);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(recordList);
-
+                .containsExactlyInAnyOrder(List.of(0), List.of(0), List.of(100), List.of(100));
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")))
+                .containsExactlyInAnyOrder(List.of(1L), List.of(20L), List.of(1L), List.of(50L));
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField(0),
                 recordListAndSchema,
@@ -824,12 +821,12 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, 0l, 1l)
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, 0L, 1L)
         );
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        List<List<Object>> recordList = Arrays.asList(0l, 1l).stream().map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
+        List<List<Object>> recordList = Stream.of(0L, 1L).map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyInAnyOrderElementsOf(recordList);
 
@@ -883,7 +880,7 @@ public class IngestCoordinatorCommonIT {
                 .schema(duplicatedRecordListAndSchema.sleeperSchema)
                 .build();
         List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_root/leftFile.parquet", 400, -100l, 99l)
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_root/leftFile.parquet", 400, -100L, 99L)
         );
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
@@ -1003,7 +1000,7 @@ public class IngestCoordinatorCommonIT {
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedAggregatedRecords);
-        List<Object> recordList = List.of(new byte[]{1, 1}, new byte[]{11, 12}).stream().collect(Collectors.toList());
+        List<Object> recordList = Stream.of(new byte[]{1, 1}, new byte[]{11, 12}).collect(Collectors.toList());
         List<Object> x = actualRecords.stream().map(record -> record.get(new ArrayList<>(record.getKeys()).get(2))).collect(Collectors.toList());
         assertThat(x).containsExactlyInAnyOrderElementsOf(recordList);
 
