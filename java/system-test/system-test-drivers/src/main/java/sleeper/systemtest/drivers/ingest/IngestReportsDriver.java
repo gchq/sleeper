@@ -17,17 +17,24 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.status.report.IngestJobStatusReport;
 import sleeper.clients.status.report.IngestTaskStatusReport;
+import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
+import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
+import sleeper.job.common.QueueMessageCount;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.util.TestContext;
@@ -48,13 +55,18 @@ public class IngestReportsDriver {
     private final IngestTaskStatusStore ingestTaskStatusStore;
     private final SleeperInstanceContext instance;
     private final SystemTestParameters parameters;
+    private final QueueMessageCount.Client queueClient;
+    private final AmazonElasticMapReduce emrClient;
 
-    public IngestReportsDriver(AmazonDynamoDB dynamoDB, SleeperInstanceContext instance, SystemTestParameters parameters) {
+    public IngestReportsDriver(AmazonDynamoDB dynamoDB, AmazonSQS sqs, AmazonElasticMapReduce emrClient,
+                               SleeperInstanceContext instance, SystemTestParameters parameters) {
         InstanceProperties properties = instance.getInstanceProperties();
         this.ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, properties);
         this.ingestTaskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, properties);
         this.instance = instance;
         this.parameters = parameters;
+        this.queueClient = QueueMessageCount.withSqsClient(sqs);
+        this.emrClient = emrClient;
     }
 
     public void printReports(TestContext testContext) {
@@ -63,6 +75,9 @@ public class IngestReportsDriver {
             new IngestTaskStatusReport(ingestTaskStatusStore,
                     new StandardIngestTaskStatusReporter(out),
                     IngestTaskQuery.ALL).run();
+            new IngestJobStatusReport(ingestJobStatusStore, instance.getTableName(), JobQuery.Type.ALL, null,
+                    new StandardIngestJobStatusReporter(out), queueClient, instance.getInstanceProperties(),
+                    PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emrClient));
         }
     }
 

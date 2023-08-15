@@ -81,7 +81,7 @@ public class SystemTestIngest {
     }
 
     public void printReports(TestContext testContext) {
-        new IngestReportsDriver(clients.getDynamoDB(), instance, parameters)
+        new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, parameters)
                 .printReports(testContext);
     }
 }
