@@ -93,6 +93,10 @@ public class SleeperSystemTest {
         }
     }
 
+    public SystemTestStateStore stateStore() {
+        return new SystemTestStateStore(instance);
+    }
+
     public SystemTestSourceFiles sourceFiles() {
         return new SystemTestSourceFiles(instance, sourceFiles);
     }
@@ -109,10 +113,6 @@ public class SleeperSystemTest {
         return () -> GenerateNumberedRecords.from(
                         instance.getTableProperties().getSchema(), numbers)
                 .iterator();
-    }
-
-    public SystemTestStateStore stateStore() {
-        return new SystemTestStateStore(instance);
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
