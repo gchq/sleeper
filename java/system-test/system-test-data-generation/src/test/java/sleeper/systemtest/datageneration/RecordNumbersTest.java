@@ -18,7 +18,6 @@ package sleeper.systemtest.datageneration;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,9 +29,8 @@ public class RecordNumbersTest {
         LongStream longStream = LongStream.of(1L, 2L, 3L, 4L, 5L);
 
         // When/Then
-        assertThat(RecordNumbers.scrambleNumberedRecords(longStream))
-                .extracting(RecordNumbers::asList)
-                .isEqualTo(List.of(5L, 3L, 2L, 4L, 1L));
+        assertThat(RecordNumbers.scrambleNumberedRecords(longStream).stream())
+                .containsExactly(5L, 3L, 2L, 4L, 1L);
     }
 
     @Test

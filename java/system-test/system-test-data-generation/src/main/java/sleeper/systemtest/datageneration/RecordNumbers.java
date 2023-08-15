@@ -35,8 +35,8 @@ public class RecordNumbers {
         return new RecordNumbers(records);
     }
 
-    public List<Long> asList() {
-        return records;
+    public LongStream stream() {
+        return records.stream().mapToLong(Long::longValue);
     }
 
     public LongStream range(int from, int to) {
