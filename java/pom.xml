@@ -1083,6 +1083,25 @@
             </build>
         </profile>
         <profile>
+            <id>singleIT</id>
+            <activation>
+                <property>
+                    <name>singleIT</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes>${singleIT}</includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>cleanForSite</id>
             <build>
                 <plugins>
