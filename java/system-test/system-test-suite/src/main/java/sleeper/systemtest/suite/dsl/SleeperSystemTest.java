@@ -21,6 +21,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
@@ -52,7 +53,6 @@ import java.util.stream.LongStream;
  * Try to avoid assigning variables except for data you want to reuse.
  */
 public class SleeperSystemTest {
-
     private static final SleeperSystemTest INSTANCE = new SleeperSystemTest();
 
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
@@ -113,5 +113,9 @@ public class SleeperSystemTest {
 
     public SystemTestStateStore stateStore() {
         return new SystemTestStateStore(instance);
+    }
+
+    public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
+        return RecordNumbers.scrambleNumberedRecords(longStream);
     }
 }
