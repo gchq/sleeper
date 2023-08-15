@@ -102,7 +102,7 @@ public class IngestReportsDriver {
         private final OutputStream outputStream;
         private final PrintStream printStream;
 
-        public FileWriter(Path file) {
+        FileWriter(Path file) {
             try {
                 outputStream = Files.newOutputStream(file);
                 printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
