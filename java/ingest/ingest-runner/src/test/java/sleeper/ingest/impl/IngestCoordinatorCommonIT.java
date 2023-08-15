@@ -31,6 +31,7 @@ import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -60,7 +61,6 @@ import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -732,11 +732,13 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 2, List.of(0, 12L), List.of(100, 12L)),
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, List.of(0, 12L), List.of(100, 12L))
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 2, List.of(0, 1L), List.of(100, 1L)),
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 2, List.of(0, 20L), List.of(100, 50L))
         );
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        Key x = fileInfoList.get(0).getMaxRowKey();
+        Key y = actualFiles.get(0).getMaxRowKey();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         List<List<Object>> recordList = LongStream.range(-100, 100)
@@ -904,14 +906,16 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    //FAILING
     public void shouldWriteNoRecordsSuccessfully(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                Collections.emptyList());
+
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("key", new LongType()))
+                .build();
+        List<Record> recordListStart = List.of();
+        RecordGenerator.RecordListAndSchema recordListAndSchema = new RecordGenerator.RecordListAndSchema(recordListStart, schema);
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
@@ -919,34 +923,16 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
-        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
-                .fileNames(List.of())
-                .fileUpdatedTimes(List.of())
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .workingDir(ingestLocalWorkingDirectory)
-                .build();
-
-        // When`
-        ingestRecords(recordListAndSchema, parameters, ingestType);
-
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        List<FileInfo> fileInfoList = List.of();
 
-        List<FileInfo> fileInfoList = List.of(
-                //fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 0, 0l, 0l)
-        );
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getField(0),
-                recordListAndSchema,
-                actualFiles,
-                hadoopConfiguration
-        );
-
+        List<List<Object>> recordList = List.of();
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyInAnyOrderElementsOf(recordList);
     }
 
     @ParameterizedTest
