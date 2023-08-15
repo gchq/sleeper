@@ -660,35 +660,65 @@ public class IngestCoordinatorCommonIT {
     }
 
     @ParameterizedTest
-    @MethodSource("parametersForTests")
+    @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(
-            QuinFunction<StateStore, Schema, String, String, Path, IngestCoordinator<Record>> ingestCoordinatorFactoryFn)
+            TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
                 Arrays.asList(new byte[]{2, 3}, new byte[]{2, 2}, new byte[]{67, 68}, new byte[]{99}));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> {
-            byte[] byteArray = (byte[]) key.get(0);
-            return (byteArray[0] < 10) ? 0 : 1;
-        };
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1),
-                        new AbstractMap.SimpleEntry<>(1, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, new byte[]{10})
                 .buildTree();
+        stateStore.initialise(tree.getAllPartitions());
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("leftFile", "rightFile"))
+                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
 
-        ingestAndVerify(recordListAndSchema,
-                tree,
-                recordListAndSchema.recordList,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
-                null,
-                ingestCoordinatorFactoryFn);
+        // When`
+        ingestRecords(recordListAndSchema, parameters, ingestType);
+
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        List<FileInfo> fileInfoList = List.of(
+                fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+                        "/partition_right/rightFile.parquet", 2, new byte[]{11, 2}, new byte[]{64, 65}),
+                fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+                        "/partition_left/leftFile.parquet", 2, new byte[]{1, 1}, new byte[]{5})
+        );
+
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyInAnyOrder(List.of(new byte[]{1, 1}), List.of(new byte[]{5}), List.of(new byte[]{11, 2}), List.of(new byte[]{64, 65}));
+        //assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")))
+        //        .containsExactlyInAnyOrder(List.of(1L), List.of(20L), List.of(1L), List.of(50L));
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+
+
     }
 
     @ParameterizedTest
@@ -739,8 +769,6 @@ public class IngestCoordinatorCommonIT {
         );
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        Key x = fileInfoList.get(0).getMaxRowKey();
-        Key y = actualFiles.get(0).getMaxRowKey();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
@@ -919,7 +947,7 @@ public class IngestCoordinatorCommonIT {
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
@@ -987,8 +1015,7 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedAggregatedRecords);
         List<Object> recordList = Stream.of(new byte[]{1, 1}, new byte[]{11, 12}).collect(Collectors.toList());
-        List<Object> x = actualRecords.stream().map(record -> record.get(new ArrayList<>(record.getKeys()).get(2))).collect(Collectors.toList());
-        assertThat(x).containsExactlyInAnyOrderElementsOf(recordList);
+        assertThat(actualRecords.stream().map(record -> record.get(new ArrayList<>(record.getKeys()).get(2))).collect(Collectors.toList())).containsExactlyInAnyOrderElementsOf(recordList);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField(0),
