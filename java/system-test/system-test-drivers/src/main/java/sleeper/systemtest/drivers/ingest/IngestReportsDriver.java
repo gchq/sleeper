@@ -85,15 +85,11 @@ public class IngestReportsDriver {
     private ReportHandle openReport(TestContext testContext) {
         Path outputDirectory = parameters.getOutputDirectory();
         if (outputDirectory != null) {
-            return new FileWriter(outputDirectory.resolve(testFileName(testContext)));
+            return new FileWriter(outputDirectory.resolve(
+                    testContext.getTestClassAndMethod() + ".report.log"));
         } else {
             return new LogWriter();
         }
-    }
-
-    private static String testFileName(TestContext context) {
-        return context.getTestClass().orElseThrow().getSimpleName()
-                + "." + context.getTestMethod().orElseThrow().getName();
     }
 
     interface ReportHandle extends AutoCloseable {

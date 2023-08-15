@@ -55,6 +55,10 @@ public class TestContext {
         return Optional.ofNullable(testMethod);
     }
 
+    public String getTestClassAndMethod() {
+        return testClass.getSimpleName() + "." + testMethod.getName();
+    }
+
     public static final class Builder {
         private String displayName;
         private Set<String> tags;
