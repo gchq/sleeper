@@ -45,9 +45,9 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
     @Test
     void shouldSendIngestJobForOneFile() throws Exception {
         // Given
-        DeployDockerInstance.deploy("test-instance-2", s3Client, dynamoDB, sqsClient);
+        DeployDockerInstance.deploy("test-instance-4", s3Client, dynamoDB, sqsClient);
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-2");
+        instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-4");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "system-test");
 
