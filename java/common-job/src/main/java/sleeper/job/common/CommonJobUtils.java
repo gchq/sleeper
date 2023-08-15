@@ -210,7 +210,7 @@ public class CommonJobUtils {
     public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws ListRunningTasksException {
         ListTasksRequest listTasksRequest = new ListTasksRequest().withCluster(clusterName).withDesiredStatus("RUNNING");
         List<String> taskArns = ecsClient.listTasks(listTasksRequest).getTaskArns();
-        if (null == taskArns || taskArns.size() != 1) {
+        if (null == taskArns) {
             throw new ListRunningTasksException("Unable to retrieve details of cluster " + clusterName);
         }
         return taskArns.size();

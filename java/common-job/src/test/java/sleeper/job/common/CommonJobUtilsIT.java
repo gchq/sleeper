@@ -52,10 +52,25 @@ public class CommonJobUtilsIT {
                     .isEqualTo(1);
         }
 
+        @Test
+        void shouldCountECSTasksWhenNoTasksAreRunning() {
+            stubFor(listRunningTasks("test-cluster")
+                    .willReturn(responseWithNoRunningTasks()));
+            assertThat(CommonJobUtils.getNumPendingAndRunningTasks("test-cluster", ecsClient))
+                    .isEqualTo(0);
+        }
+
         private ResponseDefinitionBuilder responseWithOneRunningTask() {
             return new ResponseDefinitionBuilder().withStatus(200)
                     .withBody("{" +
                             "\"taskArns\": [\"test-task\"]" +
+                            "}");
+        }
+
+        private ResponseDefinitionBuilder responseWithNoRunningTasks() {
+            return new ResponseDefinitionBuilder().withStatus(200)
+                    .withBody("{" +
+                            "\"taskArns\": []" +
                             "}");
         }
 
