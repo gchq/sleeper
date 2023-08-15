@@ -77,7 +77,8 @@ public class IngestReportsDriver {
                     IngestTaskQuery.ALL).run();
             new IngestJobStatusReport(ingestJobStatusStore, instance.getTableName(), JobQuery.Type.ALL, null,
                     new StandardIngestJobStatusReporter(out), queueClient, instance.getInstanceProperties(),
-                    PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emrClient));
+                    PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emrClient))
+                    .run();
         }
     }
 
