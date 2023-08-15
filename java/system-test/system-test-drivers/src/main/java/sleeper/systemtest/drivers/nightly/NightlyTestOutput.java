@@ -104,12 +104,12 @@ public class NightlyTestOutput {
     }
 
     private static void loadReportFiles(Path directory, Map<String, TestResult.Builder> resultByTestName) throws IOException {
-        for (String testName : resultByTestName.keySet()) {
-            Path testDirectory = directory.resolve(testName);
+        for (Map.Entry<String, TestResult.Builder> testEntry : resultByTestName.entrySet()) {
+            Path testDirectory = directory.resolve(testEntry.getKey());
             if (!Files.isDirectory(testDirectory)) {
                 continue;
             }
-            TestResult.Builder result = resultByTestName.get(testName);
+            TestResult.Builder result = testEntry.getValue();
             try (Stream<Path> files = Files.list(testDirectory)) {
                 files.filter(LOG_FILE_MATCHER::matches)
                         .forEach(result::logFile);
