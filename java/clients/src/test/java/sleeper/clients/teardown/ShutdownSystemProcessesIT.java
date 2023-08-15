@@ -136,6 +136,8 @@ class ShutdownSystemProcessesIT {
                 .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
         stubFor(listActiveClustersRequest()
                 .willReturn(aResponseWithNumRunningClusters(0)));
+        stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(0)));
 
         // When
         shutdown(properties, extraECSClusters);
@@ -163,7 +165,8 @@ class ShutdownSystemProcessesIT {
                 .willReturn(aResponse().withStatus(200)));
         stubFor(listActiveClustersRequest()
                 .willReturn(aResponseWithNumRunningClusters(0)));
-
+        stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(0)));
         // When
         shutdown(properties);
 
@@ -196,7 +199,8 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
-
+            stubFor(listActiveApplicationsRequest()
+                   .willReturn(aResponseWithNumRunningApplications(0)));
             // When
             shutdown(properties);
 
@@ -220,7 +224,8 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
-
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
             // When
             shutdown(properties);
 
@@ -239,7 +244,8 @@ class ShutdownSystemProcessesIT {
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": []}")));
-
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
             // When
             shutdown(properties);
 
@@ -252,6 +258,8 @@ class ShutdownSystemProcessesIT {
         void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
             // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +

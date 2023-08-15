@@ -24,6 +24,7 @@ import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
@@ -44,8 +45,7 @@ public class WiremockEMRTestHelper {
     }
 
     public static MappingBuilder listActiveApplicationsRequest() {
-        return post("/applications")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION);
+        return get("/applications");
     }
 
     public static MappingBuilder listStepsRequestWithClusterId(String clusterId) {
