@@ -22,6 +22,9 @@ import sleeper.systemtest.drivers.util.TestContext;
 
 public class TestContextFactory {
 
+    private TestContextFactory() {
+    }
+
     public static TestContext testContext(TestInfo info) {
         return TestContext.builder()
                 .displayName(info.getDisplayName())
