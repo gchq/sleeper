@@ -86,7 +86,12 @@ public class NightlyTestOutput {
                 statusFiles.add(file);
             }
         });
-        return fromLogAndStatusFiles(logFiles, statusFiles, directory.resolve("site.zip"));
+        Path sitePath = directory.resolve("site.zip");
+        if (Files.exists(sitePath)) {
+            return fromLogAndStatusFiles(logFiles, statusFiles, sitePath);
+        } else {
+            return fromLogAndStatusFiles(logFiles, statusFiles, null);
+        }
     }
 
     private static void forEachFileIn(Path directory, Consumer<Path> action) throws IOException {
