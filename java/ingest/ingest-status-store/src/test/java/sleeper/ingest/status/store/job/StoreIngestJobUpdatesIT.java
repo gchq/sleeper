@@ -78,8 +78,6 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         IngestJob job = jobWithFiles("file");
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
-
-        // When
         store.jobStarted(defaultJobStartedEvent(job, startedTime));
         store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
 
