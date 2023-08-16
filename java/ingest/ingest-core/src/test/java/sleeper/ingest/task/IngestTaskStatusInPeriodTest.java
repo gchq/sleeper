@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.task;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.RecordsProcessed;
@@ -112,6 +113,29 @@ public class IngestTaskStatusInPeriodTest {
 
         // When / Then
         assertThat(task.isInPeriod(startTime, FAR_FUTURE)).isTrue();
+    }
+
+    @Test
+    @Disabled("TODO")
+    public void shouldBeInPeriodWhenStartedBeforePeriodAndStillRunning() {
+        // Given
+        Instant startTime = Instant.parse("2022-10-06T11:00:00.001Z");
+        Instant periodStart = Instant.parse("2022-10-06T11:10:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
+
+        // When / Then
+        assertThat(taskWithStartTime(startTime).isInPeriod(periodStart, periodEnd)).isTrue();
+    }
+
+    @Test
+    public void shouldNotBeInPeriodWhenStartedAfterPeriodAndStillRunning() {
+        // Given
+        Instant periodStart = Instant.parse("2022-10-06T11:00:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
+        Instant startTime = Instant.parse("2022-10-06T12:10:00.001Z");
+
+        // When / Then
+        assertThat(taskWithStartTime(startTime).isInPeriod(periodStart, periodEnd)).isFalse();
     }
 
     private static IngestTaskStatus taskWithStartTime(Instant startTime) {
