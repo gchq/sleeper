@@ -7,11 +7,24 @@ functionality, but will allow you to peform a queue-based standard ingest, and r
 
 ## Prerequesites
 
-Before you can deploy Sleeper in a LocalStack container you need to install `docker` and `docker-compose`.
+The easiest way to run the LocalStack deployment commands is to use the Sleeper CLI, along with the deployment docker
+image. You can get to a command line inside the deployment image by running the following command:
+
+```shell
+sleeper deployment
+```
+
+This will put you in the `scripts` directory with all of the tools required to run Sleeper on LocalStack installed.
+All commands that follow will assume you are working inside the sleeper-deployment docker container.
 
 ## Launch LocalStack container
 
-To launch the LocalStack container, run the `startContainer.sh` script in the `scripts/deploy/LocalStack` folder.
+To launch the LocalStack container, you can run the following command:
+
+```shell
+./deploy/localstack/startContainer.sh
+```
+
 This will also output commands you can use to point Sleeper scripts to your LocalStack container.
 
 ## Deploy to LocalStack
@@ -21,7 +34,7 @@ is set. Commands to do this are provided by the `startContainer.sh` script, but 
 running the following command:
 
 ```shell
-export AWS_ENDPOINT_URL=http://localhost:4566
+export AWS_ENDPOINT_URL=http://host.docker.internal:4566
 ```
 
 To go back to using the default AWS endpoint, you can unset this environment variable:
@@ -30,21 +43,14 @@ To go back to using the default AWS endpoint, you can unset this environment var
 unset AWS_ENDPOINT_URL
 ```
 
-Before you can run any LocalStack scripts, you need to build the project, as well as the docker images.
-You can do this by running the following commands:
+To deploy an instance of Sleeper to your LocalStack container, you can run the following command:
 
 ```shell
-./scripts/build/build.sh
-./scripts/deploy/localstack/buildDockerImages.sh
+./deploy/localstack/deploy.sh <instance-id>
 ```
 
-To deploy an instance of Sleeper to your LocalStack container, you can run the following command in the
-`scripts/deploy/LocalStack` folder. Note that you will not be able to run this command unless you have the
-AWS_ENDPOINT_URL environment variable set as described in the previous section.
-
-```shell
-./deploy.sh <instance-id>
-```
+Note that you will not be able to run this command unless you have the AWS_ENDPOINT_URL environment variable
+set as described in the previous section.
 
 This will create a config bucket and a table bucket in LocalStack, and upload the necessary properties files.
 A single table will be created with the name `system-test`.
@@ -53,16 +59,15 @@ Once the instance is deployed, you can launch the admin client to view the insta
 instance, as well as running partition and file status reports.
 
 ```shell
-./scripts/utility/adminClient.sh <instance-id>
+./utility/adminClient.sh <instance-id>
 ```
 
 ## Standard ingest
 
-To ingest some data into the `system-test` table in your instance, you can run the following script in the
-`scripts/deploy/localstack` folder.
+To ingest some data into the `system-test` table in your instance, you can run the following command:
 
 ```shell
-./ingestFiles.sh <instance-id> <file1.parquet> <file2.parquet> <file3.parquet> ....
+./deploy/localstack/ingestFiles.sh <instance-id> <file1.parquet> <file2.parquet> <file3.parquet> ....
 ```
 
 This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
@@ -74,16 +79,16 @@ ingest task status report.
 
 ## Tear down instance
 
-You can tear down an existing instance by running the following command in the `scripts/deploy/LocalStack` folder.
+You can tear down an existing instance by running the following command:
 
 ```shell
-./tearDown.sh <instance-id>
+./deploy/localstack/tearDown.sh <instance-id>
 ```
 
 ## Stop LocalStack container
 
-To stop the LocalStack container, you can run the following command in the `scripts/deploy/LocalStack` folder.
+To stop the LocalStack container, you can run the following command:
 
 ```shell
-./stopContainer.sh
+./deploy/localstack/stopContainer.sh
 ```
