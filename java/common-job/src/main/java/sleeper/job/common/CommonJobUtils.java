@@ -16,10 +16,11 @@
 package sleeper.job.common;
 
 import com.amazonaws.services.ecs.AmazonECS;
+import com.amazonaws.services.ecs.model.Cluster;
 import com.amazonaws.services.ecs.model.ContainerInstance;
+import com.amazonaws.services.ecs.model.DescribeClustersRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesRequest;
 import com.amazonaws.services.ecs.model.DescribeContainerInstancesResult;
-import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.util.EC2MetadataUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -207,12 +208,12 @@ public class CommonJobUtils {
         }
     }
 
-    public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws ListRunningTasksException {
-        ListTasksRequest listTasksRequest = new ListTasksRequest().withCluster(clusterName).withDesiredStatus("RUNNING");
-        List<String> taskArns = ecsClient.listTasks(listTasksRequest).getTaskArns();
-        if (null == taskArns || taskArns.size() != 1) {
-            throw new ListRunningTasksException("Unable to retrieve details of cluster " + clusterName);
+    public static int getNumPendingAndRunningTasks(String clusterName, AmazonECS ecsClient) throws DescribeClusterException {
+        DescribeClustersRequest describeClustersRequest = new DescribeClustersRequest().withClusters(clusterName);
+        List<Cluster> clusters = ecsClient.describeClusters(describeClustersRequest).getClusters();
+        if (null == clusters || clusters.size() != 1) {
+            throw new DescribeClusterException("Unable to retrieve details of cluster " + clusterName);
         }
-        return taskArns.size();
+        return clusters.get(0).getPendingTasksCount() + clusters.get(0).getRunningTasksCount();
     }
 }
