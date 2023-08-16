@@ -33,8 +33,11 @@ public class IngestStatusStoreDriver {
         this.ingestTaskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
     }
 
-    public void clearStores() {
-        ingestJobStatusStore.clear();
-        ingestTaskStatusStore.clear();
+    public IngestJobStatusStore jobs() {
+        return ingestJobStatusStore;
+    }
+
+    public IngestTaskStatusStore tasks() {
+        return ingestTaskStatusStore;
     }
 }

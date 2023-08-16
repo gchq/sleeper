@@ -49,12 +49,12 @@ public class IngestBatcherIT {
     void setUp() {
         sleeper.connectToInstance(MAIN);
         sleeper.ingest().batcher().clearStore();
-        sleeper.ingest().statusStores().clear();
+        sleeper.ingest().reporting().clearTasks().clearJobs();
     }
 
     @AfterEach
     void tearDown(TestInfo testInfo) {
-        sleeper.ingest().printReports(testContext(testInfo));
+        sleeper.ingest().reporting().printTasksAndJobs(testContext(testInfo));
     }
 
     @Test
