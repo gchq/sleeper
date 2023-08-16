@@ -55,12 +55,14 @@ public class EmrBulkImportStack extends NestedStack {
             List<StateStoreStack> stateStoreStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
+
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 this, "NonPersistentEMR", instanceProperties, statusStoreResources);
         bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
+
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -78,6 +80,15 @@ public class EmrBulkImportStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .resources(Lists.newArrayList("*"))
                 .conditions(conditions)
+                .build());
+
+        bulkImportJobStarter.addToRolePolicy(PolicyStatement.Builder.create()
+                .sid("CreateCleanupRole")
+                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
+                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
+                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
+                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
+                                "elasticmapreduce.amazonaws.com.cn"))))
                 .build());
     }
 

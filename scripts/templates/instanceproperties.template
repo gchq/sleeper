@@ -39,6 +39,10 @@ sleeper.ingest.repo=changeme
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
 
+# The name of the repository for the EMR serverless container. The Docker image from the bulk-import
+# module should have been uploaded to an ECR repository of this name in this account.
+sleeper.bulk.import.emr.serverless.repo=changeme
+
 # (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
 # is stored.
 sleeper.bulk.import.eks.repo=changeme
@@ -74,7 +78,7 @@ sleeper.stack.tag.name=DeploymentStack
 sleeper.retain.infra.after.destroy=true
 
 # The optional stacks to deploy.
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,DashboardStack
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
@@ -410,6 +414,81 @@ sleeper.bulk.import.emr.ebs.volume.type=gp2
 # (Non-persistent or persistent EMR mode only) The number of EBS volumes per instance.
 # This can be a number from 1 to 25.
 sleeper.bulk.import.emr.ebs.volumes.per.instance=4
+
+# The architecture for EMR Serverless to use. X86_64 or ARM (Coming soon)
+sleeper.bulk.import.emr.serverless.architecture=X86_64
+
+# The version of EMR Serverless to use.
+sleeper.bulk.import.emr.serverless.release=emr-6.10.0
+
+# The number of cores used by a Serverless executor. Used to set spark.executor.cores.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.executor.cores=4
+
+# The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.executor.memory=16g
+
+# The amount of storage allocated to a Serverless executor.
+sleeper.bulk.import.emr.serverless.executor.disk=200g
+
+# The number of executors to be used with Serverless. Used to set spark.executor.instances.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.executor.instances=36
+
+# The number of cores used by the Serverless Spark driver. Used to set spark.driver.cores.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.driver.cores=4
+
+# The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.driver.memory=16g
+
+# The path to JAVA_HOME to be used by the custom image for bulk import.
+sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
+
+# Whether Spark should use dynamic allocation to scale resources up and down. Used to set
+# spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled=false
+
+# Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.rdd.compress=true
+
+# Whether to compress map output files. Used to set spark.shuffle.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.shuffle.compress=true
+
+# Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.shuffle.spill.compress=true
+
+# The default parallelism for Spark job. Used to set spark.default.parallelism.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.default.parallelism=288
+
+# The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to set
+# spark.sql.shuffle.partitions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
+
+# The default timeout for network interactions in Spark. Used to set spark.network.timeout.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.network.timeout=800s
+
+# (The interval between heartbeats from executors to the driver. Used to set
+# spark.executor.heartbeatInterval.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.executor.heartbeat.interval=60s
+
+# The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
+
+# The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for
+# execution and storage. Used to set spark.memory.storageFraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
 
 # (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
 # for bulk importing data using Spark running on EMR.

@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkimport.configuration;
+package sleeper.configuration.properties.validation;
 
 import org.apache.commons.lang3.EnumUtils;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperProperties.readList;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
+import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 
 public class EmrInstanceTypeConfig {
     private final EmrInstanceArchitecture architecture;
@@ -70,6 +72,20 @@ public class EmrInstanceTypeConfig {
             }
         }
         return builders.stream().map(Builder::build);
+    }
+
+    public static boolean isValidInstanceTypes(String value) {
+        if (value == null) {
+            return false;
+        }
+        try {
+            List<String> instanceTypes = readInstanceTypesProperty(readList(value), X86_64)
+                    .map(EmrInstanceTypeConfig::getInstanceType)
+                    .collect(Collectors.toUnmodifiableList());
+            return instanceTypes.size() == instanceTypes.stream().distinct().count();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     public static Builder builder() {

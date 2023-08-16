@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -35,6 +36,7 @@ public class SystemTestClients {
     private final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     private final LambdaClient lambda = createSystemTestLambdaClient();
     private final CloudFormationClient cloudFormation = CloudFormationClient.create();
+    private final EmrServerlessClient emrServerless = EmrServerlessClient.create();
 
     public AmazonS3 getS3() {
         return s3;
@@ -58,5 +60,9 @@ public class SystemTestClients {
 
     public CloudFormationClient getCloudFormation() {
         return cloudFormation;
+    }
+
+    public EmrServerlessClient getEmrServerless() {
+        return emrServerless;
     }
 }

@@ -1338,7 +1338,7 @@ public class QueryExecutorIT {
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
                               TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
-        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(FILE_SYSTEM, "file://");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         IngestFactory factory = IngestFactory.builder()
