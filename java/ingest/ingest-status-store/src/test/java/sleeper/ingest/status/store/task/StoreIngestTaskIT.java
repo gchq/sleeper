@@ -93,18 +93,4 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
-
-    @Test
-    void shouldClearStoreAfterTaskFinished() {
-        // Given
-        IngestTaskStatus taskStatus = finishedTaskWithDefaults();
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
-
-        // When
-        store.clear();
-
-        // Then
-        assertThat(store.getAllTasks()).isEmpty();
-    }
 }

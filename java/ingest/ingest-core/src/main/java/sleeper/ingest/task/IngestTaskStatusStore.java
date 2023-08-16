@@ -45,7 +45,4 @@ public interface IngestTaskStatusStore {
     default List<IngestTaskStatus> getTasksInProgress() {
         throw new UnsupportedOperationException("Instance has no ingest task status store");
     }
-
-    default void clear() {
-    }
 }
