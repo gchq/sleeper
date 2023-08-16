@@ -27,8 +27,20 @@ import org.jungrapht.visualization.renderers.Renderer;
 import org.jungrapht.visualization.util.LayoutAlgorithmTransition;
 import org.jungrapht.visualization.util.LayoutPaintable;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.SwingUtilities;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 
 public class DrawDependencyGraph {
@@ -45,7 +57,7 @@ public class DrawDependencyGraph {
                     + "     - scales the graph layout when the combined scale is greater than 1<p>"
                     + "     - scales the graph view when the combined scale is less than 1"
                     + "<li>Mouse1+drag pans the graph"
-                    +"<li>Mouse1 double click on the background resets all transforms"
+                    + "<li>Mouse1 double click on the background resets all transforms"
                     + "</ul>"
                     + "<h3>Vertex/Edge Selection:</h3>"
                     + "<ul>"
@@ -59,7 +71,7 @@ public class DrawDependencyGraph {
                     + "<ul>"
                     + "<li>Mouse1+MENU+drag on a selected vertex moves all selected Vertices"
                     + "</ul>"
-                    +"Note that MENU == Command on a Mac, MENU == CTRL on a PC"
+                    + "Note that MENU == Command on a Mac, MENU == CTRL on a PC"
                     + "</html>";
 
     public void drawGraph(GraphModel model) {
@@ -75,7 +87,7 @@ public class DrawDependencyGraph {
                         .layoutSize(size).build();
 
         // use html to break long labels into multi-line and center-align the text
-        vv.getRenderContext().setVertexLabelFunction(v -> "<html><b><center>"+
+        vv.getRenderContext().setVertexLabelFunction(v -> "<html><b><center>" +
                 v.toString().replaceAll("/", "/<br>"));
 
         PickedNodeState picked = new PickedNodeState(model);
