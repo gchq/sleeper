@@ -24,6 +24,10 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java --add-opens=java.base/java.nio=ALL-UNNAMED -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" \
-  sleeper.clients.docker.WriteRandomData "$@" \
+java --add-opens=java.base/java.nio=ALL-UNNAMED \
+  --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens=java.base/java.util=ALL-UNNAMED \
+  --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
+  -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
+  sleeper.systemtest.datageneration.IngestRandomDataToDocker "$@" \
   
