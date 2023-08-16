@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.18.0-SNAPSHOT</version>
+    <version>0.19.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -157,7 +157,6 @@
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
-        <sleeper.system.test.instance.id/>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -910,10 +909,6 @@
                     <configuration>
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemProperties>
-                            <property>
-                                <name>sleeper.system.test.instance.id</name>
-                                <value>${sleeper.system.test.instance.id}</value>
-                            </property>
                             <property>
                                 <name>sleeper.system.test.short.id</name>
                                 <value>${sleeper.system.test.short.id}</value>

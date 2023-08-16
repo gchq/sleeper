@@ -18,7 +18,6 @@ package sleeper.ingest;
 
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.datasketches.quantiles.ItemsUnion;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.Test;
@@ -41,11 +40,7 @@ import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
-import sleeper.sketches.s3.SketchesSerDeToS3;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -595,9 +590,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Merge the sketch files for the partition and check it has the right properties
         ItemsUnion<Long> union = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
         for (String file : partitionToFileMapping.get("partition1")) {
-            String sketchFile = file.replace(".parquet", ".sketches");
-            assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-            Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+            Sketches readSketches = getSketches(schema, file);
             union.update(readSketches.getQuantilesSketch("key"));
         }
         ItemsSketch<Long> readSketch0 = union.getResult();
@@ -630,9 +623,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Merge the sketch files for the partition and check it has the right properties
         ItemsUnion<Long> union2 = ItemsUnion.getInstance(1024, Comparator.naturalOrder());
         for (String file : partitionToFileMapping.get("partition2")) {
-            String sketchFile = file.replace(".parquet", ".sketches");
-            assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-            Sketches readSketches = new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+            Sketches readSketches = getSketches(schema, file);
             union2.update(readSketches.getQuantilesSketch("key"));
         }
         ItemsSketch<Long> readSketch1 = union2.getResult();

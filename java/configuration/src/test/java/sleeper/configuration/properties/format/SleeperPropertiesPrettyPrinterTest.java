@@ -57,7 +57,7 @@ class SleeperPropertiesPrettyPrinterTest {
     @DisplayName("Print properties")
     class PrintProperties {
         @Test
-        void shouldPrintAllInstanceProperties() throws Exception {
+        void shouldPrintAllInstanceProperties() {
             // When / Then
             assertThat(printEmptyInstanceProperties())
                     // Check all the user defined properties are present in the output
@@ -104,7 +104,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintPropertiesInTheCorrectOrder() throws IOException {
+        void shouldPrintPropertiesInTheCorrectOrder() {
             // When
             String output = printEmptyInstanceProperties();
 
@@ -138,7 +138,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintUnsetPropertyValue() throws Exception {
+        void shouldPrintUnsetPropertyValue() {
             // When / Then
             assertThat(printEmptyInstanceProperties())
                     .contains("# (no value set, uncomment to set a value)\n" +
@@ -146,7 +146,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintDefaultedPropertyValue() throws Exception {
+        void shouldPrintDefaultedPropertyValue() {
             // When / Then
             assertThat(printEmptyInstanceProperties())
                     .contains("# (using default value shown below, uncomment to set a value)\n" +
@@ -157,7 +157,7 @@ class SleeperPropertiesPrettyPrinterTest {
         void shouldPrintPropertyValueSetToEmptyString() throws Exception {
             // When / Then
             assertThat(printInstanceProperties("sleeper.logging.root.level="))
-                    .contains("\nsleeper.logging.root.level=\n");
+                    .contains("\n# sleeper.logging.root.level=\n");
         }
 
         @Test
@@ -186,7 +186,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldNotPrintPropertiesNotKnownBySleeperWhenNoneSet() throws IOException {
+        void shouldNotPrintPropertiesNotKnownBySleeperWhenNoneSet() {
             assertThat(printEmptyInstanceProperties())
                     .doesNotContain("The following properties are not recognised by Sleeper.");
         }

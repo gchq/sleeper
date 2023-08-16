@@ -47,6 +47,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
@@ -87,6 +88,7 @@ public class PopulatePropertiesIT {
         expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
+        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(ACCOUNT, sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
         expected.set(REGION, localStackContainer.getRegion());
 

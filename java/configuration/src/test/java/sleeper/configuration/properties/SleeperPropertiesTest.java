@@ -15,6 +15,8 @@
  */
 package sleeper.configuration.properties;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
@@ -25,8 +27,11 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
+import static sleeper.configuration.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 
 class SleeperPropertiesTest {
@@ -150,7 +155,7 @@ class SleeperPropertiesTest {
     }
 
     @Test
-    void shouldReturnNullIfListIsNullOrUnset() {
+    void shouldReturnEmptyListIfListIsNullOrUnset() {
         // Given
         TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
@@ -158,20 +163,60 @@ class SleeperPropertiesTest {
         List<String> list = testSleeperProperties.getList(USER_JARS);
 
         // Then
-        assertThat(list).isNull();
+        assertThat(list).isEmpty();
     }
 
-    @Test
-    void shouldReturnEmptyListIfListPropertyIsSetToEmptyString() {
-        // Given
-        TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
-        testSleeperProperties.set(OPTIONAL_STACKS, "");
+    @Nested
+    @DisplayName("Convert empty strings")
+    class ConvertEmptyString {
+        @Test
+        void shouldGetNullWhenPropertyIsSetToEmptyString() {
+            // Given
+            TestSleeperProperties sleeperProperties = new TestSleeperProperties();
+            sleeperProperties.set(ACCOUNT, "");
 
-        // When
-        List<String> list = testSleeperProperties.getList(OPTIONAL_STACKS);
+            // When
+            String value = sleeperProperties.get(ACCOUNT);
 
-        // Then
-        assertThat(list).isEmpty();
+            // Then
+            assertThat(value).isNull();
+        }
+
+        @Test
+        void shouldGetDefaultValueWhenPropertyWithDefaultValueIsSetToEmptyString() {
+            // Given
+            TestSleeperProperties sleeperProperties = new TestSleeperProperties();
+            sleeperProperties.set(VPC_ENDPOINT_CHECK, "");
+
+            // When
+            boolean value = sleeperProperties.getBoolean(VPC_ENDPOINT_CHECK);
+
+            // Then
+            assertThat(value).isTrue();
+        }
+
+        @Test
+        void shouldTreatEmptyStringAsUnsetValue() {
+            // Given
+            TestSleeperProperties sleeperProperties = new TestSleeperProperties();
+            sleeperProperties.set(ACCOUNT, "");
+
+            // When / Then
+            assertThat(sleeperProperties.isSet(ACCOUNT)).isFalse();
+        }
+
+        @Test
+        void shouldReturnEmptyListIfListPropertyIsSetToEmptyString() {
+            // Given
+            TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
+            testSleeperProperties.set(SUBNETS, "");
+
+            // When
+            List<String> list = testSleeperProperties.getList(SUBNETS);
+
+            // Then
+            assertThat(list).isEmpty();
+        }
     }
 
     private static class TestSleeperProperties extends SleeperProperties<SleeperProperty> {
