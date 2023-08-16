@@ -110,6 +110,22 @@ public class AverageRecordRateTest {
         ).containsExactly(1, 100L, 100L, Duration.ofSeconds(20), 5.0, 5.0, 10.0, 10.0);
     }
 
+    @Test
+    void shouldExcludeRunsWithRateOfNaNFromAverageRateCalculation() {
+        AverageRecordRate rate = rateFrom(
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(0L, 0L),
+                        Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(0)),
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(10L, 10L),
+                        Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
+
+        assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
+                "recordsReadPerSecond", "recordsWrittenPerSecond",
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond"
+        ).containsExactly(2, 10L, 10L, Duration.ofSeconds(10), 1.0, 1.0, 0.5, 0.5);
+    }
+
     private static AverageRecordRate rateFrom(RecordsProcessedSummary... summaries) {
         return AverageRecordRate.of(Stream.of(summaries)
                 .map(summary -> ProcessRun.finished(DEFAULT_TASK_ID,
