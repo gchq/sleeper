@@ -40,7 +40,6 @@ import javax.swing.SwingUtilities;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 
 public class DrawDependencyGraph {
@@ -80,11 +79,9 @@ public class DrawDependencyGraph {
         model.getNodes().forEach(g::addVertex);
         model.getEdges().forEach(edge -> g.addEdge(edge.getFrom(model), edge.getTo(model), edge));
 
-        Dimension size = new Dimension(600, 600);
         VisualizationViewer<GraphNode, GraphEdge> vv =
-                VisualizationViewer.builder(g)
-                        .viewSize(size)
-                        .layoutSize(size).build();
+                VisualizationViewer.<GraphNode, GraphEdge>builder(g)
+                        .build();
 
         // use html to break long labels into multi-line and center-align the text
         vv.getRenderContext().setVertexLabelFunction(v -> "<html><b><center>" +
