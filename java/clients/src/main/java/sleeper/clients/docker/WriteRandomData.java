@@ -70,10 +70,10 @@ public class WriteRandomData {
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamoDB, int numberOfRecords) throws IOException {
         writeWithIngestFactory(instanceProperties, tableProperties, dynamoDB, new Configuration(),
-                buildS3Client(S3AsyncClient.builder()), numberOfRecords);
+                buildS3AsyncClient(S3AsyncClient.builder()), numberOfRecords);
     }
 
-    private static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
+    private static S3AsyncClient buildS3AsyncClient(S3AsyncClientBuilder builder) {
         URI customEndpoint = getCustomEndpoint();
         if (customEndpoint != null) {
             return builder
