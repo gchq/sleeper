@@ -72,6 +72,13 @@ which will take the ingest job off the queue and perform the ingest.
 You can then view the ingest jobs and task that were run by launching the admin client and running an ingest job or
 ingest task status report.
 
+You can also write some random data to your instance by running the following script in the `scripts/deploy/localstack`
+folder. The default number of records is 10000.
+
+```shell
+./writeRandomData.sh <instance-id> <optional-number-of-records>
+```
+
 ## Tear down instance
 
 You can tear down an existing instance by running the following command in the `scripts/deploy/LocalStack` folder.
