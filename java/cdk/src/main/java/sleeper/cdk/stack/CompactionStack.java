@@ -422,7 +422,7 @@ public class CompactionStack extends NestedStack {
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()
                     .resources(Collections.singletonList("*"))
-                    .actions(List.of("ecs:DescribeContainerInstances"))
+                    .actions(Arrays.asList("ecs:DescribeContainerInstances"))
                     .build());
 
             compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
@@ -498,7 +498,7 @@ public class CompactionStack extends NestedStack {
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()
                     .resources(Collections.singletonList("*"))
-                    .actions(List.of("ecs:DescribeContainerInstances"))
+                    .actions(Arrays.asList("ecs:DescribeContainerInstances"))
                     .build());
 
             compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
@@ -548,7 +548,7 @@ public class CompactionStack extends NestedStack {
                 .associatePublicIpAddress(false)
                 .requireImdsv2(true)
                 .userData(customUserData)
-                .blockDevices(List.of(BlockDevice.builder()
+                .blockDevices(Arrays.asList(BlockDevice.builder()
                         .deviceName("/dev/xvda") // root volume
                         .volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),
                                 EbsDeviceOptions.builder()
@@ -571,7 +571,7 @@ public class CompactionStack extends NestedStack {
         // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
         ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
-                List.of(customTermination.getFunctionArn()));
+                Arrays.asList(customTermination.getFunctionArn()));
 
         customTermination.addPermission("AutoscalingCall", Permission.builder()
                 .action("lambda:InvokeFunction")
@@ -751,7 +751,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
                 .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
+                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
                 .build();
@@ -805,7 +805,7 @@ public class CompactionStack extends NestedStack {
         PolicyStatement policyStatement = PolicyStatement.Builder
                 .create()
                 .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:ListTasks", "ecs:RunTask", "iam:PassRole",
+                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
                         "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
                 .build();
