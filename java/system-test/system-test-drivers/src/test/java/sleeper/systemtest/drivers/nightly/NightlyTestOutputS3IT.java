@@ -93,7 +93,7 @@ class NightlyTestOutputS3IT {
 
         // Then
         assertThat(streamS3Objects())
-                .contains(
+                .containsExactly(
                         tuple("summary.json", example("nightlyTest/uploadSummary.json")),
                         tuple("summary.txt", example("nightlyTest/uploadSummary.txt")));
     }
@@ -110,7 +110,7 @@ class NightlyTestOutputS3IT {
 
         // Then
         assertThat(streamS3Objects())
-                .contains(
+                .containsExactly(
                         tuple("summary.json", example("nightlyTest/updateExistingSummary.json")),
                         tuple("summary.txt", example("nightlyTest/updateExistingSummary.txt")));
     }
