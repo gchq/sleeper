@@ -36,7 +36,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z")
             );
 
-            assertThat(timeWindowQuery.isInWindow(startTime, startTime))
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
                     .isTrue();
         }
 
@@ -48,7 +48,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z")
             );
 
-            assertThat(timeWindowQuery.isInWindow(startTime, startTime))
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
                     .isTrue();
         }
 
@@ -60,8 +60,77 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z")
             );
 
-            assertThat(timeWindowQuery.isInWindow(startTime, startTime))
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
                     .isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Process finished")
+    class ProcessFinished {
+        @Test
+        void shouldBeInPeriodWhenProcessStartsAndFinishesInsidePeriod() {
+            Instant startTime = Instant.parse("2023-08-16T12:20:00Z");
+            Instant endTime = Instant.parse("2023-08-16T12:40:00Z");
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldNotBeInPeriodWhenProcessFinishesBeforePeriod() {
+            Instant startTime = Instant.parse("2023-08-16T11:20:00Z");
+            Instant endTime = Instant.parse("2023-08-16T11:40:00Z");
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldNotBeInPeriodWhenProcessStartsAfterPeriod() {
+            Instant startTime = Instant.parse("2023-08-16T13:20:00Z");
+            Instant endTime = Instant.parse("2023-08-16T13:40:00Z");
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldBeInPeriodWhenProcessOverlapsEndOfPeriod() {
+            Instant startTime = Instant.parse("2023-08-16T12:40:00Z");
+            Instant endTime = Instant.parse("2023-08-16T13:20:00Z");
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldBeInPeriodWhenProcessOverlapsStartOfPeriod() {
+            Instant startTime = Instant.parse("2023-08-16T11:40:00Z");
+            Instant endTime = Instant.parse("2023-08-16T12:20:00Z");
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+                    .isTrue();
         }
     }
 }

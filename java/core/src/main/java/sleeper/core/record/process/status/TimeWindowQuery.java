@@ -27,24 +27,12 @@ public class TimeWindowQuery {
         this.windowEndTime = windowEndTime;
     }
 
-    public boolean isStartedInWindow(Instant startTime) {
-        return startTime.isAfter(windowStartTime) &&
+    public boolean isUnfinishedProcessInWindow(Instant startTime) {
+        return startTime.isBefore(windowEndTime);
+    }
+
+    public boolean isFinishedProcessInWindow(Instant startTime, Instant endTime) {
+        return endTime.isAfter(windowStartTime) &&
                 startTime.isBefore(windowEndTime);
-    }
-
-    public boolean isFinishedInWindow(Instant startTime, Instant endTime) {
-        return startTime.isBefore(windowStartTime) &&
-                endTime.isAfter(windowStartTime) &&
-                endTime.isBefore(windowEndTime);
-    }
-
-    public boolean isRunningInWindow(Instant startTime) {
-        return startTime.isBefore(windowStartTime);
-    }
-
-    public boolean isInWindow(Instant startTime, Instant endTime) {
-        return isStartedInWindow(startTime) ||
-                isRunningInWindow(startTime) ||
-                isFinishedInWindow(startTime, endTime);
     }
 }
