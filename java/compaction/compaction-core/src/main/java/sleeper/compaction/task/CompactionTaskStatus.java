@@ -18,6 +18,7 @@ package sleeper.compaction.task;
 
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -54,9 +55,13 @@ public class CompactionTaskStatus {
         return finishedStatus;
     }
 
-    public boolean isInPeriod(Instant startTime, Instant endTime) {
-        return startTime.isBefore(getLastTime())
-                && endTime.isAfter(getStartTime());
+    public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
+        TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
+        if (isFinished()) {
+            return timeWindowQuery.isFinishedProcessInWindow(startTime, finishedStatus.getFinishTime());
+        } else {
+            return timeWindowQuery.isUnfinishedProcessInWindow(startTime);
+        }
     }
 
     public Instant getStartTime() {
@@ -76,14 +81,6 @@ public class CompactionTaskStatus {
             return Duration.between(startTime, finishedStatus.getFinishTime());
         } else {
             return null;
-        }
-    }
-
-    private Instant getLastTime() {
-        if (isFinished()) {
-            return finishedStatus.getFinishTime();
-        } else {
-            return startTime;
         }
     }
 

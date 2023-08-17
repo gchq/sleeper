@@ -15,9 +15,6 @@
 ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
 FROM ${DEPENDENCIES_IMAGE}
 
-RUN curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-    -o /usr/local/bin/docker-compose
-RUN chmod +x /usr/local/bin/docker-compose
 # Set command line prompt to show you're in the deployment Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-deployment\[\e[0m\]: \w # "' >> ~/.bashrc
 

@@ -37,16 +37,18 @@ jobs:
         run: mvn --batch-mode clean install -am -pl ${{ steps.config.outputs.moduleList }} -Pquick,skipShade -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Test
+        id: test
         run: mvn --batch-mode --fail-at-end verify -pl ${{ steps.config.outputs.moduleList }} -Dmaven.repo.local=.m2/repository -e
         working-directory: ./java
       - name: Generate site
-        if: always()
+        id: site
+        if: failure() && steps.test.conclusion == 'failure'
         run: |
           mvn --batch-mode clean site-deploy -PcleanForSite -pl sleeper:aws,${{ steps.config.outputs.moduleList }} \
             -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Upload site as artifact
-        if: always()
+        if: failure() && steps.site.conclusion == 'success'
         uses: actions/upload-artifact@v3
         with:
           name: site

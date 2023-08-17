@@ -18,7 +18,6 @@ package sleeper.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.RecordsProcessedSummaryTestData;
 
@@ -33,9 +32,6 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 public class CompactionJobStatusInPeriodTest {
 
     private final CompactionJob job = new CompactionJobTestDataHelper().singleFileCompaction();
-    private final RecordsProcessedSummary summary = new RecordsProcessedSummary(
-            new RecordsProcessed(200L, 100L),
-            Instant.parse("2022-09-23T11:00:00.000Z"), Instant.parse("2022-09-23T11:30:00.000Z"));
 
     private static RecordsProcessedSummary startAndFinishTime(Instant startTime, Instant finishTime) {
         return RecordsProcessedSummaryTestData.summary(startTime, finishTime, 200, 100);
@@ -54,7 +50,7 @@ public class CompactionJobStatusInPeriodTest {
     }
 
     @Test
-    public void shouldBeBeforePeriodWithCreatedTime() {
+    public void shouldOverlapPeriodWhenCreatedBeforeAndUnstarted() {
         // Given
         Instant beforeTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
@@ -62,7 +58,7 @@ public class CompactionJobStatusInPeriodTest {
         CompactionJobStatus status = jobCreated(job, beforeTime);
 
         // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
     }
 
     @Test
@@ -106,7 +102,7 @@ public class CompactionJobStatusInPeriodTest {
     }
 
     @Test
-    public void shouldBeBeforePeriodWithStartedTime() {
+    public void shouldOverlapPeriodWhenStartedBeforeAndUnfinished() {
         // Given
         Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
         Instant beforeTime2 = Instant.parse("2022-09-23T11:44:00.000Z");
@@ -116,7 +112,7 @@ public class CompactionJobStatusInPeriodTest {
                 startedCompactionRun(DEFAULT_TASK_ID, beforeTime2));
 
         // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
     }
 
     @Test
