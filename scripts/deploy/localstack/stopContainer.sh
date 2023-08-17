@@ -13,5 +13,5 @@
 # limitations under the License.
 set -e
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-docker-compose -f "$THIS_DIR/docker-compose.yml" down
+docker compose -f "$THIS_DIR/docker-compose.yml" down
 echo "Stopped localstack container"

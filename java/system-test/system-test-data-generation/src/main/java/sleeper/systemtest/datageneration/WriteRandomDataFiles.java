@@ -25,6 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -42,16 +43,31 @@ public class WriteRandomDataFiles {
             SystemTestProperties systemTestProperties, TableProperties tableProperties, Iterator<Record> recordIterator)
             throws IOException {
 
-        int fileNumber = 0;
         String dir = systemTestProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID() + "/";
-        String filename = dir + fileNumber + ".parquet";
-        String path = "s3a://" + filename;
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         conf.set("fs.s3a.fast.upload", "true");
         conf.set("fs.s3a.bucket.probe", "0");
 
+        writeToPath(dir, "s3a://", tableProperties, recordIterator, conf);
+        return dir;
+    }
+
+    public static void writeFilesToDirectory(
+            String directory, SystemTestProperties systemTestProperties,
+            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException {
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(systemTestProperties);
+        writeToPath(directory, "file:///", tableProperties, recordIterator, conf);
+    }
+
+    private static void writeToPath(
+            String dir, String filePathPrefix, TableProperties tableProperties, Iterator<Record> recordIterator,
+            Configuration conf)
+            throws IOException {
+        int fileNumber = 0;
+        String filename = dir + fileNumber + ".parquet";
+        String path = filePathPrefix + filename;
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
         long count = 0L;
         LOGGER.info("Created writer to path {}", path);
@@ -65,7 +81,7 @@ public class WriteRandomDataFiles {
                     LOGGER.info("Closed writer to path {}", path);
                     fileNumber++;
                     filename = dir + fileNumber + ".parquet";
-                    path = "s3a://" + filename;
+                    path = filePathPrefix + filename;
                     writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);
                 }
             }
@@ -73,7 +89,5 @@ public class WriteRandomDataFiles {
         LOGGER.info("Closed writer to path {}", path);
         writer.close();
         LOGGER.info("Wrote {} records", count);
-
-        return dir;
     }
 }

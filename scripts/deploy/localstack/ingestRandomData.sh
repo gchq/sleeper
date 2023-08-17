@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,11 +14,19 @@
 # limitations under the License.
 
 set -e
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ];  then
+  echo "Usage: $0 <instance-id> <optional-number-of-records>"
+  exit 1
+fi
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
-DOCKER_DIR="$SCRIPTS_DIR/docker"
 
-INGEST_TASK_IMAGE="sleeper-ingest-runner"
-echo "Building ingest-runner docker image"
-docker build -t "$INGEST_TASK_IMAGE" "$DOCKER_DIR/ingest"
+java --add-opens=java.base/java.nio=ALL-UNNAMED \
+  --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens=java.base/java.util=ALL-UNNAMED \
+  --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
+  -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
+  sleeper.systemtest.datageneration.IngestRandomDataToDocker "$@"  

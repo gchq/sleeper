@@ -23,12 +23,16 @@ INSTANCE_ID=$1;
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+
+INGEST_TASK_IMAGE="sleeper-ingest-runner"
+echo "Building ingest-runner docker image"
+docker build -t "$INGEST_TASK_IMAGE" "$DOCKER_DIR/ingest"
 
 echo "Uploading files to source bucket and sending ingest job to queue"
 java -cp "${SCRIPTS_DIR}/jars/clients-${VERSION}-utility.jar" sleeper.clients.docker.SendFilesToIngest "$@"
 
-INGEST_TASK_IMAGE="sleeper-ingest-runner"
 CONTAINER_NAME="sleeper-$INSTANCE_ID-ingest"
 echo "Running ingest task in docker."
 docker run --rm \
