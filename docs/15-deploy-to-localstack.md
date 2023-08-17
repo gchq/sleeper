@@ -34,7 +34,7 @@ is set. Commands to do this are provided by the `startContainer.sh` script, but 
 running the following command:
 
 ```shell
-export AWS_ENDPOINT_URL=http://host.docker.internal:4566
+export AWS_ENDPOINT_URL=http://localhost:4566
 ```
 
 To go back to using the default AWS endpoint, you can unset this environment variable:
