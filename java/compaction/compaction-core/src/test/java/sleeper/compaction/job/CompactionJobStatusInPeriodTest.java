@@ -18,7 +18,6 @@ package sleeper.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.RecordsProcessedSummaryTestData;
 
@@ -33,9 +32,6 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 public class CompactionJobStatusInPeriodTest {
 
     private final CompactionJob job = new CompactionJobTestDataHelper().singleFileCompaction();
-    private final RecordsProcessedSummary summary = new RecordsProcessedSummary(
-            new RecordsProcessed(200L, 100L),
-            Instant.parse("2022-09-23T11:00:00.000Z"), Instant.parse("2022-09-23T11:30:00.000Z"));
 
     private static RecordsProcessedSummary startAndFinishTime(Instant startTime, Instant finishTime) {
         return RecordsProcessedSummaryTestData.summary(startTime, finishTime, 200, 100);
