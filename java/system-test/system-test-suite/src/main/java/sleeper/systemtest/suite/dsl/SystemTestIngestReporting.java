@@ -16,31 +16,20 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.util.TestContext;
 
-import java.time.Instant;
-
 public class SystemTestIngestReporting {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestIngestReporting.class);
-    private static Instant recordingFromTime = Instant.now();
     private final IngestReportsDriver driver;
 
-    public SystemTestIngestReporting(SleeperInstanceContext instance, SystemTestClients clients, SystemTestParameters parameters) {
-        this.driver = new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, parameters);
-    }
-
-    public void startRecording() {
-        recordingFromTime = Instant.now();
-        LOGGER.info("Ingest recording window started at {}", recordingFromTime);
+    public SystemTestIngestReporting(SleeperInstanceContext instance, SystemTestClients clients, SystemTestParameters parameters, ReportingContext reportingContext) {
+        this.driver = new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, parameters, reportingContext);
     }
 
     public void printTasksAndJobs(TestContext testContext) {
-        driver.printReports(testContext, recordingFromTime);
+        driver.printTasksAndJobs(testContext);
     }
 }
