@@ -17,6 +17,10 @@
 package sleeper.build.checkstylebug;
 
 public class Test {
+
+    private Test() {
+    }
+
     public static void main(String[] args) {
         Factory<Child> cs = new Factory<>(Child.class);
         Child child = cs.create(); // Expected BC_UNCONFIRMED_CAST_OF_RETURN_VALUE
