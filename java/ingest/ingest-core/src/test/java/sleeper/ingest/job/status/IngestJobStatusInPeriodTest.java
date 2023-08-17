@@ -16,6 +16,8 @@
 
 package sleeper.ingest.job.status;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
@@ -29,15 +31,51 @@ public class IngestJobStatusInPeriodTest {
     private final IngestJob job = IngestJob.builder()
             .id("test-job").files("test.parquet").tableName("test-table").build();
 
-    @Test
-    public void shouldIncludeUnfinishedJobWhenStartedBeforeWindowStartTime() {
-        // Given
-        Instant jobStartTime = Instant.parse("2022-09-23T11:43:00.000Z");
-        Instant windowStartTime = Instant.parse("2022-09-23T11:44:00.000Z");
-        Instant windowEndTime = Instant.parse("2022-09-23T11:44:02.000Z");
-        IngestJobStatus status = startedIngestJob(job, "test-task-id", jobStartTime);
+    @Nested
+    @DisplayName("Unfinished job")
+    class UnfinishedJob {
 
-        // When / Then
-        assertThat(status.isInPeriod(windowStartTime, windowEndTime)).isTrue();
+        @Test
+        public void shouldIncludeUnfinishedJobWhenStartedBeforeWindowStartTime() {
+            // Given
+            Instant jobStartTime = Instant.parse("2022-09-23T11:43:00.000Z");
+            Instant windowStartTime = Instant.parse("2022-09-23T11:44:00.000Z");
+            Instant windowEndTime = Instant.parse("2022-09-23T11:45:00.000Z");
+
+            // When / Then
+            assertThat(unfinishedStatus(jobStartTime)
+                    .isInPeriod(windowStartTime, windowEndTime))
+                    .isTrue();
+        }
+
+        @Test
+        public void shouldIncludeUnfinishedJobWhenStartedDuringWindow() {
+            // Given
+            Instant windowStartTime = Instant.parse("2022-09-23T11:44:00.000Z");
+            Instant jobStartTime = Instant.parse("2022-09-23T11:44:30.000Z");
+            Instant windowEndTime = Instant.parse("2022-09-23T11:45:00.000Z");
+
+            // When / Then
+            assertThat(unfinishedStatus(jobStartTime)
+                    .isInPeriod(windowStartTime, windowEndTime))
+                    .isTrue();
+        }
+
+        @Test
+        public void shouldNotIncludeUnfinishedJobWhenStartedAfterWindow() {
+            // Given
+            Instant windowStartTime = Instant.parse("2022-09-23T11:44:00.000Z");
+            Instant windowEndTime = Instant.parse("2022-09-23T11:45:00.000Z");
+            Instant jobStartTime = Instant.parse("2022-09-23T11:45:30.000Z");
+
+            // When / Then
+            assertThat(unfinishedStatus(jobStartTime)
+                    .isInPeriod(windowStartTime, windowEndTime))
+                    .isFalse();
+        }
+    }
+
+    private IngestJobStatus unfinishedStatus(Instant startTime) {
+        return startedIngestJob(job, "test-task-id", startTime);
     }
 }
