@@ -1070,28 +1070,6 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentIsMarkedAsLeafAfterSplit() throws IOException, StateStoreException {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "child1", "child2", Long.MIN_VALUE)
-                .buildTree();
-        dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2"));
-        // When / Then
-        // TODO This fails for the wrong reason. There's actually no validation of the leafPartition flag.
-        //      It's failing because the parent partition ID doesn't match.
-        //      We could implement the validation and improve the assertion, but we probably don't actually
-        //      need validation here at all as long as the code that calls this method is well tested.
-        assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(
-                        tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2")))
-                .isInstanceOf(StateStoreException.class);
-    }
-
-    @Test
     public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws IOException, StateStoreException {
         // Given
         Field field = new Field("key", new LongType());
