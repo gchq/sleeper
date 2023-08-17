@@ -70,7 +70,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         store.jobCreated(job);
 
         // Then
-        Instant periodStart = Instant.now().plus(Period.ofDays(1));
+        Instant periodStart = Instant.now().minus(Period.ofDays(2));
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
     }
