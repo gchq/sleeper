@@ -46,7 +46,6 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
-import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStore.class);
@@ -125,14 +124,6 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
                         streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)))
                 .filter(task -> !task.isFinished())
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public void clear() {
-        streamPagedItems(dynamoDB, new ScanRequest().withTableName(statusTableName)).forEach(item ->
-                dynamoDB.deleteItem(statusTableName, Map.of(
-                        TASK_ID, item.get(TASK_ID),
-                        UPDATE_TIME, item.get(UPDATE_TIME))));
     }
 
     private PutItemResult putItem(Map<String, AttributeValue> item) {

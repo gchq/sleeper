@@ -20,13 +20,11 @@ import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
-import sleeper.systemtest.drivers.ingest.IngestStatusStoreDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.util.TestContext;
 
 import java.nio.file.Path;
 
@@ -35,15 +33,18 @@ public class SystemTestIngest {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
     private final SystemTestParameters parameters;
+    private final ReportingContext reportingContext;
     private final IngestSourceFilesContext sourceFiles;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
                             SystemTestParameters parameters,
+                            ReportingContext reportingContext,
                             IngestSourceFilesContext sourceFiles) {
         this.instance = instance;
         this.clients = clients;
         this.parameters = parameters;
+        this.reportingContext = reportingContext;
         this.sourceFiles = sourceFiles;
     }
 
@@ -75,13 +76,7 @@ public class SystemTestIngest {
                 waitForIngestJobsDriver());
     }
 
-    public SystemTestIngestStatusStores statusStores() {
-        return new SystemTestIngestStatusStores(
-                new IngestStatusStoreDriver(clients.getDynamoDB(), instance.getInstanceProperties()));
-    }
-
-    public void printReports(TestContext testContext) {
-        new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, parameters)
-                .printReports(testContext);
+    public SystemTestIngestReporting reporting() {
+        return new SystemTestIngestReporting(instance, clients, parameters, reportingContext);
     }
 }

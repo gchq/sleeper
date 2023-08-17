@@ -29,12 +29,14 @@ import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.util.TestContext;
@@ -47,9 +49,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 
 public class IngestReportsDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(IngestStatusStoreDriver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestReportsDriver.class);
 
     private final IngestJobStatusStore ingestJobStatusStore;
     private final IngestTaskStatusStore ingestTaskStatusStore;
@@ -57,9 +60,11 @@ public class IngestReportsDriver {
     private final SystemTestParameters parameters;
     private final QueueMessageCount.Client queueClient;
     private final AmazonElasticMapReduce emrClient;
+    private final ReportingContext reportingContext;
 
     public IngestReportsDriver(AmazonDynamoDB dynamoDB, AmazonSQS sqs, AmazonElasticMapReduce emrClient,
-                               SleeperInstanceContext instance, SystemTestParameters parameters) {
+                               SleeperInstanceContext instance, SystemTestParameters parameters,
+                               ReportingContext reportingContext) {
         InstanceProperties properties = instance.getInstanceProperties();
         this.ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, properties);
         this.ingestTaskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, properties);
@@ -67,15 +72,18 @@ public class IngestReportsDriver {
         this.parameters = parameters;
         this.queueClient = QueueMessageCount.withSqsClient(sqs);
         this.emrClient = emrClient;
+        this.reportingContext = reportingContext;
     }
 
-    public void printReports(TestContext testContext) {
+    public void printTasksAndJobs(TestContext testContext) {
         try (ReportHandle handle = openReport(testContext)) {
             PrintStream out = handle.getPrintStream();
             new IngestTaskStatusReport(ingestTaskStatusStore,
                     new StandardIngestTaskStatusReporter(out),
-                    IngestTaskQuery.ALL).run();
-            new IngestJobStatusReport(ingestJobStatusStore, instance.getTableName(), JobQuery.Type.ALL, null,
+                    IngestTaskQuery.forPeriod(reportingContext.getRecordingStartTime(), Instant.MAX))
+                    .run();
+            new IngestJobStatusReport(ingestJobStatusStore, JobQuery.Type.RANGE,
+                    new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX),
                     new StandardIngestJobStatusReporter(out), queueClient, instance.getInstanceProperties(),
                     PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emrClient))
                     .run();

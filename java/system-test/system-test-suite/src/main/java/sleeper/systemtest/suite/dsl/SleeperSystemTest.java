@@ -23,6 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
@@ -59,6 +60,7 @@ public class SleeperSystemTest {
     private final SystemTestClients clients = new SystemTestClients();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+    private final ReportingContext reportingContext = new ReportingContext();
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
 
     private SleeperSystemTest() {
@@ -102,7 +104,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, parameters, sourceFiles);
+        return new SystemTestIngest(instance, clients, parameters, reportingContext, sourceFiles);
     }
 
     public SystemTestDirectQuery directQuery() {
@@ -117,5 +119,9 @@ public class SleeperSystemTest {
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
         return RecordNumbers.scrambleNumberedRecords(longStream);
+    }
+
+    public SystemTestReporting reporting() {
+        return new SystemTestReporting(reportingContext);
     }
 }

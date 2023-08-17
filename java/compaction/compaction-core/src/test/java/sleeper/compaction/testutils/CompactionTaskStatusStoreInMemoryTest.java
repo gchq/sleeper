@@ -275,7 +275,7 @@ public class CompactionTaskStatusStoreInMemoryTest {
         void shouldGetNoTasksInPeriod() {
             // Given
             CompactionTaskStatus started = startedStatusBuilder(
-                    Instant.parse("2023-03-30T11:44:00Z"))
+                    Instant.parse("2023-03-30T13:44:00Z"))
                     .taskId("test-task").build();
 
             // When

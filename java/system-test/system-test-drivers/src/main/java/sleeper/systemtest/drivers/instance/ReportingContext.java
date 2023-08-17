@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.drivers.instance;
 
-import sleeper.systemtest.drivers.ingest.IngestStatusStoreDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class SystemTestIngestStatusStores {
-    private final IngestStatusStoreDriver driver;
+import java.time.Instant;
 
-    public SystemTestIngestStatusStores(IngestStatusStoreDriver driver) {
-        this.driver = driver;
+public class ReportingContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReportingContext.class);
+
+    private Instant recordingStartTime = Instant.now();
+
+    public void startRecording() {
+        recordingStartTime = Instant.now();
+        LOGGER.info("Ingest recording window started at {}", recordingStartTime);
     }
 
-    public void clear() {
-        driver.clearStores();
+    public Instant getRecordingStartTime() {
+        return recordingStartTime;
     }
 }

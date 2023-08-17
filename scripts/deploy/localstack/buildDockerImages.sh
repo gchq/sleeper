@@ -12,17 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG DEPENDENCIES_IMAGE="sleeper-dependencies:current"
-FROM ${DEPENDENCIES_IMAGE}
+set -e
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
+VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
+DOCKER_DIR="$SCRIPTS_DIR/docker"
 
-RUN apt-get install -y maven
-RUN apt-get install -y git
-RUN apt-get install -y python3
-RUN apt-get install -y zip
-
-# Set command line prompt to show you're in the builder Docker container
-RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
-
-WORKDIR /sleeper-builder
-
-CMD bash
+INGEST_TASK_IMAGE="sleeper-ingest-runner"
+echo "Building ingest-runner docker image"
+docker build -t "$INGEST_TASK_IMAGE" "$DOCKER_DIR/ingest"

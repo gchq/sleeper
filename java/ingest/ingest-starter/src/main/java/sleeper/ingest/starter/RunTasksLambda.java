@@ -24,6 +24,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.ContainerConstants;
 
@@ -49,6 +50,7 @@ public class RunTasksLambda {
 
         this.runTasks = new RunTasks(sqsClient,
                 ecsClient, instanceProperties,
+                PropertiesReloader.ifConfigured(s3Client, instanceProperties),
                 ContainerConstants.INGEST_CONTAINER_NAME);
     }
 

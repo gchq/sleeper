@@ -71,19 +71,4 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
                         finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2)),
                         finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1))));
     }
-
-    @Test
-    void shouldClearStatusStoreAfterJobStarted() {
-        // Given
-        IngestJob job = jobWithFiles("file");
-        Instant startTime = Instant.parse("2022-10-03T15:19:01.001Z");
-        String taskId = "first-task";
-        store.jobStarted(ingestJobStarted(taskId, job, startTime));
-
-        // When
-        store.clear();
-
-        // Then
-        assertThat(getAllJobStatuses()).isEmpty();
-    }
 }

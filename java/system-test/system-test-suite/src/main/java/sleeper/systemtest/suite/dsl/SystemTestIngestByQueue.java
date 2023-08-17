@@ -24,10 +24,13 @@ import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class SystemTestIngestByQueue {
 
@@ -47,6 +50,10 @@ public class SystemTestIngestByQueue {
         this.waitForJobsDriver = waitForJobsDriver;
     }
 
+    public SystemTestIngestByQueue sendSourceFiles(String... files) {
+        return sendSourceFiles(INGEST_JOB_QUEUE_URL, files);
+    }
+
     public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
         return sendSourceFiles(queueProperty, Stream.of(files));
     }
@@ -60,6 +67,15 @@ public class SystemTestIngestByQueue {
                 .files(sourceFiles.getIngestJobFilesInBucket(files))
                 .build());
         return this;
+    }
+
+    public SystemTestIngestByQueue invokeTasks() throws InterruptedException {
+        driver.invokeStandardIngestTasks();
+        return this;
+    }
+
+    public void waitForJobs() throws InterruptedException {
+        waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {
