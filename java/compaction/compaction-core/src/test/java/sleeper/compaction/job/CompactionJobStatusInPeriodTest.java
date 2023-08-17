@@ -58,7 +58,7 @@ public class CompactionJobStatusInPeriodTest {
         CompactionJobStatus status = jobCreated(job, beforeTime);
 
         // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
     }
 
     @Test
@@ -112,7 +112,7 @@ public class CompactionJobStatusInPeriodTest {
                 startedCompactionRun(DEFAULT_TASK_ID, beforeTime2));
 
         // When / Then
-        assertThat(status.isInPeriod(startTime, endTime)).isFalse();
+        assertThat(status.isInPeriod(startTime, endTime)).isTrue();
     }
 
     @Test
