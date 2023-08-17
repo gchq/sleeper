@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,95 @@ public class TimeWindowQueryTest {
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+                    .isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Process run time can be limited")
+    class ProcessRuntimeLimited {
+
+        @Test
+        void shouldNotBeInPeriodWhenMaxRuntimeIsMetBeforeWindow() {
+            Instant startTime = Instant.parse("2023-08-16T10:00:00Z");
+            Duration maxRuntime = Duration.ofHours(1);
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z"),
+                    maxRuntime
+            );
+
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+                    .isFalse();
+        }
+
+        @Test
+        void shouldBeInPeriodWhenMaxRuntimeIsMetDuringWindow() {
+            Instant startTime = Instant.parse("2023-08-16T11:30:00Z");
+            Duration maxRuntime = Duration.ofHours(1);
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z"),
+                    maxRuntime
+            );
+
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldBeInPeriodWhenMaxRuntimeIsMetAfterWindow() {
+            Instant startTime = Instant.parse("2023-08-16T11:30:00Z");
+            Duration maxRuntime = Duration.ofHours(2);
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z"),
+                    maxRuntime
+            );
+
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldBeInPeriodWhenStartedAndMetMaxRuntimeDuringWindow() {
+            Instant startTime = Instant.parse("2023-08-16T12:15:00Z");
+            Duration maxRuntime = Duration.ofMinutes(30);
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z"),
+                    maxRuntime
+            );
+
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldBeInPeriodWhenStartedDuringWindowAndMaxRuntimeIsAfterWindow() {
+            Instant startTime = Instant.parse("2023-08-16T12:15:00Z");
+            Duration maxRuntime = Duration.ofHours(1);
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z"),
+                    maxRuntime
+            );
+
+            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+                    .isTrue();
+        }
+
+        @Test
+        void shouldNotBeInPeriodWhenStartedAfterWindowWithMaxRuntime() {
+            Instant startTime = Instant.parse("2023-08-16T13:15:00Z");
+            Duration maxRuntime = Duration.ofHours(1);
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z"),
+                    maxRuntime
             );
 
             assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))

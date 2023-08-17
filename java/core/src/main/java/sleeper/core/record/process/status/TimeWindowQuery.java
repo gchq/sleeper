@@ -16,18 +16,28 @@
 
 package sleeper.core.record.process.status;
 
+import java.time.Duration;
 import java.time.Instant;
 
 public class TimeWindowQuery {
     private final Instant windowStartTime;
     private final Instant windowEndTime;
+    private final Duration maxRuntime;
 
     public TimeWindowQuery(Instant windowStartTime, Instant windowEndTime) {
+        this(windowStartTime, windowEndTime, null);
+    }
+
+    public TimeWindowQuery(Instant windowStartTime, Instant windowEndTime, Duration maxRuntime) {
         this.windowStartTime = windowStartTime;
         this.windowEndTime = windowEndTime;
+        this.maxRuntime = maxRuntime;
     }
 
     public boolean isUnfinishedProcessInWindow(Instant startTime) {
+        if (maxRuntime != null && startTime.plus(maxRuntime).isBefore(windowStartTime)) {
+            return false;
+        }
         return startTime.isBefore(windowEndTime);
     }
 
