@@ -54,7 +54,7 @@ public class CompactionJobStatusInPeriodTest {
     }
 
     @Test
-    public void shouldBeBeforePeriodWithCreatedTime() {
+    public void shouldOverlapPeriodWhenCreatedBeforeAndUnstarted() {
         // Given
         Instant beforeTime = Instant.parse("2022-09-23T11:44:00.000Z");
         Instant startTime = Instant.parse("2022-09-23T11:44:01.000Z");
@@ -106,7 +106,7 @@ public class CompactionJobStatusInPeriodTest {
     }
 
     @Test
-    public void shouldBeBeforePeriodWithStartedTime() {
+    public void shouldOverlapPeriodWhenStartedBeforeAndUnfinished() {
         // Given
         Instant beforeTime1 = Instant.parse("2022-09-23T11:43:00.000Z");
         Instant beforeTime2 = Instant.parse("2022-09-23T11:44:00.000Z");
