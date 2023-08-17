@@ -133,6 +133,19 @@ public class TimeWindowQueryTest {
             assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
                     .isTrue();
         }
+
+        @Test
+        void shouldBeInPeriodWhenProcessContainsWindowPeriod() {
+            Instant startTime = Instant.parse("2023-08-16T11:00:00Z");
+            Instant endTime = Instant.parse("2023-08-16T14:00:00Z");
+            TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
+                    Instant.parse("2023-08-16T12:00:00Z"),
+                    Instant.parse("2023-08-16T13:00:00Z")
+            );
+
+            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+                    .isTrue();
+        }
     }
 
     @Nested
