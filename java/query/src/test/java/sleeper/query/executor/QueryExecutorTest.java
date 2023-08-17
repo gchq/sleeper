@@ -466,20 +466,16 @@ public class QueryExecutorTest {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 5L)
+                .buildTree();
         StateStore stateStore = inMemoryStateStoreWithPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "left", "right", 5L)
-                        .buildList()
+                tree.getAllPartitions()
         );
-        Partition leftPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key").getMin() == Long.MIN_VALUE))
-                .findFirst()
-                .get();
-        Partition rightPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key").getMin() == 5L))
-                .findFirst()
-                .get();
+        Partition leftPartition = tree.getPartition("left");
+        Partition rightPartition = tree.getPartition("right");
+
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
@@ -740,8 +736,6 @@ public class QueryExecutorTest {
         Record record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
         Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
         List<Record> records = Arrays.asList(record1, record2, record3, record4);
-        // Split the root partition into 2: 1 and 3, and 2 and 4
-
 
         StateStore stateStore = inMemoryStateStoreWithPartitions(
                 new PartitionsBuilder(schema)
@@ -750,11 +744,13 @@ public class QueryExecutorTest {
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
+        // Split the root partition into 2:
         stateStore.initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
                 .buildList()
         );
+
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
@@ -1316,7 +1312,7 @@ public class QueryExecutorTest {
         for (int i = 1; i <= 10; i++) {
             Record record = new Record();
             record.put("key1", (long) i);
-            record.put("key2", "" + i);
+            record.put("key2", String.valueOf(i));
             record.put("value1", i * 10L);
             record.put("value2", i * 100L);
             records.add(record);
