@@ -39,22 +39,31 @@ public class NightlyTestOutput {
     private static final PathMatcher STATUS_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.status");
 
     private final List<TestResult> tests;
+    private final Path siteFile;
 
     public NightlyTestOutput(List<TestResult> tests) {
+        this(tests, null);
+    }
+
+    public NightlyTestOutput(List<TestResult> tests, Path siteFile) {
         this.tests = Objects.requireNonNull(tests, "tests must not be null");
+        this.siteFile = siteFile;
     }
 
     public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
         streamLogFiles().forEach(logFile ->
                 s3Client.putObject(bucketName,
-                        logFilePathInS3(timestamp, logFile),
+                        filePathInS3(timestamp, logFile),
                         logFile.toFile()));
+        if (siteFile != null && Files.exists(siteFile)) {
+            s3Client.putObject(bucketName, filePathInS3(timestamp, siteFile), siteFile.toFile());
+        }
         NightlyTestSummaryTable.fromS3(s3Client, bucketName)
                 .add(timestamp, this)
                 .saveToS3(s3Client, bucketName);
     }
 
-    private static String logFilePathInS3(NightlyTestTimestamp timestamp, Path filePath) {
+    private static String filePathInS3(NightlyTestTimestamp timestamp, Path filePath) {
         return timestamp.getS3FolderName() + "/" + filePath.getFileName();
     }
 
@@ -77,7 +86,12 @@ public class NightlyTestOutput {
                 statusFiles.add(file);
             }
         });
-        return fromLogAndStatusFiles(directory, logFiles, statusFiles);
+        Path sitePath = directory.resolve("site.zip");
+        if (Files.exists(sitePath)) {
+            return fromLogAndStatusFiles(directory, logFiles, statusFiles, sitePath);
+        } else {
+            return fromLogAndStatusFiles(directory, logFiles, statusFiles, null);
+        }
     }
 
     private static void forEachFileIn(Path directory, Consumer<Path> action) throws IOException {
@@ -87,7 +101,7 @@ public class NightlyTestOutput {
     }
 
     private static NightlyTestOutput fromLogAndStatusFiles(
-            Path directory, List<Path> logFiles, List<Path> statusFiles) throws IOException {
+            Path directory, List<Path> logFiles, List<Path> statusFiles, Path siteFile) throws IOException {
         Map<String, TestResult.Builder> resultByTestName = new HashMap<>();
         for (Path logFile : logFiles) {
             getResultBuilder(logFile, resultByTestName)
@@ -100,7 +114,7 @@ public class NightlyTestOutput {
         return new NightlyTestOutput(resultByTestName.values().stream()
                 .map(TestResult.Builder::build)
                 .sorted(Comparator.comparing(TestResult::getTestName))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList()), siteFile);
     }
 
     private static void loadReportFiles(Path directory, Map<String, TestResult.Builder> resultByTestName) throws IOException {
@@ -150,18 +164,20 @@ public class NightlyTestOutput {
 
         NightlyTestOutput that = (NightlyTestOutput) o;
 
-        return tests.equals(that.tests);
+        return tests.equals(that.tests)
+                && Objects.equals(siteFile, that.siteFile);
     }
 
     @Override
     public int hashCode() {
-        return tests.hashCode();
+        return Objects.hash(tests, siteFile);
     }
 
     @Override
     public String toString() {
         return "NightlyTestOutput{" +
                 "tests=" + tests +
+                ", siteFile=" + siteFile +
                 '}';
     }
 }
