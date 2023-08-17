@@ -32,7 +32,7 @@ public class ChunkStatusesTest {
 
         assertThat(status.isFailCheck()).isFalse();
         assertThat(status.reportLines()).containsExactly("",
-                "common: completed, success",
+                "common: completed, failure",
                 "",
                 "data: completed, success");
     }
