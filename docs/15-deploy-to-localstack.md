@@ -30,11 +30,12 @@ To go back to using the default AWS endpoint, you can unset this environment var
 unset AWS_ENDPOINT_URL
 ```
 
-Before you can run any LocalStack scripts, you need to build the project. You can do this by running the
-following command:
+Before you can run any LocalStack scripts, you need to build the project, as well as the docker images.
+You can do this by running the following commands:
 
 ```shell
 ./scripts/build/build.sh
+./scripts/deploy/localstack/buildDockerImages.sh
 ```
 
 To deploy an instance of Sleeper to your LocalStack container, you can run the following command in the
@@ -54,6 +55,22 @@ instance, as well as running partition and file status reports.
 ```shell
 ./scripts/utility/adminClient.sh <instance-id>
 ```
+
+## Standard ingest
+
+To ingest some data into the `system-test` table in your instance, you can run the following script in the
+`scripts/deploy/localstack` folder.
+
+```shell
+./ingestFiles.sh <instance-id> <file1.parquet> <file2.parquet> <file3.parquet> ....
+```
+
+This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
+send them to the ingest job queue. It will then build the ingest-runner docker image, and launch a container for it,
+which will take the ingest job off the queue and perform the ingest.
+
+You can then view the ingest jobs and task that were run by launching the admin client and running an ingest job or
+ingest task status report.
 
 ## Tear down instance
 

@@ -20,10 +20,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.deploy.PopulateTableProperties;
 import sleeper.clients.docker.stack.ConfigurationDockerStack;
+import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -36,11 +39,12 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class DeployDockerInstance {
     private DeployDockerInstance() {
-
     }
 
     public static void main(String[] args) throws Exception {
@@ -53,10 +57,11 @@ public class DeployDockerInstance {
         String instanceId = args[0];
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
-        deploy(instanceId, s3Client, dynamoDB);
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        deploy(instanceId, s3Client, dynamoDB, sqsClient);
     }
 
-    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) throws Exception {
+    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) throws Exception {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
 
@@ -65,6 +70,8 @@ public class DeployDockerInstance {
 
         instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
+
+        IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }
 
     private static InstanceProperties generateInstanceProperties(String instanceId) {
@@ -75,6 +82,8 @@ public class DeployDockerInstance {
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(REGION, "us-east-1");
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, instanceId + "-IngestJobQ");
+        instanceProperties.set(INGEST_SOURCE_BUCKET, "sleeper-" + instanceId + "-ingest-source");
         return instanceProperties;
     }
 

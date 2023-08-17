@@ -50,13 +50,13 @@ public class CompactionTaskStatusInPeriodTest {
     }
 
     @Test
-    public void shouldNotBeInPeriodWithStartTimeOnlyWhenStartIsStartTime() {
+    public void shouldBeInPeriodWhenUnfinishedTaskStartsAtWindowStartTime() {
         // Given
         Instant startTime = Instant.parse("2022-10-06T11:19:00.001Z");
         CompactionTaskStatus task = taskWithStartTime(startTime);
 
         // When / Then
-        assertThat(task.isInPeriod(startTime, FAR_FUTURE)).isFalse();
+        assertThat(task.isInPeriod(startTime, FAR_FUTURE)).isTrue();
     }
 
     @Test
@@ -112,6 +112,28 @@ public class CompactionTaskStatusInPeriodTest {
 
         // When / Then
         assertThat(task.isInPeriod(startTime, FAR_FUTURE)).isTrue();
+    }
+
+    @Test
+    public void shouldBeInPeriodWhenStartedBeforePeriodAndStillRunning() {
+        // Given
+        Instant startTime = Instant.parse("2022-10-06T11:00:00.001Z");
+        Instant periodStart = Instant.parse("2022-10-06T11:10:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
+
+        // When / Then
+        assertThat(taskWithStartTime(startTime).isInPeriod(periodStart, periodEnd)).isTrue();
+    }
+
+    @Test
+    public void shouldNotBeInPeriodWhenStartedAfterPeriodAndStillRunning() {
+        // Given
+        Instant periodStart = Instant.parse("2022-10-06T11:00:00.000Z");
+        Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
+        Instant startTime = Instant.parse("2022-10-06T12:10:00.001Z");
+
+        // When / Then
+        assertThat(taskWithStartTime(startTime).isInPeriod(periodStart, periodEnd)).isFalse();
     }
 
     private static CompactionTaskStatus taskWithStartTime(Instant startTime) {
