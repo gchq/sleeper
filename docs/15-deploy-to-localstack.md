@@ -91,7 +91,7 @@ To query the data in your Sleeper instance, you can run the following utility sc
 web socket queries do not work against a Sleeper instance deployed against LocalStack.
 
 ```shell
-./scripts/utility/query.sh <instance-id>
+./utility/query.sh <instance-id>
 ```
 
 ## Tear down instance
