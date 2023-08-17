@@ -64,7 +64,17 @@ instance, as well as running partition and file status reports.
 
 ## Standard ingest
 
-To ingest some data into the `system-test` table in your instance, you can run the following command:
+You can generate some random data for your instance by running the following command:
+
+```shell
+./deploy/localstack/generateRandomData.sh <instance-id> <optional-number-of-records>
+```
+
+This will place randomly generated parquet files in the `./deploy/localstack/output` directory. The number of files
+generated will depend on the number of records that you pass into the script. By default only 1 file is generated.
+
+You can then use these files to ingest some data into the `system-test` table in your instance by running the
+following command:
 
 ```shell
 ./deploy/localstack/ingestFiles.sh <instance-id> <file1.parquet> <file2.parquet> <file3.parquet> ....
@@ -77,13 +87,14 @@ which will take the ingest job off the queue and perform the ingest.
 You can then view the ingest jobs and task that were run by launching the admin client and running an ingest job or
 ingest task status report.
 
-You can also write some random data to your instance by running the following command:
+You can skip the step of having to run `ingestFiles.sh` after generating some parquet files by running the
+following command:
 
 ```shell
-./deploy/localstack/writeRandomData.sh <instance-id> <optional-number-of-records>
+./deploy/localstack/ingestRandomData.sh <instance-id> <optional-number-of-records>
 ```
 
-If you do not provide a number of records to ingest, then a default of 100000 is used.
+Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.
 
 ## Tear down instance
 
