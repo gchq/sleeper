@@ -102,7 +102,9 @@ runMavenSystemTests() {
        -DskipTests=true \
        -DstagingDirectory="$OUTPUT_DIR/site"
     popd
-    zip -r "$OUTPUT_DIR/site.zip" "$OUTPUT_DIR/site"
+    pushd "$OUTPUT_DIR"
+    zip -r "./site.zip" "./site"
+    popd
     ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
 }
