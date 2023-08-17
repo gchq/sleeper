@@ -105,6 +105,7 @@ runMavenSystemTests() {
     pushd "$OUTPUT_DIR/site"
     zip -r "../site.zip" "."
     popd
+    rm -rf "$OUTPUT_DIR/site"
     ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
     aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
 }
