@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -821,7 +820,7 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(duplicatedRecordListAndSchema.recordList);
         List<List<Object>> recordList = LongStream.range(-100, 100).boxed().map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
-        recordList.addAll(recordList);
+        recordList.addAll(List.copyOf(recordList));
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyInAnyOrderElementsOf(recordList);
 
@@ -836,9 +835,8 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteNoRecordsSuccessfully(
-            TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+    public void shouldWriteNoRecordsSuccessfully()
+            throws StateStoreException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
 
         Schema schema = Schema.builder()
@@ -884,7 +882,7 @@ public class IngestCoordinatorCommonIT {
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getRowKeyFieldNames().get(0), new byte[]{11, 12});
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getSortKeyFieldNames().get(0), 2L);
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getValueFieldNames().get(0), 7L);
-        List<Record> expectedAggregatedRecords = Arrays.asList(expectedRecord1, expectedRecord2);
+        recordListAndSchema.recordList = Arrays.asList(expectedRecord1, expectedRecord2);
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -901,8 +899,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
-        recordListAndSchema.recordList = expectedAggregatedRecords;
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -918,9 +915,7 @@ public class IngestCoordinatorCommonIT {
         );
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedAggregatedRecords);
-        List<Object> recordList = Stream.of(new byte[]{1, 1}, new byte[]{11, 12}).collect(Collectors.toList());
-        assertThat(actualRecords.stream().map(record -> record.get(new ArrayList<>(record.getKeys()).get(2))).collect(Collectors.toList())).containsExactlyInAnyOrderElementsOf(recordList);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
@@ -941,7 +936,6 @@ public class IngestCoordinatorCommonIT {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
-
         }
     }
 

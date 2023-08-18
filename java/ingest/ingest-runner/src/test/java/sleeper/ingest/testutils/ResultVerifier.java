@@ -115,7 +115,6 @@ public class ResultVerifier {
         assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
         assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
 
-
         allPartitionNoSet.forEach(partitionNo -> verifyPartition(
                 sleeperSchema,
                 partitionNoToFileInfosMap.getOrDefault(partitionNo, Collections.emptyList()),
@@ -124,12 +123,11 @@ public class ResultVerifier {
                 hadoopConfiguration));
     }
 
-
-    public static void verifyPartition(Schema sleeperSchema,
-                                       List<FileInfo> partitionFileInfoList,
-                                       int expectedNoOfFiles,
-                                       List<Record> expectedRecordList,
-                                       Configuration hadoopConfiguration) {
+    private static void verifyPartition(Schema sleeperSchema,
+                                        List<FileInfo> partitionFileInfoList,
+                                        int expectedNoOfFiles,
+                                        List<Record> expectedRecordList,
+                                        Configuration hadoopConfiguration) {
         Comparator<Record> recordComparator = new RecordComparator(sleeperSchema);
         List<Record> expectedSortedRecordList = expectedRecordList.stream()
                 .sorted(recordComparator)
@@ -195,12 +193,6 @@ public class ResultVerifier {
                 });
             });
         }
-    }
-
-    public static void assertListsIdentical(List<?> list1, List<?> list2) {
-        assertThat(list2).hasSameSizeAs(list1);
-        IntStream.range(0, list1.size()).forEach(i ->
-                assertThat(list2.get(i)).as(String.format("First difference found at element %d (of %d)", i, list1.size())).isEqualTo(list1.get(i)));
     }
 
     public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,

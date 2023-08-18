@@ -96,9 +96,8 @@ public class DynamoDBUtils {
     }
 
     public static Stream<ScanResult> streamPagedResults(AmazonDynamoDB dynamoDB, ScanRequest scanRequest) {
-        Stream<ScanResult> x = streamResults(scanRequest, dynamoDB::scan,
+        return streamResults(scanRequest, dynamoDB::scan,
                 ScanResult::getLastEvaluatedKey, scanRequest::withExclusiveStartKey);
-        return x;
     }
 
     public static Stream<QueryResult> streamPagedResults(AmazonDynamoDB dynamoDB, QueryRequest queryRequest) {
