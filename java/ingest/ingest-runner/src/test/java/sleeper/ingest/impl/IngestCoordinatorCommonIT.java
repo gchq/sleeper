@@ -635,7 +635,6 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
-
     }
 
     @ParameterizedTest
@@ -812,10 +811,8 @@ public class IngestCoordinatorCommonIT {
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(duplicatedRecordListAndSchema.recordList);
-        List<List<Object>> recordList = LongStream.range(-100, 100).boxed().map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
-        recordList.addAll(List.copyOf(recordList));
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactlyElementsOf(LongStream.range(-100, 100).boxed().flatMap(longValue -> Stream.of(longValue, longValue)).collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 duplicatedRecordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
