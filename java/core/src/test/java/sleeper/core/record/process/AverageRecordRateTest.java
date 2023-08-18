@@ -111,10 +111,42 @@ public class AverageRecordRateTest {
     }
 
     @Test
-    void shouldExcludeRunsWithRateOfNaNFromAverageRateCalculation() {
+    void shouldExcludeRunsWithZeroRecordsReadFromAverageRateCalculation() {
         AverageRecordRate rate = rateFrom(
                 new RecordsProcessedSummary(
-                        new RecordsProcessed(0L, 0L),
+                        new RecordsProcessed(0L, 10L),
+                        Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(10L, 10L),
+                        Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
+
+        assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
+                "recordsReadPerSecond", "recordsWrittenPerSecond",
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond"
+        ).containsExactly(2, 10L, 20L, Duration.ofSeconds(20), 0.5, 1.0, 0.5, 1.0);
+    }
+
+    @Test
+    void shouldExcludeRunsWithZeroRecordsWrittenFromAverageRateCalculation() {
+        AverageRecordRate rate = rateFrom(
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(10L, 0L),
+                        Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(10L, 10L),
+                        Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
+
+        assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
+                "recordsReadPerSecond", "recordsWrittenPerSecond",
+                "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond"
+        ).containsExactly(2, 20L, 10L, Duration.ofSeconds(20), 1.0, 0.5, 1.0, 0.5);
+    }
+
+    @Test
+    void shouldExcludeRunsWithZeroDurationFromAverageRateCalculation() {
+        AverageRecordRate rate = rateFrom(
+                new RecordsProcessedSummary(
+                        new RecordsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(0)),
                 new RecordsProcessedSummary(
                         new RecordsProcessed(10L, 10L),
@@ -123,7 +155,7 @@ public class AverageRecordRateTest {
         assertThat(rate).extracting("runCount", "recordsRead", "recordsWritten", "totalDuration",
                 "recordsReadPerSecond", "recordsWrittenPerSecond",
                 "averageRunRecordsReadPerSecond", "averageRunRecordsWrittenPerSecond"
-        ).containsExactly(2, 10L, 10L, Duration.ofSeconds(10), 1.0, 1.0, 0.5, 0.5);
+        ).containsExactly(2, 20L, 20L, Duration.ofSeconds(10), 2.0, 2.0, 0.5, 0.5);
     }
 
     private static AverageRecordRate rateFrom(RecordsProcessedSummary... summaries) {

@@ -113,10 +113,10 @@ public class AverageRecordRate {
             recordsRead += summary.getRecordsRead();
             recordsWritten += summary.getRecordsWritten();
             totalRunDuration = totalRunDuration.plus(summary.getTimeInProcess());
-            if (!Double.isNaN(summary.getRecordsReadPerSecond())) {
+            if (Double.isFinite(summary.getRecordsReadPerSecond())) {
                 totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
             }
-            if (!Double.isNaN(summary.getRecordsWrittenPerSecond())) {
+            if (Double.isFinite(summary.getRecordsWrittenPerSecond())) {
                 totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
             }
             return this;
