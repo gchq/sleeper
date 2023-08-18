@@ -21,13 +21,16 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
 
 @Tag("SystemTest")
 public class PartitionSplittingIT {
@@ -48,5 +51,26 @@ public class PartitionSplittingIT {
 
         // When
         sleeper.partitionSplitting().split();
+        sleeper.compaction().runSplitting();
+        sleeper.partitionSplitting().split();
+        sleeper.compaction().runSplitting();
+        sleeper.partitionSplitting().split();
+        sleeper.compaction().runSplitting();
+
+        // Then
+        FileInfoFactory fileFactory = fileInfoFactory(sleeper);
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.stateStore().activeFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
+                .containsExactlyInAnyOrder(
+                        fileFactory.leafFile(12, "row-0000000000000000000", "row-0000000000000000011"),
+                        fileFactory.leafFile(13, "row-0000000000000000012", "row-0000000000000000024"),
+                        fileFactory.leafFile(12, "row-0000000000000000025", "row-0000000000000000036"),
+                        fileFactory.leafFile(13, "row-0000000000000000037", "row-0000000000000000049"),
+                        fileFactory.leafFile(12, "row-0000000000000000050", "row-0000000000000000061"),
+                        fileFactory.leafFile(13, "row-0000000000000000062", "row-0000000000000000074"),
+                        fileFactory.leafFile(12, "row-0000000000000000075", "row-0000000000000000086"),
+                        fileFactory.leafFile(13, "row-0000000000000000087", "row-0000000000000000099"));
     }
 }

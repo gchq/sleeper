@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.drivers.compaction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStore;
@@ -28,15 +31,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.function.Predicate.not;
-
 public class WaitForPartitionSplitting {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForPartitionSplitting.class);
+
     private static final long POLL_INTERVAL_MILLIS = 5000;
     private static final int MAX_POLLS = 12;
-    private final List<FindPartitionToSplitResult> toSplit;
+    private final List<String> toSplitIds;
 
     private WaitForPartitionSplitting(List<FindPartitionToSplitResult> toSplit) {
-        this.toSplit = toSplit;
+        this.toSplitIds = toSplit.stream()
+                .map(FindPartitionToSplitResult::getPartition)
+                .map(Partition::getId)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public static WaitForPartitionSplitting forCurrentPartitionsNeedingSplitting(
@@ -46,17 +52,18 @@ public class WaitForPartitionSplitting {
     }
 
     public void pollUntilFinished(StateStore stateStore) throws InterruptedException {
+        LOGGER.info("Waiting for splits, expecting partitions to be split: {}", toSplitIds);
         PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS)
-                .pollUntil("partition splits finished", () -> this.isSplitFinished(stateStore));
+                .pollUntil("partition splits finished", () -> isSplitFinished(stateStore));
     }
 
     public boolean isSplitFinished(StateStore stateStore) {
         Set<String> leafPartitionIds = getLeafPartitionIds(stateStore);
-
-        return toSplit.stream()
-                .map(FindPartitionToSplitResult::getPartition)
-                .map(Partition::getId)
-                .allMatch(not(leafPartitionIds::contains));
+        List<String> unsplit = toSplitIds.stream()
+                .filter(leafPartitionIds::contains)
+                .collect(Collectors.toUnmodifiableList());
+        LOGGER.info("Found unsplit partitions: {}", unsplit);
+        return unsplit.isEmpty();
     }
 
     private Set<String> getLeafPartitionIds(StateStore stateStore) {

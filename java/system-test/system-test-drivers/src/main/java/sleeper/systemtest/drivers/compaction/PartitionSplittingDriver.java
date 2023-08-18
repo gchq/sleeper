@@ -22,7 +22,7 @@ import sleeper.clients.deploy.InvokeLambda;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 
 public class PartitionSplittingDriver {
 
@@ -38,7 +38,7 @@ public class PartitionSplittingDriver {
         try {
             WaitForPartitionSplitting waitForPartitionSplitting = WaitForPartitionSplitting
                     .forCurrentPartitionsNeedingSplitting(instance.getTableProperties(), instance.getStateStore());
-            InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(INGEST_LAMBDA_FUNCTION));
+            InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_LAMBDA_FUNCTION));
             waitForPartitionSplitting.pollUntilFinished(instance.getStateStore());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
