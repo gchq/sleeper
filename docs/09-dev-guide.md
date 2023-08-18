@@ -58,6 +58,8 @@ If you'd like to look at how the modules relate to one another in terms of their
 there's a main method in the class `sleeper.build.maven.ShowInternalDependencies` to display the internal dependencies
 as a graph.
 
+If you'd like to pick up an open issue, see the [CONTRIBUTING](/docs/CONTRIBUTING.md) guide for more information.
+
 ## System Tests
 
 Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of
@@ -112,13 +114,6 @@ Note you will still need the files in the `/generated` folder that are created d
 script to work correctly.
 
 This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
-
-## Opening a pull request
-
-If you have picked up an issue to work on, and you are ready to merge into the main repository, you can open
-a pull request. Please fill in the pull request template as accurately as possible, and try to match the pull request
-naming style described in the template. Finally, if you have added, removed, or updated any external dependencies used
-in the project, you need to update the [NOTICES.md](/NOTICES.md) file to reflect this.
 
 ## Standalone deployment
 
