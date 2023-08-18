@@ -213,6 +213,10 @@ Eclipse Jetty (org.eclipse.jetty:*:9.4.51.v20230217):
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
 
+Java Universal Network/Graph Framework (JUNG) (net.sf.jung:*:2.1.1):
+
+- The 3-Clause BSD License
+
 Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.2.8):
 
 - Apache License, Version 2.0

@@ -15,7 +15,7 @@
  */
 package sleeper.ingest.impl;
 
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStoreException;
 
 public class RetryStateStoreException extends RuntimeException {
 

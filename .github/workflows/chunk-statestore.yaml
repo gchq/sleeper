@@ -1,6 +1,6 @@
 name: Build State Store Module
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/chunk-statestore.yaml'
       - '.github/workflows/chunk.yaml'

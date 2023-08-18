@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -33,7 +33,7 @@ import static sleeper.clients.status.report.partitions.PartitionStatusReportTest
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTableProperties;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 class PartitionsStatusTest {
 

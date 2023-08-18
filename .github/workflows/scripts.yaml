@@ -1,6 +1,6 @@
 name: Test Scripts
 on:
-  push:
+  pull_request:
     paths:
       - '.github/workflows/scripts.yaml'
       - 'scripts/functions/**'

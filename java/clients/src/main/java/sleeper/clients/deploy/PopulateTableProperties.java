@@ -20,23 +20,19 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class PopulateTableProperties {
-    private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final String schemaJson;
     private final String tableName;
 
-
     private PopulateTableProperties(Builder builder) {
-        instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        InstanceProperties instanceProperties = Objects.requireNonNull(
+                builder.instanceProperties, "instanceProperties must not be null");
         tableProperties = Objects.requireNonNullElse(builder.tableProperties, new TableProperties(instanceProperties));
         schemaJson = builder.schemaJson;
         tableName = builder.tableName;
@@ -52,7 +48,6 @@ public class PopulateTableProperties {
             tableProperties.set(SCHEMA, schemaJson);
         }
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(DATA_BUCKET, String.join("-", "sleeper", instanceProperties.get(ID), "table", tableName).toLowerCase(Locale.ROOT));
         return tableProperties;
     }
 

@@ -16,7 +16,7 @@
 package sleeper.splitter;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.util.List;
 

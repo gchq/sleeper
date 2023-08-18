@@ -1,0 +1,17 @@
+{
+  "Type": "Task",
+  "Resource": "arn:aws:states:::eks:call",
+  "Parameters": {
+    "ClusterName": "cluster-placeholder",
+    "CertificateAuthority": "ca-placeholder",
+    "Endpoint": "endpoint-placeholder",
+    "Method": "DELETE",
+    "Path.$": "States.Format('/apis/batch/v1/namespaces/namespace-placeholder/jobs/{}', $.job.id)",
+    "QueryParameters": {
+      "propagationPolicy": [
+        "Foreground"
+      ]
+    }
+  },
+  "ResultPath": "$.deleteJobOutput"
+}

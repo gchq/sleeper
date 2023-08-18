@@ -15,7 +15,7 @@
  */
 package sleeper.ingest;
 
-import sleeper.statestore.FileInfoTestData;
+import sleeper.core.statestore.FileInfoTestData;
 
 import java.util.Collections;
 

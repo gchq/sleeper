@@ -15,7 +15,7 @@
  */
 package sleeper.bulkimport.job.runner;
 
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.util.List;
 

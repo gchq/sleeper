@@ -24,32 +24,25 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.partition.Partition;
-import sleeper.core.range.Region;
 import sleeper.core.record.CloneRecord;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.statestore.FileInfo;
 import sleeper.ingest.IngestFactory;
 import sleeper.ingest.IngestResult;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -81,7 +74,7 @@ public class IngestRecordsTestDataHelper {
 
     public static InstanceProperties defaultInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
@@ -103,27 +96,6 @@ public class IngestRecordsTestDataHelper {
         return Schema.builder()
                 .rowKeyFields(fields)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-    }
-
-    public static Partition createRootPartition(Region region, PrimitiveType... rowKeyTypes) {
-        return Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .id("root")
-                .region(region)
-                .leafPartition(false)
-                .parentPartitionId(null)
-                .build();
-    }
-
-    public static Partition createLeafPartition(String id, Region region, PrimitiveType... rowKeyTypes) {
-        return Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .id(id)
-                .region(region)
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(Collections.emptyList())
                 .build();
     }
 
@@ -333,7 +305,6 @@ public class IngestRecordsTestDataHelper {
 
     public static Sketches getSketches(Schema schema, String filename) throws IOException {
         String sketchFile = filename.replace(".parquet", ".sketches");
-        assertThat(Files.exists(new File(sketchFile).toPath(), LinkOption.NOFOLLOW_LINKS)).isTrue();
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS("", sketchFile, new Configuration());
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(new Path(sketchFile), new Configuration());
     }
 }
