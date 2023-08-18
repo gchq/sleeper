@@ -43,6 +43,6 @@ public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(tableName);
+        //DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

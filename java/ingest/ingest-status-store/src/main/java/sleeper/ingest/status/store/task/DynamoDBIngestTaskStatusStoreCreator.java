@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package sleeper.ingest.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -27,6 +26,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Arrays;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
@@ -34,10 +35,14 @@ import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TA
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
 
 public class DynamoDBIngestTaskStatusStoreCreator {
+
     private DynamoDBIngestTaskStatusStoreCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
+        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+            return;
+        }
         String tableName = DynamoDBIngestTaskStatusStore.taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
@@ -47,5 +52,12 @@ public class DynamoDBIngestTaskStatusStoreCreator {
                         new KeySchemaElement(TASK_ID, KeyType.HASH),
                         new KeySchemaElement(UPDATE_TIME, KeyType.RANGE)));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_DATE);
+    }
+
+    public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
+        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            return;
+        }
+        dynamoDBClient.deleteTable(DynamoDBIngestTaskStatusStore.taskStatusTableName(properties.get(ID)));
     }
 }
