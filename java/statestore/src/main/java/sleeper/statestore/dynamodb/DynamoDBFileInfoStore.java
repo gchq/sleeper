@@ -33,7 +33,6 @@ import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -60,7 +59,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
@@ -303,8 +301,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
             LOGGER.debug("Scanned for all active files, capacity consumed = {}", totalCapacity.get());
             List<FileInfo> fileInfoResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
-                FileInfo x = fileInfoFormat.getFileInfoFromAttributeValues(map);
-                fileInfoResults.add(x);
+                fileInfoResults.add(fileInfoFormat.getFileInfoFromAttributeValues(map));
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
@@ -378,13 +375,11 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     private List<Map<String, AttributeValue>> scanTrackingCapacity(
             ScanRequest scanRequest, AtomicReference<Double> totalCapacity) {
-        Stream<ScanResult> x2 = streamPagedResults(dynamoDB, scanRequest);
-        List<Map<String, AttributeValue>> x = streamPagedResults(dynamoDB, scanRequest)
+        return streamPagedResults(dynamoDB, scanRequest)
                 .flatMap(result -> {
                     totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
                     return result.getItems().stream();
                 }).collect(Collectors.toList());
-        return x;
     }
 
     @Override

@@ -30,8 +30,6 @@ import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -52,6 +50,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -261,7 +260,6 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
-
     }
 
     @ParameterizedTest
@@ -290,7 +288,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -320,7 +318,6 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
-
     }
 
     @ParameterizedTest
@@ -352,7 +349,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -416,7 +413,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -435,12 +432,9 @@ public class IngestCoordinatorCommonIT {
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(
-                actualRecords
-                        .stream().map(record -> List.copyOf(record.getValues(List.of("key0"))).get(0)).collect(Collectors.toList()))
-                .containsExactlyInAnyOrderElementsOf(
-                        Stream.of((Object) new byte[]{1, 1}, new byte[]{2, 2}, new byte[]{64, 65}).collect(Collectors.toList())
-                );
+        assertThat(actualRecords
+                .stream().map(record -> record.getValues(List.of("key0")).get(0)).collect(Collectors.toList()))
+                .containsExactly(new byte[]{1, 1}, new byte[]{2, 2}, new byte[]{64, 65});
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
@@ -470,7 +464,7 @@ public class IngestCoordinatorCommonIT {
                         .collect(Collectors.toList()));
 
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-        String splitPoint = String.format("%09d", 2);
+        String splitPoint = "000000002";
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, splitPoint)
@@ -486,7 +480,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -549,7 +543,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -584,7 +578,6 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    // FAILING
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
@@ -611,7 +604,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -672,7 +665,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -743,7 +736,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
@@ -802,7 +795,7 @@ public class IngestCoordinatorCommonIT {
                 .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
-        // When`
+        // When
         ingestRecords(duplicatedRecordListAndSchema, parameters, ingestType);
 
         // Then
@@ -838,12 +831,9 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteNoRecordsSuccessfully()
             throws StateStoreException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-
-        Schema schema = Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .build();
-        List<Record> recordListStart = List.of();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = new RecordGenerator.RecordListAndSchema(recordListStart, schema);
+        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+                new LongType(),
+                Collections.emptyList());
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
