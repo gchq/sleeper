@@ -22,33 +22,21 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
-import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.suite.dsl.IngestBatcherResult;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
-import java.time.Duration;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
-import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
-import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
-public class IngestBatcherIT {
-
+public class IngestIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.ingest().batcher().clearStore();
         sleeper.reporting().startRecording();
     }
 
@@ -58,42 +46,24 @@ public class IngestBatcherIT {
     }
 
     @Test
-    void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree() throws InterruptedException {
+    void shouldIngest1File() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(tableProperties -> {
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
-        });
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
         // When
-        IngestBatcherResult result = sleeper.ingest().batcher()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForJobs().getInvokeResult();
+        sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
+                .invokeTasks().waitForJobs();
 
         // Then
-        assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(2);
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
     }
 
     @Test
-    void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
+    void shouldIngest4FilesInOneJob() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(tableProperties -> {
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR.toString());
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
-            tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
-        });
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
                 .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
@@ -101,16 +71,33 @@ public class IngestBatcherIT {
                 .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
 
         // When
-        IngestBatcherResult result = sleeper.ingest().batcher()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForJobs(
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
-                .getInvokeResult();
+        sleeper.ingest().byQueue().sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
+                .invokeTasks().waitForJobs();
 
         // Then
-        assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isOne();
+        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldIngest4FilesInTwoJobs() throws InterruptedException {
+        // Given
+        sleeper.sourceFiles()
+                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
+                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
+                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
+                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+
+        // When
+        sleeper.ingest().byQueue()
+                .sendSourceFiles("file1.parquet", "file2.parquet")
+                .sendSourceFiles("file3.parquet", "file4.parquet")
+                .invokeTasks().waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
+        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(2);
     }
 }

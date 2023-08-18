@@ -88,9 +88,9 @@ public class NightlyTestOutput {
         });
         Path sitePath = directory.resolve("site.zip");
         if (Files.exists(sitePath)) {
-            return fromLogAndStatusFiles(logFiles, statusFiles, sitePath);
+            return fromLogAndStatusFiles(directory, logFiles, statusFiles, sitePath);
         } else {
-            return fromLogAndStatusFiles(logFiles, statusFiles, null);
+            return fromLogAndStatusFiles(directory, logFiles, statusFiles, null);
         }
     }
 
@@ -101,7 +101,7 @@ public class NightlyTestOutput {
     }
 
     private static NightlyTestOutput fromLogAndStatusFiles(
-            List<Path> logFiles, List<Path> statusFiles, Path siteFile) throws IOException {
+            Path directory, List<Path> logFiles, List<Path> statusFiles, Path siteFile) throws IOException {
         Map<String, TestResult.Builder> resultByTestName = new HashMap<>();
         for (Path logFile : logFiles) {
             getResultBuilder(logFile, resultByTestName)
@@ -110,10 +110,25 @@ public class NightlyTestOutput {
         for (Path statusFile : statusFiles) {
             readStatusFile(statusFile, getResultBuilder(statusFile, resultByTestName));
         }
+        loadReportFiles(directory, resultByTestName);
         return new NightlyTestOutput(resultByTestName.values().stream()
                 .map(TestResult.Builder::build)
                 .sorted(Comparator.comparing(TestResult::getTestName))
                 .collect(Collectors.toList()), siteFile);
+    }
+
+    private static void loadReportFiles(Path directory, Map<String, TestResult.Builder> resultByTestName) throws IOException {
+        for (Map.Entry<String, TestResult.Builder> testEntry : resultByTestName.entrySet()) {
+            Path testDirectory = directory.resolve(testEntry.getKey());
+            if (!Files.isDirectory(testDirectory)) {
+                continue;
+            }
+            TestResult.Builder result = testEntry.getValue();
+            try (Stream<Path> files = Files.list(testDirectory)) {
+                files.filter(LOG_FILE_MATCHER::matches)
+                        .forEach(result::logFile);
+            }
+        }
     }
 
     private static TestResult.Builder getResultBuilder(

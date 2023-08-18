@@ -74,6 +74,48 @@ class NightlyTestOutputFileSystemIT {
     }
 
     @Nested
+    @DisplayName("Find nested report log files")
+    class FindNestedReportLogFiles {
+
+        @Test
+        void shouldIncludeReportLogFileInsideTestDirectory() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("maven.log"), "test");
+            Files.createDirectory(tempDir.resolve("maven"));
+            Files.writeString(tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.log"), "test");
+
+            // When
+            NightlyTestOutput output = NightlyTestOutput.from(tempDir);
+
+            // Then
+            assertThat(output.streamLogFiles()).containsExactly(
+                    tempDir.resolve("maven.log"),
+                    tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.log"));
+            assertThat(output.getTests())
+                    .extracting(TestResult::getTestName)
+                    .containsExactly("maven");
+        }
+
+        @Test
+        void shouldIgnoreNonReportLogFileInsideTestDirectory() throws Exception {
+            // Given
+            Files.writeString(tempDir.resolve("maven.log"), "test");
+            Files.createDirectory(tempDir.resolve("maven"));
+            Files.writeString(tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.other"), "test");
+
+            // When
+            NightlyTestOutput output = NightlyTestOutput.from(tempDir);
+
+            // Then
+            assertThat(output.streamLogFiles()).containsExactly(
+                    tempDir.resolve("maven.log"));
+            assertThat(output.getTests())
+                    .extracting(TestResult::getTestName)
+                    .containsExactly("maven");
+        }
+    }
+
+    @Nested
     @DisplayName("Read status files")
     class ReadStatusFiles {
 
