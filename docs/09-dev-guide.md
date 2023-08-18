@@ -116,9 +116,9 @@ This will remove your deployment, including any ECR repos, S3 buckets and local 
 ## Opening a pull request
 
 If you have picked up an issue to work on, and you are ready to merge into the main repository, you can open
-a pull request. Please fill in the issue template as accurately as possible, and try to match the PR naming style
-described in the issue template. Finally, if you have added, removed, or updated any external dependencies used in
-the project, you need to update the [NOTICES.md](/NOTICES.md) file to reflect this.
+a pull request. Please fill in the pull request template as accurately as possible, and try to match the pull request
+naming style described in the template. Finally, if you have added, removed, or updated any external dependencies used
+in the project, you need to update the [NOTICES.md](/NOTICES.md) file to reflect this.
 
 ## Standalone deployment
 
