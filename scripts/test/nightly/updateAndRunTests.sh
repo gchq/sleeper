@@ -21,7 +21,6 @@ pushd "$THIS_DIR"
 
 git fetch
 git switch --discard-changes -C main origin/main
-sleeper cli pull-images
 
 popd
 
