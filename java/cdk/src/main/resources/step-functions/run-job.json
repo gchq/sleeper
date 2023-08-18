@@ -16,9 +16,6 @@
         "ttlSecondsAfterFinished": 600,
         "backoffLimit": 0,
         "template": {
-          "metadata": {
-            "name.$": "$.job.id"
-          },
           "spec": {
             "serviceAccountName": "spark-submit",
             "containers": [
@@ -36,7 +33,9 @@
     "LogOptions": {
       "RetrieveLogs": true,
       "LogParameters": {
-        "tailLines": [ "10" ]
+        "tailLines": [
+          "10"
+        ]
       }
     }
   },

@@ -16,8 +16,8 @@
 package sleeper.ingest.job;
 
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestResult;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 

@@ -37,12 +37,15 @@ public class IngestBatcherStoreInMemory implements IngestBatcherStore {
     }
 
     @Override
-    public void assignJob(String jobId, List<FileIngestRequest> filesInJob) {
+    public List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
         filesInJob.forEach(file -> {
             requests.remove(keyFor(file));
             FileIngestRequest fileWithJob = file.toBuilder().jobId(jobId).build();
             requests.put(keyFor(fileWithJob), fileWithJob);
         });
+        return filesInJob.stream()
+                .map(FileIngestRequest::getFile)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
@@ -58,5 +61,11 @@ public class IngestBatcherStoreInMemory implements IngestBatcherStore {
                 .filter(request -> !request.isAssignedToJob())
                 .sorted(Comparator.comparing(FileIngestRequest::getReceivedTime))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteAllPending() {
+        getPendingFilesOldestFirst().forEach(fileIngestRequest ->
+                requests.remove(keyFor(fileIngestRequest)));
     }
 }

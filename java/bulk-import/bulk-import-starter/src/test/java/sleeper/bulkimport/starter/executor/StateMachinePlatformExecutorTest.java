@@ -50,9 +50,9 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class StateMachinePlatformExecutorTest {
     private AWSStepFunctions stepFunctions;
@@ -266,7 +266,7 @@ class StateMachinePlatformExecutorTest {
         assertThatJson(requested.get().getInput())
                 .inPath("$.args").isArray().extracting(Objects::toString)
                 .filteredOn(s -> s.startsWith("spark.kubernetes.driver.pod.name="))
-                .containsExactly("spark.kubernetes.driver.pod.name=eks-my-job");
+                .containsExactly("spark.kubernetes.driver.pod.name=job-my-job");
     }
 
     @Test
@@ -308,6 +308,6 @@ class StateMachinePlatformExecutorTest {
     }
 
     private StateMachinePlatformExecutor createPlatformExecutor() {
-        return new StateMachinePlatformExecutor(stepFunctions, instanceProperties, tablePropertiesProvider);
+        return new StateMachinePlatformExecutor(stepFunctions, instanceProperties);
     }
 }

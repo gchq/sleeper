@@ -23,6 +23,7 @@ import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
 
+import sleeper.trino.handle.SleeperSplit;
 import sleeper.trino.handle.SleeperTableHandle;
 import sleeper.trino.handle.SleeperTransactionHandle;
 import sleeper.trino.remotesleeperconnection.SleeperConnectionAsTrino;
@@ -57,13 +58,13 @@ public class SleeperSplitManager implements ConnectorSplitManager {
     /**
      * Retrieve a {@link ConnectorSplitSource} to provide access to all of the {@link SleeperSplit} objects.
      *
-     * @param transactionHandle       The transaction that these splits are to work under.
-     * @param session                 The session that these splits are to work under.
-     * @param tableHandle             The table that these splits are to be generated for, which includes a static
-     *                                filter.
-     * @param dynamicFilter           The dynamic filter waits until it is fully-narrowed and then combined with the
-     *                                static filter.
-     * @param constraint              Currently ignored.
+     * @param transactionHandle The transaction that these splits are to work under.
+     * @param session           The session that these splits are to work under.
+     * @param tableHandle       The table that these splits are to be generated for, which includes a static
+     *                          filter.
+     * @param dynamicFilter     The dynamic filter waits until it is fully-narrowed and then combined with the
+     *                          static filter.
+     * @param constraint        Currently ignored.
      * @return The {@link ConnectorSplitSource}.
      */
     @Override

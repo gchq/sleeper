@@ -21,8 +21,8 @@ import sleeper.core.key.Key;
 import sleeper.core.key.KeySerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.HashMap;

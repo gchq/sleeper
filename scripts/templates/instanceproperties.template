@@ -39,6 +39,10 @@ sleeper.ingest.repo=changeme
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
 
+# The name of the repository for the EMR serverless container. The Docker image from the bulk-import
+# module should have been uploaded to an ECR repository of this name in this account.
+sleeper.bulk.import.emr.serverless.repo=changeme
+
 # (EKS mode only) The name of the ECS repository where the Docker image for the bulk import container
 # is stored.
 sleeper.bulk.import.eks.repo=changeme
@@ -74,7 +78,7 @@ sleeper.stack.tag.name=DeploymentStack
 sleeper.retain.infra.after.destroy=true
 
 # The optional stacks to deploy.
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrBulkImportStack,DashboardStack
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,DashboardStack
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
@@ -114,6 +118,10 @@ sleeper.task.runner.timeout.seconds=900
 
 # The namespaces for the metrics used in the metrics stack.
 sleeper.metrics.namespace=Sleeper
+
+# If true, properties will be reloaded every time a long running job is started or a lambda is run.
+# This will mainly be used in test scenarios to ensure properties are up to date.
+sleeper.properties.force.reload=false
 
 
 ## The following properties relate to standard ingest.
@@ -172,6 +180,19 @@ sleeper.ingest.record.batch.type=arrow
 # The direct method is simpler but the async method should provide better performance when the number
 # of partitions is large.
 sleeper.ingest.partition.file.writer.type=async
+
+# Flag to enable/disable storage of tracking information for ingest jobs and tasks.
+sleeper.ingest.status.store.enabled=true
+
+# The time to live in seconds for ingest job updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
+sleeper.ingest.job.status.ttl=604800
+
+# The time to live in seconds for ingest task updates in the status store. Default is 1 week.
+# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
+# data.
+sleeper.ingest.task.status.ttl=604800
 
 # The maximum number of records written to local file in an ingest job. (Records are written in sorted
 # order to local disk before being uploaded to S3. Increasing this value increases the amount of time
@@ -234,19 +255,6 @@ sleeper.ingest.async.crt.part.size.bytes=134217728
 # simultaneously.
 # (CRT async ingest only)
 sleeper.ingest.async.crt.target.throughput.gbps=10
-
-# Flag to enable/disable storage of tracking information for ingest jobs and tasks.
-sleeper.ingest.status.store.enabled=true
-
-# The time to live in seconds for ingest job updates in the status store. Default is 1 week.
-# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
-# data.
-sleeper.ingest.job.status.ttl=604800
-
-# The time to live in seconds for ingest task updates in the status store. Default is 1 week.
-# The expiry time is fixed when an update is saved to the store, so changing this will only affect new
-# data.
-sleeper.ingest.task.status.ttl=604800
 
 # The amount of memory in MB for the lambda that receives submitted requests to ingest files.
 sleeper.ingest.batcher.submitter.memory.mb=1024
@@ -407,11 +415,91 @@ sleeper.bulk.import.emr.ebs.volume.type=gp2
 # This can be a number from 1 to 25.
 sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 
+# The architecture for EMR Serverless to use. X86_64 or ARM (Coming soon)
+sleeper.bulk.import.emr.serverless.architecture=X86_64
+
+# The version of EMR Serverless to use.
+sleeper.bulk.import.emr.serverless.release=emr-6.10.0
+
+# The number of cores used by a Serverless executor. Used to set spark.executor.cores.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.executor.cores=4
+
+# The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.executor.memory=16g
+
+# The amount of storage allocated to a Serverless executor.
+sleeper.bulk.import.emr.serverless.executor.disk=200g
+
+# The number of executors to be used with Serverless. Used to set spark.executor.instances.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.executor.instances=36
+
+# The number of cores used by the Serverless Spark driver. Used to set spark.driver.cores.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.driver.cores=4
+
+# The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.driver.memory=16g
+
+# The path to JAVA_HOME to be used by the custom image for bulk import.
+sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
+
+# Whether Spark should use dynamic allocation to scale resources up and down. Used to set
+# spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled=false
+
+# Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.rdd.compress=true
+
+# Whether to compress map output files. Used to set spark.shuffle.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.shuffle.compress=true
+
+# Whether to compress data spilled during shuffles. Used to set spark.shuffle.spill.compress.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.shuffle.spill.compress=true
+
+# The default parallelism for Spark job. Used to set spark.default.parallelism.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.default.parallelism=288
+
+# The number of partitions used in a Spark SQL/dataframe shuffle operation. Used to set
+# spark.sql.shuffle.partitions.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
+
+# The default timeout for network interactions in Spark. Used to set spark.network.timeout.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.network.timeout=800s
+
+# (The interval between heartbeats from executors to the driver. Used to set
+# spark.executor.heartbeatInterval.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.executor.heartbeat.interval=60s
+
+# The fraction of heap space used for execution and storage. Used to set spark.memory.fraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
+
+# The amount of storage memory immune to eviction, expressed as a fraction of the heap space used for
+# execution and storage. Used to set spark.memory.storageFraction.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
+
 # (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
 sleeper.default.bulk.import.emr.release.label=emr-6.10.0
+
+# (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
+# cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
+# import using EMR - Instance types section in docs/05-ingest.md
+sleeper.default.bulk.import.emr.instance.architecture=x86_64
 
 # (Non-persistent EMR mode only) The default EC2 x86 instance types to be used for the master node of
 # the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
@@ -426,12 +514,12 @@ sleeper.default.bulk.import.emr.executor.x86.instance.types=m6i.4xlarge
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master node
 # of the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-# sleeper.default.bulk.import.emr.master.arm.instance.types=
+sleeper.default.bulk.import.emr.master.arm.instance.types=m6g.xlarge
 
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the executor
 # nodes of the EMR cluster. For more information, see the Bulk import using EMR - Instance types
 # section in docs/05-ingest.md
-# sleeper.default.bulk.import.emr.executor.arm.instance.types=
+sleeper.default.bulk.import.emr.executor.arm.instance.types=m6g.4xlarge
 
 # (Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of
 # the EMR cluster.
@@ -461,6 +549,11 @@ sleeper.default.bulk.import.emr.executor.max.instances=10
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
 sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 
+# (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
+# Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
+# EMR - Instance types section in docs/05-ingest.md
+sleeper.bulk.import.persistent.emr.instance.architecture=x86_64
+
 # (Persistent EMR mode only) The EC2 x86 instance types used for the master node of the persistent EMR
 # cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
@@ -469,17 +562,17 @@ sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 # (Persistent EMR mode only) The EC2 x86 instance types used for the executor nodes of the persistent
 # EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-# sleeper.bulk.import.persistent.emr.executor.x86.instance.types=
+sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types used for the master node of the persistent
 # EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
 # docs/05-ingest.md
-# sleeper.bulk.import.persistent.emr.master.arm.instance.types=
+sleeper.bulk.import.persistent.emr.master.arm.instance.types=m6g.xlarge
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types used for the executor nodes of the
 # persistent EMR cluster. For more information, see the Bulk import using EMR - Instance types section
 # in docs/05-ingest.md
-# sleeper.bulk.import.persistent.emr.executor.arm.instance.types=
+sleeper.bulk.import.persistent.emr.executor.arm.instance.types=m6g.4xlarge
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true

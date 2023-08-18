@@ -46,7 +46,6 @@ public class FileIngestRequestSerDe {
         return GSON.toJson(new Request(bucketName, keys, tableName));
     }
 
-
     private static class Request {
         private final List<String> files;
         private final String tableName;

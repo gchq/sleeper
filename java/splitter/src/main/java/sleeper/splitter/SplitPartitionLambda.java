@@ -26,11 +26,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
@@ -43,6 +44,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * job to do.
  */
 public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
+    private final PropertiesReloader propertiesReloader;
     private final Configuration conf;
     private static final Logger LOGGER = LoggerFactory.getLogger(SplitPartitionLambda.class);
     private final StateStoreProvider stateStoreProvider;
@@ -61,10 +63,12 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
         this.conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
+        this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
 
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
+        propertiesReloader.reloadIfNeeded();
         try {
             for (SQSEvent.SQSMessage message : event.getRecords()) {
                 String serialisedJob = message.getBody();

@@ -41,7 +41,7 @@ public class UpdatePropertiesWithNano {
     private final RunCommand runCommand;
 
     public UpdatePropertiesWithNano(Path tempDirectory) {
-        this(tempDirectory, ClientUtils::runCommand);
+        this(tempDirectory, ClientUtils::runCommandInheritIO);
     }
 
     public UpdatePropertiesWithNano(Path tempDirectory, RunCommand runCommand) {

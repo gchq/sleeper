@@ -19,6 +19,7 @@ import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -107,17 +108,14 @@ public class CompactionJobStatus {
         return jobRuns.isTaskIdAssigned(taskId);
     }
 
-    public boolean isInPeriod(Instant startTime, Instant endTime) {
-        return startTime.isBefore(lastTime())
-                && endTime.isAfter(firstTime());
-    }
-
-    private Instant firstTime() {
-        return createdStatus.getUpdateTime();
-    }
-
-    private Instant lastTime() {
-        return jobRuns.lastTime().orElse(createdStatus.getUpdateTime());
+    public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
+        TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
+        if (isFinished()) {
+            return timeWindowQuery.isFinishedProcessInWindow(
+                    createdStatus.getUpdateTime(), jobRuns.lastTime().orElseThrow());
+        } else {
+            return timeWindowQuery.isUnfinishedProcessInWindow(createdStatus.getUpdateTime());
+        }
     }
 
     public List<ProcessRun> getJobRuns() {

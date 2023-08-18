@@ -18,7 +18,7 @@ Describe what's going wrong.
 3. Run report '...'
 4. See error
 
-### Expected behavior
+### Expected behaviour
 
 Describe what you expected to happen.
 

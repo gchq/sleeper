@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
-import sleeper.statestore.PartitionStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.PartitionStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.ArrayList;

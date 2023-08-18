@@ -29,6 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
@@ -37,12 +38,12 @@ import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -66,8 +67,8 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 class IngestJobRunnerIT {
     @RegisterExtension
@@ -87,10 +88,10 @@ class IngestJobRunnerIT {
         return Stream.of(
                 Arguments.of("arrow", "async", "s3a://"),
                 Arguments.of("arrow", "direct", "s3a://"),
-                Arguments.of("arrow", "direct", ""),
+                Arguments.of("arrow", "direct", "file://"),
                 Arguments.of("arraylist", "async", "s3a://"),
                 Arguments.of("arraylist", "direct", "s3a://"),
-                Arguments.of("arraylist", "direct", "")
+                Arguments.of("arraylist", "direct", "file://")
         );
     }
 
@@ -138,7 +139,7 @@ class IngestJobRunnerIT {
         switch (fileSystemPrefix.toLowerCase(Locale.ROOT)) {
             case "s3a://":
                 return TABLE_DATA_BUCKET_NAME;
-            case "":
+            case "file://":
                 return currentLocalTableDataDirectory;
             default:
                 throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
@@ -149,7 +150,7 @@ class IngestJobRunnerIT {
         switch (fileSystemPrefix.toLowerCase(Locale.ROOT)) {
             case "s3a://":
                 return INGEST_DATA_BUCKET_NAME;
-            case "":
+            case "file://":
                 return currentLocalIngestDirectory;
             default:
                 throw new AssertionError(String.format("File system %s is not supported", fileSystemPrefix));
@@ -201,6 +202,7 @@ class IngestJobRunnerIT {
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
+                PropertiesReloader.neverReload(),
                 stateStoreProvider,
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),

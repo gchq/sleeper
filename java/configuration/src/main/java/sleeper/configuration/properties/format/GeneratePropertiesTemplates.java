@@ -48,6 +48,7 @@ import static sleeper.configuration.properties.instance.CompactionProperty.DEFAU
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_EC2_KEYPAIR_NAME;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
@@ -77,6 +78,7 @@ public class GeneratePropertiesTemplates {
     private static final Map<InstanceProperty, String> EMR_REPOSITORY_EXAMPLE_VALUES = Map.of(
             ECR_INGEST_REPO, "<insert-unique-sleeper-id>/ingest",
             BULK_IMPORT_REPO, "<insert-unique-sleeper-id>/bulk-import-runner",
+            BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless",
             ECR_COMPACTION_REPO, "<insert-unique-sleeper-id>/compaction-job-execution");
 
     private static final Map<TableProperty, String> BASIC_TABLE_EXAMPLE_VALUES = Map.of(

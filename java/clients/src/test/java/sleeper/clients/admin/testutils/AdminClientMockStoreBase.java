@@ -18,7 +18,7 @@ package sleeper.clients.admin.testutils;
 import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 
 import java.util.Arrays;
 
