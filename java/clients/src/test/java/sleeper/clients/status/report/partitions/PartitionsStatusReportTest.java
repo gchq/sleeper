@@ -25,8 +25,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +39,7 @@ import static sleeper.clients.status.report.partitions.PartitionStatusReportTest
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createTablePropertiesWithSplitThreshold;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 class PartitionsStatusReportTest {
     @Test

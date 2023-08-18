@@ -46,14 +46,14 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;

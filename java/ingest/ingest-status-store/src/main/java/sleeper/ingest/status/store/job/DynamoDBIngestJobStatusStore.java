@@ -174,5 +174,4 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
                         .withAttributeValueList(createStringAttribute(tableName))
                         .withComparisonOperator(ComparisonOperator.EQ));
     }
-
 }

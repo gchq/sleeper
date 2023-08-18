@@ -26,8 +26,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.inmemory.StateStoreTestBuilder;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;

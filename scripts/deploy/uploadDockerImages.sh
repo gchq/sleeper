@@ -27,7 +27,7 @@ VERSION=$3
 IFS="," read -r -a STACKS <<< "$4"
 BASE_DOCKERFILE_DIR=$5
 REGION=$(echo "${DOCKER_REGISTRY}" | sed -e "s/^.*\.dkr\.ecr\.\(.*\)\.amazonaws\.com/\1/")
-DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack")
+DOCKER_STACKS_ALL=("CompactionStack" "IngestStack" "SystemTestStack" "EksBulkImportStack" "EmrServerlessBulkImportStack")
 REPO_PREFIX=${DOCKER_REGISTRY}/${INSTANCE_ID}
 FUNCTIONS_DIR=$(cd "$(dirname "$0")" && cd "../functions" && pwd)
 source "${FUNCTIONS_DIR}/arrayUtils.sh"
@@ -50,6 +50,7 @@ Stacks_CompactionStack="compaction-job-execution"
 Stacks_IngestStack="ingest"
 Stacks_SystemTestStack="system-test"
 Stacks_EksBulkImportStack="bulk-import-runner"
+Stacks_EmrServerlessBulkImportStack="bulk-import-runner-emr-serverless"
 
 echo "Beginning docker build and push of images for the following stacks: ${DOCKER_STACKS}"
 
@@ -80,9 +81,20 @@ for stack in "${DOCKER_STACKS[@]}"; do
 
     # Create the docker repository if required
     if [ $STATUS -ne 0 ]; then
-      echo "Creating repository ${INSTANCE_ID}/${REPO}"
+      echo "Creating repository ${INSTANCE_ID}/${REPO} "
       aws ecr create-repository --repository-name "${INSTANCE_ID}/${REPO}" \
         --image-scanning-configuration scanOnPush=true --no-cli-pager
+
+        # Add a resource policy if the repo is EMR Serverless 
+        # See https://aws.amazon.com/ru/blogs/big-data/add-your-own-libraries-and-application-dependencies-to-spark-and-hive-on-amazon-emr-serverless-with-custom-images/
+        if [ $REPO = $Stacks_EmrServerlessBulkImportStack ]; then
+            echo "Creating repository policy for ${INSTANCE_ID}/${REPO}"
+            aws ecr set-repository-policy --repository-name "${INSTANCE_ID}/${REPO}" \
+            --policy-text "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"EmrServerlessCustomImageSupport\", \
+            \"Effect\":\"Allow\",\"Principal\":{\"Service\":\"emr-serverless.amazonaws.com\"}, \
+            \"Action\":[\"ecr:BatchGetImage\",\"ecr:DescribeImages\",\"ecr:GetDownloadUrlForLayer\"]}]}" \
+            --no-cli-pager
+        fi
     fi
 
     pushd "${BASE_DOCKERFILE_DIR}/${DIR}"

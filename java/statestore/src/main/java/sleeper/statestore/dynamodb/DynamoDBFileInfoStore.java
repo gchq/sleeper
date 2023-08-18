@@ -44,9 +44,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.schema.Schema;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfoStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -62,10 +62,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
+import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
-import static sleeper.statestore.FileInfo.FileStatus.ACTIVE;
-import static sleeper.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION;

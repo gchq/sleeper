@@ -17,6 +17,7 @@
 package sleeper.systemtest.drivers.instance;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 public class SystemTestParameters {
 
@@ -24,12 +25,14 @@ public class SystemTestParameters {
     private final String vpcId;
     private final String subnetIds;
     private final Path scriptsDirectory;
+    private final Path outputDirectory;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = builder.shortTestId;
         vpcId = builder.vpcId;
         subnetIds = builder.subnetIds;
         scriptsDirectory = builder.scriptsDirectory;
+        outputDirectory = builder.outputDirectory;
     }
 
     public static SystemTestParameters loadFromSystemProperties() {
@@ -38,6 +41,9 @@ public class SystemTestParameters {
                 .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
                 .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
                 .scriptsDirectory(findScriptsDir())
+                .outputDirectory(Optional.ofNullable(System.getProperty("sleeper.system.test.output.dir"))
+                        .map(Path::of)
+                        .orElse(null))
                 .build();
     }
 
@@ -59,6 +65,10 @@ public class SystemTestParameters {
 
     public Path getScriptsDirectory() {
         return scriptsDirectory;
+    }
+
+    public Path getOutputDirectory() {
+        return outputDirectory;
     }
 
     private static Builder builder() {
@@ -95,6 +105,7 @@ public class SystemTestParameters {
         private String vpcId;
         private String subnetIds;
         private Path scriptsDirectory;
+        private Path outputDirectory;
 
         private Builder() {
         }
@@ -116,6 +127,11 @@ public class SystemTestParameters {
 
         public Builder scriptsDirectory(Path scriptsDirectory) {
             this.scriptsDirectory = scriptsDirectory;
+            return this;
+        }
+
+        public Builder outputDirectory(Path outputDirectory) {
+            this.outputDirectory = outputDirectory;
             return this;
         }
 

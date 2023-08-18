@@ -23,7 +23,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.type.IntType;
-import sleeper.statestore.FileInfo;
+import sleeper.core.statestore.FileInfo;
 
 import java.util.ArrayList;
 import java.util.Arrays;

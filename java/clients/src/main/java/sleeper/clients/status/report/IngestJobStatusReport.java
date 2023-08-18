@@ -61,8 +61,8 @@ public class IngestJobStatusReport {
     private final IngestJobStatusReporter ingestJobStatusReporter;
     private final QueueMessageCount.Client queueClient;
     private final InstanceProperties properties;
-    private final JobQuery query;
     private final JobQuery.Type queryType;
+    private final JobQuery query;
     private final Map<String, Integer> persistentEmrStepCount;
 
     public IngestJobStatusReport(
@@ -70,10 +70,18 @@ public class IngestJobStatusReport {
             String tableName, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
+        this(ingestJobStatusStore, queryType, JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
+                        Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
+                reporter, queueClient, properties, persistentEmrStepCount);
+    }
+
+    public IngestJobStatusReport(
+            IngestJobStatusStore ingestJobStatusStore, JobQuery.Type queryType, JobQuery query,
+            IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
+            Map<String, Integer> persistentEmrStepCount) {
         this.statusStore = ingestJobStatusStore;
-        this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery()));
         this.queryType = queryType;
+        this.query = query;
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;
