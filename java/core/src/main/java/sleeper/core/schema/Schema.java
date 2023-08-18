@@ -119,11 +119,7 @@ public class Schema {
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst();
     }
-
-
-    public Field getField(Integer index) {
-        return streamAllFields().collect(Collectors.toList()).get(index);
-    }
+    
 
     public void save(Path path) throws IOException {
         Files.writeString(path, new SchemaSerDe().toJson(this));
