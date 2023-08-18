@@ -41,12 +41,12 @@ public class PartitionSplittingIT {
     }
 
     @Test
-    void shouldSplitPartitionsWith100RecordsAndThresholdOf20() {
+    void shouldSplitPartitionsWith100RecordsAndThresholdOf20() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
-        // TODO Split partitions & run compactions
+        sleeper.partitionSplitting().split();
     }
 }

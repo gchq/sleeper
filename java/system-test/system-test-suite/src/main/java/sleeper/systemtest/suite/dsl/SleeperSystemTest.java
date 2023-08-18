@@ -22,6 +22,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
+import sleeper.systemtest.drivers.compaction.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -123,5 +124,9 @@ public class SleeperSystemTest {
 
     public SystemTestReporting reporting() {
         return new SystemTestReporting(reportingContext);
+    }
+
+    public SystemTestPartitionSplitting partitionSplitting() {
+        return new SystemTestPartitionSplitting(new PartitionSplittingDriver(instance, clients.getLambda()));
     }
 }
