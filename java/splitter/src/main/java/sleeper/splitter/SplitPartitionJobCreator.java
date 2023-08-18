@@ -23,13 +23,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.FileInfo;
 
 import java.io.IOException;
 import java.util.List;
 
 /**
  * Creates a {@link SplitPartitionJobDefinition} from the provided
- * {@link Partition} and list of {@link sleeper.statestore.FileInfo}s, serialises it to a string
+ * {@link Partition} and list of {@link FileInfo}s, serialises it to a string
  * and sends that to an SQS queue.
  */
 public class SplitPartitionJobCreator {

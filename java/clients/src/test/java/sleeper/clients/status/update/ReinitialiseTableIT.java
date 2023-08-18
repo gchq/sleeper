@@ -53,9 +53,9 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
@@ -725,7 +725,7 @@ public class ReinitialiseTableIT {
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
         if (isS3StateStore) {
-            instanceProperties.set(FILE_SYSTEM, "");
+            instanceProperties.set(FILE_SYSTEM, "file://");
         } else {
             instanceProperties.set(FILE_SYSTEM, "s3a://");
         }

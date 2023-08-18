@@ -44,13 +44,12 @@ public class DrawDependencyGraph {
         model.getEdges().forEach(edge -> g.addEdge(edge, edge.getFrom(model), edge.getTo(model)));
         KKLayout<GraphNode, GraphEdge> layout = new KKLayout<>(g);
         layout.setLengthFactor(1.2);
-        layout.setSize(new Dimension(900, 900));
 
-        VisualizationViewer<GraphNode, GraphEdge> vv = new VisualizationViewer<>(layout);
+        Dimension size = new Dimension(1000, 1000);
+        VisualizationViewer<GraphNode, GraphEdge> vv = new VisualizationViewer<>(layout, size);
         PickedNodeState picked = new PickedNodeState(model);
         vv.getPickedVertexState().addItemListener(event ->
                 picked.updatePicked(vv.getPickedVertexState().getPicked()));
-        vv.setPreferredSize(new Dimension(950, 950));
         vv.getRenderContext().setEdgeDrawPaintTransformer(edge -> picked.calculateEdgeColor(edge, showTransitiveDependencies));
         vv.getRenderContext().setArrowDrawPaintTransformer(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
         vv.getRenderContext().setArrowFillPaintTransformer(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
@@ -80,5 +79,6 @@ public class DrawDependencyGraph {
         frame.getContentPane().add(vv);
         frame.pack();
         frame.setVisible(true);
+        frame.requestFocus();
     }
 }

@@ -26,12 +26,12 @@ import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.DelegatingStateStore;
-import sleeper.statestore.FileInfoFactory;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.inmemory.FixedPartitionStore;
-import sleeper.statestore.inmemory.InMemoryFileInfoStore;
+import sleeper.core.statestore.DelegatingStateStore;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.inmemory.FixedPartitionStore;
+import sleeper.core.statestore.inmemory.InMemoryFileInfoStore;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
 import java.time.Duration;

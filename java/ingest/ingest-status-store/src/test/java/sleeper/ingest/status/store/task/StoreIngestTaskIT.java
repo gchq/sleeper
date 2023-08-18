@@ -93,5 +93,4 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
-
 }

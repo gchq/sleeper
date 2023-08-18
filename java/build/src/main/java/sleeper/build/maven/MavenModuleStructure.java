@@ -84,7 +84,7 @@ public class MavenModuleStructure {
 
     private Stream<MavenModuleAndPath> allModules(MavenModuleAndPath parent) {
         MavenModuleAndPath projectListPath = parent.child(this);
-        if ("pom".equals(packaging)) {
+        if (isPomPackage()) {
             return modules.stream()
                     .flatMap(module -> module.allModules(projectListPath));
         } else {
@@ -120,6 +120,10 @@ public class MavenModuleStructure {
                     .moduleRef(moduleRef).build());
         }
         return modules;
+    }
+
+    public boolean isPomPackage() {
+        return "pom".equals(packaging);
     }
 
     @Override

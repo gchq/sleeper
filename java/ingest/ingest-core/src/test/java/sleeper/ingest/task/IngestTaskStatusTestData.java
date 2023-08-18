@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.stream.Stream;
 
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
+import static sleeper.core.statestore.FileInfoTestData.DEFAULT_NUMBER_OF_RECORDS;
 
 public class IngestTaskStatusTestData {
     private IngestTaskStatusTestData() {

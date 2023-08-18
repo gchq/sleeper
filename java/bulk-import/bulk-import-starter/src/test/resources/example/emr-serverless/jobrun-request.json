@@ -1,0 +1,22 @@
+{
+  "executionRoleArn": "cluster-role",
+  "jobDriver": {
+    "sparkSubmit": {
+      "entryPoint": "/workdir/bulk-import-runner.jar",
+      "entryPointArguments": [
+        "config-bucket",
+        "my-job",
+        "sleeper-instance-table-name-my-job",
+        "run-id"
+      ]
+    }
+  },
+  "configurationOverrides": {
+    "monitoringConfiguration": {
+      "s3MonitoringConfiguration": {
+        "logUri": "s3://import-bucket"
+      }
+    }
+  },
+  "name": "job-run-id"
+}

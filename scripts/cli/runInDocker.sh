@@ -30,6 +30,7 @@ run_in_docker() {
   fi
   RUN_PARAMS+=(
     --rm
+    --network=host
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
     -e AWS_ACCESS_KEY_ID

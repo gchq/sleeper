@@ -34,13 +34,13 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.task.IngestTaskStatusStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
@@ -48,6 +48,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.IngestProperty.S3A_INPUT_FADVISE;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class ECSIngestTask {
     private ECSIngestTask() {
@@ -62,10 +63,10 @@ public class ECSIngestTask {
         }
 
         long startTime = System.currentTimeMillis();
-        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonCloudWatch cloudWatchClient = AmazonCloudWatchClientBuilder.defaultClient();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        AmazonCloudWatch cloudWatchClient = buildAwsV1Client(AmazonCloudWatchClientBuilder.standard());
+        AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
 
         String s3Bucket = args[0];
         InstanceProperties instanceProperties = new InstanceProperties();

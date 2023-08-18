@@ -1,7 +1,7 @@
 Performance tests
 =================
 
-The following notes describe how to run the system tests that measure performance, to help understand whether changes 
+The following notes describe how to run the system tests that measure performance, to help understand whether changes
 to the code have increased or decreased the performance. These tests are based on the system tests described in
 [09-dev-guide#System-tests](09-dev-guide.md#System-tests).
 
@@ -10,12 +10,12 @@ The performance tests take control of when compactions run in order to produce m
 
 ## Compaction performance
 
-This will test the performance of standard ingest, standard compactions and compaction job creation. It will not 
-perform any partition splitting. This will take around an hour. This is intended to avoid any variance that may be 
+This will test the performance of standard ingest, standard compactions and compaction job creation. It will not
+perform any partition splitting. This will take around an hour. This is intended to avoid any variance that may be
 caused by the number of input files or the amount of data processed at once.
 
-There are a variety of scenarios that can occur when compaction is performed on scheduled jobs (as in the deployAll 
-system test, or normal system functioning), such as compactions happening halfway through ingest. The compaction 
+There are a variety of scenarios that can occur when compaction is performed on scheduled jobs (as in the deployAll
+system test, or normal system functioning), such as compactions happening halfway through ingest. The compaction
 performance test avoids this by disabling the scheduled jobs and triggering those processes directly.
 
 Run the tests:
@@ -40,17 +40,19 @@ Report the results:
 ```
 
 ## Bulk import performance
-This will test the performance of bulk import using EMR. A bulk import job for 1 billion records will be created and 
-sent to the bulk import queue 5 times. It will then wait for all EMR steps to finish, then check that there are 
+
+This will test the performance of bulk import using EMR. A bulk import job for 1 billion records will be created and
+sent to the bulk import queue 5 times. It will then wait for all EMR steps to finish, then check that there are
 5 billion records in the table. This will take about 30 minutes.
 
-The system test table is pre-split into 512 leaf partitions using the `scripts/test/splitpoints/512-partitions.txt` 
+The system test table is pre-split into 512 leaf partitions using the `scripts/test/splitpoints/512-partitions.txt`
 splitpoints file.
 
-The standard ingest, compaction, and partition splitting stacks are not enabled, so the test finishes when all 
+The standard ingest, compaction, and partition splitting stacks are not enabled, so the test finishes when all
 records are ingested through bulk import.
 
 Run the tests
+
 ```bash
 ID=<a-unique-id-for-the-test>
 VPC=<id-of-the-VPC-to-deploy-to>
@@ -59,6 +61,7 @@ SUBNETS=<ids-of-the-subnets-to-deploy-to>
 ```
 
 Report the results:
+
 ```bash
 ./scripts/utility/ingestTaskStatusReport.sh ${ID} standard -a
 ./scripts/utility/ingestJobStatusReport.sh ${ID} system-test standard -a
@@ -81,3 +84,4 @@ otherwise not have been noticed.
 | 0.15.0         | 30/03/2023 | 336000                      | 136000                           |
 | 0.16.0         | 28/04/2023 | 325000                      | 137000                           |
 | 0.17.0         | 09/06/2023 | 308000                      | 163000                           |
+| 0.18.0         | 09/08/2023 | 326000                      | 147000                           |

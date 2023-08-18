@@ -21,7 +21,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.statestore.FileInfoFactory;
+import sleeper.core.statestore.FileInfoFactory;
 
 import java.time.Instant;
 import java.time.Period;
@@ -70,7 +70,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         store.jobCreated(job);
 
         // Then
-        Instant periodStart = Instant.now().plus(Period.ofDays(1));
+        Instant periodStart = Instant.now().minus(Period.ofDays(2));
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd)).isEmpty();
     }

@@ -34,12 +34,12 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.FileInfo;
-import sleeper.statestore.FileInfoStore;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.time.Clock;
