@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.schema.Schema;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
