@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -73,7 +74,8 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLAS
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
-public class QueryExecutorTest {
+@Testcontainers
+public class QueryExecutorIT {
     protected static ExecutorService executorService;
 
     @TempDir
@@ -750,7 +752,6 @@ public class QueryExecutorTest {
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
                 .buildList()
         );
-
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
