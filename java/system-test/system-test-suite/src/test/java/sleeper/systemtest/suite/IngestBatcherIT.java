@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.IngestBatcherResult;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
@@ -66,11 +67,12 @@ public class IngestBatcherIT {
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
         });
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
+                .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
+                .createWithNumberedRecords("file3.parquet", numbers.range(200, 300))
+                .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
         IngestBatcherResult result = sleeper.ingest().batcher()
@@ -94,11 +96,12 @@ public class IngestBatcherIT {
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
             tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         });
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
-                .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200))
-                .createWithNumberedRecords("file3.parquet", LongStream.range(200, 300))
-                .createWithNumberedRecords("file4.parquet", LongStream.range(300, 400));
+                .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
+                .createWithNumberedRecords("file2.parquet", numbers.range(100, 200))
+                .createWithNumberedRecords("file3.parquet", numbers.range(200, 300))
+                .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
         IngestBatcherResult result = sleeper.ingest().batcher()
