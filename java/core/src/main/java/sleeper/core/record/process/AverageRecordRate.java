@@ -44,8 +44,8 @@ public class AverageRecordRate {
         double totalSeconds = totalDuration.toMillis() / 1000.0;
         recordsReadPerSecond = recordsRead / totalSeconds;
         recordsWrittenPerSecond = recordsWritten / totalSeconds;
-        averageJobRecordsReadPerSecond = builder.totalRecordsReadPerSecond / runCount;
-        averageJobRecordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / runCount;
+        averageJobRecordsReadPerSecond = builder.totalRecordsReadPerSecond / builder.runsWithRecordsRead;
+        averageJobRecordsWrittenPerSecond = builder.totalRecordsWrittenPerSecond / builder.runsWithRecordsWritten;
     }
 
     public static AverageRecordRate of(Stream<ProcessRun> runs) {
@@ -97,7 +97,11 @@ public class AverageRecordRate {
         private long recordsRead;
         private long recordsWritten;
         private Duration totalRunDuration = Duration.ZERO;
+        private int runsWithRecordsRead;
+        private Duration totalReadingDuration = Duration.ZERO;
         private double totalRecordsReadPerSecond;
+        private int runsWithRecordsWritten;
+        private Duration totalWritingDuration = Duration.ZERO;
         private double totalRecordsWrittenPerSecond;
 
         private Builder() {
@@ -113,11 +117,17 @@ public class AverageRecordRate {
             recordsRead += summary.getRecordsRead();
             recordsWritten += summary.getRecordsWritten();
             totalRunDuration = totalRunDuration.plus(summary.getTimeInProcess());
-            if (Double.isFinite(summary.getRecordsReadPerSecond())) {
-                totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
-            }
-            if (Double.isFinite(summary.getRecordsWrittenPerSecond())) {
-                totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
+            if (!summary.getTimeInProcess().isZero()) { // Can't calculate average rate accurately if duration is zero
+                if (summary.getRecordsReadPerSecond() > 0) {
+                    runsWithRecordsRead++;
+                    totalReadingDuration = totalReadingDuration.plus(summary.getTimeInProcess());
+                    totalRecordsReadPerSecond += summary.getRecordsReadPerSecond();
+                }
+                if (summary.getRecordsWrittenPerSecond() > 0) {
+                    runsWithRecordsWritten++;
+                    totalWritingDuration = totalWritingDuration.plus(summary.getTimeInProcess());
+                    totalRecordsWrittenPerSecond += summary.getRecordsWrittenPerSecond();
+                }
             }
             return this;
         }
