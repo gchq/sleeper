@@ -853,10 +853,7 @@ public class IngestCoordinatorCommonIT {
         List<FileInfo> fileInfoList = List.of();
 
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        List<List<Object>> recordList = List.of();
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(recordList);
+        assertThat(actualRecords).isEmpty();
     }
 
     @ParameterizedTest
