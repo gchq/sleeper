@@ -333,8 +333,7 @@ public class IngestCoordinatorCommonIT {
         List<String> mergedLists = mergeElementsStringLists(
                 LongStream.range(-100, 100)
                         .mapToObj(longValue -> String.format("%09d", longValue))
-                        .collect(Collectors.toList())
-                , randomStringList);
+                        .collect(Collectors.toList()), randomStringList);
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new StringType(),
                 mergedLists);
@@ -381,8 +380,7 @@ public class IngestCoordinatorCommonIT {
                         mergeElementsStringLists(
                                 LongStream.range(-100, 100)
                                         .mapToObj(longValue -> String.format("%09d", longValue))
-                                        .collect(Collectors.toList())
-                                , randomStringList));
+                                        .collect(Collectors.toList()), randomStringList));
 
 
         ResultVerifier.assertOnSketch(
@@ -464,8 +462,7 @@ public class IngestCoordinatorCommonIT {
         List<String> mergedLists = mergeElementsStringLists(
                 LongStream.range(-100, 100)
                         .mapToObj(longValue -> String.format("%09d", longValue))
-                        .collect(Collectors.toList())
-                , randomStringList)
+                        .collect(Collectors.toList()), randomStringList)
                 .stream().flatMap(str -> Stream.of(str, str, str)).collect(Collectors.toList());
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1DSort1D(
                 new StringType(),
