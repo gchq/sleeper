@@ -21,9 +21,17 @@ You will need the following software:
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
-If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
-these pre-installed. You'll need to clone the Git repository, and this will be persisted between executions of
-`sleeper builder`. Use the commands below:
+You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all of these. When
+you have Nix installed, an easy way to get a development environment is to use `nix-shell` to get a shell with all the
+Sleeper dependencies installed, without installing them in your system. You can then run your IDE from there so the
+dependencies will be available in your IDE.
+
+If you haven't already cloned the Git repository, download [shell.nix](/shell.nix) and run `nix-shell shell.nix`. If you
+already have a local repository, you can just run `nix-shell` at the root.
+
+If you're working with the Sleeper CLI, you can also use `sleeper builder` to get a shell inside a Docker container with
+the dependencies pre-installed. You'll need to clone the Git repository, and this will be persisted between executions
+of `sleeper builder`. Use the commands below:
 
 ```bash
 sleeper builder
