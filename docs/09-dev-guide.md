@@ -58,6 +58,8 @@ If you'd like to look at how the modules relate to one another in terms of their
 there's a main method in the class `sleeper.build.maven.ShowInternalDependencies` to display the internal dependencies
 as a graph.
 
+If you'd like to pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
+
 ## System Tests
 
 Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of
