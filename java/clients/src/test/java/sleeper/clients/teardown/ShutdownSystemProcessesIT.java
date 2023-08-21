@@ -16,6 +16,7 @@
 package sleeper.clients.teardown;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -31,6 +32,7 @@ import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -45,9 +47,14 @@ import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServe
 import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningApplications;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningClusters;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningJobsOnApplication;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.deleteJobsForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationRequested;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationsRequest;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
 import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.listJobsForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEMRTestHelper.stopJobForApplicationsRequest;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -180,6 +187,71 @@ class ShutdownSystemProcessesIT {
     @Nested
     @DisplayName("Terminate running EMR clusters")
     class TerminateEMRClusters {
+
+        @Test
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
+            //Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(1)));
+            stubFor(listJobsForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+            stubFor(stopJobForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(2, getRequestedFor(urlEqualTo("/applications")));
+            verify(2, listActiveApplicationRequested());
+
+        }
+
+        @Test
+        void emrServerlessHasZeroApplicationsStarted() throws Exception {
+            //Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(0)));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, getRequestedFor(urlEqualTo("/applications")));
+            verify(1, listActiveApplicationRequested());
+
+        }
+
+        @Test
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJobs() throws Exception {
+            //Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(1)));
+            stubFor(listJobsForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(1)));
+            stubFor(stopJobForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+            stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
+                .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(2, getRequestedFor(urlEqualTo("/applications")));
+            verify(2, listActiveApplicationRequested());
+
+        }
+
         @Test
         void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
             // Given
