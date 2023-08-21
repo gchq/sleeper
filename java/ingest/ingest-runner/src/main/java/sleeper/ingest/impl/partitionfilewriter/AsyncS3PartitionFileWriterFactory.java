@@ -15,7 +15,10 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.S3CrtAsyncClientBuilder;
 import software.amazon.awssdk.transfer.s3.S3TransferManager;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -24,6 +27,7 @@ import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -65,15 +69,48 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
         String clientType = properties.get(ASYNC_INGEST_CLIENT_TYPE).toLowerCase(Locale.ROOT);
         if ("java".equals(clientType)) {
-            return S3AsyncClient.create();
+            return buildS3Client(S3AsyncClient.builder());
         } else if ("crt".equals(clientType)) {
-            return S3AsyncClient.crtBuilder()
+            return buildCrtClient(S3AsyncClient.crtBuilder()
                     .minimumPartSizeInBytes(properties.getLong(ASYNC_INGEST_CRT_PART_SIZE_BYTES))
-                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS))
-                    .build();
+                    .targetThroughputInGbps(properties.getDouble(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS)));
         } else {
             throw new IllegalArgumentException("Unrecognised async client type: " + clientType);
         }
+    }
+
+    private static S3AsyncClient buildCrtClient(S3CrtAsyncClientBuilder builder) {
+        URI customEndpoint = getCustomEndpoint();
+        if (customEndpoint != null) {
+            return builder
+                    .endpointOverride(customEndpoint)
+                    .region(Region.US_EAST_1)
+                    .forcePathStyle(true)
+                    .build();
+        } else {
+            return builder.build();
+        }
+    }
+
+    private static S3AsyncClient buildS3Client(S3AsyncClientBuilder builder) {
+        URI customEndpoint = getCustomEndpoint();
+        if (customEndpoint != null) {
+            return builder
+                    .endpointOverride(customEndpoint)
+                    .region(Region.US_EAST_1)
+                    .forcePathStyle(true)
+                    .build();
+        } else {
+            return builder.build();
+        }
+    }
+
+    private static URI getCustomEndpoint() {
+        String endpoint = System.getenv("AWS_ENDPOINT_URL");
+        if (endpoint != null) {
+            return URI.create(endpoint);
+        }
+        return null;
     }
 
     @Override

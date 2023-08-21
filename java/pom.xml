@@ -157,10 +157,10 @@
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.38.0</jsonunit.version>
         <checkstyle.version>10.6.0</checkstyle.version>
-        <sleeper.system.test.instance.id/>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
+        <sleeper.system.test.output.dir/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -911,10 +911,6 @@
                         <argLine>@{argLine} ${module.access.args}</argLine>
                         <systemProperties>
                             <property>
-                                <name>sleeper.system.test.instance.id</name>
-                                <value>${sleeper.system.test.instance.id}</value>
-                            </property>
-                            <property>
                                 <name>sleeper.system.test.short.id</name>
                                 <value>${sleeper.system.test.short.id}</value>
                             </property>
@@ -925,6 +921,10 @@
                             <property>
                                 <name>sleeper.system.test.subnet.ids</name>
                                 <value>${sleeper.system.test.subnet.ids}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.output.dir</name>
+                                <value>${sleeper.system.test.output.dir}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>
@@ -1078,6 +1078,25 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>singleIT</id>
+            <activation>
+                <property>
+                    <name>singleIT</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes>${singleIT}</includes>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

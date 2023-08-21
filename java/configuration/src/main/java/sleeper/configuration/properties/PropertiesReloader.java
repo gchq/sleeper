@@ -41,11 +41,18 @@ public interface PropertiesReloader {
             try {
                 if (instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
                     instanceProperties.loadFromS3(s3Client, instanceProperties.get(CONFIG_BUCKET));
-                    tablePropertiesProvider.clearCache();
+                    if (tablePropertiesProvider != null) {
+                        tablePropertiesProvider.clearCache();
+                    }
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         };
+    }
+
+    static PropertiesReloader ifConfigured(
+            AmazonS3 s3Client, InstanceProperties instanceProperties) {
+        return ifConfigured(s3Client, instanceProperties, null);
     }
 }

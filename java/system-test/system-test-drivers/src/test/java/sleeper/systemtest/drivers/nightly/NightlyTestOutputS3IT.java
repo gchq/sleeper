@@ -78,7 +78,8 @@ class NightlyTestOutputS3IT {
 
         // Then
         assertThat(streamS3Objects())
-                .contains(tuple("20230504_093500/bulkImportPerformance.log", "test data"));
+                .contains(
+                        tuple("20230504_093500/bulkImportPerformance.log", "test data"));
     }
 
     @Test
@@ -112,6 +113,21 @@ class NightlyTestOutputS3IT {
                 .containsExactly(
                         tuple("summary.json", example("nightlyTest/updateExistingSummary.json")),
                         tuple("summary.txt", example("nightlyTest/updateExistingSummary.txt")));
+    }
+
+    @Test
+    void shouldUploadSiteFile() throws Exception {
+        // Given
+        Instant startTime = Instant.parse("2023-05-04T09:45:00Z");
+        Files.writeString(tempDir.resolve("site.zip"), "test data");
+
+        // When
+        uploadFromTempDir(startTime);
+
+        // Then
+        assertThat(streamS3Objects())
+                .contains(
+                        tuple("20230504_094500/site.zip", "test data"));
     }
 
     private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {

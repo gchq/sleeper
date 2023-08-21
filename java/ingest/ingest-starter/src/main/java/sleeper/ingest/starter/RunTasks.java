@@ -27,6 +27,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
@@ -52,19 +53,23 @@ public class RunTasks {
     private final AmazonSQS sqsClient;
     private final AmazonECS ecsClient;
     private final InstanceProperties properties;
+    private final PropertiesReloader propertiesReloader;
     private final String containerName;
 
     public RunTasks(AmazonSQS sqsClient,
                     AmazonECS ecsClient,
                     InstanceProperties properties,
+                    PropertiesReloader propertiesReloader,
                     String containerName) {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.properties = properties;
+        this.propertiesReloader = propertiesReloader;
         this.containerName = containerName;
     }
 
     public void run() {
+        propertiesReloader.reloadIfNeeded();
         String sqsJobQueueUrl = properties.get(INGEST_JOB_QUEUE_URL);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed

@@ -17,6 +17,12 @@ help setting up a development environment.
 You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
 for your change if there isn't one already.
 
+Please fill in the pull request template as accurately as possible, and try to match the pull request naming style
+described in the template.
+
+If you have added, removed, or updated any external dependencies used in the project, please update the
+[NOTICES](NOTICES) file to reflect this.
+
 #### How to sign the CLA
 
 When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
