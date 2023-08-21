@@ -87,6 +87,18 @@ For Eclipse, these settings are available to import:
 - Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
 - License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
 
+### Linting
+
+The Maven project includes Checkstyle and Spotbugs. These are run on every pull request. You can run them locally with
+the Maven checkstyle:check and spotbugs:check goals. Your IDE may have plugins available to alert you of violations.
+
+You can run both plugins together:
+
+```bash
+cd java
+mvn clean compile checkstyle:check spotbugs:check
+```
+
 ### Development scripts
 
 In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
