@@ -96,6 +96,15 @@ following command:
 
 Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.
 
+## Query data
+
+To query the data in your Sleeper instance, you can run the following utility script. Note that lambda queries and
+web socket queries do not work against a Sleeper instance deployed against LocalStack.
+
+```shell
+./utility/query.sh <instance-id>
+```
+
 ## Tear down instance
 
 You can tear down an existing instance by running the following command:
