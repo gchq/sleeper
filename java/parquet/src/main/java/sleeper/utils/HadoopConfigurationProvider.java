@@ -39,13 +39,22 @@ public class HadoopConfigurationProvider {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
         conf.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
+        if (System.getenv("AWS_ENDPOINT_URL") != null) {
+            conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
+            conf.set("fs.s3a.path.style.access", "true");
+        }
         return conf;
     }
 
     public static Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
+        if (System.getenv("AWS_ENDPOINT_URL") != null) {
+            conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
+            conf.set("fs.s3a.path.style.access", "true");
+        } else {
+            conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
+        }
         // See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html#Improving_data_input_performance_through_fadvise
         // Some quick experiments showed that the following setting increases the number of records processed per second
         // by 21% in comparison to the default value of "normal".

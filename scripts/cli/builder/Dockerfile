@@ -18,6 +18,7 @@ FROM ${DEPENDENCIES_IMAGE}
 RUN apt-get install -y maven
 RUN apt-get install -y git
 RUN apt-get install -y python3
+RUN apt-get install -y zip
 
 # Set command line prompt to show you're in the builder Docker container
 RUN echo 'export PS1="\[🐳\] \[\e[0;36m\]\u@sleeper-builder\[\e[0m\]: \w # "' >> ~/.bashrc
