@@ -391,30 +391,6 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
-
-
-    }
-
-    private List<String> randomStringListGenerator(Integer length, Integer max) {
-        List<String> stringList = new ArrayList<>();
-        RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
-                .usingRandom(new Random()::nextInt)
-                .build();
-        for (int i = 0; i < length; i++) {
-            stringList.add(randomStringGenerator.generate(max));
-        }
-        return stringList;
-    }
-
-    private List<String> mergeElementsStringLists(List<String> firstList, List<String> secondList) throws Exception {
-        if (firstList.size() != secondList.size()) {
-            throw new Exception("Lists of differing lengths");
-        }
-        List<String> mergedList = new ArrayList<>();
-        for (int i = 0; i < firstList.size(); i++) {
-            mergedList.add(firstList.get(i) + "-" + secondList.get(i));
-        }
-        return mergedList;
     }
 
     @ParameterizedTest
@@ -477,21 +453,24 @@ public class IngestCoordinatorCommonIT {
         );
     }
 
-
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(
             TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            throws Exception {
 
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+        List<String> randomStringList = randomStringListGenerator(200, 25);
+        List<String> mergedLists = mergeElementsStringLists(
+                LongStream.range(-100, 100)
+                        .mapToObj(longValue -> String.format("%09d", longValue))
+                        .collect(Collectors.toList())
+                , randomStringList)
+                .stream().flatMap(str -> Stream.of(str, str, str)).collect(Collectors.toList());
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1DSort1D(
                 new StringType(),
                 new LongType(),
-                LongStream.range(-100, 100).boxed()
-                        .map(longValue -> String.format("%09d", longValue))
-                        .flatMap(str -> Stream.of(str, str, str))
-                        .collect(Collectors.toList()),
+                mergedLists,
                 LongStream.range(-100, 100).boxed()
                         .flatMap(longValue -> Stream.of(longValue + 1000L, longValue, longValue - 1000L))
                         .collect(Collectors.toList()));
@@ -525,21 +504,21 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 294, String.format("%09d", 2), String.format("%09d", 99)),
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 306, "-" + String.format("%08d", 1), String.format("%09d", 1))
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 294, String.format("%09d", 2) + "-" + randomStringList.get(102), String.format("%09d", 99) + "-" + randomStringList.get(199)),
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 306, "-" + String.format("%08d", 1) + "-" + randomStringList.get(99), String.format("%09d", 1) + "-" + randomStringList.get(101))
         );
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        List<List<Object>> recordList = LongStream.range(-100, 100)
-                .mapToObj(longValue -> List.of((Object) String.format("%09d", longValue)))
-                .collect(Collectors.toList());
-        List<List<Object>> recordListCopy = List.copyOf(recordList);
-        recordList.addAll(recordListCopy);
-        recordList.addAll(recordListCopy);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(recordList);
+        assertThat(actualRecords.stream().map(record -> record.getValues(List.of("key0")).get(0)).collect(Collectors.toList()))
+                .containsExactlyInAnyOrderElementsOf(
+                        mergeElementsStringLists(
+                                LongStream.range(-100, 100)
+                                        .mapToObj(longValue -> String.format("%09d", longValue))
+                                        .collect(Collectors.toList()), randomStringList)
+                                .stream().flatMap(str -> Stream.of(str, str, str))
+                                .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
@@ -944,6 +923,29 @@ public class IngestCoordinatorCommonIT {
                 hadoopConfiguration
         );
     }
+
+    private List<String> randomStringListGenerator(Integer length, Integer max) {
+        List<String> stringList = new ArrayList<>();
+        RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
+                .usingRandom(new Random()::nextInt)
+                .build();
+        for (int i = 0; i < length; i++) {
+            stringList.add(randomStringGenerator.generate(max));
+        }
+        return stringList;
+    }
+
+    private List<String> mergeElementsStringLists(List<String> firstList, List<String> secondList) throws Exception {
+        if (firstList.size() != secondList.size()) {
+            throw new Exception("Lists of differing lengths");
+        }
+        List<String> mergedList = new ArrayList<>();
+        for (int i = 0; i < firstList.size(); i++) {
+            mergedList.add(firstList.get(i) + "-" + secondList.get(i));
+        }
+        return mergedList;
+    }
+
 
     private void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
