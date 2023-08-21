@@ -21,6 +21,9 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 public class FileInfoSystemTestHelper {
 
+    private FileInfoSystemTestHelper() {
+    }
+
     public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
         return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.stateStore().allPartitions());
     }
