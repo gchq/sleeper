@@ -63,6 +63,21 @@ If you'd like to pick up an open issue, see the [contributing guide](/CONTRIBUTI
 
 Configuration is available for various development environments.
 
+For VS Code there's [a separate setup guide](/.vscode/README.md).
+
+For IntelliJ, here are settings available to import:
+
+- A code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
+- Copyright profile for the notice at the top of every file
+  at [code-style/intellij-copyright-profile.xml](/code-style/intellij-copyright-profile.xml)
+- Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
+
+For Eclipse, here are settings available to import:
+
+- Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
+- Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
+- License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
+
 ### Development scripts
 
 In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
