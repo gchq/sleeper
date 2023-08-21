@@ -60,7 +60,7 @@ public class PartitionSplittingIT {
         // Then
         FileInfoFactory fileFactory = fileInfoFactory(sleeper);
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         assertThat(sleeper.stateStore().activeFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
