@@ -21,7 +21,7 @@ Please fill in the pull request template as accurately as possible, and try to m
 described in the template.
 
 If you have added, removed, or updated any external dependencies used in the project, please update the
-[NOTICES.md](/NOTICES.md) file to reflect this.
+[NOTICES](NOTICES) file to reflect this.
 
 #### How to sign the CLA
 
