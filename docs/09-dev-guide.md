@@ -24,7 +24,8 @@ You will need the following software:
 You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all of these. When
 you have Nix installed, an easy way to get a development environment is to run `nix-shell` at the root of the Sleeper
 Git repository. This will start a shell with all the Sleeper dependencies installed, without installing them in your
-system. If you run your IDE from that shell, the dependencies will be available in your IDE.
+system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
+again whenever you want to work with Sleeper.
 
 You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.nix` if you'd like to get a shell
 without running Git. You can then `git clone` the repository from there.
