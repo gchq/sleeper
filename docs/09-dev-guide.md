@@ -121,6 +121,12 @@ In the `/scripts/dev` folder are some scripts that can assist you while working 
 This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
 modules relate to one another.
 
+### `generatePropertiesTemplates.sh`
+
+This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
+changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
+grouping, etc.
+
 ### `cleanupLogGroups.sh`
 
 When deploying multiple instances (or running multiple system tests), many log groups will be generated. This can make
@@ -135,6 +141,10 @@ deployed by the CDK or CloudFormation, with the stack name in the log group name
 
 Note that this will not delete log groups for recently deleted instances of Sleeper, so you will still need a different
 instance ID when deploying a new instance to avoid naming collisions with existing log groups.
+
+### `updateVersionNumber.sh`
+
+This is used during the release process to update the version number across the project (see below).
 
 ## Standalone deployment
 
