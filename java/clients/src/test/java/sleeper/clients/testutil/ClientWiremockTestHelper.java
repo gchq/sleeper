@@ -66,10 +66,7 @@ public class ClientWiremockTestHelper {
     }
 
     public static EmrServerlessClient wiremockEmrServerlessClient(WireMockRuntimeInfo runtimeInfo) {
-        return EmrServerlessClient.builder()
-            .endpointOverride(wiremockEndpointOverride(runtimeInfo))
-            .credentialsProvider(wiremockCredentialsProviderV2())
-        .build();
+        return callWiremock(EmrServerlessClient.builder(), runtimeInfo);
     }
 
     public static CloudWatchLogsClient wiremockLogsClient(WireMockRuntimeInfo runtimeInfo) {
