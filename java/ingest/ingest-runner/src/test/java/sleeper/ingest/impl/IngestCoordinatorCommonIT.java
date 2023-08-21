@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.impl;
 
+import org.apache.commons.text.RandomStringGenerator;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,9 +50,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -324,13 +327,17 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionStringKey(
             TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
+            throws Exception {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new StringType(),
+        List<String> randomStringList = randomStringListGenerator(200, 25);
+        List<String> mergedLists = mergeElementsStringLists(
                 LongStream.range(-100, 100)
                         .mapToObj(longValue -> String.format("%09d", longValue))
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList())
+                , randomStringList);
+        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+                new StringType(),
+                mergedLists);
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
         String splitPoint = String.format("%09d", 2);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
@@ -352,6 +359,7 @@ public class IngestCoordinatorCommonIT {
         // When
         ingestRecords(recordListAndSchema, parameters, ingestType);
 
+
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
@@ -361,18 +369,21 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, String.format("%09d", 2), String.format("%09d", 99)),
-                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, "-" + String.format("%08d", 1), String.format("%09d", 1))
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_right/rightFile.parquet", 98, String.format("%09d", 2) + "-" + randomStringList.get(102), String.format("%09d", 99) + "-" + randomStringList.get(199)),
+                fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) + "/partition_left/leftFile.parquet", 102, "-" + String.format("%08d", 1) + "-" + randomStringList.get(99), String.format("%09d", 1) + "-" + randomStringList.get(101))
         );
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords.stream().map(record -> record.getValues(List.of("key0")).get(0)).collect(Collectors.toList()))
+                .containsExactlyInAnyOrderElementsOf(
+                        mergeElementsStringLists(
+                                LongStream.range(-100, 100)
+                                        .mapToObj(longValue -> String.format("%09d", longValue))
+                                        .collect(Collectors.toList())
+                                , randomStringList));
 
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(LongStream.range(-100, 100)
-                        .mapToObj(longValue -> List.of((Object) String.format("%09d", longValue)))
-                        .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
@@ -382,6 +393,28 @@ public class IngestCoordinatorCommonIT {
         );
 
 
+    }
+
+    private List<String> randomStringListGenerator(Integer length, Integer max) {
+        List<String> stringList = new ArrayList<>();
+        RandomStringGenerator randomStringGenerator = new RandomStringGenerator.Builder()
+                .usingRandom(new Random()::nextInt)
+                .build();
+        for (int i = 0; i < length; i++) {
+            stringList.add(randomStringGenerator.generate(max));
+        }
+        return stringList;
+    }
+
+    private List<String> mergeElementsStringLists(List<String> firstList, List<String> secondList) throws Exception {
+        if (firstList.size() != secondList.size()) {
+            throw new Exception("Lists of differing lengths");
+        }
+        List<String> mergedList = new ArrayList<>();
+        for (int i = 0; i < firstList.size(); i++) {
+            mergedList.add(firstList.get(i) + "-" + secondList.get(i));
+        }
+        return mergedList;
     }
 
     @ParameterizedTest
