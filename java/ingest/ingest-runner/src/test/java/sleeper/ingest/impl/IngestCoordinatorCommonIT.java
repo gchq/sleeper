@@ -852,8 +852,8 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteNoRecordsSuccessfully()
-            throws StateStoreException {
+    public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
+            throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
@@ -864,12 +864,21 @@ public class IngestCoordinatorCommonIT {
                 .rootFirst("root")
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of())
+                .fileUpdatedTimes(List.of())
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
+
+        // When
+        ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        List<FileInfo> fileInfoList = List.of();
-
         assertThat(actualFiles).isEmpty();
         assertThat(actualRecords).isEmpty();
     }
@@ -957,7 +966,6 @@ public class IngestCoordinatorCommonIT {
         }
         return mergedList;
     }
-
 
     private void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
