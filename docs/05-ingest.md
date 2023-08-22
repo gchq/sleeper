@@ -141,6 +141,10 @@ imported ([see here](06-status.md#reinitialise-a-table)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
+- `EmrServerlessBulkImportStack` - this causes an EMR Serverless application to be created when the Sleeper instance is deployed. 
+  This is the default EMR Bulk Import Stack. The advantage of using EMR Serverless is that when there are no bulk import jobs 
+  the applications stops with no wasted compute. The startup of the application is greatly reduced compared to standard EMR. 
+  This stack is experimental.
 - `EmrBulkImportStack` - this causes an EMR cluster to be deployed each time a job is submitted to the EMR bulk import
   queue. Each job is processed on a separate EMR cluster. The advantage of the cluster being used for one job and then
   destroyed is that there is no wasted compute if jobs are submitted infrequently. The downside is that there is a
@@ -155,8 +159,62 @@ There are several stacks that allow data to be imported using the bulk import pr
   as Fargate tasks. Future work will allow them to run on EC2 instances. This stack is experimental.
 
 These can all be deployed independently of each other. Each stack has its own queue from which it pulls jobs. The
-`sleeper.optional.stacks` instance property needs to include `EmrBulkImportStack`, `PersistentEmrBulkImportStack` or
-`EksBulkImportStack` respectively.
+`sleeper.optional.stacks` instance property needs to include `EmrServerlessBulkImportStack`, `EmrBulkImportStack`, `PersistentEmrBulkImportStack` or `EksBulkImportStack` respectively.
+
+#### Bulk import on EMR Serverless
+
+The EMR Serverless stack creates an EMR Serverless application that only runs when there are jobs to process. 
+When you want to run a job the application is started by EMR Serverless. After 15 minutes of inactivity the application 
+is shutdown ready to be started when needed. 
+
+A simple example of the message to send is:
+
+```JSON
+{
+  "tableName": "my-table",
+  "files": [
+    "my-bucket/my-files/"
+  ]
+}
+```
+
+This message needs to be sent to the queue with URL given by the value of the
+property `sleeper.bulk.import.emr.serverless.job.queue.url`.
+
+When you submit your JSON job via the SQS Queue, an EMR Serverless job should appear in the application found in 
+the EMR Studio part of the AWS console with your desired 
+configuration. Once the job starts (around 2 minutes), you will be able to follow the links in EMR Studio to access your Spark UI. 
+This will allow you to monitor your job and view logs from the Spark executors and driver. You can also access previous job Spark UI's from EMR Studio. 
+After your job finishes the application with auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
+
+The following can be edited in the Sleeper Admin console. With the
+current stack implementation it is not possible to configure these on a job basis. 
+
+```properties
+# The following properties are used to define the custom Spark image used that has Java 11 installed
+sleeper.bulk.import.emr.serverless.repo=<insert-unique-sleeper-id>/bulk-import-runner-emr-serverless
+sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
+
+# The following properties define the executor and driver configuration
+sleeper.bulk.import.emr.serverless.executor.cores=4
+sleeper.bulk.import.emr.serverless.executor.memory=16g
+sleeper.bulk.import.emr.serverless.executor.disk=200g
+sleeper.bulk.import.emr.serverless.executor.instances=36
+sleeper.bulk.import.emr.serverless.driver.cores=4
+sleeper.bulk.import.emr.serverless.driver.memory=16g
+sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled=false
+
+# The following properties configure how Spark will function
+sleeper.bulk.import.emr.serverless.spark.rdd.compress=true
+sleeper.bulk.import.emr.serverless.spark.shuffle.compress=true
+sleeper.bulk.import.emr.serverless.spark.shuffle.spill.compress=true
+sleeper.bulk.import.emr.serverless.spark.default.parallelism=288
+sleeper.bulk.import.emr.serverless.spark.sql.shuffle.partitions=288
+sleeper.bulk.import.emr.serverless.spark.network.timeout=800s
+sleeper.bulk.import.emr.serverless.spark.executor.heartbeat.interval=60s
+sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
+sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
+```
 
 #### Bulk import on EMR
 
