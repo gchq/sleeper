@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 
@@ -28,12 +30,13 @@ echo "Setting new version to ${NEW_VERSION}"
 
 # Update the version number in the pom.xml files in the java code
 pushd "${PROJECT_ROOT}/java"
-mvn versions:set -DnewVersion=${NEW_VERSION} -DgenerateBackupPoms=false
+mvn versions:set -DnewVersion="${NEW_VERSION}" -DgenerateBackupPoms=false
 popd
 
 source "${PROJECT_ROOT}/scripts/functions/sedInPlace.sh"
 
 # Update the version number in the Python module
+NEW_VERSION_PYTHON="${NEW_VERSION//-SNAPSHOT/.dev1}"
 sed_in_place \
-  -e "s|^    version=.*|    version='${NEW_VERSION}',|" \
+  -e "s|^    version=.*|    version='${NEW_VERSION_PYTHON}',|" \
   "${PROJECT_ROOT}/python/setup.py"
