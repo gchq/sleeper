@@ -16,17 +16,29 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.util.TestContext;
 
 public class SystemTestReporting {
 
+    private final SleeperInstanceContext instance;
+    private final SystemTestClients clients;
     private final ReportingContext context;
 
-    public SystemTestReporting(ReportingContext context) {
+    public SystemTestReporting(SleeperInstanceContext instance, SystemTestClients clients, ReportingContext context) {
+        this.instance = instance;
+        this.clients = clients;
         this.context = context;
     }
 
     public void startRecording() {
         context.startRecording();
+    }
+
+    public void printIngestTasksAndJobs(TestContext testContext) {
+        new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, context)
+                .printTasksAndJobs(testContext);
     }
 }

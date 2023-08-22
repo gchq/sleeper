@@ -110,7 +110,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, reportingContext, sourceFiles);
+        return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
     public SystemTestDirectQuery directQuery() {
@@ -128,7 +128,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestReporting reporting() {
-        return new SystemTestReporting(reportingContext);
+        return new SystemTestReporting(instance, clients, reportingContext);
     }
 
     public SystemTestPartitionSplitting partitionSplitting() {

@@ -31,6 +31,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
+
 public class ReportingContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportingContext.class);
 
@@ -74,7 +77,7 @@ public class ReportingContext {
 
         FileWriter(Path file) {
             try {
-                outputStream = Files.newOutputStream(file);
+                outputStream = Files.newOutputStream(file, CREATE, APPEND);
                 printStream = new PrintStream(outputStream, false, StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
