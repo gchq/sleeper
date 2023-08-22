@@ -574,11 +574,17 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
-                .containsExactlyInAnyOrder(new byte[]{1, 1}, new byte[]{5}, new byte[]{11, 2}, new byte[]{64, 65});
+                .containsExactly(new byte[]{1, 1}, new byte[]{5}, new byte[]{11, 2}, new byte[]{64, 65});
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")).get(0))
-                .containsExactlyInAnyOrder(new byte[]{2, 3}, new byte[]{99}, new byte[]{2, 2}, new byte[]{67, 68});
+                .containsExactly(new byte[]{2, 3}, new byte[]{99}, new byte[]{2, 2}, new byte[]{67, 68});
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(1),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -635,11 +641,17 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrder(List.of(0), List.of(0), List.of(100), List.of(100));
+                .containsExactly(List.of(0), List.of(0), List.of(100), List.of(100));
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")))
-                .containsExactlyInAnyOrder(List.of(1L), List.of(20L), List.of(1L), List.of(50L));
+                .containsExactly(List.of(1L), List.of(20L), List.of(1L), List.of(50L));
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(1),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -695,7 +707,7 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(
+                .containsExactlyElementsOf(
                         LongStream.range(-100L, 100L)
                                 .boxed()
                                 .map(longValue -> List.of((Object) longValue))
@@ -703,13 +715,19 @@ public class IngestCoordinatorCommonIT {
                 );
 
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")))
-                .containsExactlyInAnyOrderElementsOf(
+                .containsExactlyElementsOf(
                         LongStream.range(-100L, 100L)
                                 .boxed()
                                 .map(x -> List.of((Object) String.valueOf(x)))
                                 .collect(Collectors.toList())
                 );
 
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
                 recordListAndSchema,
@@ -761,9 +779,9 @@ public class IngestCoordinatorCommonIT {
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        List<List<Object>> recordList = Stream.of(0L, 1L).map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
+        List<List<Object>> recordList = List.of(0L, 1L).stream().map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(recordList);
+                .containsExactlyElementsOf(recordList);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
@@ -852,7 +870,7 @@ public class IngestCoordinatorCommonIT {
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<FileInfo> fileInfoList = List.of();
 
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualFiles).isEmpty();
         assertThat(actualRecords).isEmpty();
     }
 
