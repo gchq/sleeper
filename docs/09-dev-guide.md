@@ -99,6 +99,29 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
+### Tests
+
+The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+
+A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
+If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
+should be a particular behaviour or scenario, rather than eg. a specific method.
+
+A system test is a test that works with a deployed instance of Sleeper. These can be found in the
+module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
+instance of Sleeper. They need extra configuration to run, which will be documented separately.
+
+An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
+external dependencies with TestContainers, tests network calls with WireMock, or uses the local file system.
+
+Unit tests should be in a class ending with Test, like MyFeatureTest. Integration tests should be in a class ending with
+IT, like MyFeatureIT. System tests should follow the same naming as integration tests, but should be annotated with
+`@Tag("SystemTest")`.
+
+We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
+wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
+set of English given/when/then statements.
+
 ### Development scripts
 
 In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
