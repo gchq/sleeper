@@ -66,7 +66,7 @@ integrations with libraries which are not needed by all components of the system
 If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
 the [development scripts section](#development-scripts) that can display the dependency structure as a graph.
 
-If you'd like to pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
+If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
 ### IDE setup
 
