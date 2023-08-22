@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.splitting;
+package sleeper.systemtest.drivers.partitioning;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

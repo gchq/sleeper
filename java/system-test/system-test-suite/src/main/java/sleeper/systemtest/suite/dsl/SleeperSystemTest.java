@@ -27,8 +27,8 @@ import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
-import sleeper.systemtest.drivers.splitting.PartitionSplittingDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.io.IOException;

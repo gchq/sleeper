@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.systemtest.drivers.splitting.PartitionSplittingDriver;
+import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 
 public class SystemTestPartitionSplitting {
 
