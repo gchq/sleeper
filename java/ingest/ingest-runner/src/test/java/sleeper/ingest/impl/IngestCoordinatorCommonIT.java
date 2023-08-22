@@ -767,9 +767,8 @@ public class IngestCoordinatorCommonIT {
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        List<List<Object>> recordList = List.of(0L, 1L).stream().map(longValue -> List.of((Object) longValue)).collect(Collectors.toList());
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyElementsOf(recordList);
+                .containsExactly(List.of(0L), List.of(1L));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
