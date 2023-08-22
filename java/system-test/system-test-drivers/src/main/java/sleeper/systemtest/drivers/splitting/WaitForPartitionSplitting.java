@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.compaction;
+package sleeper.systemtest.drivers.splitting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
