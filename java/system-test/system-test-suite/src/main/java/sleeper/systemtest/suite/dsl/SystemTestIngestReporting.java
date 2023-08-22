@@ -19,14 +19,13 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.util.TestContext;
 
 public class SystemTestIngestReporting {
     private final IngestReportsDriver driver;
 
-    public SystemTestIngestReporting(SleeperInstanceContext instance, SystemTestClients clients, SystemTestParameters parameters, ReportingContext reportingContext) {
-        this.driver = new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, parameters, reportingContext);
+    public SystemTestIngestReporting(SleeperInstanceContext instance, SystemTestClients clients, ReportingContext reportingContext) {
+        this.driver = new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, reportingContext);
     }
 
     public void printTasksAndJobs(TestContext testContext) {

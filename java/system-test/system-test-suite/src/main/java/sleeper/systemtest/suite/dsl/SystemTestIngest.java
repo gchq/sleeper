@@ -24,7 +24,6 @@ import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.nio.file.Path;
 
@@ -32,18 +31,15 @@ public class SystemTestIngest {
 
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
-    private final SystemTestParameters parameters;
     private final ReportingContext reportingContext;
     private final IngestSourceFilesContext sourceFiles;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
-                            SystemTestParameters parameters,
                             ReportingContext reportingContext,
                             IngestSourceFilesContext sourceFiles) {
         this.instance = instance;
         this.clients = clients;
-        this.parameters = parameters;
         this.reportingContext = reportingContext;
         this.sourceFiles = sourceFiles;
     }
@@ -77,6 +73,6 @@ public class SystemTestIngest {
     }
 
     public SystemTestIngestReporting reporting() {
-        return new SystemTestIngestReporting(instance, clients, parameters, reportingContext);
+        return new SystemTestIngestReporting(instance, clients, reportingContext);
     }
 }
