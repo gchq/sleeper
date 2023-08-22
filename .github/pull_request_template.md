@@ -8,7 +8,7 @@ Make sure you have checked _all_ steps below.
 
 ### Tests
 
-- [ ] My PR adds the following unit tests __OR__ does not need testing for this extremely good reason:
+- [ ] My PR adds the following tests __OR__ does not need testing for this extremely good reason:
     - MyUnitTest
 
 ### Documentation
