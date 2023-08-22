@@ -32,6 +32,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.drivers.partitioning.WaitForPartitionSplitting;
 import sleeper.systemtest.drivers.util.InvokeSystemTestLambda;
 
 import java.io.IOException;

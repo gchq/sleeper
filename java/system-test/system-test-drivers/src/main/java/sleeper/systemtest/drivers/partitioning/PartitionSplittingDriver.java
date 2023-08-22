@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.compaction;
+package sleeper.systemtest.drivers.partitioning;
 
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
