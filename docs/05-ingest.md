@@ -216,6 +216,8 @@ sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
 sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
 ```
 
+More information about EMR Serverless can be found [here](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/emr-serverless.html).
+
 #### Bulk import on EMR
 
 The non-persistent EMR stack creates an EMR cluster when you want to run a job. When a job is
