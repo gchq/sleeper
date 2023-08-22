@@ -38,7 +38,8 @@ public class SystemTestReporting {
     }
 
     public void printIngestTasksAndJobs(TestContext testContext) {
-        new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance, context)
-                .printTasksAndJobs(testContext);
+        context.print(testContext,
+                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+                        .tasksAndJobsReport());
     }
 }
