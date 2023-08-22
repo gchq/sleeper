@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.TestContext;
 
 public class SystemTestReporting {
@@ -44,6 +45,6 @@ public class SystemTestReporting {
     }
 
     public void printPartitionStatus(TestContext testContext) {
-        // TODO
+        context.print(testContext, new PartitionReportDriver(instance).partitionStatusReport());
     }
 }
