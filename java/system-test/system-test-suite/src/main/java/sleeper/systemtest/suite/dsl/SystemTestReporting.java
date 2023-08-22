@@ -42,4 +42,8 @@ public class SystemTestReporting {
                 new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
                         .tasksAndJobsReport());
     }
+
+    public void printPartitionStatus(TestContext testContext) {
+        // TODO
+    }
 }
