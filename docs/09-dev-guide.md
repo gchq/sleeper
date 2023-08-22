@@ -54,9 +54,10 @@ Look in the [design document](10-design.md) for an idea of what to expect in the
 largely correspond to Maven modules. Core or common modules are used to separate shared model code from integrations
 with libraries which are not needed by all components of the system.
 
-If you'd like to look at how the modules relate to one another in terms of their dependencies, in the `build` module
-there's a main method in the class `sleeper.build.maven.ShowInternalDependencies` to display the internal dependencies
-as a graph.
+If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
+the [development scripts section](#development-scripts) that can display the dependency structure as a graph.
+
+If you'd like to pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
 ## System Tests
 
@@ -112,6 +113,40 @@ Note you will still need the files in the `/generated` folder that are created d
 script to work correctly.
 
 This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
+
+## Development scripts
+
+In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper.
+
+### `showInternalDependencies.sh`
+
+This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
+modules relate to one another.
+
+### `generatePropertiesTemplates.sh`
+
+This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
+changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
+grouping, etc.
+
+### `cleanupLogGroups.sh`
+
+When deploying multiple instances (or running multiple system tests), many log groups will be generated. This can make
+it difficult to find the logs you need to view. This script will delete any log groups that meet all of the following
+criteria:
+
+- Its name does not contain the name of any deployed CloudFormation stack
+- Either it's empty, or it has no retention period and is older than 30 days
+
+This can be used to limit the number of log groups in your AWS account, particularly if all your log groups are
+deployed by the CDK or CloudFormation, with the stack name in the log group name.
+
+Note that this will not delete log groups for recently deleted instances of Sleeper, so you will still need a different
+instance ID when deploying a new instance to avoid naming collisions with existing log groups.
+
+### `updateVersionNumber.sh`
+
+This is used during the release process to update the version number across the project (see below).
 
 ## Standalone deployment
 
