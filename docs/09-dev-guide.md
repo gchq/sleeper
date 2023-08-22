@@ -115,8 +115,9 @@ An integration test is any test which does not meet the definition of a unit tes
 external dependencies with TestContainers, tests network calls with WireMock, or uses the local file system.
 
 Unit tests should be in a class ending with Test, like MyFeatureTest. Integration tests should be in a class ending with
-IT, like MyFeatureIT. System tests should follow the same naming as integration tests, but should be annotated with
-`@Tag("SystemTest")`.
+IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
+for integration tests. System tests should follow the same naming as integration tests, but should be annotated with
+`@Tag("SystemTest")`. This means they will only be run as part of a specific system test setup.
 
 We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
 wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
