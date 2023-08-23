@@ -25,13 +25,22 @@ import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.List;
 
-public class SystemTestStandaloneProperties extends SleeperProperties<SystemTestProperty> implements SystemTestPropertyValues {
+public class SystemTestStandaloneProperties
+        extends SleeperProperties<SystemTestProperty>
+        implements SystemTestPropertyValues, SystemTestPropertySetter {
 
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) throws IOException {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         properties.loadFromS3(s3Client, bucket, "config");
+        return properties;
+    }
+
+    public static SystemTestStandaloneProperties fromFile(Path propertiesFile) throws IOException {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
+        properties.load(propertiesFile);
         return properties;
     }
 

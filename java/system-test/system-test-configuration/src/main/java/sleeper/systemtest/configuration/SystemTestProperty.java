@@ -54,13 +54,31 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty BULK_IMPORT_QUEUE_PROPERTY = Index.propertyBuilder("sleeper.systemtest.bulkimport.queue.property")
             .description("The property for the bulk import queue which jobs should be sent to in SendBulkImportJobs.")
             .defaultValue(BULK_IMPORT_EMR_JOB_QUEUE_URL.getPropertyName()).build();
+    SystemTestProperty SYSTEM_TEST_ID = Index.propertyBuilder("sleeper.systemtest.standalone.id")
+            .description("The id of the deployment, when deploying standalone.")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty SYSTEM_TEST_ACCOUNT = Index.propertyBuilder("sleeper.systemtest.standalone.account")
+            .description("The AWS account when deploying standalone.")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty SYSTEM_TEST_REGION = Index.propertyBuilder("sleeper.systemtest.standalone.region")
+            .description("The AWS region when deploying standalone.")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty SYSTEM_TEST_VPC_ID = Index.propertyBuilder("sleeper.systemtest.standalone.vpc")
+            .description("The id of the VPC to deploy to, when deploying standalone.")
+            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty SYSTEM_TEST_JARS_BUCKET = Index.propertyBuilder("sleeper.systemtest.standalone.jars.bucket")
+            .description("The S3 bucket containing the jar files of the Sleeper components, when deploying standalone.").build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
-            .description("The name of the cluster to use when performing system tests").build();
+            .description("The name of the ECS cluster where system test tasks will run").build();
+    SystemTestProperty SYSTEM_TEST_BUCKET_NAME = Index.propertyBuilder("sleeper.systemtest.bucket")
+            .description("The name of the bucket where system test data will be stored").build();
     SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
             .description("The image in ECR used for writing random data to the system")
             .validationPredicate(Objects::nonNull).build();
     SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task-definition")
             .description("The name of the family of task definitions used for writing data").build();
+    SystemTestProperty WRITE_DATA_ROLE_NAME = Index.propertyBuilder("sleeper.systemtest.writer.role")
+            .description("The name of the role used when writing data for an instance in an ECS cluster").build();
     SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
             .description("The amount of CPU for the containers that write random data")
             .defaultValue("1024").build();
