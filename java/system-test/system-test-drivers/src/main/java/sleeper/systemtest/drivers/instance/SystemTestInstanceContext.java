@@ -81,13 +81,11 @@ public class SystemTestInstanceContext {
             String deploymentId = parameters.getSystemTestDeploymentId();
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
             LOGGER.info("Deployment already exists: {}", deploymentId);
-            properties = SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
         } catch (CloudFormationException e) {
-            generateProperties();
-            Path propertiesFile = parameters.getGeneratedDirectory().resolve("system-test.properties");
             try {
                 uploadJarsAndDockerImages();
-                properties.save(propertiesFile);
+                Path propertiesFile = parameters.getGeneratedDirectory().resolve("system-test.properties");
+                generateProperties().save(propertiesFile);
                 InvokeCdkForInstance.builder()
                         .propertiesFile(propertiesFile)
                         .jarsDirectory(parameters.getJarsDirectory())
@@ -98,19 +96,23 @@ public class SystemTestInstanceContext {
             } catch (IOException e1) {
                 throw new UncheckedIOException(e1);
             }
+        }
+        try {
+            properties = SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private void generateProperties() {
-        properties = new SystemTestStandaloneProperties();
+    private SystemTestStandaloneProperties generateProperties() {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         properties.set(SYSTEM_TEST_ID, parameters.getSystemTestDeploymentId());
         properties.set(SYSTEM_TEST_ACCOUNT, parameters.getAccount());
         properties.set(SYSTEM_TEST_REGION, parameters.getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
         properties.set(SYSTEM_TEST_JARS_BUCKET, parameters.buildJarsBucketName());
         properties.set(SYSTEM_TEST_REPO, parameters.getSystemTestDeploymentId() + "/system-test");
+        return properties;
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
