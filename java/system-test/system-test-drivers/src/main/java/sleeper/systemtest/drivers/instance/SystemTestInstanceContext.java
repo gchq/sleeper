@@ -37,11 +37,13 @@ import java.nio.file.Path;
 
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 
 public class SystemTestInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestInstanceContext.class);
@@ -134,5 +136,13 @@ public class SystemTestInstanceContext {
                 .skipIf(!jarsChanged)
                 .stacks("SystemTestStack")
                 .build().upload(ClientUtils::runCommandLogOutput);
+    }
+
+    public String getSystemTestBucketName() {
+        return properties.get(SYSTEM_TEST_BUCKET_NAME);
+    }
+
+    public String getSystemTestWriterRoleName() {
+        return properties.get(WRITE_DATA_ROLE_NAME);
     }
 }

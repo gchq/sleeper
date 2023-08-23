@@ -31,21 +31,17 @@ import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
 import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.LogDriver;
-import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.systemtest.configuration.SystemTestConstants;
 import sleeper.systemtest.configuration.SystemTestProperty;
 import sleeper.systemtest.configuration.SystemTestPropertySetter;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
-
-import java.util.Locale;
 
 import static sleeper.cdk.Utils.getRetentionDays;
 import static sleeper.systemtest.cdk.SystemTestStack.generateSystemTestClusterName;
@@ -100,18 +96,14 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(scope, "systemTestClusterName", writeClusterOutputProps);
 
-        String roleName = buildSystemTestWriterRoleName(deploymentId);
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
                 .create(scope, "TaskDefinition")
                 .family(deploymentId + "SystemTestTaskFamily")
                 .cpu(properties.getInt(SYSTEM_TEST_TASK_CPU))
                 .memoryLimitMiB(properties.getInt(SYSTEM_TEST_TASK_MEMORY))
-                .taskRole(Role.Builder.create(scope, "SystemTestTaskRole")
-                        .roleName(roleName)
-                        .build())
                 .build();
         propertySetter.set(WRITE_DATA_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
-        propertySetter.set(WRITE_DATA_ROLE_NAME, roleName);
+        propertySetter.set(WRITE_DATA_ROLE_NAME, taskDefinition.getTaskRole().getRoleName());
         CfnOutputProps taskDefinitionFamilyOutputProps = new CfnOutputProps.Builder()
                 .value(taskDefinition.getFamily())
                 .build();
@@ -140,10 +132,5 @@ public class SystemTestClusterStack extends NestedStack {
                         .build())
                 .build();
         return LogDriver.awsLogs(logDriverProps);
-    }
-
-    public static String buildSystemTestWriterRoleName(String deploymentId) {
-        return Utils.truncateTo64Characters(String.join("-",
-                "sleeper", deploymentId.toLowerCase(Locale.ROOT), "system", "test", "writer"));
     }
 }

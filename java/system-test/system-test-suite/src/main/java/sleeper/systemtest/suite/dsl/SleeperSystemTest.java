@@ -64,9 +64,9 @@ public class SleeperSystemTest {
     private final SystemTestInstanceContext systemTest = new SystemTestInstanceContext(
             parameters, clients.getS3(), clients.getS3V2(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+            parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, clients.getS3V2());
 
     private SleeperSystemTest() {
     }

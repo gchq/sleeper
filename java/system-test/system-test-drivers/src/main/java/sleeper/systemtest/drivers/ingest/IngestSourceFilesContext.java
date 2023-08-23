@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,26 +34,26 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IngestSourceFilesContext {
-    private final String sourceBucketName;
+    private final SystemTestInstanceContext systemTest;
     private final S3Client s3Client;
 
-    public IngestSourceFilesContext(SystemTestParameters parameters, S3Client s3Client) {
-        this.sourceBucketName = parameters.buildSystemTestBucketName();
+    public IngestSourceFilesContext(SystemTestInstanceContext systemTest, S3Client s3Client) {
+        this.systemTest = systemTest;
         this.s3Client = s3Client;
     }
 
     public String getSourceBucketName() {
-        return sourceBucketName;
+        return systemTest.getSystemTestBucketName();
     }
 
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
-        return files.map(file -> sourceBucketName + "/" + file)
+        return files.map(file -> systemTest.getSystemTestBucketName() + "/" + file)
                 .collect(Collectors.toUnmodifiableList());
     }
 
     public void writeFile(TableProperties tableProperties, String file, Iterator<Record> records) {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new org.apache.hadoop.fs.Path("s3a://" + sourceBucketName + "/" + file), tableProperties, new Configuration())) {
+                new org.apache.hadoop.fs.Path("s3a://" + systemTest.getSystemTestBucketName() + "/" + file), tableProperties, new Configuration())) {
             for (Record record : (Iterable<Record>) () -> records) {
                 writer.write(record);
             }
@@ -63,12 +63,12 @@ public class IngestSourceFilesContext {
     }
 
     public void emptySourceBucket() {
-        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(sourceBucketName))
+        List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(systemTest.getSystemTestBucketName()))
                 .contents().stream()
                 .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
                 .collect(Collectors.toList());
         if (!objects.isEmpty()) {
-            s3Client.deleteObjects(builder -> builder.bucket(sourceBucketName)
+            s3Client.deleteObjects(builder -> builder.bucket(systemTest.getSystemTestBucketName())
                     .delete(deleteBuilder -> deleteBuilder.objects(objects)));
         }
     }

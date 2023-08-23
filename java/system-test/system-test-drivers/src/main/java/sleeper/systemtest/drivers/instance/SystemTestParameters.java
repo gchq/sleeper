@@ -21,7 +21,6 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 
 import sleeper.systemtest.cdk.SystemTestBucketStack;
-import sleeper.systemtest.cdk.SystemTestClusterStack;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -71,10 +70,6 @@ public class SystemTestParameters {
 
     public String buildSystemTestBucketName() {
         return SystemTestBucketStack.buildSystemTestBucketName(shortTestId);
-    }
-
-    public String buildSystemTestWriterRoleName() {
-        return SystemTestClusterStack.buildSystemTestWriterRoleName(shortTestId);
     }
 
     public String buildJarsBucketName() {
