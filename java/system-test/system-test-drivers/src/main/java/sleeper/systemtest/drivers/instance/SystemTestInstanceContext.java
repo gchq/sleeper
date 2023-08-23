@@ -62,6 +62,9 @@ public class SystemTestInstanceContext {
     }
 
     public void deployIfMissing() throws InterruptedException {
+        if (properties != null) {
+            return;
+        }
         if (failure != null) {
             throw failure;
         }
@@ -74,9 +77,6 @@ public class SystemTestInstanceContext {
     }
 
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
-        if (properties != null) {
-            return;
-        }
         try {
             String deploymentId = parameters.getSystemTestDeploymentId();
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
