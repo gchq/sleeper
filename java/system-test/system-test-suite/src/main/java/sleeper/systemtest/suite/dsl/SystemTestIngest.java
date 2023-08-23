@@ -54,7 +54,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
-        return new SystemTestDirectIngest(new DirectIngestDriver(instance, tempDir));
+        return new SystemTestDirectIngest(instance, new DirectIngestDriver(instance, tempDir));
     }
 
     public SystemTestIngestByQueue byQueue() {

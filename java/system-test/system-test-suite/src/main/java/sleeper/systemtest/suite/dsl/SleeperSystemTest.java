@@ -22,10 +22,12 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
+import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
@@ -86,6 +88,10 @@ public class SleeperSystemTest {
         return instance.getInstanceProperties();
     }
 
+    public TableProperties tableProperties() {
+        return instance.getTableProperties();
+    }
+
     public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
         tablePropertiesConsumer.accept(instance.getTableProperties());
         try {
@@ -123,5 +129,14 @@ public class SleeperSystemTest {
 
     public SystemTestReporting reporting() {
         return new SystemTestReporting(reportingContext);
+    }
+
+    public SystemTestPartitionSplitting partitionSplitting() {
+        return new SystemTestPartitionSplitting(new PartitionSplittingDriver(instance, clients.getLambda()));
+    }
+
+    public SystemTestCompaction compaction() {
+        return new SystemTestCompaction(new SplittingCompactionDriver(instance,
+                clients.getLambda(), clients.getSqs(), clients.getDynamoDB()));
     }
 }
