@@ -19,6 +19,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -32,6 +34,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * Lambda Function which writes properties to an S3 Bucket.
  */
 public class PropertiesWriterLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
     private final AmazonS3 s3Client;
     private final String bucketName;
 
@@ -60,11 +63,15 @@ public class PropertiesWriterLambda {
     }
 
     private void deleteProperties(String propertiesStr) throws IOException {
-        s3Client.deleteObject(readBucketName(propertiesStr), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        String bucketName = readBucketName(propertiesStr);
+        LOGGER.info("Deleting from bucket {}", bucketName);
+        s3Client.deleteObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     private void updateProperties(String propertiesStr) throws IOException {
-        s3Client.putObject(readBucketName(propertiesStr), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, propertiesStr);
+        String bucketName = readBucketName(propertiesStr);
+        LOGGER.info("Writing to bucket {}", bucketName);
+        s3Client.putObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, propertiesStr);
     }
 
     private String readBucketName(String propertiesStr) throws IOException {

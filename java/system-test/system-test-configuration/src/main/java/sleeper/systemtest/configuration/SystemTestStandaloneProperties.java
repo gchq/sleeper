@@ -29,6 +29,8 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
 
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+
 public class SystemTestStandaloneProperties
         extends SleeperProperties<SystemTestProperty>
         implements SystemTestPropertyValues, SystemTestPropertySetter {
@@ -43,6 +45,10 @@ public class SystemTestStandaloneProperties
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         properties.load(propertiesFile);
         return properties;
+    }
+
+    public void saveToS3(AmazonS3 s3Client) throws IOException {
+        saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     @Override

@@ -34,6 +34,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
@@ -61,6 +62,19 @@ public class SystemTestInstanceContext {
         this.s3 = s3;
         this.s3v2 = s3v2;
         this.cloudFormation = cloudFormation;
+    }
+
+    public void updateProperties(Consumer<SystemTestStandaloneProperties> config) {
+        config.accept(properties);
+        try {
+            properties.saveToS3(s3);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public SystemTestStandaloneProperties getProperties() {
+        return properties;
     }
 
     public void deployIfMissing() throws InterruptedException {

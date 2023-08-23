@@ -82,7 +82,7 @@ public class SyncJars {
         if (!doesBucketExist(s3, bucketName)) {
             changed = true;
 
-            LOGGER.info("Creating jars bucket");
+            LOGGER.info("Creating jars bucket: {}", bucketName);
             s3.createBucket(builder -> builder
                     .bucket(bucketName)
                     .acl(BucketCannedACL.PRIVATE)

@@ -147,4 +147,8 @@ public class SleeperSystemTest {
         return new SystemTestCompaction(new SplittingCompactionDriver(instance,
                 clients.getLambda(), clients.getSqs(), clients.getDynamoDB()));
     }
+
+    public SystemTestCluster systemTestCluster() {
+        return new SystemTestCluster(systemTest, instance, clients);
+    }
 }

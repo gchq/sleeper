@@ -63,4 +63,14 @@ public class SetupInstanceIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactly(record);
     }
+
+    @Test
+    void shouldGenerateSomeData() throws InterruptedException {
+        // When
+        sleeper.systemTestCluster().ingestDirectRecords(100);
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .hasSize(100);
+    }
 }

@@ -74,7 +74,7 @@ public interface SystemTestProperty extends InstanceProperty {
                     "and posted to the ingest queue.\n" +
                     "'Generate_only' means that the data is written to a Parquet file in the table data bucket, " +
                     "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
-            .defaultValue("direct")
+            .defaultValue(IngestMode.DIRECT.toString())
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
     SystemTestProperty NUMBER_OF_BULK_IMPORT_JOBS = Index.propertyBuilder("sleeper.systemtest.bulkimport.jobs")
             .description("The number of jobs that should be sent to the bulk import queue. " +

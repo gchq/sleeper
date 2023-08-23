@@ -15,9 +15,16 @@
  */
 package sleeper.systemtest.configuration;
 
+import java.util.Locale;
+
 public enum IngestMode {
     DIRECT,
     QUEUE,
     BULK_IMPORT_QUEUE,
-    GENERATE_ONLY
+    GENERATE_ONLY;
+
+    @Override
+    public String toString() {
+        return super.toString().toLowerCase(Locale.ROOT);
+    }
 }
