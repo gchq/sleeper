@@ -51,6 +51,7 @@ public class SystemTestInstanceContext {
     private final S3Client s3v2;
     private final CloudFormationClient cloudFormation;
     private SystemTestStandaloneProperties properties;
+    private InstanceDidNotDeployException failure;
 
     public SystemTestInstanceContext(SystemTestParameters parameters,
                                      AmazonS3 s3, S3Client s3v2, CloudFormationClient cloudFormation) {
@@ -61,6 +62,18 @@ public class SystemTestInstanceContext {
     }
 
     public void deployIfMissing() throws InterruptedException {
+        if (failure != null) {
+            throw failure;
+        }
+        try {
+            deployIfMissingNoFailureTracking();
+        } catch (RuntimeException | InterruptedException e) {
+            failure = new InstanceDidNotDeployException(parameters.getSystemTestDeploymentId(), e);
+            throw e;
+        }
+    }
+
+    private void deployIfMissingNoFailureTracking() throws InterruptedException {
         if (properties != null) {
             return;
         }
