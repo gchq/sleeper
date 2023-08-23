@@ -23,6 +23,7 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.cdk.jars.BuiltJar;
 import sleeper.clients.deploy.SyncJars;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
@@ -36,6 +37,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
+import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
@@ -136,10 +138,7 @@ public class SystemTestInstanceContext {
                 .jarsDirectory(parameters.getJarsDirectory())
                 .bucketName(parameters.buildJarsBucketName())
                 .region(parameters.getRegion())
-                .uploadFilter(jar -> {
-                    String filename = String.valueOf(jar.getFileName());
-                    return filename.startsWith("system-test") || filename.startsWith("cdk-custom-resources");
-                })
+                .uploadFilter(jar -> BuiltJar.isFileJar(jar, CUSTOM_RESOURCES))
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
