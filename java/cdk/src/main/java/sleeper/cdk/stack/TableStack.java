@@ -56,6 +56,7 @@ import java.util.Map;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -105,6 +106,14 @@ public class TableStack extends NestedStack {
                 .build();
 
         createTables(scope, instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, metricsJar);
+        addIngestSourceRoleReferences(this, "IngestRole", instanceProperties)
+                .forEach(role -> {
+                    dataBuckets.forEach(bucket -> bucket.grantReadWrite(role));
+                    stateStoreStacks.forEach(stateStoreStack -> {
+                        stateStoreStack.grantReadPartitionMetadata(role);
+                        stateStoreStack.grantReadWriteActiveFileMetadata(role);
+                    });
+                });
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

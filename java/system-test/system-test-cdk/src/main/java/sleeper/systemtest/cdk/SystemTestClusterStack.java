@@ -100,18 +100,18 @@ public class SystemTestClusterStack extends NestedStack {
                 .build();
         new CfnOutput(scope, "systemTestClusterName", writeClusterOutputProps);
 
+        String roleName = buildSystemTestWriterRoleName(deploymentId);
         FargateTaskDefinition taskDefinition = FargateTaskDefinition.Builder
                 .create(scope, "TaskDefinition")
                 .family(deploymentId + "SystemTestTaskFamily")
                 .cpu(properties.getInt(SYSTEM_TEST_TASK_CPU))
                 .memoryLimitMiB(properties.getInt(SYSTEM_TEST_TASK_MEMORY))
                 .taskRole(Role.Builder.create(scope, "SystemTestTaskRole")
-                        .roleName(Utils.truncateTo64Characters(String.join("-", "sleeper",
-                                deploymentId.toLowerCase(Locale.ROOT), "system-test-writer")))
+                        .roleName(roleName)
                         .build())
                 .build();
         propertySetter.set(WRITE_DATA_TASK_DEFINITION_FAMILY, taskDefinition.getFamily());
-        propertySetter.set(WRITE_DATA_ROLE_NAME, taskDefinition.getTaskRole().getRoleName());
+        propertySetter.set(WRITE_DATA_ROLE_NAME, roleName);
         CfnOutputProps taskDefinitionFamilyOutputProps = new CfnOutputProps.Builder()
                 .value(taskDefinition.getFamily())
                 .build();
@@ -140,5 +140,10 @@ public class SystemTestClusterStack extends NestedStack {
                         .build())
                 .build();
         return LogDriver.awsLogs(logDriverProps);
+    }
+
+    public static String buildSystemTestWriterRoleName(String deploymentId) {
+        return Utils.truncateTo64Characters(String.join("-",
+                "sleeper", deploymentId.toLowerCase(Locale.ROOT), "system", "test", "writer"));
     }
 }

@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
@@ -131,8 +133,11 @@ public class SleeperInstanceContext {
                         .tableName(tableName)
                         .instanceType(InvokeCdkForInstance.Type.STANDARD)
                         .runCommand(ClientUtils::runCommandLogOutput)
-                        .extraInstanceProperties(properties ->
-                                properties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
+                        .extraInstanceProperties(properties -> {
+                            properties.set(JARS_BUCKET, parameters.buildJarsBucketName());
+                            properties.set(INGEST_SOURCE_BUCKET, parameters.buildSystemTestBucketName());
+                            properties.set(INGEST_SOURCE_ROLE, parameters.buildSystemTestWriterRoleName());
+                        })
                         .deployWithDefaultClients();
             } catch (IOException ex) {
                 throw new RuntimeIOException(ex);
