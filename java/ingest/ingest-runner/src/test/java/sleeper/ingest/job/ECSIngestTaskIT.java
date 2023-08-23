@@ -16,15 +16,20 @@
 
 package sleeper.ingest.job;
 
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
@@ -33,6 +38,9 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.StateStoreProvider;
 
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -42,8 +50,10 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
@@ -51,6 +61,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                                   List<Record> expectedRecordList,
                                   int expectedNoOfFiles) throws Exception {
         String localDir = createTempDirectory(temporaryFolder, null).toString();
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         InstanceProperties instanceProperties = getInstanceProperties();
         TableProperties tableProperties = createTable(sleeperSchema);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
@@ -62,14 +73,33 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         runner.run();
 
         // Verify the results
-        ResultVerifier.verify(
-                stateStore,
-                sleeperSchema,
-                key -> 0,
-                expectedRecordList,
-                Collections.singletonMap(0, expectedNoOfFiles),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                createTempDirectory(temporaryFolder, null).toString());
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(sleeperSchema, actualFiles, hadoopConfiguration);
+        PartitionTree tree = new PartitionsBuilder(sleeperSchema)
+                .rootFirst("root")
+                .buildTree();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(Instant.parse("2023-08-08T11:20:00Z"))
+                .schema(sleeperSchema)
+                .build();
+
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            fileInfoFactory = fileInfoFactory.toBuilder().lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(i).getLastStateStoreUpdateTime())).build();
+            fileInfoList.add(fileInfoFactory.leafFile(actualFiles.get(i).getFilename(), 800, -100L, 99L));
+        }
+        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecordList);
+        RecordGenerator.RecordListAndSchema recordListAndSchema = new RecordGenerator.RecordListAndSchema(expectedRecordList, sleeperSchema);
+        ResultVerifier.assertOnSketch(
+                sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+
     }
 
     private IngestTask createTaskRunner(InstanceProperties instanceProperties,
@@ -95,7 +125,44 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         IngestJob ingestJob = createJobWithTableAndFiles("id", TEST_TABLE_NAME, files);
         AWS_EXTERNAL_RESOURCE.getSqsClient()
                 .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, doubledRecords, 1);
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .buildTree();
+        String localDir = createTempDirectory(temporaryFolder, null).toString();
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+        InstanceProperties instanceProperties = getInstanceProperties();
+        TableProperties tableProperties = createTable(recordListAndSchema.sleeperSchema);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        stateStore.initialise();
+        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
+        runner.run();
+
+        // Verify the results
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        List<FileInfo> fileInfoList = List.of(
+                fileInfoFactory.leafFile(actualFiles.get(0).getFilename(), 400, -100L, 99L)
+        );
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        recordListAndSchema.recordList.addAll(recordListAndSchema.recordList);
+        assertThat(actualRecords).hasSize(recordListAndSchema.recordList.size());
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
     }
 
     @Test
@@ -123,6 +190,43 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         ingestJobs.forEach(ingestJob ->
                 AWS_EXTERNAL_RESOURCE.getSqsClient()
                         .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob)));
-        consumeAndVerify(recordListAndSchema.sleeperSchema, expectedRecords, noOfJobs);
+        String localDir = createTempDirectory(temporaryFolder, null).toString();
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+        InstanceProperties instanceProperties = getInstanceProperties();
+        TableProperties tableProperties = createTable(recordListAndSchema.sleeperSchema);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        stateStore.initialise();
+        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
+        IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
+        runner.run();
+
+        // Verify the results
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .buildTree();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(Instant.parse("2023-08-08T11:20:00Z"))
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            fileInfoFactory = fileInfoFactory.toBuilder().lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(i).getLastStateStoreUpdateTime())).build();
+            fileInfoList.add(fileInfoFactory.leafFile(actualFiles.get(i).getFilename(), 800, -100L, 99L));
+        }
+        assertThat(Paths.get(localDir)).isEmptyDirectory();
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
     }
 }

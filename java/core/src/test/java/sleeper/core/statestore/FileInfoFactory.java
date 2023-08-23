@@ -132,6 +132,13 @@ public class FileInfoFactory {
         }
     }
 
+    public Builder toBuilder() {
+        return new Builder()
+                .lastStateStoreUpdate(this.lastStateStoreUpdate)
+                .schema(this.schema)
+                .partitionTree(this.partitionTree);
+    }
+
     public static final class Builder {
         private Schema schema;
         private PartitionTree partitionTree;
