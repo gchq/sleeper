@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.impl;
 
+import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,10 +29,13 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
+import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -39,7 +43,10 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -48,8 +55,10 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     @RegisterExtension
@@ -89,8 +98,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         ingestAndVerifyUsingDirectWriteBackedByArrayList(
                 recordListAndSchema,
                 tree,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 5,
                 1000L);
     }
@@ -100,12 +107,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 20),
-                        new AbstractMap.SimpleEntry<>(1, 20))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
@@ -114,8 +115,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         ingestAndVerifyUsingDirectWriteBackedByArrayList(
                 recordListAndSchema,
                 tree,
-                keyToPartitionNoMappingFn,
-                partitionNoToExpectedNoOfFilesMap,
                 5,
                 10L);
     }
@@ -123,13 +122,13 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private void ingestAndVerifyUsingDirectWriteBackedByArrayList(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             PartitionTree tree,
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore) throws IOException, StateStoreException, IteratorException {
 
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         stateStore.initialise(tree.getAllPartitions());
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
 
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
@@ -148,14 +147,43 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 ingestCoordinator.write(record);
             }
         }
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        String x = actualFiles.get(0).getFilename();
+        String y = actualFiles.get(0).getPartitionId();
+        List<FileInfo> fileInfoList = List.of(
+                fileInfoFactory.partitionFile(actualFiles.get(1).getPartitionId(), actualFiles.get(1).getFilename(), 100, List.of(0L), List.of(99L)),
+                fileInfoFactory.partitionFile(actualFiles.get(0).getPartitionId(), actualFiles.get(0).getFilename(), 100, List.of(-100L), List.of(-1L))
+        );
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
 
-        ResultVerifier.verify(
-                stateStore,
-                recordListAndSchema.sleeperSchema,
-                keyToPartitionNoMappingFn,
-                recordListAndSchema.recordList,
-                partitionNoToExpectedNoOfFilesMap,
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
-                ingestLocalWorkingDirectory);
+        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
+                        .map(List::<Object>of)
+                        .collect(Collectors.toList()));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+    }
+
+    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
+        return IngestCoordinatorTestParameters
+                .builder()
+                .temporaryFolder(temporaryFolder)
+                .awsResource(AWS_EXTERNAL_RESOURCE)
+                .dataBucketName(DATA_BUCKET_NAME);
     }
 }

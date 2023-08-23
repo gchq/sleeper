@@ -24,10 +24,10 @@ import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinato
 
 public class TestIngestType {
 
-    private final CoordinatorFactory coordinatorFactory;
-    private final GetFilePrefix getFilePrefix;
+    public final CoordinatorFactory coordinatorFactory;
+    public final GetFilePrefix getFilePrefix;
 
-    private TestIngestType(CoordinatorFactory coordinatorFactory, GetFilePrefix getFilePrefix) {
+    public TestIngestType(CoordinatorFactory coordinatorFactory, GetFilePrefix getFilePrefix) {
         this.coordinatorFactory = coordinatorFactory;
         this.getFilePrefix = getFilePrefix;
     }
@@ -70,11 +70,11 @@ public class TestIngestType {
                 IngestCoordinatorTestParameters::getAsyncS3Prefix);
     }
 
-    private interface CoordinatorFactory {
+    public interface CoordinatorFactory {
         IngestCoordinator<Record> createIngestCoordinator(IngestCoordinatorTestParameters parameters);
     }
 
-    private interface GetFilePrefix {
+    public interface GetFilePrefix {
         String getFilePrefix(IngestCoordinatorTestParameters parameters);
     }
 }
