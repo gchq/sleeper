@@ -20,7 +20,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -32,6 +34,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
 
 public class IngestSourceFilesContext {
     private final SystemTestInstanceContext systemTest;
@@ -64,8 +68,9 @@ public class IngestSourceFilesContext {
 
     public void emptySourceBucket() {
         List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(systemTest.getSystemTestBucketName()))
-                .contents().stream()
-                .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
+                .contents().stream().map(S3Object::key)
+                .filter(not(InstanceProperties.S3_INSTANCE_PROPERTIES_FILE::equals))
+                .map(key -> ObjectIdentifier.builder().key(key).build())
                 .collect(Collectors.toList());
         if (!objects.isEmpty()) {
             s3Client.deleteObjects(builder -> builder.bucket(systemTest.getSystemTestBucketName())
