@@ -23,6 +23,7 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.util.List;
 
+@FunctionalInterface
 public interface SleeperPropertyValues<T extends SleeperProperty> {
 
     String get(T property);
