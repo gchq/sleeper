@@ -26,7 +26,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
-import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
@@ -56,52 +55,6 @@ import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
-
-    private void consumeAndVerify(Schema sleeperSchema,
-                                  List<Record> expectedRecordList,
-                                  int expectedNoOfFiles) throws Exception {
-        String localDir = createTempDirectory(temporaryFolder, null).toString();
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(sleeperSchema);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
-        runner.run();
-
-        // Verify the results
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(sleeperSchema, actualFiles, hadoopConfiguration);
-        PartitionTree tree = new PartitionsBuilder(sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(Instant.parse("2023-08-08T11:20:00Z"))
-                .schema(sleeperSchema)
-                .build();
-
-        List<FileInfo> fileInfoList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            fileInfoFactory = fileInfoFactory.toBuilder().lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(i).getLastStateStoreUpdateTime())).build();
-            fileInfoList.add(fileInfoFactory.leafFile(actualFiles.get(i).getFilename(), 800, -100L, 99L));
-        }
-        assertThat(Paths.get(localDir)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecordList);
-        RecordGenerator.RecordListAndSchema recordListAndSchema = new RecordGenerator.RecordListAndSchema(expectedRecordList, sleeperSchema);
-        ResultVerifier.assertOnSketch(
-                sleeperSchema.getRowKeyFields().get(0),
-                recordListAndSchema,
-                actualFiles,
-                hadoopConfiguration
-        );
-
-    }
-
     private IngestTask createTaskRunner(InstanceProperties instanceProperties,
                                         String localDir,
                                         String taskId) {
