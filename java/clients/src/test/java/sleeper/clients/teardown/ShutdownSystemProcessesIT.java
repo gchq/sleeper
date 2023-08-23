@@ -78,6 +78,7 @@ class ShutdownSystemProcessesIT {
     private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
 
     private ShutdownSystemProcesses shutdown;
+    private InstanceProperties properties;
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
@@ -93,106 +94,124 @@ class ShutdownSystemProcessesIT {
         shutdown.shutdown(instanceProperties, extraECSClusters);
     }
 
-    @Test
-    void shouldShutDownCloudWatchRulesWhenSet() throws Exception {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-compaction-job-creation-rule");
-        properties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-compaction-task-creation-rule");
-        properties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-splitting-compaction-task-creation-rule");
-        properties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-partition-splitting-rule");
-        properties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-garbage-collector-rule");
-        properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
-        properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
+    @Nested
+    @DisplayName("Shutdown Cloud Watch Rules")
+    class ShutdownCloudWatchRules {
 
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
-        stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
-        stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(0)));
+        @BeforeEach
+        void setUp() {
+            properties = createTestInstanceProperties();
+        }
+        @Test
+        void shouldShutdownCloudWatchRulesWhenSet() throws Exception {
+            // Given
+            properties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-compaction-job-creation-rule");
+            properties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-compaction-task-creation-rule");
+            properties.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-splitting-compaction-task-creation-rule");
+            properties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-partition-splitting-rule");
+            properties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-garbage-collector-rule");
+            properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
+            properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
 
-        // When
-        shutdown(properties);
+            stubFor(post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
+                    .willReturn(aResponse().withStatus(200)));
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
 
-        // Then
-        verify(9, postRequestedFor(urlEqualTo("/")));
-        verify(1, listActiveClustersRequested());
-        verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
-        verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
-        verify(1, disableRuleRequestedFor("test-splitting-compaction-task-creation-rule"));
-        verify(1, disableRuleRequestedFor("test-partition-splitting-rule"));
-        verify(1, disableRuleRequestedFor("test-garbage-collector-rule"));
-        verify(1, disableRuleRequestedFor("test-ingest-task-creation-rule"));
-        verify(1, disableRuleRequestedFor("test-table-metrics-rule-1"));
-        verify(1, disableRuleRequestedFor("test-table-metrics-rule-2"));
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(9, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
+            verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
+            verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
+            verify(1, disableRuleRequestedFor("test-splitting-compaction-task-creation-rule"));
+            verify(1, disableRuleRequestedFor("test-partition-splitting-rule"));
+            verify(1, disableRuleRequestedFor("test-garbage-collector-rule"));
+            verify(1, disableRuleRequestedFor("test-ingest-task-creation-rule"));
+            verify(1, disableRuleRequestedFor("test-table-metrics-rule-1"));
+            verify(1, disableRuleRequestedFor("test-table-metrics-rule-2"));
+        }
     }
 
-    @Test
-    void shouldLookForECSTasksWhenClustersSet() throws Exception {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(INGEST_CLUSTER, "test-ingest-cluster");
-        properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
-        properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
-        List<String> extraECSClusters = List.of("test-system-test-cluster");
+    @Nested
+    @DisplayName("Terminate running ECS tasks")
+    class TerminateECSTasks {
 
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-                .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
-        stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
-        stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(0)));
+        @BeforeEach
+        void setup() {
+            properties = createTestInstanceProperties();
+            properties.set(INGEST_CLUSTER, "test-ingest-cluster");
+        }
 
-        // When
-        shutdown(properties, extraECSClusters);
+        @Test
+        void shouldLookForECSTasksWhenClustersSet() throws Exception {
+            // Given
+            properties.set(COMPACTION_CLUSTER, "test-compaction-cluster");
+            properties.set(SPLITTING_COMPACTION_CLUSTER, "test-splitting-compaction-cluster");
+            List<String> extraECSClusters = List.of("test-system-test-cluster");
 
-        // Then
-        verify(5, postRequestedFor(urlEqualTo("/")));
-        verify(1, listActiveClustersRequested());
-        verify(1, listTasksRequestedFor("test-ingest-cluster"));
-        verify(1, listTasksRequestedFor("test-compaction-cluster"));
-        verify(1, listTasksRequestedFor("test-splitting-compaction-cluster"));
-        verify(1, listTasksRequestedFor("test-system-test-cluster"));
-    }
+            stubFor(post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+                    .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
 
-    @Test
-    void shouldStopECSTaskWhenOneIsFound() throws Exception {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(INGEST_CLUSTER, "test-ingest-cluster");
+            // When
+            shutdown(properties, extraECSClusters);
 
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-                .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
-        stubFor(post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-                .willReturn(aResponse().withStatus(200)));
-        stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
-        stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(0)));
+            // Then
+            verify(5, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
+            verify(1, listTasksRequestedFor("test-ingest-cluster"));
+            verify(1, listTasksRequestedFor("test-compaction-cluster"));
+            verify(1, listTasksRequestedFor("test-splitting-compaction-cluster"));
+            verify(1, listTasksRequestedFor("test-system-test-cluster"));
+        }
 
-        // When
-        shutdown(properties);
+        @Test
+        void shouldStopECSTaskWhenOneIsFound() throws Exception {
+            // Given
+            stubFor(post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
+                    .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[\"test-task\"]}")));
+            stubFor(post("/")
+                    .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
+                    .willReturn(aResponse().withStatus(200)));
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
 
-        // Then
-        verify(3, postRequestedFor(urlEqualTo("/")));
-        verify(1, listActiveClustersRequested());
-        verify(1, listTasksRequestedFor("test-ingest-cluster"));
-        verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(3, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
+            verify(1, listTasksRequestedFor("test-ingest-cluster"));
+            verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
+        }
     }
 
     @Nested
     @DisplayName("Terminate running EMR clusters")
     class TerminateEMRClusters {
 
+        @BeforeEach
+        void setup() {
+            properties = createTestInstancePropertiesWithEmrStack();
+        }
+
         @Test
         void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
             // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +
@@ -223,7 +242,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
             // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponseWithNumRunningClusters(11))
                     .whenScenarioStateIs(STARTED));
@@ -251,7 +269,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
             // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": []}")));
@@ -269,7 +286,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
             // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveApplicationsRequest()
                     .willReturn(aResponseWithNumRunningApplications(0)));
             stubFor(listActiveClustersRequest()
@@ -294,12 +310,16 @@ class ShutdownSystemProcessesIT {
     @DisplayName("Terminate running EMR Serverless Applications")
     class TerminateEMRServerlessApplications {
 
+        @BeforeEach
+        void setUp(WireMockRuntimeInfo runtimeInfo) {
+            properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
+        }
+
         @Test
         void shouldAllowEmrServerlessWithNoApplications() throws Exception {
             //Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(0)));
 
@@ -314,9 +334,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldAllowEmrServerlessWithAStoppedApplication() throws Exception {
             //Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(1, true)));
 
@@ -331,9 +348,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJobs() throws Exception {
             //Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
@@ -354,9 +368,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldStopEMRServerlessWhenApplicationIsStartedWithOnlySuccessJobs() throws Exception {
             //Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
@@ -377,9 +388,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
             //Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
