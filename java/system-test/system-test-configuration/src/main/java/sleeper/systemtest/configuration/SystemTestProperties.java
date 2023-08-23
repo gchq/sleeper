@@ -38,4 +38,8 @@ public class SystemTestProperties extends InstanceProperties {
     public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
         return PROPERTY_INDEX;
     }
+
+    public SystemTestPropertyValues testPropertiesOnly() {
+        return this::get;
+    }
 }
