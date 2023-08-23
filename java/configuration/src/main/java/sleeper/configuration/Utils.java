@@ -54,8 +54,16 @@ public class Utils {
         return parseAndCheckInteger(integer, num -> num >= 0);
     }
 
+    public static boolean isInteger(String integer) {
+        return parseAndCheckInteger(integer, num -> true);
+    }
+
     public static boolean isPositiveLong(String value) {
         return parseAndCheckLong(value, num -> num > 0);
+    }
+
+    public static boolean isLong(String value) {
+        return parseAndCheckLong(value, num -> true);
     }
 
     public static boolean isPositiveDouble(String value) {
