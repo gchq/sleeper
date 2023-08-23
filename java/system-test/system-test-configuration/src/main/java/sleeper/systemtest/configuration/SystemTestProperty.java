@@ -94,7 +94,7 @@ public interface SystemTestProperty extends InstanceProperty {
                     "(the number of entries in the list will range randomly from 0 to this number)")
             .defaultValue("10").build();
 
-    static List<InstanceProperty> getAll() {
+    static List<SystemTestProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
 
@@ -102,7 +102,7 @@ public interface SystemTestProperty extends InstanceProperty {
         private Index() {
         }
 
-        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
+        static final SleeperPropertyIndex<SystemTestProperty> INSTANCE = new SleeperPropertyIndex<>();
 
         private static SystemTestPropertyImpl.Builder propertyBuilder(String propertyName) {
             return SystemTestPropertyImpl.named(propertyName)

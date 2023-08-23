@@ -27,6 +27,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestsProperties;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -43,17 +44,23 @@ public class IngestRandomData {
     }
 
     public static void main(String[] args) throws IOException, ObjectFactoryException {
-        if (args.length != 2) {
-            throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name>");
-        }
-        String s3Bucket = args[0];
+        InstanceProperties instanceProperties;
+        SystemTestPropertyValues systemTestProperties;
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-
-        SystemTestProperties properties = new SystemTestProperties();
-        properties.loadFromS3(s3Client, s3Bucket);
-        InstanceProperties instanceProperties = properties;
-        SystemTestPropertyValues systemTestProperties = properties.testPropertiesOnly();
-
+        if (args.length == 2) {
+            SystemTestProperties properties = new SystemTestProperties();
+            properties.loadFromS3(s3Client, args[0]);
+            instanceProperties = properties;
+            systemTestProperties = properties.testPropertiesOnly();
+        } else if (args.length == 3) {
+            instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3(s3Client, args[0]);
+            SystemTestsProperties properties = new SystemTestsProperties();
+            properties.loadFromS3(s3Client, args[2]);
+            systemTestProperties = properties;
+        } else {
+            throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
+        }
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties)
                 .getTableProperties(args[1]);
 
