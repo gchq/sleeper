@@ -18,7 +18,7 @@ package sleeper.configuration;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
@@ -153,7 +153,7 @@ public class Utils {
         if (input == null) {
             return false;
         }
-        return SleeperProperties.readList(input).stream()
+        return SleeperPropertyValues.readList(input).stream()
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
