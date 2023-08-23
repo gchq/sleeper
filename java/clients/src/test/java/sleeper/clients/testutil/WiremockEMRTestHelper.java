@@ -97,7 +97,7 @@ public class WiremockEMRTestHelper {
     }
 
      public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications) {
-        return aResponseWithNumRunningApplications(numRunningApplications, false)
+        return aResponseWithNumRunningApplications(numRunningApplications, false);
      }
 
     public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications, boolean includeStoppedState) {
