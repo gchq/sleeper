@@ -16,11 +16,14 @@
 
 package sleeper.systemtest.cdk;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
 
+import sleeper.cdk.jars.BuiltJars;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
@@ -28,16 +31,18 @@ import java.nio.file.Path;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
 
 public class SystemTestStandaloneApp extends Stack {
 
     public SystemTestStandaloneApp(App app, String id, StackProps props,
-                                   SystemTestStandaloneProperties properties) {
+                                   SystemTestStandaloneProperties properties, BuiltJars jars) {
         super(app, id, props);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
         new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
+        new SystemTestPropertiesStack(this, "SystemTestProperties", properties, bucketStack, jars);
     }
 
     public static void main(String[] args) throws IOException {
@@ -46,16 +51,17 @@ public class SystemTestStandaloneApp extends Stack {
         Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesfile"));
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
 
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
+
         String id = systemTestProperties.get(SYSTEM_TEST_ID);
         Environment environment = Environment.builder()
                 .account(systemTestProperties.get(SYSTEM_TEST_ACCOUNT))
                 .region(systemTestProperties.get(SYSTEM_TEST_REGION))
                 .build();
-        new SystemTestStandaloneApp(app, id, StackProps.builder()
-                .stackName(id)
-                .env(environment)
-                .build(),
-                systemTestProperties);
+        new SystemTestStandaloneApp(app, id,
+                StackProps.builder().stackName(id).env(environment).build(),
+                systemTestProperties, jars);
         app.synth();
     }
 }
