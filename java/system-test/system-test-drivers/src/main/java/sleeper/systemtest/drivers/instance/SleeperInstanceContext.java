@@ -43,6 +43,8 @@ import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
 
@@ -129,6 +131,8 @@ public class SleeperInstanceContext {
                         .tableName(tableName)
                         .instanceType(InvokeCdkForInstance.Type.STANDARD)
                         .runCommand(ClientUtils::runCommandLogOutput)
+                        .extraInstanceProperties(properties ->
+                                properties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                         .deployWithDefaultClients();
             } catch (IOException ex) {
                 throw new RuntimeIOException(ex);

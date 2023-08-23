@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,13 +46,15 @@ public class SyncJars {
     private final Path jarsDirectory;
     private final String bucketName;
     private final String region;
+    private final Predicate<Path> uploadFilter;
     private final boolean deleteOldJars;
 
     private SyncJars(Builder builder) {
+        s3 = requireNonNull(builder.s3, "s3 must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         bucketName = requireNonEmpty(builder.bucketName, "bucketName must not be null");
         region = requireNonEmpty(builder.region, "region must not be null");
-        s3 = requireNonNull(builder.s3, "s3 must not be null");
+        uploadFilter = requireNonEmpty(builder.uploadFilter, "uploadFilter must not be null");
         deleteOldJars = builder.deleteOldJars;
     }
 
@@ -108,7 +111,9 @@ public class SyncJars {
 
         JarsDiff diff = JarsDiff.from(jarsDirectory, jars,
                 s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)));
-        Collection<Path> uploadJars = diff.getModifiedAndNew();
+        Collection<Path> uploadJars = diff.getModifiedAndNew().stream()
+                .filter(uploadFilter)
+                .collect(Collectors.toUnmodifiableList());
         Collection<String> deleteKeys = diff.getS3KeysToDelete();
 
         if (deleteOldJars && !deleteKeys.isEmpty()) {
@@ -148,6 +153,7 @@ public class SyncJars {
         private Path jarsDirectory;
         private String bucketName;
         private String region;
+        private Predicate<Path> uploadFilter = jar -> true;
         private boolean deleteOldJars = false;
 
         private Builder() {
@@ -170,6 +176,11 @@ public class SyncJars {
 
         public Builder region(String region) {
             this.region = region;
+            return this;
+        }
+
+        public Builder uploadFilter(Predicate<Path> uploadFilter) {
+            this.uploadFilter = uploadFilter;
             return this;
         }
 

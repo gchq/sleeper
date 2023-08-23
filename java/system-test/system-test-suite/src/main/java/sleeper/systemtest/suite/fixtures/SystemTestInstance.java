@@ -66,7 +66,7 @@ public enum SystemTestInstance {
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
-        properties.set(INGEST_SOURCE_BUCKET, parameters.buildSourceBucketName());
+        properties.set(INGEST_SOURCE_BUCKET, parameters.buildSystemTestBucketName());
         properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, "m6i.xlarge,m5.xlarge");
         properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, "m6i.4xlarge,m5.4xlarge");
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "1");

@@ -45,8 +45,7 @@ public class SystemTestBucketStack extends NestedStack {
     public SystemTestBucketStack(Construct scope, String id,
                                  String deploymentId, SystemTestPropertySetter propertySetter) {
         super(scope, id);
-        String bucketName = String.join("-", "sleeper", deploymentId,
-                "system", "test").toLowerCase(Locale.ROOT);
+        String bucketName = buildSystemTestBucketName(deploymentId);
         propertySetter.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
         bucket = Bucket.Builder.create(this, "SystemTestBucket")
                 .bucketName(bucketName)
@@ -61,5 +60,10 @@ public class SystemTestBucketStack extends NestedStack {
 
     public IBucket getBucket() {
         return bucket;
+    }
+
+    public static String buildSystemTestBucketName(String deploymentId) {
+        return String.join("-", "sleeper", deploymentId, "system", "test")
+                .toLowerCase(Locale.ROOT);
     }
 }

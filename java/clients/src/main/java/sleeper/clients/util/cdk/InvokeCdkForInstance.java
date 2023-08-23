@@ -29,13 +29,14 @@ import static java.util.Objects.requireNonNull;
 
 public class InvokeCdkForInstance {
 
-    private final Path instancePropertiesFile;
+    private final Path propertiesFile;
     private final Path jarsDirectory;
     private final String version;
 
     public enum Type {
         STANDARD("sleeper.cdk.SleeperCdkApp", InvokeCdkForInstance::cdkJarFile),
-        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile);
+        SYSTEM_TEST("sleeper.systemtest.cdk.SystemTestApp", InvokeCdkForInstance::systemTestJarFile),
+        SYSTEM_TEST_STANDALONE("sleeper.systemtest.cdk.SystemTestStandaloneApp", InvokeCdkForInstance::systemTestJarFile);
         private final String cdkAppClassName;
         private final Function<InvokeCdkForInstance, Path> getCdkJarFile;
 
@@ -46,7 +47,7 @@ public class InvokeCdkForInstance {
     }
 
     private InvokeCdkForInstance(Builder builder) {
-        instancePropertiesFile = requireNonNull(builder.instancePropertiesFile, "instancePropertiesFile must not be null");
+        propertiesFile = requireNonNull(builder.propertiesFile, "propertiesFile must not be null");
         jarsDirectory = requireNonNull(builder.jarsDirectory, "jarsDirectory must not be null");
         version = requireNonNull(builder.version, "version must not be null");
     }
@@ -82,7 +83,7 @@ public class InvokeCdkForInstance {
                         instanceType.getCdkJarFile.apply(this), instanceType.cdkAppClassName)
         ));
         cdkCommand.getCommand().forEach(command::add);
-        command.addAll(List.of("-c", String.format("propertiesfile=%s", instancePropertiesFile)));
+        command.addAll(List.of("-c", String.format("propertiesfile=%s", propertiesFile)));
         cdkCommand.getArguments().forEach(command::add);
         command.add("*");
 
@@ -102,15 +103,15 @@ public class InvokeCdkForInstance {
     }
 
     public static final class Builder {
-        private Path instancePropertiesFile;
+        private Path propertiesFile;
         private Path jarsDirectory;
         private String version;
 
         private Builder() {
         }
 
-        public Builder instancePropertiesFile(Path instancePropertiesFile) {
-            this.instancePropertiesFile = instancePropertiesFile;
+        public Builder propertiesFile(Path instancePropertiesFile) {
+            this.propertiesFile = instancePropertiesFile;
             return this;
         }
 

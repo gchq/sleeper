@@ -26,6 +26,7 @@ import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
@@ -60,6 +61,8 @@ public class SleeperSystemTest {
 
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
+    private final SystemTestInstanceContext systemTest = new SystemTestInstanceContext(
+            parameters, clients.getS3(), clients.getS3V2(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
@@ -73,7 +76,12 @@ public class SleeperSystemTest {
     }
 
     private SleeperSystemTest reset() {
-        sourceFiles.createOrEmptySourceBucket();
+        try {
+            systemTest.deployIfMissing();
+            sourceFiles.emptySourceBucket();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 

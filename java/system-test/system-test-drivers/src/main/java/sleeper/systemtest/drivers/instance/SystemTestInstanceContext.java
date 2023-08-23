@@ -1,0 +1,123 @@
+/*
+ * Copyright 2022-2023 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.systemtest.drivers.instance;
+
+import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.s3.S3Client;
+
+import sleeper.clients.deploy.SyncJars;
+import sleeper.clients.deploy.UploadDockerImages;
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.core.SleeperVersion;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
+
+import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REPO;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
+
+public class SystemTestInstanceContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestInstanceContext.class);
+
+    private final SystemTestParameters parameters;
+    private final AmazonS3 s3;
+    private final S3Client s3v2;
+    private final CloudFormationClient cloudFormation;
+    private SystemTestStandaloneProperties properties;
+
+    public SystemTestInstanceContext(SystemTestParameters parameters,
+                                     AmazonS3 s3, S3Client s3v2, CloudFormationClient cloudFormation) {
+        this.parameters = parameters;
+        this.s3 = s3;
+        this.s3v2 = s3v2;
+        this.cloudFormation = cloudFormation;
+    }
+
+    public void deployIfMissing() throws InterruptedException {
+        if (properties != null) {
+            return;
+        }
+        try {
+            String deploymentId = parameters.getSystemTestDeploymentId();
+            cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
+            LOGGER.info("Deployment already exists: {}", deploymentId);
+            properties = SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
+        } catch (CloudFormationException e) {
+            generateProperties();
+            Path propertiesFile = parameters.getGeneratedDirectory().resolve("system-test.properties");
+            try {
+                uploadJarsAndDockerImages();
+                properties.save(propertiesFile);
+                InvokeCdkForInstance.builder()
+                        .propertiesFile(propertiesFile)
+                        .jarsDirectory(parameters.getJarsDirectory())
+                        .version(SleeperVersion.getVersion())
+                        .build().invoke(SYSTEM_TEST_STANDALONE,
+                                CdkCommand.deploySystemTestStandalone(),
+                                ClientUtils::runCommandLogOutput);
+            } catch (IOException e1) {
+                throw new UncheckedIOException(e1);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void generateProperties() {
+        properties = new SystemTestStandaloneProperties();
+        properties.set(SYSTEM_TEST_ID, parameters.getSystemTestDeploymentId());
+        properties.set(SYSTEM_TEST_ACCOUNT, parameters.getAccount());
+        properties.set(SYSTEM_TEST_REGION, parameters.getRegion());
+        properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
+        properties.set(SYSTEM_TEST_JARS_BUCKET, parameters.buildJarsBucketName());
+        properties.set(SYSTEM_TEST_REPO, parameters.getSystemTestDeploymentId() + "/system-test");
+    }
+
+    private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
+        boolean jarsChanged = SyncJars.builder().s3(s3v2)
+                .jarsDirectory(parameters.getJarsDirectory())
+                .bucketName(parameters.buildJarsBucketName())
+                .region(parameters.getRegion())
+                .uploadFilter(jar -> {
+                    String filename = String.valueOf(jar.getFileName());
+                    return filename.startsWith("system-test") || filename.startsWith("cdk-custom-resources");
+                })
+                .deleteOldJars(false).build().sync();
+        UploadDockerImages.builder()
+                .baseDockerDirectory(parameters.getDockerDirectory())
+                .uploadDockerImagesScript(parameters.getScriptsDirectory().resolve("deploy/uploadDockerImages.sh"))
+                .id(parameters.getSystemTestDeploymentId())
+                .account(parameters.getAccount())
+                .region(parameters.getRegion())
+                .skipIf(!jarsChanged)
+                .stacks("SystemTestStack")
+                .build().upload(ClientUtils::runCommandLogOutput);
+    }
+}

@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertyIndex;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class SystemTestStandaloneProperties
 
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) throws IOException {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.loadFromS3(s3Client, bucket, "config");
+        properties.loadFromS3(s3Client, bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
         return properties;
     }
 

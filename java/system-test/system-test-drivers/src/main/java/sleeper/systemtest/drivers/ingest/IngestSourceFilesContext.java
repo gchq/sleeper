@@ -19,7 +19,6 @@ package sleeper.systemtest.drivers.ingest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 import sleeper.configuration.properties.table.TableProperties;
@@ -39,7 +38,7 @@ public class IngestSourceFilesContext {
     private final S3Client s3Client;
 
     public IngestSourceFilesContext(SystemTestParameters parameters, S3Client s3Client) {
-        this.sourceBucketName = parameters.buildSourceBucketName();
+        this.sourceBucketName = parameters.buildSystemTestBucketName();
         this.s3Client = s3Client;
     }
 
@@ -50,15 +49,6 @@ public class IngestSourceFilesContext {
     public List<String> getIngestJobFilesInBucket(Stream<String> files) {
         return files.map(file -> sourceBucketName + "/" + file)
                 .collect(Collectors.toUnmodifiableList());
-    }
-
-    public void createOrEmptySourceBucket() {
-        try {
-            s3Client.headBucket(builder -> builder.bucket(sourceBucketName));
-            emptySourceBucket();
-        } catch (NoSuchBucketException e) {
-            s3Client.createBucket(builder -> builder.bucket(sourceBucketName));
-        }
     }
 
     public void writeFile(TableProperties tableProperties, String file, Iterator<Record> records) {
@@ -72,7 +62,7 @@ public class IngestSourceFilesContext {
         }
     }
 
-    private void emptySourceBucket() {
+    public void emptySourceBucket() {
         List<ObjectIdentifier> objects = s3Client.listObjectsV2Paginator(builder -> builder.bucket(sourceBucketName))
                 .contents().stream()
                 .map(obj -> ObjectIdentifier.builder().key(obj.key()).build())
