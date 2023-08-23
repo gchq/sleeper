@@ -17,14 +17,26 @@ package sleeper.clients.util;
 
 
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.ListApplicationsRequest;
 import software.amazon.awssdk.services.emrserverless.model.ListApplicationsResponse;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class EmrServerlessUtils {
     private EmrServerlessUtils() {
     }
 
+    private static List<ApplicationState> runningStates = List.of(ApplicationState.STARTING,
+        ApplicationState.STARTING, ApplicationState.CREATED, ApplicationState.CREATING);
+
     public static ListApplicationsResponse listActiveApplications(EmrServerlessClient emrServerlessClient) {
-        return emrServerlessClient.listApplications(ListApplicationsRequest.builder().build());
+        ListApplicationsResponse applications =  emrServerlessClient.listApplications(ListApplicationsRequest.builder().build());
+        List<ApplicationSummary> applicationsSummary = applications.applications().stream()
+            .filter(application -> runningStates.contains(application.state()))
+            .collect(Collectors.toList());
+        return ListApplicationsResponse.builder().applications(applicationsSummary).build();
     }
 }

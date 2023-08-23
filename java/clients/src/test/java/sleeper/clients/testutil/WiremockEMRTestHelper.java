@@ -96,14 +96,23 @@ public class WiremockEMRTestHelper {
         return aResponse().withStatus(200).withBody(clustersBody.toString());
     }
 
+     public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications) {
+        return aResponseWithNumRunningApplications(numRunningApplications, false)
+     }
 
-    public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications) {
+    public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications, boolean includeStoppedState) {
         StringBuilder applicationBody = new StringBuilder("{\"applications\": [");
         for (int i = 1; i <= numRunningApplications; i++) {
+            String state = "RUNNING";
+
+            if (i == 1 && includeStoppedState) {
+                state = "STOPPED";
+            }
+
             applicationBody.append("{" +
                     "\"name\": \"sleeper-test-instance-test-application-" + i + "\"," +
                     "\"id\": \"test-application-id-" + i + "\"," +
-                    "\"state\": \"RUNNING\"" +
+                    "\"state\": \"" + state + "\"" +
                     "}");
             if (i != numRunningApplications) {
                 applicationBody.append(",");

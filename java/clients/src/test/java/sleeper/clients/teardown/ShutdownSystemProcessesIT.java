@@ -174,6 +174,7 @@ class ShutdownSystemProcessesIT {
                 .willReturn(aResponseWithNumRunningClusters(0)));
         stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(0)));
+
         // When
         shutdown(properties);
 
@@ -189,35 +190,136 @@ class ShutdownSystemProcessesIT {
     class TerminateEMRClusters {
 
         @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
-            //Given
+        void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
+            // Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody("" +
+                            "{\"Clusters\": [{" +
+                            "   \"Name\": \"sleeper-test-instance-test-cluster\"," +
+                            "   \"Id\": \"test-cluster-id\"," +
+                            "   \"Status\": {\"State\": \"RUNNING\"}" +
+                            "}]}"))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(terminateJobFlowsRequest().inScenario("TerminateEMRClusters")
+                    .whenScenarioStateIs(STARTED)
+                    .willSetStateTo("TERMINATED"));
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody(
+                            "{\"Clusters\": []}"))
+                    .whenScenarioStateIs("TERMINATED"));
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+                   .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdown(properties);
 
             // Then
-            verify(2, getRequestedFor(urlEqualTo("/applications")));
-            verify(2, listActiveApplicationRequested());
-
+            verify(3, postRequestedFor(urlEqualTo("/")));
+            verify(2, listActiveClustersRequested());
+            verify(1, terminateJobFlowsRequestedFor("test-cluster-id"));
         }
 
         @Test
-        void emrServerlessHasZeroApplicationsStarted() throws Exception {
+        void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponseWithNumRunningClusters(11))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(terminateJobFlowsRequestWithJobIdCount(10));
+            stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
+                    .willSetStateTo("TERMINATED"));
+            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponse().withStatus(200).withBody(
+                            "{\"Clusters\": []}"))
+                    .whenScenarioStateIs("TERMINATED"));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(4, postRequestedFor(urlEqualTo("/")));
+            verify(2, listActiveClustersRequested());
+
+            verify(terminateJobFlowsRequestedWithJobIdsCount(10));
+            verify(terminateJobFlowsRequestedWithJobIdsCount(1));
+        }
+
+        @Test
+        void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponse().withStatus(200).withBody("" +
+                            "{\"Clusters\": []}")));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
+        }
+
+        @Test
+        void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
+            // Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponse().withStatus(200).withBody("" +
+                            "{\"Clusters\": [{" +
+                            "   \"Name\": \"sleeper-another-instance-test-cluster\"," +
+                            "   \"Id\": \"test-cluster-id\"," +
+                            "   \"Status\": {\"State\": \"RUNNING\"}" +
+                            "}]}")));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, postRequestedFor(urlEqualTo("/")));
+            verify(1, listActiveClustersRequested());
+        }
+    }
+
+
+    @Nested
+    @DisplayName("Terminate running EMR Serverless Applications")
+    class TerminateEMRServerlessApplications {
+
+        @Test
+        void shouldAllowEmrServerlessWithNoApplications() throws Exception {
             //Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveClustersRequest()
                 .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(0)));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, getRequestedFor(urlEqualTo("/applications")));
+            verify(1, listActiveApplicationRequested());
+
+        }
+
+        @Test
+        void shouldAllowEmrServerlessWithAStoppedApplication() throws Exception {
+            //Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(1, true)));
 
             // When
             shutdown(properties);
@@ -247,105 +349,31 @@ class ShutdownSystemProcessesIT {
             shutdown(properties);
 
             // Then
-            verify(2, getRequestedFor(urlEqualTo("/applications")));
-            verify(2, listActiveApplicationRequested());
+            verify(1, getRequestedFor(urlEqualTo("/applications")));
+            verify(1, listActiveApplicationRequested());
 
         }
 
         @Test
-        void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
-            // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody("" +
-                            "{\"Clusters\": [{" +
-                            "   \"Name\": \"sleeper-test-instance-test-cluster\"," +
-                            "   \"Id\": \"test-cluster-id\"," +
-                            "   \"Status\": {\"State\": \"RUNNING\"}" +
-                            "}]}"))
-                    .whenScenarioStateIs(STARTED));
-            stubFor(terminateJobFlowsRequest().inScenario("TerminateEMRClusters")
-                    .whenScenarioStateIs(STARTED)
-                    .willSetStateTo("TERMINATED"));
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody(
-                            "{\"Clusters\": []}"))
-                    .whenScenarioStateIs("TERMINATED"));
-            stubFor(listActiveApplicationsRequest()
-                   .willReturn(aResponseWithNumRunningApplications(0)));
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(3, postRequestedFor(urlEqualTo("/")));
-            verify(2, listActiveClustersRequested());
-            verify(1, terminateJobFlowsRequestedFor("test-cluster-id"));
-        }
-
-        @Test
-        void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
-            // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponseWithNumRunningClusters(11))
-                    .whenScenarioStateIs(STARTED));
-            stubFor(terminateJobFlowsRequestWithJobIdCount(10));
-            stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
-                    .willSetStateTo("TERMINATED"));
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody(
-                            "{\"Clusters\": []}"))
-                    .whenScenarioStateIs("TERMINATED"));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(4, postRequestedFor(urlEqualTo("/")));
-            verify(2, listActiveClustersRequested());
-
-            verify(terminateJobFlowsRequestedWithJobIdsCount(10));
-            verify(terminateJobFlowsRequestedWithJobIdsCount(1));
-        }
-
-        @Test
-        void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
-            // Given
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
+            //Given
             InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
             stubFor(listActiveClustersRequest()
-                    .willReturn(aResponse().withStatus(200).withBody("" +
-                            "{\"Clusters\": []}")));
+                .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(1, postRequestedFor(urlEqualTo("/")));
-            verify(1, listActiveClustersRequested());
-        }
-
-        @Test
-        void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
-            // Given
-            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponse().withStatus(200).withBody("" +
-                            "{\"Clusters\": [{" +
-                            "   \"Name\": \"sleeper-another-instance-test-cluster\"," +
-                            "   \"Id\": \"test-cluster-id\"," +
-                            "   \"Status\": {\"State\": \"RUNNING\"}" +
-                            "}]}")));
+                .willReturn(aResponseWithNumRunningApplications(1)));
+            stubFor(listJobsForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+            stubFor(stopJobForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
 
             // When
             shutdown(properties);
 
             // Then
-            verify(1, postRequestedFor(urlEqualTo("/")));
-            verify(1, listActiveClustersRequested());
+            verify(1, getRequestedFor(urlEqualTo("/applications")));
+            verify(1, listActiveApplicationRequested());
+
         }
     }
 

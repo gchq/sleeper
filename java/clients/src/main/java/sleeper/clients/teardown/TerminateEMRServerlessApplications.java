@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 import static sleeper.clients.util.EmrServerlessUtils.listActiveApplications;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
 public class TerminateEMRServerlessApplications {
     private static final Logger LOGGER = LoggerFactory
@@ -88,7 +87,6 @@ public class TerminateEMRServerlessApplications {
                             .applicationId(application).jobRunId(jobRun.id()).build()));
                 });
             }
-            sleepForSustainedRatePerSecond(0.2);
             emrServerlessClient.stopApplication(StopApplicationRequest.builder().applicationId(application).build());
         });
     }
