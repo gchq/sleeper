@@ -63,7 +63,7 @@ public class SystemTestClusterStack extends NestedStack {
                                   SystemTestBucketStack bucketStack) {
         super(scope, id);
         createSystemTestCluster(this, properties, bucketStack);
-        Tags.of(this).add("DeploymentStack", getNode().getId());
+        Tags.of(this).add("DeploymentStack", id);
     }
 
     public static void createSystemTestCluster(Construct scope,

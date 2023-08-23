@@ -85,6 +85,6 @@ public class SystemTestPropertiesStack extends NestedStack {
                 .properties(properties)
                 .serviceToken(propertiesWriterProvider.getServiceToken())
                 .build();
-        Tags.of(this).add("DeploymentStack", getNode().getId());
+        Tags.of(this).add("DeploymentStack", id);
     }
 }

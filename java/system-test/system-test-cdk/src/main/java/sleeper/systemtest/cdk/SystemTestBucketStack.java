@@ -55,7 +55,7 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .autoDeleteObjects(true)
                 .build();
-        Tags.of(this).add("DeploymentStack", getNode().getId());
+        Tags.of(this).add("DeploymentStack", id);
     }
 
     public IBucket getBucket() {
