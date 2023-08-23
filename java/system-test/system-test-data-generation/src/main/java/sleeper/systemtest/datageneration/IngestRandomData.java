@@ -27,7 +27,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
-import sleeper.systemtest.configuration.SystemTestsProperties;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -55,9 +55,7 @@ public class IngestRandomData {
         } else if (args.length == 3) {
             instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3(s3Client, args[0]);
-            SystemTestsProperties properties = new SystemTestsProperties();
-            properties.loadFromS3(s3Client, args[2]);
-            systemTestProperties = properties;
+            systemTestProperties = SystemTestStandaloneProperties.fromS3(s3Client, args[2]);
         } else {
             throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
         }

@@ -27,11 +27,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 
-public class SystemTestsProperties extends SleeperProperties<SystemTestProperty> implements SystemTestPropertyValues {
+public class SystemTestStandaloneProperties extends SleeperProperties<SystemTestProperty> implements SystemTestPropertyValues {
 
-
-    public void loadFromS3(AmazonS3 s3Client, String bucket) throws IOException {
-        loadFromS3(s3Client, bucket, "config");
+    public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) throws IOException {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
+        properties.loadFromS3(s3Client, bucket, "config");
+        return properties;
     }
 
     @Override
