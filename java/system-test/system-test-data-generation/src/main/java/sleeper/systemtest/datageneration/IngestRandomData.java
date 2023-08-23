@@ -20,11 +20,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -47,24 +49,26 @@ public class IngestRandomData {
         String s3Bucket = args[0];
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3(s3Client, s3Bucket);
+        SystemTestProperties properties = new SystemTestProperties();
+        properties.loadFromS3(s3Client, s3Bucket);
+        InstanceProperties instanceProperties = properties;
+        SystemTestPropertyValues systemTestProperties = properties.testPropertiesOnly();
 
-        TableProperties tableProperties = new TablePropertiesProvider(s3Client, systemTestProperties)
+        TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties)
                 .getTableProperties(args[1]);
 
         s3Client.shutdown();
 
         String ingestMode = systemTestProperties.get(INGEST_MODE);
         if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {
-            WriteRandomDataViaQueue.writeAndSendToQueue(ingestMode, systemTestProperties, tableProperties);
+            WriteRandomDataViaQueue.writeAndSendToQueue(ingestMode, instanceProperties, tableProperties, systemTestProperties);
         } else if (IngestMode.DIRECT.name().equalsIgnoreCase(ingestMode)) {
             StateStoreProvider stateStoreProvider = new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(),
-                    systemTestProperties, HadoopConfigurationProvider.getConfigurationForECS(systemTestProperties));
-            WriteRandomDataDirect.writeWithIngestFactory(systemTestProperties, tableProperties, stateStoreProvider);
+                    instanceProperties, HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
+            WriteRandomDataDirect.writeWithIngestFactory(instanceProperties, tableProperties, systemTestProperties, stateStoreProvider);
         } else if (IngestMode.GENERATE_ONLY.name().equalsIgnoreCase(ingestMode)) {
             WriteRandomDataFiles.writeToS3GetDirectory(
-                    systemTestProperties, tableProperties,
+                    instanceProperties, tableProperties,
                     WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
         } else {
             throw new IllegalArgumentException("Unrecognised ingest mode: " + ingestMode +

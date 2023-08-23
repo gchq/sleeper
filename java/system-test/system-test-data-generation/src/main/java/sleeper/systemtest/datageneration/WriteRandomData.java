@@ -17,7 +17,6 @@ package sleeper.systemtest.datageneration;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
@@ -33,13 +32,14 @@ public class WriteRandomData {
 
     public static Iterator<Record> createRecordIterator(
             SystemTestProperties systemTestProperties, TableProperties tableProperties) {
-        return createRecordIterator(systemTestProperties.testPropertiesOnly(), tableProperties.getSchema());
+        return createRecordIterator(systemTestProperties.testPropertiesOnly(), tableProperties);
     }
 
-    private static Iterator<Record> createRecordIterator(SystemTestPropertyValues systemTestProperties, Schema schema) {
+    public static Iterator<Record> createRecordIterator(
+            SystemTestPropertyValues systemTestProperties, TableProperties tableProperties) {
         RandomRecordSupplierConfig config = new RandomRecordSupplierConfig(systemTestProperties);
         return Stream
-                .generate(new RandomRecordSupplier(schema, config))
+                .generate(new RandomRecordSupplier(tableProperties.getSchema(), config))
                 .limit(systemTestProperties.getLong(NUMBER_OF_RECORDS_PER_WRITER))
                 .iterator();
     }

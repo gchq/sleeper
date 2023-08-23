@@ -66,7 +66,7 @@ public class IngestRandomDataToDocker {
                         .s3AsyncClient(buildS3AsyncClient(S3AsyncClient.builder()))
                         .instanceProperties(instanceProperties)
                         .build(),
-                systemTestProperties, tableProperties);
+                systemTestProperties.testPropertiesOnly(), tableProperties);
     }
 
     private static S3AsyncClient buildS3AsyncClient(S3AsyncClientBuilder builder) {
