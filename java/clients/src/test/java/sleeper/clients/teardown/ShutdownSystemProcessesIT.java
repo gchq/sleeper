@@ -309,7 +309,6 @@ class ShutdownSystemProcessesIT {
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
             verify(1, listActiveApplicationRequested());
-
         }
 
         @Test
@@ -327,7 +326,6 @@ class ShutdownSystemProcessesIT {
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
             verify(1, listActiveApplicationRequested());
-
         }
 
         @Test
@@ -339,7 +337,7 @@ class ShutdownSystemProcessesIT {
             stubFor(listActiveApplicationsRequest()
                 .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(1)));
+                .willReturn(aResponseWithNumRunningJobsOnApplication(10, true)));
             stubFor(stopJobForApplicationsRequest("test-application-id-1")
                 .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
             stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
@@ -351,7 +349,29 @@ class ShutdownSystemProcessesIT {
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
             verify(1, listActiveApplicationRequested());
+        }
 
+        @Test
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithOnlySuccessJobs() throws Exception {
+            //Given
+            InstanceProperties properties = createTestInstancePropertiesWithEmrStack();
+            stubFor(listActiveClustersRequest()
+                .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(1)));
+            stubFor(listJobsForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(1, true)));
+            stubFor(stopJobForApplicationsRequest("test-application-id-1")
+                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+            stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
+                .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, getRequestedFor(urlEqualTo("/applications")));
+            verify(1, listActiveApplicationRequested());
         }
 
         @Test
@@ -373,7 +393,6 @@ class ShutdownSystemProcessesIT {
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
             verify(1, listActiveApplicationRequested());
-
         }
     }
 

@@ -123,12 +123,22 @@ public class WiremockEMRTestHelper {
     }
 
     public static ResponseDefinitionBuilder aResponseWithNumRunningJobsOnApplication(int numRunningJobs) {
+        return aResponseWithNumRunningJobsOnApplication(numRunningJobs, false);
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithNumRunningJobsOnApplication(int numRunningJobs, boolean includeSuccessState) {
         StringBuilder jobRunBody = new StringBuilder("{\"jobRuns\": [");
         for (int i = 1; i <= numRunningJobs; i++) {
+
+            String state = "RUNNING";
+
+            if (i == 1 && includeSuccessState) {
+                state = "SUCCESS";
+            }
             jobRunBody.append("{" +
                     "\"applicationId\": \"sleeper-test-instance-test-application-" + i + "\"," +
                     "\"id\": \"test-job-run-id-" + i + "\"," +
-                    "\"state\": \"RUNNING\"" +
+                    "\"state\": \"" + state + "\"" +
                     "}");
             if (i != numRunningJobs) {
                 jobRunBody.append(",");
