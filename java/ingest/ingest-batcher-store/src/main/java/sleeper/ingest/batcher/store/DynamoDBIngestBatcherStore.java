@@ -59,16 +59,27 @@ import static sleeper.ingest.batcher.store.DynamoDBIngestRequestFormat.createUna
 
 public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestBatcherStore.class);
+    // Each job assignment takes two write items, so 50 files at a time stays below the transaction limit of 100 items.
+    private static final int ASSIGN_JOB_BATCH_FILES = 50;
     private final AmazonDynamoDB dynamoDB;
     private final String requestsTableName;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final int assignJobBatchFiles;
 
     public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
                                       InstanceProperties instanceProperties,
                                       TablePropertiesProvider tablePropertiesProvider) {
+        this(dynamoDB, instanceProperties, tablePropertiesProvider, ASSIGN_JOB_BATCH_FILES);
+    }
+
+    public DynamoDBIngestBatcherStore(AmazonDynamoDB dynamoDB,
+                                      InstanceProperties instanceProperties,
+                                      TablePropertiesProvider tablePropertiesProvider,
+                                      int assignJobBatchFiles) {
         this.dynamoDB = dynamoDB;
         this.requestsTableName = ingestRequestsTableName(instanceProperties.get(ID));
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.assignJobBatchFiles = assignJobBatchFiles;
     }
 
     public static String ingestRequestsTableName(String instanceId) {
@@ -88,8 +99,8 @@ public class DynamoDBIngestBatcherStore implements IngestBatcherStore {
     @Override
     public List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
         List<FileIngestRequest> assignedFiles = new ArrayList<>();
-        for (int i = 0; i < filesInJob.size(); i += 50) {
-            List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + 50, filesInJob.size()));
+        for (int i = 0; i < filesInJob.size(); i += assignJobBatchFiles) {
+            List<FileIngestRequest> filesInBatch = filesInJob.subList(i, Math.min(i + assignJobBatchFiles, filesInJob.size()));
             try {
                 TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                         .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
