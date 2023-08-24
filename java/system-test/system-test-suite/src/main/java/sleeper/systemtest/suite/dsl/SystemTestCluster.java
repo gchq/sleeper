@@ -30,6 +30,7 @@ import java.util.List;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 public class SystemTestCluster {
 
@@ -49,5 +50,9 @@ public class SystemTestCluster {
         });
         List<Task> tasks = driver.startTasks();
         driver.waitForTasks(tasks, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
+    }
+
+    public boolean isDisabled() {
+        return !context.getProperties().getBoolean(SYSTEM_TEST_CLUSTER_ENABLED);
     }
 }

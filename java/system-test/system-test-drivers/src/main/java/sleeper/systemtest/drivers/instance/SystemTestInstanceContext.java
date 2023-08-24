@@ -41,6 +41,7 @@ import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
@@ -130,6 +131,7 @@ public class SystemTestInstanceContext {
         properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
         properties.set(SYSTEM_TEST_JARS_BUCKET, parameters.buildJarsBucketName());
         properties.set(SYSTEM_TEST_REPO, parameters.getSystemTestDeploymentId() + "/system-test");
+        properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(parameters.isSystemTestClusterEnabled()));
         return properties;
     }
 

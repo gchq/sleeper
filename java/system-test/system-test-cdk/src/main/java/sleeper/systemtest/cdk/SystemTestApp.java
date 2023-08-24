@@ -30,6 +30,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
  * An {@link App} to deploy the {@link SleeperCdkApp} and the additional stacks
@@ -44,12 +45,14 @@ public class SystemTestApp extends SleeperCdkApp {
 
     @Override
     public void create() {
-        SystemTestProperties systemTestProperties = getInstanceProperties();
-        new SystemTestBucketStack(this, "SystemTestIngestBucket", systemTestProperties);
+        SystemTestProperties properties = getInstanceProperties();
+        new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
         super.create();
         // Stack for writing random data
-        new SystemTestClusterStack(this, "SystemTest", systemTestProperties,
-                getTableStack(), getIngestStack(), getEmrBulkImportStack());
+        if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
+            new SystemTestClusterStack(this, "SystemTest", properties,
+                    getTableStack(), getIngestStack(), getEmrBulkImportStack());
+        }
 
         readyToGenerateProperties = true;
         generateProperties();

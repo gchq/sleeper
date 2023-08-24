@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_JARS_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_REGION;
@@ -41,7 +42,9 @@ public class SystemTestStandaloneApp extends Stack {
         super(app, id, props);
 
         SystemTestBucketStack bucketStack = new SystemTestBucketStack(this, "SystemTestBucket", properties);
-        new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
+        if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
+            new SystemTestClusterStack(this, "SystemTestCluster", properties, bucketStack);
+        }
         new SystemTestPropertiesStack(this, "SystemTestProperties", properties, bucketStack, jars);
     }
 

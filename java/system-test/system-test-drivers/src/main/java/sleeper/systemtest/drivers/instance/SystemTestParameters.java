@@ -34,6 +34,7 @@ public class SystemTestParameters {
     private final String subnetIds;
     private final Path scriptsDirectory;
     private final Path outputDirectory;
+    private final boolean systemTestClusterEnabled;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = builder.shortTestId;
@@ -43,6 +44,7 @@ public class SystemTestParameters {
         subnetIds = builder.subnetIds;
         scriptsDirectory = builder.scriptsDirectory;
         outputDirectory = builder.outputDirectory;
+        systemTestClusterEnabled = builder.systemTestClusterEnabled;
     }
 
     public static SystemTestParameters loadFromSystemProperties() {
@@ -57,6 +59,9 @@ public class SystemTestParameters {
                 .outputDirectory(Optional.ofNullable(System.getProperty("sleeper.system.test.output.dir"))
                         .map(Path::of)
                         .orElse(null))
+                .systemTestClusterEnabled(Optional.ofNullable(System.getProperty("sleeper.system.test.cluster.enabled"))
+                        .map(Boolean::valueOf)
+                        .orElse(false))
                 .build();
     }
 
@@ -112,6 +117,10 @@ public class SystemTestParameters {
         return outputDirectory;
     }
 
+    public boolean isSystemTestClusterEnabled() {
+        return systemTestClusterEnabled;
+    }
+
     private static Builder builder() {
         return new Builder();
     }
@@ -149,6 +158,7 @@ public class SystemTestParameters {
         private String subnetIds;
         private Path scriptsDirectory;
         private Path outputDirectory;
+        private boolean systemTestClusterEnabled;
 
         private Builder() {
         }
@@ -185,6 +195,11 @@ public class SystemTestParameters {
 
         public Builder outputDirectory(Path outputDirectory) {
             this.outputDirectory = outputDirectory;
+            return this;
+        }
+
+        public Builder systemTestClusterEnabled(boolean systemTestClusterEnabled) {
+            this.systemTestClusterEnabled = systemTestClusterEnabled;
             return this;
         }
 
