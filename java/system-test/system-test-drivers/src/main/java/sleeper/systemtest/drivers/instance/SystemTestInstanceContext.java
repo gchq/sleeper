@@ -130,7 +130,7 @@ public class SystemTestInstanceContext {
         properties.set(SYSTEM_TEST_REGION, parameters.getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
         properties.set(SYSTEM_TEST_JARS_BUCKET, parameters.buildJarsBucketName());
-        properties.set(SYSTEM_TEST_REPO, parameters.getSystemTestDeploymentId() + "/system-test");
+        properties.set(SYSTEM_TEST_REPO, parameters.buildSystemTestECRRepoName());
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(parameters.isSystemTestClusterEnabled()));
         return properties;
     }
