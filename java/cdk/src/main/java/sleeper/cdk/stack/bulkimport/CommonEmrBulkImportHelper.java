@@ -121,7 +121,7 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
-        addIngestSourceRoleReferences(scope, "IngestRole", instanceProperties)
+        addIngestSourceRoleReferences(scope, "WriterFor" + scope.getNode().getId(), instanceProperties)
                 .forEach(emrBulkImportJobQueue::grantSendMessages);
 
         return emrBulkImportJobQueue;

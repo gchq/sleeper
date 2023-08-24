@@ -107,7 +107,7 @@ public class TableStack extends NestedStack {
                 .build();
 
         createTables(scope, instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, metricsJar);
-        addIngestSourceRoleReferences(this, "IngestRole", instanceProperties)
+        addIngestSourceRoleReferences(this, "IngestTableWriter", instanceProperties)
                 .forEach(role -> grantIngestSourceRole(role, dataBuckets, stateStoreStacks));
 
         Utils.addStackTagIfSet(this, instanceProperties);

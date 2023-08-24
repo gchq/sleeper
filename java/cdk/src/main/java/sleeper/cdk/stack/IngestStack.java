@@ -179,7 +179,7 @@ public class IngestStack extends NestedStack {
                 .build();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, ingestJobQueue.getQueueUrl());
         instanceProperties.set(INGEST_JOB_DLQ_URL, ingestJobDeadLetterQueue.getQueue().getQueueUrl());
-        addIngestSourceRoleReferences(this, "SourceRole", instanceProperties)
+        addIngestSourceRoleReferences(this, "IngestSourceRole", instanceProperties)
                 .forEach(ingestJobQueue::grantSendMessages);
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
