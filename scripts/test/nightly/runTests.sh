@@ -111,7 +111,9 @@ runMavenSystemTests() {
     zip -r "../site.zip" "."
     popd
     rm -rf "$OUTPUT_DIR/site"
-    ./../deploy/tearDown.sh "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    while read -r INSTANCE_ID; do
+      ./../deploy/tearDown.sh "$INSTANCE_ID" >> "$OUTPUT_DIR/$TEST_NAME.tearDown.log" 2>&1
+    done <"$OUTPUT_DIR/instanceIds.txt"
     aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
 }
 
