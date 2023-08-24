@@ -23,15 +23,16 @@ described in the template.
 If you have added, removed, or updated any external dependencies used in the project, please update the
 [NOTICES](NOTICES) file to reflect this.
 
-#### How to sign the CLA
+#### Signing the CLA
 
 When you raise a pull request for the first time, a bot will comment asking you to sign the Contributor License
 Agreement (CLA). Click the link in the comment to read and sign it. The pull request will update once you've signed.
 
 #### GitHub Actions on a fork
 
-When you push code to your fork, GitHub Actions workflows will run automatically to validate your change. Please check
-these are successful in the Actions tab of your fork. You can still raise a pull request for help to get it working.
+When you raise a pull request, GitHub Actions workflows will run automatically to validate your change. Please check in
+your pull request that these are successful. For faster feedback you can raise a draft pull request before it's
+finished. You can ask us on your pull request for help to get it working.
 
 These workflows involve publishing test and linting results as separate checks. GitHub Actions requires separate
 permissions in your fork to do this, which you can set in the repository settings under
