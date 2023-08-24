@@ -19,6 +19,7 @@ package sleeper.systemtest.drivers.ingest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -76,5 +77,14 @@ public class IngestSourceFilesContext {
             s3Client.deleteObjects(builder -> builder.bucket(systemTest.getSystemTestBucketName())
                     .delete(deleteBuilder -> deleteBuilder.objects(objects)));
         }
+    }
+
+    public List<String> findGeneratedIngestJobIds() {
+        return s3Client.listObjectsV2Paginator(builder -> builder
+                        .bucket(systemTest.getSystemTestBucketName())
+                        .prefix("/ingest/"))
+                .commonPrefixes().stream()
+                .map(CommonPrefix::prefix)
+                .collect(Collectors.toUnmodifiableList());
     }
 }

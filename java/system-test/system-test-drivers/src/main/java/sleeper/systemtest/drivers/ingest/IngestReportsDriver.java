@@ -29,15 +29,18 @@ import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporte
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
 
 import java.time.Instant;
+import java.util.List;
 
 public class IngestReportsDriver {
     private final IngestJobStatusStore ingestJobStatusStore;
@@ -68,5 +71,10 @@ public class IngestReportsDriver {
                     PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emrClient))
                     .run();
         };
+    }
+
+    public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
+        return new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX)
+                .run(ingestJobStatusStore);
     }
 }

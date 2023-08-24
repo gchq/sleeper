@@ -30,8 +30,6 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import java.time.Duration;
-
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class IngestByQueueDriver {
@@ -40,8 +38,6 @@ public class IngestByQueueDriver {
     private final IngestTaskStatusStore taskStatusStore;
     private final LambdaClient lambdaClient;
     private final AmazonSQS sqsClient;
-    private final PollWithRetries pollUntilTasksStarted = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3));
 
     public IngestByQueueDriver(SleeperInstanceContext instance,
                                AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
@@ -64,11 +60,12 @@ public class IngestByQueueDriver {
         sqsClient.sendMessage(properties.get(queueUrl), new IngestJobSerDe().toJson(job));
     }
 
-    public void invokeStandardIngestTasks() throws InterruptedException {
+    public void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {
         int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
-        pollUntilTasksStarted.pollUntil("tasks are started", () -> {
+        poll.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
-            return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
+            int tasksStarted = taskStatusStore.getAllTasks().size() - tasksFinishedBefore;
+            return tasksStarted >= expectedTasks;
         });
     }
 }

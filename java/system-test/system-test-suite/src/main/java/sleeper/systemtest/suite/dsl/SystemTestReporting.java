@@ -47,4 +47,10 @@ public class SystemTestReporting {
     public void printPartitionStatus(TestContext testContext) {
         context.print(testContext, new PartitionReportDriver(instance).partitionStatusReport());
     }
+
+    public SystemTestIngestJobsReport ingestJobs() {
+        return new SystemTestIngestJobsReport(
+                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+                        .jobs(context));
+    }
 }

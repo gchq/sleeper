@@ -70,7 +70,8 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue invokeTasks() throws InterruptedException {
-        driver.invokeStandardIngestTasks();
+        driver.invokeStandardIngestTasks(1,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
         return this;
     }
 

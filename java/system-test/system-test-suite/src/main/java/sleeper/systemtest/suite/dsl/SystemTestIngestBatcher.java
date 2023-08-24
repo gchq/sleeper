@@ -60,7 +60,7 @@ public class SystemTestIngestBatcher {
     public SystemTestIngestBatcher waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
         BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
         if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
-            ingest.byQueueDriver().invokeStandardIngestTasks();
+            ingest.byQueue().invokeTasks();
         }
         ingest.waitForIngestJobsDriver()
                 .waitForJobs(getInvokeResult().createdJobIds(), pollUntilJobsFinished);
