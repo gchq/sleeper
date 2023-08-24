@@ -56,7 +56,7 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
         DynamoDBIngestBatcherStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 
-    protected IngestBatcherStore storeWithAssignJobBatchFiles(int batchFiles) {
-        return new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider, batchFiles);
+    protected IngestBatcherStore storeWithFilesInAssignJobBatch(int filesInAssignJobBatch) {
+        return new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider, filesInAssignJobBatch);
     }
 }

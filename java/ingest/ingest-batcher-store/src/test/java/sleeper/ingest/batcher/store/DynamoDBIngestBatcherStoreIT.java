@@ -258,7 +258,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.addFile(file2);
 
             // When
-            storeWithAssignJobBatchFiles(2).assignJobGetAssigned("test-job", List.of(file1, file2));
+            storeWithFilesInAssignJobBatch(2).assignJobGetAssigned("test-job", List.of(file1, file2));
 
             // Then
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();
@@ -273,7 +273,7 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
             store.addFile(file2);
 
             // When
-            storeWithAssignJobBatchFiles(1).assignJobGetAssigned("test-job", List.of(file1, file2));
+            storeWithFilesInAssignJobBatch(1).assignJobGetAssigned("test-job", List.of(file1, file2));
 
             // Then
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();
