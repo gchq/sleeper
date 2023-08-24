@@ -23,17 +23,12 @@ import software.amazon.awscdk.StackProps;
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.stack.IngestStack;
-import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
-
-import java.util.List;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 /**
@@ -50,20 +45,11 @@ public class SystemTestApp extends SleeperCdkApp {
     @Override
     public void create() {
         SystemTestProperties systemTestProperties = getInstanceProperties();
-        List<String> optionalStacks = systemTestProperties.getList(OPTIONAL_STACKS);
-        if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            new SystemTestIngestBucketStack(this, "SystemTestIngestBucket", systemTestProperties);
-        }
+        new SystemTestBucketStack(this, "SystemTestIngestBucket", systemTestProperties);
         super.create();
         // Stack for writing random data
-        IngestStack ingestStack = getIngestStack();
-        EmrBulkImportStack emrBulkImportStack = getEmrBulkImportStack();
-        new SystemTestStack(this, "SystemTest",
-                getTableStack().getDataBuckets(),
-                getTableStack().getStateStoreStacks(),
-                systemTestProperties,
-                ingestStack == null ? null : ingestStack.getIngestJobQueue(),
-                emrBulkImportStack == null ? null : emrBulkImportStack.getBulkImportJobQueue());
+        new SystemTestClusterStack(this, "SystemTest", systemTestProperties,
+                getTableStack(), getIngestStack(), getEmrBulkImportStack());
 
         readyToGenerateProperties = true;
         generateProperties();

@@ -25,13 +25,16 @@ import software.amazon.awscdk.services.s3.BucketEncryption;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.systemtest.configuration.SystemTestProperty;
-import sleeper.systemtest.configuration.SystemTestPropertySetter;
+import sleeper.cdk.Utils;
+import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.Locale;
 
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
 
 public class SystemTestBucketStack extends NestedStack {
 
@@ -39,15 +42,25 @@ public class SystemTestBucketStack extends NestedStack {
 
     public SystemTestBucketStack(Construct scope, String id,
                                  SystemTestStandaloneProperties properties) {
-        this(scope, id, properties.get(SystemTestProperty.SYSTEM_TEST_ID), properties);
+        super(scope, id);
+        String bucketName = buildSystemTestBucketName(properties.get(SYSTEM_TEST_ID));
+        properties.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
+        bucket = createBucket("SystemTestBucket", bucketName);
+        Tags.of(this).add("DeploymentStack", id);
     }
 
     public SystemTestBucketStack(Construct scope, String id,
-                                 String deploymentId, SystemTestPropertySetter propertySetter) {
+                                 SystemTestProperties properties) {
         super(scope, id);
-        String bucketName = buildSystemTestBucketName(deploymentId);
-        propertySetter.set(SYSTEM_TEST_BUCKET_NAME, bucketName);
-        bucket = Bucket.Builder.create(this, "SystemTestBucket")
+        String bucketName = String.join("-", "sleeper", properties.get(ID),
+                "system", "test", "ingest").toLowerCase(Locale.ROOT);
+        properties.set(INGEST_SOURCE_BUCKET, bucketName);
+        bucket = createBucket("SystemTestIngestBucket", bucketName);
+        Utils.addStackTagIfSet(this, properties);
+    }
+
+    private IBucket createBucket(String id, String bucketName) {
+        return Bucket.Builder.create(this, id)
                 .bucketName(bucketName)
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -55,7 +68,6 @@ public class SystemTestBucketStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .autoDeleteObjects(true)
                 .build();
-        Tags.of(this).add("DeploymentStack", id);
     }
 
     public IBucket getBucket() {
