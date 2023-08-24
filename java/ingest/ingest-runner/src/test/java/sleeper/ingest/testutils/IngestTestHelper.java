@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -37,14 +38,22 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
@@ -94,14 +103,54 @@ public class IngestTestHelper<T> {
             }
         }
 
-        ResultVerifier.verify(
-                stateStore,
+        java.nio.file.Path localWorkingDirectoryPath = Paths.get(localWorkingDirectory);
+        List<String> filesLeftInWorkingDirectory = (Files.exists(localWorkingDirectoryPath)) ?
+                Files.walk(localWorkingDirectoryPath)
+                        .filter(Files::isRegularFile)
+                        .map(java.nio.file.Path::toString)
+                        .collect(Collectors.toList()) :
+                Collections.emptyList();
+        assertThat(filesLeftInWorkingDirectory).isEmpty();
+
+        PartitionTree partitionTree = new PartitionTree(schema, stateStore.getAllPartitions());
+
+        Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
+                .collect(Collectors.groupingBy(
+                        record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(schema.getRowKeyFieldNames())))));
+
+        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
+                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
+
+        Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
+                .map(entry -> {
+                    Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(schema.getRowKeyFieldNames()));
+                    return new AbstractMap.SimpleEntry<>(partitionTree.getLeafPartition(keyOfFirstRecord).getId(), entry.getKey());
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
+                        Map.Entry::getValue));
+
+        int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
+                .mapToInt(Integer::valueOf)
+                .sum();
+
+        Set<Integer> allPartitionNoSet = Stream.of(
+                        partitionNoToFileInfosMap.keySet().stream(),
+                        partitionNoToExpectedNoOfFilesMap.keySet().stream(),
+                        partitionNoToExpectedRecordsMap.keySet().stream())
+                .flatMap(Function.identity())
+                .collect(Collectors.toSet());
+
+        assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
+        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
+
+        allPartitionNoSet.forEach(partitionNo -> ResultVerifier.verifyPartition(
                 schema,
-                keyToPartitionNoMappingFn,
-                expectedRecords,
-                partitionNoToExpectedNoOfFilesMap,
-                hadoopConfiguration,
-                localWorkingDirectory);
+                partitionNoToFileInfosMap.getOrDefault(partitionNo, Collections.emptyList()),
+                partitionNoToExpectedNoOfFilesMap.get(partitionNo),
+                partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList()),
+                hadoopConfiguration));
     }
 
     public IngestTestHelper<T> createStateStore(

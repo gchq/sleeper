@@ -25,7 +25,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.key.Key;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
@@ -35,27 +34,19 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -65,69 +56,11 @@ public class ResultVerifier {
     private ResultVerifier() {
     }
 
-    public static void verify(
-            StateStore stateStore,
-            Schema sleeperSchema,
-            Function<Key, Integer> keyToPartitionNoMappingFn,
-            List<Record> expectedRecords,
-            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap,
-            Configuration hadoopConfiguration,
-            String localWorkingDirectory) throws StateStoreException, IOException {
-        java.nio.file.Path localWorkingDirectoryPath = Paths.get(localWorkingDirectory);
-        List<String> filesLeftInWorkingDirectory = (Files.exists(localWorkingDirectoryPath)) ?
-                Files.walk(localWorkingDirectoryPath)
-                        .filter(Files::isRegularFile)
-                        .map(java.nio.file.Path::toString)
-                        .collect(Collectors.toList()) :
-                Collections.emptyList();
-        assertThat(filesLeftInWorkingDirectory).isEmpty();
-
-        PartitionTree partitionTree = new PartitionTree(sleeperSchema, stateStore.getAllPartitions());
-
-        Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
-                .collect(Collectors.groupingBy(
-                        record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(sleeperSchema.getRowKeyFieldNames())))));
-
-        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
-
-        Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
-                .map(entry -> {
-                    Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(sleeperSchema.getRowKeyFieldNames()));
-                    return new AbstractMap.SimpleEntry<>(partitionTree.getLeafPartition(keyOfFirstRecord).getId(), entry.getKey());
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
-                        Map.Entry::getValue));
-
-        int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
-                .mapToInt(Integer::valueOf)
-                .sum();
-
-        Set<Integer> allPartitionNoSet = Stream.of(
-                        partitionNoToFileInfosMap.keySet().stream(),
-                        partitionNoToExpectedNoOfFilesMap.keySet().stream(),
-                        partitionNoToExpectedRecordsMap.keySet().stream())
-                .flatMap(Function.identity())
-                .collect(Collectors.toSet());
-
-        assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
-        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
-
-        allPartitionNoSet.forEach(partitionNo -> verifyPartition(
-                sleeperSchema,
-                partitionNoToFileInfosMap.getOrDefault(partitionNo, Collections.emptyList()),
-                partitionNoToExpectedNoOfFilesMap.get(partitionNo),
-                partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList()),
-                hadoopConfiguration));
-    }
-
-    private static void verifyPartition(Schema sleeperSchema,
-                                        List<FileInfo> partitionFileInfoList,
-                                        int expectedNoOfFiles,
-                                        List<Record> expectedRecordList,
-                                        Configuration hadoopConfiguration) {
+    public static void verifyPartition(Schema sleeperSchema,
+                                       List<FileInfo> partitionFileInfoList,
+                                       int expectedNoOfFiles,
+                                       List<Record> expectedRecordList,
+                                       Configuration hadoopConfiguration) {
         Comparator<Record> recordComparator = new RecordComparator(sleeperSchema);
         List<Record> expectedSortedRecordList = expectedRecordList.stream()
                 .sorted(recordComparator)
