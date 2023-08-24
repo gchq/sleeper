@@ -25,6 +25,8 @@ import sleeper.systemtest.cdk.SystemTestBucketStack;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import static java.util.function.Predicate.not;
+
 public class SystemTestParameters {
 
     private final String shortTestId;
@@ -57,6 +59,7 @@ public class SystemTestParameters {
                 .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
                 .scriptsDirectory(findScriptsDir())
                 .outputDirectory(Optional.ofNullable(System.getProperty("sleeper.system.test.output.dir"))
+                        .filter(not(String::isEmpty))
                         .map(Path::of)
                         .orElse(null))
                 .systemTestClusterEnabled(Optional.ofNullable(System.getProperty("sleeper.system.test.cluster.enabled"))
