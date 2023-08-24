@@ -111,10 +111,11 @@ runMavenSystemTests() {
     zip -r "../site.zip" "."
     popd
     rm -rf "$OUTPUT_DIR/site"
+    INSTANCE_IDS=()
     while read -r INSTANCE_ID; do
-      ./../deploy/tearDown.sh "$INSTANCE_ID" >> "$OUTPUT_DIR/$TEST_NAME.tearDown.log" 2>&1
+      INSTANCE_IDS+=("$INSTANCE_ID")
     done <"$OUTPUT_DIR/instanceIds.txt"
-    aws s3 rb "s3://sleeper-$SHORT_ID-ingest-source-bucket" --force
+    ./maven/tearDown.sh "$SHORT_ID" "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"

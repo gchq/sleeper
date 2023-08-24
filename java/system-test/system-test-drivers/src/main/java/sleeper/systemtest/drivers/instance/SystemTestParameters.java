@@ -78,7 +78,19 @@ public class SystemTestParameters {
     }
 
     public String buildJarsBucketName() {
-        return String.format("sleeper-%s-jars", shortTestId);
+        return buildJarsBucketName(shortTestId);
+    }
+
+    public static String buildJarsBucketName(String shortId) {
+        return String.format("sleeper-%s-jars", shortId);
+    }
+
+    public String buildSystemTestECRRepoName() {
+        return buildSystemTestECRRepoName(shortTestId);
+    }
+
+    public static String buildSystemTestECRRepoName(String shortId) {
+        return shortId + "/system-test";
     }
 
     public String getAccount() {
