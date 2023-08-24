@@ -35,10 +35,10 @@ import java.util.List;
 import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildJarsBucketName;
 import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
-public class TearDownSystemTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TearDownSystemTest.class);
+public class TearDownMavenSystemTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TearDownMavenSystemTest.class);
 
-    private TearDownSystemTest() {
+    private TearDownMavenSystemTest() {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {

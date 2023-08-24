@@ -25,4 +25,5 @@ fi
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd .. && pwd)
 VERSION=$(cat "${SCRIPTS_DIR}/templates/version.txt")
 
-java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.drivers.cdk.TearDownSystemTest "${SCRIPTS_DIR}" "$@"
+java -cp "${SCRIPTS_DIR}/jars/system-test-${VERSION}-utility.jar" \
+  sleeper.systemtest.drivers.cdk.TearDownMavenSystemTest "${SCRIPTS_DIR}" "$@"
