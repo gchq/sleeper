@@ -39,6 +39,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
@@ -77,6 +78,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_TAB
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.ingest.testutils.RecordGenerator.valueFields;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 class IngestJobRunnerIT {
@@ -462,5 +464,15 @@ class IngestJobRunnerIT {
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
+        List<Record> expectedRecordList = Stream.of(records1.recordList, records2.recordList).flatMap(List::stream).collect(Collectors.toList());
+        ResultVerifier.assertOnSketch(
+                new Field("key0", new LongType()),
+                new RecordGenerator.RecordListAndSchema(expectedRecordList, Schema.builder()
+                        .rowKeyFields(new Field("key0", new LongType()))
+                        .valueFields(valueFields())
+                        .build()),
+                actualFiles,
+                hadoopConfiguration
+        );
     }
 }
