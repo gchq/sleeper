@@ -51,7 +51,7 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 public enum SystemTestInstance {
 
     MAIN("main", SystemTestInstance::buildMainConfiguration),
-    INGEST_PERFORMANCE("ingestPerformance", SystemTestInstance::buildIngestPerformanceConfiguration);
+    INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
