@@ -1126,7 +1126,9 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <includes>${singleIT}</includes>
+                            <includes>
+                                <include>${singleIT}</include>
+                            </includes>
                         </configuration>
                     </plugin>
                 </plugins>
