@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 
@@ -29,7 +31,7 @@ START_TIME=$(record_time)
 "$SCRIPTS_DIR/build/buildForTest.sh"
 END_BUILD_TIME=$(record_time)
 
-"$THIS_DIR/deployTest.sh" "$@"
+"$THIS_DIR/deployTest.sh" "$@" -pl system-test/system-test-suite
 FINISH_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
