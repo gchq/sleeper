@@ -16,9 +16,11 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.statestore.FileInfoFactory;
@@ -31,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
+import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class PartitionSplittingIT {
@@ -41,6 +44,12 @@ public class PartitionSplittingIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
+        sleeper.reporting().startRecording();
+    }
+
+    @AfterEach
+    void tearDown(TestInfo testInfo) {
+        sleeper.reporting().printPartitionStatus(testContext(testInfo));
     }
 
     @Test

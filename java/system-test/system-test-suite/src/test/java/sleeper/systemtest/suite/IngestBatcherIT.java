@@ -55,7 +55,7 @@ public class IngestBatcherIT {
 
     @AfterEach
     void tearDown(TestInfo testInfo) {
-        sleeper.ingest().reporting().printTasksAndJobs(testContext(testInfo));
+        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
     }
 
     @Test

@@ -62,7 +62,7 @@ public class SleeperSystemTest {
     private final SystemTestClients clients = new SystemTestClients();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
-    private final ReportingContext reportingContext = new ReportingContext();
+    private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
 
     private SleeperSystemTest() {
@@ -110,7 +110,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, parameters, reportingContext, sourceFiles);
+        return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
     public SystemTestDirectQuery directQuery() {
@@ -128,7 +128,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestReporting reporting() {
-        return new SystemTestReporting(reportingContext);
+        return new SystemTestReporting(instance, clients, reportingContext);
     }
 
     public SystemTestPartitionSplitting partitionSplitting() {
