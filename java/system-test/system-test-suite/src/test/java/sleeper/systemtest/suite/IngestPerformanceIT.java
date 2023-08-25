@@ -18,6 +18,7 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.DisabledIf;
@@ -45,6 +46,7 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Sp
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsFromSplitPoints;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
+@Tag("SystemTest")
 public class IngestPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
