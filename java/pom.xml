@@ -797,6 +797,7 @@
                     <version>${shade.plugin.version}</version>
                     <executions>
                         <execution>
+                            <id>fat-jar</id>
                             <phase>package</phase>
                             <goals>
                                 <goal>shade</goal>
@@ -1036,10 +1037,8 @@
                             <artifactId>maven-shade-plugin</artifactId>
                             <executions>
                                 <execution>
+                                    <id>fat-jar</id>
                                     <phase>none</phase>
-                                    <goals>
-                                        <goal>shade</goal>
-                                    </goals>
                                 </execution>
                             </executions>
                         </plugin>
@@ -1095,10 +1094,8 @@
                             <artifactId>maven-shade-plugin</artifactId>
                             <executions>
                                 <execution>
+                                    <id>fat-jar</id>
                                     <phase>none</phase>
-                                    <goals>
-                                        <goal>shade</goal>
-                                    </goals>
                                 </execution>
                             </executions>
                         </plugin>
@@ -1107,10 +1104,8 @@
                             <artifactId>maven-assembly-plugin</artifactId>
                             <executions>
                                 <execution>
+                                    <id>distro-assembly</id>
                                     <phase>none</phase>
-                                    <goals>
-                                        <goal>single</goal>
-                                    </goals>
                                 </execution>
                             </executions>
                         </plugin>
