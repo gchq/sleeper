@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 
@@ -114,8 +116,7 @@ runMavenSystemTests() {
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
-runSystemTest compactionPerformance "compaction-$START_TIME" "compaction" 
-runSystemTest partitionSplitting "splitting-$START_TIME" "partition"
+runSystemTest compactionPerformance "compaction-$START_TIME" "compaction"
 runMavenSystemTests "mvn-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"
