@@ -49,7 +49,7 @@ public interface SystemTestProperty extends InstanceProperty {
             .description("The image in ECR used for writing random data to the system")
             .validationPredicate(Objects::nonNull)
             .runCDKDeployWhenChanged(true).build();
-    SystemTestProperty SYSTEM_TEST_CLUSTER_ENABLED = Index.propertyBuilder("sleeper.systemtest.cluster")
+    SystemTestProperty SYSTEM_TEST_CLUSTER_ENABLED = Index.propertyBuilder("sleeper.systemtest.cluster.enabled")
             .description("Whether to deploy the system test cluster for data generation")
             .defaultValue("true").validationPredicate(Utils::isTrueOrFalse)
             .runCDKDeployWhenChanged(true).build();
