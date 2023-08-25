@@ -24,18 +24,18 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.IteratorException;
-import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.AwsExternalResource;
-import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
@@ -45,14 +45,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,69 +82,28 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1),
-                        new AbstractMap.SimpleEntry<>(1, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
-
-        ingestAndVerifyUsingDirectWriteBackedByArrayList(
-                recordListAndSchema,
-                tree,
-                5,
-                1000L);
-    }
-
-    @Test
-    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new LongType(),
-                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-
-        ingestAndVerifyUsingDirectWriteBackedByArrayList(
-                recordListAndSchema,
-                tree,
-                5,
-                10L);
-    }
-
-    private void ingestAndVerifyUsingDirectWriteBackedByArrayList(
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            PartitionTree tree,
-            int maxNoOfRecordsInMemory,
-            long maxNoOfRecordsInLocalStore) throws IOException, StateStoreException, IteratorException {
-
         DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
 
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(
-                recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
-                stateStore, recordListAndSchema.sleeperSchema,
-                ArrayListRecordBatchFactory.builder()
-                        .parquetConfiguration(parquetConfiguration)
-                        .localWorkingDirectory(ingestLocalWorkingDirectory)
-                        .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
-                        .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
-                        .buildAcceptingRecords(),
-                DirectPartitionFileWriterFactory.from(
-                        parquetConfiguration, "s3a://" + DATA_BUCKET_NAME))) {
-            for (Record record : recordListAndSchema.recordList) {
-                ingestCoordinator.write(record);
-            }
-        }
+
+        ingestRecords(
+                recordListAndSchema,
+                stateStore,
+                5,
+                1000L,
+                ingestLocalWorkingDirectory,
+                hadoopConfiguration,
+                List.of("leftFile", "rightFile"),
+                List.of(stateStoreUpdateTime, stateStoreUpdateTime)
+        );
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
@@ -155,16 +112,13 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        String x = actualFiles.get(0).getFilename();
-        String y = actualFiles.get(0).getPartitionId();
-        List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.partitionFile(actualFiles.get(1).getPartitionId(), actualFiles.get(1).getFilename(), 100, List.of(0L), List.of(99L)),
-                fileInfoFactory.partitionFile(actualFiles.get(0).getPartitionId(), actualFiles.get(0).getFilename(), 100, List.of(-100L), List.of(-1L))
-        );
+
+        List<FileInfo> fileInfoList = new ArrayList<>();
+        fileInfoList.add(fileInfoFactory.partitionFile("right", "s3a://" + DATA_BUCKET_NAME + "/partition_right/rightFile.parquet", 100, 0L, 99L));
+        fileInfoList.add(fileInfoFactory.partitionFile("left", "s3a://" + DATA_BUCKET_NAME + "/partition_left/leftFile.parquet", 100, -100L, -1L));
+
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
@@ -179,11 +133,92 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         );
     }
 
-    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
-        return IngestCoordinatorTestParameters
-                .builder()
-                .temporaryFolder(temporaryFolder)
-                .awsResource(AWS_EXTERNAL_RESOURCE)
-                .dataBucketName(DATA_BUCKET_NAME);
+    @Test
+    public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
+        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+                new LongType(),
+                LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+        stateStore.initialise(tree.getAllPartitions());
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        List<String> fileNames = new ArrayList<>();
+        List<Instant> fileTimes = Collections.nCopies(40, stateStoreUpdateTime);
+        for (int i = 0; i < 40; i++) {
+            fileNames.add("file" + i);
+        }
+        ingestRecords(
+                recordListAndSchema,
+                stateStore,
+                5,
+                10L,
+                ingestLocalWorkingDirectory,
+                hadoopConfiguration,
+                fileNames,
+                fileTimes
+        );
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        List<Record> actualRecords = new ArrayList<>();
+        actualRecords.addAll(readPartitionRecords(actualFiles, "left", recordListAndSchema.sleeperSchema, hadoopConfiguration));
+        actualRecords.addAll(readPartitionRecords(actualFiles, "right", recordListAndSchema.sleeperSchema, hadoopConfiguration));
+        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(LongStream.range(-100, 100).boxed()
+                        .map(List::<Object>of)
+                        .collect(Collectors.toList()));
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                actualFiles,
+                hadoopConfiguration
+        );
+    }
+
+    private void ingestRecords(
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            StateStore stateStore,
+            int maxNoOfRecordsInMemory,
+            long maxNoOfRecordsInLocalStore,
+            String ingestLocalWorkingDirectory,
+            Configuration hadoopConfiguration,
+            List<String> fileNames,
+            List<Instant> fileTimes) throws StateStoreException, IteratorException, IOException {
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(
+                recordListAndSchema.sleeperSchema, hadoopConfiguration);
+        try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
+                stateStore, recordListAndSchema.sleeperSchema,
+                ArrayListRecordBatchFactory.builder()
+                        .parquetConfiguration(parquetConfiguration)
+                        .localWorkingDirectory(ingestLocalWorkingDirectory)
+                        .maxNoOfRecordsInMemory(maxNoOfRecordsInMemory)
+                        .maxNoOfRecordsInLocalStore(maxNoOfRecordsInLocalStore)
+                        .buildAcceptingRecords(),
+                DirectPartitionFileWriterFactory.from(
+                        parquetConfiguration,
+                        "s3a://" + DATA_BUCKET_NAME,
+                        fileNames.iterator()::next,
+                        fileTimes.iterator()::next))) {
+            for (Record record : recordListAndSchema.recordList) {
+                ingestCoordinator.write(record);
+            }
+        }
+    }
+
+    private List<Record> readPartitionRecords(List<FileInfo> fileList, String partition, Schema sleeperSchema, Configuration hadoopConfiguration) {
+        List<FileInfo> partitionFiles = new ArrayList<>();
+        for (FileInfo file : fileList) {
+            if (file.getPartitionId().equals(partition)) {
+                partitionFiles.add(file);
+            }
+        }
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(sleeperSchema, partitionFiles, hadoopConfiguration);
+        return actualRecords;
     }
 }

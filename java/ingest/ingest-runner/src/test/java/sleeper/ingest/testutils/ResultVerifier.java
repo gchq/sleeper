@@ -21,6 +21,7 @@ import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
@@ -69,7 +70,6 @@ public class ResultVerifier {
 
         assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
         assertThat(expectedSortedRecordList).containsExactlyElementsOf(savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
-
 
         // In some situations, check that the file min and max match the min and max of dimension 0
         if (expectedNoOfFiles == 1 &&
@@ -173,6 +173,10 @@ public class ResultVerifier {
         return itemsSketch;
     }
 
+    public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
+            LocalStackContainer.Service.S3,
+            LocalStackContainer.Service.DYNAMODB);
+
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
                                                                        List<FileInfo> fileInfoList,
                                                                        Configuration hadoopConfiguration) {
@@ -180,11 +184,13 @@ public class ResultVerifier {
                 .map(fileInfo -> createParquetReaderIterator(
                         sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration))
                 .collect(Collectors.toList());
+
         MergingIterator mergingIterator = new MergingIterator(sleeperSchema, inputIterators);
         List<Record> recordsRead = new ArrayList<>();
         while (mergingIterator.hasNext()) {
             recordsRead.add(mergingIterator.next());
         }
+
         return recordsRead;
     }
 
