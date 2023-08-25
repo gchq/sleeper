@@ -21,11 +21,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
@@ -71,10 +69,6 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         List<String> files = writeParquetFilesForIngest(recordListAndSchema, "", 2);
-        List<Record> doubledRecords = Stream.of(recordListAndSchema.recordList, recordListAndSchema.recordList)
-                .flatMap(List::stream)
-                .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
-                .collect(Collectors.toList());
         IngestJob ingestJob = createJobWithTableAndFiles("id", TEST_TABLE_NAME, files);
         AWS_EXTERNAL_RESOURCE.getSqsClient()
                 .sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
@@ -84,9 +78,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(recordListAndSchema.sleeperSchema);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties).getStateStore(createTable(recordListAndSchema.sleeperSchema));
         stateStore.initialise();
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
@@ -146,9 +138,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         InstanceProperties instanceProperties = getInstanceProperties();
-        TableProperties tableProperties = createTable(recordListAndSchema.sleeperSchema);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreProvider(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), instanceProperties).getStateStore(createTable(recordListAndSchema.sleeperSchema));
         stateStore.initialise();
         DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
