@@ -28,7 +28,7 @@ public class SystemTestIngestJobsReport {
         this.jobs = jobs;
     }
 
-    public int numFinishedJobs() {
-        return jobs.size();
+    public long numFinishedJobs() {
+        return jobs.stream().filter(IngestJobStatus::isFinished).count();
     }
 }
