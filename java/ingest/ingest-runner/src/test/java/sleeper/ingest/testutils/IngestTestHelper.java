@@ -68,8 +68,6 @@ public class IngestTestHelper<T> {
     private StateStore stateStore;
     private RecordBatchFactory<T> recordBatchFactory;
     private PartitionFileWriterFactory partitionFileWriterFactory;
-    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
-
 
     private IngestTestHelper(Path temporaryFolder, Configuration hadoopConfiguration,
                              Schema schema, List<Record> expectedRecords, Iterable<T> toWrite) throws Exception {
