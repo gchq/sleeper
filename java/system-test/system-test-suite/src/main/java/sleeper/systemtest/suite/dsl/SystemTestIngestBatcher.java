@@ -19,7 +19,7 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
@@ -31,10 +31,10 @@ public class SystemTestIngestBatcher {
     private final SystemTestIngest ingest;
     private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
-    private final IngestSourceFilesContext sourceFiles;
+    private final IngestSourceFilesDriver sourceFiles;
     private IngestBatcherResult lastInvokeResult;
 
-    public SystemTestIngestBatcher(SystemTestIngest ingest, IngestSourceFilesContext sourceFiles,
+    public SystemTestIngestBatcher(SystemTestIngest ingest, IngestSourceFilesDriver sourceFiles,
                                    SleeperInstanceContext instance, IngestBatcherDriver driver) {
         this.ingest = ingest;
         this.instance = instance;

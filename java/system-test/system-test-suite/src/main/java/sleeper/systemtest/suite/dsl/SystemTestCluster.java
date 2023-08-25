@@ -23,7 +23,7 @@ import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
@@ -43,7 +43,7 @@ public class SystemTestCluster {
     private final SystemTestInstanceContext context;
     private final DataGenerationDriver driver;
     private final IngestByQueueDriver byQueueDriver;
-    private final IngestSourceFilesContext sourceFilesContext;
+    private final IngestSourceFilesDriver sourceFiles;
     private final WaitForIngestJobsDriver waitForJobsDriver;
     private final List<String> jobIds = new ArrayList<>();
 
@@ -51,7 +51,7 @@ public class SystemTestCluster {
         this.context = context;
         this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
-        this.sourceFilesContext = new IngestSourceFilesContext(context, clients.getS3V2());
+        this.sourceFiles = new IngestSourceFilesDriver(context, clients.getS3V2());
         this.waitForJobsDriver = new WaitForIngestJobsDriver(instance, clients.getDynamoDB());
     }
 
@@ -67,7 +67,7 @@ public class SystemTestCluster {
         context.updateProperties(config);
         List<Task> tasks = driver.startTasks();
         driver.waitForTasks(tasks, poll);
-        jobIds.addAll(sourceFilesContext.findGeneratedIngestJobIds());
+        jobIds.addAll(sourceFiles.findGeneratedIngestJobIds());
         return this;
     }
 

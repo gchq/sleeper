@@ -18,7 +18,7 @@ package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.stream.LongStream;
@@ -27,11 +27,11 @@ import java.util.stream.Stream;
 public class SystemTestSourceFiles {
 
     private final SleeperInstanceContext instanceContext;
-    private final IngestSourceFilesContext sourceFilesContext;
+    private final IngestSourceFilesDriver sourceFiles;
 
-    public SystemTestSourceFiles(SleeperInstanceContext instanceContext, IngestSourceFilesContext sourceFilesContext) {
+    public SystemTestSourceFiles(SleeperInstanceContext instanceContext, IngestSourceFilesDriver sourceFiles) {
         this.instanceContext = instanceContext;
-        this.sourceFilesContext = sourceFilesContext;
+        this.sourceFiles = sourceFiles;
     }
 
     public SystemTestSourceFiles createWithNumberedRecords(String filename, LongStream numbers) {
@@ -43,7 +43,7 @@ public class SystemTestSourceFiles {
     }
 
     private SystemTestSourceFiles create(String filename, Stream<Record> records) {
-        sourceFilesContext.writeFile(instanceContext.getTableProperties(), filename, records.iterator());
+        sourceFiles.writeFile(instanceContext.getTableProperties(), filename, records.iterator());
         return this;
     }
 }

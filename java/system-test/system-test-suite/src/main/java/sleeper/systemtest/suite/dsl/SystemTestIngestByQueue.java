@@ -20,7 +20,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -35,13 +35,13 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 public class SystemTestIngestByQueue {
 
     private final SleeperInstanceContext instance;
-    private final IngestSourceFilesContext sourceFiles;
+    private final IngestSourceFilesDriver sourceFiles;
     private final IngestByQueueDriver driver;
     private final WaitForIngestJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(SleeperInstanceContext instance,
-                                   IngestSourceFilesContext sourceFiles,
+                                   IngestSourceFilesDriver sourceFiles,
                                    IngestByQueueDriver driver,
                                    WaitForIngestJobsDriver waitForJobsDriver) {
         this.instance = instance;

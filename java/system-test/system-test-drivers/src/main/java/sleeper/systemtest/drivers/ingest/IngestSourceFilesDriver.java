@@ -38,11 +38,11 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 
-public class IngestSourceFilesContext {
+public class IngestSourceFilesDriver {
     private final SystemTestInstanceContext systemTest;
     private final S3Client s3Client;
 
-    public IngestSourceFilesContext(SystemTestInstanceContext systemTest, S3Client s3Client) {
+    public IngestSourceFilesDriver(SystemTestInstanceContext systemTest, S3Client s3Client) {
         this.systemTest = systemTest;
         this.s3Client = s3Client;
     }

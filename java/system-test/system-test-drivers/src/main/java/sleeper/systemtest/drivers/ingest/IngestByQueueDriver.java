@@ -21,7 +21,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
@@ -34,36 +33,27 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 
 public class IngestByQueueDriver {
 
-    private final InstanceProperties properties;
-    private final IngestTaskStatusStore taskStatusStore;
+    private final SleeperInstanceContext instance;
+    private final AmazonDynamoDB dynamoDBClient;
     private final LambdaClient lambdaClient;
     private final AmazonSQS sqsClient;
 
-    public IngestByQueueDriver(SleeperInstanceContext instance,
-                               AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
-        this(instance.getInstanceProperties(),
-                IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                lambdaClient, sqsClient);
-    }
-
-    public IngestByQueueDriver(InstanceProperties properties,
-                               IngestTaskStatusStore taskStatusStore,
-                               LambdaClient lambdaClient,
-                               AmazonSQS sqsClient) {
-        this.properties = properties;
-        this.taskStatusStore = taskStatusStore;
+    public IngestByQueueDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
+        this.instance = instance;
+        this.dynamoDBClient = dynamoDBClient;
         this.lambdaClient = lambdaClient;
         this.sqsClient = sqsClient;
     }
 
     public void sendJob(InstanceProperty queueUrl, IngestJob job) {
-        sqsClient.sendMessage(properties.get(queueUrl), new IngestJobSerDe().toJson(job));
+        sqsClient.sendMessage(instance.getInstanceProperties().get(queueUrl), new IngestJobSerDe().toJson(job));
     }
 
     public void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {
+        IngestTaskStatusStore taskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
         poll.pollUntil("tasks are started", () -> {
-            InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
+            InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(INGEST_LAMBDA_FUNCTION));
             int tasksStarted = taskStatusStore.getAllTasks().size() - tasksFinishedBefore;
             return tasksStarted >= expectedTasks;
         });
