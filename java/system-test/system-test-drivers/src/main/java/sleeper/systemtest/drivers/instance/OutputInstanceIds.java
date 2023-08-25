@@ -26,6 +26,9 @@ import static java.nio.file.StandardOpenOption.CREATE;
 
 public class OutputInstanceIds {
 
+    private OutputInstanceIds() {
+    }
+
     public static void addInstanceIdToOutput(String instanceId, SystemTestParameters parameters) {
         Path outputDirectory = parameters.getOutputDirectory();
         if (outputDirectory == null) {
