@@ -169,6 +169,7 @@
         <failsafe.plugin.version>${surefire.plugin.version}</failsafe.plugin.version>
         <surefire.report.plugin.version>${surefire.plugin.version}</surefire.report.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
+        <assembly.plugin.version>3.3.0</assembly.plugin.version>
         <jar.plugin.version>3.3.0</jar.plugin.version>
         <compiler.plugin.version>3.10.1</compiler.plugin.version>
         <enforcer.plugin.version>3.1.0</enforcer.plugin.version>
@@ -814,6 +815,20 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>${assembly.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>distro-assembly</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>single</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${compiler.plugin.version}</version>
                     <configuration>
@@ -1083,6 +1098,18 @@
                                     <phase>none</phase>
                                     <goals>
                                         <goal>shade</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-assembly-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <phase>none</phase>
+                                    <goals>
+                                        <goal>single</goal>
                                     </goals>
                                 </execution>
                             </executions>
