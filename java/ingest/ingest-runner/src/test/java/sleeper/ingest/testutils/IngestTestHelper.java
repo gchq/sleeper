@@ -68,6 +68,8 @@ public class IngestTestHelper<T> {
     private StateStore stateStore;
     private RecordBatchFactory<T> recordBatchFactory;
     private PartitionFileWriterFactory partitionFileWriterFactory;
+    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
+
 
     private IngestTestHelper(Path temporaryFolder, Configuration hadoopConfiguration,
                              Schema schema, List<Record> expectedRecords, Iterable<T> toWrite) throws Exception {
@@ -145,12 +147,13 @@ public class IngestTestHelper<T> {
         assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
         assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
 
-        allPartitionNoSet.forEach(partitionNo -> ResultVerifier.verifyPartition(
-                schema,
-                partitionNoToFileInfosMap.getOrDefault(partitionNo, Collections.emptyList()),
-                partitionNoToExpectedNoOfFilesMap.get(partitionNo),
-                partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList()),
-                hadoopConfiguration));
+        RecordGenerator.RecordListAndSchema recordListAndSchema = new RecordGenerator.RecordListAndSchema(expectedRecords, schema);
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema,
+                stateStore.getActiveFiles(),
+                hadoopConfiguration
+        );
     }
 
     public IngestTestHelper<T> createStateStore(

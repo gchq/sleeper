@@ -21,18 +21,15 @@ import org.apache.datasketches.quantiles.ItemsUnion;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.record.Record;
-import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.io.parquet.record.ParquetReaderIterator;
@@ -55,77 +52,6 @@ public class ResultVerifier {
     private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
 
     private ResultVerifier() {
-    }
-
-    public static void verifyPartition(Schema sleeperSchema,
-                                       List<FileInfo> partitionFileInfoList,
-                                       int expectedNoOfFiles,
-                                       List<Record> expectedRecordList,
-                                       Configuration hadoopConfiguration) {
-        Comparator<Record> recordComparator = new RecordComparator(sleeperSchema);
-        List<Record> expectedSortedRecordList = expectedRecordList.stream()
-                .sorted(recordComparator)
-                .collect(Collectors.toList());
-        List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
-
-        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
-        assertThat(expectedSortedRecordList).containsExactlyElementsOf(savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
-
-        // In some situations, check that the file min and max match the min and max of dimension 0
-        if (expectedNoOfFiles == 1 &&
-                sleeperSchema.getRowKeyFields().get(0).getType() instanceof LongType) {
-            String rowKeyFieldNameDimension0 = sleeperSchema.getRowKeyFieldNames().get(0);
-            Key minRowKeyDimension0 = expectedRecordList.stream()
-                    .map(record -> (Long) record.get(rowKeyFieldNameDimension0))
-                    .min(Comparator.naturalOrder())
-                    .map(Key::create)
-                    .get();
-            Key maxRowKeyDimension0 = expectedRecordList.stream()
-                    .map(record -> (Long) record.get(rowKeyFieldNameDimension0))
-                    .max(Comparator.naturalOrder())
-                    .map(Key::create)
-                    .get();
-            partitionFileInfoList.forEach(fileInfo -> {
-                assertThat(fileInfo.getMinRowKey()).isEqualTo(minRowKeyDimension0);
-                assertThat(fileInfo.getMaxRowKey()).isEqualTo(maxRowKeyDimension0);
-            });
-        }
-
-        if (expectedNoOfFiles > 0) {
-            Map<Field, ItemsSketch> expectedFieldToItemsSketchMap = createFieldToItemSketchMap(sleeperSchema, expectedRecordList);
-            Map<Field, ItemsSketch> savedFieldToItemsSketchMap = readFieldToItemSketchMap(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
-            sleeperSchema.getRowKeyFields().forEach(field -> {
-                ItemsSketch expectedSketch = expectedFieldToItemsSketchMap.get(field);
-                ItemsSketch savedSketch = savedFieldToItemsSketchMap.get(field);
-                assertThat(savedSketch.getMinValue()).isEqualTo(expectedSketch.getMinValue());
-                assertThat(savedSketch.getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-                IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
-                    double quantile = 0.1 * quantileNo;
-                    double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
-                    double quantileWithToleranceUpper = (quantile + QUANTILE_SKETCH_TOLERANCE) < 1 ? quantile + QUANTILE_SKETCH_TOLERANCE : 1;
-                    KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
-                    if (field.getType() instanceof ByteArrayType) {
-                        assertThat(keyComparator.compare(
-                                Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())))
-                                .isGreaterThanOrEqualTo(0);
-                        assertThat(keyComparator.compare(
-                                Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())))
-                                .isLessThanOrEqualTo(0);
-                    } else {
-                        assertThat(keyComparator.compare(
-                                Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceLower))))
-                                .isGreaterThanOrEqualTo(0);
-                        assertThat(keyComparator.compare(
-                                Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper))))
-                                .isLessThanOrEqualTo(0);
-                    }
-                });
-            });
-        }
     }
 
     public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
@@ -172,10 +98,6 @@ public class ResultVerifier {
         }
         return itemsSketch;
     }
-
-    public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
-            LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.DYNAMODB);
 
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
                                                                        List<FileInfo> fileInfoList,
