@@ -50,7 +50,7 @@ public class BulkImportArguments {
         return constructArgs(bulkImportJob, taskId, jarLocation);
     }
 
-    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
+    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
         LOGGER.info("Using Spark config {}", userConfig);
 
@@ -64,7 +64,11 @@ public class BulkImportArguments {
                 args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
             }
         }
+        return args;
+    }
 
+    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
+        List<String> args = constructArgs(bulkImportJob, taskId);
         args.add(jarLocation);
         args.add(instanceProperties.get(CONFIG_BUCKET));
         args.add(bulkImportJob.getId());

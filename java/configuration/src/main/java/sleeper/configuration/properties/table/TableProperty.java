@@ -50,6 +50,17 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_RELEASE;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -297,6 +308,87 @@ public interface TableProperty extends SleeperProperty {
                     "This value overrides the default value in the instance properties. " +
                     "It can be overridden by a value in the bulk import job specification.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE)
+            .description("The architecture for EMR Serverless to use. X86_64 or ARM (Coming soon)")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_RELEASE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.release")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_RELEASE)
+            .description("The version of EMR Serverless to use.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.repo")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO)
+            .description("The name of the repository for the EMR serverless container. "
+                            + "The Docker image from the bulk-import module "
+                            + "should have been uploaded to an ECR repository of this name in this account.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.executor.cores")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES)
+            .description("The number of cores used by a Serverless executor. Used to set spark.executor.cores.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.executor.memory")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY)
+            .description("The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.executor.disk")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK)
+            .description("The amount of storage allocated to a Serverless executor.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.executor.instances")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES)
+            .description("The number of executors to be used with Serverless. Used to set spark.executor.instances.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.driver.cores")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES)
+            .description("The number of cores used by the Serverless Spark driver. Used to set spark.driver.cores.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES.getDefaultValue())
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.driver.memory")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY)
+            .description("The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.\n"
+                            + "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY.getDefaultValue())
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.java.home")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME)
+            .description("The path to JAVA_HOME to be used by the custom image for bulk import.")
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
+            .build();
+    TableProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled")
+            .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION)
+            .description("Whether Spark should use dynamic allocation to scale resources up and down. "
+            .propertyGroup(TablePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true)
             .build();
     TableProperty BULK_IMPORT_MIN_LEAF_PARTITION_COUNT = Index.propertyBuilder("sleeper.table.bulk.import.min.leaf.partitions")
             .description("Specifies the minimum number of leaf partitions that are needed to run a bulk import job. " +

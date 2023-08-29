@@ -41,6 +41,10 @@ public class BulkImportPlatformSpec {
         return platformSpec.getOrDefault(property.getPropertyName(), tableProperties.get(property));
     }
 
+    public boolean getBoolean(TableProperty property) {
+        return Boolean.parseBoolean(get(property));
+    }
+
     public int getInt(TableProperty property) {
         return Integer.parseInt(get(property));
     }

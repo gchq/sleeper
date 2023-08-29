@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,6 +42,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static sleeper.bulkimport.starter.testutil.TestResources.exampleString;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_IMPORT_CLASS_NAME;
@@ -50,6 +54,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 @WireMockTest
 public class EmrServerlessPlatformExecutorIT {
@@ -58,6 +63,7 @@ public class EmrServerlessPlatformExecutorIT {
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
     private final InstanceProperties properties = createTestInstanceProperties();
+    private final TablePropertiesProvider tableProperties = mock(TablePropertiesProvider.class);
 
     @Test
     void shouldRunAServerlessJob(WireMockRuntimeInfo runtimeInfo) {
@@ -77,10 +83,10 @@ public class EmrServerlessPlatformExecutorIT {
                 .instanceProperties(properties)
                 .bulkImportJob(job).jobRunId("run-id")
                 .build();
-
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+        when(tableProperties.getTableProperties(anyString())).thenReturn(createTestTableProperties(properties, null));
 
-        new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties)
+        new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties, tableProperties)
                 .runJobOnPlatform(arguments);
 
         verify(postRequestedFor(urlEqualTo("/applications/application-id/jobruns"))

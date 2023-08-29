@@ -58,9 +58,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.DEFAULT_BULK_IMPORT_EMR_SERVERLESS_RELEASE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
@@ -122,14 +122,14 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         String instanceId = instanceProperties.get(ID);
         String region = instanceProperties.get(REGION);
         String accountId = instanceProperties.get(ACCOUNT);
-        String repo = instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO);
+        String repo = instanceProperties.get(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO);
         String version = instanceProperties.get(VERSION);
         String uri = accountId + ".dkr.ecr." + region + ".amazonaws.com/" + repo + ":" + version;
 
         CfnApplicationProps props = CfnApplicationProps.builder()
                 .name(String.join("-", "sleeper", instanceId, "emr", "serverless"))
-                .releaseLabel(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_RELEASE))
-                .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
+                .releaseLabel(instanceProperties.get(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_RELEASE))
+                .architecture(instanceProperties.get(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type("Spark")
                 .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
