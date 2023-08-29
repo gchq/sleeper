@@ -19,10 +19,20 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.condition.DisabledIf;
 
+import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
+import java.time.Duration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
@@ -34,6 +44,20 @@ public class CompactionPerformanceIT {
     void setUp() {
         sleeper.connectToInstance(COMPACTION_PERFORMANCE);
         sleeper.reporting().startRecording();
+    }
+
+    @Test
+    @DisabledIf("systemTestClusterDisabled")
+    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
+        sleeper.systemTestCluster().updateProperties(properties -> {
+            properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
+            properties.set(NUMBER_OF_WRITERS, "110");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
+        }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
+
+        sleeper.compaction().runStandard();
+
+        assertThat(sleeper.stateStore().activeFiles()).hasSize(110);
     }
 
     @AfterEach

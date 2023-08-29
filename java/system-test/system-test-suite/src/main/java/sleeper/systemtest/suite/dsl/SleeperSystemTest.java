@@ -23,6 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
+import sleeper.systemtest.drivers.compaction.StandardCompactionDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -146,8 +147,11 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(new SplittingCompactionDriver(instance,
-                clients.getLambda(), clients.getSqs(), clients.getDynamoDB()));
+        return new SystemTestCompaction(
+                new SplittingCompactionDriver(instance,
+                        clients.getLambda(), clients.getSqs(), clients.getDynamoDB()),
+                new StandardCompactionDriver(instance,
+                        clients.getLambda(), clients.getDynamoDB()));
     }
 
     public SystemTestCluster systemTestCluster() {

@@ -31,16 +31,8 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_LONG;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
-import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_LONG;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
-import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
@@ -68,14 +60,6 @@ public class IngestPerformanceIT {
                     properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
                     properties.set(NUMBER_OF_WRITERS, "11");
                     properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
-                    properties.set(MIN_RANDOM_INT, "0");
-                    properties.set(MAX_RANDOM_INT, "100000000");
-                    properties.set(MIN_RANDOM_LONG, "0");
-                    properties.set(MAX_RANDOM_LONG, "10000000000");
-                    properties.set(RANDOM_STRING_LENGTH, "10");
-                    properties.set(RANDOM_BYTE_ARRAY_LENGTH, "10");
-                    properties.set(MAX_ENTRIES_RANDOM_MAP, "10");
-                    properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
                 })
                 .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .invokeStandardIngestTasks(11,

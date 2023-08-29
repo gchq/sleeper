@@ -17,16 +17,23 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
+import sleeper.systemtest.drivers.compaction.StandardCompactionDriver;
 
 public class SystemTestCompaction {
 
     private final SplittingCompactionDriver splittingDriver;
+    private final StandardCompactionDriver standardDriver;
 
-    public SystemTestCompaction(SplittingCompactionDriver splittingDriver) {
+    public SystemTestCompaction(SplittingCompactionDriver splittingDriver, StandardCompactionDriver standardDriver) {
         this.splittingDriver = splittingDriver;
+        this.standardDriver = standardDriver;
     }
 
     public void runSplitting() throws InterruptedException {
         splittingDriver.runSplittingCompaction();
+    }
+
+    public void runStandard() {
+        standardDriver.createJobsGetIds();
     }
 }
