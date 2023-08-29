@@ -30,12 +30,18 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final String description;
+    private final boolean runCDKDeployWhenChanged;
+    private final boolean systemDefined;
+    private final boolean editable;
 
     private SystemTestPropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         defaultValue = builder.defaultValue;
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
+        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
+        systemDefined = builder.systemDefined;
+        editable = builder.editable;
     }
 
     public static Builder builder() {
@@ -73,7 +79,17 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
     @Override
     public boolean isRunCDKDeployWhenChanged() {
-        return false;
+        return runCDKDeployWhenChanged;
+    }
+
+    @Override
+    public boolean isSystemDefined() {
+        return systemDefined;
+    }
+
+    @Override
+    public boolean isEditable() {
+        return editable && !systemDefined;
     }
 
     public String toString() {
@@ -85,6 +101,9 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description;
+        private boolean runCDKDeployWhenChanged;
+        private boolean systemDefined;
+        private boolean editable;
         private Consumer<SystemTestProperty> addToIndex;
 
         private Builder() {
@@ -107,6 +126,21 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
+            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+            return this;
+        }
+
+        public Builder systemDefined(boolean systemDefined) {
+            this.systemDefined = systemDefined;
+            return this;
+        }
+
+        public Builder editable(boolean editable) {
+            this.editable = editable;
             return this;
         }
 

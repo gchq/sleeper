@@ -27,6 +27,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Locale;
 
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -49,6 +50,8 @@ public class ConfigurationStack extends NestedStack {
                 .build();
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
+        addIngestSourceRoleReferences(this, "IngestConfigReader", instanceProperties)
+                .forEach(configBucket::grantRead);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

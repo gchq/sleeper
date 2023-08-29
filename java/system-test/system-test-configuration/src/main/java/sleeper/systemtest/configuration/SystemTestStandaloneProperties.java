@@ -1,0 +1,65 @@
+/*
+ * Copyright 2022-2023 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.systemtest.configuration;
+
+import com.amazonaws.services.s3.AmazonS3;
+
+import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertyIndex;
+import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.InstancePropertyGroup;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Path;
+import java.util.List;
+
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
+
+public class SystemTestStandaloneProperties
+        extends SleeperProperties<SystemTestProperty>
+        implements SystemTestPropertyValues, SystemTestPropertySetter {
+
+    public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) throws IOException {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
+        properties.loadFromS3(s3Client, bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        return properties;
+    }
+
+    public static SystemTestStandaloneProperties fromFile(Path propertiesFile) throws IOException {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
+        properties.load(propertiesFile);
+        return properties;
+    }
+
+    public void saveToS3(AmazonS3 s3Client) throws IOException {
+        saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+    }
+
+    @Override
+    public SleeperPropertyIndex<SystemTestProperty> getPropertiesIndex() {
+        return SystemTestProperty.Index.INSTANCE;
+    }
+
+    @Override
+    protected SleeperPropertiesPrettyPrinter<SystemTestProperty> getPrettyPrinter(PrintWriter writer) {
+        return SleeperPropertiesPrettyPrinter.builder()
+                .properties(SystemTestProperty.getAll(), List.of(InstancePropertyGroup.COMMON))
+                .build();
+    }
+}

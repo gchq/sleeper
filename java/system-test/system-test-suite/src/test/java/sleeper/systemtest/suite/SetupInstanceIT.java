@@ -19,6 +19,7 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
@@ -62,5 +63,20 @@ public class SetupInstanceIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactly(record);
+    }
+
+    @Test
+    @DisabledIf("systemTestClusterDisabled")
+    void shouldGenerateSomeData() throws InterruptedException {
+        // When
+        sleeper.systemTestCluster().ingestDirectRecords(100);
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .hasSize(100);
+    }
+
+    boolean systemTestClusterDisabled() {
+        return sleeper.systemTestCluster().isDisabled();
     }
 }

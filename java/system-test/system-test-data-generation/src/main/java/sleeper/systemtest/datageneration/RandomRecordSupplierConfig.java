@@ -16,6 +16,7 @@
 package sleeper.systemtest.datageneration;
 
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
 import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
@@ -40,6 +41,10 @@ public class RandomRecordSupplierConfig {
     private final int maxEntriesInRandomList;
 
     public RandomRecordSupplierConfig(SystemTestProperties systemTestProperties) {
+        this(systemTestProperties.testPropertiesOnly());
+    }
+
+    public RandomRecordSupplierConfig(SystemTestPropertyValues systemTestProperties) {
         this(systemTestProperties.getInt(MIN_RANDOM_INT),
                 systemTestProperties.getInt(MAX_RANDOM_INT),
                 systemTestProperties.getLong(MIN_RANDOM_LONG),

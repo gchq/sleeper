@@ -13,21 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.systemtest.configuration;
 
-import org.junit.jupiter.api.Test;
+import sleeper.configuration.properties.SleeperPropertyValues;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-class SystemTestPropertyTest {
-
-    @Test
-    void shouldGetAllPropertiesInSystemTestPropertiesIndex() {
-        SystemTestProperties properties = new SystemTestProperties();
-        assertThat(properties.getPropertiesIndex().getAll())
-                .containsAll(InstanceProperty.getAll())
-                .containsAll(SystemTestProperty.getAll());
-    }
+public interface SystemTestPropertyValues extends SleeperPropertyValues<SystemTestProperty> {
 }
