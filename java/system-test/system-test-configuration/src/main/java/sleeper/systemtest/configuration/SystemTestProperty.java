@@ -69,12 +69,12 @@ public interface SystemTestProperty extends InstanceProperty {
             .description("The number of CPU units for the containers that write random data, where 1024 is 1 vCPU.\n" +
                     "For valid values, see: " +
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
-            .defaultValue("1024").build();
+            .defaultValue("1024").runCDKDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
             .description("The amount of memory for the containers that write random data, in MiB.\n" +
                     "For valid values, see: " +
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
-            .defaultValue("4096").build();
+            .defaultValue("4096").runCDKDeployWhenChanged(true).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
             .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
                     "'Direct' means that the data is written directly using an ingest coordinator.\n" +
