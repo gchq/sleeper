@@ -83,7 +83,9 @@ public class IngestPerformanceIT {
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
-        assertThat(sleeper.reporting().ingestJobs().numFinishedJobs()).isEqualTo(110);
+        assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
+                .matches(stats -> stats.isAllFinishedOneRunEach(110)
+                        && stats.isMinAverageRunRecordsPerSecond(135000));
     }
 
     boolean systemTestClusterDisabled() {
