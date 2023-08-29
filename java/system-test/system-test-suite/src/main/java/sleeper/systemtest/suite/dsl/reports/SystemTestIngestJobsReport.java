@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.reports;
 
 import sleeper.ingest.job.status.IngestJobStatus;
 

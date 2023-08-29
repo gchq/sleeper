@@ -21,6 +21,7 @@ import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.TestContext;
+import sleeper.systemtest.suite.dsl.reports.SystemTestIngestJobsReport;
 
 public class SystemTestReporting {
 
