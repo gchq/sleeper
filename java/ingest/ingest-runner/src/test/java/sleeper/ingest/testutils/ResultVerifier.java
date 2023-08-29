@@ -49,8 +49,6 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ResultVerifier {
-    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
-
     private ResultVerifier() {
     }
 
@@ -136,6 +134,7 @@ public class ResultVerifier {
             List<FileInfo> actualFiles,
             Configuration hadoopConfiguration
     ) {
+        final double QUANTILE_SKETCH_TOLERANCE = 0.01;
         ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
