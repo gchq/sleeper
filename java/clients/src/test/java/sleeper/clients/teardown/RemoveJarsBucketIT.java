@@ -70,6 +70,23 @@ class RemoveJarsBucketIT extends JarsBucketITBase {
     }
 
     @Test
+    void shouldRemoveBucketWithMultipleVersionsWhenOneVersionIsMarkedAsDeleted() throws IOException, InterruptedException {
+        // Given
+        Files.writeString(tempDir.resolve("test.jar"), "data1");
+        uploadJarsToBucket(bucketName);
+        Thread.sleep(1000);
+        Files.writeString(tempDir.resolve("test.jar"), "data2");
+        uploadJarsToBucket(bucketName);
+        s3.deleteObject(builder -> builder.bucket(bucketName).key("test.jar"));
+
+        // When
+        RemoveJarsBucket.remove(s3, bucketName);
+
+        // Then
+        assertThat(doesBucketExist(s3, bucketName)).isFalse();
+    }
+
+    @Test
     void shouldIgnoreIfBucketDoesNotExist() {
         assertThatCode(() -> RemoveJarsBucket.remove(s3, "not-a-bucket"))
                 .doesNotThrowAnyException();
