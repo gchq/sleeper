@@ -142,26 +142,27 @@ public class ResultVerifier {
             double quantile = 0.1 * quantileNo;
             double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
             double quantileWithToleranceUpper = (quantile + QUANTILE_SKETCH_TOLERANCE) < 1 ? quantile + QUANTILE_SKETCH_TOLERANCE : 1;
-            KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
+            Key expectedUpperQuantileKey;
+            Key expectedLowerQuantileKey;
+            Key savedQuantileKey;
             if (field.getType() instanceof ByteArrayType) {
-                assertThat(keyComparator.compare(
-                        Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                        Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())))
-                        .isGreaterThanOrEqualTo(0);
-                assertThat(keyComparator.compare(
-                        Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                        Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())))
-                        .isLessThanOrEqualTo(0);
+                expectedUpperQuantileKey = Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray());
+                expectedLowerQuantileKey = Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray());
+                savedQuantileKey = Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray());
             } else {
-                assertThat(keyComparator.compare(
-                        Key.create(savedSketch.getQuantile(quantile)),
-                        Key.create(expectedSketch.getQuantile(quantileWithToleranceLower))))
-                        .isGreaterThanOrEqualTo(0);
-                assertThat(keyComparator.compare(
-                        Key.create(savedSketch.getQuantile(quantile)),
-                        Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper))))
-                        .isLessThanOrEqualTo(0);
+                expectedUpperQuantileKey = Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper));
+                expectedLowerQuantileKey = Key.create(expectedSketch.getQuantile(quantileWithToleranceLower));
+                savedQuantileKey = Key.create(savedSketch.getQuantile(quantile));
             }
+            KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
+            assertThat(keyComparator.compare(
+                    savedQuantileKey,
+                    expectedLowerQuantileKey))
+                    .isGreaterThanOrEqualTo(0);
+            assertThat(keyComparator.compare(
+                    savedQuantileKey,
+                    expectedUpperQuantileKey))
+                    .isLessThanOrEqualTo(0);
         });
     }
 }
