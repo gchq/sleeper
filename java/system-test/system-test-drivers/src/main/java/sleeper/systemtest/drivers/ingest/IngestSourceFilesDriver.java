@@ -86,7 +86,7 @@ public class IngestSourceFilesDriver {
         List<S3Object> objects = s3Client.listObjectsV2Paginator(builder -> builder
                 .bucket(systemTest.getSystemTestBucketName())
                 .prefix("ingest/")).contents().stream().collect(Collectors.toUnmodifiableList());
-        LOGGER.info("Found ingest objects in source bucket: {}", objects);
+        LOGGER.info("Found ingest objects in source bucket: {}", objects.size());
         return getS3ObjectJobIds(objects.stream().map(S3Object::key));
     }
 

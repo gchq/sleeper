@@ -18,6 +18,8 @@ package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
@@ -32,6 +34,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class IngestByQueueDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestByQueueDriver.class);
 
     private final SleeperInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
@@ -55,6 +58,7 @@ public class IngestByQueueDriver {
         poll.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(INGEST_LAMBDA_FUNCTION));
             int tasksStarted = taskStatusStore.getAllTasks().size() - tasksFinishedBefore;
+            LOGGER.info("Found {} new ingest tasks", tasksStarted);
             return tasksStarted >= expectedTasks;
         });
     }
