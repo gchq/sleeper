@@ -30,11 +30,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -45,6 +47,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
@@ -214,10 +217,7 @@ class IngestJobRunnerIT {
                 new LongType(),
                 LongStream.range(-5, 5).boxed().collect(Collectors.toList()));
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
 
         List<String> files = writeParquetFilesForIngest(
                 fileSystemPrefix, recordListAndSchema, "", 2);
@@ -226,18 +226,15 @@ class IngestJobRunnerIT {
                 .sorted(new RecordComparator(recordListAndSchema.sleeperSchema))
                 .collect(Collectors.toList());
         // Run the job consumer
-        new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
-                instanceProperties,
-                tablePropertiesProvider,
-                PropertiesReloader.neverReload(),
-                stateStoreProvider,
+        ingestRecords(
+                stateStore,
+                fileSystemPrefix,
+                recordBatchType,
+                partitionFileWriterType,
+                recordListAndSchema,
                 localDir,
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
-                .ingest(IngestJob.builder()
-                        .tableName(TEST_TABLE_NAME).id("id").files(files)
-                        .build());
+                files
+        );
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -286,23 +283,17 @@ class IngestJobRunnerIT {
         FileSystem.get(uri2, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).createNewFile(new Path(uri2));
         files.add(ingestBucket + "/file-2.csv");
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
 
-        new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
-                instanceProperties,
-                tablePropertiesProvider,
-                PropertiesReloader.neverReload(),
-                stateStoreProvider,
+        ingestRecords(
+                stateStore,
+                fileSystemPrefix,
+                recordBatchType,
+                partitionFileWriterType,
+                recordListAndSchema,
                 localDir,
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).ingest(
-                IngestJob.builder()
-                        .tableName(TEST_TABLE_NAME).id("id").files(files)
-                        .build());
+                files
+        );
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -360,23 +351,18 @@ class IngestJobRunnerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
         StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(recordListAndSchema.sleeperSchema);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
 
-        new IngestJobRunner(
-                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
-                instanceProperties,
-                tablePropertiesProvider,
-                PropertiesReloader.neverReload(),
-                stateStoreProvider,
+        ingestRecords(
+                stateStore,
+                fileSystemPrefix,
+                recordBatchType,
+                partitionFileWriterType,
+                recordListAndSchema,
                 localDir,
-                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration()).ingest(
-                IngestJob.builder()
-                        .tableName(TEST_TABLE_NAME).id("id").files(files)
-                        .build());
+                files
+        );
+
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -433,7 +419,7 @@ class IngestJobRunnerIT {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
 
         // Run the job consumer
-        IngestJobRunner ingestJobRunner = new IngestJobRunner(
+        new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,
                 tablePropertiesProvider,
@@ -441,8 +427,8 @@ class IngestJobRunnerIT {
                 stateStoreProvider,
                 localDir,
                 AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
-                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-        ingestJobRunner.ingest(ingestJob);
+                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .ingest(ingestJob);
         PartitionTree tree = new PartitionsBuilder(records1.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -473,6 +459,37 @@ class IngestJobRunnerIT {
                         .build()),
                 actualFiles,
                 hadoopConfiguration
+        );
+    }
+
+    private void ingestRecords(
+            StateStore stateStore,
+            String fileSystemPrefix,
+            String recordBatchType,
+            String partitionFileWriterType,
+            RecordGenerator.RecordListAndSchema recordListAndSchema,
+            String localDir,
+            List<String> files
+    ) throws IOException, ObjectFactoryException, IteratorException, StateStoreException {
+        InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
+        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(TEST_TABLE_NAME), stateStore);
+        IngestJobRunner ingestJobRunner = new IngestJobRunner(
+                new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
+                instanceProperties,
+                tablePropertiesProvider,
+                PropertiesReloader.neverReload(),
+                stateStoreProvider,
+                localDir,
+                AWS_EXTERNAL_RESOURCE.getS3AsyncClient(),
+                AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+
+        ingestJobRunner.ingest(
+                IngestJob.builder()
+                        .tableName(TEST_TABLE_NAME)
+                        .id("id")
+                        .files(files)
+                        .build()
         );
     }
 }
