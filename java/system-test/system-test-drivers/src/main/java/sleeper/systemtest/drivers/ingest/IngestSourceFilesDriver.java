@@ -18,8 +18,9 @@ package sleeper.systemtest.drivers.ingest;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -39,6 +40,8 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 
 public class IngestSourceFilesDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
+
     private final SystemTestInstanceContext systemTest;
     private final S3Client s3Client;
 
@@ -80,11 +83,15 @@ public class IngestSourceFilesDriver {
     }
 
     public List<String> findGeneratedIngestJobIds() {
-        return s3Client.listObjectsV2Paginator(builder -> builder
-                        .bucket(systemTest.getSystemTestBucketName())
-                        .prefix("/ingest/"))
-                .commonPrefixes().stream()
-                .map(CommonPrefix::prefix)
+        List<S3Object> objects = s3Client.listObjectsV2Paginator(builder -> builder
+                .bucket(systemTest.getSystemTestBucketName())
+                .prefix("ingest/")).contents().stream().collect(Collectors.toUnmodifiableList());
+        LOGGER.info("Found ingest objects in source bucket: {}", objects);
+        return getS3ObjectJobIds(objects.stream().map(S3Object::key));
+    }
+
+    public static List<String> getS3ObjectJobIds(Stream<String> keys) {
+        return keys.map(key -> key.substring("ingest/".length(), key.lastIndexOf('/')))
                 .collect(Collectors.toUnmodifiableList());
     }
 }

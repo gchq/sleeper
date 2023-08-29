@@ -23,6 +23,7 @@ import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
+import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.nio.file.Path;
@@ -30,6 +31,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -69,11 +73,29 @@ public class SetupInstanceIT {
     @DisabledIf("systemTestClusterDisabled")
     void shouldGenerateSomeData() throws InterruptedException {
         // When
-        sleeper.systemTestCluster().ingestDirectRecords(100);
+        sleeper.systemTestCluster().updateProperties(properties -> {
+            properties.set(INGEST_MODE, IngestMode.GENERATE_ONLY.toString());
+            properties.set(NUMBER_OF_WRITERS, "2");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "100");
+        }).generateData();
+
+        // Then
+        assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket()).hasSize(2);
+    }
+
+    @Test
+    @DisabledIf("systemTestClusterDisabled")
+    void shouldIngestSomeData() throws InterruptedException {
+        // When
+        sleeper.systemTestCluster().updateProperties(properties -> {
+            properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
+            properties.set(NUMBER_OF_WRITERS, "2");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "100");
+        }).generateData();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .hasSize(100);
+                .hasSize(200);
     }
 
     boolean systemTestClusterDisabled() {

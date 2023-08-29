@@ -19,7 +19,6 @@ package sleeper.systemtest.suite.dsl;
 import com.amazonaws.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
@@ -33,9 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
-import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 public class SystemTestCluster {
@@ -55,17 +51,13 @@ public class SystemTestCluster {
         this.waitForJobsDriver = new WaitForIngestJobsDriver(instance, clients.getDynamoDB());
     }
 
-    public void ingestDirectRecords(int records) throws InterruptedException {
-        updateProperties(properties -> {
-            properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
-            properties.set(NUMBER_OF_WRITERS, "1");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, String.valueOf(records));
-        }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
-    }
-
     public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
         context.updateProperties(config);
         return this;
+    }
+
+    public SystemTestCluster generateData() throws InterruptedException {
+        return generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
     public SystemTestCluster generateData(PollWithRetries poll) throws InterruptedException {
@@ -82,6 +74,10 @@ public class SystemTestCluster {
 
     public void waitForJobs(PollWithRetries poll) throws InterruptedException {
         waitForJobsDriver.waitForJobs(jobIds, poll);
+    }
+
+    public List<String> ingestJobIdsInSourceBucket() {
+        return sourceFiles.findGeneratedIngestJobIds();
     }
 
     public boolean isDisabled() {
