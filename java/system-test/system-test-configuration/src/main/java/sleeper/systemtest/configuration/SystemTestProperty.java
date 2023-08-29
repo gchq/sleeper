@@ -59,18 +59,22 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty SYSTEM_TEST_BUCKET_NAME = Index.propertyBuilder("sleeper.systemtest.bucket")
             .description("The name of the bucket where system test data will be stored")
             .systemDefined(true).build();
-    SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task-definition")
+    SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task.definition")
             .description("The name of the family of task definitions used for writing data")
             .systemDefined(true).build();
     SystemTestProperty WRITE_DATA_ROLE_NAME = Index.propertyBuilder("sleeper.systemtest.writer.role")
             .description("The name of the role used when writing data for an instance in an ECS cluster")
             .systemDefined(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
-            .description("The amount of CPU for the containers that write random data")
-            .defaultValue("1024").build();
-    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory")
-            .description("The amount of memory for the containers that write random data")
-            .defaultValue("4096").build();
+            .description("The number of CPU units for the containers that write random data, where 1024 is 1 vCPU.\n" +
+                    "For valid values, see: " +
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
+            .defaultValue("1024").runCDKDeployWhenChanged(true).build();
+    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
+            .description("The amount of memory for the containers that write random data, in MiB.\n" +
+                    "For valid values, see: " +
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
+            .defaultValue("4096").runCDKDeployWhenChanged(true).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
             .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
                     "'Direct' means that the data is written directly using an ingest coordinator.\n" +
@@ -92,7 +96,7 @@ public interface SystemTestProperty extends InstanceProperty {
     SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
             .description("The number of containers that write random data")
             .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();
-    SystemTestProperty NUMBER_OF_RECORDS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.records-per-writer")
+    SystemTestProperty NUMBER_OF_RECORDS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.records.per.writer")
             .description("The number of random records that each container should write")
             .defaultValue("100").validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty MIN_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.min")
