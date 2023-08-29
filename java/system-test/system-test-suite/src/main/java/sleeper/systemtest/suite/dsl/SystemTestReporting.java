@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.systemtest.drivers.compaction.CompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -53,5 +54,11 @@ public class SystemTestReporting {
         return new SystemTestIngestJobsReport(
                 new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
                         .jobs(context));
+    }
+
+    public void printCompactionTasksAndJobs(TestContext testContext) {
+        context.print(testContext,
+                new CompactionReportsDriver(clients.getDynamoDB(), instance)
+                        .tasksAndJobsReport());
     }
 }

@@ -26,7 +26,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -40,6 +39,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.FORCE_REL
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
@@ -47,11 +49,13 @@ import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_C
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
 public enum SystemTestInstance {
 
     MAIN("main", SystemTestInstance::buildMainConfiguration),
-    INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
+    INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
+    COMPACTION_PERFORMANCE("compaction", SystemTestInstance::buildCompactionPerformanceConfiguration);
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
@@ -103,26 +107,35 @@ public enum SystemTestInstance {
     }
 
     private static DeployInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
-        return buildConfigurationFromMain(parameters, properties -> {
-            properties.set(OPTIONAL_STACKS, "IngestStack");
-            properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
-            properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
-            properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
-            properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
-            properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
-            properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
-            properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB
-            properties.set(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, "1024");
-            properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
-            properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
-            properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
-        });
+        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "IngestStack");
+        properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
+        properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
+        properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
+        properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB
+        properties.set(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, "1024");
+        properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
+        properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
+        properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
+        return configuration;
     }
 
-    private static DeployInstanceConfiguration buildConfigurationFromMain(
-            SystemTestParameters parameters, Consumer<InstanceProperties> config) {
-        DeployInstanceConfiguration deployConfig = buildMainConfiguration(parameters);
-        config.accept(deployConfig.getInstanceProperties());
-        return deployConfig;
+    private static DeployInstanceConfiguration buildCompactionPerformanceConfiguration(SystemTestParameters parameters) {
+        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "CompactionStack");
+        properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+        properties.set(COMPACTION_TASK_X86_CPU, "1024");
+        properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
+
+        TableProperties tableProperties = configuration.getTableProperties();
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
+        return configuration;
     }
 }
