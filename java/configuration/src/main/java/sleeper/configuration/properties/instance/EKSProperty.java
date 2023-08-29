@@ -26,6 +26,17 @@ public interface EKSProperty {
             .description("(EKS mode only) The name of the ECS repository where the Docker image for the bulk import container is stored.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty EKS_CLUSTER_ADMIN_ROLES = Index.propertyBuilder("sleeper.bulk.import.eks.cluster.admin.roles")
+            .description("(EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty EKS_IS_NATIVE_LIBS_IMAGE = Index.propertyBuilder("sleeper.bulk.import.eks.is.native.libs.image")
+            .description("(EKS mode only) Set to true if sleeper.bulk.import.eks.repo contains the image built with " +
+                    "native Hadoop libraries. By default when deploying with the EKS stack enabled, an image will be " +
+                    "built based on the official Spark Docker image, so this should be false.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue("false")
+            .runCDKDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

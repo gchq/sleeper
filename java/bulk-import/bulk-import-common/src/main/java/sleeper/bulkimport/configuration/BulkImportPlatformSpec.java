@@ -22,7 +22,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.SleeperProperties.readList;
+import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 
 public class BulkImportPlatformSpec {
 
@@ -56,5 +56,9 @@ public class BulkImportPlatformSpec {
         } else {
             return value;
         }
+    }
+
+    public TableProperties getTableProperties() {
+        return tableProperties;
     }
 }

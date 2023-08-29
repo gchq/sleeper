@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.cloudwatch.MetricOptions;
 import software.amazon.awscdk.services.cloudwatch.TreatMissingData;
 import software.amazon.awscdk.services.cloudwatch.actions.SnsAction;
 import software.amazon.awscdk.services.iam.Effect;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
@@ -41,10 +42,13 @@ import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -56,14 +60,28 @@ public class CommonEmrBulkImportHelper {
     private final String shortId;
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
+    private final IBucket configBucket;
+    private final List<IBucket> ingestBuckets;
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
                                      IngestStatusStoreResources ingestStatusStoreResources) {
+        this(scope, shortId, instanceProperties, ingestStatusStoreResources,
+                Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET)),
+                addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties));
+    }
+
+    public CommonEmrBulkImportHelper(Construct scope, String shortId,
+                                     InstanceProperties instanceProperties,
+                                     IngestStatusStoreResources ingestStatusStoreResources,
+                                     IBucket configBucket,
+                                     List<IBucket> ingestBuckets) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.statusStoreResources = ingestStatusStoreResources;
+        this.configBucket = configBucket;
+        this.ingestBuckets = ingestBuckets;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -103,19 +121,25 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
+        addIngestSourceRoleReferences(scope, "WriterFor" + scope.getNode().getId(), instanceProperties)
+                .forEach(emrBulkImportJobQueue::grantSendMessages);
 
         return emrBulkImportJobQueue;
     }
 
     public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
                                               IBucket importBucket, CommonEmrBulkImportStack commonEmrStack) {
+        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
+                List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
+    }
+
+    public IFunction createJobStarterFunction(String bulkImportPlatform, Queue jobQueue, BuiltJars jars,
+                                              IBucket importBucket, List<IRole> passRoles) {
         String instanceId = instanceProperties.get(ID);
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
         IBucket jarsBucket = Bucket.fromBucketName(scope, "CodeBucketEMR", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
-
-        IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), shortId, "bulk-import-job-starter"));
@@ -133,27 +157,17 @@ public class CommonEmrBulkImportHelper {
 
         configBucket.grantRead(function);
         importBucket.grantReadWrite(function);
-        addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
-                .forEach(ingestBucket -> ingestBucket.grantRead(function));
+        ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(function));
         statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()
                 .effect(Effect.ALLOW)
                 .actions(Lists.newArrayList("iam:PassRole"))
-                .resources(Lists.newArrayList(
-                        commonEmrStack.getEmrRole().getRoleArn(),
-                        commonEmrStack.getEc2Role().getRoleArn()
-                ))
+                .resources(passRoles.stream()
+                        .map(IRole::getRoleArn)
+                        .collect(Collectors.toUnmodifiableList()))
                 .build());
 
-        function.addToRolePolicy(PolicyStatement.Builder.create()
-                .sid("CreateCleanupRole")
-                .actions(Lists.newArrayList("iam:CreateServiceLinkedRole", "iam:PutRolePolicy"))
-                .resources(Lists.newArrayList("arn:aws:iam::*:role/aws-service-role/elasticmapreduce.amazonaws.com*/AWSServiceRoleForEMRCleanup*"))
-                .conditions(Map.of("StringLike", Map.of("iam:AWSServiceName",
-                        Lists.newArrayList("elasticmapreduce.amazonaws.com",
-                                "elasticmapreduce.amazonaws.com.cn"))))
-                .build());
         return function;
     }
 }

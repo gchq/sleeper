@@ -18,7 +18,9 @@ package sleeper.clients;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
 import sleeper.clients.admin.AdminClientPropertiesStore;
@@ -36,6 +38,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.utils.AwsV1ClientHelper;
 import sleeper.job.common.QueueMessageCount;
 
 import java.io.IOException;
@@ -77,20 +80,22 @@ public class AdminClient {
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
         InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
-                .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                .propertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version).build();
 
-        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDB = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
         new AdminClient(
                 new AdminClientPropertiesStore(
-                        AmazonS3ClientBuilder.defaultClient(),
+                        s3Client,
                         dynamoDB,
                         cdk, generatedDir),
                 AdminClientStatusStoreFactory.from(dynamoDB),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console()),
-                QueueMessageCount.withSqsClient(AmazonSQSClientBuilder.defaultClient()),
+                QueueMessageCount.withSqsClient(sqsClient),
                 (properties -> PersistentEMRStepCount.byStatus(properties, AmazonElasticMapReduceClientBuilder.defaultClient())))
                 .start(instanceId);
     }

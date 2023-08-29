@@ -15,9 +15,9 @@
  */
 package sleeper.cdk.stack.bulkimport;
 
-import com.facebook.collections.Pair;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -46,6 +46,7 @@ import software.amazon.awscdk.services.eks.ServiceAccountOptions;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -56,11 +57,10 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.amazon.awscdk.services.stepfunctions.Choice;
 import software.amazon.awscdk.services.stepfunctions.Condition;
 import software.amazon.awscdk.services.stepfunctions.CustomState;
-import software.amazon.awscdk.services.stepfunctions.CustomStateProps;
+import software.amazon.awscdk.services.stepfunctions.DefinitionBody;
 import software.amazon.awscdk.services.stepfunctions.Fail;
 import software.amazon.awscdk.services.stepfunctions.Pass;
 import software.amazon.awscdk.services.stepfunctions.StateMachine;
-import software.amazon.awscdk.services.stepfunctions.Succeed;
 import software.amazon.awscdk.services.stepfunctions.TaskInput;
 import software.amazon.awscdk.services.stepfunctions.tasks.SnsPublish;
 import software.constructs.Construct;
@@ -79,10 +79,11 @@ import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -93,6 +94,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
+import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_ADMIN_ROLES;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 
 /**
@@ -206,6 +208,7 @@ public final class EksBulkImportStack extends NestedStack {
         ISubnet subnet = Subnet.fromSubnetId(this, "EksBulkImportSubnet", instanceProperties.getList(SUBNETS).get(0));
         bulkImportCluster.addFargateProfile("EksBulkImportFargateProfile", FargateProfileOptions.builder()
                 .fargateProfileName(uniqueBulkImportId)
+                .vpc(vpc)
                 .subnetSelection(SubnetSelection.builder()
                         .subnets(List.of(subnet))
                         .build())
@@ -234,6 +237,7 @@ public final class EksBulkImportStack extends NestedStack {
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
                 .groups(Lists.newArrayList())
                 .build());
+        addClusterAdminRoles(bulkImportCluster, instanceProperties);
 
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
@@ -255,25 +259,27 @@ public final class EksBulkImportStack extends NestedStack {
 
     private StateMachine createStateMachine(Cluster cluster, InstanceProperties instanceProperties,
                                             ITopic errorsTopic) {
-        String imageName = new StringBuilder()
-                .append(instanceProperties.get(ACCOUNT))
-                .append(".dkr.ecr.")
-                .append(instanceProperties.get(REGION))
-                .append(".amazonaws.com/")
-                .append(instanceProperties.get(BULK_IMPORT_REPO))
-                .append(":")
-                .append(instanceProperties.get(SystemDefinedInstanceProperty.VERSION))
-                .toString();
+        String imageName = instanceProperties.get(ACCOUNT) +
+                ".dkr.ecr." +
+                instanceProperties.get(REGION) +
+                ".amazonaws.com/" +
+                instanceProperties.get(BULK_IMPORT_REPO) +
+                ":" +
+                instanceProperties.get(SystemDefinedInstanceProperty.VERSION);
 
-        String sparkJobJson = parseJsonFile("/step-functions/run-job.json",
-                instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE));
-        String parsedSparkJobStepFunction = sparkJobJson
-                .replace("endpoint-placeholder", instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT))
-                .replace("image-placeholder", imageName)
-                .replace("cluster-placeholder", cluster.getClusterName())
-                .replace("ca-placeholder", cluster.getClusterCertificateAuthorityData());
+        Map<String, Object> runJobState = parseEksStepDefinition(
+                "/step-functions/run-job.json", instanceProperties, cluster,
+                replacements(Map.of("image-placeholder", imageName)));
 
-        Map<String, Object> runJobState = new Gson().fromJson(parsedSparkJobStepFunction, Map.class);
+        // Deleting the driver pod is necessary as a Spark job does not delete the pod afterwards:
+        // https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html#how-it-works
+        // Although the Spark documentation says it doesn't use up resources in the completed state, it does when it's
+        // scheduled into AWS Fargate.
+        Map<String, Object> deleteDriverPodState = parseEksStepDefinition(
+                "/step-functions/delete-driver-pod.json", instanceProperties, cluster);
+
+        Map<String, Object> deleteJobState = parseEksStepDefinition(
+                "/step-functions/delete-job.json", instanceProperties, cluster);
 
         SnsPublish publishError = SnsPublish.Builder
                 .create(this, "AlertUserFailedSparkSubmit")
@@ -281,23 +287,23 @@ public final class EksBulkImportStack extends NestedStack {
                 .topic(errorsTopic)
                 .build();
 
-        Map<String, String> createErrorMessageParams = new HashMap<>();
-        createErrorMessageParams.put("errorMessage.$",
-                "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)");
-
-        Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage").parameters(createErrorMessageParams)
+        Pass createErrorMessage = Pass.Builder.create(this, "CreateErrorMessage")
+                .parameters(Map.of("errorMessage.$",
+                        "States.Format('Bulk import job {} failed. Check the pod logs for details.', $.job.id)"))
                 .build();
 
         return StateMachine.Builder.create(this, "EksBulkImportStateMachine")
-                .definition(
-                        new CustomState(this, "RunSparkJob", CustomStateProps.builder().stateJson(runJobState).build())
+                .definitionBody(DefinitionBody.fromChainable(
+                        CustomState.Builder.create(this, "RunSparkJob").stateJson(runJobState).build()
                                 .next(Choice.Builder.create(this, "SuccessDecision").build()
                                         .when(Condition.stringMatches("$.output.logs[0]", "*exit code: 0*"),
-                                                Succeed.Builder.create(this, "FinishedJobState").build())
-                                        .otherwise(createErrorMessage.next(publishError).next(
-                                                Fail.Builder.create(this, "FailedJobState")
-                                                        .cause("Spark job failed").build()))))
-                .build();
+                                                CustomState.Builder.create(this, "DeleteDriverPod")
+                                                        .stateJson(deleteDriverPodState).build()
+                                                        .next(CustomState.Builder.create(this, "DeleteJob")
+                                                                .stateJson(deleteJobState).build()))
+                                        .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
+                                                .create(this, "FailedJobState").cause("Spark job failed").build()))))
+                ).build();
     }
 
     private void grantAccesses(List<IBucket> dataBuckets,
@@ -315,6 +321,16 @@ public final class EksBulkImportStack extends NestedStack {
                 "/k8s/namespace.json");
     }
 
+    private void addClusterAdminRoles(Cluster cluster, InstanceProperties properties) {
+        List<String> roles = properties.getList(EKS_CLUSTER_ADMIN_ROLES);
+        if (roles == null) {
+            return;
+        }
+        for (String role : roles) {
+            cluster.getAwsAuth().addMastersRole(Role.fromRoleName(this, "ClusterAccessFor" + role, role));
+        }
+    }
+
     private void createManifests(Cluster cluster, KubernetesManifest namespace, String namespaceName,
                                  IRole stateMachineRole) {
         Lists.newArrayList(
@@ -326,29 +342,63 @@ public final class EksBulkImportStack extends NestedStack {
                         createManifestFromResource(cluster, "StepFunctionRole", namespaceName, "/k8s/step-function-role.json"),
                         createManifestFromResource(cluster, "StepFunctionRoleBinding", namespaceName,
                                 "/k8s/step-function-role-binding.json",
-                                Pair.of("user-placeholder", stateMachineRole.getRoleArn())))
+                                replacements(Map.of("user-placeholder", stateMachineRole.getRoleArn()))))
                 .forEach(manifest -> manifest.getNode().addDependency(namespace));
     }
 
-    private KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
-                                                          Pair<String, String>... replacements) {
-        String json = parseJsonFile(resource, namespace);
-        for (Pair<String, String> replacement : replacements) {
-            json = json.replace(replacement.getFirst(), replacement.getSecond());
-        }
-
-        return cluster.addManifest(id, new Gson().fromJson(json, Map.class));
+    private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource) {
+        return createManifestFromResource(cluster, id, namespace, resource, json -> json);
     }
 
-    private String parseJsonFile(String resource, String namespace) {
+    private static KubernetesManifest createManifestFromResource(Cluster cluster, String id, String namespace, String resource,
+                                                                 Function<String, String> replacements) {
+        return cluster.addManifest(id, parseJsonWithNamespace(resource, namespace, replacements));
+    }
+
+    private static Map<String, Object> parseEksStepDefinition(String resource, InstanceProperties instanceProperties, Cluster cluster) {
+        return parseEksStepDefinition(resource, instanceProperties, cluster, json -> json);
+    }
+
+    private static Map<String, Object> parseEksStepDefinition(
+            String resource, InstanceProperties instanceProperties, Cluster cluster, Function<String, String> replacements) {
+        return parseJsonWithNamespace(resource,
+                instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_NAMESPACE),
+                replacements(Map.of(
+                        "endpoint-placeholder", instanceProperties.get(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_CLUSTER_ENDPOINT),
+                        "cluster-placeholder", cluster.getClusterName(),
+                        "ca-placeholder", cluster.getClusterCertificateAuthorityData()))
+                        .andThen(replacements));
+    }
+
+    private static Map<String, Object> parseJsonWithNamespace(
+            String resource, String namespace, Function<String, String> replacements) {
+        return parseJson(resource, replacement("namespace-placeholder", namespace).andThen(replacements));
+    }
+
+    private static Map<String, Object> parseJson(
+            String resource, Function<String, String> replacements) {
         String json;
         try {
-            json = IOUtils.toString(getClass().getResourceAsStream(resource), StandardCharsets.UTF_8);
+            json = IOUtils.toString(Objects.requireNonNull(EksBulkImportStack.class.getResourceAsStream(resource)), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
 
-        return json.replace("namespace-placeholder", namespace);
+        String jsonWithReplacements = replacements.apply(json);
+        return new Gson().fromJson(jsonWithReplacements, new JsonTypeToken());
+    }
+
+    private static Function<String, String> replacement(String key, String value) {
+        return json -> json.replace(key, value);
+    }
+
+    private static Function<String, String> replacements(Map<String, String> replacements) {
+        return json -> {
+            for (Map.Entry<String, String> replacement : replacements.entrySet()) {
+                json = json.replace(replacement.getKey(), replacement.getValue());
+            }
+            return json;
+        };
     }
 
     public void grantAccessToResources(IFunction starterFunction, IBucket ingestBucket) {
@@ -360,5 +410,8 @@ public final class EksBulkImportStack extends NestedStack {
 
     public Queue getBulkImportJobQueue() {
         return bulkImportJobQueue;
+    }
+
+    public static class JsonTypeToken extends TypeToken<Map<String, Object>> {
     }
 }

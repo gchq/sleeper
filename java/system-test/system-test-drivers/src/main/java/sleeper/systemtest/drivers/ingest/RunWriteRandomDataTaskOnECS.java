@@ -30,16 +30,18 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.job.common.RunECSTasks;
 import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
@@ -48,6 +50,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.configuration.SystemTestConstants.SYSTEM_TEST_CONTAINER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TASK_DEFINITION_FAMILY;
 
@@ -57,21 +60,32 @@ import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_TAS
 public class RunWriteRandomDataTaskOnECS {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunWriteRandomDataTaskOnECS.class);
 
-    private final SystemTestProperties systemTestProperties;
-    private final TableProperties tableProperties;
+    private final InstanceProperties instanceProperties;
+    private final SystemTestPropertyValues systemTestProperties;
     private final AmazonECS ecsClient;
+    private final List<String> args;
 
     public RunWriteRandomDataTaskOnECS(SystemTestProperties systemTestProperties, TableProperties tableProperties, AmazonECS ecsClient) {
-        this.systemTestProperties = systemTestProperties;
-        this.tableProperties = tableProperties;
+        this.instanceProperties = systemTestProperties;
+        this.systemTestProperties = systemTestProperties.testPropertiesOnly();
         this.ecsClient = ecsClient;
+        this.args = List.of(
+                instanceProperties.get(CONFIG_BUCKET),
+                tableProperties.get(TABLE_NAME));
+    }
+
+    public RunWriteRandomDataTaskOnECS(InstanceProperties instanceProperties, TableProperties tableProperties,
+                                       SystemTestStandaloneProperties systemTestProperties, AmazonECS ecsClient) {
+        this.instanceProperties = instanceProperties;
+        this.systemTestProperties = systemTestProperties;
+        this.ecsClient = ecsClient;
+        this.args = List.of(
+                instanceProperties.get(CONFIG_BUCKET),
+                tableProperties.get(TABLE_NAME),
+                systemTestProperties.get(SYSTEM_TEST_BUCKET_NAME));
     }
 
     public List<RunTaskResult> run() {
-
-        List<String> args = Arrays.asList(
-                systemTestProperties.get(CONFIG_BUCKET),
-                tableProperties.get(TABLE_NAME));
 
         ContainerOverride containerOverride = new ContainerOverride()
                 .withName(SYSTEM_TEST_CONTAINER)
@@ -81,7 +95,7 @@ public class RunWriteRandomDataTaskOnECS {
                 .withContainerOverrides(containerOverride);
 
         AwsVpcConfiguration vpcConfiguration = new AwsVpcConfiguration()
-                .withSubnets(systemTestProperties.getList(SUBNETS));
+                .withSubnets(instanceProperties.getList(SUBNETS));
 
         NetworkConfiguration networkConfiguration = new NetworkConfiguration()
                 .withAwsvpcConfiguration(vpcConfiguration);
@@ -93,7 +107,7 @@ public class RunWriteRandomDataTaskOnECS {
                 .withNetworkConfiguration(networkConfiguration)
                 .withOverrides(override)
                 .withPropagateTags(PropagateTags.TASK_DEFINITION)
-                .withPlatformVersion(systemTestProperties.get(FARGATE_VERSION));
+                .withPlatformVersion(instanceProperties.get(FARGATE_VERSION));
 
         List<RunTaskResult> results = new ArrayList<>();
         RunECSTasks.runTasksOrThrow(builder -> builder

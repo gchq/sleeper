@@ -42,6 +42,7 @@ import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
+import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -69,6 +70,7 @@ public class SleeperCdkApp extends Stack {
     private BulkImportBucketStack bulkImportBucketStack;
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
+    private EmrServerlessBulkImportStack emrServerlessBulkImportStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
@@ -82,18 +84,21 @@ public class SleeperCdkApp extends Stack {
 
     private static final List<String> BULK_IMPORT_STACK_NAMES = Stream.of(
                     EmrBulkImportStack.class,
+                    EmrServerlessBulkImportStack.class,
                     PersistentEmrBulkImportStack.class,
                     EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     private static final List<String> EMR_BULK_IMPORT_STACK_NAMES = Stream.of(
                     EmrBulkImportStack.class,
+                    EmrServerlessBulkImportStack.class,
                     PersistentEmrBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
 
     public static final List<String> INGEST_STACK_NAMES = Stream.of(
                     IngestStack.class,
                     EmrBulkImportStack.class,
+                    EmrServerlessBulkImportStack.class,
                     PersistentEmrBulkImportStack.class,
                     EksBulkImportStack.class)
             .map(Class::getSimpleName).collect(Collectors.toList());
@@ -128,6 +133,17 @@ public class SleeperCdkApp extends Stack {
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
                     instanceProperties, bulkImportBucketStack, tableStack, ingestStatusStoreStack);
+        }
+
+        // Stack to run bulk import jobs via EMR Serverless
+        if (optionalStacks.contains(EmrServerlessBulkImportStack.class.getSimpleName())) {
+            emrServerlessBulkImportStack = new EmrServerlessBulkImportStack(this, "BulkImportEMRServerless",
+                    instanceProperties, jars,
+                    bulkImportBucketStack,
+                    topicStack,
+                    tableStack,
+                    ingestStatusStoreStack.getResources()
+            );
         }
 
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
@@ -248,6 +264,10 @@ public class SleeperCdkApp extends Stack {
 
     public TableStack getTableStack() {
         return tableStack;
+    }
+
+    public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {
+        return emrServerlessBulkImportStack;
     }
 
     public EmrBulkImportStack getEmrBulkImportStack() {

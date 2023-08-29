@@ -17,6 +17,9 @@ package sleeper.cdk.jars;
 
 import sleeper.core.SleeperVersion;
 
+import java.nio.file.Path;
+import java.util.stream.Stream;
+
 public class BuiltJar {
 
     public static final BuiltJar ATHENA = fromFormat("athena-%s.jar");
@@ -44,5 +47,15 @@ public class BuiltJar {
 
     public String getFileName() {
         return fileName;
+    }
+
+    public static boolean isFileJar(Path file, BuiltJar... jars) {
+        return isFilenameOfJar(String.valueOf(file.getFileName()), jars);
+    }
+
+    public static boolean isFilenameOfJar(String fileName, BuiltJar... jars) {
+        return Stream.of(jars)
+                .map(BuiltJar::getFileName)
+                .anyMatch(fileName::equals);
     }
 }

@@ -30,13 +30,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestResult;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
-import sleeper.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;

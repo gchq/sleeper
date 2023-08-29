@@ -38,13 +38,19 @@ public class UploadDockerImages {
     private final Path baseDockerDirectory;
     private final Path uploadDockerImagesScript;
     private final boolean skip;
-    private final InstanceProperties instanceProperties;
+    private final String id;
+    private final String account;
+    private final String region;
+    private final String stacks;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         uploadDockerImagesScript = requireNonNull(builder.uploadDockerImagesScript, "uploadDockerImagesScript must not be null");
         skip = builder.skip;
-        instanceProperties = requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
+        id = requireNonNull(builder.id, "id must not be null");
+        account = requireNonNull(builder.account, "account must not be null");
+        region = requireNonNull(builder.region, "region must not be null");
+        stacks = requireNonNull(builder.stacks, "stacks must not be null");
     }
 
     public static Builder builder() {
@@ -52,7 +58,7 @@ public class UploadDockerImages {
     }
 
     public void upload() throws IOException, InterruptedException {
-        upload(ClientUtils::runCommand);
+        upload(ClientUtils::runCommandInheritIO);
     }
 
     public void upload(RunCommand runCommand) throws IOException, InterruptedException {
@@ -61,11 +67,11 @@ public class UploadDockerImages {
             return;
         }
         int exitCode = runCommand.run(uploadDockerImagesScript.toString(),
-                instanceProperties.get(ID),
+                id,
                 String.format("%s.dkr.ecr.%s.amazonaws.com",
-                        instanceProperties.get(ACCOUNT), instanceProperties.get(REGION)),
+                        account, region),
                 SleeperVersion.getVersion(),
-                instanceProperties.get(OPTIONAL_STACKS),
+                stacks,
                 baseDockerDirectory.toString());
 
         if (exitCode != 0) {
@@ -77,7 +83,10 @@ public class UploadDockerImages {
         private Path baseDockerDirectory;
         private Path uploadDockerImagesScript;
         private boolean skip;
-        private InstanceProperties instanceProperties;
+        private String id;
+        private String account;
+        private String region;
+        private String stacks;
 
         private Builder() {
         }
@@ -97,9 +106,31 @@ public class UploadDockerImages {
             return this;
         }
 
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            this.instanceProperties = instanceProperties;
+        public Builder id(String id) {
+            this.id = id;
             return this;
+        }
+
+        public Builder account(String account) {
+            this.account = account;
+            return this;
+        }
+
+        public Builder region(String region) {
+            this.region = region;
+            return this;
+        }
+
+        public Builder stacks(String stacks) {
+            this.stacks = stacks;
+            return this;
+        }
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            return id(instanceProperties.get(ID))
+                    .account(instanceProperties.get(ACCOUNT))
+                    .region(instanceProperties.get(REGION))
+                    .stacks(instanceProperties.get(OPTIONAL_STACKS));
         }
 
         public UploadDockerImages build() {

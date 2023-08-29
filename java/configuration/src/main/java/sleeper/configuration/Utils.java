@@ -18,10 +18,10 @@ package sleeper.configuration;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
+import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.table.CompressionCodec;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.IntPredicate;
@@ -54,8 +54,16 @@ public class Utils {
         return parseAndCheckInteger(integer, num -> num >= 0);
     }
 
+    public static boolean isInteger(String integer) {
+        return parseAndCheckInteger(integer, num -> true);
+    }
+
     public static boolean isPositiveLong(String value) {
         return parseAndCheckLong(value, num -> num > 0);
+    }
+
+    public static boolean isLong(String value) {
+        return parseAndCheckLong(value, num -> true);
     }
 
     public static boolean isPositiveDouble(String value) {
@@ -149,10 +157,12 @@ public class Utils {
         return parseAndCheckInteger(string, num -> num >= 1 && num <= maxValue);
     }
 
-    public static <T, A extends T, B extends T> List<T> combineLists(List<A> list1, List<B> list2) {
-        List<T> combinedList = new ArrayList<>(list1);
-        combinedList.addAll(list2);
-        return combinedList;
+    public static boolean isValidArchitecture(String input) {
+        if (input == null) {
+            return false;
+        }
+        return SleeperPropertyValues.readList(input).stream()
+                .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {

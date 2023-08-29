@@ -34,12 +34,12 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
@@ -187,7 +187,7 @@ public class QueryExecutor {
             // that records are not returned twice if they are in a non-leaf
             // partition).
             LeafPartitionQuery leafPartitionQuery
-                    = ((LeafPartitionQuery.Builder) new LeafPartitionQuery.Builder(
+                    = new LeafPartitionQuery.Builder(
                     query.getTableName(),
                     query.getQueryId(),
                     UUID.randomUUID().toString(),
@@ -198,7 +198,7 @@ public class QueryExecutor {
                     .setQueryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
                     .setQueryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
                     .setResultsPublisherConfig(query.getResultsPublisherConfig())
-                    .setRequestedValueFields(query.getRequestedValueFields()))
+                    .setRequestedValueFields(query.getRequestedValueFields())
                     .setStatusReportDestinations(query.getStatusReportDestinations())
                     .build();
             LOGGER.debug("Created {}", leafPartitionQuery);
@@ -212,7 +212,7 @@ public class QueryExecutor {
         List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
 
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
-            iterators.add((Supplier<CloseableIterator<Record>>) () -> {
+            iterators.add(() -> {
                 try {
                     LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, configuration, tableProperties);
                     CloseableIterator<Record> it = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);

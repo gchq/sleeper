@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,21 +13,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-COMMON_DIR=$(cd "$THIS_DIR" && cd ../common && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$COMMON_DIR/testIngest.sh"
+"$THIS_DIR/testIngest.sh"
 
 END_INGEST=$(record_time)
 
-"$COMMON_DIR/testCompaction.sh"
+"$THIS_DIR/testCompaction.sh"
 
 FINISH_TIME=$(record_time)
 echo "-------------------------------------------------------------------------------"

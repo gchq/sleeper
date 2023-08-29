@@ -71,5 +71,4 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
                         finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2)),
                         finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1))));
     }
-
 }

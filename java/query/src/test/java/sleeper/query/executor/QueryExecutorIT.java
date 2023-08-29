@@ -15,29 +15,25 @@
  */
 package sleeper.query.executor;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -45,18 +41,15 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
-import sleeper.statestore.FileInfo;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStore;
-import sleeper.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -67,7 +60,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -80,30 +72,22 @@ import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_C
 import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 @Testcontainers
 public class QueryExecutorIT {
-    protected static final int DYNAMO_PORT = 8000;
-    protected static AmazonDynamoDB dynamoDBClient;
     protected static ExecutorService executorService;
-
-    @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
 
     @TempDir
     public Path folder;
 
     @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+    public static void initExecutorService() {
         executorService = Executors.newFixedThreadPool(10);
     }
 
     @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
+    public static void shutdownExecutorService() {
         executorService.shutdown();
     }
 
@@ -115,7 +99,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
         queryExecutor.init();
@@ -156,7 +140,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -226,7 +210,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
         List<String> files = stateStore.getActiveFiles().stream()
@@ -288,7 +272,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -352,7 +336,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
@@ -484,15 +468,16 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
-        Partition leftPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key").getMin() == Long.MIN_VALUE))
-                .findFirst()
-                .get();
-        Partition rightPartition = stateStore.getLeafPartitions().stream()
-                .filter(p -> ((long) p.getRegion().getRange("key").getMin() == 5L))
-                .findFirst()
-                .get();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 5L)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                tree.getAllPartitions()
+        );
+        Partition leftPartition = tree.getPartition("left");
+        Partition rightPartition = tree.getPartition("right");
+
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
         }
@@ -599,7 +584,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         Partition leftPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
                 .findFirst()
@@ -725,7 +715,6 @@ public class QueryExecutorIT {
                 .rowKeyFields(field1, field2)
                 .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
                 .build();
-        List<PrimitiveType> rowKeyTypes = schema.getRowKeyTypes();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -743,114 +732,38 @@ public class QueryExecutorIT {
         //           |           |           |
         //        "" +-----------+-----------+
         //           ""         "I"          null      (Dimension 1)
-        StateStore stateStore = getStateStore(schema);
-        Partition rootPartition = stateStore.getAllPartitions().get(0);
         // Add 4 records - record i is in the center of partition i
         Record record1 = createRecordMultidimensionalKey("D", "J", 10L, 100L);
         Record record2 = createRecordMultidimensionalKey("K", "H", 1000L, 10000L);
         Record record3 = createRecordMultidimensionalKey("C", "X", 100000L, 1000000L);
         Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
         List<Record> records = Arrays.asList(record1, record2, record3, record4);
-        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
-        // Split the root partition into 2: 1 and 3, and 2 and 4
-        Range leftRange1 = new RangeFactory(schema).createRange(field1, "", "I");
-        Range leftRange2 = new RangeFactory(schema).createRange(field2, "", null);
-        Partition leftPartition = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(leftRange1, leftRange2)))
-                .id("left")
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
 
-        Range rightRange1 = new RangeFactory(schema).createRange(field1, "I", null);
-        Range rightRange2 = new RangeFactory(schema).createRange(field2, "", null);
-        Partition rightPartition = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(rightRange1, rightRange2)))
-                .id("right")
-                .leafPartition(true)
-                .parentPartitionId("root")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .buildList());
 
-        rootPartition = rootPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("left", "right"))
-                .build();
-
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rootPartition,
-                leftPartition, rightPartition);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
-        // 4 leaf partitions
-        Range range11 = new RangeFactory(schema).createRange(field1, "", "I");
-        Range range12 = new RangeFactory(schema).createRange(field2, "", "T");
-        Partition partition1 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range11, range12)))
-                .id("P1")
-                .leafPartition(true)
-                .parentPartitionId("left")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
+        // Split the root partition into 2:
+        stateStore.initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
+                .buildList()
+        );
 
-        Range range21 = new RangeFactory(schema).createRange(field1, "I", null);
-        Range range22 = new RangeFactory(schema).createRange(field2, "", "T");
-        Partition partition2 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range21, range22)))
-                .id("P2")
-                .leafPartition(true)
-                .parentPartitionId("right")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-
-        Range range31 = new RangeFactory(schema).createRange(field1, "", "I");
-        Range range32 = new RangeFactory(schema).createRange(field2, "T", null);
-        Partition partition3 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range31, range32)))
-                .id("P3")
-                .leafPartition(true)
-                .parentPartitionId("left")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-
-        Range range41 = new RangeFactory(schema).createRange(field1, "I", null);
-        Range range42 = new RangeFactory(schema).createRange(field2, "T", null);
-        Partition partition4 = Partition.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .region(new Region(Arrays.asList(range41, range42)))
-                .id("P4")
-                .leafPartition(true)
-                .parentPartitionId("right")
-                .childPartitionIds(new ArrayList<>())
-                .dimension(-1)
-                .build();
-
-        // Split the left partition into 1 and 3
-        leftPartition = leftPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("P1", "P3"))
-                .build();
-
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(leftPartition,
-                partition1, partition3);
-        // Split the right partition into 2 and 4
-        rightPartition = rightPartition.toBuilder()
-                .leafPartition(false)
-                .childPartitionIds(Arrays.asList("P2", "P4"))
-                .build();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(rightPartition,
-                partition2, partition4);
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
+                .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
+                .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
+                .buildTree();
+        stateStore.initialise(tree.getAllPartitions());
+        ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
+
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
                 .filter(f -> List.of("P1", "left", "root").contains(f.getPartitionId()))
                 .map(FileInfo::getFilename)
@@ -1080,21 +993,25 @@ public class QueryExecutorIT {
                 .filter(p -> p.getLeafPartitionId().equals("P4"))
                 .findFirst()
                 .get();
-        LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition1Query.getSubQueryId(), region, partition1.getId(), partition1.getRegion(), filesInLeafPartition1)
-                .build();
+        LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1",
+                tree.getPartition("P1").getRegion(), filesInLeafPartition1
+        ).build();
         assertThat(leafPartition1Query).isEqualTo(expectedLeafPartition1Query);
-        LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition2Query.getSubQueryId(), region, partition2.getId(), partition2.getRegion(), filesInLeafPartition2)
-                .build();
+        LeafPartitionQuery expectedLeafPartition2Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition2Query.getSubQueryId(), region, "P2",
+                tree.getPartition("P2").getRegion(), filesInLeafPartition2
+        ).build();
         assertThat(leafPartition2Query).isEqualTo(expectedLeafPartition2Query);
-        LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition3Query.getSubQueryId(), region, partition3.getId(), partition3.getRegion(), filesInLeafPartition3)
-                .build();
+        LeafPartitionQuery expectedLeafPartition3Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition3Query.getSubQueryId(), region, "P3",
+                tree.getPartition("P3").getRegion(), filesInLeafPartition3
+        ).build();
         assertThat(leafPartition3Query).isEqualTo(expectedLeafPartition3Query);
-        LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery
-                .Builder("myTable", "id", leafPartition4Query.getSubQueryId(), region, partition4.getId(), partition4.getRegion(), filesInLeafPartition4)
-                .build();
+        LeafPartitionQuery expectedLeafPartition4Query = new LeafPartitionQuery.Builder(
+                "myTable", "id", leafPartition4Query.getSubQueryId(), region, "P4",
+                tree.getPartition("P4").getRegion(), filesInLeafPartition4
+        ).build();
         assertThat(leafPartition4Query).isEqualTo(expectedLeafPartition4Query);
     }
 
@@ -1111,7 +1028,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
                 tableProperties, stateStore, new Configuration(), executorService);
@@ -1170,7 +1092,7 @@ public class QueryExecutorIT {
         tableProperties.setSchema(schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Record> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         QueryExecutor queryExecutor = new QueryExecutor(new ObjectFactory(instanceProperties, null, ""),
@@ -1233,7 +1155,12 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = getStateStore(schema, Collections.singletonList(5L));
+        StateStore stateStore = inMemoryStateStoreWithPartitions(
+                new PartitionsBuilder(schema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 5L)
+                        .buildList()
+        );
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
@@ -1264,7 +1191,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1296,7 +1223,7 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
@@ -1338,7 +1265,7 @@ public class QueryExecutorIT {
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
                               TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
-        instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(FILE_SYSTEM, "file://");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         IngestFactory factory = IngestFactory.builder()
@@ -1386,7 +1313,7 @@ public class QueryExecutorIT {
         for (int i = 1; i <= 10; i++) {
             Record record = new Record();
             record.put("key1", (long) i);
-            record.put("key2", "" + i);
+            record.put("key2", String.valueOf(i));
             record.put("value1", i * 10L);
             record.put("value2", i * 100L);
             records.add(record);
@@ -1439,18 +1366,6 @@ public class QueryExecutorIT {
             records.add(record);
         }
         return records;
-    }
-
-    protected StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStore(schema, Collections.emptyList());
-    }
-
-    protected StateStore getStateStore(Schema schema,
-                                       List<Object> splitPoints) throws StateStoreException {
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema, dynamoDBClient);
-        DynamoDBStateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
-        return dynamoStateStore;
     }
 
     private static Record createRecordMultidimensionalKey(String key1, String key2, long value1, long value2) {

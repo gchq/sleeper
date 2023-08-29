@@ -33,7 +33,7 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.statestore.StateStore;
+import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;

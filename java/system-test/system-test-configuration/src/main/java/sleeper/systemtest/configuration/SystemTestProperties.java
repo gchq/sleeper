@@ -24,8 +24,22 @@ import sleeper.configuration.properties.instance.InstanceProperty;
  * run the system tests that add random data to Sleeper.
  */
 public class SystemTestProperties extends InstanceProperties {
+
+    static final SleeperPropertyIndex<InstanceProperty> PROPERTY_INDEX = createPropertyIndex();
+
+    private static SleeperPropertyIndex<InstanceProperty> createPropertyIndex() {
+        SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();
+        index.addAll(InstanceProperty.getAll());
+        index.addAll(SystemTestProperty.getAll());
+        return index;
+    }
+
     @Override
     public SleeperPropertyIndex<InstanceProperty> getPropertiesIndex() {
-        return SystemTestProperty.Index.INSTANCE;
+        return PROPERTY_INDEX;
+    }
+
+    public SystemTestPropertyValues testPropertiesOnly() {
+        return this::get;
     }
 }

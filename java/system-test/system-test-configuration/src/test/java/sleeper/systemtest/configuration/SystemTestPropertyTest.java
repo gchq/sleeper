@@ -24,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SystemTestPropertyTest {
 
     @Test
-    void shouldSetUniqueDescriptionsOnAllProperties() {
-        assertThat(SystemTestProperty.getAll())
-                .extracting(InstanceProperty::getDescription)
-                .doesNotContainNull()
-                .doesNotHaveDuplicates();
+    void shouldGetAllPropertiesInSystemTestPropertiesIndex() {
+        SystemTestProperties properties = new SystemTestProperties();
+        assertThat(properties.getPropertiesIndex().getAll())
+                .containsAll(InstanceProperty.getAll())
+                .containsAll(SystemTestProperty.getAll());
     }
 }

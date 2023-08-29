@@ -117,7 +117,7 @@ class IngestBatcherStoreInMemoryTest {
             // When
             store.addFile(fileIngestRequest1);
             store.addFile(fileIngestRequest2);
-            store.assignJob("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1, fileIngestRequest2));
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).containsExactlyInAnyOrder(
@@ -138,7 +138,7 @@ class IngestBatcherStoreInMemoryTest {
 
             // When
             store.addFile(fileIngestRequest1);
-            store.assignJob("test-job", List.of(fileIngestRequest1));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest1));
             store.addFile(fileIngestRequest2);
 
             // Then
@@ -160,7 +160,7 @@ class IngestBatcherStoreInMemoryTest {
 
             // When
             store.addFile(fileIngestRequest);
-            store.assignJob("test-job", List.of(fileIngestRequest));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
 
             // Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
@@ -213,11 +213,46 @@ class IngestBatcherStoreInMemoryTest {
         @Test
         void shouldReportAllFilesInOrderRequestsReceivedMostRecentFirstWhenOneHasBeenAssignedToAJob() {
             // Given
-            store.assignJob("test-job", List.of(fileIngestRequest2));
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest2));
 
             // When / Then
             assertThat(store.getAllFilesNewestFirst()).containsExactly(
                     fileIngestRequest3, onJob("test-job", fileIngestRequest2), fileIngestRequest1);
+        }
+    }
+
+    @Nested
+    @DisplayName("Delete all pending")
+    class DeleteAllPending {
+        final FileIngestRequest fileIngestRequest = fileRequest()
+                .file("test-bucket/first.parquet")
+                .tableName("test-table").build();
+
+        @Test
+        void shouldDeletePendingFile() {
+            // Given
+            store.addFile(fileIngestRequest);
+
+            // When
+            store.deleteAllPending();
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldNotDeleteAssignedFile() {
+            // Given
+            store.addFile(fileIngestRequest);
+            store.assignJobGetAssigned("test-job", List.of(fileIngestRequest));
+
+            // When
+            store.deleteAllPending();
+
+            // Then
+            assertThat(store.getAllFilesNewestFirst())
+                    .containsExactly(fileIngestRequest.toBuilder().jobId("test-job").build());
         }
     }
 

@@ -20,6 +20,7 @@ import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.record.process.status.TimeWindowQuery;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -99,9 +100,14 @@ public class IngestJobStatus {
                 .orElseThrow();
     }
 
-    public boolean isInPeriod(Instant startTime, Instant endTime) {
-        return startTime.isBefore(jobRuns.lastTime().orElse(endTime))
-                && endTime.isAfter(jobRuns.firstTime().orElse(startTime));
+    public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
+        TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
+        if (isFinished()) {
+            return timeWindowQuery.isFinishedProcessInWindow(
+                    jobRuns.firstTime().orElseThrow(), jobRuns.lastTime().orElseThrow());
+        } else {
+            return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
+        }
     }
 
     @Override

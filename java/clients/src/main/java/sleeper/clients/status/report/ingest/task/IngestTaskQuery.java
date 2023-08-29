@@ -18,6 +18,7 @@ package sleeper.clients.status.report.ingest.task;
 import sleeper.ingest.task.IngestTaskStatus;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
+import java.time.Instant;
 import java.util.List;
 
 @FunctionalInterface
@@ -36,5 +37,9 @@ public interface IngestTaskQuery {
             default:
                 throw new IllegalArgumentException("Unrecognised query type: " + type);
         }
+    }
+
+    static IngestTaskQuery forPeriod(Instant startTime, Instant endTime) {
+        return store -> store.getTasksInTimePeriod(startTime, endTime);
     }
 }

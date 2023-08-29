@@ -16,88 +16,81 @@
 
 package sleeper.configuration;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.Utils.combineLists;
 
 class UtilsTest {
 
-    @Test
-    void shouldCombineLists() {
-        // Given
-        List<String> list1 = List.of("test1", "test2");
-        List<String> list2 = List.of("test3", "test4");
+    @Nested
+    @DisplayName("Validate numbers")
+    class ValidateNumbers {
+        @Test
+        void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
+            // When/Then
+            assertThat(Utils.isPositiveInteger("123"))
+                    .isTrue();
+            assertThat(Utils.isPositiveInteger("ABC"))
+                    .isFalse();
+        }
 
-        // When
-        List<String> combinedList = combineLists(list1, list2);
+        @Test
+        void shouldNotThrowExceptionDuringPositiveLongCheck() {
+            // When/Then
+            assertThat(Utils.isPositiveLong("123"))
+                    .isTrue();
+            assertThat(Utils.isPositiveLong("ABC"))
+                    .isFalse();
+        }
 
-        // Then
-        assertThat(combinedList)
-                .containsExactly("test1", "test2", "test3", "test4");
+        @Test
+        void shouldNotThrowExceptionDuringPositiveDoubleCheck() {
+            // When/Then
+            assertThat(Utils.isPositiveDouble("123"))
+                    .isTrue();
+            assertThat(Utils.isPositiveDouble("ABC"))
+                    .isFalse();
+        }
     }
 
-    @Test
-    void shouldNotThrowExceptionDuringPositiveIntegerCheck() {
-        // When/Then
-        assertThat(Utils.isPositiveInteger("123"))
-                .isTrue();
-        assertThat(Utils.isPositiveInteger("ABC"))
-                .isFalse();
-    }
+    @Nested
+    @DisplayName("Validate bytes size")
+    class ValidateBytesSize {
+        @Test
+        void shouldReadBytesSize() {
+            assertThat(Utils.readBytes("42")).isEqualTo(42L);
+        }
 
-    @Test
-    void shouldNotThrowExceptionDuringPositiveLongCheck() {
-        // When/Then
-        assertThat(Utils.isPositiveLong("123"))
-                .isTrue();
-        assertThat(Utils.isPositiveLong("ABC"))
-                .isFalse();
-    }
+        @Test
+        void shouldReadKilobytesSize() {
+            assertThat(Utils.readBytes("2K")).isEqualTo(2048L);
+        }
 
-    @Test
-    void shouldNotThrowExceptionDuringPositiveDoubleCheck() {
-        // When/Then
-        assertThat(Utils.isPositiveDouble("123"))
-                .isTrue();
-        assertThat(Utils.isPositiveDouble("ABC"))
-                .isFalse();
-    }
+        @Test
+        void shouldReadMegabytesSize() {
+            assertThat(Utils.readBytes("2M")).isEqualTo(2 * 1024 * 1024L);
+        }
 
-    @Test
-    void shouldReadBytesSize() {
-        assertThat(Utils.readBytes("42")).isEqualTo(42L);
-    }
+        @Test
+        void shouldReadGigabytesSize() {
+            assertThat(Utils.readBytes("2G")).isEqualTo(2 * 1024 * 1024 * 1024L);
+        }
 
-    @Test
-    void shouldReadKilobytesSize() {
-        assertThat(Utils.readBytes("2K")).isEqualTo(2048L);
-    }
+        @Test
+        void shouldReadTerabytesSize() {
+            assertThat(Utils.readBytes("2T")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L);
+        }
 
-    @Test
-    void shouldReadMegabytesSize() {
-        assertThat(Utils.readBytes("2M")).isEqualTo(2 * 1024 * 1024L);
-    }
+        @Test
+        void shouldReadPetabytesSize() {
+            assertThat(Utils.readBytes("2P")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L);
+        }
 
-    @Test
-    void shouldReadGigabytesSize() {
-        assertThat(Utils.readBytes("2G")).isEqualTo(2 * 1024 * 1024 * 1024L);
-    }
-
-    @Test
-    void shouldReadTerabytesSize() {
-        assertThat(Utils.readBytes("2T")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L);
-    }
-
-    @Test
-    void shouldReadPetabytesSize() {
-        assertThat(Utils.readBytes("2P")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L);
-    }
-
-    @Test
-    void shouldReadExabytesSize() {
-        assertThat(Utils.readBytes("2E")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L * 1024L);
+        @Test
+        void shouldReadExabytesSize() {
+            assertThat(Utils.readBytes("2E")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L * 1024L);
+        }
     }
 }

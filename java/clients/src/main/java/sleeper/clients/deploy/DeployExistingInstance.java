@@ -96,7 +96,7 @@ public class DeployExistingInstance {
         LOGGER.info("Deploying Stacks");
         LOGGER.info("-------------------------------------------------------");
         InvokeCdkForInstance.builder()
-                .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
+                .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)
                 .build().invokeInferringType(properties, CdkCommand.deployExisting());

@@ -16,14 +16,12 @@
 package sleeper.configuration.properties;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.Utils;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
@@ -41,7 +39,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -52,7 +49,7 @@ import static java.util.function.Predicate.not;
  * Abstract class which backs both {@link InstanceProperties} and
  * {@link sleeper.configuration.properties.table.TableProperties}.
  */
-public abstract class SleeperProperties<T extends SleeperProperty> {
+public abstract class SleeperProperties<T extends SleeperProperty> implements SleeperPropertyValues<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperProperties.class);
     private final Properties properties;
 
@@ -88,41 +85,11 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public String get(T property) {
-        return properties.getProperty(property.getPropertyName(), property.getDefaultValue());
-    }
-
-    public boolean getBoolean(T property) {
-        return Boolean.parseBoolean(get(property));
-    }
-
-    public Integer getInt(T property) {
-        return Integer.parseInt(get(property));
-    }
-
-    public Long getLong(T property) {
-        return Long.parseLong(get(property));
-    }
-
-    public Double getDouble(T property) {
-        return Double.parseDouble(get(property));
-    }
-
-    public long getBytes(T property) {
-        return Utils.readBytes(get(property));
-    }
-
-    public List<String> getList(T property) {
-        return readList(get(property));
-    }
-
-    public static List<String> readList(String value) {
-        if (value == null) {
-            return null;
-        } else if ("".equals(value)) {
-            return List.of();
-        } else {
-            return Lists.newArrayList(value.split(","));
+        String value = properties.getProperty(property.getPropertyName(), property.getDefaultValue());
+        if ("".equals(value)) {
+            return property.getDefaultValue();
         }
+        return value;
     }
 
     public void setNumber(T property, Number number) {
@@ -146,7 +113,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> {
     }
 
     public boolean isSet(T property) {
-        return properties.containsKey(property.getPropertyName());
+        return properties.containsKey(property.getPropertyName()) &&
+                !"".equals(properties.getProperty(property.getPropertyName()));
     }
 
     public Properties getProperties() {
