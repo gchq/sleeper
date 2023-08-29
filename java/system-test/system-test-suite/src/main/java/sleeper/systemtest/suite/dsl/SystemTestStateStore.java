@@ -32,10 +32,6 @@ public class SystemTestStateStore {
         this.instance = instance;
     }
 
-    public int numActiveFiles() {
-        return activeFiles().size();
-    }
-
     public List<FileInfo> activeFiles() {
         try {
             return instance.getStateStore().getActiveFiles();

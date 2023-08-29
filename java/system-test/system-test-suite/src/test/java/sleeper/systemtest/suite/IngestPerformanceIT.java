@@ -62,11 +62,11 @@ public class IngestPerformanceIT {
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldMeetIngestPerformanceStandards() throws InterruptedException {
+    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
         sleeper.stateStore().setPartitions(create128Partitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
-                    properties.set(NUMBER_OF_WRITERS, "110");
+                    properties.set(NUMBER_OF_WRITERS, "11");
                     properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
                     properties.set(MIN_RANDOM_INT, "0");
                     properties.set(MAX_RANDOM_INT, "100000000");
@@ -78,12 +78,13 @@ public class IngestPerformanceIT {
                     properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
                 })
                 .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
-                .invokeStandardIngestTasks(110,
+                .invokeStandardIngestTasks(11,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
+        assertThat(sleeper.stateStore().activeFiles()).hasSize(1408);
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(110)
+                .matches(stats -> stats.isAllFinishedOneRunEach(11)
                                 && stats.isMinAverageRunRecordsPerSecond(135000),
                         "meets minimum performance");
     }

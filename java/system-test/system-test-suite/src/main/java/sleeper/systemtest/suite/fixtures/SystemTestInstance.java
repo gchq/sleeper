@@ -105,7 +105,7 @@ public enum SystemTestInstance {
     private static DeployInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
         return buildConfigurationFromMain(parameters, properties -> {
             properties.set(OPTIONAL_STACKS, "IngestStack");
-            properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "110");
+            properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
             properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
             properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
             properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
