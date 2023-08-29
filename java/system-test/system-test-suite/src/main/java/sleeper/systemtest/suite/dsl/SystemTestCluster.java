@@ -67,9 +67,18 @@ public class SystemTestCluster {
         return this;
     }
 
+    public SystemTestCluster invokeStandardIngestTask() throws InterruptedException {
+        byQueueDriver.invokeStandardIngestTask();
+        return this;
+    }
+
     public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {
         byQueueDriver.invokeStandardIngestTasks(expectedTasks, poll);
         return this;
+    }
+
+    public void waitForJobs() throws InterruptedException {
+        waitForJobsDriver.waitForJobs(jobIds);
     }
 
     public void waitForJobs(PollWithRetries poll) throws InterruptedException {

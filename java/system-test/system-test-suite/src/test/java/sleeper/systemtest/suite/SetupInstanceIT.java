@@ -71,31 +71,19 @@ public class SetupInstanceIT {
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldGenerateSomeData() throws InterruptedException {
-        // When
-        sleeper.systemTestCluster().updateProperties(properties -> {
-            properties.set(INGEST_MODE, IngestMode.GENERATE_ONLY.toString());
-            properties.set(NUMBER_OF_WRITERS, "2");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "100");
-        }).generateData();
-
-        // Then
-        assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket()).hasSize(2);
-    }
-
-    @Test
-    @DisabledIf("systemTestClusterDisabled")
     void shouldIngestSomeData() throws InterruptedException {
         // When
         sleeper.systemTestCluster().updateProperties(properties -> {
-            properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
+            properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
             properties.set(NUMBER_OF_WRITERS, "2");
-            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "100");
-        }).generateData();
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "123");
+        }).generateData().invokeStandardIngestTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .hasSize(200);
+                .hasSize(246);
+        assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket())
+                .hasSize(2);
     }
 
     boolean systemTestClusterDisabled() {

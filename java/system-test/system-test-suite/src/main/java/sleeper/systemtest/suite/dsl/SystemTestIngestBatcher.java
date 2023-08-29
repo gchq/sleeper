@@ -16,17 +16,13 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-
-import static sleeper.ingest.batcher.IngestBatcher.batchIngestMode;
 
 public class SystemTestIngestBatcher {
     private final SystemTestIngest ingest;
@@ -54,15 +50,17 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
+    public SystemTestIngestBatcher invokeStandardIngestTask() throws InterruptedException {
+        ingest.byQueue().invokeTask();
+        return this;
+    }
+
     public SystemTestIngestBatcher waitForJobs() throws InterruptedException {
-        return waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+        ingest.waitForIngestJobsDriver().waitForJobs(getInvokeResult().createdJobIds);
+        return this;
     }
 
     public SystemTestIngestBatcher waitForJobs(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
-        BatchIngestMode mode = batchIngestMode(instance.getTableProperties()).orElseThrow();
-        if (BatchIngestMode.STANDARD_INGEST.equals(mode)) {
-            ingest.byQueue().invokeTasks();
-        }
         ingest.waitForIngestJobsDriver()
                 .waitForJobs(getInvokeResult().createdJobIds, pollUntilJobsFinished);
         return this;
