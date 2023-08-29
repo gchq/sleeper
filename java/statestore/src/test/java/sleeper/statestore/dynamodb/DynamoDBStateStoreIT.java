@@ -823,9 +823,7 @@ public class DynamoDBStateStoreIT {
 
         StateStore dynamoDBStateStore = getStateStore(schema, tree.getAllPartitions());
 
-        // When
-
-        // Then
+        // When / Then
         assertThat(dynamoDBStateStore.getAllPartitions()).containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
     }
 
