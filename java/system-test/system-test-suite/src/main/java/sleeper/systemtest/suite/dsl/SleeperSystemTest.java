@@ -80,6 +80,7 @@ public class SleeperSystemTest {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
+            instance.disconnect();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
