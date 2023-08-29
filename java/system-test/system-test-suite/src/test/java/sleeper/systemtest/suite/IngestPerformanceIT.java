@@ -42,8 +42,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRIT
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128SplitPoints;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsFromSplitPoints;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
@@ -64,7 +63,7 @@ public class IngestPerformanceIT {
     @Test
     @DisabledIf("systemTestClusterDisabled")
     void shouldMeetIngestPerformanceStandards() throws InterruptedException {
-        sleeper.stateStore().setPartitions(partitionsFromSplitPoints(sleeper, create128SplitPoints()));
+        sleeper.stateStore().setPartitions(create128Partitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
                     properties.set(NUMBER_OF_WRITERS, "110");

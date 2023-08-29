@@ -30,15 +30,22 @@ public class PartitionsTestHelper {
     private PartitionsTestHelper() {
     }
 
-    public static PartitionTree partitionsFromSplitPoints(SleeperSystemTest sleeper, List<Object> splitPoints) {
-        Schema schema = sleeper.tableProperties().getSchema();
-        return new PartitionTree(schema,
-                new PartitionsFromSplitPoints(schema, splitPoints).construct());
+    public static PartitionTree create128Partitions(SleeperSystemTest sleeper) {
+        return create128Partitions(sleeper.tableProperties().getSchema());
     }
 
-    public static List<Object> create128SplitPoints() {
-        return LongStream.range(0, 128)
+    static PartitionTree create128Partitions(Schema schema) {
+        return createPartitionsFromSplitPoints(schema, create127SplitPoints());
+    }
+
+    static List<Object> create127SplitPoints() {
+        return LongStream.range(0, 127)
                 .mapToObj(i -> "" + (char) (i / 5 + 'a') + (char) (i % 5 * 5 + 'a'))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
+        return new PartitionTree(schema,
+                new PartitionsFromSplitPoints(schema, splitPoints).construct());
     }
 }

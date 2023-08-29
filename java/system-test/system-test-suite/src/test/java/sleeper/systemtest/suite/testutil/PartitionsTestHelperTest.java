@@ -18,14 +18,30 @@ package sleeper.systemtest.suite.testutil;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128SplitPoints;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create127SplitPoints;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
 
 public class PartitionsTestHelperTest {
 
     @Test
-    void shouldGenerate128SplitPoints() {
-        assertThat(create128SplitPoints()).containsExactly(
+    void shouldGenerate128Partitions() {
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = create128Partitions(schema);
+
+        assertThat(tree.traverseLeavesFirst().takeWhile(Partition::isLeafPartition))
+                .hasSize(128);
+    }
+
+    @Test
+    void shouldGenerate127SplitPoints() {
+        assertThat(create127SplitPoints()).containsExactly(
                 "aa", "af", "ak", "ap", "au",
                 "ba", "bf", "bk", "bp", "bu",
                 "ca", "cf", "ck", "cp", "cu",
@@ -51,6 +67,6 @@ public class PartitionsTestHelperTest {
                 "wa", "wf", "wk", "wp", "wu",
                 "xa", "xf", "xk", "xp", "xu",
                 "ya", "yf", "yk", "yp", "yu",
-                "za", "zf", "zk");
+                "za", "zf");
     }
 }
