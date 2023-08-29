@@ -24,6 +24,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 import static sleeper.ingest.batcher.IngestBatcher.batchIngestMode;
 
@@ -32,7 +33,7 @@ public class SystemTestIngestBatcher {
     private final SleeperInstanceContext instance;
     private final IngestBatcherDriver driver;
     private final IngestSourceFilesDriver sourceFiles;
-    private IngestBatcherResult lastInvokeResult;
+    private Result lastInvokeResult;
 
     public SystemTestIngestBatcher(SystemTestIngest ingest, IngestSourceFilesDriver sourceFiles,
                                    SleeperInstanceContext instance, IngestBatcherDriver driver) {
@@ -49,7 +50,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invoke() {
-        lastInvokeResult = new IngestBatcherResult(driver.invokeGetJobIds());
+        lastInvokeResult = new Result(driver.invokeGetJobIds());
         return this;
     }
 
@@ -63,11 +64,11 @@ public class SystemTestIngestBatcher {
             ingest.byQueue().invokeTasks();
         }
         ingest.waitForIngestJobsDriver()
-                .waitForJobs(getInvokeResult().createdJobIds(), pollUntilJobsFinished);
+                .waitForJobs(getInvokeResult().createdJobIds, pollUntilJobsFinished);
         return this;
     }
 
-    public IngestBatcherResult getInvokeResult() {
+    public Result getInvokeResult() {
         if (lastInvokeResult == null) {
             throw new IllegalStateException("Batcher has not been invoked");
         }
@@ -76,5 +77,17 @@ public class SystemTestIngestBatcher {
 
     public void clearStore() {
         driver.clearStore();
+    }
+
+    public static class Result {
+        private final Set<String> createdJobIds;
+
+        public Result(Set<String> createdJobIds) {
+            this.createdJobIds = createdJobIds;
+        }
+
+        public int numJobsCreated() {
+            return createdJobIds.size();
+        }
     }
 }
