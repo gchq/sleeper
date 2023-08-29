@@ -87,6 +87,7 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         Map<String, Object> input = new HashMap<>();
         List<String> args = constructArgs(arguments, stateMachineArn);
         input.put("job", bulkImportJob);
+        input.put("jobPodPrefix", jobPodPrefix(bulkImportJob));
         input.put("args", args);
 
         stepFunctions.startExecution(
@@ -105,18 +106,9 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
         defaultConfig.put("spark.app.name", bulkImportJob.getId());
         defaultConfig.put("spark.kubernetes.container.image", imageName);
         defaultConfig.put("spark.kubernetes.namespace", instanceProperties.get(BULK_IMPORT_EKS_NAMESPACE));
-        /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
-         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/latest/running-on-kubernetes.html)
-         * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
-         * After adding an "eks-" prefix, maximum id length = 47-(17+4) = 26 characters
-         */
-        if (bulkImportJob.getId().length() > 26) {
-            defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId().substring(0, 26));
-            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", "eks-" + bulkImportJob.getId().substring(0, 26));
-        } else {
-            defaultConfig.put("spark.kubernetes.driver.pod.name", "eks-" + bulkImportJob.getId());
-            defaultConfig.put("spark.kubernetes.executor.podNamePrefix", "eks-" + bulkImportJob.getId());
-        }
+        String jobPodPrefix = jobPodPrefix(bulkImportJob);
+        defaultConfig.put("spark.kubernetes.driver.pod.name", jobPodPrefix);
+        defaultConfig.put("spark.kubernetes.executor.podNamePrefix", jobPodPrefix);
 
         defaultConfig.putAll(DEFAULT_CONFIG);
 
@@ -154,5 +146,18 @@ public class StateMachinePlatformExecutor implements PlatformExecutor {
                 .sparkConf(sparkProperties)
                 .build();
         return arguments.constructArgs(cloneWithUpdatedProps, taskId, jarLocation);
+    }
+
+    private static String jobPodPrefix(BulkImportJob job) {
+        /* Spark adds extra IDs to the end of this - up to 17 characters, and performs some extra validation:
+         * - whether the pod name prefix is <= 47 characters (https://spark.apache.org/docs/3.3.1/running-on-kubernetes.html)
+         * - whether the pod name prefix starts with a letter (https://kubernetes.io/docs/concepts/overview/working-with-objects/names/)
+         * After adding a "job-" prefix, maximum id length = 47-(17+4) = 26 characters
+         */
+        if (job.getId().length() > 26) {
+            return "job-" + job.getId().substring(0, 26);
+        } else {
+            return "job-" + job.getId();
+        }
     }
 }

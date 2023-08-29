@@ -21,9 +21,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.RecordNumbers;
+import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
@@ -52,13 +56,13 @@ import java.util.stream.LongStream;
  * Try to avoid assigning variables except for data you want to reuse.
  */
 public class SleeperSystemTest {
-
     private static final SleeperSystemTest INSTANCE = new SleeperSystemTest();
 
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+    private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
 
     private SleeperSystemTest() {
@@ -84,6 +88,10 @@ public class SleeperSystemTest {
         return instance.getInstanceProperties();
     }
 
+    public TableProperties tableProperties() {
+        return instance.getTableProperties();
+    }
+
     public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
         tablePropertiesConsumer.accept(instance.getTableProperties());
         try {
@@ -91,6 +99,10 @@ public class SleeperSystemTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public SystemTestStateStore stateStore() {
+        return new SystemTestStateStore(instance);
     }
 
     public SystemTestSourceFiles sourceFiles() {
@@ -111,7 +123,20 @@ public class SleeperSystemTest {
                 .iterator();
     }
 
-    public SystemTestStateStore stateStore() {
-        return new SystemTestStateStore(instance);
+    public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
+        return RecordNumbers.scrambleNumberedRecords(longStream);
+    }
+
+    public SystemTestReporting reporting() {
+        return new SystemTestReporting(instance, clients, reportingContext);
+    }
+
+    public SystemTestPartitionSplitting partitionSplitting() {
+        return new SystemTestPartitionSplitting(new PartitionSplittingDriver(instance, clients.getLambda()));
+    }
+
+    public SystemTestCompaction compaction() {
+        return new SystemTestCompaction(new SplittingCompactionDriver(instance,
+                clients.getLambda(), clients.getSqs(), clients.getDynamoDB()));
     }
 }

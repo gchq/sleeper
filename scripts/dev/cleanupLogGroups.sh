@@ -1,4 +1,3 @@
-#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
-InstanceID=changeme
-Description=Partition Splitting test
-Environment=DEV
-Product=Sleeper
-ApplicationID=SLEEPER
-Project=SystemTest
-SystemTest=PartitionSplitting
+set -e
+
+THIS_DIR=$(cd "$(dirname "$0")" && pwd)
+PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
+
+pushd "${PROJECT_ROOT}/java"
+echo "Compiling..."
+mvn compile -Pquick -q -pl clients -am
+
+pushd clients
+echo "Cleaning up log groups..."
+mvn exec:java -q \
+  -Dexec.mainClass="sleeper.clients.status.update.CleanUpLogGroups" \
+  -Dexec.args="$PROJECT_ROOT"
+
+popd
+popd
