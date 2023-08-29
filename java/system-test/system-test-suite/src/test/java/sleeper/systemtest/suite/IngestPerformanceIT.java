@@ -85,7 +85,8 @@ public class IngestPerformanceIT {
 
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(110)
-                        && stats.isMinAverageRunRecordsPerSecond(135000));
+                                && stats.isMinAverageRunRecordsPerSecond(135000),
+                        "meets minimum performance");
     }
 
     boolean systemTestClusterDisabled() {

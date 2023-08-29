@@ -54,6 +54,17 @@ public class JobsFinishedStatistics {
                 && averageRecordRate.getAverageRunRecordsWrittenPerSecond() > minRate;
     }
 
+    @Override
+    public String toString() {
+        return "JobsFinishedStatistics{" +
+                "numJobs=" + numJobs +
+                ", numFinishedJobs=" + numFinishedJobs +
+                ", numJobRuns=" + numJobRuns +
+                ", numFinishedJobRuns=" + numFinishedJobRuns +
+                ", averageRecordRate=" + averageRecordRate +
+                '}';
+    }
+
     private static Stream<IngestJobStatus> finished(List<IngestJobStatus> jobs) {
         return jobs.stream().filter(IngestJobStatus::isFinished);
     }
