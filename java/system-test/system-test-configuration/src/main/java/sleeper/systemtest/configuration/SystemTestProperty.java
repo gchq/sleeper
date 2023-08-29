@@ -66,10 +66,14 @@ public interface SystemTestProperty extends InstanceProperty {
             .description("The name of the role used when writing data for an instance in an ECS cluster")
             .systemDefined(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
-            .description("The amount of CPU for the containers that write random data")
+            .description("The number of CPU units for the containers that write random data, where 1024 is 1 vCPU.\n" +
+                    "For valid values, see: " +
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("1024").build();
-    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory")
-            .description("The amount of memory for the containers that write random data")
+    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
+            .description("The amount of memory for the containers that write random data, in MiB.\n" +
+                    "For valid values, see: " +
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
             .defaultValue("4096").build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
             .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
