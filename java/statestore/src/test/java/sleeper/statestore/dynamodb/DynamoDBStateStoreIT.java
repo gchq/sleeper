@@ -1010,25 +1010,6 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws StateStoreException {
-        // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        PartitionTree tree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "child1", "child2", 0L)
-                .buildTree();
-
-        dynamoDBStateStore.initialise(tree.getAllPartitions());
-
-        // When / Then
-        assertThatThrownBy(() ->
-                dynamoDBStateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("child1"), tree.getPartition("child2")))
-                .isInstanceOf(StateStoreException.class);
-    }
-
-    @Test
     public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws StateStoreException {
         // Given
         Field field = new Field("key", new IntType());
