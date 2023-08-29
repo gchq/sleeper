@@ -65,7 +65,7 @@ public class IngestPerformanceIT {
     @DisabledIf("systemTestClusterDisabled")
     void shouldMeetIngestPerformanceStandards() throws InterruptedException {
         sleeper.stateStore().setPartitions(partitionsFromSplitPoints(sleeper, create128SplitPoints()));
-        sleeper.systemTestCluster().generateData(properties -> {
+        sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
                     properties.set(NUMBER_OF_WRITERS, "110");
                     properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
@@ -77,7 +77,8 @@ public class IngestPerformanceIT {
                     properties.set(RANDOM_BYTE_ARRAY_LENGTH, "10");
                     properties.set(MAX_ENTRIES_RANDOM_MAP, "10");
                     properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
-                }, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                })
+                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
                 .invokeStandardIngestTasks(110,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));

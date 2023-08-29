@@ -56,15 +56,19 @@ public class SystemTestCluster {
     }
 
     public void ingestDirectRecords(int records) throws InterruptedException {
-        generateData(properties -> {
+        updateProperties(properties -> {
             properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
             properties.set(NUMBER_OF_WRITERS, "1");
             properties.set(NUMBER_OF_RECORDS_PER_WRITER, String.valueOf(records));
-        }, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
+        }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(2)));
     }
 
-    public SystemTestCluster generateData(Consumer<SystemTestStandaloneProperties> config, PollWithRetries poll) throws InterruptedException {
+    public SystemTestCluster updateProperties(Consumer<SystemTestStandaloneProperties> config) {
         context.updateProperties(config);
+        return this;
+    }
+
+    public SystemTestCluster generateData(PollWithRetries poll) throws InterruptedException {
         List<Task> tasks = driver.startTasks();
         driver.waitForTasks(tasks, poll);
         jobIds.addAll(sourceFiles.findGeneratedIngestJobIds());
