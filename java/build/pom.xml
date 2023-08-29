@@ -105,34 +105,14 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.sf.jung</groupId>
-            <artifactId>jung-api</artifactId>
-            <version>${jung.version}</version>
+            <groupId>com.github.tomnelson</groupId>
+            <artifactId>jungrapht-visualization</artifactId>
+            <version>${jungrapht.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.sf.jung</groupId>
-            <artifactId>jung-graph-impl</artifactId>
-            <version>${jung.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jung</groupId>
-            <artifactId>jung-algorithms</artifactId>
-            <version>${jung.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jung</groupId>
-            <artifactId>jung-io</artifactId>
-            <version>${jung.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jung</groupId>
-            <artifactId>jung-visualization</artifactId>
-            <version>${jung.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jung</groupId>
-            <artifactId>jung-samples</artifactId>
-            <version>${jung.version}</version>
+            <groupId>com.github.tomnelson</groupId>
+            <artifactId>jungrapht-visualization-samples</artifactId>
+            <version>${jungrapht.version}</version>
         </dependency>
     </dependencies>
 </project>
