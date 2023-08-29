@@ -33,6 +33,7 @@ SUBNETS=$2
 RESULTS_BUCKET=$3
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
+source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
 OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
@@ -100,8 +101,7 @@ runMavenSystemTests() {
       -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
-    INSTANCE_ID="$SHORT_ID-main"
-    echo -n "$EXIT_CODE $INSTANCE_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
+    echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
@@ -111,7 +111,9 @@ runMavenSystemTests() {
     zip -r "../site.zip" "."
     popd
     rm -rf "$OUTPUT_DIR/site"
-    ./maven/tearDown.sh "$SHORT_ID" "$INSTANCE_ID" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
+    INSTANCE_IDS=()
+    read_instance_ids_to_array "$OUTPUT_DIR/instanceIds.txt" INSTANCE_IDS
+    ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"

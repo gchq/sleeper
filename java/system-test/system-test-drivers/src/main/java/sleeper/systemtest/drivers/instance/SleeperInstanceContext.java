@@ -46,6 +46,7 @@ import java.util.Map;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
+import static sleeper.systemtest.drivers.instance.OutputInstanceIds.addInstanceIdToOutput;
 
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
@@ -152,8 +153,10 @@ public class SleeperInstanceContext {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            return new Instance(instanceProperties, tablePropertiesProvider.getTableProperties(tableName), tablePropertiesProvider, stateStoreProvider);
+            addInstanceIdToOutput(instanceId, parameters);
+            return new Instance(instanceProperties, tableProperties, tablePropertiesProvider, stateStoreProvider);
         } catch (IOException e) {
             throw new RuntimeIOException(e);
         }
