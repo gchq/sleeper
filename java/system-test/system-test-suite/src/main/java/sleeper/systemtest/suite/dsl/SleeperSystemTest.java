@@ -78,6 +78,7 @@ public class SleeperSystemTest {
     private SleeperSystemTest reset() {
         try {
             systemTest.deployIfMissing();
+            systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
