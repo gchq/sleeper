@@ -19,6 +19,7 @@ package sleeper.clients.deploy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.util.EcrRepositories;
 import sleeper.clients.util.RunCommandPipeline;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -41,6 +42,7 @@ public class UploadDockerImagesNew {
     private final String account;
     private final String region;
     private final String stacks;
+    private final EcrRepositories.Client ecrClient;
 
     private UploadDockerImagesNew(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
@@ -48,6 +50,7 @@ public class UploadDockerImagesNew {
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
         stacks = requireNonNull(builder.stacks, "stacks must not be null");
+        ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
     }
 
     public static Builder builder() {
@@ -68,6 +71,7 @@ public class UploadDockerImagesNew {
         private String account;
         private String region;
         private String stacks;
+        private EcrRepositories.Client ecrClient;
 
         private Builder() {
         }
@@ -101,6 +105,11 @@ public class UploadDockerImagesNew {
 
         public Builder stacks(String stacks) {
             this.stacks = stacks;
+            return this;
+        }
+
+        public Builder ecrClient(EcrRepositories.Client ecrClient) {
+            this.ecrClient = ecrClient;
             return this;
         }
 

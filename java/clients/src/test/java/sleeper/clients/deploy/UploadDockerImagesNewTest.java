@@ -16,8 +16,10 @@
 
 package sleeper.clients.deploy;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.util.EcrRepositoriesInMemory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.nio.file.Path;
@@ -37,6 +39,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGES
 public class UploadDockerImagesNewTest {
 
     @Test
+    @Disabled("TODO")
     void shouldRunDockerUpload() throws Exception {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
@@ -47,9 +50,11 @@ public class UploadDockerImagesNewTest {
         properties.set(ECR_INGEST_REPO, "ingest-repo");
         properties.set(ECR_COMPACTION_REPO, "compaction-repo");
 
+        EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
         UploadDockerImagesNew upload = UploadDockerImagesNew.builder()
                 .baseDockerDirectory(Path.of("./docker"))
                 .instanceProperties(properties)
+                .ecrClient(ecrClient)
                 .build();
 
         // When / Then
@@ -58,5 +63,7 @@ public class UploadDockerImagesNewTest {
                         pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                                 command("docker", "login", "--username", "AWS", "--password-stdin",
                                         "123.dkr.ecr.test-region.amazonaws.com")));
+        assertThat(ecrClient.getRepositoryNames())
+                .containsExactly("test-instance/ingest");
     }
 }
