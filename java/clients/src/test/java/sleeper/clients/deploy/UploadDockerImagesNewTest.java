@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.deploy.DockerImageConfiguration.from;
 import static sleeper.clients.testutil.RunCommandTestHelper.command;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
 import static sleeper.clients.util.CommandPipeline.pipeline;
@@ -40,8 +41,13 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesNewTest {
-    final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
-    final InstanceProperties properties = createTestInstanceProperties();
+    private static final Map<String, String> DIRECTORY_BY_STACK = Map.of(
+            "IngestStack", "ingest",
+            "EksBulkImportStack", "bulk-import-runner",
+            "BuildXStack", "buildx");
+    private static final List<String> BUILDX_STACKS = List.of("BuildXStack");
+    private final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
+    private final InstanceProperties properties = createTestInstanceProperties();
 
     @BeforeEach
     void setUp() {
@@ -137,7 +143,7 @@ public class UploadDockerImagesNewTest {
     }
 
     @Test
-    void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
+    void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildX() throws IOException, InterruptedException {
         // Given
         properties.set(OPTIONAL_STACKS, "BuildXStack");
 
@@ -148,16 +154,16 @@ public class UploadDockerImagesNewTest {
         String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
         assertThat(pipelinesThatRan).containsExactly(
                 loginDockerPipeline(),
-                removeOldBuilderInstance(),
-                createNewBuilderInstance(),
-                buildAndPushImagePipelineWithBuildx(expectedTag, "./docker/buildx"));
+                removeOldBuildXBuilderInstancePipeline(),
+                createNewBuildXBuilderInstancePipeline(),
+                buildAndPushImageWithBuildXPipeline(expectedTag, "./docker/buildx"));
 
         assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/buildx");
     }
 
     @Test
-    void shouldCreateRepositoryAndPushImageWhereOnlyOneImageNeedsToBeBuildByBuildX() throws IOException, InterruptedException {
+    void shouldCreateRepositoryAndPushImageWhenOnlyOneImageNeedsToBeBuildByBuildX() throws IOException, InterruptedException {
         // Given
         properties.set(OPTIONAL_STACKS, "IngestStack,BuildXStack");
 
@@ -169,11 +175,11 @@ public class UploadDockerImagesNewTest {
         String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
         assertThat(pipelinesThatRan).containsExactly(
                 loginDockerPipeline(),
-                removeOldBuilderInstance(),
-                createNewBuilderInstance(),
+                removeOldBuildXBuilderInstancePipeline(),
+                createNewBuildXBuilderInstancePipeline(),
                 buildImagePipeline(expectedTag1, "./docker/ingest"),
                 pushImagePipeline(expectedTag1),
-                buildAndPushImagePipelineWithBuildx(expectedTag2, "./docker/buildx")
+                buildAndPushImageWithBuildXPipeline(expectedTag2, "./docker/buildx")
         );
 
         assertThat(ecrClient.getCreatedRepositories())
@@ -194,15 +200,15 @@ public class UploadDockerImagesNewTest {
         return pipeline(command("docker", "push", tag));
     }
 
-    private CommandPipeline removeOldBuilderInstance() {
+    private CommandPipeline removeOldBuildXBuilderInstancePipeline() {
         return pipeline(command("docker", "buildx", "rm", "sleeper", "||", "true"));
     }
 
-    private CommandPipeline createNewBuilderInstance() {
+    private CommandPipeline createNewBuildXBuilderInstancePipeline() {
         return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
     }
 
-    private CommandPipeline buildAndPushImagePipelineWithBuildx(String tag, String dockerDirectory) {
+    private CommandPipeline buildAndPushImageWithBuildXPipeline(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }
@@ -224,12 +230,7 @@ public class UploadDockerImagesNewTest {
                 .version("1.0.0")
                 .instanceProperties(properties)
                 .ecrClient(ecrClient)
-                .dockerImageConfiguration(DockerImageConfiguration.from(
-                        Map.of(
-                                "IngestStack", "ingest",
-                                "EksBulkImportStack", "bulk-import-runner",
-                                "BuildXStack", "buildx"),
-                        List.of("BuildXStack")))
+                .dockerImageConfig(from(DIRECTORY_BY_STACK, BUILDX_STACKS))
                 .build();
     }
 }

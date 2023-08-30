@@ -42,7 +42,6 @@ public class UploadDockerImagesNew {
     private final String version;
     private final List<String> stacks;
     private final EcrRepositories.Client ecrClient;
-
     private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImagesNew(Builder builder) {
@@ -53,7 +52,7 @@ public class UploadDockerImagesNew {
         version = requireNonNull(builder.version, "version must not be null");
         stacks = requireNonNull(builder.stacks, "stacks must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
-        dockerImageConfig = requireNonNull(builder.dockerImageConfiguration, "dockerImageConfiguration must not be null");
+        dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
 
     public static Builder builder() {
@@ -63,38 +62,37 @@ public class UploadDockerImagesNew {
     public void upload(RunCommandPipeline runCommand) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
 
-        List<String> dockerDirectoriesToBuild = stacks.stream()
+        List<String> dockerStacksToBuild = stacks.stream()
                 .filter(dockerImageConfig::hasStack)
-                .map(dockerImageConfig::getStack)
-                .filter(directory -> !ecrClient.repositoryExists(repositoryNameForDirectory(directory)))
+                .filter(stack -> !ecrClient.repositoryExists(
+                        repositoryNameForDirectory(dockerImageConfig.getDirectory(stack))))
                 .collect(Collectors.toUnmodifiableList());
 
-        if (!dockerDirectoriesToBuild.isEmpty()) {
+        if (!dockerStacksToBuild.isEmpty()) {
             runCommand.run(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", region),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
-        if (stacks.stream().anyMatch(dockerImageConfig::isBuildXStack)) {
+        if (dockerStacksToBuild.stream().anyMatch(dockerImageConfig::isBuildXStack)) {
             runCommand.run("docker", "buildx", "rm", "sleeper", "||", "true");
             runCommand.run("docker", "buildx", "create", "--name", "sleeper", "--use");
         }
 
-        for (String directory : dockerDirectoriesToBuild) {
+        for (String stack : dockerStacksToBuild) {
+            String directory = dockerImageConfig.getDirectory(stack);
             String repositoryName = repositoryNameForDirectory(directory);
             ecrClient.createRepository(repositoryName);
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
-            if (dockerImageConfig.isDirectoryBuildX(directory)) {
-                runCommand.run("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag,
-                        "--push", baseDockerDirectory.resolve(directory).toString());
+            if (dockerImageConfig.isBuildXStack(stack)) {
+                runCommand.run("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
+                        "-t", tag, "--push", baseDockerDirectory.resolve(directory).toString());
             } else {
-
                 runCommand.run("docker", "build", "-t", tag,
                         baseDockerDirectory.resolve(directory).toString());
                 runCommand.run("docker", "push", tag);
             }
-
         }
     }
 
@@ -110,7 +108,7 @@ public class UploadDockerImagesNew {
         private String version = SleeperVersion.getVersion();
         private List<String> stacks;
         private EcrRepositories.Client ecrClient;
-        private DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration();
+        private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
         private Builder() {
         }
@@ -157,8 +155,8 @@ public class UploadDockerImagesNew {
             return this;
         }
 
-        public Builder dockerImageConfiguration(DockerImageConfiguration dockerImageConfiguration) {
-            this.dockerImageConfiguration = dockerImageConfiguration;
+        public Builder dockerImageConfig(DockerImageConfiguration dockerImageConfig) {
+            this.dockerImageConfig = dockerImageConfig;
             return this;
         }
 
