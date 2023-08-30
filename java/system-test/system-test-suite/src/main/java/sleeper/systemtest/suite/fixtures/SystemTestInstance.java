@@ -25,6 +25,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -86,7 +87,7 @@ public enum SystemTestInstance {
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "1");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "1");
         properties.setTags(Map.of(
-                "Description", "Maven system test main instance",
+                "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",
                 "Product", "Sleeper",
                 "ApplicationID", "SLEEPER",
@@ -121,6 +122,10 @@ public enum SystemTestInstance {
         properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
         properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
         properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "ingestPerformance");
+        tags.put("Description", "Sleeper Maven system test ingest performance instance");
+        properties.setTags(tags);
         return configuration;
     }
 
