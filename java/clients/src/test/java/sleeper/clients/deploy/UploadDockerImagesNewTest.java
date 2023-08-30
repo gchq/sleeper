@@ -156,6 +156,30 @@ public class UploadDockerImagesNewTest {
                 .containsExactlyInAnyOrder("test-instance/buildx");
     }
 
+    @Test
+    void shouldCreateRepositoryAndPushImageWhereOnlyOneImageNeedsToBeBuildByBuildX() throws IOException, InterruptedException {
+        // Given
+        properties.set(OPTIONAL_STACKS, "IngestStack,BuildXStack");
+
+        // When
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+        // Then
+        String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+        String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+        assertThat(pipelinesThatRan).containsExactly(
+                loginDockerPipeline(),
+                removeOldBuilderInstance(),
+                createNewBuilderInstance(),
+                buildImagePipeline(expectedTag1, "./docker/ingest"),
+                pushImagePipeline(expectedTag1),
+                buildAndPushImagePipelineWithBuildx(expectedTag2, "./docker/buildx")
+        );
+
+        assertThat(ecrClient.getCreatedRepositories())
+                .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
+    }
+
     private CommandPipeline loginDockerPipeline() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",

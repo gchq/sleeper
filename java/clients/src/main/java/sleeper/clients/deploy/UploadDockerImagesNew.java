@@ -75,14 +75,26 @@ public class UploadDockerImagesNew {
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
+        if (stacks.stream().anyMatch(dockerImageConfig::isBuildXStack)) {
+            runCommand.run("docker", "buildx", "rm", "sleeper", "||", "true");
+            runCommand.run("docker", "buildx", "create", "--name", "sleeper", "--use");
+        }
+
         for (String directory : dockerDirectoriesToBuild) {
             String repositoryName = repositoryNameForDirectory(directory);
             ecrClient.createRepository(repositoryName);
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
-            runCommand.run("docker", "build", "-t", tag,
-                    baseDockerDirectory.resolve(directory).toString());
-            runCommand.run("docker", "push", tag);
+            if (dockerImageConfig.isDirectoryBuildX(directory)) {
+                runCommand.run("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64", "-t", tag,
+                        "--push", baseDockerDirectory.resolve(directory).toString());
+            } else {
+
+                runCommand.run("docker", "build", "-t", tag,
+                        baseDockerDirectory.resolve(directory).toString());
+                runCommand.run("docker", "push", tag);
+            }
+
         }
     }
 

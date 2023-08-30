@@ -36,6 +36,15 @@ public class DockerImageConfiguration {
         this(DEFAULT_DIRECTORY_BY_STACK, DEFAULT_BUILDX_STACKS);
     }
 
+    public boolean isDirectoryBuildX(String directory) {
+        for (String stack : buildxStacks) {
+            if (directoryByStack.get(stack).equals(directory)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public DockerImageConfiguration(Map<String, String> directoryByStack, List<String> buildxStacks) {
         this.directoryByStack = directoryByStack;
         this.buildxStacks = buildxStacks;
