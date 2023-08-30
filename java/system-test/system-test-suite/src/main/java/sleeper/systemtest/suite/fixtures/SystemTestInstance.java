@@ -138,6 +138,10 @@ public enum SystemTestInstance {
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
         properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "compactionPerformance");
+        tags.put("Description", "Sleeper Maven system test compaction performance instance");
+        properties.setTags(tags);
 
         TableProperties tableProperties = configuration.getTableProperties();
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
