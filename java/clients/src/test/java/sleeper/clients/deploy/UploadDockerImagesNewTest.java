@@ -23,6 +23,7 @@ import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.EcrRepositoriesInMemory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -39,11 +40,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 public class UploadDockerImagesNewTest {
     final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
     final InstanceProperties properties = createTestInstanceProperties();
-    final UploadDockerImagesNew upload = UploadDockerImagesNew.builder()
-            .baseDockerDirectory(Path.of("./docker"))
-            .instanceProperties(properties)
-            .ecrClient(ecrClient)
-            .build();
 
     @BeforeEach
     void setUp() {
@@ -53,12 +49,12 @@ public class UploadDockerImagesNewTest {
     }
 
     @Test
-    void shouldRunDockerUpload() throws Exception {
+    void shouldRunDockerUploadWithIngestStack() throws Exception {
         // Given
         properties.set(OPTIONAL_STACKS, "IngestStack");
 
         // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(upload::upload);
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
         // Then
         assertThat(pipelinesThatRan)
@@ -68,9 +64,34 @@ public class UploadDockerImagesNewTest {
                 .containsExactly("test-instance/ingest");
     }
 
+    @Test
+    void shouldRunDockerUploadWithEKSBulkImportStack() throws IOException, InterruptedException {
+        // Given
+        properties.set(OPTIONAL_STACKS, "EksBulkImportStack");
+
+        // When
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+        // Then
+        assertThat(pipelinesThatRan)
+                .containsExactly(loginDockerPipeline());
+
+        assertThat(ecrClient.getRepositoryNames())
+                .containsExactly("test-instance/bulk-import-runner");
+
+    }
+
     private CommandPipeline loginDockerPipeline() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
                         "123.dkr.ecr.test-region.amazonaws.com"));
+    }
+
+    private UploadDockerImagesNew getUpload() {
+        return UploadDockerImagesNew.builder()
+                .baseDockerDirectory(Path.of("./docker"))
+                .instanceProperties(properties)
+                .ecrClient(ecrClient)
+                .build();
     }
 }
