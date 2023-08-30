@@ -108,7 +108,7 @@ public class UploadDockerImagesNewTest {
     }
 
     @Test
-    void shouldNotCreateRepositoryOrPushImageWhenStackHasNoDockerImage() throws Exception {
+    void shouldDoNothingWhenStackHasNoDockerImage() throws Exception {
         // Given
         properties.set(OPTIONAL_STACKS, "OtherStack");
 
@@ -116,11 +116,8 @@ public class UploadDockerImagesNewTest {
         List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
         // Then
-        assertThat(pipelinesThatRan)
-                .containsExactly(loginDockerPipeline());
-
-        assertThat(ecrClient.getCreatedRepositories())
-                .isEmpty();
+        assertThat(pipelinesThatRan).isEmpty();
+        assertThat(ecrClient.getCreatedRepositories()).isEmpty();
     }
 
     @Test

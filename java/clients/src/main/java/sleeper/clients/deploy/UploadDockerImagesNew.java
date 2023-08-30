@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.clients.util.Command.command;
@@ -64,14 +65,19 @@ public class UploadDockerImagesNew {
 
     public void upload(RunCommandPipeline runCommand) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
-        runCommand.run(pipeline(
-                command("aws", "ecr", "get-login-password", "--region", region),
-                command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
-        for (String stack : stacks) {
-            if (!DIRECTORY_BY_STACK.containsKey(stack)) {
-                continue;
-            }
-            String directory = DIRECTORY_BY_STACK.get(stack);
+
+        List<String> dockerDirectories = stacks.stream()
+                .filter(DIRECTORY_BY_STACK::containsKey)
+                .map(DIRECTORY_BY_STACK::get)
+                .collect(Collectors.toUnmodifiableList());
+
+        if (!dockerDirectories.isEmpty()) {
+            runCommand.run(pipeline(
+                    command("aws", "ecr", "get-login-password", "--region", region),
+                    command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
+        }
+
+        for (String directory : dockerDirectories) {
             String repositoryName = id + "/" + directory;
             if (ecrClient.repositoryExists(repositoryName)) {
                 continue;
