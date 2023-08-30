@@ -16,15 +16,14 @@
 
 package sleeper.clients.deploy;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.clients.util.EcrRepositories;
 import sleeper.clients.util.RunCommandPipeline;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.clients.util.Command.command;
@@ -35,13 +34,16 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesNew {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
+    private static final Map<String, String> REPOSITORY_NAME_BY_STACK = Map.of(
+            "IngestStack", "ingest",
+            "EksBulkImportStack", "bulk-import-runner"
+    );
 
     private final Path baseDockerDirectory;
     private final String id;
     private final String account;
     private final String region;
-    private final String stacks;
+    private final List<String> stacks;
     private final EcrRepositories.Client ecrClient;
 
     private UploadDockerImagesNew(Builder builder) {
@@ -63,15 +65,9 @@ public class UploadDockerImagesNew {
                 command("docker", "login", "--username", "AWS", "--password-stdin",
                         String.format("%s.dkr.ecr.%s.amazonaws.com",
                                 account, region))));
-        switch (stacks) {
-            case "IngestStack":
-                ecrClient.createRepository(id + "/" + "ingest");
-                break;
-            case "EksBulkImportStack":
-                ecrClient.createRepository(id + "/" + "bulk-import-runner");
-                break;
+        for (String stack : stacks) {
+            ecrClient.createRepository(id + "/" + REPOSITORY_NAME_BY_STACK.get(stack));
         }
-
     }
 
     public static final class Builder {
@@ -79,7 +75,7 @@ public class UploadDockerImagesNew {
         private String id;
         private String account;
         private String region;
-        private String stacks;
+        private List<String> stacks;
         private EcrRepositories.Client ecrClient;
 
         private Builder() {
@@ -94,7 +90,7 @@ public class UploadDockerImagesNew {
             return id(instanceProperties.get(ID))
                     .account(instanceProperties.get(ACCOUNT))
                     .region(instanceProperties.get(REGION))
-                    .stacks(instanceProperties.get(OPTIONAL_STACKS));
+                    .stacks(instanceProperties.getList(OPTIONAL_STACKS));
         }
 
         public Builder id(String id) {
@@ -112,7 +108,7 @@ public class UploadDockerImagesNew {
             return this;
         }
 
-        public Builder stacks(String stacks) {
+        public Builder stacks(List<String> stacks) {
             this.stacks = stacks;
             return this;
         }

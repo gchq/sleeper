@@ -61,13 +61,13 @@ public class UploadDockerImagesNewTest {
                 .containsExactly(loginDockerPipeline());
 
         assertThat(ecrClient.getRepositoryNames())
-                .containsExactly("test-instance/ingest");
+                .containsExactlyInAnyOrder("test-instance/ingest");
     }
 
     @Test
-    void shouldRunDockerUploadWithEKSBulkImportStack() throws IOException, InterruptedException {
+    void shouldRunDockerUploadWithTwoStacks() throws IOException, InterruptedException {
         // Given
-        properties.set(OPTIONAL_STACKS, "EksBulkImportStack");
+        properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
 
         // When
         List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
@@ -77,8 +77,7 @@ public class UploadDockerImagesNewTest {
                 .containsExactly(loginDockerPipeline());
 
         assertThat(ecrClient.getRepositoryNames())
-                .containsExactly("test-instance/bulk-import-runner");
-
+                .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
     }
 
     private CommandPipeline loginDockerPipeline() {
