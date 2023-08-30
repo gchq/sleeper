@@ -16,8 +16,11 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+
+import java.util.List;
 
 public class FileInfoSystemTestHelper {
 
@@ -26,5 +29,9 @@ public class FileInfoSystemTestHelper {
 
     public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
         return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.stateStore().allPartitions());
+    }
+
+    public static long numberOfRecordsIn(List<? extends FileInfo> files) {
+        return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
     }
 }

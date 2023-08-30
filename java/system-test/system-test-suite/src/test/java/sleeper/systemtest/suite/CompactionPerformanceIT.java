@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.DisabledIf;
 
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
@@ -35,6 +34,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
@@ -60,7 +60,7 @@ public class CompactionPerformanceIT {
 
         assertThat(sleeper.stateStore().activeFiles())
                 .hasSize(10)
-                .matches(files -> files.stream().mapToLong(FileInfo::getNumberOfRecords).sum() == 4_400_000_000L,
+                .matches(files -> numberOfRecordsIn(files) == 4_400_000_000L,
                         "contain 4.4 billion records");
     }
 
