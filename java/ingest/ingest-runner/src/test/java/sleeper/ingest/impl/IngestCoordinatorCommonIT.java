@@ -889,7 +889,7 @@ public class IngestCoordinatorCommonIT {
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getRowKeyFieldNames().get(0), new byte[]{11, 12});
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getSortKeyFieldNames().get(0), 2L);
         expectedRecord2.put(recordListAndSchema.sleeperSchema.getValueFieldNames().get(0), 7L);
-        recordListAndSchema.recordList = Arrays.asList(expectedRecord1, expectedRecord2);
+        List<Record> recordList = Arrays.asList(expectedRecord1, expectedRecord2);
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -907,7 +907,8 @@ public class IngestCoordinatorCommonIT {
                 .build();
 
         // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+        RecordGenerator.RecordListAndSchema newRecordListAndSchema = new RecordGenerator.RecordListAndSchema(recordList, recordListAndSchema.sleeperSchema);
+        ingestRecords(newRecordListAndSchema, parameters, ingestType);
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
