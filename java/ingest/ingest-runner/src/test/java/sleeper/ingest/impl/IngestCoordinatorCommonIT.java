@@ -899,7 +899,7 @@ public class IngestCoordinatorCommonIT {
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
-        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder(true)
                 .fileNames(List.of("rootFile"))
                 .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
                 .stateStore(stateStore)
@@ -942,6 +942,7 @@ public class IngestCoordinatorCommonIT {
         return () -> randomStringGenerator.generate(random.nextInt(maxLength));
     }
 
+
     private void ingestRecords(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
@@ -956,12 +957,23 @@ public class IngestCoordinatorCommonIT {
         }
     }
 
-    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
-        return IngestCoordinatorTestParameters
+    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder(
+    ) {
+        return createTestParameterBuilder(false);
+    }
+
+    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder(
+            Boolean hasAdditionIterator
+    ) {
+        IngestCoordinatorTestParameters.Builder ingestCoordinatorBuilder = IngestCoordinatorTestParameters
                 .builder()
                 .temporaryFolder(temporaryFolder)
                 .awsResource(AWS_EXTERNAL_RESOURCE)
-                .dataBucketName(DATA_BUCKET_NAME)
-                .iteratorClassName(AdditionIterator.class.getName());
+                .dataBucketName(DATA_BUCKET_NAME);
+
+        if (hasAdditionIterator) {
+            ingestCoordinatorBuilder.iteratorClassName(AdditionIterator.class.getName());
+        }
+        return ingestCoordinatorBuilder;
     }
 }
