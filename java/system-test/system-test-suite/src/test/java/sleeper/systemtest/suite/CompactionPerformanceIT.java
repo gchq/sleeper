@@ -49,7 +49,7 @@ public class CompactionPerformanceIT {
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
+    void shouldMeetCompactionPerformanceStandards() throws InterruptedException {
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
             properties.set(NUMBER_OF_WRITERS, "110");
