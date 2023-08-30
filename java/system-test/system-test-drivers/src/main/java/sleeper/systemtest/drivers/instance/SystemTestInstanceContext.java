@@ -159,15 +159,15 @@ public class SystemTestInstanceContext {
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
-        if (!parameters.isSystemTestClusterEnabled()) {
-            return;
-        }
         boolean jarsChanged = SyncJars.builder().s3(s3v2)
                 .jarsDirectory(parameters.getJarsDirectory())
                 .bucketName(parameters.buildJarsBucketName())
                 .region(parameters.getRegion())
                 .uploadFilter(jar -> BuiltJar.isFileJar(jar, CUSTOM_RESOURCES))
                 .deleteOldJars(false).build().sync();
+        if (!parameters.isSystemTestClusterEnabled()) {
+            return;
+        }
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
                 .uploadDockerImagesScript(parameters.getScriptsDirectory().resolve("deploy/uploadDockerImages.sh"))
