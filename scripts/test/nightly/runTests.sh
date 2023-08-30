@@ -118,7 +118,6 @@ runMavenSystemTests() {
 }
 
 runSystemTest bulkImportPerformance "bulk-imprt-$START_TIME" "ingest"
-runSystemTest compactionPerformance "compaction-$START_TIME" "compaction"
 runMavenSystemTests "mvn-$START_TIME"
 
 echo "[$(time_str)] Uploading test output"

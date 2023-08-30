@@ -15,23 +15,13 @@
  */
 package sleeper.systemtest.drivers.compaction;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.drivers.util.InvokeSystemTestLambda;
 
-import java.io.IOException;
-
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.systemtest.drivers.util.InvokeSystemTestLambda.createSystemTestLambdaClient;
 
 public class InvokeCompactionTaskCreationUntilAllJobsStarted {
     static final int POLL_INTERVAL_MILLIS = 10000;
@@ -52,33 +42,11 @@ public class InvokeCompactionTaskCreationUntilAllJobsStarted {
         this.pollWithRetries = pollWithRetries;
     }
 
-    public static InvokeCompactionTaskCreationUntilAllJobsStarted forCompaction(
-            String tableName, InstanceProperties properties, CompactionJobStatusStore statusStore) {
-        return new InvokeCompactionTaskCreationUntilAllJobsStarted(tableName, statusStore,
-                InvokeSystemTestLambda.client(createSystemTestLambdaClient(), properties),
-                COMPACTION_TASK_CREATION_LAMBDA_FUNCTION,
-                PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS));
-    }
-
     public static InvokeCompactionTaskCreationUntilAllJobsStarted forSplitting(
             String tableName, CompactionJobStatusStore statusStore, InvokeSystemTestLambda.Client lambdaClient, PollWithRetries pollWithRetries) {
         return new InvokeCompactionTaskCreationUntilAllJobsStarted(tableName, statusStore, lambdaClient,
                 SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION,
                 pollWithRetries);
-    }
-
-    public static void main(String[] args) throws IOException, InterruptedException {
-        if (args.length != 1) {
-            System.out.println("Usage: <instance id>");
-            return;
-        }
-
-        SystemTestProperties systemTestProperties = new SystemTestProperties();
-        systemTestProperties.loadFromS3GivenInstanceId(AmazonS3ClientBuilder.defaultClient(), args[0]);
-        CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(
-                AmazonDynamoDBClientBuilder.defaultClient(), systemTestProperties);
-
-        forCompaction("system-test", systemTestProperties, statusStore).pollUntilFinished();
     }
 
     public void pollUntilFinished() throws InterruptedException {
