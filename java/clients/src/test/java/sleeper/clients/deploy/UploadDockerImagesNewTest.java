@@ -91,7 +91,7 @@ public class UploadDockerImagesNewTest {
     }
 
     @Test
-    void shouldNotCreateRepositoryOrPushImageWhenRepositoryAlreadyExists() throws Exception {
+    void shouldDoNothingWhenRepositoryAlreadyExists() throws Exception {
         // Given
         properties.set(OPTIONAL_STACKS, "IngestStack");
         ecrClient.createRepository("test-instance/ingest");
@@ -100,8 +100,7 @@ public class UploadDockerImagesNewTest {
         List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
         // Then
-        assertThat(pipelinesThatRan)
-                .containsExactly(loginDockerPipeline());
+        assertThat(pipelinesThatRan).isEmpty();
 
         assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/ingest");

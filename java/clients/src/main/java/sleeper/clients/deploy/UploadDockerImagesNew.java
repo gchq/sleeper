@@ -69,6 +69,7 @@ public class UploadDockerImagesNew {
         List<String> dockerDirectories = stacks.stream()
                 .filter(DIRECTORY_BY_STACK::containsKey)
                 .map(DIRECTORY_BY_STACK::get)
+                .filter(directory -> !ecrClient.repositoryExists(repositoryNameForDirectory(directory)))
                 .collect(Collectors.toUnmodifiableList());
 
         if (!dockerDirectories.isEmpty()) {
@@ -78,10 +79,7 @@ public class UploadDockerImagesNew {
         }
 
         for (String directory : dockerDirectories) {
-            String repositoryName = id + "/" + directory;
-            if (ecrClient.repositoryExists(repositoryName)) {
-                continue;
-            }
+            String repositoryName = repositoryNameForDirectory(directory);
             ecrClient.createRepository(repositoryName);
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
@@ -89,6 +87,10 @@ public class UploadDockerImagesNew {
                     baseDockerDirectory.resolve(directory).toString());
             runCommand.run("docker", "push", tag);
         }
+    }
+
+    private String repositoryNameForDirectory(String directory) {
+        return id + "/" + directory;
     }
 
     public static final class Builder {
