@@ -22,6 +22,7 @@ import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.TestContext;
+import sleeper.systemtest.suite.dsl.reports.SystemTestCompactionJobsReport;
 import sleeper.systemtest.suite.dsl.reports.SystemTestIngestJobsReport;
 
 public class SystemTestReporting {
@@ -60,5 +61,12 @@ public class SystemTestReporting {
         context.print(testContext,
                 new CompactionReportsDriver(clients.getDynamoDB(), instance)
                         .tasksAndJobsReport());
+    }
+
+    public SystemTestCompactionJobsReport compactionJobs() {
+        return new SystemTestCompactionJobsReport(
+                new CompactionReportsDriver(clients.getDynamoDB(), instance)
+                        .jobs(context)
+        );
     }
 }

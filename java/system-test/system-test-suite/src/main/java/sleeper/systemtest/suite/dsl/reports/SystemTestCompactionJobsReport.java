@@ -16,19 +16,18 @@
 
 package sleeper.systemtest.suite.dsl.reports;
 
-import sleeper.ingest.job.status.IngestJobStatus;
+import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.util.List;
 
-public class SystemTestIngestJobsReport {
+public class SystemTestCompactionJobsReport {
+    private final List<CompactionJobStatus> jobs;
 
-    private final List<IngestJobStatus> jobs;
-
-    public SystemTestIngestJobsReport(List<IngestJobStatus> jobs) {
+    public SystemTestCompactionJobsReport(List<CompactionJobStatus> jobs) {
         this.jobs = jobs;
     }
 
     public JobsFinishedStatistics finishedStatistics() {
-        return JobsFinishedStatistics.fromIngestJobs(jobs);
+        return JobsFinishedStatistics.fromCompactionJobs(jobs);
     }
 }

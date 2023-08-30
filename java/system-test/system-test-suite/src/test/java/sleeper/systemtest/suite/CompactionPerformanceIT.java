@@ -62,6 +62,10 @@ public class CompactionPerformanceIT {
                 .hasSize(10)
                 .matches(files -> numberOfRecordsIn(files) == 4_400_000_000L,
                         "contain 4.4 billion records");
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(stats -> stats.isAllFinishedOneRunEach(10)
+                                && stats.isMinAverageRunRecordsPerSecond(300000),
+                        "meets minimum performance");
     }
 
     @AfterEach

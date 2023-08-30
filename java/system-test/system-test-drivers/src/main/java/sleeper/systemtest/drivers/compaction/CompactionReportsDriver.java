@@ -26,14 +26,17 @@ import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatu
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
 
 import java.time.Instant;
+import java.util.List;
 
 public class CompactionReportsDriver {
     private final CompactionTaskStatusStore compactionTaskStatusStore;
@@ -58,5 +61,10 @@ public class CompactionReportsDriver {
                     JobQuery.Type.RANGE, new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX))
                     .run();
         };
+    }
+
+    public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
+        return new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX)
+                .run(compactionJobStatusStore);
     }
 }
