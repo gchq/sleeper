@@ -26,7 +26,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Arrays;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
@@ -55,7 +54,7 @@ public class DynamoDBIngestTaskStatusStoreCreator {
     }
 
     public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
-        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
         dynamoDBClient.deleteTable(DynamoDBIngestTaskStatusStore.taskStatusTableName(properties.get(ID)));
