@@ -136,6 +136,26 @@ public class UploadDockerImagesNewTest {
                 .containsExactlyInAnyOrder("test-instance/ingest");
     }
 
+    @Test
+    void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
+        // Given
+        properties.set(OPTIONAL_STACKS, "BuildXStack");
+
+        // When
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+        // Then
+        String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+        assertThat(pipelinesThatRan).containsExactly(
+                loginDockerPipeline(),
+                removeOldBuilderInstance(),
+                createNewBuilderInstance(),
+                buildAndPushImagePipelineWithBuildx(expectedTag, "./docker/buildx"));
+
+        assertThat(ecrClient.getCreatedRepositories())
+                .containsExactlyInAnyOrder("test-instance/buildx");
+    }
+
     private CommandPipeline loginDockerPipeline() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
@@ -148,6 +168,19 @@ public class UploadDockerImagesNewTest {
 
     private CommandPipeline pushImagePipeline(String tag) {
         return pipeline(command("docker", "push", tag));
+    }
+
+    private CommandPipeline removeOldBuilderInstance() {
+        return pipeline(command("docker", "buildx", "rm", "sleeper", "||", "true"));
+    }
+
+    private CommandPipeline createNewBuilderInstance() {
+        return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
+    }
+
+    private CommandPipeline buildAndPushImagePipelineWithBuildx(String tag, String dockerDirectory) {
+        return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
+                "-t", tag, "--push", dockerDirectory));
     }
 
     private List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
@@ -167,9 +200,12 @@ public class UploadDockerImagesNewTest {
                 .version("1.0.0")
                 .instanceProperties(properties)
                 .ecrClient(ecrClient)
-                .dockerImageConfiguration(DockerImageConfiguration.from(Map.of(
-                        "IngestStack", "ingest",
-                        "EksBulkImportStack", "bulk-import-runner")))
+                .dockerImageConfiguration(DockerImageConfiguration.from(
+                        Map.of(
+                                "IngestStack", "ingest",
+                                "EksBulkImportStack", "bulk-import-runner",
+                                "BuildXStack", "buildx"),
+                        List.of("BuildXStack")))
                 .build();
     }
 }

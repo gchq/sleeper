@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import java.util.List;
 import java.util.Map;
 
 public class DockerImageConfiguration {
@@ -27,18 +28,21 @@ public class DockerImageConfiguration {
             "EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless"
     );
 
+    private static final List<String> DEFAULT_BUILDX_STACKS = List.of("CompactionStack");
     private final Map<String, String> directoryByStack;
+    private final List<String> buildxStacks;
 
     public DockerImageConfiguration() {
-        this(DEFAULT_DIRECTORY_BY_STACK);
+        this(DEFAULT_DIRECTORY_BY_STACK, DEFAULT_BUILDX_STACKS);
     }
 
-    private DockerImageConfiguration(Map<String, String> directoryByStack) {
+    public DockerImageConfiguration(Map<String, String> directoryByStack, List<String> buildxStacks) {
         this.directoryByStack = directoryByStack;
+        this.buildxStacks = buildxStacks;
     }
 
-    public static DockerImageConfiguration from(Map<String, String> directoryByStack) {
-        return new DockerImageConfiguration(directoryByStack);
+    public static DockerImageConfiguration from(Map<String, String> directoryByStack, List<String> buildxStacks) {
+        return new DockerImageConfiguration(directoryByStack, buildxStacks);
     }
 
     public boolean hasStack(String stack) {
@@ -47,5 +51,9 @@ public class DockerImageConfiguration {
 
     public String getStack(String stack) {
         return directoryByStack.get(stack);
+    }
+
+    public boolean isBuildXStack(String stack) {
+        return buildxStacks.contains(stack);
     }
 }
