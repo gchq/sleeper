@@ -66,19 +66,19 @@ public class UploadDockerImagesNew {
     public void upload(RunCommandPipeline runCommand) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
 
-        List<String> dockerDirectories = stacks.stream()
+        List<String> dockerDirectoriesToBuild = stacks.stream()
                 .filter(DIRECTORY_BY_STACK::containsKey)
                 .map(DIRECTORY_BY_STACK::get)
                 .filter(directory -> !ecrClient.repositoryExists(repositoryNameForDirectory(directory)))
                 .collect(Collectors.toUnmodifiableList());
 
-        if (!dockerDirectories.isEmpty()) {
+        if (!dockerDirectoriesToBuild.isEmpty()) {
             runCommand.run(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", region),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
-        for (String directory : dockerDirectories) {
+        for (String directory : dockerDirectoriesToBuild) {
             String repositoryName = repositoryNameForDirectory(directory);
             ecrClient.createRepository(repositoryName);
 
