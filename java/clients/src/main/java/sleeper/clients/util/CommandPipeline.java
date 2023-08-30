@@ -14,15 +14,27 @@
  * limitations under the License.
  */
 
-package sleeper.clients.testutil;
+package sleeper.clients.util;
 
-import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
-public class Command {
-    private final String[] command;
+import static java.util.Objects.requireNonNull;
 
-    public Command(String[] command) {
-        this.command = command;
+public class CommandPipeline {
+
+    private final List<Command> commands;
+
+    public CommandPipeline(List<Command> commands) {
+        this.commands = requireNonNull(commands, "commands must not be null");
+    }
+
+    public static CommandPipeline pipeline(Command... commands) {
+        return new CommandPipeline(List.of(commands));
+    }
+
+    public List<Command> getCommands() {
+        return commands;
     }
 
     @Override
@@ -33,21 +45,19 @@ public class Command {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Command command1 = (Command) o;
-        return Arrays.equals(command, command1.command);
+        CommandPipeline that = (CommandPipeline) o;
+        return Objects.equals(commands, that.commands);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(command);
+        return Objects.hash(commands);
     }
 
     @Override
     public String toString() {
-        return Arrays.toString(command);
-    }
-
-    public String[] toArray() {
-        return command;
+        return "CommandPipeline{" +
+                "commands=" + commands +
+                '}';
     }
 }

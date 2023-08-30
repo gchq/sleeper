@@ -15,24 +15,34 @@
  */
 package sleeper.clients.testutil;
 
+import sleeper.clients.util.Command;
+import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.RunCommandPipeline;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RunCommandTestHelper {
     private RunCommandTestHelper() {
     }
 
-    public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
-        List<Command> commands = new ArrayList<>();
-        RunCommand runCommand = (args) -> {
-            commands.add(command(args));
+    public static List<CommandPipeline> pipelinesRunOn(PipelineInvoker invoker) throws IOException, InterruptedException {
+        List<CommandPipeline> pipelines = new ArrayList<>();
+        RunCommandPipeline runCommand = (pipeline) -> {
+            pipelines.add(pipeline);
             return 0;
         };
         invoker.run(runCommand);
-        return commands;
+        return pipelines;
+    }
+
+    public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
+        return pipelinesRunOn(invoker::run).stream()
+                .map(RunCommandTestHelper::singleCommandInPipeline)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public static String[] commandRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
@@ -49,6 +59,18 @@ public class RunCommandTestHelper {
 
     public interface CommandInvoker {
         void run(RunCommand runCommand) throws IOException, InterruptedException;
+    }
+
+    public interface PipelineInvoker {
+        void run(RunCommandPipeline runCommand) throws IOException, InterruptedException;
+    }
+
+    private static Command singleCommandInPipeline(CommandPipeline pipeline) {
+        List<Command> commands = pipeline.getCommands();
+        if (commands.size() != 1) {
+            throw new IllegalStateException("Exactly one command expected, found: " + commands);
+        }
+        return commands.get(0);
     }
 
 }
