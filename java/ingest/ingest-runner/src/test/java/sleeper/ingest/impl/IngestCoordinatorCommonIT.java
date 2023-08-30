@@ -922,7 +922,7 @@ public class IngestCoordinatorCommonIT {
         );
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).containsExactlyElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
