@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.DisabledIf;
 
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
@@ -57,7 +58,10 @@ public class CompactionPerformanceIT {
 
         sleeper.compaction().runStandard();
 
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(110);
+        assertThat(sleeper.stateStore().activeFiles())
+                .hasSize(10)
+                .matches(files -> files.stream().mapToLong(FileInfo::getNumberOfRecords).sum() == 4_400_000_000L,
+                        "contain 4.4 billion records");
     }
 
     @AfterEach
