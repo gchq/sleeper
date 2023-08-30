@@ -25,6 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,8 +58,11 @@ public class UploadDockerImagesNewTest {
         List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
         // Then
-        assertThat(pipelinesThatRan)
-                .containsExactly(loginDockerPipeline());
+        String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+        assertThat(pipelinesThatRan).containsExactly(
+                loginDockerPipeline(),
+                buildImagePipeline(expectedTag, "./docker/ingest"),
+                pushImagePipeline(expectedTag));
 
         assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/ingest");
@@ -73,8 +77,14 @@ public class UploadDockerImagesNewTest {
         List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
         // Then
-        assertThat(pipelinesThatRan)
-                .containsExactly(loginDockerPipeline());
+        String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+        String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+        assertThat(pipelinesThatRan).containsExactly(
+                loginDockerPipeline(),
+                buildImagePipeline(expectedTag1, "./docker/ingest"),
+                pushImagePipeline(expectedTag1),
+                buildImagePipeline(expectedTag2, "./docker/bulk-import-runner"),
+                pushImagePipeline(expectedTag2));
 
         assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
@@ -123,7 +133,7 @@ public class UploadDockerImagesNewTest {
 
         // Then
         assertThat(pipelinesThatRan)
-                .containsExactly(loginDockerPipeline());
+                .containsExactlyElementsOf(commandsToLoginDockerAndPushImages("ingest"));
 
         assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/ingest");
@@ -135,9 +145,29 @@ public class UploadDockerImagesNewTest {
                         "123.dkr.ecr.test-region.amazonaws.com"));
     }
 
+    private CommandPipeline buildImagePipeline(String tag, String dockerDirectory) {
+        return pipeline(command("docker", "build", "-t", tag, dockerDirectory));
+    }
+
+    private CommandPipeline pushImagePipeline(String tag) {
+        return pipeline(command("docker", "push", tag));
+    }
+
+    private List<CommandPipeline> commandsToLoginDockerAndPushImages(String... images) {
+        List<CommandPipeline> pipelines = new ArrayList<>();
+        pipelines.add(loginDockerPipeline());
+        for (String image : images) {
+            String tag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/" + image + ":1.0.0";
+            pipelines.add(buildImagePipeline(tag, "./docker/" + image));
+            pipelines.add(pushImagePipeline(tag));
+        }
+        return pipelines;
+    }
+
     private UploadDockerImagesNew getUpload() {
         return UploadDockerImagesNew.builder()
                 .baseDockerDirectory(Path.of("./docker"))
+                .version("1.0.0")
                 .instanceProperties(properties)
                 .ecrClient(ecrClient)
                 .build();

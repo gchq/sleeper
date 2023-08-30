@@ -26,7 +26,7 @@ public interface RunCommandPipeline extends RunCommand {
     int run(CommandPipeline pipeline) throws IOException, InterruptedException;
 
     @Override
-    default int run(String[] command) throws IOException, InterruptedException {
+    default int run(String... command) throws IOException, InterruptedException {
         return run(pipeline(command(command)));
     }
 }
