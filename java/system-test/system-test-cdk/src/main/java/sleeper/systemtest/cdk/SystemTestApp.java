@@ -23,18 +23,14 @@ import software.amazon.awscdk.StackProps;
 import sleeper.cdk.SleeperCdkApp;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.stack.IngestStack;
-import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
-
-import java.util.List;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
 
 /**
  * An {@link App} to deploy the {@link SleeperCdkApp} and the additional stacks
@@ -49,21 +45,14 @@ public class SystemTestApp extends SleeperCdkApp {
 
     @Override
     public void create() {
-        SystemTestProperties systemTestProperties = getInstanceProperties();
-        List<String> optionalStacks = systemTestProperties.getList(OPTIONAL_STACKS);
-        if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
-            new SystemTestIngestBucketStack(this, "SystemTestIngestBucket", systemTestProperties);
-        }
+        SystemTestProperties properties = getInstanceProperties();
+        new SystemTestBucketStack(this, "SystemTestIngestBucket", properties);
         super.create();
         // Stack for writing random data
-        IngestStack ingestStack = getIngestStack();
-        EmrBulkImportStack emrBulkImportStack = getEmrBulkImportStack();
-        new SystemTestStack(this, "SystemTest",
-                getTableStack().getDataBuckets(),
-                getTableStack().getStateStoreStacks(),
-                systemTestProperties,
-                ingestStack == null ? null : ingestStack.getIngestJobQueue(),
-                emrBulkImportStack == null ? null : emrBulkImportStack.getBulkImportJobQueue());
+        if (properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
+            new SystemTestClusterStack(this, "SystemTest", properties,
+                    getTableStack(), getIngestStack(), getEmrBulkImportStack());
+        }
 
         readyToGenerateProperties = true;
         generateProperties();

@@ -30,12 +30,51 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
-    SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
-            .description("The number of containers that write random data")
-            .validationPredicate(Objects::nonNull).build();
-    SystemTestProperty NUMBER_OF_RECORDS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.records-per-writer")
-            .description("The number of random records that each container should write")
-            .validationPredicate(Objects::nonNull).build();
+    SystemTestProperty SYSTEM_TEST_ID = Index.propertyBuilder("sleeper.systemtest.standalone.id")
+            .description("The id of the deployment, when deploying standalone.")
+            .editable(false).build();
+    SystemTestProperty SYSTEM_TEST_ACCOUNT = Index.propertyBuilder("sleeper.systemtest.standalone.account")
+            .description("The AWS account when deploying standalone.")
+            .editable(false).build();
+    SystemTestProperty SYSTEM_TEST_REGION = Index.propertyBuilder("sleeper.systemtest.standalone.region")
+            .description("The AWS region when deploying standalone.")
+            .editable(false).build();
+    SystemTestProperty SYSTEM_TEST_VPC_ID = Index.propertyBuilder("sleeper.systemtest.standalone.vpc")
+            .description("The id of the VPC to deploy to, when deploying standalone.")
+            .editable(false).build();
+    SystemTestProperty SYSTEM_TEST_JARS_BUCKET = Index.propertyBuilder("sleeper.systemtest.standalone.jars.bucket")
+            .description("The S3 bucket containing the jar files of the Sleeper components, when deploying standalone.")
+            .runCDKDeployWhenChanged(true).build();
+    SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
+            .description("The image in ECR used for writing random data to the system")
+            .validationPredicate(Objects::nonNull)
+            .runCDKDeployWhenChanged(true).build();
+    SystemTestProperty SYSTEM_TEST_CLUSTER_ENABLED = Index.propertyBuilder("sleeper.systemtest.cluster.enabled")
+            .description("Whether to deploy the system test cluster for data generation")
+            .defaultValue("true").validationPredicate(Utils::isTrueOrFalse)
+            .runCDKDeployWhenChanged(true).build();
+    SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
+            .description("The name of the ECS cluster where system test tasks will run")
+            .systemDefined(true).build();
+    SystemTestProperty SYSTEM_TEST_BUCKET_NAME = Index.propertyBuilder("sleeper.systemtest.bucket")
+            .description("The name of the bucket where system test data will be stored")
+            .systemDefined(true).build();
+    SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task.definition")
+            .description("The name of the family of task definitions used for writing data")
+            .systemDefined(true).build();
+    SystemTestProperty WRITE_DATA_ROLE_NAME = Index.propertyBuilder("sleeper.systemtest.writer.role")
+            .description("The name of the role used when writing data for an instance in an ECS cluster")
+            .systemDefined(true).build();
+    SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
+            .description("The number of CPU units for the containers that write random data, where 1024 is 1 vCPU.\n" +
+                    "For valid values, see: " +
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
+            .defaultValue("1024").runCDKDeployWhenChanged(true).build();
+    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
+            .description("The amount of memory for the containers that write random data, in MiB.\n" +
+                    "For valid values, see: " +
+                    "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
+            .defaultValue("4096").runCDKDeployWhenChanged(true).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
             .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
                     "'Direct' means that the data is written directly using an ingest coordinator.\n" +
@@ -43,58 +82,51 @@ public interface SystemTestProperty extends InstanceProperty {
                     "and posted to the ingest queue.\n" +
                     "'Generate_only' means that the data is written to a Parquet file in the table data bucket, " +
                     "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
+            .defaultValue(IngestMode.DIRECT.toString())
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
     SystemTestProperty NUMBER_OF_BULK_IMPORT_JOBS = Index.propertyBuilder("sleeper.systemtest.bulkimport.jobs")
             .description("The number of jobs that should be sent to the bulk import queue. " +
                     "Only applies when sending bulk import jobs with the SendBulkImportJobs class.\n" +
                     "When using the ingest mode 'generate_only', this will take all generated data files, and send a " +
                     "number of bulk import jobs that each import all of those files.")
-            .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger).build();
+            .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty BULK_IMPORT_QUEUE_PROPERTY = Index.propertyBuilder("sleeper.systemtest.bulkimport.queue.property")
             .description("The property for the bulk import queue which jobs should be sent to in SendBulkImportJobs.")
             .defaultValue(BULK_IMPORT_EMR_JOB_QUEUE_URL.getPropertyName()).build();
-    SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
-            .description("The name of the cluster to use when performing system tests").build();
-    SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
-            .description("The image in ECR used for writing random data to the system")
-            .validationPredicate(Objects::nonNull).build();
-    SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task-definition")
-            .description("The name of the family of task definitions used for writing data").build();
-    SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
-            .description("The amount of CPU for the containers that write random data")
-            .defaultValue("1024").build();
-    SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory")
-            .description("The amount of memory for the containers that write random data")
-            .defaultValue("4096").build();
+    SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
+            .description("The number of containers that write random data")
+            .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();
+    SystemTestProperty NUMBER_OF_RECORDS_PER_WRITER = Index.propertyBuilder("sleeper.systemtest.records.per.writer")
+            .description("The number of random records that each container should write")
+            .defaultValue("100").validationPredicate(Utils::isPositiveInteger).build();
     SystemTestProperty MIN_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.min")
             .description("The minimum value of integers generated randomly during random record generation")
-            .defaultValue("0").build();
+            .defaultValue("0").validationPredicate(Utils::isInteger).build();
     SystemTestProperty MAX_RANDOM_INT = Index.propertyBuilder("sleeper.systemtest.random.int.max")
             .description("The maximum value of integers generated randomly during random record generation")
-            .defaultValue("100000000").build();
+            .defaultValue("100000000").validationPredicate(Utils::isInteger).build();
     SystemTestProperty MIN_RANDOM_LONG = Index.propertyBuilder("sleeper.systemtest.random.long.min")
             .description("The minimum value of longs generated randomly during random record generation")
-            .defaultValue("0").build();
+            .defaultValue("0").validationPredicate(Utils::isLong).build();
     SystemTestProperty MAX_RANDOM_LONG = Index.propertyBuilder("sleeper.systemtest.random.long.max")
             .description("The maximum value of longs generated randomly during random record generation")
-            .defaultValue("10000000000").build();
+            .defaultValue("10000000000").validationPredicate(Utils::isLong).build();
     SystemTestProperty RANDOM_STRING_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.string.length")
             .description("The length of strings generated randomly during random record generation")
-            .defaultValue("10").build();
+            .defaultValue("10").validationPredicate(Utils::isNonNegativeInteger).build();
     SystemTestProperty RANDOM_BYTE_ARRAY_LENGTH = Index.propertyBuilder("sleeper.systemtest.random.bytearray.length")
             .description("The length of byte arrays generated randomly during random record generation")
-            .defaultValue("10").build();
+            .defaultValue("10").validationPredicate(Utils::isNonNegativeInteger).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_MAP = Index.propertyBuilder("sleeper.systemtest.random.map.length")
             .description("The maximum number of entries in maps generated randomly during random record generation\n" +
                     "(the number of entries in the map will range randomly from 0 to this number)")
-            .defaultValue("10").build();
+            .defaultValue("10").validationPredicate(Utils::isNonNegativeInteger).build();
     SystemTestProperty MAX_ENTRIES_RANDOM_LIST = Index.propertyBuilder("sleeper.systemtest.random.list.length")
             .description("The maximum number of entries in lists generated randomly during random record generation\n" +
                     "(the number of entries in the list will range randomly from 0 to this number)")
-            .defaultValue("10").build();
+            .defaultValue("10").validationPredicate(Utils::isNonNegativeInteger).build();
 
-    static List<InstanceProperty> getAll() {
+    static List<SystemTestProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
 
@@ -102,7 +134,7 @@ public interface SystemTestProperty extends InstanceProperty {
         private Index() {
         }
 
-        static final SleeperPropertyIndex<InstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
+        static final SleeperPropertyIndex<SystemTestProperty> INSTANCE = new SleeperPropertyIndex<>();
 
         private static SystemTestPropertyImpl.Builder propertyBuilder(String propertyName) {
             return SystemTestPropertyImpl.named(propertyName)

@@ -30,10 +30,4 @@ class SystemTestPropertyTest {
                 .containsAll(InstanceProperty.getAll())
                 .containsAll(SystemTestProperty.getAll());
     }
-
-    @Test
-    void shouldNotReturnAnyInstancePropertiesAsSystemTestProperties() {
-        assertThat(SystemTestProperty.getAll())
-                .doesNotContainAnyElementsOf(InstanceProperty.getAll());
-    }
 }

@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.SleeperProperties.readList;
+import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.ARM64;
 import static sleeper.configuration.properties.validation.EmrInstanceArchitecture.X86_64;
 

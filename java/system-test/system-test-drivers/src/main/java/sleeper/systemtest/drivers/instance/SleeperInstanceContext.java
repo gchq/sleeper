@@ -43,10 +43,16 @@ import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
+import static sleeper.systemtest.drivers.instance.OutputInstanceIds.addInstanceIdToOutput;
+
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
 
     private final SystemTestParameters parameters;
+    private final SystemTestInstanceContext systemTest;
     private final CloudFormationClient cloudFormationClient;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDBClient;
@@ -54,10 +60,12 @@ public class SleeperInstanceContext {
     private Instance currentInstance;
 
     public SleeperInstanceContext(SystemTestParameters parameters,
+                                  SystemTestInstanceContext systemTest,
                                   CloudFormationClient cloudFormationClient,
                                   AmazonS3 s3Client,
                                   AmazonDynamoDB dynamoDBClient) {
         this.parameters = parameters;
+        this.systemTest = systemTest;
         this.cloudFormationClient = cloudFormationClient;
         this.s3Client = s3Client;
         this.dynamoDBClient = dynamoDBClient;
@@ -129,6 +137,11 @@ public class SleeperInstanceContext {
                         .tableName(tableName)
                         .instanceType(InvokeCdkForInstance.Type.STANDARD)
                         .runCommand(ClientUtils::runCommandLogOutput)
+                        .extraInstanceProperties(properties -> {
+                            properties.set(JARS_BUCKET, parameters.buildJarsBucketName());
+                            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+                            properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
+                        })
                         .deployWithDefaultClients();
             } catch (IOException ex) {
                 throw new RuntimeIOException(ex);
@@ -140,8 +153,10 @@ public class SleeperInstanceContext {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            return new Instance(instanceProperties, tablePropertiesProvider.getTableProperties(tableName), tablePropertiesProvider, stateStoreProvider);
+            addInstanceIdToOutput(instanceId, parameters);
+            return new Instance(instanceProperties, tableProperties, tablePropertiesProvider, stateStoreProvider);
         } catch (IOException e) {
             throw new RuntimeIOException(e);
         }

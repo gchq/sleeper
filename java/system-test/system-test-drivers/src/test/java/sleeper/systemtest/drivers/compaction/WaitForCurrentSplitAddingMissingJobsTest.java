@@ -251,7 +251,6 @@ class WaitForCurrentSplitAddingMissingJobsTest {
                 .instanceProperties(properties)
                 .store(statusStore)
                 .tableName(tableName)
-                .waitForSplitsToFinish(pollTimes(1))
                 .waitForCompactionsToAppearOnQueue(pollTimes(1))
                 .waitForCompactionJobs(pollTimes(1))
                 .waitForAllCompactionJobsToStart(pollTimes(1));

@@ -22,10 +22,13 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
+import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
+import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
@@ -58,10 +61,12 @@ public class SleeperSystemTest {
 
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
+    private final SystemTestInstanceContext systemTest = new SystemTestInstanceContext(
+            parameters, clients.getS3(), clients.getS3V2(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
-    private final ReportingContext reportingContext = new ReportingContext();
-    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(parameters, clients.getS3V2());
+            parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+    private final ReportingContext reportingContext = new ReportingContext(parameters);
+    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, clients.getS3V2());
 
     private SleeperSystemTest() {
     }
@@ -71,7 +76,12 @@ public class SleeperSystemTest {
     }
 
     private SleeperSystemTest reset() {
-        sourceFiles.createOrEmptySourceBucket();
+        try {
+            systemTest.deployIfMissing();
+            sourceFiles.emptySourceBucket();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
@@ -84,6 +94,10 @@ public class SleeperSystemTest {
 
     public InstanceProperties instanceProperties() {
         return instance.getInstanceProperties();
+    }
+
+    public TableProperties tableProperties() {
+        return instance.getTableProperties();
     }
 
     public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
@@ -104,7 +118,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, parameters, reportingContext, sourceFiles);
+        return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
     public SystemTestDirectQuery directQuery() {
@@ -122,6 +136,19 @@ public class SleeperSystemTest {
     }
 
     public SystemTestReporting reporting() {
-        return new SystemTestReporting(reportingContext);
+        return new SystemTestReporting(instance, clients, reportingContext);
+    }
+
+    public SystemTestPartitionSplitting partitionSplitting() {
+        return new SystemTestPartitionSplitting(new PartitionSplittingDriver(instance, clients.getLambda()));
+    }
+
+    public SystemTestCompaction compaction() {
+        return new SystemTestCompaction(new SplittingCompactionDriver(instance,
+                clients.getLambda(), clients.getSqs(), clients.getDynamoDB()));
+    }
+
+    public SystemTestCluster systemTestCluster() {
+        return new SystemTestCluster(systemTest, instance, clients);
     }
 }

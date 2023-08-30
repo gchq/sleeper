@@ -155,7 +155,7 @@ public class DeployNewInstance {
         LOGGER.info("-------------------------------------------------------");
         CdkCommand cdkCommand = deployPaused ? CdkCommand.deployNewPaused() : CdkCommand.deployNew();
         InvokeCdkForInstance.builder()
-                .instancePropertiesFile(generatedDirectory.resolve("instance.properties"))
+                .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
         LOGGER.info("Finished deployment of new instance");

@@ -18,7 +18,7 @@ package sleeper.configuration;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.EnumUtils;
 
-import sleeper.configuration.properties.SleeperProperties;
+import sleeper.configuration.properties.SleeperPropertyValues;
 import sleeper.configuration.properties.table.CompressionCodec;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
@@ -54,8 +54,16 @@ public class Utils {
         return parseAndCheckInteger(integer, num -> num >= 0);
     }
 
+    public static boolean isInteger(String integer) {
+        return parseAndCheckInteger(integer, num -> true);
+    }
+
     public static boolean isPositiveLong(String value) {
         return parseAndCheckLong(value, num -> num > 0);
+    }
+
+    public static boolean isLong(String value) {
+        return parseAndCheckLong(value, num -> true);
     }
 
     public static boolean isPositiveDouble(String value) {
@@ -153,7 +161,7 @@ public class Utils {
         if (input == null) {
             return false;
         }
-        return SleeperProperties.readList(input).stream()
+        return SleeperPropertyValues.readList(input).stream()
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 

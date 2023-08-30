@@ -49,6 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * Allows a user to run a query from the command line.
@@ -119,10 +120,11 @@ public class QueryClient extends QueryCommandLineClient {
             throw new IllegalArgumentException("Usage: <instance id>");
         }
 
-        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, AmazonDynamoDBClientBuilder.defaultClient());
+        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB);
         queryClient.run();
     }
 }

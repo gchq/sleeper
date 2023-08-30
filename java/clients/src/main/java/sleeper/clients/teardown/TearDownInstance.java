@@ -29,6 +29,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
@@ -57,6 +58,7 @@ public class TearDownInstance {
     private final AmazonECS ecs;
     private final AmazonECR ecr;
     private final AmazonElasticMapReduce emr;
+    private final EmrServerlessClient emrServerless;
     private final CloudFormationClient cloudFormation;
     private final Path scriptsDir;
     private final Path generatedDir;
@@ -71,6 +73,7 @@ public class TearDownInstance {
         ecs = Objects.requireNonNull(builder.ecs, "ecs must not be null");
         ecr = Objects.requireNonNull(builder.ecr, "ecr must not be null");
         emr = Objects.requireNonNull(builder.emr, "emr must not be null");
+        emrServerless = Objects.requireNonNull(builder.emrServerless, "emrServerless must not be null");
         cloudFormation = Objects.requireNonNull(builder.cloudFormation, "cloudFormation must not be null");
         scriptsDir = Objects.requireNonNull(builder.scriptsDir, "scriptsDir must not be null");
         getExtraEcsClusters = Objects.requireNonNull(builder.getExtraEcsClusters, "getExtraEcsClusters must not be null");
@@ -100,7 +103,7 @@ public class TearDownInstance {
         LOGGER.info("{}: {}", CONFIG_BUCKET.getPropertyName(), instanceProperties.get(CONFIG_BUCKET));
         LOGGER.info("{}: {}", QUERY_RESULTS_BUCKET.getPropertyName(), instanceProperties.get(QUERY_RESULTS_BUCKET));
 
-        new ShutdownSystemProcesses(cloudWatch, ecs, emr)
+        new ShutdownSystemProcesses(cloudWatch, ecs, emr, emrServerless)
                 .shutdown(instanceProperties, getExtraEcsClusters.apply(instanceProperties));
 
         LOGGER.info("Deleting deployed CloudFormation stack");
@@ -153,6 +156,7 @@ public class TearDownInstance {
         private AmazonECS ecs;
         private AmazonECR ecr;
         private AmazonElasticMapReduce emr;
+        private EmrServerlessClient emrServerless;
         private CloudFormationClient cloudFormation;
         private Path scriptsDir;
         private String instanceId;
@@ -189,6 +193,11 @@ public class TearDownInstance {
 
         public Builder emr(AmazonElasticMapReduce emr) {
             this.emr = emr;
+            return this;
+        }
+
+        public Builder emrServerless(EmrServerlessClient emrServerless) {
+            this.emrServerless = emrServerless;
             return this;
         }
 
@@ -230,6 +239,7 @@ public class TearDownInstance {
                 ecs(AmazonECSClientBuilder.defaultClient());
                 ecr(AmazonECRClientBuilder.defaultClient());
                 emr(AmazonElasticMapReduceClientBuilder.defaultClient());
+                emrServerless(EmrServerlessClient.create());
                 cloudFormation(cloudFormationClient);
                 build().tearDown();
             }

@@ -26,8 +26,6 @@ import sleeper.ingest.batcher.testutil.FileIngestRequestTestHelper;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_TRACKING_TTL_MINUTES;
@@ -252,32 +250,30 @@ public class DynamoDBIngestBatcherStoreIT extends DynamoDBIngestBatcherStoreTest
         }
 
         @Test
-        void shouldAssignFilesWhenNumberOfFilesMeetsTheDynamoDBTransactionLimit() {
+        void shouldAssignFilesWhenNumberOfFilesMeetsTheBatchSize() {
             // Given
-            // Transaction limit is 100. 2 transactions are performed per job, so send 50 files
-            List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 50)
-                    .mapToObj(i -> fileRequest().build())
-                    .collect(Collectors.toUnmodifiableList());
-            addFiles(fileIngestRequests); // Add files transactionally as DynamoDB local is inconsistent otherwise
+            FileIngestRequest file1 = fileRequest().build();
+            FileIngestRequest file2 = fileRequest().build();
+            store.addFile(file1);
+            store.addFile(file2);
 
             // When
-            store.assignJobGetAssigned("test-job", fileIngestRequests);
+            storeWithFilesInAssignJobBatch(2).assignJobGetAssigned("test-job", List.of(file1, file2));
 
             // Then
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();
         }
 
         @Test
-        void shouldAssignFilesWhenNumberOfFilesExceedsTheDynamoDBTransactionLimit() {
+        void shouldAssignFilesWhenNumberOfFilesExceedsTheBatchSize() {
             // Given
-            // Transaction limit is 100. 2 transactions are performed per job, so send 51 files
-            List<FileIngestRequest> fileIngestRequests = IntStream.range(0, 51)
-                    .mapToObj(i -> fileRequest().build())
-                    .collect(Collectors.toUnmodifiableList());
-            addFiles(fileIngestRequests); // Add files transactionally as DynamoDB local is inconsistent otherwise
+            FileIngestRequest file1 = fileRequest().build();
+            FileIngestRequest file2 = fileRequest().build();
+            store.addFile(file1);
+            store.addFile(file2);
 
             // When
-            store.assignJobGetAssigned("test-job", fileIngestRequests);
+            storeWithFilesInAssignJobBatch(1).assignJobGetAssigned("test-job", List.of(file1, file2));
 
             // Then
             assertThat(store.getPendingFilesOldestFirst()).isEmpty();

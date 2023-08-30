@@ -14,10 +14,12 @@
 # limitations under the License.
 #
 
-InstanceID=changeme
-Description=Partition Splitting test
-Environment=DEV
-Product=Sleeper
-ApplicationID=SLEEPER
-Project=SystemTest
-SystemTest=PartitionSplitting
+source "$(dirname "${BASH_SOURCE[0]}")/arrayUtils.sh"
+
+read_instance_ids_to_array() {
+    local ARRAY_OUT_NAME=$2
+    eval "$ARRAY_OUT_NAME=()"
+    while read -r id; do
+      eval "$ARRAY_OUT_NAME+=(\"$id\")"
+    done <"$1"
+}
