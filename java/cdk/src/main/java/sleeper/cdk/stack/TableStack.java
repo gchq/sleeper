@@ -25,6 +25,7 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
@@ -56,6 +57,7 @@ import java.util.Map;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -105,8 +107,19 @@ public class TableStack extends NestedStack {
                 .build();
 
         createTables(scope, instanceProperties, sleeperTableProvider, sleeperTableLambda, configBucket, metricsJar);
+        addIngestSourceRoleReferences(this, "IngestTableWriter", instanceProperties)
+                .forEach(role -> grantIngestSourceRole(role, dataBuckets, stateStoreStacks));
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private static void grantIngestSourceRole(
+            IRole role, List<IBucket> dataBuckets, List<StateStoreStack> stateStoreStacks) {
+        dataBuckets.forEach(bucket -> bucket.grantReadWrite(role));
+        stateStoreStacks.forEach(stateStoreStack -> {
+            stateStoreStack.grantReadPartitionMetadata(role);
+            stateStoreStack.grantReadWriteActiveFileMetadata(role);
+        });
     }
 
     private void createTables(Construct scope,

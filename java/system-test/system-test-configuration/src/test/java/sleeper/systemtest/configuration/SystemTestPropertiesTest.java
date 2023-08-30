@@ -48,7 +48,7 @@ class SystemTestPropertiesTest {
     void shouldFailValidationWhenMandatorySystemTestPropertyNotSet() throws IOException {
         // Given
         SystemTestProperties properties = validProperties();
-        properties.unset(NUMBER_OF_WRITERS);
+        properties.unset(SYSTEM_TEST_REPO);
 
         // When / Then
         assertThatThrownBy(properties::validate)

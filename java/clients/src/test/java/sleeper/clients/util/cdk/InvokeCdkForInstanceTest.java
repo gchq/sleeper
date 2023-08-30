@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 class InvokeCdkForInstanceTest {
 
     private final InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
-            .instancePropertiesFile(Path.of("instance.properties"))
+            .propertiesFile(Path.of("instance.properties"))
             .jarsDirectory(Path.of("."))
             .version("1.0").build();
 

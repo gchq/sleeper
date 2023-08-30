@@ -80,7 +80,7 @@ public class AdminClient {
         Path jarsDir = scriptsDir.resolve("jars");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
         InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
-                .instancePropertiesFile(generatedDir.resolve("instance.properties"))
+                .propertiesFile(generatedDir.resolve("instance.properties"))
                 .jarsDirectory(jarsDir).version(version).build();
 
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());

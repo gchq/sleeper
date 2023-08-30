@@ -16,8 +16,12 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+
+import java.util.List;
 
 public class SystemTestStateStore {
 
@@ -28,8 +32,20 @@ public class SystemTestStateStore {
     }
 
     public int numActiveFiles() {
+        return activeFiles().size();
+    }
+
+    public List<FileInfo> activeFiles() {
         try {
-            return instance.getStateStore().getActiveFiles().size();
+            return instance.getStateStore().getActiveFiles();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<Partition> allPartitions() {
+        try {
+            return instance.getStateStore().getAllPartitions();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

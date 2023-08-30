@@ -41,6 +41,7 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -61,7 +62,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -76,6 +76,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNN
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
@@ -143,11 +144,18 @@ public class IngestStack extends NestedStack {
 
     public static List<IBucket> addIngestSourceBucketReferences(Construct scope, String id, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
-        return Optional.ofNullable(instanceProperties.getList(INGEST_SOURCE_BUCKET))
-                .orElse(List.of()).stream()
+        return instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
                 .filter(not(String::isEmpty))
                 .map(bucketName -> Bucket.fromBucketName(scope, id + index.getAndIncrement(), bucketName))
                 .collect(Collectors.toList());
+    }
+
+    public static List<IRole> addIngestSourceRoleReferences(Construct scope, String id, InstanceProperties instanceProperties) {
+        AtomicInteger index = new AtomicInteger(1);
+        return instanceProperties.getList(INGEST_SOURCE_ROLE).stream()
+                .filter(not(String::isEmpty))
+                .map(roleName -> Role.fromRoleName(scope, id + index.getAndIncrement(), roleName))
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -171,6 +179,8 @@ public class IngestStack extends NestedStack {
                 .build();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, ingestJobQueue.getQueueUrl());
         instanceProperties.set(INGEST_JOB_DLQ_URL, ingestJobDeadLetterQueue.getQueue().getQueueUrl());
+        addIngestSourceRoleReferences(this, "IngestSourceRole", instanceProperties)
+                .forEach(ingestJobQueue::grantSendMessages);
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         Alarm ingestAlarm = Alarm.Builder
