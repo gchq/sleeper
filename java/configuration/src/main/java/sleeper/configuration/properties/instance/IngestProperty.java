@@ -79,6 +79,10 @@ public interface IngestProperty {
                     "and bulk import stacks will be given read access to these buckets so that they can consume data from them.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_SOURCE_ROLE = Index.propertyBuilder("sleeper.ingest.source.role")
+            .description("A comma-separated list of role names which should be able to ingest data into Sleeper.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.ingest.record.batch.type")
             .description("The way in which records are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +

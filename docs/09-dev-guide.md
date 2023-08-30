@@ -21,9 +21,18 @@ You will need the following software:
 * [Maven](https://maven.apache.org/): Tested with v3.8.6
 * [NodeJS / NPM](https://github.com/nvm-sh/nvm#installing-and-updating): Tested with NodeJS v16.16.0 and npm v8.11.0
 
+You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all of these. When
+you have Nix installed, an easy way to get a development environment is to run `nix-shell` at the root of the Sleeper
+Git repository. This will start a shell with all the Sleeper dependencies installed, without installing them in your
+system. If you run your IDE from that shell, the dependencies will be available in your IDE. You can run `nix-shell`
+again whenever you want to work with Sleeper.
+
+You can also download [shell.nix](/shell.nix) directly and run `nix-shell shell.nix` if you'd like to get a shell
+without running Git. You can then `git clone` the repository from there.
+
 If you're working with the Sleeper CLI, you can use `sleeper builder` to get a shell inside a Docker container with
-these pre-installed. You'll need to clone the Git repository, and this will be persisted between executions of
-`sleeper builder`. Use the commands below:
+the dependencies pre-installed. You'll need to clone the Git repository, and this will be persisted between executions
+of `sleeper builder`. Use the commands below:
 
 ```bash
 sleeper builder
@@ -48,15 +57,105 @@ cd java
 mvn clean install -Pquick
 ```
 
-## Exploring the code base
+## Using the codebase
 
-Look in the [design document](10-design.md) for an idea of what to expect in the project. The elements of the design
-largely correspond to Maven modules. Core or common modules are used to separate shared model code from integrations
-with libraries which are not needed by all components of the system.
+The codebase is structured around the components explained in the [design document](10-design.md). The elements of the
+design largely correspond to Maven modules. Core or common modules contain shared model code. Other modules contain
+integrations with libraries which are not needed by all components of the system, eg. AWS API clients.
 
-If you'd like to look at how the modules relate to one another in terms of their dependencies, in the `build` module
-there's a main method in the class `sleeper.build.maven.ShowInternalDependencies` to display the internal dependencies
-as a graph.
+If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
+the [development scripts section](#development-scripts) that can display the dependency structure as a graph.
+
+If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
+
+### IDE setup
+
+Configuration is available for various development environments.
+
+For VS Code there's [a separate setup guide](/.vscode/README.md).
+
+For IntelliJ, these settings are available to import:
+
+- Code style scheme at [code-style/intellij-style.xml](/code-style/intellij-style.xml)
+- Copyright profile for license header
+  at [code-style/intellij-copyright-profile.xml](/code-style/intellij-copyright-profile.xml)
+- Checkstyle plugin settings in [code-style/checkstyle-idea](/code-style/checkstyle-idea)
+
+For Eclipse, these settings are available to import:
+
+- Code style at [code-style/eclipse-style.xml](/code-style/eclipse-style.xml)
+- Import order at [code-style/eclipse-import-order.importorder](/code-style/eclipse-import-order.importorder)
+- License header at [code-style/licenseHeader.txt](/code-style/licenseHeader.txt)
+
+### Linting
+
+The Maven project includes Checkstyle and Spotbugs. These are run on every pull request. You can run them locally with
+the Maven checkstyle:check and spotbugs:check goals. Your IDE may have plugins available to alert you of violations.
+
+You can run both plugins together:
+
+```bash
+cd java
+mvn clean compile checkstyle:check spotbugs:check
+```
+
+### Tests
+
+The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+
+A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
+If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
+should be a particular behaviour or scenario, rather than eg. a specific method.
+
+A system test is a test that works with a deployed instance of Sleeper. These can be found in the
+module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
+instance of Sleeper. They need extra configuration to run, which will be documented separately.
+
+An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
+external dependencies with TestContainers, tests network calls with WireMock, or uses the local file system.
+
+Unit tests should be in a class ending with Test, like MyFeatureTest. Integration tests should be in a class ending with
+IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
+for integration tests. System tests should follow the same naming as integration tests, but should be annotated with
+`@Tag("SystemTest")`. This means they will only be run as part of a specific system test setup.
+
+We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
+wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
+set of English given/when/then statements.
+
+### Development scripts
+
+In the `/scripts/dev` folder are some scripts that can assist you while working on Sleeper:
+
+#### `showInternalDependencies.sh`
+
+This will display a graph of the dependencies between Sleeper's Maven modules. You can use this to explore how the
+modules relate to one another.
+
+#### `generatePropertiesTemplates.sh`
+
+This will regenerate the examples and templates for Sleeper configuration properties files. Use this if you've made any
+changes to Sleeper configuration properties. This will propagate any changes to property descriptions, ordering,
+grouping, etc.
+
+#### `cleanupLogGroups.sh`
+
+When deploying multiple instances (or running multiple system tests), many log groups will be generated. This can make
+it difficult to find the logs you need to view. This script will delete any log groups that meet all of the following
+criteria:
+
+- Its name does not contain the name of any deployed CloudFormation stack
+- Either it's empty, or it has no retention period and is older than 30 days
+
+This can be used to limit the number of log groups in your AWS account, particularly if all your log groups are
+deployed by the CDK or CloudFormation, with the stack name in the log group name.
+
+Note that this will not delete log groups for recently deleted instances of Sleeper, so you will still need a different
+instance ID when deploying a new instance to avoid naming collisions with existing log groups.
+
+#### `updateVersionNumber.sh`
+
+This is used during the release process to update the version number across the project (see below).
 
 ## System Tests
 

@@ -23,6 +23,7 @@ import com.amazonaws.services.ecs.model.StopTaskRequest;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.clients.status.update.PauseSystem;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -43,20 +44,23 @@ public class ShutdownSystemProcesses {
     private final AmazonCloudWatchEvents cloudWatch;
     private final AmazonECS ecs;
     private final AmazonElasticMapReduce emrClient;
+    private final EmrServerlessClient emrServerlessClient;
 
-    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs, AmazonElasticMapReduce emrClient) {
+    public ShutdownSystemProcesses(AmazonCloudWatchEvents cloudWatch, AmazonECS ecs,
+            AmazonElasticMapReduce emrClient, EmrServerlessClient emrServerlessClient) {
         this.cloudWatch = cloudWatch;
         this.ecs = ecs;
         this.emrClient = emrClient;
+        this.emrServerlessClient = emrServerlessClient;
     }
 
-    public void shutdown(
-            InstanceProperties instanceProperties,
-            List<String> extraECSClusters) throws InterruptedException {
+    public void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters)
+            throws InterruptedException {
         LOGGER.info("Pausing the system");
         PauseSystem.pause(cloudWatch, instanceProperties);
         stopECSTasks(instanceProperties, extraECSClusters);
         stopEMRClusters(instanceProperties);
+        stopEMRServerlessCluster(instanceProperties);
     }
 
     private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
@@ -70,7 +74,13 @@ public class ShutdownSystemProcesses {
         new TerminateEMRClusters(emrClient, properties).run();
     }
 
-    private static void stopTasks(AmazonECS ecs, InstanceProperties properties, InstanceProperty property) {
+    private void stopEMRServerlessCluster(InstanceProperties properties)
+            throws InterruptedException {
+        new TerminateEMRServerlessApplications(emrServerlessClient, properties).run();
+    }
+
+    private static void stopTasks(AmazonECS ecs, InstanceProperties properties,
+            InstanceProperty property) {
         if (!properties.isSet(property)) {
             return;
         }
@@ -83,18 +93,17 @@ public class ShutdownSystemProcesses {
             // Rate limit for ECS StopTask is 100 burst, 40 sustained:
             // https://docs.aws.amazon.com/AmazonECS/latest/APIReference/request-throttling.html
             sleepForSustainedRatePerSecond(30);
-            ecs.stopTask(new StopTaskRequest()
-                    .withCluster(clusterName)
-                    .withTask(taskArn)
+            ecs.stopTask(new StopTaskRequest().withCluster(clusterName).withTask(taskArn)
                     .withReason("Cleaning up before cdk destroy"));
         });
     }
 
-    private static void forEachTaskArn(AmazonECS ecs, String clusterName, Consumer<String> consumer) {
+    private static void forEachTaskArn(AmazonECS ecs, String clusterName,
+            Consumer<String> consumer) {
         String nextToken = null;
         do {
-            ListTasksResult result = ecs.listTasks(new ListTasksRequest()
-                    .withCluster(clusterName).withNextToken(nextToken));
+            ListTasksResult result = ecs.listTasks(
+                    new ListTasksRequest().withCluster(clusterName).withNextToken(nextToken));
 
             LOGGER.info("Found {} tasks", result.getTaskArns().size());
             result.getTaskArns().forEach(consumer);

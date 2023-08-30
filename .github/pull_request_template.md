@@ -8,10 +8,12 @@ Make sure you have checked _all_ steps below.
 
 ### Tests
 
-- [ ] My PR adds the following unit tests __OR__ does not need testing for this extremely good reason:
+- [ ] My PR adds the following tests __OR__ does not need testing for this extremely good reason:
     - MyUnitTest
 
 ### Documentation
 
 - [ ] In case of new functionality, my PR adds documentation that describes how to use it, or I have linked to a
   separate issue for that below.
+- [ ] If I have added, removed, or updated any external dependencies used in the project, I have updated the
+  [NOTICES](/NOTICES) file to reflect this.

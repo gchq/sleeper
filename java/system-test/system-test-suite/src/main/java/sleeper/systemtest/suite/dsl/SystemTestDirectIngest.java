@@ -17,16 +17,25 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.record.Record;
+import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
+import java.util.stream.LongStream;
 
 public class SystemTestDirectIngest {
 
+    private final SleeperInstanceContext instance;
     private final DirectIngestDriver context;
 
-    public SystemTestDirectIngest(DirectIngestDriver context) {
+    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver context) {
+        this.instance = instance;
         this.context = context;
+    }
+
+    public void numberedRecords(LongStream numbers) {
+        context.ingest(GenerateNumberedRecords.from(instance.getTableProperties().getSchema(), numbers).iterator());
     }
 
     public void records(Record... records) {
