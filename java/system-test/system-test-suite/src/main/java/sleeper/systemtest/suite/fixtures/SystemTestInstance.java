@@ -27,7 +27,6 @@ import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -104,30 +103,24 @@ public enum SystemTestInstance {
     }
 
     private static DeployInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
-        return buildConfigurationFromMain(parameters, properties -> {
-            properties.set(OPTIONAL_STACKS, "IngestStack");
-            properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
-            properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
-            properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
-            properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
-            properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
-            properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
-            properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB
-            properties.set(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, "1024");
-            properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
-            properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
-            properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
-            Map<String, String> tags = new HashMap<>(properties.getTags());
-            tags.put("SystemTestInstance", "ingestPerformance");
-            tags.put("Description", "Sleeper Maven system test ingest performance instance");
-            properties.setTags(tags);
-        });
-    }
-
-    private static DeployInstanceConfiguration buildConfigurationFromMain(
-            SystemTestParameters parameters, Consumer<InstanceProperties> config) {
-        DeployInstanceConfiguration deployConfig = buildMainConfiguration(parameters);
-        config.accept(deployConfig.getInstanceProperties());
-        return deployConfig;
+        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "IngestStack");
+        properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
+        properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
+        properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
+        properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB
+        properties.set(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, "1024");
+        properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
+        properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
+        properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "ingestPerformance");
+        tags.put("Description", "Sleeper Maven system test ingest performance instance");
+        properties.setTags(tags);
+        return configuration;
     }
 }
