@@ -34,7 +34,7 @@ public class EcrRepositoriesInMemory implements EcrRepositories.Client {
 
     @Override
     public void createRepository(String repository) {
-
+        repositoryNames.add(repository);
     }
 
     public Set<String> getRepositoryNames() {

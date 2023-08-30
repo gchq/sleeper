@@ -63,6 +63,7 @@ public class UploadDockerImagesNew {
                 command("docker", "login", "--username", "AWS", "--password-stdin",
                         String.format("%s.dkr.ecr.%s.amazonaws.com",
                                 account, region))));
+        ecrClient.createRepository("test-instance/ingest");
     }
 
     public static final class Builder {
