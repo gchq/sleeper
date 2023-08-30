@@ -97,6 +97,38 @@ public class UploadDockerImagesNewTest {
                 .containsExactlyInAnyOrder("test-instance/ingest");
     }
 
+    @Test
+    void shouldNotCreateRepositoryOrPushImageWhenStackHasNoDockerImage() throws Exception {
+        // Given
+        properties.set(OPTIONAL_STACKS, "OtherStack");
+
+        // When
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+        // Then
+        assertThat(pipelinesThatRan)
+                .containsExactly(loginDockerPipeline());
+
+        assertThat(ecrClient.getCreatedRepositories())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldCreateRepositoryAndPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
+        // Given
+        properties.set(OPTIONAL_STACKS, "OtherStack,IngestStack");
+
+        // When
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+        // Then
+        assertThat(pipelinesThatRan)
+                .containsExactly(loginDockerPipeline());
+
+        assertThat(ecrClient.getCreatedRepositories())
+                .containsExactlyInAnyOrder("test-instance/ingest");
+    }
+
     private CommandPipeline loginDockerPipeline() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",

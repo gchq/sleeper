@@ -66,6 +66,9 @@ public class UploadDockerImagesNew {
                         String.format("%s.dkr.ecr.%s.amazonaws.com",
                                 account, region))));
         for (String stack : stacks) {
+            if (!REPOSITORY_SUFFIX_BY_STACK.containsKey(stack)) {
+                continue;
+            }
             String repository = id + "/" + REPOSITORY_SUFFIX_BY_STACK.get(stack);
             if (ecrClient.repositoryExists(repository)) {
                 continue;
