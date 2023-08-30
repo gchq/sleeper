@@ -24,7 +24,6 @@ import sleeper.core.SleeperVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -36,11 +35,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesNew {
-    private static final Map<String, String> DIRECTORY_BY_STACK = Map.of(
-            "IngestStack", "ingest",
-            "EksBulkImportStack", "bulk-import-runner"
-    );
-
     private final Path baseDockerDirectory;
     private final String id;
     private final String account;
@@ -48,6 +42,8 @@ public class UploadDockerImagesNew {
     private final String version;
     private final List<String> stacks;
     private final EcrRepositories.Client ecrClient;
+
+    private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImagesNew(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
@@ -57,6 +53,7 @@ public class UploadDockerImagesNew {
         version = requireNonNull(builder.version, "version must not be null");
         stacks = requireNonNull(builder.stacks, "stacks must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
+        dockerImageConfig = requireNonNull(builder.dockerImageConfiguration, "dockerImageConfiguration must not be null");
     }
 
     public static Builder builder() {
@@ -67,8 +64,8 @@ public class UploadDockerImagesNew {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
 
         List<String> dockerDirectoriesToBuild = stacks.stream()
-                .filter(DIRECTORY_BY_STACK::containsKey)
-                .map(DIRECTORY_BY_STACK::get)
+                .filter(dockerImageConfig::hasStack)
+                .map(dockerImageConfig::getStack)
                 .filter(directory -> !ecrClient.repositoryExists(repositoryNameForDirectory(directory)))
                 .collect(Collectors.toUnmodifiableList());
 
@@ -101,6 +98,7 @@ public class UploadDockerImagesNew {
         private String version = SleeperVersion.getVersion();
         private List<String> stacks;
         private EcrRepositories.Client ecrClient;
+        private DockerImageConfiguration dockerImageConfiguration = new DockerImageConfiguration();
 
         private Builder() {
         }
@@ -144,6 +142,11 @@ public class UploadDockerImagesNew {
 
         public Builder ecrClient(EcrRepositories.Client ecrClient) {
             this.ecrClient = ecrClient;
+            return this;
+        }
+
+        public Builder dockerImageConfiguration(DockerImageConfiguration dockerImageConfiguration) {
+            this.dockerImageConfiguration = dockerImageConfiguration;
             return this;
         }
 

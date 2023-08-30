@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.RunCommandTestHelper.command;
@@ -166,6 +167,9 @@ public class UploadDockerImagesNewTest {
                 .version("1.0.0")
                 .instanceProperties(properties)
                 .ecrClient(ecrClient)
+                .dockerImageConfiguration(DockerImageConfiguration.from(Map.of(
+                        "IngestStack", "ingest",
+                        "EksBulkImportStack", "bulk-import-runner")))
                 .build();
     }
 }
