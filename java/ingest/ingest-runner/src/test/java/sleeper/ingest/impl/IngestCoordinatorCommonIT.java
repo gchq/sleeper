@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -923,11 +924,11 @@ public class IngestCoordinatorCommonIT {
         );
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).containsExactlyElementsOf(newRecordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                recordListAndSchema,
+                newRecordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
         );
@@ -960,6 +961,7 @@ public class IngestCoordinatorCommonIT {
                 .builder()
                 .temporaryFolder(temporaryFolder)
                 .awsResource(AWS_EXTERNAL_RESOURCE)
-                .dataBucketName(DATA_BUCKET_NAME);
+                .dataBucketName(DATA_BUCKET_NAME)
+                .iteratorClassName(AdditionIterator.class.getName());
     }
 }
