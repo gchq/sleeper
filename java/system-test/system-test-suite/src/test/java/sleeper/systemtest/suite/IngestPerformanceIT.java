@@ -42,6 +42,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRIT
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
 import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
@@ -82,7 +83,10 @@ public class IngestPerformanceIT {
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(1408);
+        assertThat(sleeper.stateStore().activeFiles())
+                .hasSize(1408)
+                .matches(files -> numberOfRecordsIn(files) == 440_000_000,
+                        "contain 440 million records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
                                 && stats.isMinAverageRunRecordsPerSecond(135000),
