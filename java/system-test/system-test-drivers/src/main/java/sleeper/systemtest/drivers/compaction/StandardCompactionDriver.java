@@ -30,6 +30,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,6 +61,10 @@ public class StandardCompactionDriver {
         return allJobIds(store)
                 .filter(not(jobsBefore::contains))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void invokeTasks(int expectedTasks) throws InterruptedException {
+        invokeTasks(expectedTasks, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
     }
 
     public void invokeTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {

@@ -18,22 +18,30 @@ package sleeper.systemtest.suite.dsl;
 
 import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
 import sleeper.systemtest.drivers.compaction.StandardCompactionDriver;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+
+import java.util.List;
 
 public class SystemTestCompaction {
 
-    private final SplittingCompactionDriver splittingDriver;
-    private final StandardCompactionDriver standardDriver;
+    private final SleeperInstanceContext instance;
+    private final SystemTestClients clients;
 
-    public SystemTestCompaction(SplittingCompactionDriver splittingDriver, StandardCompactionDriver standardDriver) {
-        this.splittingDriver = splittingDriver;
-        this.standardDriver = standardDriver;
+    public SystemTestCompaction(SleeperInstanceContext instance, SystemTestClients clients) {
+        this.instance = instance;
+        this.clients = clients;
     }
 
     public void runSplitting() throws InterruptedException {
-        splittingDriver.runSplittingCompaction();
+        new SplittingCompactionDriver(instance, clients.getLambda(), clients.getSqs(), clients.getDynamoDB())
+                .runSplittingCompaction();
     }
 
-    public void runStandard() {
-        standardDriver.createJobsGetIds();
+    public void runStandard() throws InterruptedException {
+        StandardCompactionDriver driver = new StandardCompactionDriver(instance, clients.getLambda(), clients.getDynamoDB());
+        List<String> jobIds = driver.createJobsGetIds();
+        driver.invokeTasks(jobIds.size());
+        WaitForJobsDriver.forCompaction(instance, clients.getDynamoDB()).waitForJobs(jobIds);
     }
 }
