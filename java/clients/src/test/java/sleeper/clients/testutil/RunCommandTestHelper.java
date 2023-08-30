@@ -18,23 +18,37 @@ package sleeper.clients.testutil;
 import sleeper.clients.util.RunCommand;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RunCommandTestHelper {
     private RunCommandTestHelper() {
     }
 
-    public static String[] commandRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
-        AtomicReference<String[]> reference = new AtomicReference<>();
+    public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
+        List<Command> commands = new ArrayList<>();
         RunCommand runCommand = (args) -> {
-            reference.set(args);
+            commands.add(command(args));
             return 0;
         };
         invoker.run(runCommand);
-        return reference.get();
+        return commands;
+    }
+
+    public static String[] commandRunOn(CommandInvoker invoker) throws IOException, InterruptedException {
+        List<Command> commands = commandsRunOn(invoker);
+        if (commands.size() != 1) {
+            throw new IllegalStateException("Exactly one command expected, found: " + commands);
+        }
+        return commands.get(0).toArray();
+    }
+
+    public static Command command(String... command) {
+        return new Command(command);
     }
 
     public interface CommandInvoker {
         void run(RunCommand runCommand) throws IOException, InterruptedException;
     }
+
 }
