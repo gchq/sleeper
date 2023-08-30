@@ -16,67 +16,150 @@
 
 package sleeper.build.maven.dependencydraw;
 
-import edu.uci.ics.jung.algorithms.layout.KKLayout;
-import edu.uci.ics.jung.graph.DirectedGraph;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.visualization.VisualizationViewer;
-import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
-import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
-import edu.uci.ics.jung.visualization.renderers.Renderer;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.builder.GraphTypeBuilder;
+import org.jungrapht.samples.util.LayoutHelperDirectedGraphs;
+import org.jungrapht.visualization.VisualizationViewer;
+import org.jungrapht.visualization.layout.algorithms.BalloonLayoutAlgorithm;
+import org.jungrapht.visualization.layout.algorithms.LayoutAlgorithm;
+import org.jungrapht.visualization.layout.algorithms.RadialTreeLayoutAlgorithm;
+import org.jungrapht.visualization.renderers.Renderer;
+import org.jungrapht.visualization.util.LayoutAlgorithmTransition;
+import org.jungrapht.visualization.util.LayoutPaintable;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.event.ItemEvent;
 
 public class DrawDependencyGraph {
     public boolean showTransitiveDependencies = false;
 
+    LayoutPaintable.BalloonRings balloonLayoutRings;
+    LayoutPaintable.RadialRings radialLayoutRings;
+
+    String instructions =
+            "<html>"
+                    + "<h3>Graph Transformation:</h3>"
+                    + "<ul>"
+                    + "<li>Mousewheel scales with a crossover value of 1.0.<p>"
+                    + "     - scales the graph layout when the combined scale is greater than 1<p>"
+                    + "     - scales the graph view when the combined scale is less than 1"
+                    + "<li>Mouse1+drag pans the graph"
+                    + "<li>Mouse1 double click on the background resets all transforms"
+                    + "</ul>"
+                    + "<h3>Vertex/Edge Selection:</h3>"
+                    + "<ul>"
+                    + "<li>Mouse1+MENU on a vertex or edge selects the vertex or edge and deselects any others"
+                    + "<li>Mouse1+MENU+Shift on a vertex toggles selection of the vertex"
+                    + "<li>Mouse1+MENU on a selected edge toggles selection of the edge"
+                    + "<li>Mouse1+MENU+drag elsewhere selects vertices in a region"
+                    + "<li>Mouse1+Shift+drag adds selection of vertices in a new region"
+                    + "</ul>"
+                    + "<h3>Vertex Transformation:</h3>"
+                    + "<ul>"
+                    + "<li>Mouse1+MENU+drag on a selected vertex moves all selected Vertices"
+                    + "</ul>"
+                    + "Note that MENU == Command on a Mac, MENU == CTRL on a PC"
+                    + "</html>";
+
     public void drawGraph(GraphModel model) {
-        DirectedGraph<GraphNode, GraphEdge> g = new DirectedSparseGraph<>();
+        Graph<GraphNode, GraphEdge> g =
+                GraphTypeBuilder.<GraphNode, GraphEdge>directed().buildGraph();
         model.getNodes().forEach(g::addVertex);
-        model.getEdges().forEach(edge -> g.addEdge(edge, edge.getFrom(model), edge.getTo(model)));
-        KKLayout<GraphNode, GraphEdge> layout = new KKLayout<>(g);
-        layout.setLengthFactor(1.2);
+        model.getEdges().forEach(edge -> g.addEdge(edge.getFrom(model), edge.getTo(model), edge));
 
-        Dimension size = new Dimension(1000, 1000);
-        VisualizationViewer<GraphNode, GraphEdge> vv = new VisualizationViewer<>(layout, size);
+        VisualizationViewer<GraphNode, GraphEdge> vv =
+                VisualizationViewer.<GraphNode, GraphEdge>builder(g)
+                        .build();
+
+        // use html to break long labels into multi-line and center-align the text
+        vv.getRenderContext().setVertexLabelFunction(v -> "<html><b><center>" +
+                v.toString().replaceAll("/", "/<br>"));
+
         PickedNodeState picked = new PickedNodeState(model);
-        vv.getPickedVertexState().addItemListener(event ->
-                picked.updatePicked(vv.getPickedVertexState().getPicked()));
-        vv.getRenderContext().setEdgeDrawPaintTransformer(edge -> picked.calculateEdgeColor(edge, showTransitiveDependencies));
-        vv.getRenderContext().setArrowDrawPaintTransformer(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
-        vv.getRenderContext().setArrowFillPaintTransformer(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
-        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
-        vv.getRenderContext().setVertexDrawPaintTransformer(node -> new Color(255, 255, 255, 0));
-        vv.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.CNTR);
-        vv.setVertexToolTipTransformer(new ToStringLabeller());
-        vv.setEdgeToolTipTransformer(new ToStringLabeller());
+        vv.getRenderContext().getSelectedVertexState().addItemListener(event ->
+                picked.updatePicked(vv.getRenderContext().getSelectedVertexState().getSelected()));
+        vv.getRenderContext().setEdgeDrawPaintFunction(edge -> picked.calculateEdgeColor(edge, showTransitiveDependencies));
+        vv.getRenderContext().setArrowDrawPaintFunction(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
+        vv.getRenderContext().setArrowFillPaintFunction(edge -> picked.calculateArrowColor(edge, showTransitiveDependencies));
+        vv.getRenderContext().setVertexDrawPaintFunction(node -> new Color(255, 255, 255, 0));
+        vv.getRenderContext().setVertexLabelPosition(Renderer.VertexLabel.Position.S);
+        vv.setVertexToolTipFunction(Object::toString);
+        vv.setEdgeToolTipFunction(Object::toString);
 
-        DefaultModalGraphMouse<GraphNode, GraphEdge> gm = new DefaultModalGraphMouse<>();
-        vv.setGraphMouse(gm);
-        vv.addKeyListener(gm.getModeKeyListener());
-        gm.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+        LayoutHelperDirectedGraphs.Layouts[] combos = LayoutHelperDirectedGraphs.getCombos();
+        final JRadioButton animateLayoutTransition = new JRadioButton("Animate Transition", true);
+
+        final JComboBox layoutComboBox = new JComboBox(combos);
+        layoutComboBox.addActionListener(
+                e ->
+                        SwingUtilities.invokeLater(
+                                () -> {
+                                    LayoutHelperDirectedGraphs.Layouts layoutBuilderType =
+                                            (LayoutHelperDirectedGraphs.Layouts) layoutComboBox.getSelectedItem();
+                                    LayoutAlgorithm.Builder layoutAlgorithmBuilder =
+                                            layoutBuilderType.getLayoutAlgorithmBuilder();
+                                    LayoutAlgorithm<GraphNode> layoutAlgorithm = layoutAlgorithmBuilder.build();
+                                    vv.removePreRenderPaintable(balloonLayoutRings);
+                                    vv.removePreRenderPaintable(radialLayoutRings);
+                                    layoutAlgorithm.setAfter(vv::scaleToLayout);
+                                    if (animateLayoutTransition.isSelected()) {
+                                        LayoutAlgorithmTransition.animate(vv, layoutAlgorithm, vv::scaleToLayout);
+                                    } else {
+                                        LayoutAlgorithmTransition.apply(vv, layoutAlgorithm, vv::scaleToLayout);
+                                    }
+                                    if (layoutAlgorithm instanceof BalloonLayoutAlgorithm) {
+                                        balloonLayoutRings =
+                                                new LayoutPaintable.BalloonRings(
+                                                        vv, (BalloonLayoutAlgorithm) layoutAlgorithm);
+                                        vv.addPreRenderPaintable(balloonLayoutRings);
+                                    }
+                                    if (layoutAlgorithm instanceof RadialTreeLayoutAlgorithm) {
+                                        radialLayoutRings =
+                                                new LayoutPaintable.RadialRings(
+                                                        vv, (RadialTreeLayoutAlgorithm) layoutAlgorithm);
+                                        vv.addPreRenderPaintable(radialLayoutRings);
+                                    }
+                                 }));
+
+        layoutComboBox.setSelectedItem(LayoutHelperDirectedGraphs.Layouts.SUGIYAMA);
 
         JFrame frame = new JFrame("Dependency Graph View");
-        JLabel text = new JLabel("P - Selection Mode | T - Traverse mode |\n");
+        JPanel controlPanel = new JPanel();
         JLabel text2 = new JLabel("Red - Going to | Blue - Going from");
+        JButton help = new JButton("?");
+        help.addActionListener(e -> {
+            // make a non-modal dialog with instructions
+            JOptionPane pane = new JOptionPane(instructions);
+            JDialog dialog = pane.createDialog(frame, "Help");
+            dialog.setModal(false);
+            dialog.show();
+        });
+
         JCheckBox transitiveCheckBox = new JCheckBox("Show transitive dependencies");
         transitiveCheckBox.addItemListener(e -> {
             showTransitiveDependencies = e.getStateChange() == ItemEvent.SELECTED;
             SwingUtilities.updateComponentTreeUI(frame);
         });
-        vv.add(text, BorderLayout.CENTER);
-        vv.add(text2, BorderLayout.CENTER);
-        vv.add(transitiveCheckBox);
+        controlPanel.add(layoutComboBox);
+        controlPanel.add(animateLayoutTransition);
+        controlPanel.add(text2);
+        controlPanel.add(transitiveCheckBox);
+        controlPanel.add(help);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().add(vv);
+        frame.getContentPane().add(vv.getComponent());
+        frame.getContentPane().add(controlPanel, BorderLayout.NORTH);
         frame.pack();
         frame.setVisible(true);
         frame.requestFocus();

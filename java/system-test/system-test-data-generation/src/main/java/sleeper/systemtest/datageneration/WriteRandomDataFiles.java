@@ -21,10 +21,10 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -40,10 +40,10 @@ public class WriteRandomDataFiles {
     }
 
     public static String writeToS3GetDirectory(
-            SystemTestProperties systemTestProperties, TableProperties tableProperties, Iterator<Record> recordIterator)
+            InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator)
             throws IOException {
 
-        String dir = systemTestProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID() + "/";
+        String dir = instanceProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID() + "/";
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
@@ -55,9 +55,9 @@ public class WriteRandomDataFiles {
     }
 
     public static void writeFilesToDirectory(
-            String directory, SystemTestProperties systemTestProperties,
+            String directory, InstanceProperties instanceProperties,
             TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException {
-        Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(systemTestProperties);
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
         writeToPath(directory, "file:///", tableProperties, recordIterator, conf);
     }
 

@@ -19,10 +19,14 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.Properties;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -30,42 +34,49 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * Lambda Function which writes properties to an S3 Bucket.
  */
 public class PropertiesWriterLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PropertiesWriterLambda.class);
     private final AmazonS3 s3Client;
+    private final String bucketName;
 
     public PropertiesWriterLambda() {
-        this(AmazonS3ClientBuilder.defaultClient());
+        this(AmazonS3ClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public PropertiesWriterLambda(AmazonS3 s3Client) {
+    public PropertiesWriterLambda(AmazonS3 s3Client, String bucketName) {
         this.s3Client = s3Client;
+        this.bucketName = bucketName;
     }
 
     public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromString((String) event.getResourceProperties().get("properties"));
+        String propertiesStr = (String) event.getResourceProperties().get("properties");
         switch (event.getRequestType()) {
             case "Create":
             case "Update":
-                updateProperties(instanceProperties);
+                updateProperties(propertiesStr);
                 break;
             case "Delete":
-                deleteProperties(instanceProperties);
+                deleteProperties(propertiesStr);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid request type: " + event.getRequestType());
         }
     }
 
-    private void deleteProperties(InstanceProperties instanceProperties) {
-        String bucketName = instanceProperties.get(CONFIG_BUCKET);
+    private void deleteProperties(String propertiesStr) throws IOException {
+        String bucketName = readBucketName(propertiesStr);
+        LOGGER.info("Deleting from bucket {}", bucketName);
         s3Client.deleteObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
-    private void updateProperties(InstanceProperties instanceProperties) {
-        try {
-            instanceProperties.saveToS3(s3Client);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to update sleeper properties", e);
-        }
+    private void updateProperties(String propertiesStr) throws IOException {
+        String bucketName = readBucketName(propertiesStr);
+        LOGGER.info("Writing to bucket {}", bucketName);
+        s3Client.putObject(bucketName, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, propertiesStr);
+    }
+
+    private String readBucketName(String propertiesStr) throws IOException {
+        Properties properties = new Properties();
+        properties.load(new StringReader(propertiesStr));
+        return properties.getProperty(CONFIG_BUCKET.getPropertyName(), bucketName);
     }
 }

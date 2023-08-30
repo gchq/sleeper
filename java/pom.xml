@@ -148,7 +148,7 @@
         <jetty.version>9.4.51.v20230217</jetty.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
-        <jung.version>2.1.1</jung.version>
+        <jungrapht.version>1.4</jungrapht.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
@@ -161,6 +161,7 @@
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
         <sleeper.system.test.output.dir/>
+        <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -926,6 +927,10 @@
                                 <name>sleeper.system.test.output.dir</name>
                                 <value>${sleeper.system.test.output.dir}</value>
                             </property>
+                            <property>
+                                <name>sleeper.system.test.cluster.enabled</name>
+                                <value>${sleeper.system.test.cluster.enabled}</value>
+                            </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>
                     </configuration>
@@ -1067,19 +1072,23 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <phase>none</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-shade-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <phase>none</phase>
+                                    <goals>
+                                        <goal>shade</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
             </build>
         </profile>
         <profile>

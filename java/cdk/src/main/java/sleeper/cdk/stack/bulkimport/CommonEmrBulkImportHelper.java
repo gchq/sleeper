@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -120,6 +121,8 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
+        addIngestSourceRoleReferences(scope, "WriterFor" + scope.getNode().getId(), instanceProperties)
+                .forEach(emrBulkImportJobQueue::grantSendMessages);
 
         return emrBulkImportJobQueue;
     }

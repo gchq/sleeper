@@ -72,7 +72,7 @@ public class PropertiesWriterLambdaIT {
         AmazonS3 client = createClient();
         String bucketName = UUID.randomUUID().toString();
         client.createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client, bucketName);
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);
@@ -102,7 +102,7 @@ public class PropertiesWriterLambdaIT {
         AmazonS3 client = createClient();
         String bucketName = UUID.randomUUID().toString();
         client.createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client, bucketName);
 
         client.putObject(bucketName, "config", "foo");
 
@@ -133,7 +133,7 @@ public class PropertiesWriterLambdaIT {
         AmazonS3 client = createClient();
         String bucketName = UUID.randomUUID().toString();
         client.createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(client, bucketName);
         String alternativeBucket = bucketName + "-alternative";
 
         client.createBucket(alternativeBucket);
@@ -178,7 +178,7 @@ public class PropertiesWriterLambdaIT {
                 .withResourceProperties(resourceProperties)
                 .build();
 
-        PropertiesWriterLambda lambda = new PropertiesWriterLambda(client);
+        PropertiesWriterLambda lambda = new PropertiesWriterLambda(client, bucketName);
         lambda.handleEvent(event, null);
 
         // Then

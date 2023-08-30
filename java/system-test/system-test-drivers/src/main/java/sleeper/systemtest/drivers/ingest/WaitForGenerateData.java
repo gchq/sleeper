@@ -30,6 +30,7 @@ import sleeper.systemtest.drivers.ingest.json.TasksJson;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -44,13 +45,12 @@ import static sleeper.clients.util.ClientUtils.optionalArgument;
 public class WaitForGenerateData {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForGenerateData.class);
     private static final Set<String> FINISHED_STATUSES = Stream.of("STOPPED", "DELETED").collect(Collectors.toSet());
-    private static final long POLL_INTERVAL_MILLIS = 30000;
-    private static final int MAX_POLLS = 30;
+    private static final PollWithRetries DEFAULT_POLL =
+            PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(15));
 
     private final AmazonECS ecsClient;
     private final List<Task> generateDataTasks;
     private final ECSTaskStatusFormat ecsStatusFormat;
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
 
     public WaitForGenerateData(
             AmazonECS ecsClient,
@@ -62,6 +62,10 @@ public class WaitForGenerateData {
     }
 
     public void pollUntilFinished() throws InterruptedException {
+        pollUntilFinished(DEFAULT_POLL);
+    }
+
+    public void pollUntilFinished(PollWithRetries poll) throws InterruptedException {
         poll.pollUntil("generate data tasks finished", this::isGenerateDataTasksFinished);
     }
 
@@ -128,7 +132,7 @@ public class WaitForGenerateData {
         }
     }
 
-    interface ECSTaskStatusFormat {
+    public interface ECSTaskStatusFormat {
         Object statusOutput(List<Task> tasks);
     }
 }

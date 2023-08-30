@@ -23,12 +23,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 import sleeper.systemtest.configuration.IngestMode;
-import sleeper.systemtest.configuration.SystemTestProperties;
+import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -45,9 +46,11 @@ public class WriteRandomDataViaQueue {
     private WriteRandomDataViaQueue() {
     }
 
-    public static void writeAndSendToQueue(String ingestMode, SystemTestProperties properties, TableProperties tableProperties) throws IOException {
-        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(properties, tableProperties);
-        String dir = WriteRandomDataFiles.writeToS3GetDirectory(properties, tableProperties, recordIterator);
+    public static void writeAndSendToQueue(
+            String ingestMode, InstanceProperties instanceProperties, TableProperties tableProperties,
+            SystemTestPropertyValues systemTestProperties) throws IOException {
+        Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(systemTestProperties, tableProperties);
+        String dir = WriteRandomDataFiles.writeToS3GetDirectory(instanceProperties, tableProperties, recordIterator);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
@@ -61,7 +64,7 @@ public class WriteRandomDataViaQueue {
             String jsonJob = new IngestJobSerDe().toJson(ingestJob);
             LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
             sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(properties.get(INGEST_JOB_QUEUE_URL))
+                    .withQueueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL))
                     .withMessageBody(jsonJob);
         } else if (ingestMode.equalsIgnoreCase(IngestMode.BULK_IMPORT_QUEUE.name())) {
             BulkImportJob bulkImportJob = new BulkImportJob.Builder()
@@ -72,7 +75,7 @@ public class WriteRandomDataViaQueue {
             String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
             LOGGER.debug("Sending message to ingest queue ({})", jsonJob);
             sendMessageRequest = new SendMessageRequest()
-                    .withQueueUrl(properties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
+                    .withQueueUrl(instanceProperties.get(BULK_IMPORT_EMR_JOB_QUEUE_URL))
                     .withMessageBody(jsonJob);
         } else {
             throw new IllegalArgumentException("Unknown ingest mode of " + ingestMode);

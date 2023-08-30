@@ -19,11 +19,15 @@ package sleeper.clients.teardown;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteMarkerEntry;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.ObjectVersion;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class RemoveJarsBucket {
@@ -37,7 +41,10 @@ public class RemoveJarsBucket {
             LOGGER.info("Emptying bucket {}", bucketName);
             s3.listObjectVersionsPaginator(builder -> builder.bucket(bucketName))
                     .stream().parallel()
-                    .forEach(response -> deleteVersions(s3, bucketName, response));
+                    .forEach(response -> {
+                        deleteVersions(s3, bucketName, response);
+                        deleteMarkers(s3, bucketName, response);
+                    });
             LOGGER.info("Waiting for bucket to empty");
             WaitForS3BucketToEmpty.from(s3, bucketName)
                     .pollUntilFinished();
@@ -53,13 +60,26 @@ public class RemoveJarsBucket {
             LOGGER.info("Deleting {} versions", response.versions().size());
             s3.deleteObjects(builder -> builder.bucket(bucketName)
                     .delete(deleteBuilder -> deleteBuilder
-                            .objects(objectIdentifiers(response))));
+                            .objects(objectIdentifiers(response.versions(), ObjectVersion::key, ObjectVersion::versionId))));
+        }
+
+    }
+
+    private static void deleteMarkers(S3Client s3, String bucketName, ListObjectVersionsResponse response) {
+        if (!response.deleteMarkers().isEmpty()) {
+            LOGGER.info("Deleting {} delete markers", response.deleteMarkers().size());
+            s3.deleteObjects(builder -> builder.bucket(bucketName)
+                    .delete(deleteBuilder -> deleteBuilder
+                            .objects(objectIdentifiers(response.deleteMarkers(), DeleteMarkerEntry::key, DeleteMarkerEntry::versionId))));
         }
     }
 
-    private static Collection<ObjectIdentifier> objectIdentifiers(ListObjectVersionsResponse response) {
-        return response.versions().stream()
-                .map(version -> ObjectIdentifier.builder().key(version.key()).versionId(version.versionId()).build())
+    private static <T> Collection<ObjectIdentifier> objectIdentifiers(
+            List<T> versions, Function<T, String> getKey, Function<T, String> getVersionId) {
+        return versions.stream()
+                .map(version -> ObjectIdentifier.builder()
+                        .key(getKey.apply(version))
+                        .versionId(getVersionId.apply(version)).build())
                 .collect(Collectors.toList());
     }
 }

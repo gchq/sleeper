@@ -51,7 +51,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
         printTemplate = builder.printTemplate;
     }
 
-    private static Builder<?> builder() {
+    public static Builder<?> builder() {
         return new Builder<>();
     }
 
