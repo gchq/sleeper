@@ -16,12 +16,11 @@
 
 package sleeper.clients.util;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class EcrRepositoriesInMemory implements EcrRepositories.Client {
-    private final Set<String> repositoryNames = new HashSet<>();
+    private final List<String> repositoryNames = new ArrayList<>();
 
     public EcrRepositoriesInMemory(String... repositories) {
         repositoryNames.addAll(List.of(repositories));
@@ -37,7 +36,7 @@ public class EcrRepositoriesInMemory implements EcrRepositories.Client {
         repositoryNames.add(repository);
     }
 
-    public Set<String> getRepositoryNames() {
+    public List<String> getCreatedRepositories() {
         return repositoryNames;
     }
 }

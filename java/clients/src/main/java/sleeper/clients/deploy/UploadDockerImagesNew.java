@@ -34,7 +34,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesNew {
-    private static final Map<String, String> REPOSITORY_NAME_BY_STACK = Map.of(
+    private static final Map<String, String> REPOSITORY_SUFFIX_BY_STACK = Map.of(
             "IngestStack", "ingest",
             "EksBulkImportStack", "bulk-import-runner"
     );
@@ -66,7 +66,11 @@ public class UploadDockerImagesNew {
                         String.format("%s.dkr.ecr.%s.amazonaws.com",
                                 account, region))));
         for (String stack : stacks) {
-            ecrClient.createRepository(id + "/" + REPOSITORY_NAME_BY_STACK.get(stack));
+            String repository = id + "/" + REPOSITORY_SUFFIX_BY_STACK.get(stack);
+            if (ecrClient.repositoryExists(repository)) {
+                continue;
+            }
+            ecrClient.createRepository(repository);
         }
     }
 

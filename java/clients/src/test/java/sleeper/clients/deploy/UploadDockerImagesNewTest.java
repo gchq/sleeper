@@ -49,7 +49,7 @@ public class UploadDockerImagesNewTest {
     }
 
     @Test
-    void shouldRunDockerUploadWithIngestStack() throws Exception {
+    void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {
         // Given
         properties.set(OPTIONAL_STACKS, "IngestStack");
 
@@ -60,12 +60,12 @@ public class UploadDockerImagesNewTest {
         assertThat(pipelinesThatRan)
                 .containsExactly(loginDockerPipeline());
 
-        assertThat(ecrClient.getRepositoryNames())
+        assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/ingest");
     }
 
     @Test
-    void shouldRunDockerUploadWithTwoStacks() throws IOException, InterruptedException {
+    void shouldCreateRepositoriesAndPushImagesForTwoStacks() throws IOException, InterruptedException {
         // Given
         properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
 
@@ -76,8 +76,25 @@ public class UploadDockerImagesNewTest {
         assertThat(pipelinesThatRan)
                 .containsExactly(loginDockerPipeline());
 
-        assertThat(ecrClient.getRepositoryNames())
+        assertThat(ecrClient.getCreatedRepositories())
                 .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
+    }
+
+    @Test
+    void shouldNotCreateRepositoryOrPushImageWhenRepositoryAlreadyExists() throws Exception {
+        // Given
+        properties.set(OPTIONAL_STACKS, "IngestStack");
+        ecrClient.createRepository("test-instance/ingest");
+
+        // When
+        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+        // Then
+        assertThat(pipelinesThatRan)
+                .containsExactly(loginDockerPipeline());
+
+        assertThat(ecrClient.getCreatedRepositories())
+                .containsExactlyInAnyOrder("test-instance/ingest");
     }
 
     private CommandPipeline loginDockerPipeline() {
