@@ -155,7 +155,7 @@ public interface CommonProperty {
     UserDefinedInstanceProperty ECR_REPOSITORY_PREFIX = Index.propertyBuilder("sleeper.ecr.repository.prefix")
             .description("If set, this property will be used as a prefix for the names of ECR repositories. " +
                     "If unset, then the instance ID will be used to determine the names instead.\n" +
-                    "Note: This is only used by the logic to upload Docker images to an ECR repository. " +
+                    "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
                     "We may add the ability to use this in the CDK in the future.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
