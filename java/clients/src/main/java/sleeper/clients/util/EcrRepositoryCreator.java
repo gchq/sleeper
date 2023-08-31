@@ -16,7 +16,57 @@
 
 package sleeper.clients.util;
 
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.model.CreateRepositoryRequest;
+import com.amazonaws.services.ecr.model.DeleteRepositoryRequest;
+import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
+import com.amazonaws.services.ecr.model.ListImagesRequest;
+import com.amazonaws.services.ecr.model.ListImagesResult;
+import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
+
 public class EcrRepositoryCreator {
+    public static Client withEcrClient(AmazonECR ecrClient) {
+        return new AwsClient(ecrClient);
+    }
+
+    static class AwsClient implements Client {
+        private final AmazonECR ecrClient;
+
+        AwsClient(AmazonECR ecrClient) {
+            this.ecrClient = ecrClient;
+        }
+
+        @Override
+        public boolean repositoryExists(String repository) {
+            try {
+                ecrClient.describeRepositories(new DescribeRepositoriesRequest().withRepositoryNames(repository));
+                return true;
+            } catch (RepositoryNotFoundException e) {
+                return false;
+            }
+        }
+
+        @Override
+        public void createRepository(String repository) {
+            ecrClient.createRepository(new CreateRepositoryRequest().withRepositoryName(repository));
+        }
+
+        @Override
+        public void deleteRepository(String repository) {
+            ecrClient.deleteRepository(new DeleteRepositoryRequest().withRepositoryName(repository));
+        }
+
+        @Override
+        public void createEmrServerlessAccessPolicy(String repository) {
+
+        }
+
+        @Override
+        public boolean versionExistsInRepository(String repository, String version) {
+            ListImagesResult result = ecrClient.listImages(new ListImagesRequest().withRepositoryName(repository));
+            result.getImageIds().stream().filter(imageIdentifier -> imageIdentifier.getImageTag().contains(version));
+        }
+    }
 
     public interface Client {
         boolean repositoryExists(String repository);
@@ -26,7 +76,7 @@ public class EcrRepositoryCreator {
         void deleteRepository(String repository);
 
         void createEmrServerlessAccessPolicy(String repository);
-        
+
         boolean versionExistsInRepository(String repository, String version);
     }
 }
