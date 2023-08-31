@@ -23,13 +23,17 @@ import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.ListImagesRequest;
 import com.amazonaws.services.ecr.model.ListImagesResult;
 import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
+import com.amazonaws.services.ecr.model.SetRepositoryPolicyRequest;
 
 public class EcrRepositoryCreator {
+    private EcrRepositoryCreator() {
+    }
+
     public static Client withEcrClient(AmazonECR ecrClient) {
         return new AwsClient(ecrClient);
     }
 
-    static class AwsClient implements Client {
+    private static class AwsClient implements Client {
         private final AmazonECR ecrClient;
 
         AwsClient(AmazonECR ecrClient) {
@@ -58,13 +62,22 @@ public class EcrRepositoryCreator {
 
         @Override
         public void createEmrServerlessAccessPolicy(String repository) {
-
+            ecrClient.setRepositoryPolicy(new SetRepositoryPolicyRequest().withRepositoryName(repository)
+                    .withPolicyText("" +
+                            "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"EmrServerlessCustomImageSupport\"," +
+                            "\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"emr-serverless.amazonaws.com\"}," +
+                            "\"Action\":[\"ecr:BatchGetImage\",\"ecr:DescribeImages\",\"ecr:GetDownloadUrlForLayer\"]}]}"));
         }
 
         @Override
         public boolean versionExistsInRepository(String repository, String version) {
-            ListImagesResult result = ecrClient.listImages(new ListImagesRequest().withRepositoryName(repository));
-            result.getImageIds().stream().filter(imageIdentifier -> imageIdentifier.getImageTag().contains(version));
+            try {
+                ListImagesResult result = ecrClient.listImages(new ListImagesRequest().withRepositoryName(repository));
+                return result.getImageIds().stream()
+                        .anyMatch(imageIdentifier -> imageIdentifier.getImageTag().equals(version));
+            } catch (RepositoryNotFoundException e) {
+                return false;
+            }
         }
     }
 
