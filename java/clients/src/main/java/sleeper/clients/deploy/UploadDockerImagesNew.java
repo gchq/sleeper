@@ -62,42 +62,41 @@ public class UploadDockerImagesNew {
     public void upload(RunCommandPipeline runCommand) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
 
-        List<String> dockerStacksToBuild = stacks.stream()
-                .filter(dockerImageConfig::hasStack)
-                .filter(stack -> !ecrClient.repositoryExists(
-                        repositoryNameForDirectory(dockerImageConfig.getDirectory(stack))))
+        List<StackDockerImage> stacksToBuild = stacks.stream()
+                .flatMap(stack -> dockerImageConfig.getStackImage(stack).stream())
+                .filter(stack -> !ecrClient.repositoryExists(repositoryNameForImage(stack.getImageName())))
                 .collect(Collectors.toUnmodifiableList());
 
-        if (!dockerStacksToBuild.isEmpty()) {
+        if (!stacksToBuild.isEmpty()) {
             runCommand.runOrThrow(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", region),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
-        if (dockerStacksToBuild.stream().anyMatch(dockerImageConfig::isBuildxStack)) {
+        if (stacksToBuild.stream().anyMatch(StackDockerImage::isBuildx)) {
             runCommand.run("docker", "buildx", "rm", "sleeper");
             runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
         }
 
-        for (String stack : dockerStacksToBuild) {
-            String directory = dockerImageConfig.getDirectory(stack);
-            String repositoryName = repositoryNameForDirectory(directory);
+        for (StackDockerImage stackImage : stacksToBuild) {
+            String directory = baseDockerDirectory.resolve(stackImage.getDirectoryName()).toString();
+            String repositoryName = repositoryNameForImage(stackImage.getImageName());
             ecrClient.createRepository(repositoryName);
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
-            if (dockerImageConfig.isBuildxStack(stack)) {
-                runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
-                        "-t", tag, "--push", baseDockerDirectory.resolve(directory).toString());
+            if (stackImage.isBuildx()) {
+                runCommand.runOrThrow("docker", "buildx", "build",
+                        "--platform", "linux/amd64,linux/arm64",
+                        "-t", tag, "--push", directory);
             } else {
-                runCommand.runOrThrow("docker", "build", "-t", tag,
-                        baseDockerDirectory.resolve(directory).toString());
+                runCommand.runOrThrow("docker", "build", "-t", tag, directory);
                 runCommand.runOrThrow("docker", "push", tag);
             }
         }
     }
 
-    private String repositoryNameForDirectory(String directory) {
-        return id + "/" + directory;
+    private String repositoryNameForImage(String image) {
+        return id + "/" + image;
     }
 
     public static final class Builder {

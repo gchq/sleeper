@@ -19,20 +19,24 @@ package sleeper.clients.deploy;
 public class StackDockerImage {
     private final String stackName;
     private final String imageName;
+    private final String directoryName;
     private final boolean isBuildx;
 
     private StackDockerImage(Builder builder) {
         stackName = builder.stackName;
         imageName = builder.imageName;
+        directoryName = builder.directoryName;
         isBuildx = builder.isBuildx;
     }
 
     public static StackDockerImage dockerBuildImage(String stackName, String imageName) {
-        return builder().stackName(stackName).imageName(imageName).build();
+        return builder().stackName(stackName).imageName(imageName)
+                .directoryName(imageName).build();
     }
 
     public static StackDockerImage dockerBuildxImage(String stackName, String imageName) {
-        return builder().stackName(stackName).imageName(imageName).isBuildx(true).build();
+        return builder().stackName(stackName).imageName(imageName)
+                .directoryName(imageName).isBuildx(true).build();
     }
 
     public static Builder builder() {
@@ -47,6 +51,10 @@ public class StackDockerImage {
         return imageName;
     }
 
+    public String getDirectoryName() {
+        return directoryName;
+    }
+
     public boolean isBuildx() {
         return isBuildx;
     }
@@ -54,6 +62,7 @@ public class StackDockerImage {
     public static final class Builder {
         private String stackName;
         private String imageName;
+        private String directoryName;
         private boolean isBuildx;
 
         private Builder() {
@@ -66,6 +75,11 @@ public class StackDockerImage {
 
         public Builder imageName(String imageName) {
             this.imageName = imageName;
+            return this;
+        }
+
+        public Builder directoryName(String directoryName) {
+            this.directoryName = directoryName;
             return this;
         }
 
