@@ -18,42 +18,45 @@ package sleeper.clients.deploy;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 
 public class DockerImageConfiguration {
-    private static final Map<String, String> DEFAULT_DIRECTORY_BY_STACK = Map.of(
-            "IngestStack", "ingest",
-            "EksBulkImportStack", "bulk-import-runner",
-            "CompactionStack", "compaction-job-execution",
-            "SystemTestStack", "system-test",
-            "EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless"
-    );
+    private static final Map<String, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Stream.of(
+            dockerBuildImage("IngestStack", "ingest"),
+            dockerBuildImage("EksBulkImportStack", "bulk-import-runner"),
+            dockerBuildxImage("CompactionStack", "compaction-job-execution"),
+            dockerBuildImage("SystemTestStack", "system-test"),
+            dockerBuildImage("EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless")
+    ).collect(Collectors.toMap(StackDockerImage::getStackName, image -> image));
 
-    private static final List<String> DEFAULT_BUILDX_STACKS = List.of("CompactionStack");
-    private final Map<String, String> directoryByStack;
-    private final List<String> buildxStacks;
+    private final Map<String, StackDockerImage> imageByStack;
 
     public DockerImageConfiguration() {
-        this(DEFAULT_DIRECTORY_BY_STACK, DEFAULT_BUILDX_STACKS);
+        this(DEFAULT_DOCKER_IMAGE_BY_STACK);
     }
 
-    public DockerImageConfiguration(Map<String, String> directoryByStack, List<String> buildxStacks) {
-        this.directoryByStack = directoryByStack;
-        this.buildxStacks = buildxStacks;
+    public DockerImageConfiguration(Map<String, StackDockerImage> imageByStack) {
+        this.imageByStack = imageByStack;
     }
 
-    public static DockerImageConfiguration from(Map<String, String> directoryByStack, List<String> buildxStacks) {
-        return new DockerImageConfiguration(directoryByStack, buildxStacks);
+    public static DockerImageConfiguration from(List<StackDockerImage> images) {
+        return new DockerImageConfiguration(images.stream()
+                .collect(Collectors.toMap(StackDockerImage::getStackName, image -> image)));
     }
 
     public boolean hasStack(String stack) {
-        return directoryByStack.containsKey(stack);
+        return imageByStack.containsKey(stack);
     }
 
     public String getDirectory(String stack) {
-        return directoryByStack.get(stack);
+        return imageByStack.get(stack).getImageName();
     }
 
-    public boolean isBuildXStack(String stack) {
-        return buildxStacks.contains(stack);
+    public boolean isBuildxStack(String stack) {
+        return imageByStack.get(stack).isBuildx();
     }
 }

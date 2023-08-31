@@ -30,11 +30,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.deploy.DockerImageConfiguration.from;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
+import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.clients.testutil.RunCommandTestHelper.command;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
 import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCode;
@@ -47,11 +48,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesNewTest {
-    private static final Map<String, String> DIRECTORY_BY_STACK = Map.of(
-            "IngestStack", "ingest",
-            "EksBulkImportStack", "bulk-import-runner",
-            "BuildxStack", "buildx");
-    private static final List<String> BUILDX_STACKS = List.of("BuildxStack");
+    private static final List<StackDockerImage> STACK_DOCKER_IMAGES = List.of(
+            dockerBuildImage("IngestStack", "ingest"),
+            dockerBuildImage("EksBulkImportStack", "bulk-import-runner"),
+            dockerBuildxImage("BuildxStack", "buildx")
+    );
     private final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
     private final InstanceProperties properties = createTestInstanceProperties();
 
@@ -60,6 +61,16 @@ public class UploadDockerImagesNewTest {
         properties.set(ID, "test-instance");
         properties.set(ACCOUNT, "123");
         properties.set(REGION, "test-region");
+    }
+
+    private UploadDockerImagesNew getUpload() {
+        return UploadDockerImagesNew.builder()
+                .baseDockerDirectory(Path.of("./docker"))
+                .version("1.0.0")
+                .instanceProperties(properties)
+                .ecrClient(ecrClient)
+                .dockerImageConfig(from(STACK_DOCKER_IMAGES))
+                .build();
     }
 
     @Nested
@@ -300,15 +311,5 @@ public class UploadDockerImagesNewTest {
             commands.add(pushImageCommand(tag));
         }
         return commands;
-    }
-
-    private UploadDockerImagesNew getUpload() {
-        return UploadDockerImagesNew.builder()
-                .baseDockerDirectory(Path.of("./docker"))
-                .version("1.0.0")
-                .instanceProperties(properties)
-                .ecrClient(ecrClient)
-                .dockerImageConfig(from(DIRECTORY_BY_STACK, BUILDX_STACKS))
-                .build();
     }
 }
