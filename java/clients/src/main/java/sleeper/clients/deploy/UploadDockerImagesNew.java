@@ -84,13 +84,18 @@ public class UploadDockerImagesNew {
             ecrClient.createRepository(repositoryName);
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
-            if (stackImage.isBuildx()) {
-                runCommand.runOrThrow("docker", "buildx", "build",
-                        "--platform", "linux/amd64,linux/arm64",
-                        "-t", tag, "--push", directory);
-            } else {
-                runCommand.runOrThrow("docker", "build", "-t", tag, directory);
-                runCommand.runOrThrow("docker", "push", tag);
+            try {
+                if (stackImage.isBuildx()) {
+                    runCommand.runOrThrow("docker", "buildx", "build",
+                            "--platform", "linux/amd64,linux/arm64",
+                            "-t", tag, "--push", directory);
+                } else {
+                    runCommand.runOrThrow("docker", "build", "-t", tag, directory);
+                    runCommand.runOrThrow("docker", "push", tag);
+                }
+            } catch (Exception e) {
+                ecrClient.deleteRepository(repositoryName);
+                throw e;
             }
         }
     }

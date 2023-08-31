@@ -92,7 +92,7 @@ public class UploadDockerImagesNewTest {
                     buildImageCommand(expectedTag, "./docker/ingest"),
                     pushImageCommand(expectedTag));
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
@@ -114,7 +114,7 @@ public class UploadDockerImagesNewTest {
                     buildImageCommand(expectedTag2, "./docker/bulk-import-runner"),
                     pushImageCommand(expectedTag2));
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
         }
     }
@@ -135,7 +135,7 @@ public class UploadDockerImagesNewTest {
             // Then
             assertThat(commandsThatRan).isEmpty();
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
@@ -149,7 +149,7 @@ public class UploadDockerImagesNewTest {
 
             // Then
             assertThat(commandsThatRan).isEmpty();
-            assertThat(ecrClient.getCreatedRepositories()).isEmpty();
+            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -164,7 +164,7 @@ public class UploadDockerImagesNewTest {
             assertThat(commandsThatRan)
                     .containsExactlyElementsOf(commandsToLoginDockerAndPushImages("ingest"));
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest");
         }
     }
@@ -189,7 +189,7 @@ public class UploadDockerImagesNewTest {
                     createNewBuildxBuilderInstanceCommand(),
                     buildAndPushImageWithBuildxCommand(expectedTag, "./docker/buildx"));
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/buildx");
         }
 
@@ -213,7 +213,7 @@ public class UploadDockerImagesNewTest {
                     buildAndPushImageWithBuildxCommand(expectedTag2, "./docker/buildx")
             );
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
         }
     }
@@ -234,7 +234,7 @@ public class UploadDockerImagesNewTest {
                 assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
             });
-            assertThat(ecrClient.getCreatedRepositories()).isEmpty();
+            assertThat(ecrClient.getRepositories()).isEmpty();
         }
 
         @Test
@@ -254,7 +254,7 @@ public class UploadDockerImagesNewTest {
                     createNewBuildxBuilderInstanceCommand(),
                     buildAndPushImageWithBuildxCommand(expectedTag, "./docker/buildx"));
 
-            assertThat(ecrClient.getCreatedRepositories())
+            assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/buildx");
         }
 
@@ -271,7 +271,25 @@ public class UploadDockerImagesNewTest {
                 assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
             });
-            assertThat(ecrClient.getCreatedRepositories()).isEmpty();
+            assertThat(ecrClient.getRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldDeleteRepositoryWhenDockerBuildFails() {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack");
+
+            // When / Then
+            CommandPipeline buildImageCommand = buildImageCommand(
+                    "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
+                    "./docker/ingest");
+            assertThatThrownBy(() ->
+                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand))
+            ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                assertThat(e.getCommand()).isEqualTo(buildImageCommand);
+                assertThat(e.getExitCode()).isEqualTo(42);
+            });
+            assertThat(ecrClient.getRepositories()).isEmpty();
         }
     }
 

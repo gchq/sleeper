@@ -16,27 +16,37 @@
 
 package sleeper.clients.util;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
-    private final List<String> repositoryNames = new ArrayList<>();
+    private final Set<String> repositores = new HashSet<>();
 
     public EcrRepositoriesInMemory(String... repositories) {
-        repositoryNames.addAll(List.of(repositories));
+        repositores.addAll(List.of(repositories));
     }
 
     @Override
     public boolean repositoryExists(String repository) {
-        return repositoryNames.contains(repository);
+        return repositores.contains(repository);
     }
 
     @Override
     public void createRepository(String repository) {
-        repositoryNames.add(repository);
+        if (repositoryExists(repository)) {
+            throw new IllegalArgumentException("Repository already exists: " + repository);
+        }
+        repositores.add(repository);
     }
 
-    public List<String> getCreatedRepositories() {
-        return repositoryNames;
+    @Override
+    public void deleteRepository(String repository) {
+        repositores.remove(repository);
+    }
+
+    public Collection<String> getRepositories() {
+        return repositores;
     }
 }

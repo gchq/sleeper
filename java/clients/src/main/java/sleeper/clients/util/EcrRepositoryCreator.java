@@ -22,5 +22,7 @@ public class EcrRepositoryCreator {
         boolean repositoryExists(String repository);
 
         void createRepository(String repository);
+
+        void deleteRepository(String repository);
     }
 }
