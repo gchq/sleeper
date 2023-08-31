@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
 
@@ -61,7 +61,7 @@ public class UploadDockerImages {
         upload(ClientUtils::runCommandInheritIO);
     }
 
-    public void upload(RunCommand runCommand) throws IOException, InterruptedException {
+    public void upload(CommandRunner runCommand) throws IOException, InterruptedException {
         if (skip) {
             LOGGER.info("Not uploading Docker images");
             return;

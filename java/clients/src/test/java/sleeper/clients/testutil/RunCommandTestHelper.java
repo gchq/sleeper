@@ -17,8 +17,8 @@ package sleeper.clients.testutil;
 
 import sleeper.clients.util.Command;
 import sleeper.clients.util.CommandPipeline;
-import sleeper.clients.util.RunCommand;
-import sleeper.clients.util.RunCommandPipeline;
+import sleeper.clients.util.CommandPipelineRunner;
+import sleeper.clients.util.CommandRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,10 +34,10 @@ public class RunCommandTestHelper {
     }
 
     public static List<CommandPipeline> pipelinesRunOn(
-            PipelineInvoker invoker, RunCommandPipeline runner)
+            PipelineInvoker invoker, CommandPipelineRunner runner)
             throws IOException, InterruptedException {
         List<CommandPipeline> pipelines = new ArrayList<>();
-        RunCommandPipeline runCommand = (pipeline) -> {
+        CommandPipelineRunner runCommand = (pipeline) -> {
             pipelines.add(pipeline);
             return runner.run(pipeline);
         };
@@ -45,11 +45,11 @@ public class RunCommandTestHelper {
         return pipelines;
     }
 
-    public static RunCommandPipeline returningExitCode(int exitCode) {
+    public static CommandPipelineRunner returningExitCode(int exitCode) {
         return pipeline -> exitCode;
     }
 
-    public static RunCommandPipeline returningExitCodeForCommand(int exitCode, CommandPipeline command) {
+    public static CommandPipelineRunner returningExitCodeForCommand(int exitCode, CommandPipeline command) {
         return foundCommand -> foundCommand.equals(command) ? exitCode : 0;
     }
 
@@ -72,11 +72,11 @@ public class RunCommandTestHelper {
     }
 
     public interface CommandInvoker {
-        void run(RunCommand runCommand) throws IOException, InterruptedException;
+        void run(CommandRunner runCommand) throws IOException, InterruptedException;
     }
 
     public interface PipelineInvoker {
-        void run(RunCommandPipeline runCommand) throws IOException, InterruptedException;
+        void run(CommandPipelineRunner runCommand) throws IOException, InterruptedException;
     }
 
     private static Command singleCommandInPipeline(CommandPipeline pipeline) {

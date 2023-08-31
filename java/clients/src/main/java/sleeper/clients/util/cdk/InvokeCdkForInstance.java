@@ -16,7 +16,7 @@
 package sleeper.clients.util.cdk;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -60,7 +60,7 @@ public class InvokeCdkForInstance {
         invoke(inferType(instanceProperties), cdkCommand);
     }
 
-    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
+    public void invokeInferringType(InstanceProperties instanceProperties, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
         invoke(inferType(instanceProperties), cdkCommand, runCommand);
     }
 
@@ -76,7 +76,7 @@ public class InvokeCdkForInstance {
         invoke(instanceType, cdkCommand, ClientUtils::runCommandInheritIO);
     }
 
-    public void invoke(Type instanceType, CdkCommand cdkCommand, RunCommand runCommand) throws IOException, InterruptedException {
+    public void invoke(Type instanceType, CdkCommand cdkCommand, CommandRunner runCommand) throws IOException, InterruptedException {
         List<String> command = new ArrayList<>(List.of(
                 "cdk",
                 "-a", String.format("java -cp \"%s\" %s",

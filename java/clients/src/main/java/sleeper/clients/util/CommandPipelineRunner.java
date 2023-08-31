@@ -22,7 +22,7 @@ import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 
 @FunctionalInterface
-public interface RunCommandPipeline extends RunCommand {
+public interface CommandPipelineRunner extends CommandRunner {
     int run(CommandPipeline pipeline) throws IOException, InterruptedException;
 
     @Override

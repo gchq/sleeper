@@ -16,8 +16,8 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
-import sleeper.clients.util.RunCommandPipeline;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
 
@@ -59,7 +59,7 @@ public class UploadDockerImagesNew {
         return new Builder();
     }
 
-    public void upload(RunCommandPipeline runCommand) throws IOException, InterruptedException {
+    public void upload(CommandPipelineRunner runCommand) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
 
         List<StackDockerImage> stacksToBuild = stacks.stream()
