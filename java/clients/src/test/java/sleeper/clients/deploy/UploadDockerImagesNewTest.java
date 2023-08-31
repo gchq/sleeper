@@ -17,6 +17,8 @@
 package sleeper.clients.deploy;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.util.CommandPipeline;
@@ -44,8 +46,8 @@ public class UploadDockerImagesNewTest {
     private static final Map<String, String> DIRECTORY_BY_STACK = Map.of(
             "IngestStack", "ingest",
             "EksBulkImportStack", "bulk-import-runner",
-            "BuildXStack", "buildx");
-    private static final List<String> BUILDX_STACKS = List.of("BuildXStack");
+            "BuildxStack", "buildx");
+    private static final List<String> BUILDX_STACKS = List.of("BuildxStack");
     private final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
     private final InstanceProperties properties = createTestInstanceProperties();
 
@@ -56,134 +58,149 @@ public class UploadDockerImagesNewTest {
         properties.set(REGION, "test-region");
     }
 
-    @Test
-    void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {
-        // Given
-        properties.set(OPTIONAL_STACKS, "IngestStack");
+    @Nested
+    @DisplayName("Upload Docker images")
+    class UploadDockerImages {
 
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+        @Test
+        void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack");
 
-        // Then
-        String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-        assertThat(pipelinesThatRan).containsExactly(
-                loginDockerPipeline(),
-                buildImagePipeline(expectedTag, "./docker/ingest"),
-                pushImagePipeline(expectedTag));
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
-        assertThat(ecrClient.getCreatedRepositories())
-                .containsExactlyInAnyOrder("test-instance/ingest");
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            assertThat(pipelinesThatRan).containsExactly(
+                    loginDockerPipeline(),
+                    buildImagePipeline(expectedTag, "./docker/ingest"),
+                    pushImagePipeline(expectedTag));
+
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
+        }
+
+        @Test
+        void shouldCreateRepositoriesAndPushImagesForTwoStacks() throws IOException, InterruptedException {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
+
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+            // Then
+            String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
+            assertThat(pipelinesThatRan).containsExactly(
+                    loginDockerPipeline(),
+                    buildImagePipeline(expectedTag1, "./docker/ingest"),
+                    pushImagePipeline(expectedTag1),
+                    buildImagePipeline(expectedTag2, "./docker/bulk-import-runner"),
+                    pushImagePipeline(expectedTag2));
+
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
+        }
     }
 
-    @Test
-    void shouldCreateRepositoriesAndPushImagesForTwoStacks() throws IOException, InterruptedException {
-        // Given
-        properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
+    @Nested
+    @DisplayName("Handle stacks not needing uploads")
+    class HandleStacksNotNeedingUploads {
 
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+        @Test
+        void shouldDoNothingWhenRepositoryAlreadyExists() throws Exception {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack");
+            ecrClient.createRepository("test-instance/ingest");
 
-        // Then
-        String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-        String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner:1.0.0";
-        assertThat(pipelinesThatRan).containsExactly(
-                loginDockerPipeline(),
-                buildImagePipeline(expectedTag1, "./docker/ingest"),
-                pushImagePipeline(expectedTag1),
-                buildImagePipeline(expectedTag2, "./docker/bulk-import-runner"),
-                pushImagePipeline(expectedTag2));
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
-        assertThat(ecrClient.getCreatedRepositories())
-                .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
+            // Then
+            assertThat(pipelinesThatRan).isEmpty();
+
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
+        }
+
+        @Test
+        void shouldDoNothingWhenStackHasNoDockerImage() throws Exception {
+            // Given
+            properties.set(OPTIONAL_STACKS, "OtherStack");
+
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+            // Then
+            assertThat(pipelinesThatRan).isEmpty();
+            assertThat(ecrClient.getCreatedRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldCreateRepositoryAndPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
+            // Given
+            properties.set(OPTIONAL_STACKS, "OtherStack,IngestStack");
+
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+
+            // Then
+            assertThat(pipelinesThatRan)
+                    .containsExactlyElementsOf(commandsToLoginDockerAndPushImages("ingest"));
+
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
+        }
     }
 
-    @Test
-    void shouldDoNothingWhenRepositoryAlreadyExists() throws Exception {
-        // Given
-        properties.set(OPTIONAL_STACKS, "IngestStack");
-        ecrClient.createRepository("test-instance/ingest");
+    @Nested
+    @DisplayName("Build Docker images with buildx")
+    class BuildImagesWithBuildx {
 
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+        @Test
+        void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
+            // Given
+            properties.set(OPTIONAL_STACKS, "BuildxStack");
 
-        // Then
-        assertThat(pipelinesThatRan).isEmpty();
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
-        assertThat(ecrClient.getCreatedRepositories())
-                .containsExactlyInAnyOrder("test-instance/ingest");
-    }
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+            assertThat(pipelinesThatRan).containsExactly(
+                    loginDockerPipeline(),
+                    removeOldBuildXBuilderInstancePipeline(),
+                    createNewBuildXBuilderInstancePipeline(),
+                    buildAndPushImageWithBuildxPipeline(expectedTag, "./docker/buildx"));
 
-    @Test
-    void shouldDoNothingWhenStackHasNoDockerImage() throws Exception {
-        // Given
-        properties.set(OPTIONAL_STACKS, "OtherStack");
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/buildx");
+        }
 
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
+        @Test
+        void shouldCreateRepositoryAndPushImageWhenOnlyOneImageNeedsToBeBuiltByBuildx() throws IOException, InterruptedException {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack,BuildxStack");
 
-        // Then
-        assertThat(pipelinesThatRan).isEmpty();
-        assertThat(ecrClient.getCreatedRepositories()).isEmpty();
-    }
+            // When
+            List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
 
-    @Test
-    void shouldCreateRepositoryAndPushImageWhenPreviousStackHasNoDockerImage() throws Exception {
-        // Given
-        properties.set(OPTIONAL_STACKS, "OtherStack,IngestStack");
+            // Then
+            String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+            assertThat(pipelinesThatRan).containsExactly(
+                    loginDockerPipeline(),
+                    removeOldBuildXBuilderInstancePipeline(),
+                    createNewBuildXBuilderInstancePipeline(),
+                    buildImagePipeline(expectedTag1, "./docker/ingest"),
+                    pushImagePipeline(expectedTag1),
+                    buildAndPushImageWithBuildxPipeline(expectedTag2, "./docker/buildx")
+            );
 
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
-
-        // Then
-        assertThat(pipelinesThatRan)
-                .containsExactlyElementsOf(commandsToLoginDockerAndPushImages("ingest"));
-
-        assertThat(ecrClient.getCreatedRepositories())
-                .containsExactlyInAnyOrder("test-instance/ingest");
-    }
-
-    @Test
-    void shouldCreateRepositoryAndPushImageWhenImageNeedsToBeBuiltByBuildX() throws IOException, InterruptedException {
-        // Given
-        properties.set(OPTIONAL_STACKS, "BuildXStack");
-
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
-
-        // Then
-        String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
-        assertThat(pipelinesThatRan).containsExactly(
-                loginDockerPipeline(),
-                removeOldBuildXBuilderInstancePipeline(),
-                createNewBuildXBuilderInstancePipeline(),
-                buildAndPushImageWithBuildXPipeline(expectedTag, "./docker/buildx"));
-
-        assertThat(ecrClient.getCreatedRepositories())
-                .containsExactlyInAnyOrder("test-instance/buildx");
-    }
-
-    @Test
-    void shouldCreateRepositoryAndPushImageWhenOnlyOneImageNeedsToBeBuildByBuildX() throws IOException, InterruptedException {
-        // Given
-        properties.set(OPTIONAL_STACKS, "IngestStack,BuildXStack");
-
-        // When
-        List<CommandPipeline> pipelinesThatRan = pipelinesRunOn(getUpload()::upload);
-
-        // Then
-        String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
-        String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
-        assertThat(pipelinesThatRan).containsExactly(
-                loginDockerPipeline(),
-                removeOldBuildXBuilderInstancePipeline(),
-                createNewBuildXBuilderInstancePipeline(),
-                buildImagePipeline(expectedTag1, "./docker/ingest"),
-                pushImagePipeline(expectedTag1),
-                buildAndPushImageWithBuildXPipeline(expectedTag2, "./docker/buildx")
-        );
-
-        assertThat(ecrClient.getCreatedRepositories())
-                .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
+        }
     }
 
     private CommandPipeline loginDockerPipeline() {
@@ -208,7 +225,7 @@ public class UploadDockerImagesNewTest {
         return pipeline(command("docker", "buildx", "create", "--name", "sleeper", "--use"));
     }
 
-    private CommandPipeline buildAndPushImageWithBuildXPipeline(String tag, String dockerDirectory) {
+    private CommandPipeline buildAndPushImageWithBuildxPipeline(String tag, String dockerDirectory) {
         return pipeline(command("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                 "-t", tag, "--push", dockerDirectory));
     }
