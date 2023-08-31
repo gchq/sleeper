@@ -24,19 +24,21 @@ import sleeper.core.SleeperVersion;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImagesNew {
     private final Path baseDockerDirectory;
-    private final String id;
+    private final String ecrPrefix;
     private final String account;
     private final String region;
     private final String version;
@@ -46,7 +48,7 @@ public class UploadDockerImagesNew {
 
     private UploadDockerImagesNew(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
-        id = requireNonNull(builder.id, "id must not be null");
+        ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
         version = requireNonNull(builder.version, "version must not be null");
@@ -104,12 +106,12 @@ public class UploadDockerImagesNew {
     }
 
     private String repositoryNameForImage(String image) {
-        return id + "/" + image;
+        return ecrPrefix + "/" + image;
     }
 
     public static final class Builder {
         private Path baseDockerDirectory;
-        private String id;
+        private String ecrPrefix;
         private String account;
         private String region;
         private String version = SleeperVersion.getVersion();
@@ -126,14 +128,16 @@ public class UploadDockerImagesNew {
         }
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
-            return id(instanceProperties.get(ID))
+            return ecrPrefix(
+                    Optional.ofNullable(instanceProperties.get(ECR_REPOSITORY_PREFIX))
+                            .orElse(instanceProperties.get(ID)))
                     .account(instanceProperties.get(ACCOUNT))
                     .region(instanceProperties.get(REGION))
                     .stacks(instanceProperties.getList(OPTIONAL_STACKS));
         }
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder ecrPrefix(String ecrPrefix) {
+            this.ecrPrefix = ecrPrefix;
             return this;
         }
 

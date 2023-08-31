@@ -44,6 +44,7 @@ import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeFor
 import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
@@ -118,6 +119,26 @@ public class UploadDockerImagesNewTest {
 
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner");
+        }
+
+        @Test
+        void shouldCreateRepositoryAndPushImageWhenEcrRepositoryPrefixIsSet() throws Exception {
+            // Given
+            properties.set(ECR_REPOSITORY_PREFIX, "custom-ecr-prefix");
+            properties.set(OPTIONAL_STACKS, "IngestStack");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/custom-ecr-prefix/ingest:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommand(expectedTag, "./docker/ingest"),
+                    pushImageCommand(expectedTag)
+            );
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("custom-ecr-prefix/ingest");
         }
     }
 
