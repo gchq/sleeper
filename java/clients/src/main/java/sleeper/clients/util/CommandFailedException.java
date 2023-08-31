@@ -16,6 +16,10 @@
 
 package sleeper.clients.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+// SpotBugs complains because exceptions are serializable, but we don't need to serialise this class
+@SuppressFBWarnings("SE_BAD_FIELD")
 public class CommandFailedException extends RuntimeException {
 
     private final CommandPipeline command;
