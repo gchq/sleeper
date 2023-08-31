@@ -63,7 +63,7 @@ public class UploadDockerImagesNewTest {
         properties.set(REGION, "test-region");
     }
 
-    private UploadDockerImagesNew getUpload() {
+    private UploadDockerImagesNew uploader() {
         return UploadDockerImagesNew.builder()
                 .baseDockerDirectory(Path.of("./docker"))
                 .version("1.0.0")
@@ -83,7 +83,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "IngestStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -102,7 +102,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -130,7 +130,7 @@ public class UploadDockerImagesNewTest {
             ecrClient.createRepository("test-instance/ingest");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             assertThat(commandsThatRan).isEmpty();
@@ -145,7 +145,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "OtherStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             assertThat(commandsThatRan).isEmpty();
@@ -158,7 +158,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "OtherStack,IngestStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             assertThat(commandsThatRan)
@@ -179,7 +179,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "BuildxStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
@@ -199,7 +199,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "IngestStack,BuildxStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -229,7 +229,7 @@ public class UploadDockerImagesNewTest {
 
             // When / Then
             assertThatThrownBy(() ->
-                    getUpload().upload(returningExitCode(123))
+                    uploader().upload(returningExitCode(123))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -243,7 +243,7 @@ public class UploadDockerImagesNewTest {
             properties.set(OPTIONAL_STACKS, "BuildxStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload,
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload,
                     returningExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand()));
 
             // Then
@@ -265,7 +265,7 @@ public class UploadDockerImagesNewTest {
 
             // When / Then
             assertThatThrownBy(() ->
-                    getUpload().upload(returningExitCodeForCommand(
+                    uploader().upload(returningExitCodeForCommand(
                             123, createNewBuildxBuilderInstanceCommand()))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
