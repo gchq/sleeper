@@ -354,7 +354,18 @@ public class UploadDockerImagesNewTest {
 
         @Test
         void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() throws IOException, InterruptedException {
-            
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack");
+            ecrClient.createRepository("test-instance/ingest");
+            ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+
+            // Then
+            assertThat(commandsThatRan).isEmpty();
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
     }
 
