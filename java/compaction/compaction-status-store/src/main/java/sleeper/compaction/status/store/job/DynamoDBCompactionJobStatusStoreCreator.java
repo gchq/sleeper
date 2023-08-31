@@ -24,6 +24,7 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.JOB_ID;
@@ -35,8 +36,11 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
+    private static final Logger LOGGER = Logger.getLogger(DynamoDBCompactionJobStatusStoreCreator.class.getName());
+
 
     private DynamoDBCompactionJobStatusStoreCreator() {
+
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
@@ -58,6 +62,7 @@ public class DynamoDBCompactionJobStatusStoreCreator {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
+        LOGGER.info("Deleting dynamoDBClient");
         dynamoDBClient.deleteTable(jobStatusTableName(properties.get(ID)));
     }
 }
