@@ -85,6 +85,9 @@ public class UploadDockerImagesNew {
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
             try {
+                if (stackImage.isCreateEmrServerlessPolicy()) {
+                    ecrClient.createEmrServerlessAccessPolicy(repositoryName);
+                }
                 if (stackImage.isBuildx()) {
                     runCommand.runOrThrow("docker", "buildx", "build",
                             "--platform", "linux/amd64,linux/arm64",

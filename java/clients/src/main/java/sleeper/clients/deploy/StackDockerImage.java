@@ -21,12 +21,14 @@ public class StackDockerImage {
     private final String imageName;
     private final String directoryName;
     private final boolean isBuildx;
+    private final boolean createEmrServerlessPolicy;
 
     private StackDockerImage(Builder builder) {
         stackName = builder.stackName;
         imageName = builder.imageName;
         directoryName = builder.directoryName;
         isBuildx = builder.isBuildx;
+        createEmrServerlessPolicy = builder.createEmrServerlessPolicy;
     }
 
     public static StackDockerImage dockerBuildImage(String stackName, String imageName) {
@@ -37,6 +39,11 @@ public class StackDockerImage {
     public static StackDockerImage dockerBuildxImage(String stackName, String imageName) {
         return builder().stackName(stackName).imageName(imageName)
                 .directoryName(imageName).isBuildx(true).build();
+    }
+
+    public static StackDockerImage emrServerlessImage(String stackName, String imageName) {
+        return builder().stackName(stackName).imageName(imageName)
+                .directoryName(imageName).createEmrServerlessPolicy(true).build();
     }
 
     public static Builder builder() {
@@ -59,11 +66,16 @@ public class StackDockerImage {
         return isBuildx;
     }
 
+    public boolean isCreateEmrServerlessPolicy() {
+        return createEmrServerlessPolicy;
+    }
+
     public static final class Builder {
         private String stackName;
         private String imageName;
         private String directoryName;
         private boolean isBuildx;
+        private boolean createEmrServerlessPolicy;
 
         private Builder() {
         }
@@ -85,6 +97,11 @@ public class StackDockerImage {
 
         public Builder isBuildx(boolean isBuildx) {
             this.isBuildx = isBuildx;
+            return this;
+        }
+
+        public Builder createEmrServerlessPolicy(boolean createEmrServerlessPolicy) {
+            this.createEmrServerlessPolicy = createEmrServerlessPolicy;
             return this;
         }
 

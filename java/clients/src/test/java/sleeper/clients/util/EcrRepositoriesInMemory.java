@@ -22,15 +22,16 @@ import java.util.List;
 import java.util.Set;
 
 public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
-    private final Set<String> repositores = new HashSet<>();
+    private final Set<String> repositories = new HashSet<>();
+    private final Set<String> repositoriesWithEmrServerlessPolicy = new HashSet<>();
 
     public EcrRepositoriesInMemory(String... repositories) {
-        repositores.addAll(List.of(repositories));
+        this.repositories.addAll(List.of(repositories));
     }
 
     @Override
     public boolean repositoryExists(String repository) {
-        return repositores.contains(repository);
+        return repositories.contains(repository);
     }
 
     @Override
@@ -38,15 +39,27 @@ public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
         if (repositoryExists(repository)) {
             throw new IllegalArgumentException("Repository already exists: " + repository);
         }
-        repositores.add(repository);
+        repositories.add(repository);
     }
 
     @Override
     public void deleteRepository(String repository) {
-        repositores.remove(repository);
+        repositories.remove(repository);
+    }
+
+    @Override
+    public void createEmrServerlessAccessPolicy(String repository) {
+        if (repositoriesWithEmrServerlessPolicy.contains(repository)) {
+            throw new IllegalArgumentException("Repository already has EMR Serverless policy: " + repository);
+        }
+        repositoriesWithEmrServerlessPolicy.add(repository);
     }
 
     public Collection<String> getRepositories() {
-        return repositores;
+        return repositories;
+    }
+
+    public Collection<String> getRepositoriesWithEmrServerlessPolicy() {
+        return repositoriesWithEmrServerlessPolicy;
     }
 }

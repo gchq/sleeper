@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
+import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 
 public class DockerImageConfiguration {
     private static final Map<String, StackDockerImage> DEFAULT_DOCKER_IMAGE_BY_STACK = Stream.of(
@@ -31,7 +32,7 @@ public class DockerImageConfiguration {
             dockerBuildImage("EksBulkImportStack", "bulk-import-runner"),
             dockerBuildxImage("CompactionStack", "compaction-job-execution"),
             dockerBuildImage("SystemTestStack", "system-test"),
-            dockerBuildImage("EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless")
+            emrServerlessImage("EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless")
     ).collect(Collectors.toMap(StackDockerImage::getStackName, image -> image));
 
     private final Map<String, StackDockerImage> imageByStack;

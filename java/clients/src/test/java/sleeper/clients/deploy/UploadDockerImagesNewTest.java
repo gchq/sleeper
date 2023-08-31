@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.deploy.DockerImageConfiguration.from;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
+import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
 import static sleeper.clients.testutil.RunCommandTestHelper.command;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
 import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCode;
@@ -51,7 +52,8 @@ public class UploadDockerImagesNewTest {
     private static final List<StackDockerImage> STACK_DOCKER_IMAGES = List.of(
             dockerBuildImage("IngestStack", "ingest"),
             dockerBuildImage("EksBulkImportStack", "bulk-import-runner"),
-            dockerBuildxImage("BuildxStack", "buildx")
+            dockerBuildxImage("BuildxStack", "buildx"),
+            emrServerlessImage("EmrServerlessBulkImportStack", "bulk-import-runner-emr-serverless")
     );
     private final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
     private final InstanceProperties properties = createTestInstanceProperties();
@@ -215,6 +217,35 @@ public class UploadDockerImagesNewTest {
 
             assertThat(ecrClient.getRepositories())
                     .containsExactlyInAnyOrder("test-instance/buildx", "test-instance/ingest");
+        }
+    }
+
+    @Nested
+    @DisplayName("Create EMR Serverless security policy")
+    class CreateEMRServerlessSecurityPolicy {
+
+        @Test
+        void shouldCreateSecurityPolicyToGiveAccessToEmrServerlessImageOnly() throws IOException, InterruptedException {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack,EmrServerlessBulkImportStack");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+
+            // Then
+            String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            String expectedTag2 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/bulk-import-runner-emr-serverless:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommand(expectedTag1, "./docker/ingest"),
+                    pushImageCommand(expectedTag1),
+                    buildImageCommand(expectedTag2, "./docker/bulk-import-runner-emr-serverless"),
+                    pushImageCommand(expectedTag2));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest", "test-instance/bulk-import-runner-emr-serverless");
+            assertThat(ecrClient.getRepositoriesWithEmrServerlessPolicy())
+                    .containsExactly("test-instance/bulk-import-runner-emr-serverless");
         }
     }
 
