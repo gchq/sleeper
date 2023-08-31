@@ -345,6 +345,20 @@ public class UploadDockerImagesNewTest {
         }
     }
 
+    @Nested
+    @DisplayName("Handle existing images")
+    class HandleExistingImages {
+        @Test
+        void shouldBuildAndPushImageIfImageWithDifferentVersionExists() {
+
+        }
+
+        @Test
+        void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() {
+
+        }
+    }
+
     private CommandPipeline loginDockerCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
