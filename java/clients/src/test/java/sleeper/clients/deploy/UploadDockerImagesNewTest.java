@@ -145,23 +145,6 @@ public class UploadDockerImagesNewTest {
     @Nested
     @DisplayName("Handle stacks not needing uploads")
     class HandleStacksNotNeedingUploads {
-
-        @Test
-        void shouldDoNothingWhenRepositoryAlreadyExists() throws Exception {
-            // Given
-            properties.set(OPTIONAL_STACKS, "IngestStack");
-            ecrClient.createRepository("test-instance/ingest");
-
-            // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
-
-            // Then
-            assertThat(commandsThatRan).isEmpty();
-
-            assertThat(ecrClient.getRepositories())
-                    .containsExactlyInAnyOrder("test-instance/ingest");
-        }
-
         @Test
         void shouldDoNothingWhenStackHasNoDockerImage() throws Exception {
             // Given
@@ -349,13 +332,29 @@ public class UploadDockerImagesNewTest {
     @DisplayName("Handle existing images")
     class HandleExistingImages {
         @Test
-        void shouldBuildAndPushImageIfImageWithDifferentVersionExists() {
+        void shouldBuildAndPushImageIfImageWithDifferentVersionExists() throws IOException, InterruptedException {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack");
+            ecrClient.createRepository("test-instance/ingest");
+            ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    buildImageCommand(expectedTag, "./docker/ingest"),
+                    pushImageCommand(expectedTag));
+
+            assertThat(ecrClient.getRepositories())
+                    .containsExactlyInAnyOrder("test-instance/ingest");
         }
 
         @Test
-        void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() {
-
+        void shouldNotBuildAndPushImageIfImageWithMatchingVersionExists() throws IOException, InterruptedException {
+            
         }
     }
 

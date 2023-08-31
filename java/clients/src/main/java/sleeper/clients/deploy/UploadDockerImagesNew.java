@@ -63,10 +63,9 @@ public class UploadDockerImagesNew {
 
     public void upload(CommandPipelineRunner runCommand) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
-
         List<StackDockerImage> stacksToBuild = stacks.stream()
                 .flatMap(stack -> dockerImageConfig.getStackImage(stack).stream())
-                .filter(stack -> !ecrClient.repositoryExists(repositoryNameForImage(stack.getImageName())))
+                .filter(this::repositoryExistsWithVersion)
                 .collect(Collectors.toUnmodifiableList());
 
         if (!stacksToBuild.isEmpty()) {
@@ -83,7 +82,9 @@ public class UploadDockerImagesNew {
         for (StackDockerImage stackImage : stacksToBuild) {
             String directory = baseDockerDirectory.resolve(stackImage.getDirectoryName()).toString();
             String repositoryName = repositoryNameForImage(stackImage.getImageName());
-            ecrClient.createRepository(repositoryName);
+            if (!ecrClient.repositoryExists(repositoryName)) {
+                ecrClient.createRepository(repositoryName);
+            }
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
             try {
@@ -107,6 +108,11 @@ public class UploadDockerImagesNew {
 
     private String repositoryNameForImage(String image) {
         return ecrPrefix + "/" + image;
+    }
+
+    private boolean repositoryExistsWithVersion(StackDockerImage stackDockerImage) {
+        String repositoryName = repositoryNameForImage(stackDockerImage.getImageName());
+        return !ecrClient.repositoryExists(repositoryName) || !ecrClient.versionExistsInRepository(repositoryName, version);
     }
 
     public static final class Builder {

@@ -26,5 +26,7 @@ public class EcrRepositoryCreator {
         void deleteRepository(String repository);
 
         void createEmrServerlessAccessPolicy(String repository);
+        
+        boolean versionExistsInRepository(String repository, String version);
     }
 }
