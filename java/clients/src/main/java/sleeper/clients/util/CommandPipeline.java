@@ -56,8 +56,12 @@ public class CommandPipeline {
 
     @Override
     public String toString() {
-        return "CommandPipeline{" +
-                "commands=" + commands +
-                '}';
+        if (commands.size() == 1) {
+            return commands.get(0).toString();
+        } else {
+            return "CommandPipeline{" +
+                    "commands=" + commands +
+                    '}';
+        }
     }
 }

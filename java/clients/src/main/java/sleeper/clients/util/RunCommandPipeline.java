@@ -29,4 +29,15 @@ public interface RunCommandPipeline extends RunCommand {
     default int run(String... command) throws IOException, InterruptedException {
         return run(pipeline(command(command)));
     }
+
+    default void runOrThrow(CommandPipeline pipeline) throws IOException, InterruptedException {
+        int exitCode = run(pipeline);
+        if (exitCode != 0) {
+            throw new CommandFailedException(pipeline, exitCode);
+        }
+    }
+
+    default void runOrThrow(String... command) throws IOException, InterruptedException {
+        runOrThrow(pipeline(command(command)));
+    }
 }

@@ -30,13 +30,27 @@ public class RunCommandTestHelper {
     }
 
     public static List<CommandPipeline> pipelinesRunOn(PipelineInvoker invoker) throws IOException, InterruptedException {
+        return pipelinesRunOn(invoker, pipeline -> 0);
+    }
+
+    public static List<CommandPipeline> pipelinesRunOn(
+            PipelineInvoker invoker, RunCommandPipeline runner)
+            throws IOException, InterruptedException {
         List<CommandPipeline> pipelines = new ArrayList<>();
         RunCommandPipeline runCommand = (pipeline) -> {
             pipelines.add(pipeline);
-            return 0;
+            return runner.run(pipeline);
         };
         invoker.run(runCommand);
         return pipelines;
+    }
+
+    public static RunCommandPipeline returningExitCode(int exitCode) {
+        return pipeline -> exitCode;
+    }
+
+    public static RunCommandPipeline returningExitCodeForCommand(int exitCode, CommandPipeline command) {
+        return foundCommand -> foundCommand.equals(command) ? exitCode : 0;
     }
 
     public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {

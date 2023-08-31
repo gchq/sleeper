@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.EcrRepositoriesInMemory;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -32,9 +33,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.clients.deploy.DockerImageConfiguration.from;
 import static sleeper.clients.testutil.RunCommandTestHelper.command;
 import static sleeper.clients.testutil.RunCommandTestHelper.pipelinesRunOn;
+import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCode;
+import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -203,6 +207,63 @@ public class UploadDockerImagesNewTest {
         }
     }
 
+    @Nested
+    @DisplayName("Handle command failures")
+    class HandleCommandFailures {
+
+        @Test
+        void shouldFailWhenDockerLoginFails() {
+            // Given
+            properties.set(OPTIONAL_STACKS, "IngestStack");
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    getUpload().upload(returningExitCode(123))
+            ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
+                assertThat(e.getExitCode()).isEqualTo(123);
+            });
+            assertThat(ecrClient.getCreatedRepositories()).isEmpty();
+        }
+
+        @Test
+        void shouldNotFailWhenRemoveBuildxBuilderFails() throws Exception {
+            // Given
+            properties.set(OPTIONAL_STACKS, "BuildxStack");
+
+            // When
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(getUpload()::upload,
+                    returningExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand()));
+
+            // Then
+            String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
+            assertThat(commandsThatRan).containsExactly(
+                    loginDockerCommand(),
+                    removeOldBuildxBuilderInstanceCommand(),
+                    createNewBuildxBuilderInstanceCommand(),
+                    buildAndPushImageWithBuildxCommand(expectedTag, "./docker/buildx"));
+
+            assertThat(ecrClient.getCreatedRepositories())
+                    .containsExactlyInAnyOrder("test-instance/buildx");
+        }
+
+        @Test
+        void shouldFailWhenCreateBuildxBuilderFails() {
+            // Given
+            properties.set(OPTIONAL_STACKS, "BuildxStack");
+
+            // When / Then
+            assertThatThrownBy(() ->
+                    getUpload().upload(returningExitCodeForCommand(
+                            123, createNewBuildxBuilderInstanceCommand()))
+            ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
+                assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
+                assertThat(e.getExitCode()).isEqualTo(123);
+            });
+            assertThat(ecrClient.getCreatedRepositories()).isEmpty();
+        }
+    }
+
     private CommandPipeline loginDockerCommand() {
         return pipeline(command("aws", "ecr", "get-login-password", "--region", "test-region"),
                 command("docker", "login", "--username", "AWS", "--password-stdin",
@@ -218,7 +279,7 @@ public class UploadDockerImagesNewTest {
     }
 
     private CommandPipeline removeOldBuildxBuilderInstanceCommand() {
-        return pipeline(command("docker", "buildx", "rm", "sleeper", "||", "true"));
+        return pipeline(command("docker", "buildx", "rm", "sleeper"));
     }
 
     private CommandPipeline createNewBuildxBuilderInstanceCommand() {

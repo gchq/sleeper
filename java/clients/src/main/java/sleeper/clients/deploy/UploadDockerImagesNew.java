@@ -69,14 +69,14 @@ public class UploadDockerImagesNew {
                 .collect(Collectors.toUnmodifiableList());
 
         if (!dockerStacksToBuild.isEmpty()) {
-            runCommand.run(pipeline(
+            runCommand.runOrThrow(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", region),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
         if (dockerStacksToBuild.stream().anyMatch(dockerImageConfig::isBuildXStack)) {
-            runCommand.run("docker", "buildx", "rm", "sleeper", "||", "true");
-            runCommand.run("docker", "buildx", "create", "--name", "sleeper", "--use");
+            runCommand.run("docker", "buildx", "rm", "sleeper");
+            runCommand.runOrThrow("docker", "buildx", "create", "--name", "sleeper", "--use");
         }
 
         for (String stack : dockerStacksToBuild) {
@@ -86,12 +86,12 @@ public class UploadDockerImagesNew {
 
             String tag = repositoryHost + "/" + repositoryName + ":" + version;
             if (dockerImageConfig.isBuildXStack(stack)) {
-                runCommand.run("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
+                runCommand.runOrThrow("docker", "buildx", "build", "--platform", "linux/amd64,linux/arm64",
                         "-t", tag, "--push", baseDockerDirectory.resolve(directory).toString());
             } else {
-                runCommand.run("docker", "build", "-t", tag,
+                runCommand.runOrThrow("docker", "build", "-t", tag,
                         baseDockerDirectory.resolve(directory).toString());
-                runCommand.run("docker", "push", tag);
+                runCommand.runOrThrow("docker", "push", tag);
             }
         }
     }
