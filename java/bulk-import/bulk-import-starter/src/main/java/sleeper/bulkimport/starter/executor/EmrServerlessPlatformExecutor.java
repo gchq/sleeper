@@ -16,6 +16,7 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.xbill.DNS.LOCRecord;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
@@ -139,6 +140,8 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 + platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY));
         args.add("--conf spark.dynamicAllocation.enabled="
                 + platformSpec.getBoolean(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION));
+
+        System.out.println(args.toString());
         return args.toString();
     }
 }

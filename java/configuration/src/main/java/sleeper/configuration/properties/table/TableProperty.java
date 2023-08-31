@@ -386,7 +386,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION)
-            .description("Whether Spark should use dynamic allocation to scale resources up and down. "
+            .description("Whether Spark should use dynamic allocation to scale resources up and down.")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true)
             .build();

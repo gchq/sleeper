@@ -56,13 +56,13 @@ public interface EMRServerlessProperty {
             .description(
                     "The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue("16g")
+            .defaultValue("16G")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.executor.disk")
             .description("The amount of storage allocated to a Serverless executor.")
-            .defaultValue("200g").
+            .defaultValue("200G").
             propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index
