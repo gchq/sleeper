@@ -910,7 +910,7 @@ public class IngestCoordinatorCommonIT {
 
         // When
         RecordGenerator.RecordListAndSchema newRecordListAndSchema = new RecordGenerator.RecordListAndSchema(recordList, recordListAndSchema.sleeperSchema);
-        ingestRecords(newRecordListAndSchema, parameters, ingestType);
+        ingestRecords(recordListAndSchema, parameters, ingestType);
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
