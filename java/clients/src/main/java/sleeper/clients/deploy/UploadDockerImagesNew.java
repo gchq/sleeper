@@ -16,7 +16,7 @@
 
 package sleeper.clients.deploy;
 
-import sleeper.clients.util.EcrRepositories;
+import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.RunCommandPipeline;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
@@ -41,7 +41,7 @@ public class UploadDockerImagesNew {
     private final String region;
     private final String version;
     private final List<String> stacks;
-    private final EcrRepositories.Client ecrClient;
+    private final EcrRepositoryCreator.Client ecrClient;
     private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImagesNew(Builder builder) {
@@ -107,7 +107,7 @@ public class UploadDockerImagesNew {
         private String region;
         private String version = SleeperVersion.getVersion();
         private List<String> stacks;
-        private EcrRepositories.Client ecrClient;
+        private EcrRepositoryCreator.Client ecrClient;
         private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
         private Builder() {
@@ -150,7 +150,7 @@ public class UploadDockerImagesNew {
             return this;
         }
 
-        public Builder ecrClient(EcrRepositories.Client ecrClient) {
+        public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
             this.ecrClient = ecrClient;
             return this;
         }

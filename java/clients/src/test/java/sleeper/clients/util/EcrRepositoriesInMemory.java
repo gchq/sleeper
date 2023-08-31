@@ -19,7 +19,7 @@ package sleeper.clients.util;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EcrRepositoriesInMemory implements EcrRepositories.Client {
+public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
     private final List<String> repositoryNames = new ArrayList<>();
 
     public EcrRepositoriesInMemory(String... repositories) {

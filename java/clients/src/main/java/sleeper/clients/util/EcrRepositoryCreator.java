@@ -16,7 +16,7 @@
 
 package sleeper.clients.util;
 
-public class EcrRepositories {
+public class EcrRepositoryCreator {
 
     public interface Client {
         boolean repositoryExists(String repository);
