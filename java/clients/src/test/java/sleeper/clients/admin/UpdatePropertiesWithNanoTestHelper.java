@@ -16,7 +16,7 @@
 
 package sleeper.clients.admin;
 
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -105,7 +105,7 @@ public class UpdatePropertiesWithNanoTestHelper {
         });
     }
 
-    private UpdatePropertiesWithNano updaterWithCommandHandler(RunCommand runCommand) {
+    private UpdatePropertiesWithNano updaterWithCommandHandler(CommandRunner runCommand) {
         return new UpdatePropertiesWithNano(tempDir, runCommand);
     }
 }

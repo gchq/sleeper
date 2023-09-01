@@ -43,6 +43,7 @@ import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
@@ -132,6 +133,10 @@ public class SleeperInstanceContext {
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             try {
+                InstanceProperties properties = deployInstanceConfiguration.getInstanceProperties();
+                properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+                properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
+                properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
                 DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                         .deployInstanceConfiguration(deployInstanceConfiguration)
                         .instanceId(instanceId)
@@ -141,11 +146,8 @@ public class SleeperInstanceContext {
                         .tableName(tableName)
                         .instanceType(InvokeCdkForInstance.Type.STANDARD)
                         .runCommand(ClientUtils::runCommandLogOutput)
-                        .extraInstanceProperties(properties -> {
-                            properties.set(JARS_BUCKET, parameters.buildJarsBucketName());
-                            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
-                            properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
-                        })
+                        .extraInstanceProperties(instanceProperties ->
+                                instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
                         .deployWithDefaultClients();
             } catch (IOException ex) {
                 throw new RuntimeIOException(ex);
