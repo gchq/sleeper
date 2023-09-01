@@ -38,6 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static sleeper.clients.util.Command.command;
+import static sleeper.clients.util.CommandPipeline.pipeline;
+
 public class ClientUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
 
@@ -119,15 +122,26 @@ public class ClientUtils {
     }
 
     public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
-        LOGGER.info("Running command: {}", (Object) commands);
-        Process process = new ProcessBuilder(commands).start();
-        CompletableFuture<Void> logOutput = CompletableFuture.allOf(
-                CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
-                CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
-        int exitCode = process.waitFor();
+        return runCommandLogOutput(pipeline(command(commands)));
+    }
+
+    public static int runCommandLogOutput(CommandPipeline pipeline) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", pipeline);
+        List<Process> processes = pipeline.startProcesses();
+        CompletableFuture<Void> logOutput = CompletableFuture.allOf(processes.stream()
+                .map(ClientUtils::logOutput)
+                .toArray(CompletableFuture[]::new));
+        Process last = processes.get(processes.size() - 1);
+        int exitCode = last.waitFor();
         logOutput.join();
         LOGGER.info("Exit code: {}", exitCode);
         return exitCode;
+    }
+
+    private static CompletableFuture<Void> logOutput(Process process) {
+        return CompletableFuture.allOf(
+                CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
+                CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
     }
 
     private static void logTo(InputStream stream, Consumer<String> logLine) {
@@ -143,8 +157,16 @@ public class ClientUtils {
         }
     }
 
-    public static int runCommandInheritIO(String... commands) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(commands).inheritIO().start();
-        return process.waitFor();
+    public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {
+        return runCommandInheritIO(pipeline(command(command)));
+    }
+
+    public static int runCommandInheritIO(CommandPipeline pipeline) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", pipeline);
+        List<Process> processes = pipeline.startProcessesInheritIO();
+        Process last = processes.get(processes.size() - 1);
+        int exitCode = last.waitFor();
+        LOGGER.info("Exit code: {}", exitCode);
+        return exitCode;
     }
 }

@@ -26,6 +26,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.util.Command.command;
+import static sleeper.clients.util.CommandPipeline.pipeline;
 
 class ClientUtilsTest {
 
@@ -112,6 +114,71 @@ class ClientUtilsTest {
             assertThat(ClientUtils.runCommandLogOutput(
                     "cat", path1.toString(), path2.toString(), path3.toString()))
                     .isNotZero();
+        }
+
+        @Test
+        void shouldPipeOutputOfOneCommandIntoNext() throws Exception {
+            // Given
+            Path path = Files.writeString(tempDir.resolve("test.txt"), "ab\ncd");
+            CommandPipeline command = pipeline(
+                    command("cat", path.toString()),
+                    command("grep", "ab"));
+
+            // When/Then
+            assertThat(ClientUtils.runCommandLogOutput(command))
+                    .isZero();
+        }
+
+        @Test
+        void shouldFailWhenLastCommandFails() throws Exception {
+            // Given
+            Path path = Files.writeString(tempDir.resolve("test.txt"), "ab\ncd");
+            CommandPipeline command = pipeline(
+                    command("cat", path.toString()),
+                    command("grep", "ef"));
+
+            // When/Then
+            assertThat(ClientUtils.runCommandLogOutput(command))
+                    .isNotZero();
+        }
+
+        @Test
+        void shouldIgnoreFailureInEarlierCommandToMatchBashPipelineBehaviour() throws Exception {
+            // Given
+            Path path = tempDir.resolve("doesNotExist.txt");
+            CommandPipeline command = pipeline(
+                    command("cat", path.toString()),
+                    command("echo", "ab"));
+
+            // When/Then
+            assertThat(ClientUtils.runCommandLogOutput(command))
+                    .isZero();
+        }
+
+        @Test
+        void shouldRunPipelineInheritingIO() throws Exception {
+            // Given
+            Path path = Files.writeString(tempDir.resolve("test.txt"), "ab\ncd");
+            CommandPipeline command = pipeline(
+                    command("cat", path.toString()),
+                    command("grep", "ab"));
+
+            // When/Then
+            assertThat(ClientUtils.runCommandInheritIO(command))
+                    .isZero();
+        }
+
+        @Test
+        void shouldIgnoreFailureInEarlierCommandToMatchBashPipelineBehaviourWhenInheritingIO() throws Exception {
+            // Given
+            Path path = tempDir.resolve("doesNotExist.txt");
+            CommandPipeline command = pipeline(
+                    command("cat", path.toString()),
+                    command("echo", "ab"));
+
+            // When/Then
+            assertThat(ClientUtils.runCommandInheritIO(command))
+                    .isZero();
         }
     }
 }
