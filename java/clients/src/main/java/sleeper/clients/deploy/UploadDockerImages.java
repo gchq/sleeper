@@ -112,7 +112,7 @@ public class UploadDockerImages {
 
     private boolean repositoryExistsWithVersion(StackDockerImage stackDockerImage) {
         String repositoryName = repositoryNameForImage(stackDockerImage.getImageName());
-        return !ecrClient.repositoryExists(repositoryName) || !ecrClient.versionExistsInRepository(repositoryName, version);
+        return !ecrClient.versionExistsInRepository(repositoryName, version);
     }
 
     public static final class Builder {

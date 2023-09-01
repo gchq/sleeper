@@ -58,7 +58,7 @@ public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
 
     @Override
     public boolean versionExistsInRepository(String repository, String version) {
-        return versionsByRepositoryName.get(repository).contains(version);
+        return versionsByRepositoryName.containsKey(repository) && versionsByRepositoryName.get(repository).contains(version);
     }
 
     public Collection<String> getRepositories() {
