@@ -18,6 +18,6 @@ package sleeper.clients.util;
 
 import java.io.IOException;
 
-public interface RunCommand {
+public interface CommandRunner {
     int run(String... command) throws IOException, InterruptedException;
 }
