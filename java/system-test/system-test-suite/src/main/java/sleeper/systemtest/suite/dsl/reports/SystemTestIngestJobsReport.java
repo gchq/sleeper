@@ -33,7 +33,7 @@ public class SystemTestIngestJobsReport {
         return JobsFinishedStatistics.fromIngestJobs(jobs);
     }
 
-    public List<String> finishedJobIds() {
+    public List<String> jobIds() {
         return jobs.stream()
                 .map(IngestJobStatus::getJobId)
                 .collect(Collectors.toUnmodifiableList());
