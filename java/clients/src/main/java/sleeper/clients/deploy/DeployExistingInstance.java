@@ -16,6 +16,8 @@
 
 package sleeper.clients.deploy;
 
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -41,12 +44,14 @@ public class DeployExistingInstance {
     private final String instanceId;
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonECR ecr;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         s3 = builder.s3;
         s3v2 = builder.s3v2;
+        ecr = builder.ecr;
     }
 
     public static Builder builder() {
@@ -59,8 +64,9 @@ public class DeployExistingInstance {
         }
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
         try (S3Client s3v2 = S3Client.create()) {
-            builder().s3(s3).s3v2(s3v2)
+            builder().s3(s3).s3v2(s3v2).ecr(ecr)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
                     .build().update();
@@ -80,17 +86,16 @@ public class DeployExistingInstance {
         ClientUtils.clearDirectory(generatedDirectory);
         SaveLocalProperties.saveToDirectory(generatedDirectory, properties, TableProperties.streamTablesFromS3(s3, properties));
 
-        boolean jarsChanged = SyncJars.builder().s3(s3v2)
+        SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
                 .deleteOldJars(false)
                 .build().sync();
 
-        UploadDockerImages.builder()
+        UploadDockerImagesNew.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
-                .skipIf(!jarsChanged)
                 .instanceProperties(properties)
-                .build().upload();
+                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
+                .build().upload(ClientUtils::runCommandInheritIO);
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
@@ -113,6 +118,7 @@ public class DeployExistingInstance {
         private String instanceId;
         private AmazonS3 s3;
         private S3Client s3v2;
+        private AmazonECR ecr;
 
         private Builder() {
         }
@@ -134,6 +140,11 @@ public class DeployExistingInstance {
 
         public Builder s3v2(S3Client s3v2) {
             this.s3v2 = s3v2;
+            return this;
+        }
+
+        public Builder ecr(AmazonECR ecr) {
+            this.ecr = ecr;
             return this;
         }
 
