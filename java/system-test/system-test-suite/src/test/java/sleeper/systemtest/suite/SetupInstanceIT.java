@@ -83,7 +83,8 @@ public class SetupInstanceIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .hasSize(246);
         assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket())
-                .hasSize(2);
+                .hasSize(2)
+                .isEqualTo(sleeper.reporting().ingestJobs().finishedJobIds());
     }
 
     boolean systemTestClusterDisabled() {

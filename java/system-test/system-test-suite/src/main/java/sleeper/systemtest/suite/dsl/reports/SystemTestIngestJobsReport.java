@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.dsl.reports;
 import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SystemTestIngestJobsReport {
 
@@ -30,5 +31,11 @@ public class SystemTestIngestJobsReport {
 
     public JobsFinishedStatistics finishedStatistics() {
         return JobsFinishedStatistics.fromIngestJobs(jobs);
+    }
+
+    public List<String> finishedJobIds() {
+        return jobs.stream()
+                .map(IngestJobStatus::getJobId)
+                .collect(Collectors.toUnmodifiableList());
     }
 }
