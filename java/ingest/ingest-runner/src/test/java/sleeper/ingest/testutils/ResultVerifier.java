@@ -137,7 +137,6 @@ public class ResultVerifier {
         assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
         assertThat(expectedSortedRecordList).containsExactlyElementsOf(savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
 
-
         // In some situations, check that the file min and max match the min and max of dimension 0
         if (expectedNoOfFiles == 1 &&
                 sleeperSchema.getRowKeyFields().get(0).getType() instanceof LongType) {
@@ -280,7 +279,6 @@ public class ResultVerifier {
             throw new RuntimeException(e);
         }
     }
-
 
     public static void assertOnSketch(
             Field field,
