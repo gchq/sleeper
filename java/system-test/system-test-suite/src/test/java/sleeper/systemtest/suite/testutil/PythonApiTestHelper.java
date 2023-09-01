@@ -14,23 +14,27 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.testutil;
 
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.python.PythonIngestDriver;
+import sleeper.clients.util.ClientUtils;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
-public class SystemTestPython {
-    private final SleeperInstanceContext instance;
-    private final Path pythonDir;
+public class PythonApiTestHelper {
 
-    public SystemTestPython(SleeperInstanceContext instance, Path pythonDir) {
-        this.instance = instance;
-        this.pythonDir = pythonDir;
+    private PythonApiTestHelper() {
     }
 
-    public PythonIngestDriver ingest() {
-        return new PythonIngestDriver(instance, pythonDir);
+    public static final Path PYTHON_DIR = Path.of("").toAbsolutePath()
+            .getParent().getParent().getParent()
+            .resolve("python");
+
+    public static void buildPythonApi() throws IOException, InterruptedException {
+        try {
+            ClientUtils.runCommandInheritIO("pip", "install", PYTHON_DIR.toString());
+        } catch (IOException e) {
+            ClientUtils.runCommandInheritIO("pip3", "install", PYTHON_DIR.toString());
+        }
     }
 }

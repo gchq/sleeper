@@ -153,11 +153,11 @@ public class SleeperSystemTest {
         return new SystemTestCluster(systemTest, instance, clients);
     }
 
-    public SystemTestPython pythonApi() {
-        return new SystemTestPython();
+    public SystemTestPython pythonApi(Path pythonDir) {
+        return new SystemTestPython(instance, pythonDir);
     }
 
-    public SystemTestLocalFiles localFiles(Path tempDir) {
-        return new SystemTestLocalFiles(instance, tempDir);
+    public SystemTestLocalFiles localFiles() {
+        return new SystemTestLocalFiles(instance);
     }
 }

@@ -34,24 +34,17 @@ import java.util.stream.Stream;
 
 public class SystemTestLocalFiles {
     private final SleeperInstanceContext instanceContext;
-    private final Path tempDir;
 
-    public SystemTestLocalFiles(SleeperInstanceContext instanceContext, Path tempDir) {
+    public SystemTestLocalFiles(SleeperInstanceContext instanceContext) {
         this.instanceContext = instanceContext;
-        this.tempDir = tempDir;
     }
 
-    public SystemTestLocalFiles createWithNumberedRecords(String filename, LongStream numbers) {
-        return create(filename, GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
+    public void createWithNumberedRecords(Path file, LongStream numbers) {
+        create(file, GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
     }
 
-    public SystemTestLocalFiles create(String filename, Record... records) {
-        return create(filename, Stream.of(records));
-    }
-
-    private SystemTestLocalFiles create(String filename, Stream<Record> records) {
-        writeFile(instanceContext.getTableProperties(), tempDir.resolve(filename).toString(), records.iterator());
-        return this;
+    private void create(Path file, Stream<Record> records) {
+        writeFile(instanceContext.getTableProperties(), file.toString(), records.iterator());
     }
 
     public void writeFile(TableProperties tableProperties, String filePath, Iterator<Record> records) {

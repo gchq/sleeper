@@ -16,14 +16,30 @@
 
 package sleeper.systemtest.drivers.python;
 
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.RunCommand;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+
+import java.io.IOException;
 import java.nio.file.Path;
 
-public class PythonIngestDriver {
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
-    public PythonIngestDriver() {
+public class PythonIngestDriver {
+    private final SleeperInstanceContext instance;
+    private final RunCommand commandRunner = ClientUtils::runCommandInheritIO;
+    private final Path pythonDir;
+
+    public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir) {
+        this.instance = instance;
+        this.pythonDir = pythonDir;
     }
 
-    public void ingest(Path file) {
-
+    public void direct(Path file) throws IOException, InterruptedException {
+        commandRunner.run("python3",
+                pythonDir.resolve("src/test/batch_writer.py").toString(),
+                "--instance", instance.getInstanceProperties().get(ID),
+                "--table", instance.getTableName(),
+                "--files", file.toString());
     }
 }

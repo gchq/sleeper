@@ -16,20 +16,22 @@
 
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
+import static sleeper.systemtest.suite.testutil.PythonApiTestHelper.PYTHON_DIR;
+import static sleeper.systemtest.suite.testutil.PythonApiTestHelper.buildPythonApi;
 
 @Tag("SystemTest")
 public class PythonApiIT {
@@ -37,25 +39,27 @@ public class PythonApiIT {
     private Path tempDir;
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
-    @BeforeEach
-    void setUp() {
-        sleeper.connectToInstance(MAIN);
-        sleeper.reporting().startRecording();
+    @BeforeAll
+    static void beforeAll() throws IOException, InterruptedException {
+        buildPythonApi();
     }
 
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printPartitionStatus(testContext(testInfo));
+    @BeforeEach
+    void setup() {
+        sleeper.connectToInstance(MAIN);
     }
 
     @Test
-    void shouldIngestOneRecord() {
+    void shouldIngestOneFileWithTenRecords() throws IOException, InterruptedException {
         // Given
         Path file = tempDir.resolve("file.parquet");
-        sleeper.localFiles(tempDir)
-                .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
+        sleeper.localFiles().createWithNumberedRecords(file, LongStream.range(0, 10));
 
         // When
-        sleeper.pythonApi().ingest().ingest(file);
+        sleeper.pythonApi(PYTHON_DIR).ingest().direct(file);
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 10)));
     }
 }
