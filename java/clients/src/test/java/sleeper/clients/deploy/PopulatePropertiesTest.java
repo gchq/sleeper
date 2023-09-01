@@ -50,14 +50,14 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class PopulatePropertiesTest {
-    @Test
-    void shouldPopulateInstanceProperties() {
-        // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
-                .build().populate();
 
-        // Then
+    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
+        return PopulateInstanceProperties.builder()
+                .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL)
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
+    }
+
+    private InstanceProperties expectedInstanceProperties() {
         InstanceProperties expected = new InstanceProperties();
         expected.setTags(Map.of("InstanceID", "test-instance"));
         expected.set(ID, "test-instance");
@@ -72,16 +72,22 @@ class PopulatePropertiesTest {
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "aws-global");
-
-        assertThat(properties).isEqualTo(expected);
+        return expected;
     }
 
     @Test
-    void shouldDefaultTagsWhenNotProvidedAndNotSetInInstanceProperties() {
+    void shouldPopulateInstanceProperties() {
         // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
-                .build().populate();
+        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate();
+
+        // Then
+        assertThat(properties).isEqualTo(expectedInstanceProperties());
+    }
+
+    @Test
+    void shouldGetDefaultTagsWhenNotProvidedAndNotSetInInstanceProperties() {
+        // Given/When
+        InstanceProperties properties = populateInstancePropertiesBuilder().build().populate();
 
         // Then
         assertThat(properties.getTags())
@@ -91,12 +97,10 @@ class PopulatePropertiesTest {
     @Test
     void shouldAddToExistingTagsWhenSetInInstanceProperties() {
         // Given/When
-
         InstanceProperties beforePopulate = new InstanceProperties();
         beforePopulate.setTags(Map.of("TestTag", "TestValue"));
         InstanceProperties afterPopulate = populateInstancePropertiesBuilder()
                 .instanceProperties(beforePopulate)
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().populate();
 
         // Then
@@ -135,9 +139,7 @@ class PopulatePropertiesTest {
     @Test
     void shouldGenerateTablePropertiesCorrectly() {
         // Given
-        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
-                .build().populate();
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder().build().populate();
         TableProperties tableProperties = PopulateTableProperties.builder()
                 .instanceProperties(instanceProperties)
                 .tableProperties(new TableProperties(instanceProperties))
@@ -156,9 +158,7 @@ class PopulatePropertiesTest {
     @Test
     void shouldRetainWhitespaceInSchema() {
         // Given
-        InstanceProperties instanceProperties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
-                .build().populate();
+        InstanceProperties instanceProperties = populateInstancePropertiesBuilder().build().populate();
         String schemaWithNewlines = "{\"rowKeyFields\":[{\n" +
                 "\"name\":\"key\",\"type\":\"LongType\"\n" +
                 "}],\n" +
@@ -178,10 +178,5 @@ class PopulatePropertiesTest {
         expected.set(TABLE_NAME, "test-table");
 
         assertThat(tableProperties).isEqualTo(expected);
-    }
-
-    private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstanceProperties.builder()
-                .accountSupplier(() -> "test-account-id").regionProvider(() -> Region.AWS_GLOBAL);
     }
 }
