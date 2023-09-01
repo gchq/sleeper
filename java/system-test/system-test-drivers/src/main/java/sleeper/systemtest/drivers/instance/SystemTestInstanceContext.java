@@ -95,14 +95,14 @@ public class SystemTestInstanceContext {
         try {
             deployIfMissingNoFailureTracking();
         } catch (RuntimeException | InterruptedException e) {
-            failure = new InstanceDidNotDeployException(parameters.getSystemTestDeploymentId(), e);
+            failure = new InstanceDidNotDeployException(parameters.getSystemTestShortId(), e);
             throw e;
         }
     }
 
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
         try {
-            String deploymentId = parameters.getSystemTestDeploymentId();
+            String deploymentId = parameters.getSystemTestShortId();
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
             LOGGER.info("Deployment already exists: {}", deploymentId);
         } catch (CloudFormationException e) {
@@ -130,7 +130,7 @@ public class SystemTestInstanceContext {
 
     private SystemTestStandaloneProperties generateProperties() {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.set(SYSTEM_TEST_ID, parameters.getSystemTestDeploymentId());
+        properties.set(SYSTEM_TEST_ID, parameters.getSystemTestShortId());
         properties.set(SYSTEM_TEST_ACCOUNT, parameters.getAccount());
         properties.set(SYSTEM_TEST_REGION, parameters.getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
@@ -152,7 +152,7 @@ public class SystemTestInstanceContext {
         }
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
-                .ecrPrefix(parameters.getSystemTestDeploymentId())
+                .ecrPrefix(parameters.getSystemTestShortId())
                 .account(parameters.getAccount())
                 .region(parameters.getRegion())
                 .stacks(List.of("SystemTestStack"))
