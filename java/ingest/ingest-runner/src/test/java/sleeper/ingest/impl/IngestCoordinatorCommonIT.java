@@ -211,8 +211,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionIntKey(
-            TestIngestType ingestType)
+    public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
@@ -269,8 +268,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionLongKey(
-            TestIngestType ingestType)
+    public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
@@ -327,8 +325,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKey(
-            TestIngestType ingestType)
+    public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
             throws Exception {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
@@ -388,8 +385,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionByteArrayKey(
-            TestIngestType ingestType)
+    public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
@@ -448,10 +444,8 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(
-            TestIngestType ingestType)
+    public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
             throws Exception {
-
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
@@ -517,8 +511,7 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(
-            TestIngestType ingestType)
+    public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
@@ -554,7 +547,6 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
 
-
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
@@ -569,10 +561,6 @@ public class IngestCoordinatorCommonIT {
         List<Record> leftFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         assertThat(rightFileRecords)
-                .extracting(record -> record.getValues(List.of("key0", "key1")))
-                .flatMap()
-                .containsExactly(List.of(new byte[]{11, 2}, new byte[]{2, 2}), List.of(new byte[]{64, 65}, new byte[]{67, 68}));
-        assertThat(rightFileRecords)
                 .extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{11, 2}, new byte[]{64, 65});
         assertThat(rightFileRecords)
@@ -580,8 +568,12 @@ public class IngestCoordinatorCommonIT {
                 .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
 
         assertThat(leftFileRecords)
-                .extracting(record -> record.getValues(List.of("key0", "key1")))
-                .containsExactly(List.of(new byte[]{1, 1}, new byte[]{2, 3}), List.of(new byte[]{5}, new byte[]{99}));
+                .extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactly(new byte[]{1, 1}, new byte[]{5});
+        assertThat(leftFileRecords)
+                .extracting(record -> record.getValues(List.of("key1")).get(0))
+                .containsExactly(new byte[]{2, 3}, new byte[]{99});
+
         List<Record> allRecords = new ArrayList<>(leftFileRecords);
         allRecords.addAll(rightFileRecords);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
@@ -643,7 +635,6 @@ public class IngestCoordinatorCommonIT {
                 "/partition_right/rightFile.parquet", 2, 0, 100);
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
                 "/partition_left/leftFile.parquet", 2, 0, 100);
-
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         List<Record> leftFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
@@ -737,7 +728,6 @@ public class IngestCoordinatorCommonIT {
         allRecords.addAll(rightFileRecords);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
-
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
                 recordListAndSchema,
@@ -745,7 +735,7 @@ public class IngestCoordinatorCommonIT {
                 hadoopConfiguration
         );
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getRowKeyFields().get(1),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -862,7 +852,6 @@ public class IngestCoordinatorCommonIT {
                 actualFiles,
                 hadoopConfiguration
         );
-
     }
 
     @ParameterizedTest
@@ -986,13 +975,11 @@ public class IngestCoordinatorCommonIT {
     }
 
 
-    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder(
-    ) {
-        IngestCoordinatorTestParameters.Builder ingestCoordinatorBuilder = IngestCoordinatorTestParameters
+    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
+        return IngestCoordinatorTestParameters
                 .builder()
                 .temporaryFolder(temporaryFolder)
                 .awsResource(AWS_EXTERNAL_RESOURCE)
                 .dataBucketName(DATA_BUCKET_NAME);
-        return ingestCoordinatorBuilder;
     }
 }
