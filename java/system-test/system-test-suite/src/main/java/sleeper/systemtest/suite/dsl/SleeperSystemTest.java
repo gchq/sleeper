@@ -34,6 +34,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
 
@@ -150,5 +151,13 @@ public class SleeperSystemTest {
 
     public SystemTestCluster systemTestCluster() {
         return new SystemTestCluster(systemTest, instance, clients);
+    }
+
+    public SystemTestPython pythonApi() {
+        return new SystemTestPython();
+    }
+
+    public SystemTestLocalFiles localFiles(Path tempDir) {
+        return new SystemTestLocalFiles(instance, tempDir);
     }
 }
