@@ -37,7 +37,7 @@ public class PythonIngestDriver {
 
     public void direct(Path file) throws IOException, InterruptedException {
         commandRunner.run("python3",
-                pythonDir.resolve("src/test/batch_writer.py").toString(),
+                pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--files", file.toString());
