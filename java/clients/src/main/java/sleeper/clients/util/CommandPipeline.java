@@ -53,7 +53,7 @@ public class CommandPipeline {
     public List<Process> startProcessesInheritIO() throws IOException {
         int size = commands.size();
         if (size == 1) {
-            return List.of(commands.get(0).toProcessBuilder().start());
+            return List.of(commands.get(0).toProcessBuilder().inheritIO().start());
         } else {
             List<ProcessBuilder> builders = new ArrayList<>(size);
             for (int i = 0; i < size; i++) {
