@@ -91,7 +91,7 @@ public class DeployExistingInstance {
                 .deleteOldJars(false)
                 .build().sync();
 
-        UploadDockerImagesNew.builder()
+        UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .instanceProperties(properties)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))

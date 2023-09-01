@@ -144,7 +144,7 @@ public class DeployNewInstance {
         SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
-        UploadDockerImagesNew.builder()
+        UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .instanceProperties(instanceProperties)

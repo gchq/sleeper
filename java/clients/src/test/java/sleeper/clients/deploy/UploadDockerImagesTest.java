@@ -49,7 +49,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
-public class UploadDockerImagesNewTest {
+public class UploadDockerImagesTest {
     private static final List<StackDockerImage> STACK_DOCKER_IMAGES = List.of(
             dockerBuildImage("IngestStack", "ingest"),
             dockerBuildImage("EksBulkImportStack", "bulk-import-runner"),
@@ -66,8 +66,8 @@ public class UploadDockerImagesNewTest {
         properties.set(REGION, "test-region");
     }
 
-    private UploadDockerImagesNew uploader() {
-        return UploadDockerImagesNew.builder()
+    private sleeper.clients.deploy.UploadDockerImages uploader() {
+        return sleeper.clients.deploy.UploadDockerImages.builder()
                 .baseDockerDirectory(Path.of("./docker"))
                 .version("1.0.0")
                 .instanceProperties(properties)

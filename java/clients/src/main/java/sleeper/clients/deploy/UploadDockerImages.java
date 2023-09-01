@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
-public class UploadDockerImagesNew {
+public class UploadDockerImages {
     private final Path baseDockerDirectory;
     private final String ecrPrefix;
     private final String account;
@@ -46,7 +46,7 @@ public class UploadDockerImagesNew {
     private final EcrRepositoryCreator.Client ecrClient;
     private final DockerImageConfiguration dockerImageConfig;
 
-    private UploadDockerImagesNew(Builder builder) {
+    private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
@@ -177,8 +177,8 @@ public class UploadDockerImagesNew {
             return this;
         }
 
-        public UploadDockerImagesNew build() {
-            return new UploadDockerImagesNew(this);
+        public UploadDockerImages build() {
+            return new UploadDockerImages(this);
         }
     }
 }

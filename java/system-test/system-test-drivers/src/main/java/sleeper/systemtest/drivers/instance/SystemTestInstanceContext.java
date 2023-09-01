@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.clients.deploy.SyncJars;
-import sleeper.clients.deploy.UploadDockerImagesNew;
+import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
@@ -150,7 +150,7 @@ public class SystemTestInstanceContext {
         if (!parameters.isSystemTestClusterEnabled()) {
             return;
         }
-        UploadDockerImagesNew.builder()
+        UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
                 .ecrPrefix(parameters.getSystemTestDeploymentId())
                 .account(parameters.getAccount())
