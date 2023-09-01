@@ -39,7 +39,7 @@ public class PartitionsTestHelper {
     }
 
     static List<Object> create127SplitPoints() {
-        return LongStream.range(0, 127)
+        return LongStream.range(1, 128)
                 .mapToObj(i -> "" + (char) (i / 5 + 'a') + (char) (i % 5 * 5 + 'a'))
                 .collect(Collectors.toUnmodifiableList());
     }

@@ -16,13 +16,24 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
+import sleeper.systemtest.datageneration.RandomRecordSupplier;
+import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create127SplitPoints;
@@ -40,9 +51,28 @@ public class PartitionsTestHelperTest {
     }
 
     @Test
+    void shouldFill128PartitionsWithData() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        List<Key> keys = generateNRandomKeys(schema, 10000);
+        PartitionTree tree = create128Partitions(schema);
+        List<Partition> allLeafPartitions = tree.traverseLeavesFirst()
+                .takeWhile(Partition::isLeafPartition)
+                .collect(Collectors.toUnmodifiableList());
+
+        // When
+        Set<Partition> partitionsWithData = keys.stream()
+                .map(tree::getLeafPartition)
+                .collect(Collectors.toSet());
+
+        // Then
+        assertThat(partitionsWithData).containsExactlyInAnyOrderElementsOf(allLeafPartitions);
+    }
+
+    @Test
     void shouldGenerate127SplitPoints() {
         assertThat(create127SplitPoints()).containsExactly(
-                "aa", "af", "ak", "ap", "au",
+                "af", "ak", "ap", "au",
                 "ba", "bf", "bk", "bp", "bu",
                 "ca", "cf", "ck", "cp", "cu",
                 "da", "df", "dk", "dp", "du",
@@ -67,6 +97,17 @@ public class PartitionsTestHelperTest {
                 "wa", "wf", "wk", "wp", "wu",
                 "xa", "xf", "xk", "xp", "xu",
                 "ya", "yf", "yk", "yp", "yu",
-                "za", "zf");
+                "za", "zf", "zk");
+    }
+
+    private static List<Key> generateNRandomKeys(Schema schema, int n) {
+        SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
+        RandomGenerator generator = new JDKRandomGenerator();
+        generator.setSeed(0);
+        RandomRecordSupplierConfig config = new RandomRecordSupplierConfig(properties, generator);
+        RandomRecordSupplier supplier = new RandomRecordSupplier(schema, config);
+        return LongStream.range(0, n).mapToObj(i -> supplier.get())
+                .map(record -> Key.create(record.getValues(schema.getRowKeyFieldNames())))
+                .collect(Collectors.toUnmodifiableList());
     }
 }
