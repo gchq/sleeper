@@ -27,6 +27,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.deploy.PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
@@ -82,6 +83,27 @@ class PopulatePropertiesTest {
 
         // Then
         assertThat(properties).isEqualTo(expectedInstanceProperties());
+    }
+
+    @Test
+    void shouldApplyECRRepositoryPrefixFromInstancePropertiesTemplate() {
+        // Given
+        InstanceProperties template = new InstanceProperties();
+        template.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
+
+        // When
+        InstanceProperties properties = populateInstancePropertiesBuilder()
+                .instanceProperties(template)
+                .build().populate();
+
+        // Then
+        InstanceProperties expected = expectedInstanceProperties();
+        expected.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
+        expected.set(ECR_COMPACTION_REPO, "test-ecr-prefix/compaction-job-execution");
+        expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
+        expected.set(BULK_IMPORT_REPO, "test-ecr-prefix/bulk-import-runner");
+        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-ecr-prefix/bulk-import-runner-emr-serverless");
+        assertThat(properties).isEqualTo(expected);
     }
 
     @Test
