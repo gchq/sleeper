@@ -26,10 +26,6 @@ public class CommandPipelineResult {
         this.exitCodes = exitCodes;
     }
 
-    public int[] getExitCodes() {
-        return exitCodes;
-    }
-
     public int getLastExitCode() {
         return exitCodes[exitCodes.length - 1];
     }
