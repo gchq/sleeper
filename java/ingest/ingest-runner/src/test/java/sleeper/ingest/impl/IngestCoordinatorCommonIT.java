@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -552,20 +553,39 @@ public class IngestCoordinatorCommonIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                        "/partition_right/rightFile.parquet", 2, new byte[]{11, 2}, new byte[]{64, 65}),
-                fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                        "/partition_left/leftFile.parquet", 2, new byte[]{1, 1}, new byte[]{5})
-        );
+
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(new byte[]{1, 1}, new byte[]{5}, new byte[]{11, 2}, new byte[]{64, 65});
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")).get(0))
                 .containsExactly(new byte[]{2, 3}, new byte[]{99}, new byte[]{2, 2}, new byte[]{67, 68});
+
+        FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+                "/partition_left/leftFile.parquet", 2, new byte[]{1, 1}, new byte[]{5});
+        FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+                "/partition_right/rightFile.parquet", 2, new byte[]{11, 2}, new byte[]{64, 65});
+        List<Record> leftFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
+        List<Record> rightFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        assertThat(rightFileRecords)
+                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .flatMap()
+                .containsExactly(List.of(new byte[]{11, 2}, new byte[]{2, 2}), List.of(new byte[]{64, 65}, new byte[]{67, 68}));
+        assertThat(rightFileRecords)
+                .extracting(record -> record.getValues(List.of("key0")).get(0))
+                .containsExactly(new byte[]{11, 2}, new byte[]{64, 65});
+        assertThat(rightFileRecords)
+                .extracting(record -> record.getValues(List.of("key1")).get(0))
+                .containsExactly(new byte[]{2, 2}, new byte[]{67, 68});
+
+        assertThat(leftFileRecords)
+                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .containsExactly(List.of(new byte[]{1, 1}, new byte[]{2, 3}), List.of(new byte[]{5}, new byte[]{99}));
+        List<Record> allRecords = new ArrayList<>(leftFileRecords);
+        allRecords.addAll(rightFileRecords);
+        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
                 recordListAndSchema,
@@ -613,26 +633,31 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
                 .partitionTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                        "/partition_right/rightFile.parquet", 2, 0, 100),
-                fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                        "/partition_left/leftFile.parquet", 2, 0, 100)
-        );
+
+        FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+                "/partition_right/rightFile.parquet", 2, 0, 100);
+        FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+                "/partition_left/leftFile.parquet", 2, 0, 100);
+
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactly(List.of(0), List.of(0), List.of(100), List.of(100));
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")))
-                .containsExactly(List.of(1L), List.of(20L), List.of(1L), List.of(50L));
+        List<Record> leftFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
+        List<Record> rightFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
+        assertThat(leftFileRecords)
+                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .containsExactly(List.of(0, 1L), List.of(100, 1L));
+        assertThat(rightFileRecords)
+                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .containsExactly(List.of(0, 20L), List.of(100, 50L));
+        List<Record> allRecords = new ArrayList<>(leftFileRecords);
+        allRecords.addAll(rightFileRecords);
+        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
                 recordListAndSchema,
@@ -679,37 +704,39 @@ public class IngestCoordinatorCommonIT {
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
                 .partitionTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                        "/partition_left/leftFile.parquet", 112, -100L, 19L),
-                fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                        "/partition_right/rightFile.parquet", 88, 2L, 99L)
-        );
+        FileInfo fileLeft = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
+                "/partition_left/leftFile.parquet", 112, -100L, 19L);
+        FileInfo fileRight = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
+                "/partition_right/rightFile.parquet", 88, 2L, 99L);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyElementsOf(
-                        LongStream.range(-100L, 100L)
-                                .boxed()
-                                .map(longValue -> List.of((Object) longValue))
-                                .collect(Collectors.toList())
-                );
+        assertThat(actualFiles).containsExactlyInAnyOrder(fileLeft, fileRight);
+        List<Record> leftFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, fileLeft, hadoopConfiguration);
+        List<Record> rightFileRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, fileRight, hadoopConfiguration);
 
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key1")))
-                .containsExactlyElementsOf(
-                        LongStream.range(-100L, 100L)
-                                .boxed()
-                                .map(x -> List.of((Object) String.valueOf(x)))
-                                .collect(Collectors.toList())
+        assertThat(leftFileRecords)
+                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .containsExactlyElementsOf(LongStream.concat(LongStream.range(-100L, 2L), LongStream.range(10L, 20L))
+                        .boxed()
+                        .map(x -> List.<Object>of(x, String.valueOf(x)))
+                        .collect(Collectors.toList())
                 );
+        assertThat(rightFileRecords)
+                .extracting(record -> record.getValues(List.of("key0", "key1")))
+                .containsExactlyElementsOf(LongStream.concat(LongStream.range(2L, 10L), LongStream.range(20L, 100L))
+                        .boxed()
+                        .map(x -> List.<Object>of(x, String.valueOf(x)))
+                        .collect(Collectors.toList())
+                );
+        List<Record> allRecords = new ArrayList<>(leftFileRecords);
+        allRecords.addAll(rightFileRecords);
+        assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),

@@ -255,6 +255,19 @@ public class ResultVerifier {
         return recordsRead;
     }
 
+    public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
+                                                                       FileInfo fileInfo,
+                                                                       Configuration hadoopConfiguration) throws IOException {
+
+        try (CloseableIterator<Record> inputIterator = createParquetReaderIterator(sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+            List<Record> recordsRead = new ArrayList<>();
+            while (inputIterator.hasNext()) {
+                recordsRead.add(inputIterator.next());
+            }
+            return recordsRead;
+        }
+    }
+
     private static ParquetReaderIterator createParquetReaderIterator(Schema sleeperSchema,
                                                                      Path filePath,
                                                                      Configuration hadoopConfiguration) {
