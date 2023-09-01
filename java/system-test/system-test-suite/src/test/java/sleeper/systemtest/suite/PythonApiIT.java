@@ -56,7 +56,8 @@ public class PythonApiIT {
         sleeper.localFiles().createWithNumberedRecords(file, LongStream.range(0, 10));
 
         // When
-        sleeper.pythonApi(PYTHON_DIR).ingest().direct(file);
+        sleeper.pythonApi(PYTHON_DIR).ingest().byQueue(file);
+        sleeper.ingest().byQueue().invokeTasks().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

@@ -18,11 +18,11 @@ from pq.parquet_deserial import ParquetDeserialiser
 from sleeper.sleeper import SleeperClient
 
 
-def read_files(*files: str):
+def read_files(files: list):
     parq = ParquetDeserialiser()
     file_records = []
     for fileName in files:
-        with open(fileName, mode="rb") as file:
+        with open(fileName, "rb") as file:
             reader = parq.read(file)
             for r in reader:
                 file_records.append(r)

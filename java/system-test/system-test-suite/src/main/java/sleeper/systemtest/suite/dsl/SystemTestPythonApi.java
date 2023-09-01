@@ -14,32 +14,22 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.drivers.python;
+package sleeper.systemtest.suite.dsl;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.RunCommand;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-
-public class PythonIngestDriver {
+public class SystemTestPythonApi {
     private final SleeperInstanceContext instance;
-    private final RunCommand commandRunner = ClientUtils::runCommandInheritIO;
     private final Path pythonDir;
 
-    public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir) {
+    public SystemTestPythonApi(SleeperInstanceContext instance, Path pythonDir) {
         this.instance = instance;
         this.pythonDir = pythonDir;
     }
 
-    public void byQueue(Path file) throws IOException, InterruptedException {
-        commandRunner.run("python3",
-                pythonDir.resolve("test/batch_writer.py").toString(),
-                "--instance", instance.getInstanceProperties().get(ID),
-                "--table", instance.getTableName(),
-                "--files", file.toString());
+    public SystemTestPythonIngest ingest() {
+        return new SystemTestPythonIngest(instance, pythonDir);
     }
 }

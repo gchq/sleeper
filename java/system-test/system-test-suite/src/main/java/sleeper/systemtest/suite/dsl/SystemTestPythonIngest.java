@@ -19,18 +19,17 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
-public class SystemTestPython {
-    private final SleeperInstanceContext instance;
-    private final Path pythonDir;
+public class SystemTestPythonIngest {
+    private final PythonIngestDriver pythonIngestDriver;
 
-    public SystemTestPython(SleeperInstanceContext instance, Path pythonDir) {
-        this.instance = instance;
-        this.pythonDir = pythonDir;
+    public SystemTestPythonIngest(SleeperInstanceContext instance, Path pythonDir) {
+        this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir);
     }
 
-    public PythonIngestDriver ingest() {
-        return new PythonIngestDriver(instance, pythonDir);
+    public void byQueue(Path file) throws IOException, InterruptedException {
+        pythonIngestDriver.byQueue(file);
     }
 }
