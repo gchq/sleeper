@@ -17,6 +17,7 @@ package sleeper.clients.testutil;
 
 import sleeper.clients.util.Command;
 import sleeper.clients.util.CommandPipeline;
+import sleeper.clients.util.CommandPipelineResult;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.CommandRunner;
 
@@ -30,7 +31,7 @@ public class RunCommandTestHelper {
     }
 
     public static List<CommandPipeline> pipelinesRunOn(PipelineInvoker invoker) throws IOException, InterruptedException {
-        return pipelinesRunOn(invoker, pipeline -> 0);
+        return pipelinesRunOn(invoker, pipeline -> new CommandPipelineResult(0));
     }
 
     public static List<CommandPipeline> pipelinesRunOn(
@@ -46,11 +47,11 @@ public class RunCommandTestHelper {
     }
 
     public static CommandPipelineRunner returningExitCode(int exitCode) {
-        return pipeline -> exitCode;
+        return pipeline -> new CommandPipelineResult(exitCode);
     }
 
     public static CommandPipelineRunner returningExitCodeForCommand(int exitCode, CommandPipeline command) {
-        return foundCommand -> foundCommand.equals(command) ? exitCode : 0;
+        return foundCommand -> new CommandPipelineResult(foundCommand.equals(command) ? exitCode : 0);
     }
 
     public static List<Command> commandsRunOn(CommandInvoker invoker) throws IOException, InterruptedException {

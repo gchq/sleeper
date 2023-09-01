@@ -122,20 +122,19 @@ public class ClientUtils {
     }
 
     public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
-        return runCommandLogOutput(pipeline(command(commands)));
+        return runCommandLogOutput(pipeline(command(commands))).getLastExitCode();
     }
 
-    public static int runCommandLogOutput(CommandPipeline pipeline) throws IOException, InterruptedException {
+    public static CommandPipelineResult runCommandLogOutput(CommandPipeline pipeline) throws IOException, InterruptedException {
         LOGGER.info("Running command: {}", pipeline);
         List<Process> processes = pipeline.startProcesses();
         CompletableFuture<Void> logOutput = CompletableFuture.allOf(processes.stream()
                 .map(ClientUtils::logOutput)
                 .toArray(CompletableFuture[]::new));
-        Process last = processes.get(processes.size() - 1);
-        int exitCode = last.waitFor();
+        CommandPipelineResult result = waitFor(processes);
         logOutput.join();
-        LOGGER.info("Exit code: {}", exitCode);
-        return exitCode;
+        LOGGER.info("Exit code: {}", result);
+        return result;
     }
 
     private static CompletableFuture<Void> logOutput(Process process) {
@@ -158,15 +157,23 @@ public class ClientUtils {
     }
 
     public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {
-        return runCommandInheritIO(pipeline(command(command)));
+        return runCommandInheritIO(pipeline(command(command))).getLastExitCode();
     }
 
-    public static int runCommandInheritIO(CommandPipeline pipeline) throws IOException, InterruptedException {
+    public static CommandPipelineResult runCommandInheritIO(CommandPipeline pipeline) throws IOException, InterruptedException {
         LOGGER.info("Running command: {}", pipeline);
         List<Process> processes = pipeline.startProcessesInheritIO();
-        Process last = processes.get(processes.size() - 1);
-        int exitCode = last.waitFor();
-        LOGGER.info("Exit code: {}", exitCode);
-        return exitCode;
+        CommandPipelineResult result = waitFor(processes);
+        LOGGER.info("Exit code: {}", result);
+        return result;
+    }
+
+    private static CommandPipelineResult waitFor(List<Process> processes) throws InterruptedException {
+        int size = processes.size();
+        int[] exitCodes = new int[size];
+        for (int i = 0; i < size; i++) {
+            exitCodes[i] = processes.get(i).waitFor();
+        }
+        return new CommandPipelineResult(exitCodes);
     }
 }

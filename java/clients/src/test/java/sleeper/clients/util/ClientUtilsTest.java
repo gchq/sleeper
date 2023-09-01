@@ -126,7 +126,7 @@ class ClientUtilsTest {
 
             // When/Then
             assertThat(ClientUtils.runCommandLogOutput(command))
-                    .isZero();
+                    .isEqualTo(new CommandPipelineResult(0, 0));
         }
 
         @Test
@@ -139,7 +139,7 @@ class ClientUtilsTest {
 
             // When/Then
             assertThat(ClientUtils.runCommandLogOutput(command))
-                    .isNotZero();
+                    .isEqualTo(new CommandPipelineResult(0, 1));
         }
 
         @Test
@@ -152,7 +152,7 @@ class ClientUtilsTest {
 
             // When/Then
             assertThat(ClientUtils.runCommandLogOutput(command))
-                    .isZero();
+                    .isEqualTo(new CommandPipelineResult(1, 0));
         }
 
         @Test
@@ -165,7 +165,7 @@ class ClientUtilsTest {
 
             // When/Then
             assertThat(ClientUtils.runCommandInheritIO(command))
-                    .isZero();
+                    .isEqualTo(new CommandPipelineResult(0, 0));
         }
 
         @Test
@@ -178,7 +178,7 @@ class ClientUtilsTest {
 
             // When/Then
             assertThat(ClientUtils.runCommandInheritIO(command))
-                    .isZero();
+                    .isEqualTo(new CommandPipelineResult(1, 0));
         }
     }
 }
