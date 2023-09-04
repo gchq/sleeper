@@ -22,7 +22,7 @@ import com.amazonaws.services.ecs.model.Task;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,11 +30,11 @@ import java.util.stream.Collectors;
 import static sleeper.systemtest.drivers.ingest.WaitForGenerateData.ecsTaskStatusFormat;
 
 public class DataGenerationDriver {
-    private final SystemTestInstanceContext systemTest;
+    private final SystemTestDeploymentContext systemTest;
     private final SleeperInstanceContext instance;
     private final AmazonECS ecsClient;
 
-    public DataGenerationDriver(SystemTestInstanceContext systemTest,
+    public DataGenerationDriver(SystemTestDeploymentContext systemTest,
                                 SleeperInstanceContext instance,
                                 AmazonECS ecsClient) {
         this.systemTest = systemTest;
@@ -52,7 +52,7 @@ public class DataGenerationDriver {
     }
 
     public void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
-        new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("status"))
+        new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
                 .pollUntilFinished(poll);
     }
 }

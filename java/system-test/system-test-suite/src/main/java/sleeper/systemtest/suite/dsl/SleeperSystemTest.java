@@ -22,14 +22,17 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
+import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
+import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.io.IOException;
@@ -62,12 +65,12 @@ public class SleeperSystemTest {
 
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
-    private final SystemTestInstanceContext systemTest = new SystemTestInstanceContext(
+    private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
             parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, clients.getS3V2());
+    private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
 
     private SleeperSystemTest() {
     }
@@ -79,7 +82,9 @@ public class SleeperSystemTest {
     private SleeperSystemTest reset() {
         try {
             systemTest.deployIfMissing();
+            systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
+            instance.disconnect();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -110,12 +115,16 @@ public class SleeperSystemTest {
         }
     }
 
-    public SystemTestStateStore stateStore() {
-        return new SystemTestStateStore(instance);
-    }
-
     public SystemTestSourceFiles sourceFiles() {
         return new SystemTestSourceFiles(instance, sourceFiles);
+    }
+
+    public SystemTestTableFiles tableFiles() {
+        return new SystemTestTableFiles(instance);
+    }
+
+    public SystemTestPartitioning partitioning() {
+        return new SystemTestPartitioning(instance, clients);
     }
 
     public SystemTestIngest ingest() {
@@ -126,27 +135,12 @@ public class SleeperSystemTest {
         return new SystemTestDirectQuery(new DirectQueryDriver(instance));
     }
 
-    public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return () -> GenerateNumberedRecords.from(
-                        instance.getTableProperties().getSchema(), numbers)
-                .iterator();
-    }
-
-    public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
-        return RecordNumbers.scrambleNumberedRecords(longStream);
+    public SystemTestCompaction compaction() {
+        return new SystemTestCompaction(instance, clients);
     }
 
     public SystemTestReporting reporting() {
         return new SystemTestReporting(instance, clients, reportingContext);
-    }
-
-    public SystemTestPartitionSplitting partitionSplitting() {
-        return new SystemTestPartitionSplitting(new PartitionSplittingDriver(instance, clients.getLambda()));
-    }
-
-    public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(new SplittingCompactionDriver(instance,
-                clients.getLambda(), clients.getSqs(), clients.getDynamoDB()));
     }
 
     public SystemTestCluster systemTestCluster() {
@@ -159,5 +153,15 @@ public class SleeperSystemTest {
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
         return new SystemTestLocalFiles(instance, tempDir);
+    }
+
+    public Iterable<Record> generateNumberedRecords(LongStream numbers) {
+        return () -> GenerateNumberedRecords.from(
+                        instance.getTableProperties().getSchema(), numbers)
+                .iterator();
+    }
+
+    public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
+        return RecordNumbers.scrambleNumberedRecords(longStream);
     }
 }

@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.json.TaskStatusJson;
 import sleeper.systemtest.drivers.ingest.json.TasksJson;
+import sleeper.systemtest.drivers.ingest.json.TasksSummaryJson;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -112,7 +113,7 @@ public class WaitForGenerateData {
         List<Task> generateDataTasks = TasksJson.readTasksFromFile(Paths.get(args[0]));
         String statusFormatStr = optionalArgument(args, 1)
                 .map(arg -> arg.toLowerCase(Locale.ROOT))
-                .orElse("status");
+                .orElse("summary");
         ECSTaskStatusFormat ecsTaskFormat = ecsTaskStatusFormat(statusFormatStr);
 
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
@@ -127,8 +128,10 @@ public class WaitForGenerateData {
             case "full":
                 return TasksJson::new;
             case "status":
-            default:
                 return tasks -> tasks.stream().map(TaskStatusJson::new).collect(Collectors.toList());
+            case "summary":
+            default:
+                return TasksSummaryJson::new;
         }
     }
 
