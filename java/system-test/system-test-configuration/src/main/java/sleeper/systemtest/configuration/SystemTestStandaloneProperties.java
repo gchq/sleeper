@@ -17,6 +17,8 @@
 package sleeper.systemtest.configuration;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.SleeperPropertyIndex;
@@ -34,6 +36,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BU
 public class SystemTestStandaloneProperties
         extends SleeperProperties<SystemTestProperty>
         implements SystemTestPropertyValues, SystemTestPropertySetter {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStandaloneProperties.class);
 
     public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) throws IOException {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
@@ -49,6 +52,8 @@ public class SystemTestStandaloneProperties
 
     public void saveToS3(AmazonS3 s3Client) throws IOException {
         saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
+        LOGGER.info("Saved system test properties to bucket {}, key {}",
+                get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
     }
 
     @Override

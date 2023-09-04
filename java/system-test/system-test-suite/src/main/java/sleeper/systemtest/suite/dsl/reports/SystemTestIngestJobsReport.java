@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.testutil;
+package sleeper.systemtest.suite.dsl.reports;
 
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
-import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.ingest.job.status.IngestJobStatus;
 
 import java.util.List;
 
-public class FileInfoSystemTestHelper {
+public class SystemTestIngestJobsReport {
 
-    private FileInfoSystemTestHelper() {
+    private final List<IngestJobStatus> jobs;
+
+    public SystemTestIngestJobsReport(List<IngestJobStatus> jobs) {
+        this.jobs = jobs;
     }
 
-    public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
-        return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.stateStore().allPartitions());
-    }
-
-    public static long numberOfRecordsIn(List<? extends FileInfo> files) {
-        return files.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
+    public JobsFinishedStatistics finishedStatistics() {
+        return new JobsFinishedStatistics(jobs);
     }
 }

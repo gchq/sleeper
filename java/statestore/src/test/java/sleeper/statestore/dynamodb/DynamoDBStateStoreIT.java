@@ -1068,4 +1068,28 @@ public class DynamoDBStateStoreIT {
         // Then
         assertThat(partitions).containsExactly(expectedPartition);
     }
+
+    @Test
+    public void shouldReinitialisePartitions() throws StateStoreException {
+        // Given
+        Field field = new Field("key", new LongType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        StateStore dynamoDBStateStore = getStateStore(schema, treeBefore.getAllPartitions());
+
+        // When
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+
+        dynamoDBStateStore.initialise(treeAfter.getAllPartitions());
+
+        // Then
+        assertThat(dynamoDBStateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
+    }
 }

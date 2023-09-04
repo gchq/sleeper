@@ -52,7 +52,7 @@ public class DataGenerationDriver {
     }
 
     public void waitForTasks(List<Task> tasks, PollWithRetries poll) throws InterruptedException {
-        new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("status"))
+        new WaitForGenerateData(ecsClient, tasks, ecsTaskStatusFormat("summary"))
                 .pollUntilFinished(poll);
     }
 }

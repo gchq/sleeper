@@ -99,6 +99,7 @@ runMavenSystemTests() {
     mkdir "$OUTPUT_DIR/$TEST_NAME"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
+      -Dsleeper.system.test.cluster.enabled=true \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
     echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"

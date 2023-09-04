@@ -64,6 +64,12 @@ class DynamoDBPartitionFormat {
         return map;
     }
 
+    Map<String, AttributeValue> getKeyFromPartition(Partition partition) {
+        Map<String, AttributeValue> map = new HashMap<>();
+        map.put(ID, createStringAttribute(partition.getId()));
+        return map;
+    }
+
     Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
         Partition.Builder partitionBuilder = Partition.builder()
                 .rowKeyTypes(rowKeyTypes)

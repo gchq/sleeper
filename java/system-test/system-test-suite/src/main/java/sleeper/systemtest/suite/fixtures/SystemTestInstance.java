@@ -25,13 +25,24 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
+import static sleeper.configuration.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CLIENT_TYPE;
+import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
+import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.configuration.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -39,7 +50,8 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 
 public enum SystemTestInstance {
 
-    MAIN("main", SystemTestInstance::buildMainConfiguration);
+    MAIN("main", SystemTestInstance::buildMainConfiguration),
+    INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration);
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
@@ -70,7 +82,7 @@ public enum SystemTestInstance {
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "1");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "1");
         properties.setTags(Map.of(
-                "Description", "Maven system test main instance",
+                "Description", "Sleeper Maven system test main instance",
                 "Environment", "DEV",
                 "Product", "Sleeper",
                 "ApplicationID", "SLEEPER",
@@ -88,5 +100,27 @@ public enum SystemTestInstance {
                 .instanceProperties(properties)
                 .tableProperties(tableProperties)
                 .build();
+    }
+
+    private static DeployInstanceConfiguration buildIngestPerformanceConfiguration(SystemTestParameters parameters) {
+        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "IngestStack");
+        properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        properties.set(INGEST_RECORD_BATCH_TYPE, "arrow");
+        properties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "async");
+        properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
+        properties.set(ARROW_INGEST_BATCH_BUFFER_BYTES, "1073741824"); // 1GB
+        properties.set(ARROW_INGEST_MAX_LOCAL_STORE_BYTES, "2147483648"); // 2GB
+        properties.set(ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS, "1024");
+        properties.set(ASYNC_INGEST_CLIENT_TYPE, "crt");
+        properties.set(ASYNC_INGEST_CRT_PART_SIZE_BYTES, "134217728"); // 128MB
+        properties.set(ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS, "10");
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "ingestPerformance");
+        tags.put("Description", "Sleeper Maven system test ingest performance instance");
+        properties.setTags(tags);
+        return configuration;
     }
 }

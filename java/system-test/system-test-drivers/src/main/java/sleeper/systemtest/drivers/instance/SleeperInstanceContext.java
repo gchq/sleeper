@@ -76,6 +76,10 @@ public class SleeperInstanceContext {
         currentInstance = deployed.connectTo(identifier, deployInstanceConfiguration);
     }
 
+    public void disconnect() {
+        currentInstance = null;
+    }
+
     public void resetProperties(DeployInstanceConfiguration configuration) {
         ResetProperties.reset(configuration,
                 currentInstance.getInstanceProperties(),

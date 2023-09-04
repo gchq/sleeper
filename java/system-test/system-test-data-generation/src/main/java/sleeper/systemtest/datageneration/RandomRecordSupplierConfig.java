@@ -15,6 +15,8 @@
  */
 package sleeper.systemtest.datageneration;
 
+import org.apache.commons.math3.random.RandomGenerator;
+
 import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
@@ -39,12 +41,17 @@ public class RandomRecordSupplierConfig {
     private final int randomByteArrayLength;
     private final int maxEntriesInRandomMap;
     private final int maxEntriesInRandomList;
+    private final RandomGenerator generator;
 
     public RandomRecordSupplierConfig(SystemTestProperties systemTestProperties) {
         this(systemTestProperties.testPropertiesOnly());
     }
 
     public RandomRecordSupplierConfig(SystemTestPropertyValues systemTestProperties) {
+        this(systemTestProperties, null);
+    }
+
+    public RandomRecordSupplierConfig(SystemTestPropertyValues systemTestProperties, RandomGenerator generator) {
         this(systemTestProperties.getInt(MIN_RANDOM_INT),
                 systemTestProperties.getInt(MAX_RANDOM_INT),
                 systemTestProperties.getLong(MIN_RANDOM_LONG),
@@ -52,7 +59,8 @@ public class RandomRecordSupplierConfig {
                 systemTestProperties.getInt(RANDOM_STRING_LENGTH),
                 systemTestProperties.getInt(RANDOM_BYTE_ARRAY_LENGTH),
                 systemTestProperties.getInt(MAX_ENTRIES_RANDOM_MAP),
-                systemTestProperties.getInt(MAX_ENTRIES_RANDOM_LIST));
+                systemTestProperties.getInt(MAX_ENTRIES_RANDOM_LIST),
+                generator);
     }
 
     public RandomRecordSupplierConfig(int minRandomInt,
@@ -62,7 +70,8 @@ public class RandomRecordSupplierConfig {
                                       int randomStringLength,
                                       int randomByteArrayLength,
                                       int maxEntriesInRandomMap,
-                                      int maxEntriesInRandomList) {
+                                      int maxEntriesInRandomList,
+                                      RandomGenerator generator) {
         this.minRandomInt = minRandomInt;
         this.maxRandomInt = maxRandomInt;
         this.minRandomLong = minRandomLong;
@@ -71,6 +80,7 @@ public class RandomRecordSupplierConfig {
         this.randomByteArrayLength = randomByteArrayLength;
         this.maxEntriesInRandomMap = maxEntriesInRandomMap;
         this.maxEntriesInRandomList = maxEntriesInRandomList;
+        this.generator = generator;
     }
 
     public int getMinRandomInt() {
@@ -103,5 +113,9 @@ public class RandomRecordSupplierConfig {
 
     public int getMaxEntriesInRandomList() {
         return maxEntriesInRandomList;
+    }
+
+    public RandomGenerator getGenerator() {
+        return generator;
     }
 }

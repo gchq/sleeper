@@ -100,6 +100,13 @@ public class SystemTestInstanceContext {
         }
     }
 
+    public void resetProperties() {
+        updateProperties(properties ->
+                properties.getPropertiesIndex().getUserDefined().stream()
+                        .filter(property -> property.isEditable() && !property.isRunCDKDeployWhenChanged())
+                        .forEach(properties::unset));
+    }
+
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
         try {
             String deploymentId = parameters.getSystemTestShortId();
