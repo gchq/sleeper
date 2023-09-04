@@ -46,7 +46,7 @@ public class S3ResultsDriver {
     }
 
     private Stream<Record> getRecords(S3ObjectSummary s3ObjectSummary) {
-        String path = "s3a://" + s3ObjectSummary.getBucketName() + "/" + s3ObjectSummary.getKey();
+        String path = "s3a://" + s3ObjectSummary.getBucketName() + "/query-" + s3ObjectSummary.getKey();
         List<Record> records = new ArrayList<>();
         try {
             ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path),
