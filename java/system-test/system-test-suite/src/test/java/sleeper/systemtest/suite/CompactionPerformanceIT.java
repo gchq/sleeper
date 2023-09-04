@@ -56,8 +56,8 @@ public class CompactionPerformanceIT {
             properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
         }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
-        sleeper.compaction().runStandard(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
+        sleeper.compaction().createJobs().invokeStandardTasks(10)
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         assertThat(sleeper.stateStore().activeFiles())
                 .hasSize(10)

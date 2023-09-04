@@ -60,11 +60,11 @@ public class PartitionSplittingIT {
 
         // When
         sleeper.partitionSplitting().split();
-        sleeper.compaction().runSplitting();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
         sleeper.partitionSplitting().split();
-        sleeper.compaction().runSplitting();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
         sleeper.partitionSplitting().split();
-        sleeper.compaction().runSplitting();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
         // Then
         FileInfoFactory fileFactory = fileInfoFactory(sleeper);

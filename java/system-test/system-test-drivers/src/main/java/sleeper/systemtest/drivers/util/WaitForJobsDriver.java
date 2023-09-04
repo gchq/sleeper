@@ -21,22 +21,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static java.util.function.Predicate.not;
 
 public class WaitForJobsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForJobsDriver.class);
@@ -60,16 +54,12 @@ public class WaitForJobsDriver {
 
     private static JobStatusStore ingestStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return jobId -> store.getJob(jobId)
-                .map(IngestJobStatus::isFinished)
-                .orElse(false);
+        return jobId -> WaitForJobsStatus.forIngest(store, jobId);
     }
 
     private static JobStatusStore compactionStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return jobId -> store.getJob(jobId)
-                .map(CompactionJobStatus::isFinished)
-                .orElse(false);
+        return jobId -> WaitForJobsStatus.forCompaction(store, jobId);
     }
 
     public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
@@ -81,20 +71,14 @@ public class WaitForJobsDriver {
         JobStatusStore store = getStore.apply(instance.getInstanceProperties());
         LOGGER.info("Waiting for jobs to finish: {}", jobIds.size());
         pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
-            List<String> unfinishedJobIds = getUnfinishedJobIds(store, jobIds);
-            LOGGER.info("Unfinished jobs: {}", unfinishedJobIds.size());
-            return unfinishedJobIds.isEmpty();
+            WaitForJobsStatus status = store.getStatus(jobIds);
+            LOGGER.info("Jobs status: {}", status);
+            return status.isAllFinished();
         });
-    }
-
-    private List<String> getUnfinishedJobIds(JobStatusStore store, Collection<String> jobIds) {
-        return jobIds.stream()
-                .filter(not(store::isFinished))
-                .collect(Collectors.toUnmodifiableList());
     }
 
     @FunctionalInterface
     private interface JobStatusStore {
-        boolean isFinished(String jobId);
+        WaitForJobsStatus getStatus(Collection<String> jobIds);
     }
 }
