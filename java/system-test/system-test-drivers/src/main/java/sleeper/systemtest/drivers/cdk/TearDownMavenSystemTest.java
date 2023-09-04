@@ -48,6 +48,7 @@ public class TearDownMavenSystemTest {
         Path scriptsDir = Path.of(args[0]);
         String shortId = args[1];
         List<String> instanceIds = List.of(args).subList(2, args.length);
+        LOGGER.info("Found instance IDs to tear down: {}", instanceIds);
         for (String instanceId : instanceIds) {
             TearDownInstance.builder()
                     .scriptsDir(scriptsDir)
