@@ -63,7 +63,7 @@ public class SleeperSystemTest {
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
     private final SystemTestInstanceContext systemTest = new SystemTestInstanceContext(
-            parameters, clients.getS3(), clients.getS3V2(), clients.getCloudFormation());
+            parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);

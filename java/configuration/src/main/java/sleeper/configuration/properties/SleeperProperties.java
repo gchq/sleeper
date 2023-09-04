@@ -18,7 +18,6 @@ package sleeper.configuration.properties;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +27,7 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -37,6 +37,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -209,8 +210,8 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("properties", properties)
-                .build();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        getPrettyPrinter(new PrintWriter(stream, false, StandardCharsets.UTF_8)).print(this);
+        return stream.toString(StandardCharsets.UTF_8);
     }
 }

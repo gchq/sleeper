@@ -68,7 +68,7 @@ public class SystemTestParameters {
                 .build();
     }
 
-    public String getSystemTestDeploymentId() {
+    public String getSystemTestShortId() {
         return shortTestId;
     }
 

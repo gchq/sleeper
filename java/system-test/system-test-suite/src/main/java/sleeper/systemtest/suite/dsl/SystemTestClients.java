@@ -18,6 +18,8 @@ package sleeper.systemtest.suite.dsl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecs.AmazonECS;
 import com.amazonaws.services.ecs.AmazonECSClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
@@ -43,6 +45,7 @@ public class SystemTestClients {
     private final EmrServerlessClient emrServerless = EmrServerlessClient.create();
     private final AmazonElasticMapReduce emr = AmazonElasticMapReduceClientBuilder.defaultClient();
     private final AmazonECS ecs = AmazonECSClientBuilder.defaultClient();
+    private final AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
 
     public AmazonS3 getS3() {
         return s3;
@@ -78,5 +81,9 @@ public class SystemTestClients {
 
     public AmazonECS getEcs() {
         return ecs;
+    }
+
+    public AmazonECR getEcr() {
+        return ecr;
     }
 }
