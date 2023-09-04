@@ -34,7 +34,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
 echo "Setting up virtual environment for Python API"
-python -m venv "$PYTHON_DIR/env"
+python3 -m venv "$PYTHON_DIR/env"
 source "$PYTHON_DIR/env/bin/activate"
 pip3 install .
 deactivate
