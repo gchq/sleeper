@@ -102,7 +102,7 @@ class PopulatePropertiesTest {
         expected.set(ECR_COMPACTION_REPO, "test-ecr-prefix/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
         expected.set(BULK_IMPORT_REPO, "test-ecr-prefix/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-ecr-prefix/bulk-import-runner-emr-serverless");
+        expected.set(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-ecr-prefix/bulk-import-runner-emr-serverless");
         assertThat(properties).isEqualTo(expected);
     }
 
