@@ -36,7 +36,7 @@ START_TIME=$(record_time)
 echo "Setting up virtual environment for Python API"
 python3 -m venv "$PYTHON_DIR/env"
 source "$PYTHON_DIR/env/bin/activate"
-pip3 install .
+pip3 install "$PYTHON_DIR"
 deactivate
 
 pushd "$MAVEN_DIR"
