@@ -71,7 +71,7 @@ public class PythonApiIT {
 
             // When
             sleeper.pythonApi(PYTHON_DIR, tempDir)
-                    .ingest().batchWrite("test-job-1", "file.parquet")
+                    .ingest().batchWrite("file.parquet")
                     .invokeTasks().waitForJobs();
 
             // Then
@@ -89,7 +89,7 @@ public class PythonApiIT {
 
             // When
             sleeper.pythonApi(PYTHON_DIR, tempDir)
-                    .ingest().fromS3("test-job-2", "file1.parquet", "file2.parquet")
+                    .ingest().fromS3("file1.parquet", "file2.parquet")
                     .invokeTasks().waitForJobs();
 
             // Then

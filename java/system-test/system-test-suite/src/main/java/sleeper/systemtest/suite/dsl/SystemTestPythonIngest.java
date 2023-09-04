@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class SystemTestPythonIngest {
     private final PythonIngestDriver pythonIngestDriver;
@@ -43,13 +44,15 @@ public class SystemTestPythonIngest {
         this.waitForJobsDriver = new WaitForIngestJobsDriver(instance, clients.getDynamoDB());
     }
 
-    public SystemTestPythonIngest batchWrite(String jobId, String file) throws IOException, InterruptedException {
+    public SystemTestPythonIngest batchWrite(String file) throws IOException, InterruptedException {
+        String jobId = UUID.randomUUID().toString();
         pythonIngestDriver.batchWrite(jobId, file);
         sentJobIds.add(jobId);
         return this;
     }
 
-    public SystemTestPythonIngest fromS3(String jobId, String... files) throws IOException, InterruptedException {
+    public SystemTestPythonIngest fromS3(String... files) throws IOException, InterruptedException {
+        String jobId = UUID.randomUUID().toString();
         pythonIngestDriver.fromS3(jobId, files);
         sentJobIds.add(jobId);
         return this;
