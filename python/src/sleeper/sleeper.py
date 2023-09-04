@@ -118,12 +118,14 @@ class SleeperClient:
                      self._eks_bulk_import_queue, self._emr_serverless_bulk_import_queue, id, platform, platform_spec,
                      class_name)
 
-    def exact_key_query(self, table_name: str, keys) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str = str(uuid.uuid4())) -> list:
         """
         Query a Sleeper table for records where the key matches a given list of query keys.
 
         :param table_name: the table to query
-        :param keys: either a dict with key the row-key field name and value a list of values to query for, or a list of dicts where the key is a row-key field name and the value is the value
+        :param keys: either a single dict where the key is the row-key field name and the value is a list of values 
+        to query for, or a list of dicts where the key is a row-key field name and the value is the value to query for
+        :param query_id: the query ID, will be randomly generated if not provided
 
         :return: list of result records
         """
@@ -139,18 +141,19 @@ class SleeperClient:
                 raise Exception(
                     "If keys is a dict, there must be only one entry, with key of the row-key field and the value a list of the values to query for")
             for key in keys:
-                return self._exact_key_query_from_list_of_values(table_name, key, keys[key])
+                return self._exact_key_query_from_list_of_values(table_name, key, keys[key], query_id)
 
-        return self._exact_key_query_from_dicts(table_name, keys)
+        return self._exact_key_query_from_dicts(table_name, keys, query_id)
 
-    def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list) -> list:
+    def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list,
+                                             query_id: str = str(uuid.uuid4())) -> list:
         regions = []
         for value in values:
             region = {row_key_field_name: [value, True, value, True]}
             regions.append(region)
-        return self.range_key_query(table_name, regions)
+        return self.range_key_query(table_name, regions, query_id)
 
-    def _exact_key_query_from_dicts(self, table_name: str, keys: list) -> list:
+    def _exact_key_query_from_dicts(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4())) -> list:
         regions = []
         for key in keys:
             if not isinstance(key, dict):
@@ -161,9 +164,9 @@ class SleeperClient:
             for field_name in key:
                 region[field_name] = [key[field_name], True, key[field_name], True]
             regions.append(region)
-        return self.range_key_query(table_name, regions)
+        return self.range_key_query(table_name, regions, query_id)
 
-    def range_key_query(self, table_name: str, regions: list) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str = str(uuid.uuid4())) -> list:
         """
         Query a Sleeper table for records where the key is within one of the provided list of ranges.
 
@@ -174,6 +177,7 @@ class SleeperClient:
             maximum). If length 4 then the first element is the min of the range, the next is a boolean specifying
             whether the minimum is inclusive, the third is the max of the range and the next is a boolean specifying
             whether the maximum is inclusive.
+        :param query_id: the query ID, will be randomly generated if not provided
 
         :return: list of the result records
         """
@@ -214,7 +218,6 @@ class SleeperClient:
                 json_region["stringsBase64Encoded"] = False
             json_regions_list.append(json_region)
 
-        query_id = str(uuid.uuid4())
         query_message = {
             'queryId': query_id,
             'tableName': table_name,

@@ -30,6 +30,8 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,6 +129,22 @@ public class PythonApiIT {
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
             assertThat(sleeper.tableFiles().active()).hasSize(1);
+        }
+    }
+
+    @Nested
+    @DisplayName("Run SQS query")
+    class RunSQSQuery {
+        @Test
+        void shouldRunExactQueryWithMapOfKeyToListOfValues() throws IOException, InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.pythonApi(tempDir)
+                    .query().exact(Map.of("1", List.of(1L)))
+                    .results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(1, 2)));
         }
     }
 }

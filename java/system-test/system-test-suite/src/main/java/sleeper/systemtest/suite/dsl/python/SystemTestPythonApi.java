@@ -41,4 +41,8 @@ public class SystemTestPythonApi {
     public SystemTestPythonBulkImport bulkImport() {
         return new SystemTestPythonBulkImport(instance, clients, pythonDir);
     }
+
+    public SystemTestPythonQuery query() {
+        return new SystemTestPythonQuery(instance, clients, pythonDir);
+    }
 }
