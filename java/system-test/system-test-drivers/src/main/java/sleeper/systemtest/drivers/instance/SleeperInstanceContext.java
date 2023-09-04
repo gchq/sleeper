@@ -123,6 +123,7 @@ public class SleeperInstanceContext {
     private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
         String instanceId = parameters.buildInstanceId(identifier);
         String tableName = "system-test";
+        addInstanceIdToOutput(instanceId, parameters);
         try {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
@@ -157,7 +158,6 @@ public class SleeperInstanceContext {
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            addInstanceIdToOutput(instanceId, parameters);
             return new Instance(instanceProperties, tableProperties, tablePropertiesProvider, stateStoreProvider);
         } catch (IOException e) {
             throw new RuntimeIOException(e);
