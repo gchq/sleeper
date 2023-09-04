@@ -24,7 +24,7 @@ import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
@@ -37,14 +37,14 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CL
 
 public class SystemTestCluster {
 
-    private final SystemTestInstanceContext context;
+    private final SystemTestDeploymentContext context;
     private final DataGenerationDriver driver;
     private final IngestByQueueDriver byQueueDriver;
     private final IngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> jobIds = new ArrayList<>();
 
-    public SystemTestCluster(SystemTestInstanceContext context, SleeperInstanceContext instance, SystemTestClients clients) {
+    public SystemTestCluster(SystemTestDeploymentContext context, SleeperInstanceContext instance, SystemTestClients clients) {
         this.context = context;
         this.driver = new DataGenerationDriver(context, instance, clients.getEcs());
         this.byQueueDriver = new IngestByQueueDriver(instance, clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
