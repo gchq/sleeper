@@ -33,47 +33,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
-public class IngestPerformanceIT {
+public class CompactionPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @BeforeEach
     void setUp() {
-        sleeper.connectToInstance(INGEST_PERFORMANCE);
+        sleeper.connectToInstance(COMPACTION_PERFORMANCE);
         sleeper.reporting().startRecording();
     }
 
     @AfterEach
     void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
+        sleeper.reporting().printCompactionTasksAndJobs(testContext(testInfo));
     }
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
-        sleeper.stateStore().setPartitions(create128Partitions(sleeper));
+    void shouldMeetCompactionPerformanceStandards() throws InterruptedException {
         sleeper.systemTestCluster().updateProperties(properties -> {
-                    properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
-                    properties.set(NUMBER_OF_WRITERS, "11");
-                    properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
-                })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
-                .invokeStandardIngestTasks(11,
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
+            properties.set(INGEST_MODE, IngestMode.DIRECT.toString());
+            properties.set(NUMBER_OF_WRITERS, "110");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
+        }).generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
+
+        sleeper.compaction().createJobs().invokeStandardTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         assertThat(sleeper.stateStore().activeFiles())
-                .hasSize(1408)
-                .matches(files -> numberOfRecordsIn(files) == 440_000_000,
-                        "contain 440 million records");
-        assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                                && stats.isMinAverageRunRecordsPerSecond(130_000),
+                .hasSize(10)
+                .matches(files -> numberOfRecordsIn(files) == 4_400_000_000L,
+                        "contain 4.4 billion records");
+        assertThat(sleeper.reporting().compactionJobs().finishedStatistics())
+                .matches(stats -> stats.isAllFinishedOneRunEach(10)
+                                && stats.isMinAverageRunRecordsPerSecond(300000),
                         "meets minimum performance");
     }
 

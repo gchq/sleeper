@@ -25,6 +25,8 @@ import com.amazonaws.services.ecr.model.ListImagesResult;
 import com.amazonaws.services.ecr.model.RepositoryNotFoundException;
 import com.amazonaws.services.ecr.model.SetRepositoryPolicyRequest;
 
+import java.util.Objects;
+
 public class EcrRepositoryCreator {
     private EcrRepositoryCreator() {
     }
@@ -74,7 +76,9 @@ public class EcrRepositoryCreator {
             try {
                 ListImagesResult result = ecrClient.listImages(new ListImagesRequest().withRepositoryName(repository));
                 return result.getImageIds().stream()
-                        .anyMatch(imageIdentifier -> imageIdentifier.getImageTag().equals(version));
+                        // Note that image tag can be null. In particular, a multiplatform image has multiple images but
+                        // only the image index is tagged.
+                        .anyMatch(imageIdentifier -> Objects.equals(version, imageIdentifier.getImageTag()));
             } catch (RepositoryNotFoundException e) {
                 return false;
             }
