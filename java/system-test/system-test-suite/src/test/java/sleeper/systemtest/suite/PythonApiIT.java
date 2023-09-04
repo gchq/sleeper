@@ -61,8 +61,8 @@ public class PythonApiIT {
     }
 
     @Nested
-    @DisplayName("Standard ingest")
-    class StandardIngest {
+    @DisplayName("Ingest files")
+    class IngestFiles {
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
             // Given

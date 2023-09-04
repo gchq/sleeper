@@ -392,7 +392,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
                  emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
                  job_id: str, platform: str, platform_spec: dict, class_name: str):
     """
-    Instructs Sleeper to bulk imoport the given files from S3.
+    Instructs Sleeper to bulk import the given files from S3.
 
     :param table_name: table name to bulk import to
     :param files_to_ingest: path to the file on the S3 databucket which is to be bulk imported
@@ -400,7 +400,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     :param persistent_emr_bulk_import_queue: name of the Sleeper instance's persistent EMR bulk import queue
     :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
     :param job_id: the id of the bulk import job, will be randomly generated if not provided 
-    :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
+    :param platform: the platform to use - either "EMR", "PersistentEMR" or "EKS"
     :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
     """
     if platform != "EMR" and platform != "EKS" and platform != "PersistentEMR":
