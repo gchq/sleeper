@@ -14,68 +14,47 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.ingest;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.IngestJob;
-import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
+import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-
-public class SystemTestIngestByQueue {
+public class SystemTestDirectEmrServerless {
 
     private final SleeperInstanceContext instance;
     private final IngestSourceFilesDriver sourceFiles;
-    private final IngestByQueueDriver driver;
+    private final DirectEmrServerlessDriver driver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(SleeperInstanceContext instance,
-                                   IngestSourceFilesDriver sourceFiles,
-                                   IngestByQueueDriver driver,
-                                   WaitForJobsDriver waitForJobsDriver) {
+    public SystemTestDirectEmrServerless(SleeperInstanceContext instance,
+                                         IngestSourceFilesDriver sourceFiles,
+                                         DirectEmrServerlessDriver driver,
+                                         WaitForJobsDriver waitForJobsDriver) {
         this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
         this.waitForJobsDriver = waitForJobsDriver;
     }
 
-    public SystemTestIngestByQueue sendSourceFiles(String... files) {
-        return sendSourceFiles(INGEST_JOB_QUEUE_URL, files);
-    }
-
-    public SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, String... files) {
-        return sendSourceFiles(queueProperty, Stream.of(files));
-    }
-
-    private SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, Stream<String> files) {
+    public SystemTestDirectEmrServerless sendSourceFiles(String... files) {
         String jobId = UUID.randomUUID().toString();
         sentJobIds.add(jobId);
-        driver.sendJob(queueProperty, IngestJob.builder()
+        driver.sendJob(BulkImportJob.builder()
                 .id(jobId)
                 .tableName(instance.getTableName())
-                .files(sourceFiles.getIngestJobFilesInBucket(files))
+                .files(sourceFiles.getIngestJobFilesInBucket(Stream.of(files)))
                 .build());
         return this;
-    }
-
-    public SystemTestIngestByQueue invokeTask() throws InterruptedException {
-        driver.invokeStandardIngestTask();
-        return this;
-    }
-
-    public void waitForJobs() throws InterruptedException {
-        waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {

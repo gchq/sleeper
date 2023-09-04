@@ -25,7 +25,7 @@ import org.junit.jupiter.api.TestInfo;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.SystemTestIngestBatcher;
+import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
 
 import java.time.Duration;
 import java.util.stream.LongStream;
