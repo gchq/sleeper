@@ -18,14 +18,14 @@
 set -e
 
 if [ "$#" -lt 4 ]; then
-  echo "Usage: $0 <test> <shortId> <vpc> <subnets> <optional-maven-params>"
+  echo "Usage: $0 <shortId> <vpc> <subnets> <test> <optional-maven-params>"
   exit 1
 fi
 
-TEST=$1
-SHORT_ID=$2
-VPC=$3
-SUBNETS=$4
+SHORT_ID=$1
+VPC=$2
+SUBNETS=$3
+TEST=$4
 shift 4
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
