@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.fixtures;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;

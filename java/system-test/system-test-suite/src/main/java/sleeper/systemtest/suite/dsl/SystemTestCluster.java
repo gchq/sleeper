@@ -26,6 +26,7 @@ import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.time.Duration;
 import java.util.ArrayList;
