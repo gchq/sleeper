@@ -32,6 +32,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Write files to Sleeper")
     parser.add_argument("--instance", required=True)
     parser.add_argument("--table", required=True)
+    parser.add_argument("--jobid", required=True)
     parser.add_argument("--file", required=True)
 
     args = parser.parse_args()

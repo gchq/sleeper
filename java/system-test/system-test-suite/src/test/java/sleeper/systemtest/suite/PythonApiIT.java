@@ -16,12 +16,14 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
@@ -34,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.PythonApiTestHelper.PYTHON_DIR;
 import static sleeper.systemtest.suite.testutil.PythonApiTestHelper.buildPythonApi;
+import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class PythonApiIT {
@@ -49,6 +52,12 @@ public class PythonApiIT {
     @BeforeEach
     void setup() {
         sleeper.connectToInstance(MAIN);
+        sleeper.reporting().startRecording();
+    }
+
+    @AfterEach
+    void tearDown(TestInfo testInfo) {
+        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
     }
 
     @Nested
@@ -57,16 +66,18 @@ public class PythonApiIT {
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
             // Given
-            Path file = tempDir.resolve("file.parquet");
-            sleeper.localFiles().createWithNumberedRecords(file, LongStream.range(0, 100));
+            sleeper.localFiles(tempDir)
+                    .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
             // When
-            sleeper.pythonApi(PYTHON_DIR).ingest().batchWrite(file);
-            sleeper.ingest().byQueue().invokeTasks().waitForJobs();
+            sleeper.pythonApi(PYTHON_DIR, tempDir)
+                    .ingest().batchWrite("test-job-1", "file.parquet")
+                    .invokeTasks().waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+            assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
         }
 
         @Test
@@ -76,14 +87,15 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
-
             // When
-            sleeper.pythonApi(PYTHON_DIR).ingest().fromS3("file1.parquet", "file2.parquet");
-            sleeper.ingest().byQueue().invokeTasks().waitForJobs();
+            sleeper.pythonApi(PYTHON_DIR, tempDir)
+                    .ingest().fromS3("test-job-2", "file1.parquet", "file2.parquet")
+                    .invokeTasks().waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
+            assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(2);
         }
     }
 }

@@ -63,7 +63,7 @@ class SleeperClient:
         logger.debug("Loaded properties from config bucket sleeper-" + self._basename + "-config")
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
 
-    def write_single_batch(self, table_name: str, records_to_write: list):
+    def write_single_batch(self, table_name: str, records_to_write: list, job_id: str = None):
         """
         Perform a write of the given records to Sleeper.
         These are treated as a single block of records to write. Each
@@ -71,6 +71,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param records_to_write: list of the dictionaries containing the records to write
+        :param job_id: the ingest job ID to use, will be randomly generated if not provided 
         """
         # Generate a filename to write to
         databucket: str = _make_ingest_bucket_name(
@@ -80,20 +81,21 @@ class SleeperClient:
         # Upload it
         _write_and_upload_parquet(records_to_write, databucket_file)
         # Inform Sleeper
-        _ingest(table_name, [databucket_file], self._ingest_queue)
+        _ingest(table_name, [databucket_file], self._ingest_queue, job_id)
 
-    def ingest_parquet_files_from_s3(self, table_name: str, files: list):
+    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name. This is
-        done by posting a messagen containing the list of files to the ingest queue. These
+        done by posting a message containing the list of files to the ingest queue. These
         files must be in S3. They can be either files or directories. If they are directories
         then all Parquet files under the directory will be ingested. Files should be specified
         in the format 'bucket/file'.
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
+        :param job_id: the ingest job ID to use, will be randomly generated if not provided 
         """
-        _ingest(table_name, files, self._ingest_queue)
+        _ingest(table_name, files, self._ingest_queue, job_id)
 
     def bulk_import_parquet_files_from_s3(self, table_name: str, files: list,
                                           id: str = None, platform: str = "EMR", platform_spec: dict = None,
@@ -142,8 +144,7 @@ class SleeperClient:
     def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list) -> list:
         regions = []
         for value in values:
-            region = {}
-            region[row_key_field_name] = [value, True, value, True]
+            region = {row_key_field_name: [value, True, value, True]}
             regions.append(region)
         return self.range_key_query(table_name, regions)
 
@@ -171,7 +172,6 @@ class SleeperClient:
             maximum). If length 4 then the first element is the min of the range, the next is a boolean specifying
             whether the minimum is inclusive, the third is the max of the range and the next is a boolean specifying
             whether the maximum is inclusive.
-        :param key_schema_name: name given to the key in the Sleeper schema
 
         :return: list of the result records
         """
@@ -319,7 +319,7 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
     persistent_emr_bulk_import_queue = None
     if 'sleeper.bulk.import.persistent.emr.job.queue.url' in config['asection']:
         persistent_emr_bulk_import_queue = \
-        (config['asection']['sleeper.bulk.import.persistent.emr.job.queue.url']).rsplit('/', 1)[1]
+            (config['asection']['sleeper.bulk.import.persistent.emr.job.queue.url']).rsplit('/', 1)[1]
 
     eks_bulk_import_queue = None
     if 'sleeper.bulk.import.eks.job.queue.url' in config['asection']:
@@ -347,7 +347,7 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
 
     :param records_to_write: list of the dictionaries containing the records to user wants to write to the Parquet file
 
-    :param databucket_file: name of the databucket concatenated with the name of the Parquet file
+    :param s3_file: name of the databucket concatenated with the name of the Parquet file
     """
     # Separates the argument into the databucket name and the filename they want to appear in the bucket
     databucket_name = s3_file.split('/', 1)[0]
@@ -362,12 +362,12 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
         _s3.upload_file(fp.name, databucket_name, file_name)
 
 
-def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
+def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: str = str(uuid.uuid4())):
     """
     Instructs Sleeper to ingest the given file from S3.
 
     :param table_name: table name to ingest to
-    :param file_to_ingest: path to the file on the S3 databucket which is to be ingested
+    :param files_to_ingest: path to the file on the S3 databucket which is to be ingested
     :param ingest_queue: name of the Sleeper instance's ingest queue
     """
     if ingest_queue == None:
@@ -375,7 +375,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
 
     # Creates the ingest message and generates an ID
     ingest_message = {
-        "id": str(uuid.uuid4()),
+        "id": job_id,
         "tableName": table_name,
         "files": files_to_ingest
     }
@@ -389,14 +389,16 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
 
 def _bulk_import(table_name: str, files_to_ingest: list,
                  emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
-                 id: str, platform: str, platform_spec: dict, class_name: str):
+                 job_id: str, platform: str, platform_spec: dict, class_name: str):
     """
     Instructs Sleeper to bulk imoport the given files from S3.
 
     :param table_name: table name to bulk import to
-    :param file_to_ingest: path to the file on the S3 databucket which is to be bulk imported
-    :param bulk_import_queue: name of the Sleeper instance's ingest queue
-    :param id: the id of the bulk import job
+    :param files_to_ingest: path to the file on the S3 databucket which is to be bulk imported
+    :param emr_bulk_import_queue: name of the Sleeper instance's non-persistent EMR bulk import queue
+    :param persistent_emr_bulk_import_queue: name of the Sleeper instance's persistent EMR bulk import queue
+    :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
+    :param job_id: the id of the bulk import job
     :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
     :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
     """
@@ -417,12 +419,12 @@ def _bulk_import(table_name: str, files_to_ingest: list,
             raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
         queue = eks_bulk_import_queue
 
-    if id == None:
-        id = str(uuid.uuid4())
+    if job_id == None:
+        job_id = str(uuid.uuid4())
 
     # Creates the ingest message and generates and ID
     bulk_import_message = {
-        "id": id,
+        "id": job_id,
         "tableName": table_name,
         "files": files_to_ingest
     }

@@ -33,26 +33,30 @@ public class PythonIngestDriver {
     private final SleeperInstanceContext instance;
     private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandInheritIO;
     private final Path pythonDir;
+    private final Path tempDir;
 
-    public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir) {
+    public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir, Path tempDir) {
         this.instance = instance;
         this.pythonDir = pythonDir;
+        this.tempDir = tempDir;
     }
 
-    public void batchWrite(Path file) throws IOException, InterruptedException {
+    public void batchWrite(String jobId, String file) throws IOException, InterruptedException {
         pipelineRunner.run("python3",
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
-                "--file", file.toString());
+                "--jobid", jobId,
+                "--file", tempDir.resolve(file).toString());
     }
 
-    public void fromS3(String... files) throws IOException, InterruptedException {
+    public void fromS3(String jobId, String... files) throws IOException, InterruptedException {
         pipelineRunner.run(pipeline(command(Stream.concat(
                         Stream.of("python3",
                                 pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
                                 "--table", instance.getTableName(),
+                                "--jobid", jobId,
                                 "--files"),
                         Stream.of(files)
                                 .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))

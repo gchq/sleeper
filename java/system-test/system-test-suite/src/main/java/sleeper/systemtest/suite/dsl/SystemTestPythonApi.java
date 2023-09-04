@@ -22,14 +22,19 @@ import java.nio.file.Path;
 
 public class SystemTestPythonApi {
     private final SleeperInstanceContext instance;
+    private final SystemTestClients clients;
     private final Path pythonDir;
+    private final Path outputDir;
 
-    public SystemTestPythonApi(SleeperInstanceContext instance, Path pythonDir) {
+    public SystemTestPythonApi(SleeperInstanceContext instance, SystemTestClients clients, Path pythonDir,
+                               Path tempDir) {
         this.instance = instance;
+        this.clients = clients;
         this.pythonDir = pythonDir;
+        this.outputDir = tempDir;
     }
 
     public SystemTestPythonIngest ingest() {
-        return new SystemTestPythonIngest(instance, pythonDir);
+        return new SystemTestPythonIngest(instance, clients, pythonDir, outputDir);
     }
 }

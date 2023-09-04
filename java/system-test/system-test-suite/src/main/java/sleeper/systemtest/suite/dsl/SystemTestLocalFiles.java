@@ -34,13 +34,15 @@ import java.util.stream.Stream;
 
 public class SystemTestLocalFiles {
     private final SleeperInstanceContext instanceContext;
+    private final Path tempDir;
 
-    public SystemTestLocalFiles(SleeperInstanceContext instanceContext) {
+    public SystemTestLocalFiles(SleeperInstanceContext instanceContext, Path tempDir) {
         this.instanceContext = instanceContext;
+        this.tempDir = tempDir;
     }
 
-    public void createWithNumberedRecords(Path file, LongStream numbers) {
-        create(file, GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
+    public void createWithNumberedRecords(String file, LongStream numbers) {
+        create(tempDir.resolve(file), GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
     }
 
     private void create(Path file, Stream<Record> records) {

@@ -20,10 +20,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest files from S3 to Sleeper")
     parser.add_argument("--instance", required=True)
     parser.add_argument("--table", required=True)
+    parser.add_argument("--jobid", required=True)
     parser.add_argument("--files", nargs="+")
 
     args = parser.parse_args()
 
     sleeper_client = SleeperClient(args.instance)
 
-    sleeper_client.ingest_parquet_files_from_s3(args.table, args.files)
+    sleeper_client.ingest_parquet_files_from_s3(args.table, args.files, args.jobid)
