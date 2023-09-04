@@ -30,4 +30,4 @@ shift 4
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 
-"$THIS_DIR/deployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" -Dsleeper.system.test.cluster.enabled=true -DsingleIT="$TEST" "$@"
+"$THIS_DIR/deployTest.sh" "$SHORT_ID" "$VPC" "$SUBNETS" -Dsleeper.system.test.cluster.enabled=true "-DsingleIT=$TEST" "$@"
