@@ -16,9 +16,6 @@
 
 package sleeper.systemtest.drivers.python;
 
-import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.CommandPipeline;
-import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
@@ -32,18 +29,19 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SO
 
 public class PythonIngestDriver {
     private final SleeperInstanceContext instance;
-    private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandInheritIO;
+    private final PythonCommandHelper pythonCommandHelper;
     private final Path pythonDir;
     private final Path tempDir;
 
     public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir, Path tempDir) {
         this.instance = instance;
+        this.pythonCommandHelper = new PythonCommandHelper(pythonDir);
         this.pythonDir = pythonDir;
         this.tempDir = tempDir;
     }
 
     public void batchWrite(String jobId, String file) throws IOException, InterruptedException {
-        runInVenv(pipeline(command("python3",
+        pythonCommandHelper.runInVenv(pipeline(command("python3",
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
@@ -52,7 +50,7 @@ public class PythonIngestDriver {
     }
 
     public void fromS3(String jobId, String... files) throws IOException, InterruptedException {
-        runInVenv(pipeline(command(Stream.concat(
+        pythonCommandHelper.runInVenv(pipeline(command(Stream.concat(
                         Stream.of("python3",
                                 pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
@@ -62,19 +60,5 @@ public class PythonIngestDriver {
                         Stream.of(files)
                                 .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
                 .toArray(String[]::new))));
-    }
-
-    public void runInVenv(CommandPipeline pipeline) throws IOException, InterruptedException {
-        pipelineRunner.run(activateVenv(pythonDir));
-        pipelineRunner.run(pipeline);
-        pipelineRunner.run(deactivateVenv());
-    }
-
-    public static CommandPipeline activateVenv(Path pythonDir) {
-        return pipeline(command("source", pythonDir.resolve("env/bin/activate").toString()));
-    }
-
-    public static CommandPipeline deactivateVenv() {
-        return pipeline(command("deactivate"));
     }
 }
