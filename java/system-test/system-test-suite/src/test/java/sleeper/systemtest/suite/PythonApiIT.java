@@ -97,5 +97,23 @@ public class PythonApiIT {
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
             assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
         }
+
+        @Test
+        void shouldIngestDirectoryFromS3() throws IOException, InterruptedException {
+            // Given
+            sleeper.sourceFiles()
+                    .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
+                    .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
+
+            // When
+            sleeper.pythonApi(PYTHON_DIR, tempDir)
+                    .ingest().fromS3("test-dir")
+                    .invokeTasks().waitForJobs();
+
+            // Then
+            assertThat(sleeper.directQuery().allRecordsInTable())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
+            assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
+        }
     }
 }
