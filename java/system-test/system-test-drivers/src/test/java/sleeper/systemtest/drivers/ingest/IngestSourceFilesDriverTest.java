@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class IngestSourceFilesDriverTest {
 
     @Test
-    void shouldJobIdFromObjectKey() {
+    void shouldGetJobIdFromObjectKey() {
         assertThat(IngestSourceFilesDriver.getS3ObjectJobIds(Stream.of("ingest/test-job-id/0.parquet")))
                 .containsExactly("test-job-id");
     }
