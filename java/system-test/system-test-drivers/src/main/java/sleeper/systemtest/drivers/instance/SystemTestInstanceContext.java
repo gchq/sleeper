@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.clients.deploy.SyncJars;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.core.SleeperVersion;
@@ -35,6 +37,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
@@ -55,15 +58,17 @@ public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
     private final S3Client s3v2;
+    private final AmazonECR ecr;
     private final CloudFormationClient cloudFormation;
     private SystemTestStandaloneProperties properties;
     private InstanceDidNotDeployException failure;
 
-    public SystemTestInstanceContext(SystemTestParameters parameters,
-                                     AmazonS3 s3, S3Client s3v2, CloudFormationClient cloudFormation) {
+    public SystemTestInstanceContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
+                                     AmazonECR ecr, CloudFormationClient cloudFormation) {
         this.parameters = parameters;
         this.s3 = s3;
         this.s3v2 = s3v2;
+        this.ecr = ecr;
         this.cloudFormation = cloudFormation;
     }
 
@@ -90,14 +95,21 @@ public class SystemTestInstanceContext {
         try {
             deployIfMissingNoFailureTracking();
         } catch (RuntimeException | InterruptedException e) {
-            failure = new InstanceDidNotDeployException(parameters.getSystemTestDeploymentId(), e);
+            failure = new InstanceDidNotDeployException(parameters.getSystemTestShortId(), e);
             throw e;
         }
     }
 
+    public void resetProperties() {
+        updateProperties(properties ->
+                properties.getPropertiesIndex().getUserDefined().stream()
+                        .filter(property -> property.isEditable() && !property.isRunCDKDeployWhenChanged())
+                        .forEach(properties::unset));
+    }
+
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
         try {
-            String deploymentId = parameters.getSystemTestDeploymentId();
+            String deploymentId = parameters.getSystemTestShortId();
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
             LOGGER.info("Deployment already exists: {}", deploymentId);
         } catch (CloudFormationException e) {
@@ -125,7 +137,7 @@ public class SystemTestInstanceContext {
 
     private SystemTestStandaloneProperties generateProperties() {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
-        properties.set(SYSTEM_TEST_ID, parameters.getSystemTestDeploymentId());
+        properties.set(SYSTEM_TEST_ID, parameters.getSystemTestShortId());
         properties.set(SYSTEM_TEST_ACCOUNT, parameters.getAccount());
         properties.set(SYSTEM_TEST_REGION, parameters.getRegion());
         properties.set(SYSTEM_TEST_VPC_ID, parameters.getVpcId());
@@ -136,7 +148,7 @@ public class SystemTestInstanceContext {
     }
 
     private void uploadJarsAndDockerImages() throws IOException, InterruptedException {
-        boolean jarsChanged = SyncJars.builder().s3(s3v2)
+        SyncJars.builder().s3(s3v2)
                 .jarsDirectory(parameters.getJarsDirectory())
                 .bucketName(parameters.buildJarsBucketName())
                 .region(parameters.getRegion())
@@ -147,12 +159,11 @@ public class SystemTestInstanceContext {
         }
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
-                .uploadDockerImagesScript(parameters.getScriptsDirectory().resolve("deploy/uploadDockerImages.sh"))
-                .id(parameters.getSystemTestDeploymentId())
+                .ecrPrefix(parameters.getSystemTestShortId())
                 .account(parameters.getAccount())
                 .region(parameters.getRegion())
-                .skipIf(!jarsChanged)
-                .stacks("SystemTestStack")
+                .stacks(List.of("SystemTestStack"))
+                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .build().upload(ClientUtils::runCommandLogOutput);
     }
 

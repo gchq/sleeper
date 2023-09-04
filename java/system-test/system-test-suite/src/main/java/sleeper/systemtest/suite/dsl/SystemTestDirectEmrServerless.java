@@ -19,7 +19,7 @@ package sleeper.systemtest.suite.dsl;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -31,13 +31,13 @@ import java.util.stream.Stream;
 public class SystemTestDirectEmrServerless {
 
     private final SleeperInstanceContext instance;
-    private final IngestSourceFilesContext sourceFiles;
+    private final IngestSourceFilesDriver sourceFiles;
     private final DirectEmrServerlessDriver driver;
     private final WaitForIngestJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestDirectEmrServerless(SleeperInstanceContext instance,
-                                         IngestSourceFilesContext sourceFiles,
+                                         IngestSourceFilesDriver sourceFiles,
                                          DirectEmrServerlessDriver driver,
                                          WaitForIngestJobsDriver waitForJobsDriver) {
         this.instance = instance;

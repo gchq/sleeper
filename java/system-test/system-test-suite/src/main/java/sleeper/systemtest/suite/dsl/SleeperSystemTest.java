@@ -23,7 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
@@ -62,11 +62,11 @@ public class SleeperSystemTest {
     private final SystemTestParameters parameters = SystemTestParameters.loadFromSystemProperties();
     private final SystemTestClients clients = new SystemTestClients();
     private final SystemTestInstanceContext systemTest = new SystemTestInstanceContext(
-            parameters, clients.getS3(), clients.getS3V2(), clients.getCloudFormation());
+            parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
             parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
-    private final IngestSourceFilesContext sourceFiles = new IngestSourceFilesContext(systemTest, clients.getS3V2());
+    private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
 
     private SleeperSystemTest() {
     }
@@ -78,7 +78,9 @@ public class SleeperSystemTest {
     private SleeperSystemTest reset() {
         try {
             systemTest.deployIfMissing();
+            systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
+            instance.disconnect();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

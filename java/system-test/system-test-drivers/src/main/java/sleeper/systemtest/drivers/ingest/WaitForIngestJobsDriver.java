@@ -25,6 +25,7 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,30 +33,37 @@ import java.util.stream.Collectors;
 public class WaitForIngestJobsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestJobsDriver.class);
 
-    private final IngestJobStatusStore jobStatusStore;
+    private final SleeperInstanceContext instance;
+    private final AmazonDynamoDB dynamoDBClient;
 
     public WaitForIngestJobsDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient) {
-        this(IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()));
+        this.instance = instance;
+        this.dynamoDBClient = dynamoDBClient;
     }
 
-    public WaitForIngestJobsDriver(IngestJobStatusStore jobStatusStore) {
-        this.jobStatusStore = jobStatusStore;
+    public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
+        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished)
             throws InterruptedException {
+        IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         LOGGER.info("Waiting for jobs to finish: {}", jobIds.size());
         pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
-            List<String> unfinishedJobIds = jobIds.stream()
-                    .filter(this::isUnfinished)
-                    .collect(Collectors.toUnmodifiableList());
+            List<String> unfinishedJobIds = getUnfinishedJobIds(store, jobIds);
             LOGGER.info("Unfinished jobs: {}", unfinishedJobIds.size());
-            return unfinishedJobIds.size() == 0;
+            return unfinishedJobIds.isEmpty();
         });
     }
 
-    private boolean isUnfinished(String jobId) {
-        return jobStatusStore.getJob(jobId)
+    private List<String> getUnfinishedJobIds(IngestJobStatusStore store, Collection<String> jobIds) {
+        return jobIds.stream()
+                .filter(jobId -> isUnfinished(store, jobId))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private boolean isUnfinished(IngestJobStatusStore store, String jobId) {
+        return store.getJob(jobId)
                 .map(job -> !job.isFinished())
                 .orElse(true);
     }

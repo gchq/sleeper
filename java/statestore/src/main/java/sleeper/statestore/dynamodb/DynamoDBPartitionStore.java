@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.IdempotentParameterMismatchException;
 import com.amazonaws.services.dynamodbv2.model.InternalServerErrorException;
 import com.amazonaws.services.dynamodbv2.model.ItemCollectionSizeLimitExceededException;
@@ -193,6 +194,10 @@ public class DynamoDBPartitionStore implements PartitionStore {
         if (null == partitions || partitions.isEmpty()) {
             throw new StateStoreException("At least one partition must be provided");
         }
+        getAllPartitions().forEach(partition ->
+                dynamoDB.deleteItem(new DeleteItemRequest()
+                        .withTableName(tableName)
+                        .withKey(partitionFormat.getKeyFromPartition(partition))));
         for (Partition partition : partitions) {
             addPartition(partition);
             LOGGER.debug("Added partition {}", partition);

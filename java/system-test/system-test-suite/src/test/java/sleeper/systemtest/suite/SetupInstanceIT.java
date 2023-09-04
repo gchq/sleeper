@@ -23,6 +23,7 @@ import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.record.Record;
+import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.nio.file.Path;
@@ -30,6 +31,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
+import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -67,13 +71,19 @@ public class SetupInstanceIT {
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldGenerateSomeData() throws InterruptedException {
+    void shouldIngestSomeData() throws InterruptedException {
         // When
-        sleeper.systemTestCluster().ingestDirectRecords(100);
+        sleeper.systemTestCluster().updateProperties(properties -> {
+            properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
+            properties.set(NUMBER_OF_WRITERS, "2");
+            properties.set(NUMBER_OF_RECORDS_PER_WRITER, "123");
+        }).generateData().invokeStandardIngestTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .hasSize(100);
+                .hasSize(246);
+        assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket())
+                .hasSize(2);
     }
 
     boolean systemTestClusterDisabled() {

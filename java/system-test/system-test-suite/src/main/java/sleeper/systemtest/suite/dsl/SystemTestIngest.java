@@ -20,7 +20,7 @@ import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.IngestSourceFilesContext;
+import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -30,11 +30,11 @@ public class SystemTestIngest {
 
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
-    private final IngestSourceFilesContext sourceFiles;
+    private final IngestSourceFilesDriver sourceFiles;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
-                            IngestSourceFilesContext sourceFiles) {
+                            IngestSourceFilesDriver sourceFiles) {
         this.instance = instance;
         this.clients = clients;
         this.sourceFiles = sourceFiles;

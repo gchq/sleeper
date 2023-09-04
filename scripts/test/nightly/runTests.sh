@@ -99,6 +99,7 @@ runMavenSystemTests() {
     mkdir "$OUTPUT_DIR/$TEST_NAME"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
+      -Dsleeper.system.test.cluster.enabled=true \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
     echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
@@ -112,7 +113,7 @@ runMavenSystemTests() {
     popd
     rm -rf "$OUTPUT_DIR/site"
     INSTANCE_IDS=()
-    read_instance_ids_to_array "$OUTPUT_DIR/instanceIds.txt" INSTANCE_IDS
+    read_instance_ids_to_array "$OUTPUT_DIR/$TEST_NAME/instanceIds.txt" INSTANCE_IDS
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 

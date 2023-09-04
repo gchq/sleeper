@@ -90,6 +90,20 @@ public class AverageRecordRate {
         return averageJobRecordsWrittenPerSecond;
     }
 
+    @Override
+    public String toString() {
+        return "AverageRecordRate{" +
+                "runCount=" + runCount +
+                ", recordsRead=" + recordsRead +
+                ", recordsWritten=" + recordsWritten +
+                ", totalDuration=" + totalDuration +
+                ", recordsReadPerSecond=" + recordsReadPerSecond +
+                ", recordsWrittenPerSecond=" + recordsWrittenPerSecond +
+                ", averageJobRecordsReadPerSecond=" + averageJobRecordsReadPerSecond +
+                ", averageJobRecordsWrittenPerSecond=" + averageJobRecordsWrittenPerSecond +
+                '}';
+    }
+
     public static final class Builder {
         private Instant startTime;
         private Instant finishTime;

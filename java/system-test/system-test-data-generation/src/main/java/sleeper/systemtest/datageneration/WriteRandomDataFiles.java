@@ -43,7 +43,7 @@ public class WriteRandomDataFiles {
             InstanceProperties instanceProperties, TableProperties tableProperties, Iterator<Record> recordIterator)
             throws IOException {
 
-        String dir = instanceProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID() + "/";
+        String dir = instanceProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID();
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
@@ -66,6 +66,9 @@ public class WriteRandomDataFiles {
             Configuration conf)
             throws IOException {
         int fileNumber = 0;
+        if (!dir.endsWith("/")) {
+            dir = dir + "/";
+        }
         String filename = dir + fileNumber + ".parquet";
         String path = filePathPrefix + filename;
         ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), tableProperties, conf);

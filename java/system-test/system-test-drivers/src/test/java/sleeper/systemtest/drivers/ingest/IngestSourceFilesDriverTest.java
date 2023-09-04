@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.drivers.ingest;
 
-import java.util.Set;
+import org.junit.jupiter.api.Test;
 
-public class IngestBatcherResult {
-    private final Set<String> createdJobIds;
+import java.util.stream.Stream;
 
-    public IngestBatcherResult(Set<String> createdJobIds) {
-        this.createdJobIds = createdJobIds;
-    }
+import static org.assertj.core.api.Assertions.assertThat;
 
-    Set<String> createdJobIds() {
-        return createdJobIds;
-    }
+public class IngestSourceFilesDriverTest {
 
-    public int numJobsCreated() {
-        return createdJobIds.size();
+    @Test
+    void shouldGetJobIdFromObjectKey() {
+        assertThat(IngestSourceFilesDriver.getS3ObjectJobIds(Stream.of("ingest/test-job-id/0.parquet")))
+                .containsExactly("test-job-id");
     }
 }

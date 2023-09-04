@@ -21,6 +21,7 @@ import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.TestContext;
+import sleeper.systemtest.suite.dsl.reports.SystemTestIngestJobsReport;
 
 public class SystemTestReporting {
 
@@ -46,5 +47,11 @@ public class SystemTestReporting {
 
     public void printPartitionStatus(TestContext testContext) {
         context.print(testContext, new PartitionReportDriver(instance).partitionStatusReport());
+    }
+
+    public SystemTestIngestJobsReport ingestJobs() {
+        return new SystemTestIngestJobsReport(
+                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+                        .jobs(context));
     }
 }

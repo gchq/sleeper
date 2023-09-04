@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -25,6 +28,7 @@ import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 
 public class OutputInstanceIds {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OutputInstanceIds.class);
 
     private OutputInstanceIds() {
     }
@@ -35,8 +39,9 @@ public class OutputInstanceIds {
             return;
         }
         try {
-            Files.writeString(outputDirectory.resolve("instanceIds.txt"),
-                    instanceId + "\n", CREATE, APPEND);
+            Path outputFile = outputDirectory.resolve("instanceIds.txt");
+            LOGGER.info("Appending instance id {} to output file: {}", instanceId, outputFile);
+            Files.writeString(outputFile, instanceId + "\n", CREATE, APPEND);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

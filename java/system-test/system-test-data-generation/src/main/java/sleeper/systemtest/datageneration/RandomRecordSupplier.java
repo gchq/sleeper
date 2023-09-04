@@ -16,6 +16,7 @@
 package sleeper.systemtest.datageneration;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.text.RandomStringGenerator;
 
 import sleeper.core.key.Key;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.function.Supplier;
 
 /**
@@ -43,8 +43,6 @@ import java.util.function.Supplier;
  * given schema.
  */
 public class RandomRecordSupplier implements Supplier<Record> {
-    public static final RandomRecordSupplierConfig DEFAULT_RANDOM_RECORD_SUPPLIER_CONFIG
-            = new RandomRecordSupplierConfig(0, 100_000_000, 0, 10_000_000_000L, 10, 10, 10, 10);
     private final Map<String, Supplier<Object>> fieldNameToSupplier;
 
     public RandomRecordSupplier(Schema schema, RandomRecordSupplierConfig config) {
@@ -52,10 +50,6 @@ public class RandomRecordSupplier implements Supplier<Record> {
         for (Field field : schema.getAllFields()) {
             fieldNameToSupplier.put(field.getName(), getSupplier(field.getType(), config));
         }
-    }
-
-    public RandomRecordSupplier(Schema schema) {
-        this(schema, DEFAULT_RANDOM_RECORD_SUPPLIER_CONFIG);
     }
 
     @Override
@@ -67,7 +61,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
         return record;
     }
 
-    public static Supplier<Object> getSupplier(Type type, RandomRecordSupplierConfig config) {
+    private static Supplier<Object> getSupplier(Type type, RandomRecordSupplierConfig config) {
         if (type instanceof PrimitiveType) {
             return getSupplier((PrimitiveType) type, config);
         }
@@ -80,10 +74,10 @@ public class RandomRecordSupplier implements Supplier<Record> {
         throw new IllegalArgumentException("Unknown type " + type);
     }
 
-    public static Supplier<Object> getSupplier(PrimitiveType type, RandomRecordSupplierConfig config) {
+    private static Supplier<Object> getSupplier(PrimitiveType type, RandomRecordSupplierConfig config) {
         if (type instanceof IntType) {
             return new Supplier<>() {
-                private final RandomDataGenerator generator = new RandomDataGenerator();
+                private final RandomDataGenerator generator = new RandomDataGenerator(config.getGenerator());
 
                 @Override
                 public Object get() {
@@ -93,7 +87,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
         }
         if (type instanceof LongType) {
             return new Supplier<>() {
-                private final RandomDataGenerator generator = new RandomDataGenerator();
+                private final RandomDataGenerator generator = new RandomDataGenerator(config.getGenerator());
 
                 @Override
                 public Object get() {
@@ -104,6 +98,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
         if (type instanceof StringType) {
             return new Supplier<>() {
                 private final RandomStringGenerator generator = new RandomStringGenerator.Builder()
+                        .usingRandom(config.getGenerator() == null ? null : config.getGenerator()::nextInt)
                         .withinRange('a', 'z')
                         .build();
 
@@ -115,7 +110,7 @@ public class RandomRecordSupplier implements Supplier<Record> {
         }
         if (type instanceof ByteArrayType) {
             return new Supplier<>() {
-                private final Random random = new Random();
+                private final RandomGenerator random = config.getGenerator();
 
                 @Override
                 public Object get() {
@@ -128,10 +123,10 @@ public class RandomRecordSupplier implements Supplier<Record> {
         throw new IllegalArgumentException("Unknown type " + type);
     }
 
-    public static Supplier<Object> getSupplierForMapType(MapType mapType, RandomRecordSupplierConfig config) {
+    private static Supplier<Object> getSupplierForMapType(MapType mapType, RandomRecordSupplierConfig config) {
         Supplier<Object> keySupplier = getSupplier(mapType.getKeyType(), config);
         Supplier<Object> valueSupplier = getSupplier(mapType.getValueType(), config);
-        RandomDataGenerator generator = new RandomDataGenerator();
+        RandomDataGenerator generator = new RandomDataGenerator(config.getGenerator());
         int maxEntries = config.getMaxEntriesInRandomMap();
         return () -> {
             int numEntries = generator.nextInt(0, maxEntries);
@@ -143,9 +138,9 @@ public class RandomRecordSupplier implements Supplier<Record> {
         };
     }
 
-    public static Supplier<Object> getSupplierForListType(ListType listType, RandomRecordSupplierConfig config) {
+    private static Supplier<Object> getSupplierForListType(ListType listType, RandomRecordSupplierConfig config) {
         Supplier<Object> elementSupplier = getSupplier(listType.getElementType(), config);
-        RandomDataGenerator generator = new RandomDataGenerator();
+        RandomDataGenerator generator = new RandomDataGenerator(config.getGenerator());
         int maxEntries = config.getMaxEntriesInRandomList();
         return () -> {
             int numEntries = generator.nextInt(0, maxEntries);
