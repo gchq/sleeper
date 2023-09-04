@@ -27,7 +27,6 @@ import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
@@ -110,12 +109,16 @@ public class SleeperSystemTest {
         }
     }
 
-    public SystemTestStateStore stateStore() {
-        return new SystemTestStateStore(instance);
-    }
-
     public SystemTestSourceFiles sourceFiles() {
         return new SystemTestSourceFiles(instance, sourceFiles);
+    }
+
+    public SystemTestTableFiles tableFiles() {
+        return new SystemTestTableFiles(instance);
+    }
+
+    public SystemTestPartitioning partitioning() {
+        return new SystemTestPartitioning(instance, clients);
     }
 
     public SystemTestIngest ingest() {
@@ -126,6 +129,18 @@ public class SleeperSystemTest {
         return new SystemTestDirectQuery(new DirectQueryDriver(instance));
     }
 
+    public SystemTestCompaction compaction() {
+        return new SystemTestCompaction(instance, clients);
+    }
+
+    public SystemTestReporting reporting() {
+        return new SystemTestReporting(instance, clients, reportingContext);
+    }
+
+    public SystemTestCluster systemTestCluster() {
+        return new SystemTestCluster(systemTest, instance, clients);
+    }
+
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
         return () -> GenerateNumberedRecords.from(
                         instance.getTableProperties().getSchema(), numbers)
@@ -134,21 +149,5 @@ public class SleeperSystemTest {
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
         return RecordNumbers.scrambleNumberedRecords(longStream);
-    }
-
-    public SystemTestReporting reporting() {
-        return new SystemTestReporting(instance, clients, reportingContext);
-    }
-
-    public SystemTestPartitionSplitting partitionSplitting() {
-        return new SystemTestPartitionSplitting(new PartitionSplittingDriver(instance, clients.getLambda()));
-    }
-
-    public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(instance, clients);
-    }
-
-    public SystemTestCluster systemTestCluster() {
-        return new SystemTestCluster(systemTest, instance, clients);
     }
 }

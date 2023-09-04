@@ -16,17 +16,25 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-public class SystemTestPartitionSplitting {
+import java.util.List;
 
-    private final PartitionSplittingDriver driver;
+public class SystemTestTableFiles {
 
-    public SystemTestPartitionSplitting(PartitionSplittingDriver driver) {
-        this.driver = driver;
+    private final SleeperInstanceContext instance;
+
+    public SystemTestTableFiles(SleeperInstanceContext instance) {
+        this.instance = instance;
     }
 
-    public void split() throws InterruptedException {
-        driver.splitPartitions();
+    public List<FileInfo> active() {
+        try {
+            return instance.getStateStore().getActiveFiles();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
