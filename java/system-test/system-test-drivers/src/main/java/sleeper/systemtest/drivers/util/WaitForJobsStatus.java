@@ -17,6 +17,8 @@
 package sleeper.systemtest.drivers.util;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.clients.util.GsonConfig;
@@ -36,7 +38,9 @@ import java.util.function.Function;
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class WaitForJobsStatus {
 
-    private static final Gson GSON = GsonConfig.standardBuilder().create();
+    private static final Gson GSON = GsonConfig.standardBuilder()
+            .registerTypeAdapter(Duration.class, durationSerializer())
+            .create();
 
     private final int numUnstarted;
     private final int numInProgress;
@@ -81,6 +85,10 @@ public class WaitForJobsStatus {
 
     interface JobStatusStore<T> {
         Optional<T> getJob(String jobId);
+    }
+
+    private static JsonSerializer<Duration> durationSerializer() {
+        return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
     public static final class Builder {
