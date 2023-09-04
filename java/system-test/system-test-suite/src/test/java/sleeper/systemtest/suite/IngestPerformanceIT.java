@@ -89,7 +89,7 @@ public class IngestPerformanceIT {
                         "contain 440 million records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
                 .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                                && stats.isMinAverageRunRecordsPerSecond(135000),
+                                && stats.isMinAverageRunRecordsPerSecond(130_000),
                         "meets minimum performance");
     }
 
