@@ -47,6 +47,11 @@ public class CompactionPerformanceIT {
         sleeper.reporting().startRecording();
     }
 
+    @AfterEach
+    void tearDown(TestInfo testInfo) {
+        sleeper.reporting().printCompactionTasksAndJobs(testContext(testInfo));
+    }
+
     @Test
     @DisabledIf("systemTestClusterDisabled")
     void shouldMeetCompactionPerformanceStandards() throws InterruptedException {
@@ -67,10 +72,5 @@ public class CompactionPerformanceIT {
                 .matches(stats -> stats.isAllFinishedOneRunEach(10)
                                 && stats.isMinAverageRunRecordsPerSecond(300000),
                         "meets minimum performance");
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printCompactionTasksAndJobs(testContext(testInfo));
     }
 }
