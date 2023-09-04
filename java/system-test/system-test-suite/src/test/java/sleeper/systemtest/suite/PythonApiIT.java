@@ -142,9 +142,11 @@ public class PythonApiIT {
 
             // When/Then
             assertThat(sleeper.pythonApi(tempDir)
-                    .query().exact(Map.of("key", List.of(1L)))
+                    .query().exact(Map.of("key",
+                            List.of("Value 0000000000000000001",
+                                    "Value 0000000000000000002")))
                     .results())
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(1, 2)));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(1, 2)));
         }
     }
 }
