@@ -22,8 +22,6 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.clients.util.Command.command;
@@ -50,7 +48,7 @@ public class PythonIngestDriver {
     }
 
     public void fromS3(String... files) throws IOException, InterruptedException {
-        List<String> command = Stream.concat(
+        pipelineRunner.run(pipeline(command(Stream.concat(
                         Stream.of("python3",
                                 pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
@@ -58,7 +56,6 @@ public class PythonIngestDriver {
                                 "--files"),
                         Stream.of(files)
                                 .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
-                .collect(Collectors.toList());
-        pipelineRunner.run(pipeline(command(command)));
+                .toArray(String[]::new))));
     }
 }

@@ -17,7 +17,6 @@
 package sleeper.clients.util;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
@@ -32,10 +31,6 @@ public class Command {
 
     public static Command command(String... command) {
         return new Command(command);
-    }
-
-    public static Command command(List<String> command) {
-        return command(command.toArray(new String[0]));
     }
 
     @Override
