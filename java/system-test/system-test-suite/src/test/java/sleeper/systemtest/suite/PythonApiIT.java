@@ -18,6 +18,8 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -49,18 +51,39 @@ public class PythonApiIT {
         sleeper.connectToInstance(MAIN);
     }
 
-    @Test
-    void shouldIngestOneFileWithTenRecords() throws IOException, InterruptedException {
-        // Given
-        Path file = tempDir.resolve("file.parquet");
-        sleeper.localFiles().createWithNumberedRecords(file, LongStream.range(0, 10));
+    @Nested
+    @DisplayName("Standard ingest")
+    class StandardIngest {
+        @Test
+        void shouldBatchWriteOneFile() throws IOException, InterruptedException {
+            // Given
+            Path file = tempDir.resolve("file.parquet");
+            sleeper.localFiles().createWithNumberedRecords(file, LongStream.range(0, 100));
 
-        // When
-        sleeper.pythonApi(PYTHON_DIR).ingest().byQueue(file);
-        sleeper.ingest().byQueue().invokeTasks().waitForJobs();
+            // When
+            sleeper.pythonApi(PYTHON_DIR).ingest().batchWrite(file);
+            sleeper.ingest().byQueue().invokeTasks().waitForJobs();
 
-        // Then
-        assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 10)));
+            // Then
+            assertThat(sleeper.directQuery().allRecordsInTable())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        }
+
+        @Test
+        void shouldIngestTwoFilesFromS3() throws IOException, InterruptedException {
+            // Given
+            sleeper.sourceFiles()
+                    .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
+                    .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
+
+
+            // When
+            sleeper.pythonApi(PYTHON_DIR).ingest().fromS3("file1.parquet", "file2.parquet");
+            sleeper.ingest().byQueue().invokeTasks().waitForJobs();
+
+            // Then
+            assertThat(sleeper.directQuery().allRecordsInTable())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
+        }
     }
 }

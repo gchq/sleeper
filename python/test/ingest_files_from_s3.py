@@ -14,31 +14,16 @@
 
 import argparse
 
-from pq.parquet_deserial import ParquetDeserialiser
 from sleeper.sleeper import SleeperClient
 
-
-def read_files(filename: str):
-    parq = ParquetDeserialiser()
-    file_records = []
-    with open(filename, "rb") as file:
-        reader = parq.read(file)
-        for r in reader:
-            file_records.append(r)
-    return file_records
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Write files to Sleeper")
+    parser = argparse.ArgumentParser(description="Ingest files from S3 to Sleeper")
     parser.add_argument("--instance", required=True)
     parser.add_argument("--table", required=True)
-    parser.add_argument("--file", required=True)
+    parser.add_argument("--files", nargs="+")
 
     args = parser.parse_args()
 
     sleeper_client = SleeperClient(args.instance)
-    table_name = args.table
 
-    records = read_files(args.file)
-    with sleeper_client.create_batch_writer(table_name) as writer:
-        writer.write(records)
+    sleeper_client.ingest_parquet_files_from_s3(args.table, args.files)

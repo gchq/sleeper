@@ -29,7 +29,11 @@ public class SystemTestPythonIngest {
         this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir);
     }
 
-    public void byQueue(Path file) throws IOException, InterruptedException {
-        pythonIngestDriver.byQueue(file);
+    public void batchWrite(Path file) throws IOException, InterruptedException {
+        pythonIngestDriver.batchWrite(file);
+    }
+
+    public void fromS3(String... files) throws IOException, InterruptedException {
+        pythonIngestDriver.fromS3(files);
     }
 }

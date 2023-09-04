@@ -31,10 +31,6 @@ public class PythonApiTestHelper {
             .resolve("python");
 
     public static void buildPythonApi() throws IOException, InterruptedException {
-        try {
-            ClientUtils.runCommandInheritIO("pip", "install", PYTHON_DIR.toString());
-        } catch (IOException e) {
-            ClientUtils.runCommandInheritIO("pip3", "install", PYTHON_DIR.toString());
-        }
+        ClientUtils.runCommandInheritIO("pip3", "install", PYTHON_DIR.toString());
     }
 }

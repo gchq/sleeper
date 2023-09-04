@@ -17,17 +17,23 @@
 package sleeper.systemtest.drivers.python;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static sleeper.clients.util.Command.command;
+import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class PythonIngestDriver {
     private final SleeperInstanceContext instance;
-    private final RunCommand commandRunner = ClientUtils::runCommandInheritIO;
+    private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandInheritIO;
     private final Path pythonDir;
 
     public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir) {
@@ -35,11 +41,24 @@ public class PythonIngestDriver {
         this.pythonDir = pythonDir;
     }
 
-    public void byQueue(Path file) throws IOException, InterruptedException {
-        commandRunner.run("python3",
+    public void batchWrite(Path file) throws IOException, InterruptedException {
+        pipelineRunner.run("python3",
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--file", file.toString());
+    }
+
+    public void fromS3(String... files) throws IOException, InterruptedException {
+        List<String> command = Stream.concat(
+                        Stream.of("python3",
+                                pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
+                                "--instance", instance.getInstanceProperties().get(ID),
+                                "--table", instance.getTableName(),
+                                "--files"),
+                        Stream.of(files)
+                                .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
+                .collect(Collectors.toList());
+        pipelineRunner.run(pipeline(command(command)));
     }
 }
