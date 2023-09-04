@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
 import sleeper.systemtest.drivers.compaction.StandardCompactionDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -38,10 +39,11 @@ public class SystemTestCompaction {
                 .runSplittingCompaction();
     }
 
-    public void runStandard() throws InterruptedException {
+    public void runStandard(PollWithRetries pollUntilJobsFinished) throws InterruptedException {
         StandardCompactionDriver driver = new StandardCompactionDriver(instance, clients.getLambda(), clients.getDynamoDB());
         List<String> jobIds = driver.createJobsGetIds();
         driver.invokeTasks(jobIds.size());
-        WaitForJobsDriver.forCompaction(instance, clients.getDynamoDB()).waitForJobs(jobIds);
+        WaitForJobsDriver.forCompaction(instance, clients.getDynamoDB())
+                .waitForJobs(jobIds, pollUntilJobsFinished);
     }
 }
