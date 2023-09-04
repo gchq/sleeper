@@ -95,7 +95,7 @@ public class PythonApiIT {
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
-            assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(2);
+            assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
         }
     }
 }
