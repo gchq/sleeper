@@ -41,5 +41,5 @@ if __name__ == "__main__":
     table_name = args.table
 
     records = read_files(args.file)
-    with sleeper_client.create_batch_writer(table_name) as writer:
+    with sleeper_client.create_batch_writer(table_name, args.jobid) as writer:
         writer.write(records)

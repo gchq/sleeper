@@ -71,7 +71,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param records_to_write: list of the dictionaries containing the records to write
-        :param job_id: the ingest job ID to use, will be randomly generated if not provided 
+        :param job_id: the id of the ingest job, will be randomly generated if not provided 
         """
         # Generate a filename to write to
         databucket: str = _make_ingest_bucket_name(
@@ -93,7 +93,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
-        :param job_id: the ingest job ID to use, will be randomly generated if not provided 
+        :param job_id: the id of the ingest job, will be randomly generated if not provided 
         """
         _ingest(table_name, files, self._ingest_queue, job_id)
 
@@ -233,7 +233,7 @@ class SleeperClient:
         return located_records
 
     @contextmanager
-    def create_batch_writer(self, table_name: str):
+    def create_batch_writer(self, table_name: str, job_id: str = None):
         """
         Creates an object for writing large batches of events to Sleeper.
         Designed to be used within a context manager ('with' statement).
@@ -249,6 +249,7 @@ class SleeperClient:
         See the examples for how to use this method.
 
         :param table_name: the table to ingest to
+        :param job_id: the id of the ingest job, will be randomly generated if not provided 
         :return: an object for use with context managers
         """
         # Create a temporary file to write data to as it is batched
@@ -290,7 +291,7 @@ class SleeperClient:
                 logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, [s3_filename], self._ingest_queue)
+                _ingest(table_name, [s3_filename], self._ingest_queue, job_id)
 
 
 def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str]:
@@ -398,7 +399,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     :param emr_bulk_import_queue: name of the Sleeper instance's non-persistent EMR bulk import queue
     :param persistent_emr_bulk_import_queue: name of the Sleeper instance's persistent EMR bulk import queue
     :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
-    :param job_id: the id of the bulk import job
+    :param job_id: the id of the bulk import job, will be randomly generated if not provided 
     :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
     :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
     """
