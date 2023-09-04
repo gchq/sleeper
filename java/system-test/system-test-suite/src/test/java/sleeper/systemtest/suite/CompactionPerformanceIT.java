@@ -73,4 +73,8 @@ public class CompactionPerformanceIT {
                                 && stats.isMinAverageRunRecordsPerSecond(300000),
                         "meets minimum performance");
     }
+
+    boolean systemTestClusterDisabled() {
+        return sleeper.systemTestCluster().isDisabled();
+    }
 }
