@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.sourcedata;
 
 import com.amazonaws.services.ecs.model.Task;
 
