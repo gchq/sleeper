@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,8 +33,6 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.PythonApiTestHelper.PYTHON_DIR;
-import static sleeper.systemtest.suite.testutil.PythonApiTestHelper.buildPythonApi;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
@@ -43,11 +40,6 @@ public class PythonApiIT {
     @TempDir
     private Path tempDir;
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-
-    @BeforeAll
-    static void beforeAll() throws IOException, InterruptedException {
-        buildPythonApi();
-    }
 
     @BeforeEach
     void setup() {
@@ -70,7 +62,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
             // When
-            sleeper.pythonApi(PYTHON_DIR, tempDir)
+            sleeper.pythonApi(tempDir)
                     .ingest().batchWrite("file.parquet")
                     .invokeTask().waitForJobs();
 
@@ -88,7 +80,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(PYTHON_DIR, tempDir)
+            sleeper.pythonApi(tempDir)
                     .ingest().fromS3("file1.parquet", "file2.parquet")
                     .invokeTask().waitForJobs();
 
@@ -106,7 +98,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(PYTHON_DIR, tempDir)
+            sleeper.pythonApi(tempDir)
                     .ingest().fromS3("test-dir")
                     .invokeTask().waitForJobs();
 
@@ -124,7 +116,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(PYTHON_DIR, tempDir)
+            sleeper.pythonApi(tempDir)
                     .bulkImport().emrServerless("file1.parquet", "file2.parquet")
                     .waitForJobs();
 
