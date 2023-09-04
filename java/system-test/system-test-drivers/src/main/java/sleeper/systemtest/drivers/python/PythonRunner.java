@@ -22,29 +22,27 @@ import sleeper.clients.util.CommandPipelineRunner;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 
-public class PythonCommandHelper {
+public class PythonRunner {
     private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandInheritIO;
     private final Path pythonDir;
 
-    public PythonCommandHelper(Path pythonDir) {
+    public PythonRunner(Path pythonDir) {
         this.pythonDir = pythonDir;
     }
 
-    public void runInVenv(CommandPipeline pipeline) throws IOException, InterruptedException {
-        pipelineRunner.run(activateVenv(pythonDir));
-        pipelineRunner.run(pipeline);
-        pipelineRunner.run(deactivateVenv());
+    public void run(String... commands) throws IOException, InterruptedException {
+        pipelineRunner.run(pythonPipeline(pythonDir, commands));
     }
 
-    public static CommandPipeline activateVenv(Path pythonDir) {
-        return pipeline(command(".", pythonDir.resolve("env/bin/activate").toString()));
-    }
-
-    public static CommandPipeline deactivateVenv() {
-        return pipeline(command("deactivate"));
+    private static CommandPipeline pythonPipeline(Path pythonDir, String... commands) {
+        return pipeline(command(Stream.concat(
+                        Stream.of(pythonDir.resolve("env/bin/python").toString()),
+                        Stream.of(commands))
+                .toArray(String[]::new)));
     }
 }

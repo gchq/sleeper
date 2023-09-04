@@ -22,43 +22,40 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class PythonIngestDriver {
     private final SleeperInstanceContext instance;
-    private final PythonCommandHelper pythonCommandHelper;
+    private final PythonRunner pythonRunner;
     private final Path pythonDir;
     private final Path tempDir;
 
     public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir, Path tempDir) {
         this.instance = instance;
-        this.pythonCommandHelper = new PythonCommandHelper(pythonDir);
+        this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;
         this.tempDir = tempDir;
     }
 
     public void batchWrite(String jobId, String file) throws IOException, InterruptedException {
-        pythonCommandHelper.runInVenv(pipeline(command("python3",
+        pythonRunner.run(
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--jobid", jobId,
-                "--file", tempDir.resolve(file).toString())));
+                "--file", tempDir.resolve(file).toString());
     }
 
     public void fromS3(String jobId, String... files) throws IOException, InterruptedException {
-        pythonCommandHelper.runInVenv(pipeline(command(Stream.concat(
-                        Stream.of("python3",
-                                pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
+        pythonRunner.run(Stream.concat(
+                        Stream.of(pythonDir.resolve("test/ingest_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
                                 "--table", instance.getTableName(),
                                 "--jobid", jobId,
                                 "--files"),
                         Stream.of(files)
                                 .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
-                .toArray(String[]::new))));
+                .toArray(String[]::new));
     }
 }

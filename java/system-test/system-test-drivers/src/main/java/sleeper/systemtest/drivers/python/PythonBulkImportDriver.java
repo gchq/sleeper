@@ -22,26 +22,23 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static sleeper.clients.util.Command.command;
-import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class PythonBulkImportDriver {
     private final SleeperInstanceContext instance;
-    private final PythonCommandHelper pythonCommandHelper;
+    private final PythonRunner pythonRunner;
     private final Path pythonDir;
 
     public PythonBulkImportDriver(SleeperInstanceContext instance, Path pythonDir) {
         this.instance = instance;
-        this.pythonCommandHelper = new PythonCommandHelper(pythonDir);
+        this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;
     }
 
     public void emrServerless(String jobId, String... files) throws IOException, InterruptedException {
-        pythonCommandHelper.runInVenv(pipeline(command(Stream.concat(
-                        Stream.of("python3",
-                                pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
+        pythonRunner.run(Stream.concat(
+                        Stream.of(pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
                                 "--table", instance.getTableName(),
                                 "--platform", "EMRServerless",
@@ -49,6 +46,6 @@ public class PythonBulkImportDriver {
                                 "--files"),
                         Stream.of(files)
                                 .map(file -> instance.getInstanceProperties().get(INGEST_SOURCE_BUCKET) + "/" + file))
-                .toArray(String[]::new))));
+                .toArray(String[]::new));
     }
 }
