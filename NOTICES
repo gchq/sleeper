@@ -203,7 +203,7 @@ Jersey Client (org.glassfish.jersey.core:jersey-client:2.38):
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
-Netty (io.netty:*:4.1.94.Final):
+Netty (io.netty:*:4.1.97.Final):
 
 - Apache License, Version 2.0
 
