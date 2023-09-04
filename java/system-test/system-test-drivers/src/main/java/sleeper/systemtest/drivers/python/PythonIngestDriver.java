@@ -40,6 +40,6 @@ public class PythonIngestDriver {
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
-                "--files", file.toString());
+                "--file", file.toString());
     }
 }

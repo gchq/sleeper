@@ -18,14 +18,13 @@ from pq.parquet_deserial import ParquetDeserialiser
 from sleeper.sleeper import SleeperClient
 
 
-def read_files(files: list):
+def read_files(filename: str):
     parq = ParquetDeserialiser()
     file_records = []
-    for fileName in files:
-        with open(fileName, "rb") as file:
-            reader = parq.read(file)
-            for r in reader:
-                file_records.append(r)
+    with open(filename, "rb") as file:
+        reader = parq.read(file)
+        for r in reader:
+            file_records.append(r)
     return file_records
 
 
@@ -33,7 +32,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Write files to Sleeper")
     parser.add_argument("--instance", required=True)
     parser.add_argument("--table", required=True)
-    parser.add_argument("--files", nargs="+")
+    parser.add_argument("--file", required=True)
 
     args = parser.parse_args()
 
