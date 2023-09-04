@@ -20,7 +20,6 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonQueryDriver;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
-import sleeper.systemtest.drivers.query.WaitForResultsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.io.IOException;
@@ -34,13 +33,11 @@ import java.util.stream.Stream;
 public class SystemTestPythonQuery {
     private final PythonQueryDriver pythonQueryDriver;
     private final S3ResultsDriver s3ResultsDriver;
-    private final WaitForResultsDriver waitForResultsDriver;
     private final List<String> queryIds = new ArrayList<>();
 
     public SystemTestPythonQuery(SleeperInstanceContext instance, SystemTestClients clients, Path pythonDir) {
         this.pythonQueryDriver = new PythonQueryDriver(instance, pythonDir);
         this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
-        this.waitForResultsDriver = new WaitForResultsDriver(instance, clients.getS3());
     }
 
     public SystemTestPythonQuery exact(Map<String, List<Object>> queryMap) throws IOException, InterruptedException {
@@ -50,8 +47,7 @@ public class SystemTestPythonQuery {
         return this;
     }
 
-    public Stream<Record> results() throws InterruptedException {
-        waitForResultsDriver.waitForResults(queryIds);
+    public Stream<Record> results() {
         return queryIds.stream().flatMap(s3ResultsDriver::results);
     }
 }
