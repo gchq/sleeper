@@ -28,7 +28,7 @@ public class FileInfoSystemTestHelper {
     }
 
     public static FileInfoFactory fileInfoFactory(SleeperSystemTest sleeper) {
-        return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.stateStore().allPartitions());
+        return new FileInfoFactory(sleeper.tableProperties().getSchema(), sleeper.partitioning().allPartitions());
     }
 
     public static long numberOfRecordsIn(List<? extends FileInfo> files) {

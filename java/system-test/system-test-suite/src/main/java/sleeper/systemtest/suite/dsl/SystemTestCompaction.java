@@ -20,6 +20,7 @@ import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.compaction.CompactionDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
 

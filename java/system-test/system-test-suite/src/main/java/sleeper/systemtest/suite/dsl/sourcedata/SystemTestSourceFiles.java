@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.sourcedata;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;

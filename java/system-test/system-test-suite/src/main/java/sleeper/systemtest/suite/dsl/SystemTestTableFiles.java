@@ -16,29 +16,25 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.core.record.Record;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
-import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
-import java.util.stream.LongStream;
 
-public class SystemTestDirectIngest {
+public class SystemTestTableFiles {
 
     private final SleeperInstanceContext instance;
-    private final DirectIngestDriver context;
 
-    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver context) {
+    public SystemTestTableFiles(SleeperInstanceContext instance) {
         this.instance = instance;
-        this.context = context;
     }
 
-    public void numberedRecords(LongStream numbers) {
-        context.ingest(GenerateNumberedRecords.from(instance.getTableProperties().getSchema(), numbers).iterator());
-    }
-
-    public void records(Record... records) {
-        context.ingest(List.of(records).iterator());
+    public List<FileInfo> active() {
+        try {
+            return instance.getStateStore().getActiveFiles();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -60,8 +60,8 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 
-public class SystemTestInstanceContext {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestInstanceContext.class);
+public class SystemTestDeploymentContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentContext.class);
 
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
@@ -71,8 +71,8 @@ public class SystemTestInstanceContext {
     private SystemTestStandaloneProperties properties;
     private InstanceDidNotDeployException failure;
 
-    public SystemTestInstanceContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
-                                     AmazonECR ecr, CloudFormationClient cloudFormation) {
+    public SystemTestDeploymentContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
+                                       AmazonECR ecr, CloudFormationClient cloudFormation) {
         this.parameters = parameters;
         this.s3 = s3;
         this.s3v2 = s3v2;

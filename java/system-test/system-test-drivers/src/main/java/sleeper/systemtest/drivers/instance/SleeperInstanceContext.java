@@ -53,7 +53,7 @@ public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
 
     private final SystemTestParameters parameters;
-    private final SystemTestInstanceContext systemTest;
+    private final SystemTestDeploymentContext systemTest;
     private final CloudFormationClient cloudFormationClient;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDBClient;
@@ -61,7 +61,7 @@ public class SleeperInstanceContext {
     private Instance currentInstance;
 
     public SleeperInstanceContext(SystemTestParameters parameters,
-                                  SystemTestInstanceContext systemTest,
+                                  SystemTestDeploymentContext systemTest,
                                   CloudFormationClient cloudFormationClient,
                                   AmazonS3 s3Client,
                                   AmazonDynamoDB dynamoDBClient) {

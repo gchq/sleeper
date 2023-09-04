@@ -56,7 +56,7 @@ public class IngestPerformanceIT {
     @Test
     @DisabledIf("systemTestClusterDisabled")
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
-        sleeper.stateStore().setPartitions(create128Partitions(sleeper));
+        sleeper.partitioning().setPartitions(create128Partitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
                     properties.set(NUMBER_OF_WRITERS, "11");
@@ -67,7 +67,7 @@ public class IngestPerformanceIT {
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
-        assertThat(sleeper.stateStore().activeFiles())
+        assertThat(sleeper.tableFiles().active())
                 .hasSize(1408)
                 .matches(files -> numberOfRecordsIn(files) == 440_000_000,
                         "contain 440 million records");

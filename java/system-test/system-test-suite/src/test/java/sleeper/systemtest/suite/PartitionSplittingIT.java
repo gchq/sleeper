@@ -59,18 +59,18 @@ public class PartitionSplittingIT {
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
-        sleeper.partitionSplitting().split();
+        sleeper.partitioning().split();
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
-        sleeper.partitionSplitting().split();
+        sleeper.partitioning().split();
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
-        sleeper.partitionSplitting().split();
+        sleeper.partitioning().split();
         sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
         // Then
         FileInfoFactory fileFactory = fileInfoFactory(sleeper);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.stateStore().activeFiles())
+        assertThat(sleeper.tableFiles().active())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
                         fileFactory.leafFile(12, "row-0000000000000000000", "row-0000000000000000011"),

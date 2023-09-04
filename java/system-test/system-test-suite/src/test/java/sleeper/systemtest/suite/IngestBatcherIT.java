@@ -25,7 +25,7 @@ import org.junit.jupiter.api.TestInfo;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.dsl.SystemTestIngestBatcher;
+import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
 
 import java.time.Duration;
 import java.util.stream.LongStream;
@@ -83,7 +83,7 @@ public class IngestBatcherIT {
         assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(2);
+        assertThat(sleeper.tableFiles().active()).hasSize(2);
     }
 
     @Test
@@ -114,6 +114,6 @@ public class IngestBatcherIT {
         assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(1);
+        assertThat(sleeper.tableFiles().active()).hasSize(1);
     }
 }

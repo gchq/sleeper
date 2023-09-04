@@ -58,7 +58,7 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(1);
+        assertThat(sleeper.tableFiles().active()).hasSize(1);
     }
 
     @Test
@@ -77,7 +77,7 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(1);
+        assertThat(sleeper.tableFiles().active()).hasSize(1);
     }
 
     @Test
@@ -98,6 +98,6 @@ public class IngestIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().activeFiles()).hasSize(2);
+        assertThat(sleeper.tableFiles().active()).hasSize(2);
     }
 }

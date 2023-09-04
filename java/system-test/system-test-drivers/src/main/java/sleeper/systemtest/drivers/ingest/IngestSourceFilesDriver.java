@@ -28,7 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.drivers.instance.SystemTestInstanceContext;
+import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,10 +42,10 @@ import static java.util.function.Predicate.not;
 public class IngestSourceFilesDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestSourceFilesDriver.class);
 
-    private final SystemTestInstanceContext systemTest;
+    private final SystemTestDeploymentContext systemTest;
     private final S3Client s3Client;
 
-    public IngestSourceFilesDriver(SystemTestInstanceContext systemTest, S3Client s3Client) {
+    public IngestSourceFilesDriver(SystemTestDeploymentContext systemTest, S3Client s3Client) {
         this.systemTest = systemTest;
         this.s3Client = s3Client;
     }
