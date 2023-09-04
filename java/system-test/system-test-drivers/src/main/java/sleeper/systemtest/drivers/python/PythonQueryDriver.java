@@ -42,7 +42,7 @@ public class PythonQueryDriver {
 
     public void exact(String queryId, Map<String, List<Object>> queryList) throws IOException, InterruptedException {
         pythonRunner.run(
-                pythonDir.resolve("test/batch_writer.py").toString(),
+                pythonDir.resolve("test/exact_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--queryid", queryId,
