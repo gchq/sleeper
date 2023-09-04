@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.io.IOException;
@@ -111,6 +112,8 @@ public class PythonApiIT {
         @Test
         void shouldBulkImportFilesFromS3() throws IOException, InterruptedException {
             // Given
+            sleeper.updateTableProperties(tableProperties ->
+                    tableProperties.set(TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
             sleeper.sourceFiles()
                     .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
