@@ -115,5 +115,18 @@ public class PythonApiIT {
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 200)));
             assertThat(sleeper.tableFiles().active()).hasSize(1);
         }
+
+        @Test
+        void shouldBulkImportFilesFromS3() throws IOException, InterruptedException {
+            // Given
+            sleeper.sourceFiles()
+                    .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
+                    .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
+
+            // When
+            sleeper.pythonApi(PYTHON_DIR, tempDir)
+                    .bulkImport().emrServerless("file1.parquet", "file2.parquet")
+                    .waitForJobs();
+        }
     }
 }

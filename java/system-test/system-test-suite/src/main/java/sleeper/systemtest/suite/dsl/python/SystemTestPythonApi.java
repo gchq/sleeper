@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.python;
 
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
@@ -37,5 +37,10 @@ public class SystemTestPythonApi {
 
     public SystemTestPythonIngest ingest() {
         return new SystemTestPythonIngest(instance, clients, pythonDir, outputDir);
+    }
+
+    public SystemTestPythonBulkImport bulkImport() {
+        return new SystemTestPythonBulkImport(instance, clients,
+                pythonDir);
     }
 }

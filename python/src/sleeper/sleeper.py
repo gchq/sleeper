@@ -57,9 +57,10 @@ class SleeperClient:
         self._emr_bulk_import_queue = resources[1]
         self._persistent_emr_bulk_import_queue = resources[2]
         self._eks_bulk_import_queue = resources[3]
-        self._query_queue = resources[4]
-        self._query_results_bucket = resources[5]
-        self._dynamodb_query_tracker_table = resources[6]
+        self._emr_serverless_bulk_import_queue = resources[4]
+        self._query_queue = resources[5]
+        self._query_results_bucket = resources[6]
+        self._dynamodb_query_tracker_table = resources[7]
         logger.debug("Loaded properties from config bucket sleeper-" + self._basename + "-config")
         self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
 
@@ -114,7 +115,8 @@ class SleeperClient:
         :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
         """
         _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue,
-                     self._eks_bulk_import_queue, id, platform, platform_spec, class_name)
+                     self._eks_bulk_import_queue, self._emr_serverless_bulk_import_queue, id, platform, platform_spec,
+                     class_name)
 
     def exact_key_query(self, table_name: str, keys) -> list:
         """
@@ -294,7 +296,7 @@ class SleeperClient:
                 _ingest(table_name, [s3_filename], self._ingest_queue, job_id)
 
 
-def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str]:
+def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str, str]:
     """
     Gets SQS queue names from S3 for the posting of messages to Sleeper.
 
@@ -322,10 +324,14 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
         persistent_emr_bulk_import_queue = \
             (config['asection']['sleeper.bulk.import.persistent.emr.job.queue.url']).rsplit('/', 1)[1]
 
+    emr_serverless_bulk_import_queue = None
+    if 'sleeper.bulk.import.emr.serverless.job.queue.url' in config['asection']:
+        emr_serverless_bulk_import_queue = \
+            (config['asection']['sleeper.bulk.import.emr.serverless.job.queue.url']).rsplit('/', 1)[1]
+
     eks_bulk_import_queue = None
     if 'sleeper.bulk.import.eks.job.queue.url' in config['asection']:
         eks_bulk_import_queue = (config['asection']['sleeper.bulk.import.eks.job.queue.url']).rsplit('/', 1)[1]
-
     query_queue = None
     if 'sleeper.query.queue.url' in config['asection']:
         query_queue = (config['asection']['sleeper.query.queue.url']).rsplit('/', 1)[1]
@@ -338,7 +344,8 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
     if 'sleeper.query.tracker.table.name' in config['asection']:
         dynamodb_query_tracker_table = (config['asection']['sleeper.query.tracker.table.name'])
 
-    return (ingest_queue, emr_bulk_import_queue, persistent_emr_bulk_import_queue, eks_bulk_import_queue, query_queue,
+    return (ingest_queue, emr_bulk_import_queue, persistent_emr_bulk_import_queue, eks_bulk_import_queue,
+            emr_serverless_bulk_import_queue, query_queue,
             query_results_bucket, dynamodb_query_tracker_table)
 
 
@@ -390,7 +397,8 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: s
 
 def _bulk_import(table_name: str, files_to_ingest: list,
                  emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
-                 job_id: str, platform: str, platform_spec: dict, class_name: str):
+                 emr_serverless_bulk_import_queue: str, job_id: str, platform: str, platform_spec: dict,
+                 class_name: str):
     """
     Instructs Sleeper to bulk import the given files from S3.
 
@@ -400,11 +408,11 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     :param persistent_emr_bulk_import_queue: name of the Sleeper instance's persistent EMR bulk import queue
     :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
     :param job_id: the id of the bulk import job, will be randomly generated if not provided 
-    :param platform: the platform to use - either "EMR", "PersistentEMR" or "EKS"
+    :param platform: the platform to use - either "EMR", "PersistentEMR", "EKS", or "EMRServerless"
     :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
     """
-    if platform != "EMR" and platform != "EKS" and platform != "PersistentEMR":
-        raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS'")
+    if platform != "EMR" and platform != "EKS" and platform != "PersistentEMR" and platform != "EMRServerless":
+        raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS' or 'EMRServerless'")
 
     if platform == "EMR":
         if emr_bulk_import_queue == None:
@@ -415,11 +423,15 @@ def _bulk_import(table_name: str, files_to_ingest: list,
             raise Exception(
                 "Persistent EMR bulk import queue is not defined - was the PersistentEmrBulkImportStack deployed?")
         queue = persistent_emr_bulk_import_queue
-    else:
+    elif platform == "EKS":
         if eks_bulk_import_queue == None:
             raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
         queue = eks_bulk_import_queue
-
+    else:
+        if emr_serverless_bulk_import_queue == None:
+            raise Exception(
+                "EMR serverless bulk import queue is not defined - was the EmrServerlessBulkImportStack deployed?")
+        queue = emr_serverless_bulk_import_queue
     if job_id == None:
         job_id = str(uuid.uuid4())
 
@@ -436,7 +448,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
 
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)
-    logger.debug(f"Sending JSON message to queue {bulk_import_message_json}")
+    logger.debug(f"Sending JSON message to {platform} queue: {bulk_import_message_json}")
     bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName=queue)
     bulk_import_queue_sqs.send_message(MessageBody=bulk_import_message_json)
 
