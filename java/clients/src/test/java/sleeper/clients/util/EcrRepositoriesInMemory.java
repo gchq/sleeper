@@ -17,21 +17,18 @@
 package sleeper.clients.util;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
-    private final Set<String> repositories = new HashSet<>();
+    private final Map<String, Set<String>> versionsByRepositoryName = new HashMap<>();
     private final Set<String> repositoriesWithEmrServerlessPolicy = new HashSet<>();
-
-    public EcrRepositoriesInMemory(String... repositories) {
-        this.repositories.addAll(List.of(repositories));
-    }
 
     @Override
     public boolean repositoryExists(String repository) {
-        return repositories.contains(repository);
+        return versionsByRepositoryName.containsKey(repository);
     }
 
     @Override
@@ -39,12 +36,16 @@ public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
         if (repositoryExists(repository)) {
             throw new IllegalArgumentException("Repository already exists: " + repository);
         }
-        repositories.add(repository);
+        versionsByRepositoryName.put(repository, new HashSet<>());
+    }
+
+    public void addVersionToRepository(String repository, String version) {
+        versionsByRepositoryName.get(repository).add(version);
     }
 
     @Override
     public void deleteRepository(String repository) {
-        repositories.remove(repository);
+        versionsByRepositoryName.remove(repository);
     }
 
     @Override
@@ -55,8 +56,13 @@ public class EcrRepositoriesInMemory implements EcrRepositoryCreator.Client {
         repositoriesWithEmrServerlessPolicy.add(repository);
     }
 
+    @Override
+    public boolean versionExistsInRepository(String repository, String version) {
+        return versionsByRepositoryName.containsKey(repository) && versionsByRepositoryName.get(repository).contains(version);
+    }
+
     public Collection<String> getRepositories() {
-        return repositories;
+        return versionsByRepositoryName.keySet();
     }
 
     public Collection<String> getRepositoriesWithEmrServerlessPolicy() {

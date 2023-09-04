@@ -18,6 +18,7 @@ package sleeper.clients.util;
 
 import java.util.Arrays;
 
+import static java.lang.ProcessBuilder.Redirect.INHERIT;
 import static java.util.Objects.requireNonNull;
 
 public class Command {
@@ -56,5 +57,20 @@ public class Command {
 
     public String[] toArray() {
         return command;
+    }
+
+    public ProcessBuilder toProcessBuilder() {
+        return new ProcessBuilder(command);
+    }
+
+    public ProcessBuilder toProcessBuilderInheritIO(int index, int pipelineSize) {
+        ProcessBuilder builder = toProcessBuilder().redirectError(INHERIT);
+        if (index == 0) {
+            builder.redirectInput(INHERIT);
+        }
+        if (index == pipelineSize - 1) {
+            builder.redirectOutput(INHERIT);
+        }
+        return builder;
     }
 }

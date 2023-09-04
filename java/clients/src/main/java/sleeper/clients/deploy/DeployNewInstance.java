@@ -15,6 +15,8 @@
  */
 package sleeper.clients.deploy;
 
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
@@ -24,7 +26,8 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.CommandRunner;
+import sleeper.clients.util.CommandPipelineRunner;
+import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -48,6 +51,7 @@ public class DeployNewInstance {
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
     private final S3Client s3;
+    private final AmazonECR ecr;
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
@@ -56,7 +60,7 @@ public class DeployNewInstance {
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
-    private final CommandRunner runCommand;
+    private final CommandPipelineRunner runCommand;
     private final Path splitPointsFile;
     private final boolean deployPaused;
 
@@ -64,6 +68,7 @@ public class DeployNewInstance {
         sts = builder.sts;
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
+        ecr = builder.ecr;
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
@@ -136,13 +141,12 @@ public class DeployNewInstance {
                 .tableProperties(deployInstanceConfiguration.getTableProperties())
                 .tableName(tableName).build().populate();
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
-        boolean jarsChanged = SyncJars.builder().s3(s3)
+        SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
-                .uploadDockerImagesScript(scriptsDirectory.resolve("deploy/uploadDockerImages.sh"))
-                .skipIf(!jarsChanged)
+                .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
                 .instanceProperties(instanceProperties)
                 .build().upload(runCommand);
 
@@ -165,6 +169,7 @@ public class DeployNewInstance {
         private AWSSecurityTokenService sts;
         private AwsRegionProvider regionProvider;
         private S3Client s3;
+        private AmazonECR ecr;
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
@@ -174,7 +179,7 @@ public class DeployNewInstance {
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
-        private CommandRunner runCommand = ClientUtils::runCommandInheritIO;
+        private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
         private Path splitPointsFile;
         private boolean deployPaused;
 
@@ -193,6 +198,11 @@ public class DeployNewInstance {
 
         public Builder s3(S3Client s3) {
             this.s3 = s3;
+            return this;
+        }
+
+        public Builder ecr(AmazonECR ecr) {
+            this.ecr = ecr;
             return this;
         }
 
@@ -236,7 +246,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder runCommand(CommandRunner runCommand) {
+        public Builder runCommand(CommandPipelineRunner runCommand) {
             this.runCommand = runCommand;
             return this;
         }
@@ -261,6 +271,7 @@ public class DeployNewInstance {
                 sts(AWSSecurityTokenServiceClientBuilder.defaultClient());
                 regionProvider(DefaultAwsRegionProviderChain.builder().build());
                 s3(s3Client);
+                ecr(AmazonECRClientBuilder.defaultClient());
                 build().deploy();
             }
         }

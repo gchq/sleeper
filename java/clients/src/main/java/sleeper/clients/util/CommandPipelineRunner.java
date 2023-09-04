@@ -23,15 +23,15 @@ import static sleeper.clients.util.CommandPipeline.pipeline;
 
 @FunctionalInterface
 public interface CommandPipelineRunner extends CommandRunner {
-    int run(CommandPipeline pipeline) throws IOException, InterruptedException;
+    CommandPipelineResult run(CommandPipeline pipeline) throws IOException, InterruptedException;
 
     @Override
     default int run(String... command) throws IOException, InterruptedException {
-        return run(pipeline(command(command)));
+        return run(pipeline(command(command))).getLastExitCode();
     }
 
     default void runOrThrow(CommandPipeline pipeline) throws IOException, InterruptedException {
-        int exitCode = run(pipeline);
+        int exitCode = run(pipeline).getLastExitCode();
         if (exitCode != 0) {
             throw new CommandFailedException(pipeline, exitCode);
         }

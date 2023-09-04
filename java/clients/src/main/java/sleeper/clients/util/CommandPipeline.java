@@ -16,8 +16,11 @@
 
 package sleeper.clients.util;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,6 +38,29 @@ public class CommandPipeline {
 
     public List<Command> getCommands() {
         return commands;
+    }
+
+    public List<Process> startProcesses() throws IOException {
+        if (commands.size() == 1) {
+            return List.of(commands.get(0).toProcessBuilder().start());
+        } else {
+            return ProcessBuilder.startPipeline(commands.stream()
+                    .map(Command::toProcessBuilder)
+                    .collect(Collectors.toUnmodifiableList()));
+        }
+    }
+
+    public List<Process> startProcessesInheritIO() throws IOException {
+        int size = commands.size();
+        if (size == 1) {
+            return List.of(commands.get(0).toProcessBuilder().inheritIO().start());
+        } else {
+            List<ProcessBuilder> builders = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                builders.add(commands.get(i).toProcessBuilderInheritIO(i, size));
+            }
+            return ProcessBuilder.startPipeline(builders);
+        }
     }
 
     @Override
