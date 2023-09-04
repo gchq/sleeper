@@ -24,7 +24,7 @@ import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandRunner;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -56,7 +56,7 @@ public class DeployNewInstance {
     private final DeployInstanceConfiguration deployInstanceConfiguration;
     private final Consumer<InstanceProperties> extraInstanceProperties;
     private final InvokeCdkForInstance.Type instanceType;
-    private final RunCommand runCommand;
+    private final CommandRunner runCommand;
     private final Path splitPointsFile;
     private final boolean deployPaused;
 
@@ -174,7 +174,7 @@ public class DeployNewInstance {
         private Consumer<InstanceProperties> extraInstanceProperties = properties -> {
         };
         private InvokeCdkForInstance.Type instanceType;
-        private RunCommand runCommand = ClientUtils::runCommandInheritIO;
+        private CommandRunner runCommand = ClientUtils::runCommandInheritIO;
         private Path splitPointsFile;
         private boolean deployPaused;
 
@@ -236,7 +236,7 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder runCommand(RunCommand runCommand) {
+        public Builder runCommand(CommandRunner runCommand) {
             this.runCommand = runCommand;
             return this;
         }
