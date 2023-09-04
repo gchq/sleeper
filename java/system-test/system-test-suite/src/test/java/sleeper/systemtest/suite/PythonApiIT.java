@@ -120,8 +120,8 @@ public class PythonApiIT {
         void shouldBulkImportFilesFromS3() throws IOException, InterruptedException {
             // Given
             sleeper.sourceFiles()
-                    .createWithNumberedRecords("test-dir/file1.parquet", LongStream.range(0, 100))
-                    .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
+                    .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
+                    .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
             sleeper.pythonApi(PYTHON_DIR, tempDir)
