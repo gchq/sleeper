@@ -72,7 +72,7 @@ public class PythonApiIT {
             // When
             sleeper.pythonApi(PYTHON_DIR, tempDir)
                     .ingest().batchWrite("file.parquet")
-                    .invokeTasks().waitForJobs();
+                    .invokeTask().waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
@@ -90,7 +90,7 @@ public class PythonApiIT {
             // When
             sleeper.pythonApi(PYTHON_DIR, tempDir)
                     .ingest().fromS3("file1.parquet", "file2.parquet")
-                    .invokeTasks().waitForJobs();
+                    .invokeTask().waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
@@ -108,7 +108,7 @@ public class PythonApiIT {
             // When
             sleeper.pythonApi(PYTHON_DIR, tempDir)
                     .ingest().fromS3("test-dir")
-                    .invokeTasks().waitForJobs();
+                    .invokeTask().waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())

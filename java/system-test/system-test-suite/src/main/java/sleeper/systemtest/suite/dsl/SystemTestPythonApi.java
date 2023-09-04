@@ -17,6 +17,7 @@
 package sleeper.systemtest.suite.dsl;
 
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.nio.file.Path;
 

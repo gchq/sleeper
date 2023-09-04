@@ -18,9 +18,10 @@ package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
-import sleeper.systemtest.drivers.ingest.WaitForIngestJobsDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonIngestDriver;
+import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,7 +33,7 @@ import java.util.UUID;
 public class SystemTestPythonIngest {
     private final PythonIngestDriver pythonIngestDriver;
     private final IngestByQueueDriver ingestByQueueDriver;
-    private final WaitForIngestJobsDriver waitForJobsDriver;
+    private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
 
@@ -41,7 +42,7 @@ public class SystemTestPythonIngest {
         this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir, tempDir);
         this.ingestByQueueDriver = new IngestByQueueDriver(instance,
                 clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
-        this.waitForJobsDriver = new WaitForIngestJobsDriver(instance, clients.getDynamoDB());
+        this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
     public SystemTestPythonIngest batchWrite(String file) throws IOException, InterruptedException {
@@ -58,8 +59,8 @@ public class SystemTestPythonIngest {
         return this;
     }
 
-    public SystemTestPythonIngest invokeTasks() throws InterruptedException {
-        ingestByQueueDriver.invokeStandardIngestTasks();
+    public SystemTestPythonIngest invokeTask() throws InterruptedException {
+        ingestByQueueDriver.invokeStandardIngestTask();
         return this;
     }
 
