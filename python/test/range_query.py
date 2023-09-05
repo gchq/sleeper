@@ -28,4 +28,4 @@ if __name__ == "__main__":
 
     sleeper_client = SleeperClient(args.instance)
 
-    sleeper_client.range_key_query(args.table, args.query, args.queryid)
+    sleeper_client.range_key_query(args.table, [args.query], args.queryid)
