@@ -32,19 +32,20 @@ import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
@@ -66,6 +67,7 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestCoordinatorCommonIT {
@@ -76,6 +78,7 @@ public class IngestCoordinatorCommonIT {
     private static final String DATA_BUCKET_NAME = "databucket";
     @TempDir
     public Path temporaryFolder;
+    private final Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
 
     private static Stream<Arguments> parameterObjsForTests() {
         return Stream.of(
@@ -102,16 +105,23 @@ public class IngestCoordinatorCommonIT {
         AWS_EXTERNAL_RESOURCE.clear();
     }
 
+    private StateStore createStateStore(Schema schema) {
+        return new DynamoDBStateStoreCreator(
+                UUID.randomUUID().toString(),
+                schema,
+                AWS_EXTERNAL_RESOURCE.getDynamoDBClient())
+                .create();
+    }
+
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsCorrectly(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -161,11 +171,10 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteManyRecordsCorrectly(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         // Given
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -214,11 +223,10 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new IntType(),
                 IntStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -271,11 +279,10 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionLongKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
 
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
@@ -328,20 +335,17 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionStringKey(TestIngestType ingestType)
             throws Exception {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> keys = LongStream.range(0, 200)
                 .mapToObj(longValue -> String.format("%09d-%s", longValue, randomString.get()))
                 .collect(Collectors.toList());
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
-                new StringType(), keys);
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(new StringType(), keys);
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "000000102")
                 .buildTree();
-
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
@@ -388,15 +392,13 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new ByteArrayType(),
                 Arrays.asList(
                         new byte[]{1, 1},
                         new byte[]{2, 2},
                         new byte[]{64, 65}));
-
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", new byte[]{64, 64})
@@ -447,7 +449,6 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionStringKeyLongSortKey(TestIngestType ingestType)
             throws Exception {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         // RandomStringGenerator generates random unicode strings to test both standard and unusual character sets
         Supplier<String> randomString = randomStringGeneratorWithMaxLength(25);
         List<String> stringKeys = LongStream.range(0, 200)
@@ -461,8 +462,7 @@ public class IngestCoordinatorCommonIT {
                 new StringType(),
                 new LongType(),
                 stringKeys, longKeys);
-
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "000000102")
@@ -514,13 +514,11 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartition2DimensionalByteArrayKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new ByteArrayType(), new ByteArrayType(),
                 Arrays.asList(new byte[]{1, 1}, new byte[]{11, 2}, new byte[]{64, 65}, new byte[]{5}),
                 Arrays.asList(new byte[]{2, 3}, new byte[]{2, 2}, new byte[]{67, 68}, new byte[]{99}));
-
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, new byte[]{10})
@@ -530,7 +528,7 @@ public class IngestCoordinatorCommonIT {
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -598,24 +596,21 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartition2DimensionalIntLongKeyWhenSplitOnDim1(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new IntType(), new LongType(),
                 Arrays.asList(0, 0, 100, 100),
                 Arrays.asList(1L, 20L, 1L, 50L));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, 10L)
                 .buildTree();
-
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -669,13 +664,11 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartition2DimensionalLongStringKeyWhenSplitOnDim1(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey2D(
                 new LongType(), new StringType(),
                 LongStream.range(-100L, 100L).boxed().collect(Collectors.toList()),
                 LongStream.range(-100L, 100L).mapToObj(Long::toString).collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, "2")
@@ -685,7 +678,7 @@ public class IngestCoordinatorCommonIT {
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -748,12 +741,10 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Arrays.asList(1L, 0L));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2L)
@@ -763,7 +754,7 @@ public class IngestCoordinatorCommonIT {
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -802,8 +793,7 @@ public class IngestCoordinatorCommonIT {
     public void shouldWriteDuplicateRecords(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         RecordGenerator.RecordListAndSchema duplicatedRecordListAndSchema = new RecordGenerator.RecordListAndSchema(
@@ -811,8 +801,7 @@ public class IngestCoordinatorCommonIT {
                         .flatMap(List::stream)
                         .collect(Collectors.toList()),
                 recordListAndSchema.sleeperSchema);
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), duplicatedRecordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(duplicatedRecordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -821,7 +810,7 @@ public class IngestCoordinatorCommonIT {
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(duplicatedRecordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -859,12 +848,10 @@ public class IngestCoordinatorCommonIT {
     @MethodSource("parameterObjsForTests")
     public void shouldWriteNoRecordsSuccessfully(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
-        RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
+        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
                 new LongType(),
                 Collections.emptyList());
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -893,7 +880,6 @@ public class IngestCoordinatorCommonIT {
     public void shouldApplyIterator(
             TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
-        Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.byteArrayRowKeyLongSortKey(
                 Arrays.asList(new byte[]{1, 1}, new byte[]{1, 1}, new byte[]{11, 12}, new byte[]{11, 12}),
                 Arrays.asList(1L, 1L, 2L, 2L),
@@ -908,12 +894,10 @@ public class IngestCoordinatorCommonIT {
                         "sort", 2L,
                         "value", 7L
                 )));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
-
+        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
