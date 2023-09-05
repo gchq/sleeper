@@ -17,16 +17,20 @@
 package sleeper.systemtest.drivers.query;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryState;
+import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 
 public class WaitForQueryDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueryDriver.class);
     private final DynamoDBQueryTracker queryTracker;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
             Duration.ofSeconds(10), Duration.ofMinutes(5));
@@ -38,7 +42,13 @@ public class WaitForQueryDriver {
     public void waitForQuery(String queryId) throws InterruptedException {
         poll.pollUntil("query is finished", () -> {
             try {
-                return QueryState.COMPLETED.equals(queryTracker.getStatus(queryId).getLastKnownState());
+                TrackedQuery queryStatus = queryTracker.getStatus(queryId);
+                if (queryStatus == null) {
+                    LOGGER.info("Query not found yet, retrying...");
+                    return false;
+                }
+                LOGGER.info("Query found with state: {}", queryStatus.getLastKnownState());
+                return QueryState.COMPLETED.equals(queryStatus.getLastKnownState());
             } catch (QueryTrackerException e) {
                 throw new RuntimeException(e);
             }
