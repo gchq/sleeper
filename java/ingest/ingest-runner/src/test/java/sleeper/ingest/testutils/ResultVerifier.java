@@ -23,7 +23,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.MergingIterator;
 import sleeper.core.key.Key;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.record.Record;
@@ -38,6 +37,7 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -95,30 +95,29 @@ public class ResultVerifier {
     public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
                                                                        List<FileInfo> fileInfoList,
                                                                        Configuration hadoopConfiguration) {
-        List<CloseableIterator<Record>> inputIterators = fileInfoList.stream()
-                .map(fileInfo -> createParquetReaderIterator(
-                        sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration))
-                .collect(Collectors.toList());
-
-        MergingIterator mergingIterator = new MergingIterator(sleeperSchema, inputIterators);
         List<Record> recordsRead = new ArrayList<>();
-        while (mergingIterator.hasNext()) {
-            recordsRead.add(mergingIterator.next());
+        for (FileInfo fileInfo : fileInfoList) {
+            try (CloseableIterator<Record> iterator = createParquetReaderIterator(
+                    sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+                iterator.forEachRemaining(recordsRead::add);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
-
         return recordsRead;
     }
 
     public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
                                                                 FileInfo fileInfo,
-                                                                Configuration hadoopConfiguration) throws IOException {
+                                                                Configuration hadoopConfiguration) {
 
-        try (CloseableIterator<Record> inputIterator = createParquetReaderIterator(sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+        try (CloseableIterator<Record> iterator = createParquetReaderIterator(
+                sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
             List<Record> recordsRead = new ArrayList<>();
-            while (inputIterator.hasNext()) {
-                recordsRead.add(inputIterator.next());
-            }
+            iterator.forEachRemaining(recordsRead::add);
             return recordsRead;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
