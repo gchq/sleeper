@@ -58,12 +58,24 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue responsible for sending a query to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
+    SystemDefinedInstanceProperty QUERY_QUEUE_ARN = Index.propertyBuilder("sleeper.query.queue.arn")
+            .description("The ARN of the queue responsible for sending a query to sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     SystemDefinedInstanceProperty QUERY_DLQ_URL = Index.propertyBuilder("sleeper.query.dlq.url")
             .description("The URL of the dead letter queue used when querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
+    SystemDefinedInstanceProperty QUERY_DLQ_ARN = Index.propertyBuilder("sleeper.query.dlq.arn")
+            .description("The ARN of the dead letter queue used when querying sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
     SystemDefinedInstanceProperty QUERY_RESULTS_QUEUE_URL = Index.propertyBuilder("sleeper.query.results.queue.url")
             .description("The URL of the queue responsible for retrieving results from a query sent to sleeper.")
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .build();
+    SystemDefinedInstanceProperty QUERY_RESULTS_QUEUE_ARN = Index.propertyBuilder("sleeper.query.results.queue.arn")
+            .description("The ARN of the queue responsible for retrieving results from a query sent to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
     SystemDefinedInstanceProperty QUERY_RESULTS_BUCKET = Index.propertyBuilder("sleeper.query.results.bucket")
@@ -104,8 +116,16 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
+    SystemDefinedInstanceProperty COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.queue.arn")
+            .description("The ARN of the queue for compaction jobs.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
     SystemDefinedInstanceProperty COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.dlq.url")
             .description("The URL of the dead letter queue for compaction jobs.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.dlq.arn")
+            .description("The ARN of the dead letter queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.task.creation.lambda.function")
@@ -133,8 +153,16 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
+            .description("The URL of the queue for splitting compaction jobs.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
             .description("The URL of the dead letter queue for splitting compaction jobs.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.arn")
+            .description("The ARN of the dead letter queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
@@ -155,8 +183,16 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
+    SystemDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.queue.arn")
+            .description("The ARN of the queue for partition splitting.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
     SystemDefinedInstanceProperty PARTITION_SPLITTING_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.dlq.url")
             .description("The URL of the dead letter queue for partition splitting.")
+            .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
+            .build();
+    SystemDefinedInstanceProperty PARTITION_SPLITTING_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.dlq.arn")
+            .description("The ARN of the dead letter queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
     SystemDefinedInstanceProperty PARTITION_SPLITTING_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.lambda.function")
@@ -187,16 +223,32 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
+    SystemDefinedInstanceProperty INGEST_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.ingest.job.queue.arn")
+            .description("The ARN of the queue for ingest jobs.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
     SystemDefinedInstanceProperty INGEST_JOB_DLQ_URL = Index.propertyBuilder("sleeper.ingest.job.dlq.url")
             .description("The URL of the dead letter queue for ingest jobs.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.ingest.job.dlq.arn")
+            .description("The ARN of the dead letter queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
     SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.url")
             .description("The URL of the queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_ARN = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.arn")
+            .description("The ARN of the queue for ingest batcher file submission.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
     SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.url")
             .description("The URL of the dead letter queue for ingest batcher file submission.")
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .build();
+    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_ARN = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.arn")
+            .description("The ARN of the dead letter queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
     SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.rule")
@@ -245,6 +297,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for bulk import jobs using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.job.queue.arn")
+            .description("The ARN of the queue for bulk import jobs using EMR.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
     // Bulk import using EMR Serverless
     SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.cluster.name")
             .description("The name of the cluster used for EMR Serverless bulk import jobs.")
@@ -262,9 +318,17 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The URL of the queue for bulk import jobs using EMR Serverless.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.job.queue.arn")
+            .description("The ARN of the queue for bulk import jobs using EMR Serverless.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
     // Bulk import using persistent EMR
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using persistent EMR.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.arn")
+            .description("The ARN of the queue for bulk import jobs using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.cluster.name")
@@ -278,6 +342,10 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     // Bulk import using EKS
     SystemDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.url")
             .description("The URL of the queue for bulk import jobs using EKS.")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .build();
+    SystemDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.arn")
+            .description("The ARN of the queue for bulk import jobs using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     SystemDefinedInstanceProperty BULK_IMPORT_EKS_STATE_MACHINE_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.statemachine.arn")

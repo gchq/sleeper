@@ -117,7 +117,9 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
@@ -126,7 +128,9 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_CLUSTER;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
@@ -250,8 +254,11 @@ public class CompactionStack extends NestedStack {
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, compactionJobQ.getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_QUEUE_ARN, compactionJobQ.getQueueArn());
         instanceProperties.set(COMPACTION_JOB_DLQ_URL,
                 compactionMergeJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_DLQ_ARN,
+                compactionMergeJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter
         // queue
@@ -301,8 +308,11 @@ public class CompactionStack extends NestedStack {
                         Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_URL, splittingJobQ.getQueueUrl());
+        instanceProperties.set(SPLITTING_COMPACTION_JOB_QUEUE_ARN, splittingJobQ.getQueueArn());
         instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_URL,
                 compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueUrl());
+        instanceProperties.set(SPLITTING_COMPACTION_JOB_DLQ_ARN,
+                compactionJobDefinitionsDeadLetterQueue.getQueue().getQueueArn());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter
         // queue
@@ -422,7 +432,7 @@ public class CompactionStack extends NestedStack {
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()
                     .resources(Collections.singletonList("*"))
-                    .actions(Arrays.asList("ecs:DescribeContainerInstances"))
+                    .actions(List.of("ecs:DescribeContainerInstances"))
                     .build());
 
             compactionMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
@@ -498,7 +508,7 @@ public class CompactionStack extends NestedStack {
             taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
                     .create()
                     .resources(Collections.singletonList("*"))
-                    .actions(Arrays.asList("ecs:DescribeContainerInstances"))
+                    .actions(List.of("ecs:DescribeContainerInstances"))
                     .build());
 
             compactionSplittingMergeJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
@@ -548,7 +558,7 @@ public class CompactionStack extends NestedStack {
                 .associatePublicIpAddress(false)
                 .requireImdsv2(true)
                 .userData(customUserData)
-                .blockDevices(Arrays.asList(BlockDevice.builder()
+                .blockDevices(List.of(BlockDevice.builder()
                         .deviceName("/dev/xvda") // root volume
                         .volume(BlockDeviceVolume.ebs(instanceProperties.getInt(COMPACTION_EC2_ROOT_SIZE),
                                 EbsDeviceOptions.builder()
@@ -571,7 +581,7 @@ public class CompactionStack extends NestedStack {
         // Set this by accessing underlying CloudFormation as CDK doesn't yet support custom
         // lambda termination policies: https://github.com/aws/aws-cdk/issues/19750
         ((CfnAutoScalingGroup) ec2scalingGroup.getNode().getDefaultChild()).setTerminationPolicies(
-                Arrays.asList(customTermination.getFunctionArn()));
+                List.of(customTermination.getFunctionArn()));
 
         customTermination.addPermission("AutoscalingCall", Permission.builder()
                 .action("lambda:InvokeFunction")
