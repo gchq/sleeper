@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -28,12 +30,14 @@ import java.util.Arrays;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
+import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionTaskStatusStoreCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStoreCreator.class);
 
     private DynamoDBCompactionTaskStatusStoreCreator() {
     }
@@ -42,7 +46,7 @@ public class DynamoDBCompactionTaskStatusStoreCreator {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
-        String tableName = DynamoDBCompactionTaskStatusStore.taskStatusTableName(properties.get(ID));
+        String tableName = taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(TASK_ID, ScalarAttributeType.S),
@@ -57,6 +61,8 @@ public class DynamoDBCompactionTaskStatusStoreCreator {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
-        dynamoDBClient.deleteTable(DynamoDBCompactionTaskStatusStore.taskStatusTableName(properties.get(ID)));
+        String tableName = taskStatusTableName(properties.get(ID));
+        LOGGER.info("Deleting table: {}", tableName);
+        dynamoDBClient.deleteTable(tableName);
     }
 }

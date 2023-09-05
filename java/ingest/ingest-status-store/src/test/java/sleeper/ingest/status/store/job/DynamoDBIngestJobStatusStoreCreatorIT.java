@@ -43,6 +43,6 @@ public class DynamoDBIngestJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(tableName);
+        DynamoDBIngestJobStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

@@ -169,4 +169,19 @@
         <packageUrl regex="true">^pkg:maven/com\.squareup\.(okhttp3|okhttp)/okhttp@.*$</packageUrl>
         <cve>CVE-2023-3782</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        The problem here is that Netty does not enable hostname verification by default. This is still a problem in the
+        latest version of Netty. We don't use this directly. It's a dependency for Spark, Athena, and AWS clients,
+        eg. for S3.
+
+        There isn't a fixed version of Netty, and the libraries we're using may configure hostname verification
+        correctly. We may see CVEs against those libraries separately if this doesn't get fixed.
+
+        It's not clear how we would solve this ourselves, and the relevant network calls all happen within a private
+        VPC.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty\-handler@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
+    </suppress>
 </suppressions>

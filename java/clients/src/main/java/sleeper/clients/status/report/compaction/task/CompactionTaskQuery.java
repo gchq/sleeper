@@ -18,6 +18,7 @@ package sleeper.clients.status.report.compaction.task;
 import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 
+import java.time.Instant;
 import java.util.List;
 
 @FunctionalInterface
@@ -36,5 +37,9 @@ public interface CompactionTaskQuery {
             default:
                 throw new IllegalArgumentException("Unrecognised query type: " + type);
         }
+    }
+
+    static CompactionTaskQuery forPeriod(Instant startTime, Instant endTime) {
+        return store -> store.getTasksInTimePeriod(startTime, endTime);
     }
 }

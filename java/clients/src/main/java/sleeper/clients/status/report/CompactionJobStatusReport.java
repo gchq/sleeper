@@ -65,10 +65,18 @@ public class CompactionJobStatusReport {
             CompactionJobStatusStore compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
             String tableName, JobQuery.Type queryType, String queryParameters) {
+        this(compactionJobStatusStore, reporter, queryType,
+                JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
+                        Clock.systemUTC(), new ConsoleInput(System.console())));
+    }
+
+    public CompactionJobStatusReport(
+            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobStatusReporter reporter,
+            JobQuery.Type queryType, JobQuery query) {
         this.compactionJobStatusStore = compactionJobStatusStore;
         this.compactionJobStatusReporter = reporter;
-        this.query = JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
-                Clock.systemUTC(), new ConsoleInput(System.console()));
+        this.query = query;
         this.queryType = queryType;
     }
 

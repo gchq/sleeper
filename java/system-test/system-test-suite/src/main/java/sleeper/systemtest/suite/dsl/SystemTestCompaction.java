@@ -16,17 +16,55 @@
 
 package sleeper.systemtest.suite.dsl;
 
-import sleeper.systemtest.drivers.compaction.SplittingCompactionDriver;
+import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.drivers.compaction.CompactionDriver;
+import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.util.WaitForJobsDriver;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
+
+import java.util.List;
 
 public class SystemTestCompaction {
 
-    private final SplittingCompactionDriver splittingDriver;
+    private final SleeperInstanceContext instance;
+    private final SystemTestClients clients;
+    private List<String> lastJobIds;
 
-    public SystemTestCompaction(SplittingCompactionDriver splittingDriver) {
-        this.splittingDriver = splittingDriver;
+    public SystemTestCompaction(SleeperInstanceContext instance, SystemTestClients clients) {
+        this.instance = instance;
+        this.clients = clients;
     }
 
-    public void runSplitting() throws InterruptedException {
-        splittingDriver.runSplittingCompaction();
+    public SystemTestCompaction createJobs() {
+        lastJobIds = driver().createJobsGetIds();
+        return this;
+    }
+
+    public SystemTestCompaction invokeStandardTasks(int expectedTasks) throws InterruptedException {
+        driver().invokeTasks(CompactionDriver.Type.STANDARD, expectedTasks);
+        return this;
+    }
+
+    public SystemTestCompaction invokeSplittingTasks(int expectedTasks) throws InterruptedException {
+        driver().invokeTasks(CompactionDriver.Type.SPLITTING, expectedTasks);
+        return this;
+    }
+
+    public SystemTestCompaction waitForJobs() throws InterruptedException {
+        jobsDriver().waitForJobs(lastJobIds);
+        return this;
+    }
+
+    public SystemTestCompaction waitForJobs(PollWithRetries poll) throws InterruptedException {
+        jobsDriver().waitForJobs(lastJobIds, poll);
+        return this;
+    }
+
+    private CompactionDriver driver() {
+        return new CompactionDriver(instance, clients.getLambda(), clients.getDynamoDB());
+    }
+
+    private WaitForJobsDriver jobsDriver() {
+        return WaitForJobsDriver.forCompaction(instance, clients.getDynamoDB());
     }
 }

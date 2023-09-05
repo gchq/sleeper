@@ -16,7 +16,7 @@
 package sleeper.clients.admin;
 
 import sleeper.clients.util.ClientUtils;
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
@@ -38,13 +38,13 @@ import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 public class UpdatePropertiesWithNano {
 
     private final Path tempDirectory;
-    private final RunCommand runCommand;
+    private final CommandRunner runCommand;
 
     public UpdatePropertiesWithNano(Path tempDirectory) {
         this(tempDirectory, ClientUtils::runCommandInheritIO);
     }
 
-    public UpdatePropertiesWithNano(Path tempDirectory, RunCommand runCommand) {
+    public UpdatePropertiesWithNano(Path tempDirectory, CommandRunner runCommand) {
         this.tempDirectory = tempDirectory;
         this.runCommand = runCommand;
     }

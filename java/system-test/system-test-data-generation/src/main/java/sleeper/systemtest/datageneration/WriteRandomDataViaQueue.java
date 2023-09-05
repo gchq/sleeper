@@ -34,7 +34,6 @@ import sleeper.systemtest.configuration.SystemTestPropertyValues;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -51,6 +50,8 @@ public class WriteRandomDataViaQueue {
             SystemTestPropertyValues systemTestProperties) throws IOException {
         Iterator<Record> recordIterator = WriteRandomData.createRecordIterator(systemTestProperties, tableProperties);
         String dir = WriteRandomDataFiles.writeToS3GetDirectory(instanceProperties, tableProperties, recordIterator);
+        int jobDirIndex = dir.lastIndexOf('/');
+        String jobId = dir.substring(jobDirIndex + 1);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
 
@@ -58,7 +59,7 @@ public class WriteRandomDataViaQueue {
         if (ingestMode.equalsIgnoreCase(IngestMode.QUEUE.name())) {
             IngestJob ingestJob = IngestJob.builder()
                     .tableName(tableProperties.get(TABLE_NAME))
-                    .id(UUID.randomUUID().toString())
+                    .id(jobId)
                     .files(Collections.singletonList(dir))
                     .build();
             String jsonJob = new IngestJobSerDe().toJson(ingestJob);
@@ -69,7 +70,7 @@ public class WriteRandomDataViaQueue {
         } else if (ingestMode.equalsIgnoreCase(IngestMode.BULK_IMPORT_QUEUE.name())) {
             BulkImportJob bulkImportJob = new BulkImportJob.Builder()
                     .tableName(tableProperties.get(TABLE_NAME))
-                    .id(UUID.randomUUID().toString())
+                    .id(jobId)
                     .files(Collections.singletonList(dir))
                     .build();
             String jsonJob = new BulkImportJobSerDe().toJson(bulkImportJob);
