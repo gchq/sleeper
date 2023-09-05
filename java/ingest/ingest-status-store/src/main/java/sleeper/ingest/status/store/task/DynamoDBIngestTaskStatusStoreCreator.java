@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -32,8 +34,10 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
 
 public class DynamoDBIngestTaskStatusStoreCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStoreCreator.class);
 
     private DynamoDBIngestTaskStatusStoreCreator() {
     }
@@ -42,7 +46,7 @@ public class DynamoDBIngestTaskStatusStoreCreator {
         if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
-        String tableName = DynamoDBIngestTaskStatusStore.taskStatusTableName(properties.get(ID));
+        String tableName = taskStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(TASK_ID, ScalarAttributeType.S),
@@ -57,6 +61,8 @@ public class DynamoDBIngestTaskStatusStoreCreator {
         if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
-        dynamoDBClient.deleteTable(DynamoDBIngestTaskStatusStore.taskStatusTableName(properties.get(ID)));
+        String tableName = taskStatusTableName(properties.get(ID));
+        LOGGER.info("Deleting table: {}", tableName);
+        dynamoDBClient.deleteTable(tableName);
     }
 }
