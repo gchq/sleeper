@@ -39,7 +39,8 @@ public class IngestCoordinatorTestParameters {
     private final String workingDir;
     private final String dataBucketName;
     private final String localFilePrefix;
-    private final AwsExternalResource awsResource;
+    private final Configuration hadoopConfiguration;
+    private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
     private final Supplier<Instant> fileUpdatedTimes;
 
@@ -50,7 +51,8 @@ public class IngestCoordinatorTestParameters {
         workingDir = builder.workingDir;
         dataBucketName = builder.dataBucketName;
         localFilePrefix = builder.localFilePrefix;
-        awsResource = builder.awsResource;
+        hadoopConfiguration = builder.hadoopConfiguration;
+        s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
         fileUpdatedTimes = builder.fileUpdatedTimes;
     }
@@ -72,7 +74,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     public Configuration getHadoopConfiguration() {
-        return awsResource.getHadoopConfiguration();
+        return hadoopConfiguration;
     }
 
     public StateStore getStateStore() {
@@ -92,7 +94,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     public S3AsyncClient getS3AsyncClient() {
-        return awsResource.getS3AsyncClient();
+        return s3AsyncClient;
     }
 
     public Supplier<String> getFileNameGenerator() {
@@ -110,7 +112,8 @@ public class IngestCoordinatorTestParameters {
         private String workingDir;
         private String dataBucketName;
         private String localFilePrefix;
-        private AwsExternalResource awsResource;
+        private Configuration hadoopConfiguration;
+        private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
         private Supplier<Instant> fileUpdatedTimes;
 
@@ -155,8 +158,13 @@ public class IngestCoordinatorTestParameters {
             }
         }
 
-        public Builder awsResource(AwsExternalResource awsResource) {
-            this.awsResource = awsResource;
+        public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
+            this.hadoopConfiguration = hadoopConfiguration;
+            return this;
+        }
+
+        public Builder s3AsyncClient(S3AsyncClient s3AsyncClient) {
+            this.s3AsyncClient = s3AsyncClient;
             return this;
         }
 
