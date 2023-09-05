@@ -121,44 +121,4 @@ public class IngestJobRunner implements IngestJobHandler {
         LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
         return result;
     }
-
-    public IngestResult ingest(IngestJob job, List<String> filePaths) throws IteratorException, StateStoreException, IOException {
-        propertiesReloader.reloadIfNeeded();
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
-        Schema schema = tableProperties.getSchema();
-
-        // Create list of all files to be read
-        List<Path> paths = HadoopPathUtils.getPaths(job.getFiles(), hadoopConfiguration, fs);
-        LOGGER.info("There are {} files to ingest", paths.size());
-        LOGGER.debug("Files to ingest are: {}", paths);
-
-        // Create supplier of iterator of records from each file (using a supplier avoids having multiple files open
-        // at the same time)
-        List<Supplier<CloseableIterator<Record>>> inputIterators = new ArrayList<>();
-        for (Path path : paths) {
-            String pathString = path.toString();
-            if (pathString.endsWith(".parquet")) {
-                inputIterators.add(() -> {
-                    try {
-                        ParquetReader<Record> reader = new ParquetRecordReader.Builder(path, schema).withConf(hadoopConfiguration).build();
-                        return new ParquetReaderIterator(reader);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Ingest job: " + job.getId() + " IOException creating reader for file "
-                                + path + ": " + e.getMessage());
-                    }
-                });
-            } else {
-                LOGGER.error("A file with a currently unsupported format has been found on ingest, file path: {}"
-                        + ". This file will be ignored and will not be ingested.", pathString);
-            }
-        }
-
-        // Concatenate iterators into one iterator
-        CloseableIterator<Record> concatenatingIterator = new ConcatenatingIterator(inputIterators);
-
-        // Run the ingest
-        IngestResult result = ingestFactory.ingestFromRecordIteratorAndClose(tableProperties, concatenatingIterator);
-        LOGGER.info("Ingest job {}: Wrote {} records from files {}", job.getId(), result.getRecordsWritten(), paths);
-        return result;
-    }
 }
