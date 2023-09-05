@@ -18,7 +18,6 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -56,7 +55,6 @@ public class PythonApiIT {
 
     @Nested
     @DisplayName("Ingest files")
-    @Disabled("temporarily disabling to test other nested class")
     class IngestFiles {
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
