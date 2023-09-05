@@ -136,15 +136,15 @@ public class PythonApiIT {
     @DisplayName("Run SQS query")
     class RunSQSQuery {
         @Test
-        void shouldRunExactQueryWithMapOfKeyToListOfValues() throws IOException, InterruptedException {
+        void shouldRunExactKeyQueryWithMapOfKeyToListOfKeys() throws IOException, InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
             assertThat(sleeper.pythonApi(tempDir)
-                    .query().exact(Map.of("key",
-                            List.of("Value 0000000000000000001",
-                                    "Value 0000000000000000002")))
+                    .query().exactKeys(Map.of("key",
+                            List.of("row-0000000000000000001",
+                                    "row-0000000000000000002")))
                     .results())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(1, 2)));
         }

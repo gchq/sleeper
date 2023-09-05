@@ -40,7 +40,7 @@ public class PythonQueryDriver {
         this.pythonDir = pythonDir;
     }
 
-    public void exact(String queryId, Map<String, List<Object>> queryList) throws IOException, InterruptedException {
+    public void exactKeys(String queryId, Map<String, List<Object>> queryList) throws IOException, InterruptedException {
         pythonRunner.run(
                 pythonDir.resolve("test/exact_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),

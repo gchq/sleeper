@@ -40,9 +40,9 @@ public class SystemTestPythonQuery {
         this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
     }
 
-    public SystemTestPythonQuery exact(Map<String, List<Object>> queryMap) throws IOException, InterruptedException {
+    public SystemTestPythonQuery exactKeys(Map<String, List<Object>> queryMap) throws IOException, InterruptedException {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.exact(queryId, queryMap);
+        pythonQueryDriver.exactKeys(queryId, queryMap);
         queryIds.add(queryId);
         return this;
     }
