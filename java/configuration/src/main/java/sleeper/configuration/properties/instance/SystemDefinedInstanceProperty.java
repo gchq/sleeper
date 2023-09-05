@@ -154,7 +154,7 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
-            .description("The URL of the queue for splitting compaction jobs.")
+            .description("The ARN of the queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
