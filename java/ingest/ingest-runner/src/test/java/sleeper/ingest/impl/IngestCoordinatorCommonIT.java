@@ -149,7 +149,7 @@ public class IngestCoordinatorCommonIT {
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -203,7 +203,7 @@ public class IngestCoordinatorCommonIT {
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -260,7 +260,7 @@ public class IngestCoordinatorCommonIT {
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -317,7 +317,7 @@ public class IngestCoordinatorCommonIT {
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -377,7 +377,7 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(keys);
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -436,7 +436,7 @@ public class IngestCoordinatorCommonIT {
                 .containsExactly(new byte[]{1, 1}, new byte[]{2, 2}, new byte[]{64, 65});
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -503,7 +503,7 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(longKeys);
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -580,13 +580,13 @@ public class IngestCoordinatorCommonIT {
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
         );
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(1),
+                recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -651,13 +651,13 @@ public class IngestCoordinatorCommonIT {
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
         );
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(1),
+                recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -730,13 +730,13 @@ public class IngestCoordinatorCommonIT {
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
         );
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(1),
+                recordListAndSchema.sleeperSchema.getField("key1").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -790,7 +790,7 @@ public class IngestCoordinatorCommonIT {
                 .containsExactly(List.of(0L), List.of(1L));
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -848,7 +848,7 @@ public class IngestCoordinatorCommonIT {
                 .containsExactlyElementsOf(LongStream.range(-100, 100).boxed().flatMap(longValue -> Stream.of(longValue, longValue)).collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
-                duplicatedRecordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 duplicatedRecordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
@@ -943,7 +943,7 @@ public class IngestCoordinatorCommonIT {
         assertThat(actualRecords).containsExactlyElementsOf(expectedRecords);
 
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key").orElseThrow(),
                 new RecordGenerator.RecordListAndSchema(expectedRecords, recordListAndSchema.sleeperSchema),
                 actualFiles,
                 hadoopConfiguration
