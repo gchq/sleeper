@@ -204,7 +204,8 @@ class IngestJobRunnerIT {
         return IngestCoordinatorTestParameters
                 .builder()
                 .temporaryFolder(temporaryFolder)
-                .awsResource(AWS_EXTERNAL_RESOURCE)
+                .hadoopConfiguration(AWS_EXTERNAL_RESOURCE.getHadoopConfiguration())
+                .s3AsyncClient(AWS_EXTERNAL_RESOURCE.getS3AsyncClient())
                 .dataBucketName(DATA_BUCKET_NAME);
     }
 
