@@ -63,4 +63,9 @@ public class S3ResultsDriver {
         }
         return records.stream();
     }
+
+    public void emptyResultsBucket() {
+        s3.listObjects(instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET)).getObjectSummaries()
+                .forEach(summary -> s3.deleteObject(summary.getBucketName(), summary.getKey()));
+    }
 }
