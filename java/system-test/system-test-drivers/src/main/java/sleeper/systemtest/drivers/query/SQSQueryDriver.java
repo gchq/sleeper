@@ -34,6 +34,6 @@ public class SQSQueryDriver {
     }
 
     public void run(String queryId, String key, Object min, Object max) {
-        sqsClient.sendMessage(queueUrl, queryCreator.create(queryId, key, min, max));
+        sqsClient.sendMessage(queueUrl, queryCreator.asString(queryId, key, min, max));
     }
 }
