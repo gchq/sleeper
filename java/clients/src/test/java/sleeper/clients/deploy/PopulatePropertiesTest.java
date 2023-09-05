@@ -54,37 +54,7 @@ class PopulatePropertiesTest {
     void shouldPopulateInstanceProperties() {
         // Given/When
         InstanceProperties properties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance")
-                .vpcId("some-vpc")
-                .subnetIds("some-subnet")
-                .build().populate();
-
-        // Then
-        InstanceProperties expected = new InstanceProperties();
-        expected.setTags(Map.of("InstanceID", "test-instance"));
-        expected.set(ID, "test-instance");
-        expected.set(CONFIG_BUCKET, "sleeper-test-instance-config");
-        expected.set(JARS_BUCKET, "sleeper-test-instance-jars");
-        expected.set(QUERY_RESULTS_BUCKET, "sleeper-test-instance-query-results");
-        expected.set(VPC_ID, "some-vpc");
-        expected.set(SUBNETS, "some-subnet");
-        expected.set(ECR_COMPACTION_REPO, "test-instance/compaction-job-execution");
-        expected.set(ECR_INGEST_REPO, "test-instance/ingest");
-        expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
-        expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(ACCOUNT, "test-account-id");
-        expected.set(REGION, "aws-global");
-
-        assertThat(properties).isEqualTo(expected);
-    }
-
-    @Test
-    void shouldPopulateInstancePropertiesWithECRPrefixSet() {
-        // Given/When
-        InstanceProperties properties = populateInstancePropertiesBuilder()
-                .instanceId("test-instance")
-                .vpcId("some-vpc")
-                .subnetIds("some-subnet")
+                .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet")
                 .build().populate();
 
         // Then
