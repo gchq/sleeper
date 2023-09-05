@@ -20,6 +20,10 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
@@ -97,31 +101,28 @@ public class WiremockEMRTestHelper {
     }
 
      public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications) {
-        return aResponseWithNumRunningApplications(numRunningApplications, false);
+        List<ApplicationState> states = new ArrayList<>();
+        for (int i = 0; i < numRunningApplications; i++) {
+            states.add(ApplicationState.STARTED);
+        }
+        return aResponseWithNumRunningApplications(states);
      }
 
-    public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications, boolean includeStoppedState) {
+    public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(List<ApplicationState> states) {
         StringBuilder applicationBody = new StringBuilder("{\"applications\": [");
-        for (int i = 1; i <= numRunningApplications; i++) {
-            String state = "RUNNING";
-
-            if (i == 1 && includeStoppedState) {
-                state = "STOPPED";
-            }
-
+        for (int i = 1; i < states.size(); i++) {
             applicationBody.append("{" +
                     "\"name\": \"sleeper-test-instance-test-application-" + i + "\"," +
                     "\"id\": \"test-application-id-" + i + "\"," +
-                    "\"state\": \"" + state + "\"" +
+                    "\"state\": \"" + states.get(i).toString() + "\"" +
                     "}");
-            if (i != numRunningApplications) {
+            if (i != states.size()) {
                 applicationBody.append(",");
             }
         }
         applicationBody.append("]}");
         return aResponse().withStatus(200).withBody(applicationBody.toString());
     }
-
     public static ResponseDefinitionBuilder aResponseWithNumRunningJobsOnApplication(int numRunningJobs) {
         return aResponseWithNumRunningJobsOnApplication(numRunningJobs, false);
     }

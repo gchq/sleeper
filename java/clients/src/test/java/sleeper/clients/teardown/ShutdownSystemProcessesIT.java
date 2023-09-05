@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -335,7 +336,21 @@ class ShutdownSystemProcessesIT {
         void shouldAllowEmrServerlessWithAStoppedApplication() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1, true)));
+                .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.STOPPED))));
+
+            // When
+            shutdown(properties);
+
+            // Then
+            verify(1, getRequestedFor(urlEqualTo("/applications")));
+            verify(1, listActiveApplicationRequested());
+        }
+
+        @Test
+        void shouldAllowEmrServerlessWithACreatedApplication() throws Exception {
+            //Given
+            stubFor(listActiveApplicationsRequest()
+                .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.CREATED))));
 
             // When
             shutdown(properties);
