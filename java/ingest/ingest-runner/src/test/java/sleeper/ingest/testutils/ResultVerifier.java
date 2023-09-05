@@ -135,12 +135,8 @@ public class ResultVerifier {
         }
     }
 
-    public static void assertOnSketch(
-            Field field,
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            List<FileInfo> actualFiles,
-            Configuration hadoopConfiguration
-    ) {
+    public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                      List<FileInfo> actualFiles, Configuration hadoopConfiguration) {
         final double QUANTILE_SKETCH_TOLERANCE = 0.01;
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
