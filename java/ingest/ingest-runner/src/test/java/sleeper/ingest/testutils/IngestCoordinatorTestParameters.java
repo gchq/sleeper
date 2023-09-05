@@ -41,7 +41,7 @@ public class IngestCoordinatorTestParameters {
     private final String localFilePrefix;
     private final AwsExternalResource awsResource;
     private final List<String> fileNames;
-    private final List<Instant> fileUpdatedTimes;
+    private final Supplier<Instant> fileUpdatedTimes;
 
     public IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -100,7 +100,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     public Supplier<Instant> getFileUpdatedTimeSupplier() {
-        return fileUpdatedTimes.iterator()::next;
+        return fileUpdatedTimes;
     }
 
     public static final class Builder {
@@ -112,7 +112,7 @@ public class IngestCoordinatorTestParameters {
         private String localFilePrefix;
         private AwsExternalResource awsResource;
         private List<String> fileNames;
-        private List<Instant> fileUpdatedTimes;
+        private Supplier<Instant> fileUpdatedTimes;
 
         private Builder() {
         }
@@ -166,6 +166,10 @@ public class IngestCoordinatorTestParameters {
         }
 
         public Builder fileUpdatedTimes(List<Instant> fileUpdatedTimes) {
+            return fileUpdatedTimes(fileUpdatedTimes.iterator()::next);
+        }
+
+        public Builder fileUpdatedTimes(Supplier<Instant> fileUpdatedTimes) {
             this.fileUpdatedTimes = fileUpdatedTimes;
             return this;
         }

@@ -37,6 +37,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -114,6 +115,19 @@ public class ResultVerifier {
         return recordsRead;
     }
 
+    public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
+                                                                FileInfo fileInfo,
+                                                                Configuration hadoopConfiguration) throws IOException {
+
+        try (CloseableIterator<Record> inputIterator = createParquetReaderIterator(sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+            List<Record> recordsRead = new ArrayList<>();
+            while (inputIterator.hasNext()) {
+                recordsRead.add(inputIterator.next());
+            }
+            return recordsRead;
+        }
+    }
+
     private static ParquetReaderIterator createParquetReaderIterator(Schema sleeperSchema,
                                                                      Path filePath,
                                                                      Configuration hadoopConfiguration) {
@@ -127,7 +141,6 @@ public class ResultVerifier {
         }
     }
 
-
     public static void assertOnSketch(
             Field field,
             RecordGenerator.RecordListAndSchema recordListAndSchema,
@@ -135,7 +148,7 @@ public class ResultVerifier {
             Configuration hadoopConfiguration
     ) {
         final double QUANTILE_SKETCH_TOLERANCE = 0.01;
-        ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
+        ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
             KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());

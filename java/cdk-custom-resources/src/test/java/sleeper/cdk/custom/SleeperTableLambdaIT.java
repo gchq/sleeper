@@ -35,7 +35,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
@@ -225,12 +224,8 @@ public class SleeperTableLambdaIT {
         AmazonS3 s3Client = createS3Client();
         s3Client.createBucket(tableName);
         s3Client.shutdown();
-        try {
-            new DynamoDBStateStoreCreator(tableName, KEY_VALUE_SCHEMA, dynamoClient)
-                    .create();
-        } catch (StateStoreException e) {
-            throw new IllegalArgumentException("Could not create StateStore");
-        }
+        new DynamoDBStateStoreCreator(tableName, KEY_VALUE_SCHEMA, dynamoClient)
+                .create();
         dynamoClient.shutdown();
 
         tableProperties.set(TABLE_NAME, tableName);
