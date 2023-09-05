@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.CancelJobRunRequest;
+import software.amazon.awssdk.services.emrserverless.model.GetJobRunRequest;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.ListJobRunsRequest;
 import software.amazon.awssdk.services.emrserverless.model.ListJobRunsResponse;
@@ -34,6 +35,7 @@ import sleeper.core.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.util.EmrServerlessUtils.listActiveApplications;
@@ -85,6 +87,15 @@ public class TerminateEMRServerlessApplications {
                 .forEach(jobRun -> {
                     emrServerlessClient.cancelJobRun((CancelJobRunRequest.builder()
                             .applicationId(application).jobRunId(jobRun.id()).build()));
+                    while (!emrServerlessClient.getJobRun(GetJobRunRequest.builder()
+                    .applicationId(application).jobRunId(jobRun.id()).build()).jobRun().state().equals(JobRunState.CANCELLED)) {
+                        try {
+                            LOGGER.info("Waiting for job {} to cancel", jobRun.id());
+                            TimeUnit.SECONDS.sleep(5);
+                        } catch (InterruptedException e) {
+                            LOGGER.error("An error has occurred whilst waiting for job {} to cancel", jobRun.id(), e);
+                        }
+                    }
                 });
             }
             emrServerlessClient.stopApplication(StopApplicationRequest.builder().applicationId(application).build());
