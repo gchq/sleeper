@@ -27,9 +27,10 @@ import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
+import sleeper.systemtest.suite.dsl.query.SystemTestQueryResults;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
@@ -132,8 +133,16 @@ public class SleeperSystemTest {
         return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
+    public SystemTestQuery query() {
+        return new SystemTestQuery(instance, clients);
+    }
+
+    public SystemTestQueryResults queryResults() {
+        return query().results();
+    }
+
     public SystemTestDirectQuery directQuery() {
-        return new SystemTestDirectQuery(new DirectQueryDriver(instance));
+        return query().direct();
     }
 
     public SystemTestCompaction compaction() {
@@ -154,10 +163,6 @@ public class SleeperSystemTest {
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
         return new SystemTestLocalFiles(instance, tempDir);
-    }
-
-    public SystemTestQueryResults queryResults() {
-        return new SystemTestQueryResults(instance, clients.getS3());
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {

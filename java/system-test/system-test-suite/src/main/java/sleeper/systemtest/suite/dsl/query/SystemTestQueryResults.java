@@ -14,18 +14,31 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.query;
 
-import com.amazonaws.services.s3.AmazonS3;
-
+import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
+import sleeper.systemtest.drivers.query.WaitForQueryDriver;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
+
+import java.util.stream.Stream;
 
 public class SystemTestQueryResults {
     private final S3ResultsDriver s3ResultsDriver;
+    private final WaitForQueryDriver waitForQueryDriver;
 
-    public SystemTestQueryResults(SleeperInstanceContext instance, AmazonS3 s3) {
-        this.s3ResultsDriver = new S3ResultsDriver(instance, s3);
+    public SystemTestQueryResults(SleeperInstanceContext instance, SystemTestClients clients) {
+        this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
+        this.waitForQueryDriver = new WaitForQueryDriver(instance, clients.getDynamoDB());
+    }
+
+    public void waitForQuery(String queryId) throws InterruptedException {
+        waitForQueryDriver.waitForQuery(queryId);
+    }
+
+    public Stream<Record> results(String queryId) {
+        return s3ResultsDriver.results(queryId);
     }
 
     public void emptyBucket() {
