@@ -48,7 +48,7 @@ public class QueryIT {
 
         // When/Then
         assertThat(sleeper.query().byQueue()
-                .run("key", "00010", "00020")
+                .run("key", "row-0000000000000000010", "row-0000000000000000020")
                 .waitForQuery().results())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
     }
