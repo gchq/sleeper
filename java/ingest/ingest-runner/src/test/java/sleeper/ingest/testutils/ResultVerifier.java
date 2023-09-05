@@ -82,12 +82,6 @@ public class ResultVerifier {
         return union.getResult();
     }
 
-    private static Map<Field, ItemsSketch> createFieldToItemSketchMap(Schema sleeperSchema, List<Record> recordList) {
-        return sleeperSchema.getRowKeyFields().stream()
-                .map(field -> new AbstractMap.SimpleEntry<>(field, createItemSketch(field, recordList)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
     private static ItemsSketch createItemSketch(Field field, List<Record> recordList) {
         ItemsSketch itemsSketch = ItemsSketch.getInstance(1024, Comparator.naturalOrder());
         if (field.getType() instanceof ByteArrayType) {
