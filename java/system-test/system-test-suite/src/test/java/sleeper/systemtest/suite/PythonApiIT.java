@@ -45,18 +45,21 @@ public class PythonApiIT {
     @BeforeEach
     void setup() {
         sleeper.connectToInstance(MAIN);
-        sleeper.reporting().startRecording();
-        sleeper.queryResults().emptyBucket();
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
     }
 
     @Nested
     @DisplayName("Ingest files")
     class IngestFiles {
+        @BeforeEach
+        void setup() {
+            sleeper.reporting().startRecording();
+        }
+
+        @AfterEach
+        void tearDown(TestInfo testInfo) {
+            sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
+        }
+
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
             // Given
@@ -134,6 +137,11 @@ public class PythonApiIT {
     @Nested
     @DisplayName("Run SQS query")
     class RunSQSQuery {
+        @BeforeEach
+        void setup() {
+            sleeper.queryResults().emptyBucket();
+        }
+
         @Test
         void shouldRunExactKeyQuery() throws IOException, InterruptedException {
             // Given
