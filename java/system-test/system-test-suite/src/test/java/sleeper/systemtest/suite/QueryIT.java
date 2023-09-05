@@ -42,6 +42,17 @@ public class QueryIT {
     }
 
     @Test
+    void shouldRunDirectQuery() {
+        // Given
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+        // When/Then
+        assertThat(sleeper.query().direct()
+                .run("key", "row-0000000000000000010", "row-0000000000000000020"))
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+    }
+
+    @Test
     void shouldRunSQSQuery() throws InterruptedException {
         // Given
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));

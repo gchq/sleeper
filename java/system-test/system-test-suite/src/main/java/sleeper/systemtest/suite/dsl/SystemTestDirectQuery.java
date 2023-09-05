@@ -23,13 +23,17 @@ import java.util.List;
 
 public class SystemTestDirectQuery {
 
-    private final DirectQueryDriver context;
+    private final DirectQueryDriver directQueryDriver;
 
-    public SystemTestDirectQuery(DirectQueryDriver context) {
-        this.context = context;
+    public SystemTestDirectQuery(DirectQueryDriver directQueryDriver) {
+        this.directQueryDriver = directQueryDriver;
     }
 
     public List<Record> allRecordsInTable() {
-        return context.getAllRecordsInTable();
+        return directQueryDriver.getAllRecordsInTable();
+    }
+
+    public List<Record> run(String key, Object min, Object max) {
+        return directQueryDriver.run(key, min, max);
     }
 }

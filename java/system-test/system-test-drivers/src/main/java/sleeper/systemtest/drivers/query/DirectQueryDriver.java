@@ -43,16 +43,24 @@ import java.util.stream.StreamSupport;
 
 public class DirectQueryDriver {
     private final SleeperInstanceContext instance;
+    private final QueryCreator queryCreator;
 
     public DirectQueryDriver(SleeperInstanceContext instance) {
         this.instance = instance;
+        this.queryCreator = new QueryCreator(instance);
     }
 
     public List<Record> getAllRecordsInTable() {
         StateStore stateStore = instance.getStateStore();
         PartitionTree tree = getPartitionTree(stateStore);
+        return run(allRecordsQuery(tree));
+    }
+
+    public List<Record> run(Query query) {
+        StateStore stateStore = instance.getStateStore();
+        PartitionTree tree = getPartitionTree(stateStore);
         try (CloseableIterator<Record> recordIterator =
-                     executor(stateStore, tree).execute(allRecordsQuery(tree))) {
+                     executor(stateStore, tree).execute(query)) {
             return stream(recordIterator)
                     .collect(Collectors.toUnmodifiableList());
         } catch (IOException e) {
@@ -60,6 +68,10 @@ public class DirectQueryDriver {
         } catch (QueryException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<Record> run(String key, Object min, Object max) {
+        return run(queryCreator.create(key, min, max));
     }
 
     private Query allRecordsQuery(PartitionTree tree) {

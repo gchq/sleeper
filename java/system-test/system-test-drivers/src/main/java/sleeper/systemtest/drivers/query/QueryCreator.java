@@ -24,6 +24,7 @@ import sleeper.query.model.QuerySerDe;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.Map;
+import java.util.UUID;
 
 public class QueryCreator {
     private final Schema schema;
@@ -36,9 +37,17 @@ public class QueryCreator {
         this.querySerDe = new QuerySerDe(Map.of(tableName, schema));
     }
 
-    public String create(String queryId, String key, Object min, Object max) {
+    public Query create(String key, Object min, Object max) {
+        return create(UUID.randomUUID().toString(), key, min, max);
+    }
+
+    public Query create(String queryId, String key, Object min, Object max) {
         Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
         Region region = new Region(rangeFactory.createRange(key, min, max));
-        return querySerDe.toJson(new Query.Builder(tableName, queryId, region).build());
+        return new Query.Builder(tableName, queryId, region).build();
+    }
+
+    public String asString(String queryId, String key, Object min, Object max) {
+        return querySerDe.toJson(create(queryId, key, min, max));
     }
 }
