@@ -28,7 +28,6 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
-import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
@@ -73,7 +72,6 @@ public class SleeperSystemTest {
             parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
-    private final S3ResultsDriver s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
 
     private SleeperSystemTest() {
     }
@@ -87,7 +85,6 @@ public class SleeperSystemTest {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
-            s3ResultsDriver.emptyResultsBucket();
             instance.disconnect();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -157,6 +154,10 @@ public class SleeperSystemTest {
 
     public SystemTestLocalFiles localFiles(Path tempDir) {
         return new SystemTestLocalFiles(instance, tempDir);
+    }
+
+    public SystemTestQueryResults queryResults() {
+        return new SystemTestQueryResults(instance, clients.getS3());
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {

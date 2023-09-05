@@ -46,6 +46,7 @@ public class PythonApiIT {
     void setup() {
         sleeper.connectToInstance(MAIN);
         sleeper.reporting().startRecording();
+        sleeper.queryResults().emptyBucket();
     }
 
     @AfterEach
