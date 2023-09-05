@@ -111,9 +111,9 @@ public class IngestBatcher {
         long totalBytes = totalBytes(inputFiles);
         boolean maxAgeMet = inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime));
         if (maxAgeMet) {
+            LOGGER.info("At least one file has reached the maximum age of {} seconds", maxAgeInSeconds);
             return true;
         }
-        LOGGER.info("No files have reached the max age of {} seconds", maxAgeInSeconds);
         boolean meetsMinFiles = true;
         if (inputFiles.size() < minFiles) {
             LOGGER.info("Number of files ({}) does not satisfy minimum file count for job ({})",
