@@ -76,10 +76,11 @@ public class IngestBatcher {
 
     public void batchFiles() {
         Instant time = timeSupplier.get();
-        if (store.getPendingFilesOldestFirst().isEmpty()) {
+        List<FileIngestRequest> pendingFiles = store.getPendingFilesOldestFirst();
+        if (pendingFiles.isEmpty()) {
             LOGGER.info("No pending files found");
         } else {
-            store.getPendingFilesOldestFirst().stream()
+            pendingFiles.stream()
                     .collect(Collectors.groupingBy(FileIngestRequest::getTableName, LinkedHashMap::new, toList()))
                     .forEach((tableName, inputFiles) -> batchTableFiles(tableName, inputFiles, time));
         }
