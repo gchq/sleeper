@@ -76,9 +76,13 @@ public class IngestBatcher {
 
     public void batchFiles() {
         Instant time = timeSupplier.get();
-        store.getPendingFilesOldestFirst().stream()
-                .collect(Collectors.groupingBy(FileIngestRequest::getTableName, LinkedHashMap::new, toList()))
-                .forEach((tableName, inputFiles) -> batchTableFiles(tableName, inputFiles, time));
+        if (store.getPendingFilesOldestFirst().isEmpty()) {
+            LOGGER.info("No pending files found");
+        } else {
+            store.getPendingFilesOldestFirst().stream()
+                    .collect(Collectors.groupingBy(FileIngestRequest::getTableName, LinkedHashMap::new, toList()))
+                    .forEach((tableName, inputFiles) -> batchTableFiles(tableName, inputFiles, time));
+        }
     }
 
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles, Instant time) {
@@ -87,13 +91,23 @@ public class IngestBatcher {
         long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
         Instant maxReceivedTime = time.minus(Duration.ofSeconds(
                 properties.getInt(INGEST_BATCHER_MAX_FILE_AGE_SECONDS)));
+        long totalBytes = totalBytes(inputFiles);
         if ((inputFiles.size() >= minFiles &&
-                totalBytes(inputFiles) >= minBytes)
+                totalBytes >= minBytes)
                 || inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime))) {
             BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
             LOGGER.info("Creating batches for {} input files", inputFiles.size());
             createBatches(properties, inputFiles)
                     .forEach(batch -> sendBatch(tableName, batchIngestMode, batch));
+        } else {
+            if (inputFiles.size() < minFiles) {
+                LOGGER.info("Number of input files ({}) does not match minimum file count for job ({})",
+                        inputFiles.size(), minFiles);
+            } else if (totalBytes < minBytes) {
+                LOGGER.info("Total bytes for input files ({}) does not match minimum size for job ({})",
+                        totalBytes, minBytes);
+            }
+            LOGGER.info("Batching conditions not met, skipping batch creation");
         }
     }
 
