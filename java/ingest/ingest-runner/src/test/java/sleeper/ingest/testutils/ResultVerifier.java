@@ -161,35 +161,7 @@ public class ResultVerifier {
             Map<Field, ItemsSketch> expectedFieldToItemsSketchMap = createFieldToItemSketchMap(sleeperSchema, expectedRecordList);
             Map<Field, ItemsSketch> savedFieldToItemsSketchMap = readFieldToItemSketchMap(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
             sleeperSchema.getRowKeyFields().forEach(field -> {
-                ItemsSketch expectedSketch = expectedFieldToItemsSketchMap.get(field);
-                ItemsSketch savedSketch = savedFieldToItemsSketchMap.get(field);
-                assertThat(savedSketch.getMinValue()).isEqualTo(expectedSketch.getMinValue());
-                assertThat(savedSketch.getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-                IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
-                    double quantile = 0.1 * quantileNo;
-                    double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
-                    double quantileWithToleranceUpper = (quantile + QUANTILE_SKETCH_TOLERANCE) < 1 ? quantile + QUANTILE_SKETCH_TOLERANCE : 1;
-                    KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
-                    if (field.getType() instanceof ByteArrayType) {
-                        assertThat(keyComparator.compare(
-                                Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())))
-                                .isGreaterThanOrEqualTo(0);
-                        assertThat(keyComparator.compare(
-                                Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())))
-                                .isLessThanOrEqualTo(0);
-                    } else {
-                        assertThat(keyComparator.compare(
-                                Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceLower))))
-                                .isGreaterThanOrEqualTo(0);
-                        assertThat(keyComparator.compare(
-                                Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper))))
-                                .isLessThanOrEqualTo(0);
-                    }
-                });
+                assertOnSketch(field, expectedFieldToItemsSketchMap.get(field), savedFieldToItemsSketchMap.get(field));
             });
         }
     }
@@ -280,14 +252,14 @@ public class ResultVerifier {
         }
     }
 
-    public static void assertOnSketch(
-            Field field,
-            RecordGenerator.RecordListAndSchema recordListAndSchema,
-            List<FileInfo> actualFiles,
-            Configuration hadoopConfiguration
-    ) {
+    public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                      List<FileInfo> actualFiles, Configuration hadoopConfiguration) {
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
+        assertOnSketch(field, expectedSketch, savedSketch);
+    }
+
+    private static void assertOnSketch(Field field, ItemsSketch expectedSketch, ItemsSketch savedSketch) {
         IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
             double quantile = 0.1 * quantileNo;
             double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
