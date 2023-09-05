@@ -162,5 +162,19 @@ public class PythonApiIT {
                     .results())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
         }
+
+        @Test
+        void shouldRunRangeKeyQueryWithMinAndMaxInclusive() throws IOException, InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.pythonApi(tempDir)
+                    .query().range("key",
+                            "row-0000000000000000010", true,
+                            "row-0000000000000000020", true)
+                    .results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(10, 20)));
+        }
     }
 }

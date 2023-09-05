@@ -53,6 +53,14 @@ public class SystemTestPythonQuery {
         return this;
     }
 
+    public SystemTestPythonQuery range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusve)
+            throws IOException, InterruptedException {
+        String queryId = UUID.randomUUID().toString();
+        pythonQueryDriver.range(queryId, key, min, minInclusive, max, maxInclusve);
+        queryIds.add(queryId);
+        return this;
+    }
+
     public Stream<Record> results() {
         return queryIds.stream().flatMap(s3ResultsDriver::results);
     }
