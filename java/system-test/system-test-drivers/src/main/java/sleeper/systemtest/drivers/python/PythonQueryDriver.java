@@ -40,12 +40,21 @@ public class PythonQueryDriver {
         this.pythonDir = pythonDir;
     }
 
-    public void exactKeys(String queryId, Map<String, List<Object>> queryList) throws IOException, InterruptedException {
+    public void exactKeys(String queryId, String keyName, List<String> keyValues) throws IOException, InterruptedException {
         pythonRunner.run(
                 pythonDir.resolve("test/exact_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--queryid", queryId,
-                "--query", GSON.toJson(queryList));
+                "--query", GSON.toJson(Map.of(keyName, keyValues)));
+    }
+
+    public void range(String queryId, String key, Object min, Object max) throws IOException, InterruptedException {
+        pythonRunner.run(
+                pythonDir.resolve("test/range_query.py").toString(),
+                "--instance", instance.getInstanceProperties().get(ID),
+                "--table", instance.getTableName(),
+                "--queryid", queryId,
+                "--query", GSON.toJson(Map.of(key, List.of(min, max))));
     }
 }

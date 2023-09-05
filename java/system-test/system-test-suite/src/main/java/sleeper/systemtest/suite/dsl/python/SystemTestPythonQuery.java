@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -40,9 +39,16 @@ public class SystemTestPythonQuery {
         this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
     }
 
-    public SystemTestPythonQuery exactKeys(Map<String, List<Object>> queryMap) throws IOException, InterruptedException {
+    public SystemTestPythonQuery exactKeys(String keyName, String... keyValues) throws IOException, InterruptedException {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.exactKeys(queryId, queryMap);
+        pythonQueryDriver.exactKeys(queryId, keyName, List.of(keyValues));
+        queryIds.add(queryId);
+        return this;
+    }
+
+    public SystemTestPythonQuery range(String key, Object min, Object max) throws IOException, InterruptedException {
+        String queryId = UUID.randomUUID().toString();
+        pythonQueryDriver.range(queryId, key, min, max);
         queryIds.add(queryId);
         return this;
     }

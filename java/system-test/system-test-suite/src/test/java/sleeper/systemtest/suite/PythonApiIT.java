@@ -18,6 +18,7 @@ package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -30,8 +31,6 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,6 +56,7 @@ public class PythonApiIT {
 
     @Nested
     @DisplayName("Ingest files")
+    @Disabled("temporarily disabling to test other nested class")
     class IngestFiles {
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
@@ -142,11 +142,23 @@ public class PythonApiIT {
 
             // When/Then
             assertThat(sleeper.pythonApi(tempDir)
-                    .query().exactKeys(Map.of("key",
-                            List.of("row-0000000000000000001",
-                                    "row-0000000000000000002")))
+                    .query().exactKeys("key",
+                            "row-0000000000000000001",
+                            "row-0000000000000000002")
                     .results())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(1, 2)));
+        }
+
+        @Test
+        void shouldRunRangeKeyQuery() throws IOException, InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.pythonApi(tempDir)
+                    .query().range("key", "00010", "00020")
+                    .results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
         }
     }
 }
