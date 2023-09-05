@@ -86,21 +86,12 @@ public class IngestBatcher {
     }
 
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles, Instant time) {
+        LOGGER.info("Attempting to batch {} files for table {}", inputFiles.size(), tableName);
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
-        int minFiles = properties.getInt(INGEST_BATCHER_MIN_JOB_FILES);
-        long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
-        int maxAgeInSeconds = properties.getInt(INGEST_BATCHER_MAX_FILE_AGE_SECONDS);
-        Instant maxReceivedTime = time.minus(Duration.ofSeconds(maxAgeInSeconds));
         long totalBytes = totalBytes(inputFiles);
-        boolean maxAgeMet = inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime));
-        if ((inputFiles.size() >= minFiles &&
-                totalBytes >= minBytes)
-                || maxAgeMet) {
-            if (maxAgeMet) {
-                LOGGER.info("At least one file has exceeded the maximum age of {} seconds", maxAgeInSeconds);
-            }
+        if (shouldCreateBatches(properties, inputFiles, time)) {
             BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
-            LOGGER.info("Creating batches for {} input files with total bytes of {}", inputFiles.size(), totalBytes);
+            LOGGER.info("Creating batches for {} files with total bytes of {}", inputFiles.size(), totalBytes);
             List<Instant> receivedTimes = inputFiles.stream()
                     .map(FileIngestRequest::getReceivedTime)
                     .sorted().collect(toList());
@@ -108,17 +99,33 @@ public class IngestBatcher {
                     receivedTimes.get(0), receivedTimes.get(receivedTimes.size() - 1));
             createBatches(properties, inputFiles)
                     .forEach(batch -> sendBatch(tableName, batchIngestMode, batch));
-        } else {
-            if (inputFiles.size() < minFiles) {
-                LOGGER.info("Number of input files ({}) does not satisfy minimum file count for job ({})",
-                        inputFiles.size(), minFiles);
-            }
-            if (totalBytes < minBytes) {
-                LOGGER.info("Total bytes for input files ({}) does not satisfy minimum size for job ({})",
-                        totalBytes, minBytes);
-            }
-            LOGGER.info("Batching conditions not met, skipping batch creation");
         }
+    }
+
+    private boolean shouldCreateBatches(
+            TableProperties properties, List<FileIngestRequest> inputFiles, Instant time) {
+        int minFiles = properties.getInt(INGEST_BATCHER_MIN_JOB_FILES);
+        long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
+        int maxAgeInSeconds = properties.getInt(INGEST_BATCHER_MAX_FILE_AGE_SECONDS);
+        Instant maxReceivedTime = time.minus(Duration.ofSeconds(maxAgeInSeconds));
+        long totalBytes = totalBytes(inputFiles);
+        boolean maxAgeMet = inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime));
+        if (maxAgeMet) {
+            return true;
+        }
+        LOGGER.info("No files have reached the max age of {} seconds", maxAgeInSeconds);
+        boolean meetsMinFiles = true;
+        if (inputFiles.size() < minFiles) {
+            LOGGER.info("Number of files ({}) does not satisfy minimum file count for job ({})",
+                    inputFiles.size(), minFiles);
+            meetsMinFiles = false;
+        }
+        if (totalBytes < minBytes) {
+            LOGGER.info("Total bytes for files ({}) does not satisfy minimum size for job ({})",
+                    totalBytes, minBytes);
+            meetsMinFiles = false;
+        }
+        return meetsMinFiles;
     }
 
     private void sendBatch(String tableName, BatchIngestMode batchIngestMode, List<FileIngestRequest> batch) {
