@@ -142,7 +142,7 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../compaction/compaction-job-execution/target/compaction-job-execution-${project.version}-utility.jar
+                ${project.basedir}/../compaction/compaction-task-creation/target/compaction-task-creation-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>runningjobs-${project.version}.jar</destName>
