@@ -156,7 +156,9 @@ public class PythonApiIT {
 
             // When/Then
             assertThat(sleeper.pythonApi(tempDir)
-                    .query().range("key", "00010", "00020")
+                    .query().range("key",
+                            "row-0000000000000000010",
+                            "row-0000000000000000020")
                     .results())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
         }
