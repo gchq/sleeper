@@ -136,7 +136,7 @@ public class PythonApiIT {
     @DisplayName("Run SQS query")
     class RunSQSQuery {
         @Test
-        void shouldRunExactKeyQueryWithMapOfKeyToListOfKeys() throws IOException, InterruptedException {
+        void shouldRunExactKeyQuery() throws IOException, InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
