@@ -40,7 +40,7 @@ public class S3ResultsDriver {
     }
 
     public Stream<Record> results(String queryId) {
-        return s3.listObjects(instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET), "/query-" + queryId)
+        return s3.listObjects(instance.getInstanceProperties().get(QUERY_RESULTS_BUCKET), "query-" + queryId)
                 .getObjectSummaries().stream()
                 .flatMap(this::getRecords);
     }
