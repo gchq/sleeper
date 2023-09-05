@@ -89,22 +89,32 @@ public class IngestBatcher {
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         int minFiles = properties.getInt(INGEST_BATCHER_MIN_JOB_FILES);
         long minBytes = properties.getBytes(INGEST_BATCHER_MIN_JOB_SIZE);
-        Instant maxReceivedTime = time.minus(Duration.ofSeconds(
-                properties.getInt(INGEST_BATCHER_MAX_FILE_AGE_SECONDS)));
+        int maxAgeInSeconds = properties.getInt(INGEST_BATCHER_MAX_FILE_AGE_SECONDS);
+        Instant maxReceivedTime = time.minus(Duration.ofSeconds(maxAgeInSeconds));
         long totalBytes = totalBytes(inputFiles);
+        boolean maxAgeMet = inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime));
         if ((inputFiles.size() >= minFiles &&
                 totalBytes >= minBytes)
-                || inputFiles.stream().anyMatch(file -> file.getReceivedTime().isBefore(maxReceivedTime))) {
+                || maxAgeMet) {
+            if (maxAgeMet) {
+                LOGGER.info("At least one file has exceeded the maximum age of {} seconds", maxAgeInSeconds);
+            }
             BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
-            LOGGER.info("Creating batches for {} input files", inputFiles.size());
+            LOGGER.info("Creating batches for {} input files with total bytes of {}", inputFiles.size(), totalBytes);
+            List<Instant> receivedTimes = inputFiles.stream()
+                    .map(FileIngestRequest::getReceivedTime)
+                    .sorted().collect(toList());
+            LOGGER.info("Files to batch were received between {} and {}",
+                    receivedTimes.get(0), receivedTimes.get(receivedTimes.size() - 1));
             createBatches(properties, inputFiles)
                     .forEach(batch -> sendBatch(tableName, batchIngestMode, batch));
         } else {
             if (inputFiles.size() < minFiles) {
-                LOGGER.info("Number of input files ({}) does not match minimum file count for job ({})",
+                LOGGER.info("Number of input files ({}) does not satisfy minimum file count for job ({})",
                         inputFiles.size(), minFiles);
-            } else if (totalBytes < minBytes) {
-                LOGGER.info("Total bytes for input files ({}) does not match minimum size for job ({})",
+            }
+            if (totalBytes < minBytes) {
+                LOGGER.info("Total bytes for input files ({}) does not satisfy minimum size for job ({})",
                         totalBytes, minBytes);
             }
             LOGGER.info("Batching conditions not met, skipping batch creation");
