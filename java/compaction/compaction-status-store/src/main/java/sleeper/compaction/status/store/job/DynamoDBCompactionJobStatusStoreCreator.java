@@ -61,7 +61,8 @@ public class DynamoDBCompactionJobStatusStoreCreator {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
-        LOGGER.info("Deleting dynamoDBClient");
-        dynamoDBClient.deleteTable(jobStatusTableName(properties.get(ID)));
+        String tableName = jobStatusTableName(properties.get(ID));
+        LOGGER.info("Deleting table: {}", tableName);
+        dynamoDBClient.deleteTable(tableName);
     }
 }

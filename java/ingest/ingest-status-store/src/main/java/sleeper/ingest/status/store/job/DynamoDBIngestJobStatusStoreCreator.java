@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -32,8 +34,10 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.EXPIRY_DATE;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.JOB_ID;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.UPDATE_TIME;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobStatusTableName;
 
 public class DynamoDBIngestJobStatusStoreCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStoreCreator.class);
 
     private DynamoDBIngestJobStatusStoreCreator() {
     }
@@ -42,7 +46,7 @@ public class DynamoDBIngestJobStatusStoreCreator {
         if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
-        String tableName = DynamoDBIngestJobStatusStore.jobStatusTableName(properties.get(ID));
+        String tableName = jobStatusTableName(properties.get(ID));
         initialiseTable(dynamoDB, tableName,
                 Arrays.asList(
                         new AttributeDefinition(JOB_ID, ScalarAttributeType.S),
@@ -57,6 +61,8 @@ public class DynamoDBIngestJobStatusStoreCreator {
         if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return;
         }
-        dynamoDBClient.deleteTable(DynamoDBIngestJobStatusStore.jobStatusTableName(properties.get(ID)));
+        String tableName = jobStatusTableName(properties.get(ID));
+        LOGGER.info("Deleting table: {}", tableName);
+        dynamoDBClient.deleteTable(tableName);
     }
 }
