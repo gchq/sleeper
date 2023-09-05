@@ -286,7 +286,7 @@ public class ResultVerifier {
             List<FileInfo> actualFiles,
             Configuration hadoopConfiguration
     ) {
-        ItemsSketch expectedSketch = createFieldToItemSketchMap(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList).get(field);
+        ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
         IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
             double quantile = 0.1 * quantileNo;
