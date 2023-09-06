@@ -198,7 +198,7 @@ public class RecordGenerator {
         }
     }
 
-    public static List<Field> valueFields() {
+    private static List<Field> valueFields() {
         return Arrays.asList(
                 new Field("intValue", new IntType()),
                 new Field("longValue", new LongType()),
