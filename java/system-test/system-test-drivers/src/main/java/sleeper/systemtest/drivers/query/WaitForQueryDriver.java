@@ -47,8 +47,12 @@ public class WaitForQueryDriver {
                     LOGGER.info("Query not found yet, retrying...");
                     return false;
                 }
-                LOGGER.info("Query found with state: {}", queryStatus.getLastKnownState());
-                return QueryState.COMPLETED.equals(queryStatus.getLastKnownState());
+                QueryState state = queryStatus.getLastKnownState();
+                if (QueryState.FAILED.equals(state) || QueryState.PARTIALLY_FAILED.equals(state)) {
+                    throw new IllegalStateException("Query failed: " + queryStatus);
+                }
+                LOGGER.info("Query found with state: {}", state);
+                return QueryState.COMPLETED.equals(state);
             } catch (QueryTrackerException e) {
                 throw new RuntimeException(e);
             }
