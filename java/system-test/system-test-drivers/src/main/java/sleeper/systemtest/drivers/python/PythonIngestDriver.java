@@ -29,16 +29,14 @@ public class PythonIngestDriver {
     private final SleeperInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
-    private final Path tempDir;
 
-    public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir, Path tempDir) {
+    public PythonIngestDriver(SleeperInstanceContext instance, Path pythonDir) {
         this.instance = instance;
         this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;
-        this.tempDir = tempDir;
     }
 
-    public void batchWrite(String jobId, String file) throws IOException, InterruptedException {
+    public void batchWrite(Path tempDir, String jobId, String file) throws IOException, InterruptedException {
         pythonRunner.run(
                 pythonDir.resolve("test/batch_writer.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),

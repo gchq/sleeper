@@ -67,8 +67,8 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
             // When
-            sleeper.pythonApi(tempDir)
-                    .ingest().batchWrite("file.parquet")
+            sleeper.pythonApi()
+                    .ingest().batchWrite(tempDir, "file.parquet")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -85,7 +85,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(tempDir)
+            sleeper.pythonApi()
                     .ingest().fromS3("file1.parquet", "file2.parquet")
                     .invokeTask().waitForJobs();
 
@@ -103,7 +103,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(tempDir)
+            sleeper.pythonApi()
                     .ingest().fromS3("test-dir")
                     .invokeTask().waitForJobs();
 
@@ -123,7 +123,7 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(tempDir)
+            sleeper.pythonApi()
                     .bulkImport().emrServerless("file1.parquet", "file2.parquet")
                     .waitForJobs();
 
@@ -148,7 +148,7 @@ public class PythonApiIT {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
-            assertThat(sleeper.pythonApi(tempDir)
+            assertThat(sleeper.pythonApi()
                     .query().exactKeys("key",
                             "row-0000000000000000001",
                             "row-0000000000000000002")
@@ -162,7 +162,7 @@ public class PythonApiIT {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
-            assertThat(sleeper.pythonApi(tempDir)
+            assertThat(sleeper.pythonApi()
                     .query().range("key",
                             "row-0000000000000000010",
                             "row-0000000000000000020")
@@ -176,7 +176,7 @@ public class PythonApiIT {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
-            assertThat(sleeper.pythonApi(tempDir)
+            assertThat(sleeper.pythonApi()
                     .query().range("key",
                             "row-0000000000000000010", true,
                             "row-0000000000000000020", true)

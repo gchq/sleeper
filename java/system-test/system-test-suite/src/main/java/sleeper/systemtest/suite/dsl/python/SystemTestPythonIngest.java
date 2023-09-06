@@ -38,16 +38,16 @@ public class SystemTestPythonIngest {
 
 
     public SystemTestPythonIngest(SleeperInstanceContext instance, SystemTestClients clients,
-                                  Path pythonDir, Path tempDir) {
-        this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir, tempDir);
+                                  Path pythonDir) {
+        this.pythonIngestDriver = new PythonIngestDriver(instance, pythonDir);
         this.ingestByQueueDriver = new IngestByQueueDriver(instance,
                 clients.getDynamoDB(), clients.getLambda(), clients.getSqs());
         this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
-    public SystemTestPythonIngest batchWrite(String file) throws IOException, InterruptedException {
+    public SystemTestPythonIngest batchWrite(Path tempDir, String file) throws IOException, InterruptedException {
         String jobId = UUID.randomUUID().toString();
-        pythonIngestDriver.batchWrite(jobId, file);
+        pythonIngestDriver.batchWrite(tempDir, jobId, file);
         sentJobIds.add(jobId);
         return this;
     }

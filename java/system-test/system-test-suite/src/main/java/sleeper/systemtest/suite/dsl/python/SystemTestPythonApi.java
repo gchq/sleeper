@@ -25,17 +25,15 @@ public class SystemTestPythonApi {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
     private final Path pythonDir;
-    private final Path outputDir;
 
-    public SystemTestPythonApi(SleeperInstanceContext instance, SystemTestClients clients, Path pythonDir, Path tempDir) {
+    public SystemTestPythonApi(SleeperInstanceContext instance, SystemTestClients clients, Path pythonDir) {
         this.instance = instance;
         this.clients = clients;
         this.pythonDir = pythonDir;
-        this.outputDir = tempDir;
     }
 
     public SystemTestPythonIngest ingest() {
-        return new SystemTestPythonIngest(instance, clients, pythonDir, outputDir);
+        return new SystemTestPythonIngest(instance, clients, pythonDir);
     }
 
     public SystemTestPythonBulkImport bulkImport() {
