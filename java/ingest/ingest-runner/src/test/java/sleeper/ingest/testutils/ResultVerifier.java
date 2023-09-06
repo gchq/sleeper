@@ -25,7 +25,6 @@ import org.apache.parquet.hadoop.ParquetReader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.KeyComparator;
 import sleeper.core.record.Record;
@@ -88,19 +87,20 @@ public class ResultVerifier {
         Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
                 .collect(Collectors.groupingBy(
                         record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(sleeperSchema.getRowKeyFieldNames())))));
+
         Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
                 .collect(Collectors.groupingBy(FileInfo::getPartitionId));
+
         Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
                 .map(entry -> {
-                    int partitionNo = entry.getKey();
                     Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(sleeperSchema.getRowKeyFieldNames()));
-                    Partition partitionOfFirstRecord = partitionTree.getLeafPartition(keyOfFirstRecord);
-                    return new AbstractMap.SimpleEntry<>(partitionOfFirstRecord.getId(), partitionNo);
+                    return new AbstractMap.SimpleEntry<>(partitionTree.getLeafPartition(keyOfFirstRecord).getId(), entry.getKey());
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
                         Map.Entry::getValue));
+
         int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
                 .mapToInt(Integer::valueOf)
                 .sum();
@@ -134,8 +134,8 @@ public class ResultVerifier {
                 .collect(Collectors.toList());
         List<Record> savedRecordList = readMergedRecordsFromPartitionDataFiles(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
 
-        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles);
-        assertListsIdentical(expectedSortedRecordList, savedRecordList);
+        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
+        assertThat(expectedSortedRecordList).containsExactlyElementsOf(savedRecordList); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
 
         // In some situations, check that the file min and max match the min and max of dimension 0
         if (expectedNoOfFiles == 1 &&
@@ -161,48 +161,14 @@ public class ResultVerifier {
             Map<Field, ItemsSketch> expectedFieldToItemsSketchMap = createFieldToItemSketchMap(sleeperSchema, expectedRecordList);
             Map<Field, ItemsSketch> savedFieldToItemsSketchMap = readFieldToItemSketchMap(sleeperSchema, partitionFileInfoList, hadoopConfiguration);
             sleeperSchema.getRowKeyFields().forEach(field -> {
-                ItemsSketch expectedSketch = expectedFieldToItemsSketchMap.get(field);
-                ItemsSketch savedSketch = savedFieldToItemsSketchMap.get(field);
-                assertThat(savedSketch.getMinValue()).isEqualTo(expectedSketch.getMinValue());
-                assertThat(savedSketch.getMaxValue()).isEqualTo(expectedSketch.getMaxValue());
-                IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
-                    double quantile = 0.1 * quantileNo;
-                    double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
-                    double quantileWithToleranceUpper = (quantile + QUANTILE_SKETCH_TOLERANCE) < 1 ? quantile + QUANTILE_SKETCH_TOLERANCE : 1;
-                    KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
-                    if (field.getType() instanceof ByteArrayType) {
-                        assertThat(keyComparator.compare(
-                                Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())))
-                                .isGreaterThanOrEqualTo(0);
-                        assertThat(keyComparator.compare(
-                                Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
-                                Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())))
-                                .isLessThanOrEqualTo(0);
-                    } else {
-                        assertThat(keyComparator.compare(
-                                Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceLower))))
-                                .isGreaterThanOrEqualTo(0);
-                        assertThat(keyComparator.compare(
-                                Key.create(savedSketch.getQuantile(quantile)),
-                                Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper))))
-                                .isLessThanOrEqualTo(0);
-                    }
-                });
+                assertOnSketch(field, expectedFieldToItemsSketchMap.get(field), savedFieldToItemsSketchMap.get(field));
             });
         }
     }
 
-    private static void assertListsIdentical(List<?> list1, List<?> list2) {
-        assertThat(list2).hasSameSizeAs(list1);
-        IntStream.range(0, list1.size()).forEach(i ->
-                assertThat(list2.get(i)).as(String.format("First difference found at element %d (of %d)", i, list1.size())).isEqualTo(list1.get(i)));
-    }
-
-    private static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
-                                                                    List<FileInfo> partitionFileInfoList,
-                                                                    Configuration hadoopConfiguration) {
+    public static Map<Field, ItemsSketch> readFieldToItemSketchMap(Schema sleeperSchema,
+                                                                   List<FileInfo> partitionFileInfoList,
+                                                                   Configuration hadoopConfiguration) {
         List<Sketches> readSketchesList = partitionFileInfoList.stream()
                 .map(fileInfo -> {
                     try {
@@ -245,9 +211,9 @@ public class ResultVerifier {
         return itemsSketch;
     }
 
-    private static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
-                                                                        List<FileInfo> fileInfoList,
-                                                                        Configuration hadoopConfiguration) {
+    public static List<Record> readMergedRecordsFromPartitionDataFiles(Schema sleeperSchema,
+                                                                       List<FileInfo> fileInfoList,
+                                                                       Configuration hadoopConfiguration) {
         List<CloseableIterator<Record>> inputIterators = fileInfoList.stream()
                 .map(fileInfo -> createParquetReaderIterator(
                         sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration))
@@ -258,6 +224,19 @@ public class ResultVerifier {
             recordsRead.add(mergingIterator.next());
         }
         return recordsRead;
+    }
+
+    public static List<Record> readRecordsFromPartitionDataFile(Schema sleeperSchema,
+                                                                FileInfo fileInfo,
+                                                                Configuration hadoopConfiguration) throws IOException {
+
+        try (CloseableIterator<Record> inputIterator = createParquetReaderIterator(sleeperSchema, new Path(fileInfo.getFilename()), hadoopConfiguration)) {
+            List<Record> recordsRead = new ArrayList<>();
+            while (inputIterator.hasNext()) {
+                recordsRead.add(inputIterator.next());
+            }
+            return recordsRead;
+        }
     }
 
     private static ParquetReaderIterator createParquetReaderIterator(Schema sleeperSchema,
@@ -271,5 +250,40 @@ public class ResultVerifier {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                      List<FileInfo> actualFiles, Configuration hadoopConfiguration) {
+        ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
+        ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
+        assertOnSketch(field, expectedSketch, savedSketch);
+    }
+
+    private static void assertOnSketch(Field field, ItemsSketch expectedSketch, ItemsSketch savedSketch) {
+        IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
+            double quantile = 0.1 * quantileNo;
+            double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
+            double quantileWithToleranceUpper = (quantile + QUANTILE_SKETCH_TOLERANCE) < 1 ? quantile + QUANTILE_SKETCH_TOLERANCE : 1;
+            KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
+            if (field.getType() instanceof ByteArrayType) {
+                assertThat(keyComparator.compare(
+                        Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
+                        Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())))
+                        .isGreaterThanOrEqualTo(0);
+                assertThat(keyComparator.compare(
+                        Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray()),
+                        Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())))
+                        .isLessThanOrEqualTo(0);
+            } else {
+                assertThat(keyComparator.compare(
+                        Key.create(savedSketch.getQuantile(quantile)),
+                        Key.create(expectedSketch.getQuantile(quantileWithToleranceLower))))
+                        .isGreaterThanOrEqualTo(0);
+                assertThat(keyComparator.compare(
+                        Key.create(savedSketch.getQuantile(quantile)),
+                        Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper))))
+                        .isLessThanOrEqualTo(0);
+            }
+        });
     }
 }

@@ -28,8 +28,11 @@ import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CLIENT_TYPE;
 import static sleeper.configuration.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
@@ -41,6 +44,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final ParquetConfiguration parquetConfiguration;
     private final String s3BucketName;
     private final String localWorkingDirectory;
+    private final Supplier<String> fileNameGenerator;
+    private final Supplier<Instant> timeSupplier;
     private final S3TransferManager s3TransferManager;
     private final S3AsyncClient s3AsyncClient;
     private final boolean closeS3AsyncClient;
@@ -49,6 +54,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         parquetConfiguration = Objects.requireNonNull(builder.parquetConfiguration, "parquetWriterConfiguration must not be null");
         s3BucketName = Objects.requireNonNull(builder.s3BucketName, "s3BucketName must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
+        fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
+        timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
         s3AsyncClient = builder.s3AsyncClient;
         closeS3AsyncClient = builder.closeS3AsyncClient;
         if (s3AsyncClient != null) {
@@ -121,7 +128,9 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     parquetConfiguration,
                     s3BucketName,
                     s3TransferManager,
-                    localWorkingDirectory);
+                    localWorkingDirectory,
+                    fileNameGenerator.get(),
+                    timeSupplier);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -141,6 +150,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         private String s3BucketName;
         private String localWorkingDirectory;
         private boolean closeS3AsyncClient;
+        private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
+        private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
         }
@@ -178,6 +189,16 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder tableProperties(TableProperties tableProperties) {
             return s3BucketName(tableProperties.get(DATA_BUCKET));
+        }
+
+        public Builder fileNameGenerator(Supplier<String> fileNameGenerator) {
+            this.fileNameGenerator = fileNameGenerator;
+            return this;
+        }
+
+        public Builder timeSupplier(Supplier<Instant> timeSupplier) {
+            this.timeSupplier = timeSupplier;
+            return this;
         }
 
         public AsyncS3PartitionFileWriterFactory build() {
