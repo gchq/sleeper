@@ -17,25 +17,30 @@
 package sleeper.ingest.job;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -56,28 +61,30 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
+import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
+@Testcontainers
 public abstract class IngestJobQueueConsumerTestBase {
-    @RegisterExtension
-    public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
-            LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.SQS,
-            LocalStackContainer.Service.DYNAMODB,
-            LocalStackContainer.Service.CLOUDWATCH);
 
-    protected final AmazonS3 s3 = AWS_EXTERNAL_RESOURCE.getS3Client();
-    protected final S3AsyncClient s3Async = AWS_EXTERNAL_RESOURCE.getS3AsyncClient();
-    protected final AmazonSQS sqs = AWS_EXTERNAL_RESOURCE.getSqsClient();
-    protected final AmazonDynamoDB dynamoDB = AWS_EXTERNAL_RESOURCE.getDynamoDBClient();
-    protected final AmazonCloudWatch cloudWatch = AWS_EXTERNAL_RESOURCE.getCloudWatchClient();
-    protected final Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+    @Container
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
+    protected final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected final AmazonCloudWatch cloudWatch = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
+    protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
     private final String instanceId = UUID.randomUUID().toString();
     protected final String tableName = UUID.randomUUID().toString();
     private final String ingestQueueName = instanceId + "-ingestqueue";
     private final String configBucketName = instanceId + "-configbucket";
-    private final String ingestDataBucketName = instanceId + "-" + tableName + "-ingestdata";
-    private final String tableDataBucketName = instanceId + "-" + tableName + "-tabledata";
+    private final String ingestDataBucketName = tableName + "-ingestdata";
+    private final String tableDataBucketName = tableName + "-tabledata";
     private final String fileSystemPrefix = "s3a://";
     @TempDir
     public java.nio.file.Path temporaryFolder;
@@ -88,11 +95,6 @@ public abstract class IngestJobQueueConsumerTestBase {
         s3.createBucket(tableDataBucketName);
         s3.createBucket(ingestDataBucketName);
         sqs.createQueue(ingestQueueName);
-    }
-
-    @AfterEach
-    public void after() {
-        AWS_EXTERNAL_RESOURCE.clear();
     }
 
     protected InstanceProperties getInstanceProperties() {
