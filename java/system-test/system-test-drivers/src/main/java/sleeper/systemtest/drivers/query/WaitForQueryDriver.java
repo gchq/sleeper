@@ -33,7 +33,7 @@ public class WaitForQueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WaitForQueryDriver.class);
     private final DynamoDBQueryTracker queryTracker;
     private final PollWithRetries poll = PollWithRetries.intervalAndPollingTimeout(
-            Duration.ofSeconds(10), Duration.ofMinutes(5));
+            Duration.ofSeconds(2), Duration.ofMinutes(1));
 
     public WaitForQueryDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDB) {
         this.queryTracker = new DynamoDBQueryTracker(instance.getInstanceProperties(), dynamoDB);
