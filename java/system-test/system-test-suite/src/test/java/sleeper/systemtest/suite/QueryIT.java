@@ -78,8 +78,7 @@ public class QueryIT {
                     .run("key",
                             "row-0000000000000000010", "row-0000000000000000030",
                             "row-0000000000000000020", "row-0000000000000000040"))
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
-                            LongStream.range(10, 20), LongStream.range(30, 40))));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
         }
 
         @Test
@@ -135,8 +134,7 @@ public class QueryIT {
                             "row-0000000000000000010", "row-0000000000000000030",
                             "row-0000000000000000020", "row-0000000000000000040")
                     .waitForQuery().results())
-                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
-                            LongStream.range(10, 20), LongStream.range(30, 40))));
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
         }
 
         @Test
