@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.drivers.ingest;
 
-import sleeper.systemtest.drivers.util.InvokeSystemTestLambda;
+package sleeper.systemtest.suite.dsl.reports;
 
-import java.io.IOException;
+import sleeper.compaction.job.status.CompactionJobStatus;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import java.util.List;
 
-public class InvokeIngestTaskCreation {
+public class SystemTestCompactionJobsReport {
+    private final List<CompactionJobStatus> jobs;
 
-    private InvokeIngestTaskCreation() {
+    public SystemTestCompactionJobsReport(List<CompactionJobStatus> jobs) {
+        this.jobs = jobs;
     }
 
-    public static void main(String[] args) throws IOException {
-        if (args.length != 1) {
-            System.out.println("Usage: <instance id>");
-            return;
-        }
-
-        InvokeSystemTestLambda.forInstance(args[0], INGEST_LAMBDA_FUNCTION);
+    public JobsFinishedStatistics finishedStatistics() {
+        return JobsFinishedStatistics.fromCompactionJobs(jobs);
     }
 }

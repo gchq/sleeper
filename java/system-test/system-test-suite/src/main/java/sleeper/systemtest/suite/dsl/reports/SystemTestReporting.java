@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.suite.dsl.reports;
 
+import sleeper.systemtest.drivers.compaction.CompactionReportsDriver;
 import sleeper.systemtest.drivers.ingest.IngestReportsDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.partitioning.PartitionReportDriver;
 import sleeper.systemtest.drivers.util.TestContext;
-import sleeper.systemtest.suite.dsl.reports.SystemTestIngestJobsReport;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 public class SystemTestReporting {
 
@@ -53,5 +54,18 @@ public class SystemTestReporting {
         return new SystemTestIngestJobsReport(
                 new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
                         .jobs(context));
+    }
+
+    public void printCompactionTasksAndJobs(TestContext testContext) {
+        context.print(testContext,
+                new CompactionReportsDriver(clients.getDynamoDB(), instance)
+                        .tasksAndJobsReport());
+    }
+
+    public SystemTestCompactionJobsReport compactionJobs() {
+        return new SystemTestCompactionJobsReport(
+                new CompactionReportsDriver(clients.getDynamoDB(), instance)
+                        .jobs(context)
+        );
     }
 }

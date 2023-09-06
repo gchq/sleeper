@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -35,6 +37,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
 public class DynamoDBCompactionJobStatusStoreCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStoreCreator.class);
 
     private DynamoDBCompactionJobStatusStoreCreator() {
     }
@@ -58,6 +61,8 @@ public class DynamoDBCompactionJobStatusStoreCreator {
         if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return;
         }
-        dynamoDBClient.deleteTable(jobStatusTableName(properties.get(ID)));
+        String tableName = jobStatusTableName(properties.get(ID));
+        LOGGER.info("Deleting table: {}", tableName);
+        dynamoDBClient.deleteTable(tableName);
     }
 }

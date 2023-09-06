@@ -32,7 +32,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -125,7 +124,7 @@ public class DynamoDBStateStoreCreator {
                 dynamoDB, Collections.EMPTY_MAP);
     }
 
-    public DynamoDBStateStore create() throws StateStoreException {
+    public DynamoDBStateStore create() {
         createFileInfoTables();
         createPartitionInfoTable();
         return new DynamoDBStateStore(activeFileInfoTablename, readyForGCFileInfoTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, stronglyConsistentReads, dynamoDB);
@@ -140,17 +139,12 @@ public class DynamoDBStateStoreCreator {
         initialiseTable(readyForGCFileInfoTablename, attributeDefinitions, keySchemaElements);
     }
 
-    public void createPartitionInfoTable() throws StateStoreException {
+    public void createPartitionInfoTable() {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
         keySchemaElements.add(new KeySchemaElement(PARTITION_ID, KeyType.HASH));
         initialiseTable(partitionTableName, attributeDefinitions, keySchemaElements);
-        try {
-            Thread.sleep(2000L);
-        } catch (InterruptedException e) {
-            throw new StateStoreException("InterruptedException whilst initialising partition info table: ", e);
-        }
     }
 
     private void initialiseTable(

@@ -42,6 +42,14 @@ import java.util.function.Consumer;
 
 import static sleeper.cdk.jars.BuiltJar.CUSTOM_RESOURCES;
 import static sleeper.clients.util.cdk.InvokeCdkForInstance.Type.SYSTEM_TEST_STANDALONE;
+import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_LIST;
+import static sleeper.systemtest.configuration.SystemTestProperty.MAX_ENTRIES_RANDOM_MAP;
+import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_INT;
+import static sleeper.systemtest.configuration.SystemTestProperty.MAX_RANDOM_LONG;
+import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_INT;
+import static sleeper.systemtest.configuration.SystemTestProperty.MIN_RANDOM_LONG;
+import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_BYTE_ARRAY_LENGTH;
+import static sleeper.systemtest.configuration.SystemTestProperty.RANDOM_STRING_LENGTH;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
@@ -52,8 +60,8 @@ import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_RE
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_VPC_ID;
 import static sleeper.systemtest.configuration.SystemTestProperty.WRITE_DATA_ROLE_NAME;
 
-public class SystemTestInstanceContext {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestInstanceContext.class);
+public class SystemTestDeploymentContext {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestDeploymentContext.class);
 
     private final SystemTestParameters parameters;
     private final AmazonS3 s3;
@@ -63,8 +71,8 @@ public class SystemTestInstanceContext {
     private SystemTestStandaloneProperties properties;
     private InstanceDidNotDeployException failure;
 
-    public SystemTestInstanceContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
-                                     AmazonECR ecr, CloudFormationClient cloudFormation) {
+    public SystemTestDeploymentContext(SystemTestParameters parameters, AmazonS3 s3, S3Client s3v2,
+                                       AmazonECR ecr, CloudFormationClient cloudFormation) {
         this.parameters = parameters;
         this.s3 = s3;
         this.s3v2 = s3v2;
@@ -144,6 +152,14 @@ public class SystemTestInstanceContext {
         properties.set(SYSTEM_TEST_JARS_BUCKET, parameters.buildJarsBucketName());
         properties.set(SYSTEM_TEST_REPO, parameters.buildSystemTestECRRepoName());
         properties.set(SYSTEM_TEST_CLUSTER_ENABLED, String.valueOf(parameters.isSystemTestClusterEnabled()));
+        properties.set(MIN_RANDOM_INT, "0");
+        properties.set(MAX_RANDOM_INT, "100000000");
+        properties.set(MIN_RANDOM_LONG, "0");
+        properties.set(MAX_RANDOM_LONG, "10000000000");
+        properties.set(RANDOM_STRING_LENGTH, "10");
+        properties.set(RANDOM_BYTE_ARRAY_LENGTH, "10");
+        properties.set(MAX_ENTRIES_RANDOM_MAP, "10");
+        properties.set(MAX_ENTRIES_RANDOM_LIST, "10");
         return properties;
     }
 

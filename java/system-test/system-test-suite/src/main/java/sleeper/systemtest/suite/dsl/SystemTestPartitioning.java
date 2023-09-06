@@ -18,26 +18,25 @@ package sleeper.systemtest.suite.dsl;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.partitioning.PartitionSplittingDriver;
+import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
 
-public class SystemTestStateStore {
+public class SystemTestPartitioning {
 
     private final SleeperInstanceContext instance;
+    private final PartitionSplittingDriver splittingDriver;
 
-    public SystemTestStateStore(SleeperInstanceContext instance) {
+    public SystemTestPartitioning(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
+        this.splittingDriver = new PartitionSplittingDriver(instance, clients.getLambda());
     }
 
-    public List<FileInfo> activeFiles() {
-        try {
-            return instance.getStateStore().getActiveFiles();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+    public void split() throws InterruptedException {
+        splittingDriver.splitPartitions();
     }
 
     public List<Partition> allPartitions() {
