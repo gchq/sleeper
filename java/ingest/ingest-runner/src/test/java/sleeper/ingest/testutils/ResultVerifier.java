@@ -183,7 +183,7 @@ public class ResultVerifier {
         private final int expectedLowerOffset;
         private final int expectedUpperOffset;
 
-        public TestQuantile(int index, double quantile, double tolerance) {
+        TestQuantile(int index, double quantile, double tolerance) {
             this.quantile = quantile;
             quantileWithToleranceLower = Math.max(quantile - tolerance, 0);
             quantileWithToleranceUpper = Math.min(quantile + tolerance, 1);
