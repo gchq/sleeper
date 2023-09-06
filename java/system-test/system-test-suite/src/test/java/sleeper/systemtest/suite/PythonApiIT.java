@@ -68,7 +68,7 @@ public class PythonApiIT {
 
             // When
             sleeper.pythonApi()
-                    .ingest().batchWrite(tempDir, "file.parquet")
+                    .ingestByQueue().uploadingLocalFile(tempDir, "file.parquet")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -86,7 +86,7 @@ public class PythonApiIT {
 
             // When
             sleeper.pythonApi()
-                    .ingest().fromS3("file1.parquet", "file2.parquet")
+                    .ingestByQueue().fromS3("file1.parquet", "file2.parquet")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -104,7 +104,7 @@ public class PythonApiIT {
 
             // When
             sleeper.pythonApi()
-                    .ingest().fromS3("test-dir")
+                    .ingestByQueue().fromS3("test-dir")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -124,7 +124,7 @@ public class PythonApiIT {
 
             // When
             sleeper.pythonApi()
-                    .bulkImport().emrServerless("file1.parquet", "file2.parquet")
+                    .bulkImport().fromS3("file1.parquet", "file2.parquet")
                     .waitForJobs();
 
             // Then

@@ -36,12 +36,12 @@ public class PythonBulkImportDriver {
         this.pythonDir = pythonDir;
     }
 
-    public void emrServerless(String jobId, String... files) throws IOException, InterruptedException {
+    public void fromS3(String platform, String jobId, String... files) throws IOException, InterruptedException {
         pythonRunner.run(Stream.concat(
                         Stream.of(pythonDir.resolve("test/bulk_import_files_from_s3.py").toString(),
                                 "--instance", instance.getInstanceProperties().get(ID),
                                 "--table", instance.getTableName(),
-                                "--platform", "EMRServerless",
+                                "--platform", platform,
                                 "--jobid", jobId,
                                 "--files"),
                         Stream.of(files)

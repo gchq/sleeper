@@ -32,7 +32,7 @@ public class SystemTestPythonApi {
         this.pythonDir = pythonDir;
     }
 
-    public SystemTestPythonIngest ingest() {
+    public SystemTestPythonIngest ingestByQueue() {
         return new SystemTestPythonIngest(instance, clients, pythonDir);
     }
 

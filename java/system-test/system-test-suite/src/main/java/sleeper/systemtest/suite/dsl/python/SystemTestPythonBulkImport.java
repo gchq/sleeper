@@ -40,9 +40,9 @@ public class SystemTestPythonBulkImport {
         this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
-    public SystemTestPythonBulkImport emrServerless(String... files) throws IOException, InterruptedException {
+    public SystemTestPythonBulkImport fromS3(String... files) throws IOException, InterruptedException {
         String jobId = UUID.randomUUID().toString();
-        pythonBulkImportDriver.emrServerless(jobId, files);
+        pythonBulkImportDriver.fromS3("EMRServerless", jobId, files);
         sentJobIds.add(jobId);
         return this;
     }

@@ -45,7 +45,7 @@ public class SystemTestPythonIngest {
         this.waitForJobsDriver = WaitForJobsDriver.forIngest(instance, clients.getDynamoDB());
     }
 
-    public SystemTestPythonIngest batchWrite(Path tempDir, String file) throws IOException, InterruptedException {
+    public SystemTestPythonIngest uploadingLocalFile(Path tempDir, String file) throws IOException, InterruptedException {
         String jobId = UUID.randomUUID().toString();
         pythonIngestDriver.batchWrite(tempDir, jobId, file);
         sentJobIds.add(jobId);
