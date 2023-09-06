@@ -34,7 +34,6 @@ import sleeper.ingest.testutils.ResultVerifier;
 
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,6 +62,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
     @Test
     public void shouldIngestParquetFilesPutOnTheQueue() throws Exception {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
@@ -70,28 +70,27 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+        List<Record> expectedRecords = Collections.nCopies(2, recordListAndSchema.recordList).stream()
+                .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-
+        StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
         sendJobs(List.of(createJobWithTableAndFiles("job", tableName, files)));
+
+        // When
         runTask(localDir, "task");
 
-        // Verify the results
+        // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
                 .partitionTree(tree)
                 .lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(0).getLastStateStoreUpdateTime()))
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        List<FileInfo> fileInfoList = List.of(
-                fileInfoFactory.leafFile(actualFiles.get(0).getFilename(), 400, -100L, 99L)
-        );
+        FileInfo expectedFile = fileInfoFactory.leafFile(actualFiles.get(0).getFilename(), 400, -100L, 99L);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
-        recordListAndSchema.recordList.addAll(recordListAndSchema.recordList);
-        assertThat(actualRecords).hasSize(recordListAndSchema.recordList.size());
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualFiles).containsExactly(expectedFile);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
@@ -109,13 +108,13 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         int noOfJobs = 10;
         int noOfFilesPerJob = 4;
-        List<IngestJob> ingestJobs = IntStream.range(0, noOfJobs)
+        List<IngestJob> ingestJobs = IntStream.rangeClosed(1, noOfJobs)
                 .mapToObj(jobNo -> "job-" + jobNo)
                 .map(jobId -> IngestJob.builder().tableName(tableName).id(jobId)
                         .files(writeParquetFilesForIngest(recordListAndSchema, jobId, noOfFilesPerJob))
                         .build())
                 .collect(Collectors.toList());
-        List<Record> expectedRecords = Collections.nCopies(noOfJobs * noOfFilesPerJob, recordListAndSchema.recordList).stream()
+        List<Record> expectedRecords = Collections.nCopies(40, recordListAndSchema.recordList).stream()
                 .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
         StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
@@ -124,7 +123,7 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         // When
         runTask(localDir, "test-task");
 
-        // Verify the results
+        // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
@@ -136,16 +135,14 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
 
-        List<FileInfo> fileInfoList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            fileInfoFactory = fileInfoFactory.toBuilder().lastStateStoreUpdate(Instant.ofEpochMilli(actualFiles.get(i).getLastStateStoreUpdateTime())).build();
-            fileInfoList.add(fileInfoFactory.leafFile(actualFiles.get(i).getFilename(), 800, -100L, 99L));
-        }
         assertThat(Paths.get(localDir)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactlyInAnyOrderElementsOf(fileInfoList);
+        assertThat(actualFiles)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime", "filename")
+                .containsExactlyElementsOf(Collections.nCopies(10,
+                        fileInfoFactory.leafFile("anyfilename", 800, -100L, 99L)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
                 hadoopConfiguration
