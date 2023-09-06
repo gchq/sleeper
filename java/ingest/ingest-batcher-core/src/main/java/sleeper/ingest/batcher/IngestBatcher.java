@@ -146,7 +146,8 @@ public class IngestBatcher {
             if (jobQueueUrl == null) {
                 LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
             } else {
-                LOGGER.info("Sending ingest job with {} files to {}", job.getFiles().size(), batchIngestMode);
+                LOGGER.info("Sending ingest job with {} files ({} bytes) to {}",
+                        job.getFiles().size(), totalBytes(batch), batchIngestMode);
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
