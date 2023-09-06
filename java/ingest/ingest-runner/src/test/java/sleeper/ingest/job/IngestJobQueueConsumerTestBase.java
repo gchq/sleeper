@@ -72,7 +72,8 @@ public abstract class IngestJobQueueConsumerTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB,
+                    LocalStackContainer.Service.SQS, LocalStackContainer.Service.CLOUDWATCH);
 
     protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
