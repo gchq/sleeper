@@ -23,6 +23,8 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -42,9 +44,10 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  */
 @SuppressWarnings("unused")
 public class IngestBatcherJobCreatorLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherJobCreatorLambda.class);
+
     private final AmazonS3 s3Client;
     private final String configBucket;
-
     private final AmazonSQS sqs;
     private final AmazonDynamoDB dynamoDB;
     private final Supplier<Instant> timeSupplier;
@@ -78,13 +81,15 @@ public class IngestBatcherJobCreatorLambda {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        LOGGER.info("Loaded instance properties from bucket {}", configBucket);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         IngestBatcher batcher = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)
                 .store(new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties, tablePropertiesProvider))
                 .queueClient(new SQSIngestBatcherQueueClient(sqs))
-                .timeSupplier(timeSupplier).jobIdSupplier(jobIdSupplier)
+                .timeSupplier(timeSupplier)
+                .jobIdSupplier(jobIdSupplier)
                 .build();
         batcher.batchFiles();
     }
