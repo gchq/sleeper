@@ -11,22 +11,20 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from setuptools import setup
 
-setup(
-    name='sleeper',
-    version='0.19.0.dev1',
-    description='Python client for Sleeper',
-    packages=['sleeper', 'pq'],
-    install_requires=[
-        'pyarrow', 'boto3', 's3fs'
-    ],
-    package_dir={"": "src"},
-    python_requires=">=3.7",
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3 :: Only",
-        "Typing :: Typed",
-    ]
-)
+import argparse
+
+from sleeper.sleeper import SleeperClient
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Ingest files from S3 to Sleeper")
+    parser.add_argument("--instance", required=True)
+    parser.add_argument("--table", required=True)
+    parser.add_argument("--jobid", required=True)
+    parser.add_argument("--files", nargs="+")
+
+    args = parser.parse_args()
+
+    sleeper_client = SleeperClient(args.instance)
+
+    sleeper_client.ingest_parquet_files_from_s3(args.table, args.files, args.jobid)

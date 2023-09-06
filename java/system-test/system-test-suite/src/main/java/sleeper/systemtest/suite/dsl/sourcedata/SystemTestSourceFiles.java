@@ -25,7 +25,6 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestSourceFiles {
-
     private final SleeperInstanceContext instanceContext;
     private final IngestSourceFilesDriver sourceFiles;
 

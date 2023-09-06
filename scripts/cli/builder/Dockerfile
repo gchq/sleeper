@@ -18,6 +18,8 @@ FROM ${DEPENDENCIES_IMAGE}
 RUN apt-get install -y maven
 RUN apt-get install -y git
 RUN apt-get install -y python3
+RUN apt-get install -y pip
+RUN apt-get install -y python3.10-venv
 RUN apt-get install -y zip
 
 # Set command line prompt to show you're in the builder Docker container
