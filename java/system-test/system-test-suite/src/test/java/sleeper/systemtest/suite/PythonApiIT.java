@@ -67,8 +67,8 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
 
             // When
-            sleeper.pythonApi(tempDir)
-                    .ingest().batchWrite("file.parquet")
+            sleeper.pythonApi()
+                    .ingestByQueue().uploadingLocalFile(tempDir, "file.parquet")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -85,8 +85,8 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(tempDir)
-                    .ingest().fromS3("file1.parquet", "file2.parquet")
+            sleeper.pythonApi()
+                    .ingestByQueue().fromS3("file1.parquet", "file2.parquet")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -103,8 +103,8 @@ public class PythonApiIT {
                     .createWithNumberedRecords("test-dir/file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(tempDir)
-                    .ingest().fromS3("test-dir")
+            sleeper.pythonApi()
+                    .ingestByQueue().fromS3("test-dir")
                     .invokeTask().waitForJobs();
 
             // Then
@@ -123,8 +123,8 @@ public class PythonApiIT {
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));
 
             // When
-            sleeper.pythonApi(tempDir)
-                    .bulkImport().emrServerless("file1.parquet", "file2.parquet")
+            sleeper.pythonApi()
+                    .bulkImport().fromS3("file1.parquet", "file2.parquet")
                     .waitForJobs();
 
             // Then
@@ -137,8 +137,8 @@ public class PythonApiIT {
     @Nested
     @DisplayName("Run SQS query")
     class RunSQSQuery {
-        @BeforeEach
-        void setup() {
+        @AfterEach
+        void tearDown() {
             sleeper.queryResults().emptyBucket();
         }
 
@@ -148,8 +148,8 @@ public class PythonApiIT {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
-            assertThat(sleeper.pythonApi(tempDir)
-                    .query().exactKeys("key",
+            assertThat(sleeper.pythonApi()
+                    .query(tempDir).exactKeys("key",
                             "row-0000000000000000001",
                             "row-0000000000000000002")
                     .results())
@@ -162,8 +162,8 @@ public class PythonApiIT {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
-            assertThat(sleeper.pythonApi(tempDir)
-                    .query().range("key",
+            assertThat(sleeper.pythonApi()
+                    .query(tempDir).range("key",
                             "row-0000000000000000010",
                             "row-0000000000000000020")
                     .results())
@@ -176,8 +176,8 @@ public class PythonApiIT {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
             // When/Then
-            assertThat(sleeper.pythonApi(tempDir)
-                    .query().range("key",
+            assertThat(sleeper.pythonApi()
+                    .query(tempDir).range("key",
                             "row-0000000000000000010", true,
                             "row-0000000000000000020", true)
                     .results())

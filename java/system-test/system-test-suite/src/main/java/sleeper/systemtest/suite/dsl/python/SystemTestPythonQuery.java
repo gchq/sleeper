@@ -19,8 +19,6 @@ package sleeper.systemtest.suite.dsl.python;
 import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.python.PythonQueryDriver;
-import sleeper.systemtest.drivers.query.S3ResultsDriver;
-import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -31,12 +29,10 @@ import java.util.stream.Stream;
 
 public class SystemTestPythonQuery {
     private final PythonQueryDriver pythonQueryDriver;
-    private final S3ResultsDriver s3ResultsDriver;
     private final List<String> queryIds = new ArrayList<>();
 
-    public SystemTestPythonQuery(SleeperInstanceContext instance, SystemTestClients clients, Path pythonDir) {
-        this.pythonQueryDriver = new PythonQueryDriver(instance, pythonDir);
-        this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
+    public SystemTestPythonQuery(SleeperInstanceContext instance, Path pythonDir, Path outputDir) {
+        this.pythonQueryDriver = new PythonQueryDriver(instance, pythonDir, outputDir);
     }
 
     public SystemTestPythonQuery exactKeys(String keyName, String... keyValues) throws IOException, InterruptedException {
@@ -62,6 +58,6 @@ public class SystemTestPythonQuery {
     }
 
     public Stream<Record> results() {
-        return queryIds.stream().flatMap(s3ResultsDriver::results);
+        return queryIds.stream().flatMap(pythonQueryDriver::results);
     }
 }

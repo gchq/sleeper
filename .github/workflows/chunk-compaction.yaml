@@ -10,6 +10,7 @@ on:
       - 'java/pom.xml'
       - 'java/compaction/pom.xml'
       - 'java/compaction/compaction-job-execution/**'
+      - 'java/compaction/compaction-task-creation/**'
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/compaction/compaction-core/**'

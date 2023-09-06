@@ -35,14 +35,14 @@ public class PythonRunner {
         this.pythonDir = pythonDir;
     }
 
-    public void run(String... commands) throws IOException, InterruptedException {
-        pipelineRunner.run(pythonPipeline(pythonDir, commands));
+    public void run(String... arguments) throws IOException, InterruptedException {
+        pipelineRunner.runOrThrow(pythonPipeline(pythonDir, arguments));
     }
 
-    private static CommandPipeline pythonPipeline(Path pythonDir, String... commands) {
+    private static CommandPipeline pythonPipeline(Path pythonDir, String... arguments) {
         return pipeline(command(Stream.concat(
                         Stream.of(pythonDir.resolve("env/bin/python").toString()),
-                        Stream.of(commands))
+                        Stream.of(arguments))
                 .toArray(String[]::new)));
     }
 }
