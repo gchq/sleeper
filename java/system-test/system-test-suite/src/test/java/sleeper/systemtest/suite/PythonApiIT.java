@@ -137,8 +137,8 @@ public class PythonApiIT {
     @Nested
     @DisplayName("Run SQS query")
     class RunSQSQuery {
-        @BeforeEach
-        void setup() {
+        @AfterEach
+        void tearDown() {
             sleeper.queryResults().emptyBucket();
         }
 
