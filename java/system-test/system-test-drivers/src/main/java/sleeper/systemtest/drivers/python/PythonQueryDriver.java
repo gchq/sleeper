@@ -78,7 +78,7 @@ public class PythonQueryDriver {
     }
 
     public Stream<Record> results(String queryId) {
-        String path = "file:///" + queryId + ".txt";
+        String path = "file://" + outputDir.resolve(queryId + ".txt");
         List<Record> records = new ArrayList<>();
         try {
             ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path),
