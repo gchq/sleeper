@@ -19,7 +19,6 @@ package sleeper.systemtest.drivers.query;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.record.Record;
@@ -35,7 +34,6 @@ import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,9 +49,7 @@ public class DirectQueryDriver {
     }
 
     public List<Record> getAllRecordsInTable() {
-        StateStore stateStore = instance.getStateStore();
-        PartitionTree tree = getPartitionTree(stateStore);
-        return run(allRecordsQuery(tree));
+        return run(queryCreator.allRecordsQuery());
     }
 
     public List<Record> run(Query query) {
@@ -72,13 +68,6 @@ public class DirectQueryDriver {
 
     public List<Record> run(String key, Object min, Object max) {
         return run(queryCreator.create(key, min, max));
-    }
-
-    private Query allRecordsQuery(PartitionTree tree) {
-        return new Query.Builder(
-                instance.getTableProperties().get(TableProperty.TABLE_NAME),
-                UUID.randomUUID().toString(),
-                List.of(tree.getRootPartition().getRegion())).build();
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {

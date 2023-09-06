@@ -34,6 +34,13 @@ public class SystemTestSQSQuery {
         this.sqsQueryDriver = new SQSQueryDriver(instance, clients.getSqs());
     }
 
+    public SystemTestSQSQuery allRecordsInTable() {
+        String queryId = UUID.randomUUID().toString();
+        sqsQueryDriver.allRecords(queryId);
+        this.queryId = queryId;
+        return this;
+    }
+
     public SystemTestSQSQuery run(String key, Object min, Object max) {
         String queryId = UUID.randomUUID().toString();
         sqsQueryDriver.run(queryId, key, min, max);

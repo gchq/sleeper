@@ -16,25 +16,27 @@
 
 package sleeper.systemtest.drivers.query;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
-import sleeper.query.model.QuerySerDe;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 public class QueryCreator {
     private final Schema schema;
     private final String tableName;
-    private final QuerySerDe querySerDe;
+    private final StateStore stateStore;
 
     public QueryCreator(SleeperInstanceContext instance) {
         this.schema = instance.getTableProperties().getSchema();
         this.tableName = instance.getTableName();
-        this.querySerDe = new QuerySerDe(Map.of(tableName, schema));
+        this.stateStore = instance.getStateStore();
     }
 
     public Query create(String key, Object min, Object max) {
@@ -47,7 +49,20 @@ public class QueryCreator {
         return new Query.Builder(tableName, queryId, region).build();
     }
 
-    public String asString(String queryId, String key, Object min, Object max) {
-        return querySerDe.toJson(create(queryId, key, min, max));
+    public Query allRecordsQuery() {
+        return allRecordsQuery(UUID.randomUUID().toString());
+    }
+
+    public Query allRecordsQuery(String queryId) {
+        return new Query.Builder(tableName, queryId,
+                List.of(getPartitionTree().getRootPartition().getRegion())).build();
+    }
+
+    private PartitionTree getPartitionTree() {
+        try {
+            return new PartitionTree(schema, stateStore.getAllPartitions());
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

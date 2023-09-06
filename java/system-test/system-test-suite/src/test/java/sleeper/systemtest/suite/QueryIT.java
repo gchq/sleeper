@@ -17,6 +17,8 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,26 +43,57 @@ public class QueryIT {
         sleeper.queryResults().emptyBucket();
     }
 
-    @Test
-    void shouldRunDirectQuery() {
-        // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+    @Nested
+    @DisplayName("Direct query")
+    class DirectQuery {
+        @Test
+        void shouldRunQueryForAllRecords() {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
-        // When/Then
-        assertThat(sleeper.query().direct()
-                .run("key", "row-0000000000000000010", "row-0000000000000000020"))
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+            // When/Then
+            assertThat(sleeper.query().direct()
+                    .allRecordsInTable())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        }
+
+        @Test
+        void shouldRunQueryWithCustomRange() {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().direct()
+                    .run("key", "row-0000000000000000010", "row-0000000000000000020"))
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+        }
     }
 
-    @Test
-    void shouldRunSQSQuery() throws InterruptedException {
-        // Given
-        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+    @Nested
+    @DisplayName("SQS Query")
+    class SQSQuery {
+        @Test
+        void shouldRunQueryForAllRecords() throws InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
-        // When/Then
-        assertThat(sleeper.query().byQueue()
-                .run("key", "row-0000000000000000010", "row-0000000000000000020")
-                .waitForQuery().results())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+            // When/Then
+            assertThat(sleeper.query().byQueue()
+                    .allRecordsInTable()
+                    .waitForQuery().results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
+        }
+
+        @Test
+        void shouldRunQueryWithCustomRange() throws InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().byQueue()
+                    .run("key", "row-0000000000000000010", "row-0000000000000000020")
+                    .waitForQuery().results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+        }
     }
 }

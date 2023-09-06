@@ -18,7 +18,10 @@ package sleeper.systemtest.drivers.query;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
+import sleeper.query.model.QuerySerDe;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+
+import java.util.Map;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 
@@ -27,13 +30,20 @@ public class SQSQueryDriver {
     private final QueryCreator queryCreator;
     private final AmazonSQS sqsClient;
 
+    private final QuerySerDe querySerDe;
+
     public SQSQueryDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
         this.queryCreator = new QueryCreator(instance);
         this.sqsClient = sqsClient;
         this.queueUrl = instance.getInstanceProperties().get(QUERY_QUEUE_URL);
+        this.querySerDe = new QuerySerDe(Map.of(instance.getTableName(), instance.getTableProperties().getSchema()));
+    }
+
+    public void allRecords(String queryId) {
+        sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.allRecordsQuery(queryId)));
     }
 
     public void run(String queryId, String key, Object min, Object max) {
-        sqsClient.sendMessage(queueUrl, queryCreator.asString(queryId, key, min, max));
+        sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.create(queryId, key, min, max)));
     }
 }
