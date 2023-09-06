@@ -48,6 +48,13 @@ public class SystemTestSQSQuery {
         return this;
     }
 
+    public SystemTestSQSQuery run(String key, Object min1, Object max1, Object min2, Object max2) {
+        String queryId = UUID.randomUUID().toString();
+        sqsQueryDriver.run(queryId, key, min1, max1, min2, max2);
+        this.queryId = queryId;
+        return this;
+    }
+
     public SystemTestSQSQuery waitForQuery() throws InterruptedException {
         systemTestQueryResults.waitForQuery(queryId);
         return this;

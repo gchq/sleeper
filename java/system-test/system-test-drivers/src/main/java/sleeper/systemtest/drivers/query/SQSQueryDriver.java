@@ -46,4 +46,8 @@ public class SQSQueryDriver {
     public void run(String queryId, String key, Object min, Object max) {
         sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.create(queryId, key, min, max)));
     }
+
+    public void run(String queryId, String key, Object min1, Object max1, Object min2, Object max2) {
+        sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.create(queryId, key, min1, max1, min2, max2)));
+    }
 }

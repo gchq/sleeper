@@ -34,6 +34,7 @@ import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,7 +68,11 @@ public class DirectQueryDriver {
     }
 
     public List<Record> run(String key, Object min, Object max) {
-        return run(queryCreator.create(key, min, max));
+        return run(queryCreator.create(UUID.randomUUID().toString(), key, min, max));
+    }
+
+    public List<Record> run(String key, Object min1, Object max1, Object min2, Object max2) {
+        return run(queryCreator.create(UUID.randomUUID().toString(), key, min1, max1, min2, max2));
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {

@@ -58,7 +58,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithCustomRange() {
+        void shouldRunQueryWithOneRange() {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -66,6 +66,34 @@ public class QueryIT {
             assertThat(sleeper.query().direct()
                     .run("key", "row-0000000000000000010", "row-0000000000000000020"))
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+        }
+
+        @Test
+        void shouldRunQueryWithTwoRangesThatOverlap() {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().direct()
+                    .run("key",
+                            "row-0000000000000000010", "row-0000000000000000030",
+                            "row-0000000000000000020", "row-0000000000000000040"))
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                            LongStream.range(10, 20), LongStream.range(30, 40))));
+        }
+
+        @Test
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap() {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().direct()
+                    .run("key",
+                            "row-0000000000000000010", "row-0000000000000000020",
+                            "row-0000000000000000030", "row-0000000000000000040"))
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                            LongStream.range(10, 20), LongStream.range(30, 40))));
         }
     }
 
@@ -85,7 +113,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithCustomRange() throws InterruptedException {
+        void shouldRunQueryWithOneRange() throws InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -94,6 +122,36 @@ public class QueryIT {
                     .run("key", "row-0000000000000000010", "row-0000000000000000020")
                     .waitForQuery().results())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
+        }
+
+        @Test
+        void shouldRunQueryWithTwoRangesThatOverlap() throws InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().byQueue()
+                    .run("key",
+                            "row-0000000000000000010", "row-0000000000000000030",
+                            "row-0000000000000000020", "row-0000000000000000040")
+                    .waitForQuery().results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                            LongStream.range(10, 20), LongStream.range(30, 40))));
+        }
+
+        @Test
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap() throws InterruptedException {
+            // Given
+            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+            // When/Then
+            assertThat(sleeper.query().byQueue()
+                    .run("key",
+                            "row-0000000000000000010", "row-0000000000000000020",
+                            "row-0000000000000000030", "row-0000000000000000040")
+                    .waitForQuery().results())
+                    .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
+                            LongStream.range(10, 20), LongStream.range(30, 40))));
         }
     }
 }

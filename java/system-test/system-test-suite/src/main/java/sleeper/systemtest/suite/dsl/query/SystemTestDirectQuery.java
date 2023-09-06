@@ -36,4 +36,8 @@ public class SystemTestDirectQuery {
     public List<Record> run(String key, Object min, Object max) {
         return directQueryDriver.run(key, min, max);
     }
+
+    public List<Record> run(String key, Object min1, Object max1, Object min2, Object max2) {
+        return directQueryDriver.run(key, min1, max1, min2, max2);
+    }
 }
