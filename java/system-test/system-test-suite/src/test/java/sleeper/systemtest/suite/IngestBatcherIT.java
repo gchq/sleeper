@@ -24,8 +24,8 @@ import org.junit.jupiter.api.TestInfo;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
-import sleeper.systemtest.suite.dsl.IngestBatcherResult;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
 
 import java.time.Duration;
 import java.util.stream.LongStream;
@@ -75,15 +75,15 @@ public class IngestBatcherIT {
                 .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
-        IngestBatcherResult result = sleeper.ingest().batcher()
+        SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForJobs().getInvokeResult();
+                .invoke().invokeStandardIngestTask().waitForJobs().getInvokeResult();
 
         // Then
         assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(2);
+        assertThat(sleeper.tableFiles().active()).hasSize(2);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class IngestBatcherIT {
                 .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
-        IngestBatcherResult result = sleeper.ingest().batcher()
+        SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
                 .invoke().waitForJobs(
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
@@ -114,6 +114,6 @@ public class IngestBatcherIT {
         assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isOne();
+        assertThat(sleeper.tableFiles().active()).hasSize(1);
     }
 }

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.util.RunCommand;
+import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
@@ -116,7 +116,7 @@ class InvokeCdkForInstanceTest {
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
             CdkCommand cdkCommand = CdkCommand.deployExisting();
-            RunCommand runner = command -> 1; // Anything but 0 is a failed exit code
+            CommandRunner runner = command -> 1; // Anything but 0 is a failed exit code
 
             // When / Then
             assertThatThrownBy(() -> cdk.invoke(InvokeCdkForInstance.Type.STANDARD, cdkCommand, runner))
@@ -158,7 +158,7 @@ class InvokeCdkForInstanceTest {
         void shouldThrowIOExceptionWhenCommandFails() {
             // Given
             CdkCommand cdkCommand = CdkCommand.destroy();
-            RunCommand runner = command -> 1; // Anything but 0 is a failed exit code
+            CommandRunner runner = command -> 1; // Anything but 0 is a failed exit code
 
             // When / Then
             assertThatThrownBy(() -> cdk.invoke(InvokeCdkForInstance.Type.STANDARD, cdkCommand, runner))

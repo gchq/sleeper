@@ -50,7 +50,7 @@ public class ConfigurationStack extends NestedStack {
                 .build();
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
-        addIngestSourceRoleReferences(this, "IngestConfigReader", instanceProperties)
+        addIngestSourceRoleReferences(this, "ConfigReaderForIngest", instanceProperties)
                 .forEach(configBucket::grantRead);
 
         Utils.addStackTagIfSet(this, instanceProperties);

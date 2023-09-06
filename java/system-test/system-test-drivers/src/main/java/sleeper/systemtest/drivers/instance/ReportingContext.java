@@ -49,6 +49,10 @@ public class ReportingContext {
         LOGGER.info("Ingest recording window started at {}", recordingStartTime);
     }
 
+    public Instant getRecordingStartTime() {
+        return recordingStartTime;
+    }
+
     public void print(TestContext testContext, SystemTestReport report) {
         try (ReportHandle handle = openReport(testContext)) {
             report.print(handle.getPrintStream(), recordingStartTime);

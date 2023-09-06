@@ -123,6 +123,12 @@ sleeper.metrics.namespace=Sleeper
 # This will mainly be used in test scenarios to ensure properties are up to date.
 sleeper.properties.force.reload=false
 
+# If set, this property will be used as a prefix for the names of ECR repositories. If unset, then the
+# instance ID will be used to determine the names instead.
+# Note: This is only used by the deployment scripts to upload Docker images, not the CDK. We may add
+# the ability to use this in the CDK in the future.
+# sleeper.ecr.repository.prefix=
+
 
 ## The following properties relate to standard ingest.
 
@@ -167,6 +173,9 @@ sleeper.ingest.partition.refresh.period=120
 # of Sleeper. The ingest and bulk import stacks will be given read access to these buckets so that
 # they can consume data from them.
 # sleeper.ingest.source.bucket=
+
+# A comma-separated list of role names which should be able to ingest data into Sleeper.
+# sleeper.ingest.source.role=
 
 # The way in which records are held in memory before they are written to a local store.
 # Valid values are 'arraylist' and 'arrow'.
@@ -501,24 +510,24 @@ sleeper.default.bulk.import.emr.release.label=emr-6.10.0
 # import using EMR - Instance types section in docs/05-ingest.md
 sleeper.default.bulk.import.emr.instance.architecture=x86_64
 
-# (Non-persistent EMR mode only) The default EC2 x86 instance types to be used for the master node of
-# the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
-# docs/05-ingest.md
+# (Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be used for the
+# master node of the EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.default.bulk.import.emr.master.x86.instance.types=m6i.xlarge
 
-# (Non-persistent EMR mode only) The default EC2 x86_64 instance types to be used for the executor
-# nodes of the EMR cluster. For more information, see the Bulk import using EMR - Instance types
-# section in docs/05-ingest.md
+# (Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be used for the
+# executor nodes of the EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.default.bulk.import.emr.executor.x86.instance.types=m6i.4xlarge
 
-# (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the master node
-# of the EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
-# docs/05-ingest.md
+# (Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used for the
+# master node of the EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.default.bulk.import.emr.master.arm.instance.types=m6g.xlarge
 
-# (Non-persistent EMR mode only) The default EC2 ARM64 instance types to be used for the executor
-# nodes of the EMR cluster. For more information, see the Bulk import using EMR - Instance types
-# section in docs/05-ingest.md
+# (Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used for the
+# executor nodes of the EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.default.bulk.import.emr.executor.arm.instance.types=m6g.4xlarge
 
 # (Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of
@@ -554,24 +563,24 @@ sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
 # EMR - Instance types section in docs/05-ingest.md
 sleeper.bulk.import.persistent.emr.instance.architecture=x86_64
 
-# (Persistent EMR mode only) The EC2 x86 instance types used for the master node of the persistent EMR
-# cluster. For more information, see the Bulk import using EMR - Instance types section in
-# docs/05-ingest.md
+# (Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the master node of the
+# persistent EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.bulk.import.persistent.emr.master.x86.instance.types=m6i.xlarge
 
-# (Persistent EMR mode only) The EC2 x86 instance types used for the executor nodes of the persistent
-# EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
-# docs/05-ingest.md
+# (Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the executor nodes of
+# the persistent EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m6i.4xlarge
 
-# (Persistent EMR mode only) The EC2 ARM64 instance types used for the master node of the persistent
-# EMR cluster. For more information, see the Bulk import using EMR - Instance types section in
-# docs/05-ingest.md
+# (Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the master node of the
+# persistent EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.bulk.import.persistent.emr.master.arm.instance.types=m6g.xlarge
 
-# (Persistent EMR mode only) The EC2 ARM64 instance types used for the executor nodes of the
-# persistent EMR cluster. For more information, see the Bulk import using EMR - Instance types section
-# in docs/05-ingest.md
+# (Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the executor nodes of
+# the persistent EMR cluster.
+# For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md
 sleeper.bulk.import.persistent.emr.executor.arm.instance.types=m6g.4xlarge
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
@@ -596,6 +605,14 @@ sleeper.bulk.import.persistent.emr.max.capacity=10
 
 # (Persistent EMR mode only) This controls the number of EMR steps that can run concurrently.
 sleeper.bulk.import.persistent.emr.step.concurrency.level=2
+
+# (EKS mode only) Names of AWS IAM roles which should have access to administer the EKS cluster.
+# sleeper.bulk.import.eks.cluster.admin.roles=
+
+# (EKS mode only) Set to true if sleeper.bulk.import.eks.repo contains the image built with native
+# Hadoop libraries. By default when deploying with the EKS stack enabled, an image will be built based
+# on the official Spark Docker image, so this should be false.
+sleeper.bulk.import.eks.is.native.libs.image=false
 
 
 ## The following properties relate to the splitting of partitions.
