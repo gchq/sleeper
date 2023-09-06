@@ -40,12 +40,14 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -88,6 +90,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     private final String fileSystemPrefix = "s3a://";
     @TempDir
     public java.nio.file.Path temporaryFolder;
+    protected final InstanceProperties instanceProperties = new InstanceProperties();
 
     @BeforeEach
     public void before() throws IOException {
@@ -95,22 +98,19 @@ public abstract class IngestJobQueueConsumerTestBase {
         s3.createBucket(tableDataBucketName);
         s3.createBucket(ingestDataBucketName);
         sqs.createQueue(ingestQueueName);
-    }
-
-    protected InstanceProperties getInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(CONFIG_BUCKET, configBucketName);
         instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return instanceProperties;
     }
 
-    protected TableProperties createTable(Schema schema) throws IOException, StateStoreException {
-        InstanceProperties instanceProperties = getInstanceProperties();
+    protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
+        return new DynamoDBStateStoreCreator(instanceProperties, createTableProperties(schema), dynamoDB).create();
+    }
 
+    private TableProperties createTableProperties(Schema schema) throws IOException {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
@@ -119,9 +119,6 @@ public abstract class IngestJobQueueConsumerTestBase {
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.saveToS3(s3);
-
-        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
-
         return tableProperties;
     }
 
@@ -136,18 +133,21 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected List<String> writeParquetFilesForIngest(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             String subDirectory,
-            int numberOfFiles) throws IOException {
+            int numberOfFiles) {
         List<String> files = new ArrayList<>();
 
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
             String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", getIngestBucket(), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConfiguration);
-            for (Record record : recordListAndSchema.recordList) {
-                writer.write(record);
+            try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                    path, recordListAndSchema.sleeperSchema, hadoopConfiguration)) {
+                for (Record record : recordListAndSchema.recordList) {
+                    writer.write(record);
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-            writer.close();
         }
 
         return files;

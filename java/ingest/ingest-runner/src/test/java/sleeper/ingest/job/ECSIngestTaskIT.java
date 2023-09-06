@@ -16,11 +16,10 @@
 
 package sleeper.ingest.job;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -28,25 +27,19 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
-import sleeper.ingest.task.IngestTask;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
-import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,12 +48,17 @@ import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
-    private IngestTask createTaskRunner(InstanceProperties instanceProperties,
-                                        String localDir,
-                                        String taskId) {
-        return ECSIngestTask.createIngestTask(
-                ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
-                s3, dynamoDB, sqs, cloudWatch, s3Async, hadoopConfiguration);
+    private void runTask(String localDir, String taskId) throws Exception {
+        ECSIngestTask.createIngestTask(
+                        ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
+                        s3, dynamoDB, sqs, cloudWatch, s3Async, hadoopConfiguration)
+                .run();
+    }
+
+    @BeforeEach
+    void setUp() {
+        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
     }
 
     @Test
@@ -72,16 +70,11 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        InstanceProperties instanceProperties = getInstanceProperties();
-        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties).getStateStore(createTable(recordListAndSchema.sleeperSchema));
-        stateStore.initialise();
+        StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
         String localDir = createTempDirectory(temporaryFolder, null).toString();
 
-        ingestRecords(
-                files,
-                localDir,
-                instanceProperties
-        );
+        sendJobs(List.of(createJobWithTableAndFiles("job", tableName, files)));
+        runTask(localDir, "task");
 
         // Verify the results
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -110,37 +103,26 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
 
     @Test
     public void shouldContinueReadingFromQueueWhileMoreMessagesExist() throws Exception {
+        // Given
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-100, 100).boxed().collect(Collectors.toList()));
         int noOfJobs = 10;
         int noOfFilesPerJob = 4;
         List<IngestJob> ingestJobs = IntStream.range(0, noOfJobs)
-                .mapToObj(jobNo -> {
-                    try {
-                        List<String> files = writeParquetFilesForIngest(recordListAndSchema, "job-" + jobNo, noOfFilesPerJob);
-                        return IngestJob.builder()
-                                .tableName(tableName).id(UUID.randomUUID().toString()).files(files)
-                                .build();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toList());
-        List<Record> expectedRecords = Stream.of(Collections.nCopies(noOfJobs * noOfFilesPerJob, recordListAndSchema.recordList))
-                .flatMap(List::stream)
-                .flatMap(List::stream)
+                .mapToObj(jobNo -> "job-" + jobNo)
+                .map(jobId -> IngestJob.builder().tableName(tableName).id(jobId)
+                        .files(writeParquetFilesForIngest(recordListAndSchema, jobId, noOfFilesPerJob))
+                        .build())
                 .collect(Collectors.toList());
-        ingestJobs.forEach(ingestJob -> sqs.sendMessage(
-                getInstanceProperties().get(INGEST_JOB_QUEUE_URL),
-                new IngestJobSerDe().toJson(ingestJob)));
+        List<Record> expectedRecords = Collections.nCopies(noOfJobs * noOfFilesPerJob, recordListAndSchema.recordList).stream()
+                .flatMap(List::stream).collect(Collectors.toList());
         String localDir = createTempDirectory(temporaryFolder, null).toString();
-        InstanceProperties instanceProperties = getInstanceProperties();
-        StateStore stateStore = new StateStoreProvider(dynamoDB, instanceProperties).getStateStore(createTable(recordListAndSchema.sleeperSchema));
-        stateStore.initialise();
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
-        IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
-        runner.run();
+        StateStore stateStore = createTable(recordListAndSchema.sleeperSchema);
+        sendJobs(ingestJobs);
+
+        // When
+        runTask(localDir, "test-task");
 
         // Verify the results
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -170,17 +152,9 @@ public class ECSIngestTaskIT extends IngestJobQueueConsumerTestBase {
         );
     }
 
-    private void ingestRecords(
-            List<String> files,
-            String localDir,
-            InstanceProperties instanceProperties
-
-    ) throws IteratorException, StateStoreException, IOException {
-        IngestJob ingestJob = createJobWithTableAndFiles("id", tableName, files);
-        sqs.sendMessage(getInstanceProperties().get(INGEST_JOB_QUEUE_URL), new IngestJobSerDe().toJson(ingestJob));
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
-        IngestTask runner = createTaskRunner(instanceProperties, localDir, "test-task");
-        runner.run();
+    private void sendJobs(List<IngestJob> jobs) {
+        jobs.forEach(job -> sqs.sendMessage(
+                instanceProperties.get(INGEST_JOB_QUEUE_URL),
+                new IngestJobSerDe().toJson(job)));
     }
 }
