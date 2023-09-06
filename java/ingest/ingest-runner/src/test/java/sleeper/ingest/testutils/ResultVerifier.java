@@ -44,13 +44,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ResultVerifier {
-    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
 
     private ResultVerifier() {
     }
@@ -150,31 +151,65 @@ public class ResultVerifier {
     }
 
     public static void assertOnSketch(Field field, ItemsSketch expectedSketch, ItemsSketch savedSketch) {
-        IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
-            KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
-            double quantile = 0.1 * quantileNo;
-            double quantileWithToleranceLower = (quantile - QUANTILE_SKETCH_TOLERANCE) > 0 ? quantile - QUANTILE_SKETCH_TOLERANCE : 0;
-            double quantileWithToleranceUpper = (quantile + QUANTILE_SKETCH_TOLERANCE) < 1 ? quantile + QUANTILE_SKETCH_TOLERANCE : 1;
-            Key expectedUpperQuantileKey =
-                    field.getType() instanceof ByteArrayType
-                            ? Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceUpper)).getArray())
-                            : Key.create(expectedSketch.getQuantile(quantileWithToleranceUpper));
-            Key expectedLowerQuantileKey =
-                    field.getType() instanceof ByteArrayType
-                            ? Key.create(((ByteArray) expectedSketch.getQuantile(quantileWithToleranceLower)).getArray())
-                            : Key.create(expectedSketch.getQuantile(quantileWithToleranceLower));
-            Key savedQuantileKey =
-                    field.getType() instanceof ByteArrayType
-                            ? Key.create(((ByteArray) savedSketch.getQuantile(quantile)).getArray())
-                            : Key.create(savedSketch.getQuantile(quantile));
-            assertThat(keyComparator.compare(
-                    savedQuantileKey,
-                    expectedLowerQuantileKey))
-                    .isGreaterThanOrEqualTo(0);
-            assertThat(keyComparator.compare(
-                    savedQuantileKey,
-                    expectedUpperQuantileKey))
-                    .isLessThanOrEqualTo(0);
-        });
+        KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
+        Function<Object, Key> readKey = field.getType() instanceof ByteArrayType
+                ? object -> Key.create(((ByteArray) object).getArray())
+                : Key::create;
+        Object[] actual = savedSketch.getQuantiles(ACTUAL_QUANTILES_QUERY);
+        Object[] expected = expectedSketch.getQuantiles(EXPECTED_QUANTILES_QUERY);
+        for (TestQuantile quantile : TEST_QUANTILES) {
+            assertThat(List.of(
+                    readKey.apply(quantile.expectedLowerValue(expected)),
+                    readKey.apply(quantile.actualValue(actual)),
+                    readKey.apply(quantile.expectedUpperValue(expected))))
+                    .isSortedAccordingTo(keyComparator);
+        }
+    }
+
+    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
+    private static final List<TestQuantile> TEST_QUANTILES = IntStream.rangeClosed(0, 10)
+            .mapToObj(index -> new TestQuantile(index, index * 0.1, QUANTILE_SKETCH_TOLERANCE))
+            .collect(Collectors.toUnmodifiableList());
+    private static final double[] ACTUAL_QUANTILES_QUERY = TEST_QUANTILES.stream()
+            .mapToDouble(TestQuantile::actualQuantile).toArray();
+    private static final double[] EXPECTED_QUANTILES_QUERY = TEST_QUANTILES.stream()
+            .flatMapToDouble(TestQuantile::expectedQuantiles).toArray();
+
+    private static class TestQuantile {
+        private final double quantile;
+        private final double quantileWithToleranceLower;
+        private final double quantileWithToleranceUpper;
+        private final int actualOffset;
+        private final int expectedLowerOffset;
+        private final int expectedUpperOffset;
+
+        public TestQuantile(int index, double quantile, double tolerance) {
+            this.quantile = quantile;
+            quantileWithToleranceLower = Math.max(quantile - tolerance, 0);
+            quantileWithToleranceUpper = Math.min(quantile + tolerance, 1);
+            actualOffset = index;
+            expectedLowerOffset = index * 2;
+            expectedUpperOffset = index * 2 + 1;
+        }
+
+        public Object expectedLowerValue(Object[] expected) {
+            return expected[expectedLowerOffset];
+        }
+
+        public Object expectedUpperValue(Object[] expected) {
+            return expected[expectedUpperOffset];
+        }
+
+        public Object actualValue(Object[] actual) {
+            return actual[actualOffset];
+        }
+
+        public DoubleStream expectedQuantiles() {
+            return DoubleStream.of(quantileWithToleranceLower, quantileWithToleranceUpper);
+        }
+
+        public double actualQuantile() {
+            return quantile;
+        }
     }
 }
