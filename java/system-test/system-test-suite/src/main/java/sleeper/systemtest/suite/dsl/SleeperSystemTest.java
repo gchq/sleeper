@@ -29,6 +29,7 @@ import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.suite.dsl.query.SystemTestDirectQuery;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
 import sleeper.systemtest.suite.dsl.query.SystemTestQueryResults;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;

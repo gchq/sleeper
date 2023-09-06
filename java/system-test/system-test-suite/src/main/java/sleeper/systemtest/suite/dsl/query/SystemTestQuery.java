@@ -18,7 +18,6 @@ package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
-import sleeper.systemtest.suite.dsl.SystemTestDirectQuery;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 public class SystemTestQuery {
