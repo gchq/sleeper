@@ -50,6 +50,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ResultVerifier {
+    private static final double QUANTILE_SKETCH_TOLERANCE = 0.01;
+
     private ResultVerifier() {
     }
 
@@ -71,9 +73,15 @@ public class ResultVerifier {
         return fieldNameSet.stream()
                 .map(fieldName -> {
                     List<ItemsSketch> itemsSketchList = readSketchesList.stream().map(sketches -> sketches.getQuantilesSketch(fieldName)).collect(Collectors.toList());
-                    Field field = sleeperSchema.getField(fieldName).get();
+                    Field field = sleeperSchema.getField(fieldName).orElseThrow();
                     return new AbstractMap.SimpleEntry<>(field, mergeSketches(itemsSketchList));
                 }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static Map<Field, ItemsSketch> createFieldToItemSketchMap(Schema sleeperSchema, List<Record> recordList) {
+        return sleeperSchema.getRowKeyFields().stream()
+                .map(field -> new AbstractMap.SimpleEntry<>(field, createItemSketch(field, recordList)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private static ItemsSketch mergeSketches(List<ItemsSketch> itemsSketchList) {
@@ -136,9 +144,12 @@ public class ResultVerifier {
 
     public static void assertOnSketch(Field field, RecordGenerator.RecordListAndSchema recordListAndSchema,
                                       List<FileInfo> actualFiles, Configuration hadoopConfiguration) {
-        final double QUANTILE_SKETCH_TOLERANCE = 0.01;
         ItemsSketch expectedSketch = createItemSketch(field, recordListAndSchema.recordList);
         ItemsSketch savedSketch = readFieldToItemSketchMap(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration).get(field);
+        assertOnSketch(field, expectedSketch, savedSketch);
+    }
+
+    public static void assertOnSketch(Field field, ItemsSketch expectedSketch, ItemsSketch savedSketch) {
         IntStream.rangeClosed(0, 10).forEach(quantileNo -> {
             KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
             double quantile = 0.1 * quantileNo;

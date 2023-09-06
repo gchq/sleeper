@@ -16,15 +16,19 @@
 package sleeper.ingest.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
@@ -38,11 +42,10 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +59,10 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
+import static sleeper.ingest.testutils.ResultVerifier.assertOnSketch;
+import static sleeper.ingest.testutils.ResultVerifier.createFieldToItemSketchMap;
+import static sleeper.ingest.testutils.ResultVerifier.readFieldToItemSketchMap;
+import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
 public class IngestTestHelper<T> {
 
@@ -103,55 +110,7 @@ public class IngestTestHelper<T> {
             }
         }
 
-        java.nio.file.Path localWorkingDirectoryPath = Paths.get(localWorkingDirectory);
-        List<String> filesLeftInWorkingDirectory = (Files.exists(localWorkingDirectoryPath)) ?
-                Files.walk(localWorkingDirectoryPath)
-                        .filter(Files::isRegularFile)
-                        .map(java.nio.file.Path::toString)
-                        .collect(Collectors.toList()) :
-                Collections.emptyList();
-        assertThat(filesLeftInWorkingDirectory).isEmpty();
-
-        PartitionTree partitionTree = new PartitionTree(schema, stateStore.getAllPartitions());
-
-        Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
-                .collect(Collectors.groupingBy(
-                        record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(schema.getRowKeyFieldNames())))));
-
-        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
-                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
-
-        Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
-                .map(entry -> {
-                    Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(schema.getRowKeyFieldNames()));
-                    return new AbstractMap.SimpleEntry<>(partitionTree.getLeafPartition(keyOfFirstRecord).getId(), entry.getKey());
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
-                        Map.Entry::getValue));
-
-        int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
-                .mapToInt(Integer::valueOf)
-                .sum();
-
-        Set<Integer> allPartitionNoSet = Stream.of(
-                        partitionNoToFileInfosMap.keySet().stream(),
-                        partitionNoToExpectedNoOfFilesMap.keySet().stream(),
-                        partitionNoToExpectedRecordsMap.keySet().stream())
-                .flatMap(Function.identity())
-                .collect(Collectors.toSet());
-
-        assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
-        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
-
-        RecordGenerator.RecordListAndSchema recordListAndSchema = new RecordGenerator.RecordListAndSchema(expectedRecords, schema);
-        ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getRowKeyFields().get(0),
-                recordListAndSchema,
-                stateStore.getActiveFiles(),
-                hadoopConfiguration
-        );
+        verify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     public IngestTestHelper<T> createStateStore(
@@ -219,5 +178,85 @@ public class IngestTestHelper<T> {
     public IngestTestHelper<T> partitionFileWriterFactory(PartitionFileWriterFactory partitionFileWriterFactory) {
         this.partitionFileWriterFactory = partitionFileWriterFactory;
         return this;
+    }
+
+    private void verify(
+            Function<Key, Integer> keyToPartitionNoMappingFn,
+            Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws StateStoreException {
+        assertThat(Path.of(localWorkingDirectory)).isEmptyDirectory();
+
+        PartitionTree partitionTree = new PartitionTree(schema, stateStore.getAllPartitions());
+
+        Map<Integer, List<Record>> partitionNoToExpectedRecordsMap = expectedRecords.stream()
+                .collect(Collectors.groupingBy(
+                        record -> keyToPartitionNoMappingFn.apply(Key.create(record.getValues(schema.getRowKeyFieldNames())))));
+
+        Map<String, List<FileInfo>> partitionIdToFileInfosMap = stateStore.getActiveFiles().stream()
+                .collect(Collectors.groupingBy(FileInfo::getPartitionId));
+
+        Map<String, Integer> partitionIdToPartitionNoMap = partitionNoToExpectedRecordsMap.entrySet().stream()
+                .map(entry -> {
+                    Key keyOfFirstRecord = Key.create(entry.getValue().get(0).getValues(schema.getRowKeyFieldNames()));
+                    return new AbstractMap.SimpleEntry<>(partitionTree.getLeafPartition(keyOfFirstRecord).getId(), entry.getKey());
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Integer, List<FileInfo>> partitionNoToFileInfosMap = partitionIdToFileInfosMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> partitionIdToPartitionNoMap.get(entry.getKey()),
+                        Map.Entry::getValue));
+
+        int expectedTotalNoOfFiles = partitionNoToExpectedNoOfFilesMap.values().stream()
+                .mapToInt(Integer::valueOf)
+                .sum();
+
+        Set<Integer> allPartitionNoSet = Stream.of(
+                        partitionNoToFileInfosMap.keySet().stream(),
+                        partitionNoToExpectedNoOfFilesMap.keySet().stream(),
+                        partitionNoToExpectedRecordsMap.keySet().stream())
+                .flatMap(Function.identity())
+                .collect(Collectors.toSet());
+
+        assertThat(stateStore.getActiveFiles()).hasSize(expectedTotalNoOfFiles);
+        assertThat(allPartitionNoSet).allMatch(partitionNoToExpectedNoOfFilesMap::containsKey);
+
+        allPartitionNoSet.forEach(partitionNo -> verifyPartition(
+                partitionNoToFileInfosMap.getOrDefault(partitionNo, Collections.emptyList()),
+                partitionNoToExpectedNoOfFilesMap.get(partitionNo),
+                partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList())));
+    }
+
+    private void verifyPartition(List<FileInfo> partitionFileInfoList,
+                                 int expectedNoOfFiles,
+                                 List<Record> expectedRecords) {
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(schema, partitionFileInfoList, hadoopConfiguration);
+
+        assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles); // Asserts that the partitionFileInfoList has the same size as the expected number of files
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords); // Asserts that the expected record list, when sorted, is identical to the record list in the partition
+
+        // In some situations, check that the file min and max match the min and max of dimension 0
+        if (expectedNoOfFiles == 1 &&
+                schema.getRowKeyFields().get(0).getType() instanceof LongType) {
+            String rowKeyFieldNameDimension0 = schema.getRowKeyFieldNames().get(0);
+            Key minRowKeyDimension0 = expectedRecords.stream()
+                    .map(record -> (Long) record.get(rowKeyFieldNameDimension0))
+                    .min(Comparator.naturalOrder())
+                    .map(Key::create)
+                    .orElseThrow();
+            Key maxRowKeyDimension0 = expectedRecords.stream()
+                    .map(record -> (Long) record.get(rowKeyFieldNameDimension0))
+                    .max(Comparator.naturalOrder())
+                    .map(Key::create)
+                    .orElseThrow();
+            partitionFileInfoList.forEach(fileInfo -> {
+                assertThat(fileInfo.getMinRowKey()).isEqualTo(minRowKeyDimension0);
+                assertThat(fileInfo.getMaxRowKey()).isEqualTo(maxRowKeyDimension0);
+            });
+        }
+
+        if (expectedNoOfFiles > 0) {
+            Map<Field, ItemsSketch> expectedFieldToItemsSketchMap = createFieldToItemSketchMap(schema, expectedRecords);
+            Map<Field, ItemsSketch> savedFieldToItemsSketchMap = readFieldToItemSketchMap(schema, partitionFileInfoList, hadoopConfiguration);
+            schema.getRowKeyFields().forEach(field ->
+                    assertOnSketch(field, expectedFieldToItemsSketchMap.get(field), savedFieldToItemsSketchMap.get(field)));
+        }
     }
 }
