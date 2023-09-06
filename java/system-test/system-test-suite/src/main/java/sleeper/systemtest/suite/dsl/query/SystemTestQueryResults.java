@@ -16,29 +16,15 @@
 
 package sleeper.systemtest.suite.dsl.query;
 
-import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
-import sleeper.systemtest.drivers.query.WaitForQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
-
-import java.util.stream.Stream;
 
 public class SystemTestQueryResults {
     private final S3ResultsDriver s3ResultsDriver;
-    private final WaitForQueryDriver waitForQueryDriver;
 
     public SystemTestQueryResults(SleeperInstanceContext instance, SystemTestClients clients) {
         this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
-        this.waitForQueryDriver = new WaitForQueryDriver(instance, clients.getDynamoDB());
-    }
-
-    public void waitForQuery(String queryId) throws InterruptedException {
-        waitForQueryDriver.waitForQuery(queryId);
-    }
-
-    public Stream<Record> results(String queryId) {
-        return s3ResultsDriver.results(queryId);
     }
 
     public void emptyBucket() {

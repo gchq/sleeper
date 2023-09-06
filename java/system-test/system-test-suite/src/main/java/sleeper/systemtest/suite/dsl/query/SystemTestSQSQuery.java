@@ -18,20 +18,24 @@ package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
+import sleeper.systemtest.drivers.query.WaitForQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.UUID;
 import java.util.stream.Stream;
 
 public class SystemTestSQSQuery {
-    private final SystemTestQueryResults systemTestQueryResults;
     private final SQSQueryDriver sqsQueryDriver;
+    private final S3ResultsDriver s3ResultsDriver;
+    private final WaitForQueryDriver waitForQueryDriver;
     private String queryId;
 
     public SystemTestSQSQuery(SleeperInstanceContext instance, SystemTestClients clients) {
-        this.systemTestQueryResults = new SystemTestQueryResults(instance, clients);
         this.sqsQueryDriver = new SQSQueryDriver(instance, clients.getSqs());
+        this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
+        this.waitForQueryDriver = new WaitForQueryDriver(instance, clients.getDynamoDB());
     }
 
     public SystemTestSQSQuery allRecordsInTable() {
@@ -56,11 +60,11 @@ public class SystemTestSQSQuery {
     }
 
     public SystemTestSQSQuery waitForQuery() throws InterruptedException {
-        systemTestQueryResults.waitForQuery(queryId);
+        waitForQueryDriver.waitForQuery(queryId);
         return this;
     }
 
     public Stream<Record> results() {
-        return systemTestQueryResults.results(queryId);
+        return s3ResultsDriver.results(queryId);
     }
 }
