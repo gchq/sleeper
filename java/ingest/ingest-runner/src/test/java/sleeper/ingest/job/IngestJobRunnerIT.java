@@ -106,7 +106,6 @@ class IngestJobRunnerIT {
     private String currentLocalIngestDirectory;
     private String currentLocalTableDataDirectory;
 
-
     private static Stream<Arguments> parametersForTests() {
         return Stream.of(
                 Arguments.of("arrow", "async", "s3a://"),
