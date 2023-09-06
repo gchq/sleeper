@@ -44,7 +44,7 @@ public class IngestCoordinatorTestParameters {
     private final List<String> fileNames;
     private final Supplier<Instant> fileUpdatedTimes;
 
-    public IngestCoordinatorTestParameters(Builder builder) {
+    private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
         schema = builder.schema;
         iteratorClassName = builder.iteratorClassName;
