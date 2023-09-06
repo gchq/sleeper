@@ -16,6 +16,11 @@
 
 package sleeper.ingest.job;
 
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.sqs.AmazonSQS;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterEach;
@@ -23,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -37,6 +43,7 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -57,22 +64,30 @@ public abstract class IngestJobQueueConsumerTestBase {
             LocalStackContainer.Service.SQS,
             LocalStackContainer.Service.DYNAMODB,
             LocalStackContainer.Service.CLOUDWATCH);
-    protected static final String TEST_INSTANCE_NAME = "myinstance";
-    protected static final String TEST_TABLE_NAME = "mytable";
-    protected static final String INGEST_QUEUE_NAME = TEST_INSTANCE_NAME + "-ingestqueue";
-    protected static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
-    protected static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
-    protected static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
-    protected static final String FILE_SYSTEM_PREFIX = "s3a://";
+
+    protected final AmazonS3 s3 = AWS_EXTERNAL_RESOURCE.getS3Client();
+    protected final S3AsyncClient s3Async = AWS_EXTERNAL_RESOURCE.getS3AsyncClient();
+    protected final AmazonSQS sqs = AWS_EXTERNAL_RESOURCE.getSqsClient();
+    protected final AmazonDynamoDB dynamoDB = AWS_EXTERNAL_RESOURCE.getDynamoDBClient();
+    protected final AmazonCloudWatch cloudWatch = AWS_EXTERNAL_RESOURCE.getCloudWatchClient();
+    protected final Configuration hadoopConfiguration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+
+    private final String instanceId = UUID.randomUUID().toString();
+    protected final String tableName = UUID.randomUUID().toString();
+    private final String ingestQueueName = instanceId + "-ingestqueue";
+    private final String configBucketName = instanceId + "-configbucket";
+    private final String ingestDataBucketName = instanceId + "-" + tableName + "-ingestdata";
+    private final String tableDataBucketName = instanceId + "-" + tableName + "-tabledata";
+    private final String fileSystemPrefix = "s3a://";
     @TempDir
     public java.nio.file.Path temporaryFolder;
 
     @BeforeEach
     public void before() throws IOException {
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(CONFIG_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getSqsClient().createQueue(INGEST_QUEUE_NAME);
+        s3.createBucket(configBucketName);
+        s3.createBucket(tableDataBucketName);
+        s3.createBucket(ingestDataBucketName);
+        sqs.createQueue(ingestQueueName);
     }
 
     @AfterEach
@@ -82,10 +97,10 @@ public abstract class IngestJobQueueConsumerTestBase {
 
     protected InstanceProperties getInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, TEST_INSTANCE_NAME);
-        instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, AWS_EXTERNAL_RESOURCE.getSqsClient().getQueueUrl(INGEST_QUEUE_NAME).getQueueUrl());
-        instanceProperties.set(FILE_SYSTEM, FILE_SYSTEM_PREFIX);
+        instanceProperties.set(ID, instanceId);
+        instanceProperties.set(CONFIG_BUCKET, configBucketName);
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
+        instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         return instanceProperties;
@@ -95,29 +110,25 @@ public abstract class IngestJobQueueConsumerTestBase {
         InstanceProperties instanceProperties = getInstanceProperties();
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, TEST_TABLE_NAME);
+        tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(DATA_BUCKET, getTableDataBucket());
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, TEST_TABLE_NAME + "-p");
-        tableProperties.saveToS3(AWS_EXTERNAL_RESOURCE.getS3Client());
+        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
+        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
+        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
+        tableProperties.saveToS3(s3);
 
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(
-                instanceProperties,
-                tableProperties,
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        dynamoDBStateStoreCreator.create();
+        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
 
         return tableProperties;
     }
 
     protected String getTableDataBucket() {
-        return TABLE_DATA_BUCKET_NAME;
+        return tableDataBucketName;
     }
 
     protected String getIngestBucket() {
-        return INGEST_DATA_BUCKET_NAME;
+        return ingestDataBucketName;
     }
 
     protected List<String> writeParquetFilesForIngest(
@@ -129,8 +140,8 @@ public abstract class IngestJobQueueConsumerTestBase {
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
             String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", getIngestBucket(), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
-            Path path = new Path(FILE_SYSTEM_PREFIX + fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
+            Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
+            ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, hadoopConfiguration);
             for (Record record : recordListAndSchema.recordList) {
                 writer.write(record);
             }
