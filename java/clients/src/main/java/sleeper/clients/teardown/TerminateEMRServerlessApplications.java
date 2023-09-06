@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.CancelJobRunRequest;
-import software.amazon.awssdk.services.emrserverless.model.GetJobRunRequest;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.ListJobRunsRequest;
 import software.amazon.awssdk.services.emrserverless.model.ListJobRunsResponse;
@@ -35,7 +34,6 @@ import sleeper.core.util.PollWithRetries;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static sleeper.clients.util.EmrServerlessUtils.listActiveApplications;
@@ -53,6 +51,7 @@ public class TerminateEMRServerlessApplications {
 
     private final EmrServerlessClient emrServerlessClient;
     private final String applicationPrefix;
+
 
     public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient,
             InstanceProperties properties) {
@@ -87,16 +86,12 @@ public class TerminateEMRServerlessApplications {
                 .forEach(jobRun -> {
                     emrServerlessClient.cancelJobRun((CancelJobRunRequest.builder()
                             .applicationId(application).jobRunId(jobRun.id()).build()));
-                    while (!emrServerlessClient.getJobRun(GetJobRunRequest.builder()
-                    .applicationId(application).jobRunId(jobRun.id()).build()).jobRun().state().equals(JobRunState.CANCELLED)) {
-                        try {
-                            LOGGER.info("Waiting for job {} to cancel", jobRun.id());
-                            TimeUnit.SECONDS.sleep(5);
-                        } catch (InterruptedException e) {
-                            LOGGER.error("An error has occurred whilst waiting for job {} to cancel", jobRun.id(), e);
-                        }
-                    }
                 });
+            }
+            try {
+                pollUntilCancelled(application);
+            } catch (InterruptedException e) {
+                LOGGER.error("An error has occurred whilst waiting for jobs to cancel", e);
             }
             emrServerlessClient.stopApplication(StopApplicationRequest.builder().applicationId(application).build());
         });
@@ -106,6 +101,10 @@ public class TerminateEMRServerlessApplications {
         poll.pollUntil("all EMR Serverless applications terminated", this::allApplicationsTerminated);
     }
 
+    private void pollUntilCancelled(String applicationId) throws InterruptedException {
+        poll.pollUntil("all EMR Serverless jobs cancelled", () -> allJobsCancelled(applicationId));
+    }
+
     private boolean allApplicationsTerminated() {
         List<ApplicationSummary> applications = listActiveApplications(emrServerlessClient).applications();
         long applicationsStillRunning = applications.stream()
@@ -113,6 +112,16 @@ public class TerminateEMRServerlessApplications {
                 .filter(application -> application.state().equals(ApplicationState.STOPPED)).count();
         LOGGER.info("{} apps are still terminating for instance", applicationsStillRunning);
         return applicationsStillRunning == 0;
+    }
+
+    private boolean allJobsCancelled(String applicationId) {
+        ListJobRunsResponse jobRunResponse = emrServerlessClient
+                    .listJobRuns(ListJobRunsRequest.builder().applicationId(applicationId).build());
+
+        long terminatedJobs = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.CANCELLED)).count();
+        long runningJobs = jobRunResponse.jobRuns().size() - terminatedJobs;
+        LOGGER.info("{} jobs are still cancelling for application {}", runningJobs, applicationId);
+        return runningJobs == 0;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
