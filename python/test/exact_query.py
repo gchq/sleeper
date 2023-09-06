@@ -15,6 +15,7 @@
 import argparse
 import json
 
+from pq.parquet_serial import ParquetSerialiser
 from sleeper.sleeper import SleeperClient
 
 if __name__ == "__main__":
@@ -23,9 +24,14 @@ if __name__ == "__main__":
     parser.add_argument("--table", required=True)
     parser.add_argument("--queryid", required=True)
     parser.add_argument("--query", type=json.loads, required=True)
+    parser.add_argument("--outdir", required=True)
 
     args = parser.parse_args()
 
     sleeper_client = SleeperClient(args.instance)
 
-    sleeper_client.exact_key_query(args.table, args.query, args.queryid)
+    with open(args.outdir + "/" + args.queryid + ".txt", "wb") as file:
+        writer = ParquetSerialiser(file)
+        for record in sleeper_client.exact_key_query(args.table, args.query, args.queryid):
+            writer.write_record(record)
+        writer.write_tail()

@@ -19,12 +19,16 @@ package sleeper.systemtest.drivers.python;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import sleeper.core.record.Record;
+import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -33,11 +37,13 @@ public class PythonQueryDriver {
     private final SleeperInstanceContext instance;
     private final PythonRunner pythonRunner;
     private final Path pythonDir;
+    private final Path outputDir;
 
-    public PythonQueryDriver(SleeperInstanceContext instance, Path pythonDir) {
+    public PythonQueryDriver(SleeperInstanceContext instance, Path pythonDir, Path outputDir) {
         this.instance = instance;
         this.pythonRunner = new PythonRunner(pythonDir);
         this.pythonDir = pythonDir;
+        this.outputDir = outputDir;
     }
 
     public void exactKeys(String queryId, String keyName, List<String> keyValues) throws IOException, InterruptedException {
@@ -46,7 +52,8 @@ public class PythonQueryDriver {
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--queryid", queryId,
-                "--query", GSON.toJson(Map.of(keyName, keyValues)));
+                "--query", GSON.toJson(Map.of(keyName, keyValues)),
+                "--outdir", outputDir.toString());
     }
 
     public void range(String queryId, String key, Object min, Object max) throws IOException, InterruptedException {
@@ -55,7 +62,8 @@ public class PythonQueryDriver {
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--queryid", queryId,
-                "--query", GSON.toJson(Map.of(key, List.of(min, max))));
+                "--query", GSON.toJson(Map.of(key, List.of(min, max))),
+                "--outdir", outputDir.toString());
     }
 
     public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusve)
@@ -65,6 +73,26 @@ public class PythonQueryDriver {
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--queryid", queryId,
-                "--query", GSON.toJson(Map.of(key, List.of(min, minInclusive, max, maxInclusve))));
+                "--query", GSON.toJson(Map.of(key, List.of(min, minInclusive, max, maxInclusve))),
+                "--outdir", outputDir.toString());
+    }
+
+    public Stream<Record> results(String queryId) {
+        String path = "file:///" + queryId + ".txt";
+        List<Record> records = new ArrayList<>();
+        try {
+            ParquetRecordReader reader = new ParquetRecordReader(new org.apache.hadoop.fs.Path(path),
+                    instance.getTableProperties().getSchema());
+
+            Record record = reader.read();
+            while (null != record) {
+                records.add(new Record(record));
+                record = reader.read();
+            }
+            reader.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        return records.stream();
     }
 }

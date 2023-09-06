@@ -149,7 +149,7 @@ public class PythonApiIT {
 
             // When/Then
             assertThat(sleeper.pythonApi()
-                    .query().exactKeys("key",
+                    .query(tempDir).exactKeys("key",
                             "row-0000000000000000001",
                             "row-0000000000000000002")
                     .results())
@@ -163,7 +163,7 @@ public class PythonApiIT {
 
             // When/Then
             assertThat(sleeper.pythonApi()
-                    .query().range("key",
+                    .query(tempDir).range("key",
                             "row-0000000000000000010",
                             "row-0000000000000000020")
                     .results())
@@ -177,7 +177,7 @@ public class PythonApiIT {
 
             // When/Then
             assertThat(sleeper.pythonApi()
-                    .query().range("key",
+                    .query(tempDir).range("key",
                             "row-0000000000000000010", true,
                             "row-0000000000000000020", true)
                     .results())

@@ -40,7 +40,7 @@ public class SystemTestPythonApi {
         return new SystemTestPythonBulkImport(instance, clients, pythonDir);
     }
 
-    public SystemTestPythonQuery query() {
-        return new SystemTestPythonQuery(instance, clients, pythonDir);
+    public SystemTestPythonQuery query(Path outputDir) {
+        return new SystemTestPythonQuery(instance, pythonDir, outputDir);
     }
 }
