@@ -36,16 +36,16 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create127SplitPoints;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create511SplitPoints;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create127StringSplitPoints;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create511StringSplitPoints;
 
 public class PartitionsTestHelperTest {
 
     @Test
     void shouldGenerate128Partitions() {
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-        PartitionTree tree = create128Partitions(schema);
+        PartitionTree tree = create128StringPartitions(schema);
 
         assertThat(tree.traverseLeavesFirst().takeWhile(Partition::isLeafPartition))
                 .hasSize(128);
@@ -56,7 +56,7 @@ public class PartitionsTestHelperTest {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
         List<Key> keys = generateNRandomKeys(schema, 10000);
-        PartitionTree tree = create128Partitions(schema);
+        PartitionTree tree = create128StringPartitions(schema);
         List<Partition> allLeafPartitions = tree.traverseLeavesFirst()
                 .takeWhile(Partition::isLeafPartition)
                 .collect(Collectors.toUnmodifiableList());
@@ -72,7 +72,7 @@ public class PartitionsTestHelperTest {
 
     @Test
     void shouldGenerate127SplitPoints() {
-        assertThat(create127SplitPoints()).containsExactly(
+        assertThat(create127StringSplitPoints()).containsExactly(
                 "af", "ak", "ap", "au",
                 "ba", "bf", "bk", "bp", "bu",
                 "ca", "cf", "ck", "cp", "cu",
@@ -103,7 +103,7 @@ public class PartitionsTestHelperTest {
 
     @Test
     void shouldGenerate511SplitPoints() {
-        assertThat(create511SplitPoints()).containsExactly(
+        assertThat(create511StringSplitPoints()).containsExactly(
                 "ab", "ac", "ad", "af", "ag", "ah", "aj", "ak", "al", "an", "ao", "ap", "aq", "as", "at", "au", "aw", "ax", "ay",
                 "ba", "bb", "bc", "bd", "bf", "bg", "bh", "bj", "bk", "bl", "bn", "bo", "bp", "bq", "bs", "bt", "bu", "bw", "bx", "by",
                 "ca", "cb", "cc", "cd", "cf", "cg", "ch", "cj", "ck", "cl", "cn", "co", "cp", "cq", "cs", "ct", "cu", "cw", "cx", "cy",

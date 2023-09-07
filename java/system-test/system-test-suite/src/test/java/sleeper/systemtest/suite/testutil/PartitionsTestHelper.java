@@ -30,25 +30,25 @@ public class PartitionsTestHelper {
     private PartitionsTestHelper() {
     }
 
-    public static PartitionTree create128Partitions(SleeperSystemTest sleeper) {
-        return create128Partitions(sleeper.tableProperties().getSchema());
+    public static PartitionTree create128StringPartitions(SleeperSystemTest sleeper) {
+        return create128StringPartitions(sleeper.tableProperties().getSchema());
     }
 
-    public static PartitionTree create512Partitions(SleeperSystemTest sleeper) {
-        return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(), create511SplitPoints());
+    public static PartitionTree create512StringPartitions(SleeperSystemTest sleeper) {
+        return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(), create511StringSplitPoints());
     }
 
-    static PartitionTree create128Partitions(Schema schema) {
-        return createPartitionsFromSplitPoints(schema, create127SplitPoints());
+    static PartitionTree create128StringPartitions(Schema schema) {
+        return createPartitionsFromSplitPoints(schema, create127StringSplitPoints());
     }
 
-    static List<Object> create127SplitPoints() {
+    static List<Object> create127StringSplitPoints() {
         return IntStream.range(1, 128)
                 .mapToObj(i -> "" + (char) (i / 5 + 'a') + SECONDARY_SPLITS_FOR_127.get(i % 5))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    static List<Object> create511SplitPoints() {
+    static List<Object> create511StringSplitPoints() {
         return IntStream.range(1, 512)
                 .mapToObj(i -> "" + (char) (i / 20 + 'a') + SECONDARY_SPLITS_FOR_511.get(i % 20))
                 .collect(Collectors.toUnmodifiableList());
