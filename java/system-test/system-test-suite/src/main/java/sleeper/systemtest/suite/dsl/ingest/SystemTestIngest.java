@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
+import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
@@ -32,13 +33,16 @@ public class SystemTestIngest {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
     private final IngestSourceFilesDriver sourceFiles;
+    private final GenerateNumberedValueOverrides generatorOverrides;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
-                            IngestSourceFilesDriver sourceFiles) {
+                            IngestSourceFilesDriver sourceFiles,
+                            GenerateNumberedValueOverrides generatorOverrides) {
         this.instance = instance;
         this.clients = clients;
         this.sourceFiles = sourceFiles;
+        this.generatorOverrides = generatorOverrides;
     }
 
     public SystemTestIngestBatcher batcher() {
@@ -47,7 +51,7 @@ public class SystemTestIngest {
     }
 
     public SystemTestDirectIngest direct(Path tempDir) {
-        return new SystemTestDirectIngest(instance, new DirectIngestDriver(instance, tempDir));
+        return new SystemTestDirectIngest(instance, new DirectIngestDriver(instance, tempDir), generatorOverrides);
     }
 
     public SystemTestIngestByQueue byQueue() {

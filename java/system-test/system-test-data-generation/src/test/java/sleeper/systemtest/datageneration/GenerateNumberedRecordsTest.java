@@ -31,9 +31,9 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverride.overrideField;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverride.overrideKeyAndFieldType;
-import static sleeper.systemtest.datageneration.GenerateNumberedValueOverride.overrides;
+import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideKeyAndFieldType;
+import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrides;
 import static sleeper.systemtest.datageneration.KeyType.ROW;
 import static sleeper.systemtest.datageneration.KeyType.SORT;
 import static sleeper.systemtest.datageneration.KeyType.VALUE;

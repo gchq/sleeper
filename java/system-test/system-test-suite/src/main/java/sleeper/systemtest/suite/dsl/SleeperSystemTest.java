@@ -21,6 +21,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
@@ -72,6 +73,7 @@ public class SleeperSystemTest {
             parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
+    private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
     private SleeperSystemTest() {
     }
@@ -85,6 +87,7 @@ public class SleeperSystemTest {
             systemTest.deployIfMissing();
             systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
+            generatorOverrides = GenerateNumberedValueOverrides.none();
             instance.disconnect();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -129,7 +132,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, sourceFiles);
+        return new SystemTestIngest(instance, clients, sourceFiles, generatorOverrides);
     }
 
     public SystemTestQuery query() {
@@ -160,9 +163,13 @@ public class SleeperSystemTest {
         return new SystemTestLocalFiles(instance, tempDir);
     }
 
+    public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
+        this.generatorOverrides = overrides;
+    }
+
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
         return () -> GenerateNumberedRecords.from(
-                        instance.getTableProperties().getSchema(), numbers)
+                        instance.getTableProperties().getSchema(), generatorOverrides, numbers)
                 .iterator();
     }
 

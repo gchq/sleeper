@@ -17,7 +17,9 @@
 package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.core.record.Record;
+import sleeper.core.schema.Schema;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -28,14 +30,21 @@ public class SystemTestDirectIngest {
 
     private final SleeperInstanceContext instance;
     private final DirectIngestDriver context;
+    private final GenerateNumberedValueOverrides generatorOverrides;
 
-    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver context) {
+    public SystemTestDirectIngest(SleeperInstanceContext instance, DirectIngestDriver context,
+                                  GenerateNumberedValueOverrides generatorOverrides) {
         this.instance = instance;
         this.context = context;
+        this.generatorOverrides = generatorOverrides;
     }
 
     public void numberedRecords(LongStream numbers) {
-        context.ingest(GenerateNumberedRecords.from(instance.getTableProperties().getSchema(), numbers).iterator());
+        context.ingest(GenerateNumberedRecords.from(getSchema(), generatorOverrides, numbers).iterator());
+    }
+
+    private Schema getSchema() {
+        return instance.getTableProperties().getSchema();
     }
 
     public void records(Record... records) {

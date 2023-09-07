@@ -24,30 +24,34 @@ import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
-public interface GenerateNumberedValueOverride {
+public interface GenerateNumberedValueOverrides {
     Optional<GenerateNumberedValue> getGenerator(KeyType keyType, Field field);
 
-    static GenerateNumberedValueOverride overrides(GenerateNumberedValueOverride... overrides) {
+    static GenerateNumberedValueOverrides none() {
+        return (keyType, field) -> Optional.empty();
+    }
+
+    static GenerateNumberedValueOverrides overrides(GenerateNumberedValueOverrides... overrides) {
         return (keyType, field) ->
                 Stream.of(overrides)
                         .flatMap(override -> override.getGenerator(keyType, field).stream())
                         .findFirst();
     }
 
-    static GenerateNumberedValueOverride overrideKeyAndFieldType(
+    static GenerateNumberedValueOverrides overrideKeyAndFieldType(
             KeyType keyType, Class<? extends Type> fieldType, GenerateNumberedValue generator) {
         return overrideIf((foundKeyType, field) ->
                         keyType == foundKeyType && fieldType.isInstance(field.getType()),
                 generator);
     }
 
-    static GenerateNumberedValueOverride overrideField(String fieldName, GenerateNumberedValue generator) {
+    static GenerateNumberedValueOverrides overrideField(String fieldName, GenerateNumberedValue generator) {
         return overrideIf((keyType, field) ->
                         Objects.equals(fieldName, field.getName()),
                 generator);
     }
 
-    static GenerateNumberedValueOverride overrideIf(BiPredicate<KeyType, Field> condition, GenerateNumberedValue generator) {
+    static GenerateNumberedValueOverrides overrideIf(BiPredicate<KeyType, Field> condition, GenerateNumberedValue generator) {
         return (keyType, field) -> {
             if (condition.test(keyType, field)) {
                 return Optional.of(generator);

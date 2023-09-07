@@ -25,12 +25,12 @@ public class SystemTestSchema {
     private SystemTestSchema() {
     }
 
-    public static final String ROW_KEY_FIELD = "key";
-    public static final String SORT_KEY_FIELD = "timestamp";
-    public static final String VALUE_FIELD = "value";
+    public static final String ROW_KEY_FIELD_NAME = "key";
+    public static final String SORT_KEY_FIELD_NAME = "timestamp";
+    public static final String VALUE_FIELD_NAME = "value";
     public static final Schema DEFAULT_SCHEMA = Schema.builder()
-            .rowKeyFields(new Field(ROW_KEY_FIELD, new StringType()))
-            .sortKeyFields(new Field(SORT_KEY_FIELD, new LongType()))
-            .valueFields(new Field(VALUE_FIELD, new StringType()))
+            .rowKeyFields(new Field(ROW_KEY_FIELD_NAME, new StringType()))
+            .sortKeyFields(new Field(SORT_KEY_FIELD_NAME, new LongType()))
+            .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
             .build();
 }

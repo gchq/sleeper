@@ -34,7 +34,7 @@ public class GenerateNumberedRecords {
         this(GenerateNumberedValue::forField, schema);
     }
 
-    public GenerateNumberedRecords(Schema schema, GenerateNumberedValueOverride overrides) {
+    public GenerateNumberedRecords(Schema schema, GenerateNumberedValueOverrides overrides) {
         this(configureOverrides(overrides), schema);
     }
 
@@ -43,10 +43,14 @@ public class GenerateNumberedRecords {
         this.schema = schema;
     }
 
-    private static Configuration configureOverrides(GenerateNumberedValueOverride overrides) {
+    private static Configuration configureOverrides(GenerateNumberedValueOverrides overrides) {
         return (keyType, field) ->
                 overrides.getGenerator(keyType, field)
                         .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
+    }
+
+    public static Stream<Record> from(Schema schema, GenerateNumberedValueOverrides override, LongStream numbers) {
+        return new GenerateNumberedRecords(schema, override).generate(numbers);
     }
 
     public static Stream<Record> from(Schema schema, LongStream numbers) {
