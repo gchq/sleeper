@@ -50,13 +50,15 @@ import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_C
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
+import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 
 public enum SystemTestInstance {
 
     MAIN("main", SystemTestInstance::buildMainConfiguration),
     INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
-    COMPACTION_PERFORMANCE("compaction", SystemTestInstance::buildCompactionPerformanceConfiguration);
+    COMPACTION_PERFORMANCE("compaction", SystemTestInstance::buildCompactionPerformanceConfiguration),
+    BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
@@ -145,6 +147,19 @@ public enum SystemTestInstance {
 
         TableProperties tableProperties = configuration.getTableProperties();
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
+        return configuration;
+    }
+
+    private static DeployInstanceConfiguration buildBulkImportPerformanceConfiguration(SystemTestParameters parameters) {
+        DeployInstanceConfiguration configuration = buildMainConfiguration(parameters);
+        InstanceProperties properties = configuration.getInstanceProperties();
+        properties.set(OPTIONAL_STACKS, "EmrBulkImportStack");
+        properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
+        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
+        Map<String, String> tags = new HashMap<>(properties.getTags());
+        tags.put("SystemTestInstance", "bulkImportPerformance");
+        tags.put("Description", "Sleeper Maven system test bulk import performance instance");
+        properties.setTags(tags);
         return configuration;
     }
 }

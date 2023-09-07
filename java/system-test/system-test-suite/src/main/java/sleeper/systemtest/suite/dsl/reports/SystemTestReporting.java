@@ -40,32 +40,39 @@ public class SystemTestReporting {
         context.startRecording();
     }
 
-    public void printIngestTasksAndJobs(TestContext testContext) {
-        context.print(testContext,
-                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
-                        .tasksAndJobsReport());
+    public void printPartitionStatus(TestContext testContext) {
+        context.print(testContext, partitions().statusReport());
     }
 
-    public void printPartitionStatus(TestContext testContext) {
-        context.print(testContext, new PartitionReportDriver(instance).partitionStatusReport());
+    public void printIngestTasksAndJobs(TestContext testContext) {
+        context.print(testContext, ingest().tasksAndJobsReport());
+    }
+
+    public void printIngestJobs(TestContext testContext) {
+        context.print(testContext, ingest().jobsReport());
     }
 
     public SystemTestIngestJobsReport ingestJobs() {
-        return new SystemTestIngestJobsReport(
-                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
-                        .jobs(context));
+        return new SystemTestIngestJobsReport(ingest().jobs(context));
     }
 
     public void printCompactionTasksAndJobs(TestContext testContext) {
-        context.print(testContext,
-                new CompactionReportsDriver(clients.getDynamoDB(), instance)
-                        .tasksAndJobsReport());
+        context.print(testContext, compaction().tasksAndJobsReport());
     }
 
     public SystemTestCompactionJobsReport compactionJobs() {
-        return new SystemTestCompactionJobsReport(
-                new CompactionReportsDriver(clients.getDynamoDB(), instance)
-                        .jobs(context)
-        );
+        return new SystemTestCompactionJobsReport(compaction().jobs(context));
+    }
+
+    private PartitionReportDriver partitions() {
+        return new PartitionReportDriver(instance);
+    }
+
+    private IngestReportsDriver ingest() {
+        return new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance);
+    }
+
+    private CompactionReportsDriver compaction() {
+        return new CompactionReportsDriver(clients.getDynamoDB(), instance);
     }
 }
