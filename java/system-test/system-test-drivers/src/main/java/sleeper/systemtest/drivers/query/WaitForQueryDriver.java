@@ -48,11 +48,11 @@ public class WaitForQueryDriver {
                     return false;
                 }
                 QueryState state = queryStatus.getLastKnownState();
-                if (QueryState.FAILED.equals(state) || QueryState.PARTIALLY_FAILED.equals(state)) {
+                if (QueryState.FAILED == state || QueryState.PARTIALLY_FAILED == state) {
                     throw new IllegalStateException("Query failed: " + queryStatus);
                 }
                 LOGGER.info("Query found with state: {}", state);
-                return QueryState.COMPLETED.equals(state);
+                return QueryState.COMPLETED == state;
             } catch (QueryTrackerException e) {
                 throw new RuntimeException(e);
             }
