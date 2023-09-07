@@ -41,20 +41,18 @@ public class QueryCreator {
     }
 
     public Query allRecordsQuery() {
-        return allRecordsQuery(UUID.randomUUID().toString());
-    }
-
-    public Query allRecordsQuery(String queryId) {
-        return new Query.Builder(tableName, queryId,
-                List.of(getPartitionTree().getRootPartition().getRegion())).build();
+        return byRegions(List.of(getPartitionTree().getRootPartition().getRegion()));
     }
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
-        return new Query(tableName, UUID.randomUUID().toString(),
-                ranges.stream()
-                        .map(range -> new Region(new Range.RangeFactory(schema)
-                                .createRange(key, range.getMin(), range.getMax())))
-                        .collect(Collectors.toList()));
+        return byRegions(ranges.stream()
+                .map(range -> new Region(new Range.RangeFactory(schema)
+                        .createRange(key, range.getMin(), range.getMax())))
+                .collect(Collectors.toList()));
+    }
+
+    private Query byRegions(List<Region> regions) {
+        return new Query.Builder(tableName, UUID.randomUUID().toString(), regions).build();
     }
 
     private PartitionTree getPartitionTree() {

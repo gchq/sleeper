@@ -66,14 +66,14 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusve)
+    public void range(String queryId, String key, Object min, boolean minInclusive, Object max, boolean maxInclusive)
             throws IOException, InterruptedException {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
                 "--table", instance.getTableName(),
                 "--queryid", queryId,
-                "--query", GSON.toJson(Map.of(key, List.of(min, minInclusive, max, maxInclusve))),
+                "--query", GSON.toJson(Map.of(key, List.of(min, minInclusive, max, maxInclusive))),
                 "--outdir", outputDir.toString());
     }
 
