@@ -49,7 +49,7 @@ public class QueryIT {
     @DisplayName("Direct query")
     class DirectQuery {
         @Test
-        void shouldRunQueryForAllRecords() {
+        void shouldRunQueryForAllRecords() throws InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -60,7 +60,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithOneRange() {
+        void shouldRunQueryWithOneRange() throws InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -72,7 +72,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatOverlap() {
+        void shouldRunQueryWithTwoRangesThatOverlap() throws InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
@@ -85,7 +85,7 @@ public class QueryIT {
         }
 
         @Test
-        void shouldRunQueryWithTwoRangesThatDoNotOverlap() {
+        void shouldRunQueryWithTwoRangesThatDoNotOverlap() throws InterruptedException {
             // Given
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 

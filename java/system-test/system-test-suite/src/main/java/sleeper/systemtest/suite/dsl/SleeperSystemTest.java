@@ -29,7 +29,6 @@ import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
-import sleeper.systemtest.suite.dsl.query.SystemTestDirectQuery;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
@@ -137,7 +136,7 @@ public class SleeperSystemTest {
         return new SystemTestQuery(instance, clients);
     }
 
-    public SystemTestDirectQuery directQuery() {
+    public SystemTestQuery directQuery() {
         return query().direct();
     }
 

@@ -42,19 +42,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DirectQueryDriver {
+public class DirectQueryDriver implements QueryDriver {
     private final SleeperInstanceContext instance;
-    private final QueryCreator queryCreator;
     private final Range.RangeFactory rangeFactory;
 
     public DirectQueryDriver(SleeperInstanceContext instance) {
         this.instance = instance;
-        this.queryCreator = new QueryCreator(instance);
         this.rangeFactory = new Range.RangeFactory(instance.getTableProperties().getSchema());
-    }
-
-    public List<Record> getAllRecordsInTable() {
-        return run(queryCreator.allRecordsQuery());
     }
 
     public List<Record> run(Query query) {

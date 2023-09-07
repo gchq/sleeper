@@ -16,26 +16,46 @@
 
 package sleeper.systemtest.suite.dsl.query;
 
+import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.systemtest.drivers.query.QueryCreator;
+import sleeper.systemtest.drivers.query.QueryDriver;
+import sleeper.systemtest.drivers.query.QueryRange;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
+import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
+
+import java.util.List;
 
 public class SystemTestQuery {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
+    private final QueryCreator queryCreator;
+    private QueryDriver driver;
 
     public SystemTestQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.clients = clients;
+        this.queryCreator = new QueryCreator(instance);
     }
 
-    public SystemTestSQSQuery byQueue() {
-        return new SystemTestSQSQuery(instance, clients);
+    public SystemTestQuery byQueue() {
+        driver = new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3());
+        return this;
     }
 
-    public SystemTestDirectQuery direct() {
-        return new SystemTestDirectQuery(new DirectQueryDriver(instance));
+    public SystemTestQuery direct() {
+        driver = new DirectQueryDriver(instance);
+        return this;
+    }
+
+    public List<Record> allRecordsInTable() throws InterruptedException {
+        return driver.run(queryCreator.allRecordsQuery());
+    }
+
+    public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
+        return driver.run(queryCreator.byRowKey(key, List.of(ranges)));
     }
 
     public void emptyResultsBucket() {

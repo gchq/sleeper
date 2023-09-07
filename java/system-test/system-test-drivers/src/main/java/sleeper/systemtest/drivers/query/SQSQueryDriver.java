@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
-public class SQSQueryDriver {
+public class SQSQueryDriver implements QueryDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSQueryDriver.class);
 
     private final AmazonSQS sqsClient;
