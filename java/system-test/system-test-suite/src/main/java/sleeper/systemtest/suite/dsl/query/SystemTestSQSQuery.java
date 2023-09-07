@@ -17,7 +17,9 @@
 package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
+import sleeper.query.model.Query;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.query.QueryCreator;
 import sleeper.systemtest.drivers.query.QueryRange;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
@@ -25,35 +27,33 @@ import sleeper.systemtest.drivers.query.WaitForQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SystemTestSQSQuery {
+    private final QueryCreator queryCreator;
     private final SQSQueryDriver sqsQueryDriver;
     private final S3ResultsDriver s3ResultsDriver;
     private final WaitForQueryDriver waitForQueryDriver;
 
     public SystemTestSQSQuery(SleeperInstanceContext instance, SystemTestClients clients) {
+        this.queryCreator = new QueryCreator(instance);
         this.sqsQueryDriver = new SQSQueryDriver(instance, clients.getSqs());
         this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
         this.waitForQueryDriver = new WaitForQueryDriver(instance, clients.getDynamoDB());
     }
 
     public List<Record> allRecordsInTable() throws InterruptedException {
-        String queryId = UUID.randomUUID().toString();
-        sqsQueryDriver.allRecords(queryId);
-        return waitAndReturn(queryId);
+        return runAndReturn(queryCreator.allRecordsQuery());
     }
 
     public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
-        String queryId = UUID.randomUUID().toString();
-        sqsQueryDriver.run(queryId, key, List.of(ranges));
-        return waitAndReturn(queryId);
+        return runAndReturn(queryCreator.byRowKey(key, List.of(ranges)));
     }
 
-    private List<Record> waitAndReturn(String queryId) throws InterruptedException {
-        waitForQueryDriver.waitForQuery(queryId);
-        return s3ResultsDriver.results(queryId)
+    private List<Record> runAndReturn(Query query) throws InterruptedException {
+        sqsQueryDriver.run(query);
+        waitForQueryDriver.waitForQuery(query.getQueryId());
+        return s3ResultsDriver.results(query.getQueryId())
                 .collect(Collectors.toUnmodifiableList());
     }
 }

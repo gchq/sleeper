@@ -17,6 +17,8 @@
 package sleeper.systemtest.drivers.query;
 
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -25,6 +27,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class QueryCreator {
     private final Schema schema;
@@ -44,6 +47,14 @@ public class QueryCreator {
     public Query allRecordsQuery(String queryId) {
         return new Query.Builder(tableName, queryId,
                 List.of(getPartitionTree().getRootPartition().getRegion())).build();
+    }
+
+    public Query byRowKey(String key, List<QueryRange> ranges) {
+        return new Query(tableName, UUID.randomUUID().toString(),
+                ranges.stream()
+                        .map(range -> new Region(new Range.RangeFactory(schema)
+                                .createRange(key, range.getMin(), range.getMax())))
+                        .collect(Collectors.toList()));
     }
 
     private PartitionTree getPartitionTree() {
