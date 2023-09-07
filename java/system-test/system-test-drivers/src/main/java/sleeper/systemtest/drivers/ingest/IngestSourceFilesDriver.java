@@ -82,12 +82,13 @@ public class IngestSourceFilesDriver {
         }
     }
 
-    public List<String> findGeneratedIngestJobIds() {
-        List<S3Object> objects = s3Client.listObjectsV2Paginator(builder -> builder
-                .bucket(systemTest.getSystemTestBucketName())
-                .prefix("ingest/")).contents().stream().collect(Collectors.toUnmodifiableList());
+    public GeneratedIngestSourceFiles findGeneratedFiles() {
+        String bucketName = systemTest.getSystemTestBucketName();
+        List<S3Object> objects = s3Client.listObjectsV2Paginator(builder ->
+                        builder.bucket(bucketName).prefix("ingest/"))
+                .contents().stream().collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found ingest objects in source bucket: {}", objects.size());
-        return getS3ObjectJobIds(objects.stream().map(S3Object::key));
+        return new GeneratedIngestSourceFiles(bucketName, objects);
     }
 
     public static List<String> getS3ObjectJobIds(Stream<String> keys) {

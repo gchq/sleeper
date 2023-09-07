@@ -32,6 +32,7 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
+import java.util.List;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
@@ -50,8 +51,13 @@ public class IngestByQueueDriver {
         this.sqsClient = sqsClient;
     }
 
-    public void sendJob(InstanceProperty queueUrl, IngestJob job) {
-        sqsClient.sendMessage(instance.getInstanceProperties().get(queueUrl), new IngestJobSerDe().toJson(job));
+    public void sendJob(InstanceProperty queueUrl, String jobId, List<String> files) {
+        sqsClient.sendMessage(instance.getInstanceProperties().get(queueUrl),
+                new IngestJobSerDe().toJson(IngestJob.builder()
+                        .id(jobId)
+                        .tableName(instance.getTableName())
+                        .files(files)
+                        .build()));
     }
 
     public void invokeStandardIngestTask() throws InterruptedException {

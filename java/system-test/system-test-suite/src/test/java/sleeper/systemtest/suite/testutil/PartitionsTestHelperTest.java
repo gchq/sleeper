@@ -38,6 +38,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create127SplitPoints;
 import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create511SplitPoints;
 
 public class PartitionsTestHelperTest {
 
@@ -98,6 +99,37 @@ public class PartitionsTestHelperTest {
                 "xa", "xf", "xk", "xp", "xu",
                 "ya", "yf", "yk", "yp", "yu",
                 "za", "zf", "zk");
+    }
+
+    @Test
+    void shouldGenerate511SplitPoints() {
+        assertThat(create511SplitPoints()).containsExactly(
+                "ab", "ac", "ad", "af", "ag", "ah", "aj", "ak", "al", "an", "ao", "ap", "aq", "as", "at", "au", "aw", "ax", "ay",
+                "ba", "bb", "bc", "bd", "bf", "bg", "bh", "bj", "bk", "bl", "bn", "bo", "bp", "bq", "bs", "bt", "bu", "bw", "bx", "by",
+                "ca", "cb", "cc", "cd", "cf", "cg", "ch", "cj", "ck", "cl", "cn", "co", "cp", "cq", "cs", "ct", "cu", "cw", "cx", "cy",
+                "da", "db", "dc", "dd", "df", "dg", "dh", "dj", "dk", "dl", "dn", "do", "dp", "dq", "ds", "dt", "du", "dw", "dx", "dy",
+                "ea", "eb", "ec", "ed", "ef", "eg", "eh", "ej", "ek", "el", "en", "eo", "ep", "eq", "es", "et", "eu", "ew", "ex", "ey",
+                "fa", "fb", "fc", "fd", "ff", "fg", "fh", "fj", "fk", "fl", "fn", "fo", "fp", "fq", "fs", "ft", "fu", "fw", "fx", "fy",
+                "ga", "gb", "gc", "gd", "gf", "gg", "gh", "gj", "gk", "gl", "gn", "go", "gp", "gq", "gs", "gt", "gu", "gw", "gx", "gy",
+                "ha", "hb", "hc", "hd", "hf", "hg", "hh", "hj", "hk", "hl", "hn", "ho", "hp", "hq", "hs", "ht", "hu", "hw", "hx", "hy",
+                "ia", "ib", "ic", "id", "if", "ig", "ih", "ij", "ik", "il", "in", "io", "ip", "iq", "is", "it", "iu", "iw", "ix", "iy",
+                "ja", "jb", "jc", "jd", "jf", "jg", "jh", "jj", "jk", "jl", "jn", "jo", "jp", "jq", "js", "jt", "ju", "jw", "jx", "jy",
+                "ka", "kb", "kc", "kd", "kf", "kg", "kh", "kj", "kk", "kl", "kn", "ko", "kp", "kq", "ks", "kt", "ku", "kw", "kx", "ky",
+                "la", "lb", "lc", "ld", "lf", "lg", "lh", "lj", "lk", "ll", "ln", "lo", "lp", "lq", "ls", "lt", "lu", "lw", "lx", "ly",
+                "ma", "mb", "mc", "md", "mf", "mg", "mh", "mj", "mk", "ml", "mn", "mo", "mp", "mq", "ms", "mt", "mu", "mw", "mx", "my",
+                "na", "nb", "nc", "nd", "nf", "ng", "nh", "nj", "nk", "nl", "nn", "no", "np", "nq", "ns", "nt", "nu", "nw", "nx", "ny",
+                "oa", "ob", "oc", "od", "of", "og", "oh", "oj", "ok", "ol", "on", "oo", "op", "oq", "os", "ot", "ou", "ow", "ox", "oy",
+                "pa", "pb", "pc", "pd", "pf", "pg", "ph", "pj", "pk", "pl", "pn", "po", "pp", "pq", "ps", "pt", "pu", "pw", "px", "py",
+                "qa", "qb", "qc", "qd", "qf", "qg", "qh", "qj", "qk", "ql", "qn", "qo", "qp", "qq", "qs", "qt", "qu", "qw", "qx", "qy",
+                "ra", "rb", "rc", "rd", "rf", "rg", "rh", "rj", "rk", "rl", "rn", "ro", "rp", "rq", "rs", "rt", "ru", "rw", "rx", "ry",
+                "sa", "sb", "sc", "sd", "sf", "sg", "sh", "sj", "sk", "sl", "sn", "so", "sp", "sq", "ss", "st", "su", "sw", "sx", "sy",
+                "ta", "tb", "tc", "td", "tf", "tg", "th", "tj", "tk", "tl", "tn", "to", "tp", "tq", "ts", "tt", "tu", "tw", "tx", "ty",
+                "ua", "ub", "uc", "ud", "uf", "ug", "uh", "uj", "uk", "ul", "un", "uo", "up", "uq", "us", "ut", "uu", "uw", "ux", "uy",
+                "va", "vb", "vc", "vd", "vf", "vg", "vh", "vj", "vk", "vl", "vn", "vo", "vp", "vq", "vs", "vt", "vu", "vw", "vx", "vy",
+                "wa", "wb", "wc", "wd", "wf", "wg", "wh", "wj", "wk", "wl", "wn", "wo", "wp", "wq", "ws", "wt", "wu", "ww", "wx", "wy",
+                "xa", "xb", "xc", "xd", "xf", "xg", "xh", "xj", "xk", "xl", "xn", "xo", "xp", "xq", "xs", "xt", "xu", "xw", "xx", "xy",
+                "ya", "yb", "yc", "yd", "yf", "yg", "yh", "yj", "yk", "yl", "yn", "yo", "yp", "yq", "ys", "yt", "yu", "yw", "yx", "yy",
+                "za", "zb", "zc", "zd", "zf", "zg", "zh", "zj", "zk", "zl", "zn", "zo");
     }
 
     private static List<Key> generateNRandomKeys(Schema schema, int n) {

@@ -18,13 +18,10 @@ package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.job.IngestJob;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,17 +31,14 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 
 public class SystemTestIngestByQueue {
 
-    private final SleeperInstanceContext instance;
     private final IngestSourceFilesDriver sourceFiles;
     private final IngestByQueueDriver driver;
     private final WaitForJobsDriver waitForJobsDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
-    public SystemTestIngestByQueue(SleeperInstanceContext instance,
-                                   IngestSourceFilesDriver sourceFiles,
+    public SystemTestIngestByQueue(IngestSourceFilesDriver sourceFiles,
                                    IngestByQueueDriver driver,
                                    WaitForJobsDriver waitForJobsDriver) {
-        this.instance = instance;
         this.sourceFiles = sourceFiles;
         this.driver = driver;
         this.waitForJobsDriver = waitForJobsDriver;
@@ -61,11 +55,7 @@ public class SystemTestIngestByQueue {
     private SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, Stream<String> files) {
         String jobId = UUID.randomUUID().toString();
         sentJobIds.add(jobId);
-        driver.sendJob(queueProperty, IngestJob.builder()
-                .id(jobId)
-                .tableName(instance.getTableName())
-                .files(sourceFiles.getIngestJobFilesInBucket(files))
-                .build());
+        driver.sendJob(queueProperty, jobId, sourceFiles.getIngestJobFilesInBucket(files));
         return this;
     }
 
@@ -75,7 +65,7 @@ public class SystemTestIngestByQueue {
     }
 
     public void waitForJobs() throws InterruptedException {
-        waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+        waitForJobsDriver.waitForJobs(sentJobIds);
     }
 
     public void waitForJobs(PollWithRetries pollWithRetries) throws InterruptedException {

@@ -23,7 +23,7 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
+import java.util.stream.IntStream;
 
 public class PartitionsTestHelper {
 
@@ -34,14 +34,39 @@ public class PartitionsTestHelper {
         return create128Partitions(sleeper.tableProperties().getSchema());
     }
 
+    public static PartitionTree create512Partitions(SleeperSystemTest sleeper) {
+        return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(), create511SplitPoints());
+    }
+
     static PartitionTree create128Partitions(Schema schema) {
         return createPartitionsFromSplitPoints(schema, create127SplitPoints());
     }
 
     static List<Object> create127SplitPoints() {
-        return LongStream.range(1, 128)
-                .mapToObj(i -> "" + (char) (i / 5 + 'a') + (char) (i % 5 * 5 + 'a'))
+        return IntStream.range(1, 128)
+                .mapToObj(i -> "" + (char) (i / 5 + 'a') + SECONDARY_SPLITS_FOR_127.get(i % 5))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    static List<Object> create511SplitPoints() {
+        return IntStream.range(1, 512)
+                .mapToObj(i -> "" + (char) (i / 20 + 'a') + SECONDARY_SPLITS_FOR_511.get(i % 20))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static final List<Character> SECONDARY_SPLITS_FOR_127 = secondarySplitCharacters(5);
+    private static final List<Character> SECONDARY_SPLITS_FOR_511 = secondarySplitCharacters(20);
+
+    private static List<Character> secondarySplitCharacters(int n) {
+        double step = 26.0 / (double) n;
+        return IntStream.range(0, n)
+                .map(i -> (int) (i * step))
+                .mapToObj(PartitionsTestHelper::charN)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static char charN(int n) {
+        return (char) (n + 'a');
     }
 
     private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
