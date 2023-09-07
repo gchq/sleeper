@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,7 +41,6 @@ public class QueryIT {
     @BeforeEach
     void setup() {
         sleeper.connectToInstance(MAIN);
-        sleeper.queryResults().emptyBucket();
     }
 
     @Nested
@@ -99,6 +99,11 @@ public class QueryIT {
     @Nested
     @DisplayName("SQS Query")
     class SQSQuery {
+        @AfterEach
+        void tearDown() {
+            sleeper.queryResults().emptyBucket();
+        }
+
         @Test
         void shouldRunQueryForAllRecords() throws InterruptedException {
             // Given
