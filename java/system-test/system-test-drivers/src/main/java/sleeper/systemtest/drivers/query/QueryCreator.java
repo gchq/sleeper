@@ -17,8 +17,6 @@
 package sleeper.systemtest.drivers.query;
 
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -32,24 +30,11 @@ public class QueryCreator {
     private final Schema schema;
     private final String tableName;
     private final StateStore stateStore;
-    private final Range.RangeFactory rangeFactory;
 
     public QueryCreator(SleeperInstanceContext instance) {
         this.schema = instance.getTableProperties().getSchema();
         this.tableName = instance.getTableName();
         this.stateStore = instance.getStateStore();
-        this.rangeFactory = new Range.RangeFactory(schema);
-    }
-
-    public Query create(String queryId, String key, Object min1, Object max1, Object min2, Object max2) {
-        Region region1 = new Region(rangeFactory.createRange(key, min1, max1));
-        Region region2 = new Region(rangeFactory.createRange(key, min2, max2));
-        return new Query.Builder(tableName, queryId, List.of(region1, region2)).build();
-    }
-
-    public Query create(String queryId, String key, Object min, Object max) {
-        Region region = new Region(rangeFactory.createRange(key, min, max));
-        return new Query.Builder(tableName, queryId, region).build();
     }
 
     public Query allRecordsQuery() {

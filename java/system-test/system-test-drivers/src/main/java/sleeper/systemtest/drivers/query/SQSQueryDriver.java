@@ -18,22 +18,30 @@ package sleeper.systemtest.drivers.query;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
+import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 
 public class SQSQueryDriver {
     private final String queueUrl;
+    private final String tableName;
     private final QueryCreator queryCreator;
+    private final Range.RangeFactory rangeFactory;
     private final AmazonSQS sqsClient;
-
     private final QuerySerDe querySerDe;
 
     public SQSQueryDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
         this.queryCreator = new QueryCreator(instance);
+        this.rangeFactory = new Range.RangeFactory(instance.getTableProperties().getSchema());
+        this.tableName = instance.getTableName();
         this.sqsClient = sqsClient;
         this.queueUrl = instance.getInstanceProperties().get(QUERY_QUEUE_URL);
         this.querySerDe = new QuerySerDe(Map.of(instance.getTableName(), instance.getTableProperties().getSchema()));
@@ -43,11 +51,10 @@ public class SQSQueryDriver {
         sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.allRecordsQuery(queryId)));
     }
 
-    public void run(String queryId, String key, Object min, Object max) {
-        sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.create(queryId, key, min, max)));
-    }
-
-    public void run(String queryId, String key, Object min1, Object max1, Object min2, Object max2) {
-        sqsClient.sendMessage(queueUrl, querySerDe.toJson(queryCreator.create(queryId, key, min1, max1, min2, max2)));
+    public void run(String queryId, String key, List<QueryRange> ranges) {
+        sqsClient.sendMessage(queueUrl, querySerDe.toJson(new Query(tableName, queryId,
+                ranges.stream()
+                        .map(range -> new Region(rangeFactory.createRange(key, range.getMin(), range.getMax())))
+                        .collect(Collectors.toList()))));
     }
 }

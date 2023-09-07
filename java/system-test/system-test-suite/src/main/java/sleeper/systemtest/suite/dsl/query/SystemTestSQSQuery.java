@@ -18,11 +18,13 @@ package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
+import sleeper.systemtest.drivers.query.QueryRange;
 import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.drivers.query.WaitForQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -45,16 +47,9 @@ public class SystemTestSQSQuery {
         return this;
     }
 
-    public SystemTestSQSQuery run(String key, Object min, Object max) {
+    public SystemTestSQSQuery byRowKey(String key, QueryRange... ranges) {
         String queryId = UUID.randomUUID().toString();
-        sqsQueryDriver.run(queryId, key, min, max);
-        this.queryId = queryId;
-        return this;
-    }
-
-    public SystemTestSQSQuery run(String key, Object min1, Object max1, Object min2, Object max2) {
-        String queryId = UUID.randomUUID().toString();
-        sqsQueryDriver.run(queryId, key, min1, max1, min2, max2);
+        sqsQueryDriver.run(queryId, key, List.of(ranges));
         this.queryId = queryId;
         return this;
     }

@@ -21,6 +21,8 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -43,10 +45,12 @@ import java.util.stream.StreamSupport;
 public class DirectQueryDriver {
     private final SleeperInstanceContext instance;
     private final QueryCreator queryCreator;
+    private final Range.RangeFactory rangeFactory;
 
     public DirectQueryDriver(SleeperInstanceContext instance) {
         this.instance = instance;
         this.queryCreator = new QueryCreator(instance);
+        this.rangeFactory = new Range.RangeFactory(instance.getTableProperties().getSchema());
     }
 
     public List<Record> getAllRecordsInTable() {
@@ -67,12 +71,11 @@ public class DirectQueryDriver {
         }
     }
 
-    public List<Record> run(String key, Object min, Object max) {
-        return run(queryCreator.create(UUID.randomUUID().toString(), key, min, max));
-    }
-
-    public List<Record> run(String key, Object min1, Object max1, Object min2, Object max2) {
-        return run(queryCreator.create(UUID.randomUUID().toString(), key, min1, max1, min2, max2));
+    public List<Record> run(String key, List<QueryRange> ranges) {
+        return run(new Query(instance.getTableName(), UUID.randomUUID().toString(),
+                ranges.stream()
+                        .map(range -> new Region(rangeFactory.createRange(key, range.getMin(), range.getMax())))
+                        .collect(Collectors.toList())));
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {

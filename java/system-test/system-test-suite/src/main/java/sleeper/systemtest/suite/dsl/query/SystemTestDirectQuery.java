@@ -18,6 +18,7 @@ package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.systemtest.drivers.query.QueryRange;
 
 import java.util.List;
 
@@ -33,11 +34,7 @@ public class SystemTestDirectQuery {
         return directQueryDriver.getAllRecordsInTable();
     }
 
-    public List<Record> run(String key, Object min, Object max) {
-        return directQueryDriver.run(key, min, max);
-    }
-
-    public List<Record> run(String key, Object min1, Object max1, Object min2, Object max2) {
-        return directQueryDriver.run(key, min1, max1, min2, max2);
+    public List<Record> byRowKey(String key, QueryRange... ranges) {
+        return directQueryDriver.run(key, List.of(ranges));
     }
 }
