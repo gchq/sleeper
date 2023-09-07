@@ -17,39 +17,28 @@
 package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.query.model.Query;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.QueryCreator;
 import sleeper.systemtest.drivers.query.QueryRange;
-import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.drivers.query.SQSQueryDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class SystemTestSQSQuery {
     private final QueryCreator queryCreator;
     private final SQSQueryDriver sqsQueryDriver;
-    private final S3ResultsDriver s3ResultsDriver;
 
     public SystemTestSQSQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.queryCreator = new QueryCreator(instance);
-        this.sqsQueryDriver = new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB());
-        this.s3ResultsDriver = new S3ResultsDriver(instance, clients.getS3());
+        this.sqsQueryDriver = new SQSQueryDriver(instance, clients.getSqs(), clients.getDynamoDB(), clients.getS3());
     }
 
     public List<Record> allRecordsInTable() throws InterruptedException {
-        return runAndReturn(queryCreator.allRecordsQuery());
+        return sqsQueryDriver.run(queryCreator.allRecordsQuery());
     }
 
     public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
-        return runAndReturn(queryCreator.byRowKey(key, List.of(ranges)));
-    }
-
-    private List<Record> runAndReturn(Query query) throws InterruptedException {
-        sqsQueryDriver.run(query);
-        return s3ResultsDriver.results(query.getQueryId())
-                .collect(Collectors.toUnmodifiableList());
+        return sqsQueryDriver.run(queryCreator.byRowKey(key, List.of(ranges)));
     }
 }
