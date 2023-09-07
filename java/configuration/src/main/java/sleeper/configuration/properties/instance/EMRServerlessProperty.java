@@ -67,7 +67,7 @@ public interface EMRServerlessProperty {
             propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index
-            .propertyBuilder("sleeper.bulk.import.emr.serverless.executor.instances")
+            .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executor.instances")
             .description(
                     "The number of executors to be used with Serverless. Used to set spark.executor.instances.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
