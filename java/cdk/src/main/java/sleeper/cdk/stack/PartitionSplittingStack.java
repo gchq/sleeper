@@ -60,6 +60,7 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 
@@ -102,8 +103,14 @@ public class PartitionSplittingStack extends NestedStack {
                 .deadLetterQueue(partitionSplittingDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS))) // TODO Needs to be >= function timeout
                 .build();
-        instanceProperties.set(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL, partitionSplittingQueue.getQueueUrl());
-        instanceProperties.set(PARTITION_SPLITTING_DLQ_URL, partitionSplittingDeadLetterQueue.getQueue().getQueueUrl());
+        instanceProperties.set(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL,
+                partitionSplittingQueue.getQueueUrl());
+        instanceProperties.set(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_ARN,
+                partitionSplittingQueue.getQueueArn());
+        instanceProperties.set(PARTITION_SPLITTING_DLQ_URL,
+                partitionSplittingDeadLetterQueue.getQueue().getQueueUrl());
+        instanceProperties.set(PARTITION_SPLITTING_DLQ_ARN,
+                partitionSplittingDeadLetterQueue.getQueue().getQueueArn());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         Alarm partitionSplittingAlarm = Alarm.Builder

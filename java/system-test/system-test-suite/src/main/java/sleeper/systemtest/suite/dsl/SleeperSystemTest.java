@@ -29,6 +29,7 @@ import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
@@ -37,6 +38,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
 
@@ -144,6 +146,18 @@ public class SleeperSystemTest {
 
     public SystemTestCluster systemTestCluster() {
         return new SystemTestCluster(systemTest, instance, clients);
+    }
+
+    public SystemTestPythonApi pythonApi() {
+        return new SystemTestPythonApi(instance, clients, parameters.getPythonDirectory());
+    }
+
+    public SystemTestLocalFiles localFiles(Path tempDir) {
+        return new SystemTestLocalFiles(instance, tempDir);
+    }
+
+    public SystemTestQueryResults queryResults() {
+        return new SystemTestQueryResults(instance, clients.getS3());
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {

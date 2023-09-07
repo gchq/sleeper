@@ -64,6 +64,7 @@ import static sleeper.configuration.properties.instance.EMRServerlessProperty.DE
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
@@ -90,7 +91,8 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 "EMRServerless", instanceProperties, statusStoreResources, configBucket, ingestBuckets);
         Queue bulkImportJobQueue = commonHelper.createJobQueue(
-                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, errorsTopicStack.getTopic());
+                BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
+                errorsTopicStack.getTopic());
 
         IFunction jobStarter = commonHelper.createJobStarterFunction("EMRServerless",
                 bulkImportJobQueue, jars, importBucketStack.getImportBucket(), List.of(emrRole));
@@ -186,7 +188,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
         // See https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/getting-started.html
         String instanceId = instanceProperties.get(ID);
 
-        ManagedPolicy emrServerlessManagedPolicy = new ManagedPolicy(this,
+        return new ManagedPolicy(this,
                 "CustomEMRServerlessServicePolicy",
                 ManagedPolicyProps.builder()
                         .managedPolicyName(
@@ -212,6 +214,5 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                                                 .resources(List.of("*")).build())))
                                 .build())
                         .build());
-        return emrServerlessManagedPolicy;
     }
 }

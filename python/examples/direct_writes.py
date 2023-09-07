@@ -1,19 +1,20 @@
-# Copyright 2022-2023 Crown Copyright
+#  Copyright 2022-2023 Crown Copyright
 # 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
 # 
-#     http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 # 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-from sleeper.sleeper import SleeperClient
-import string
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 import random
+import string
+
+from sleeper.sleeper import SleeperClient
 
 """
 This example shows how to write data to Sleeper via writing in batches. Data will not
@@ -43,7 +44,6 @@ num_batches = 1
 
 # Recommended method is to use the batch writer as follows:
 with my_sleeper.create_batch_writer(table_name) as writer:
-
     # Create records in a loop
     for x in range(num_batches):
 

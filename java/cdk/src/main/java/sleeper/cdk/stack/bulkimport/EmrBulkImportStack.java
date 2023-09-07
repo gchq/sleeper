@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 
 /**
@@ -58,7 +59,9 @@ public class EmrBulkImportStack extends NestedStack {
 
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
                 this, "NonPersistentEMR", instanceProperties, statusStoreResources);
-        bulkImportJobQueue = commonHelper.createJobQueue(BULK_IMPORT_EMR_JOB_QUEUE_URL, errorsTopicStack.getTopic());
+        bulkImportJobQueue = commonHelper.createJobQueue(
+                BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN,
+                errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(jobStarter));
