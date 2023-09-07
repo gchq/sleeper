@@ -135,12 +135,12 @@ public class GenerateNumberedRecordsTest {
                 .sortKeyFields(new Field("sortkey", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        GenerateNumberedRecords generator = new GenerateNumberedRecords(schema,
+        GenerateNumberedValueOverrides overrides =
                 overrideKeyAndFieldType(ROW, StringType.class,
-                        stringFromPrefixAndPadToSize("customrow-", 3)));
+                        stringFromPrefixAndPadToSize("customrow-", 3));
 
         // When/Then
-        assertThat(generator.generate(LongStream.of(1, 999)))
+        assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 999)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", "customrow-001",
@@ -160,16 +160,16 @@ public class GenerateNumberedRecordsTest {
                 .sortKeyFields(new Field("sortkey", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        GenerateNumberedRecords generator = new GenerateNumberedRecords(schema, overrides(
+        GenerateNumberedValueOverrides overrides = overrides(
                 overrideKeyAndFieldType(ROW, StringType.class,
                         stringFromPrefixAndPadToSize("customrow-", 3)),
                 overrideKeyAndFieldType(SORT, StringType.class,
                         stringFromPrefixAndPadToSize("customsort-", 3)),
                 overrideKeyAndFieldType(VALUE, StringType.class,
-                        stringFromPrefixAndPadToSize("Custom value ", 3))));
+                        stringFromPrefixAndPadToSize("Custom value ", 3)));
 
         // When/Then
-        assertThat(generator.generate(LongStream.of(1, 999)))
+        assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 999)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", "customrow-001",
@@ -189,16 +189,16 @@ public class GenerateNumberedRecordsTest {
                 .sortKeyFields(new Field("sortkey", new StringType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-        GenerateNumberedRecords generator = new GenerateNumberedRecords(schema, overrides(
+        GenerateNumberedValueOverrides overrides = overrides(
                 overrideField("rowkey",
                         stringFromPrefixAndPadToSize("rowkey-", 5)),
                 overrideField("sortkey",
                         stringFromPrefixAndPadToSize("sortkey-", 5)),
                 overrideField("value",
-                        stringFromPrefixAndPadToSize("A value ", 5))));
+                        stringFromPrefixAndPadToSize("A value ", 5)));
 
         // When/Then
-        assertThat(generator.generate(LongStream.of(1, 12345)))
+        assertThat(GenerateNumberedRecords.from(schema, overrides, LongStream.of(1, 12345)))
                 .containsExactly(
                         new Record(Map.of(
                                 "rowkey", "rowkey-00001",

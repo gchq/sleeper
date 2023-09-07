@@ -30,17 +30,17 @@ public class GenerateNumberedRecords {
     private final Configuration configuration;
     private final Schema schema;
 
-    public GenerateNumberedRecords(Schema schema) {
-        this(GenerateNumberedValue::forField, schema);
-    }
-
-    public GenerateNumberedRecords(Schema schema, GenerateNumberedValueOverrides overrides) {
-        this(configureOverrides(overrides), schema);
-    }
-
     private GenerateNumberedRecords(Configuration configuration, Schema schema) {
         this.configuration = configuration;
         this.schema = schema;
+    }
+
+    public static Stream<Record> from(Schema schema, GenerateNumberedValueOverrides overrides, LongStream numbers) {
+        return new GenerateNumberedRecords(configureOverrides(overrides), schema).generate(numbers);
+    }
+
+    public static Stream<Record> from(Schema schema, LongStream numbers) {
+        return new GenerateNumberedRecords(GenerateNumberedValue::forField, schema).generate(numbers);
     }
 
     private static Configuration configureOverrides(GenerateNumberedValueOverrides overrides) {
@@ -49,19 +49,11 @@ public class GenerateNumberedRecords {
                         .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
     }
 
-    public static Stream<Record> from(Schema schema, GenerateNumberedValueOverrides override, LongStream numbers) {
-        return new GenerateNumberedRecords(schema, override).generate(numbers);
-    }
-
-    public static Stream<Record> from(Schema schema, LongStream numbers) {
-        return new GenerateNumberedRecords(schema).generate(numbers);
-    }
-
-    public Stream<Record> generate(LongStream numbers) {
+    private Stream<Record> generate(LongStream numbers) {
         return numbers.mapToObj(this::numberedRecord);
     }
 
-    public Record numberedRecord(long number) {
+    private Record numberedRecord(long number) {
         return new Record(mapForNumber(number));
     }
 
