@@ -77,7 +77,7 @@ public class SQSQueryDriver implements QueryDriver {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void waitForQuery(String queryId) throws InterruptedException {
+    private void waitForQuery(String queryId) throws InterruptedException {
         poll.pollUntil("query is finished", () -> {
             try {
                 TrackedQuery queryStatus = queryTracker.getStatus(queryId);

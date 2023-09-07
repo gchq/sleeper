@@ -21,8 +21,6 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -36,7 +34,6 @@ import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterators;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,11 +41,9 @@ import java.util.stream.StreamSupport;
 
 public class DirectQueryDriver implements QueryDriver {
     private final SleeperInstanceContext instance;
-    private final Range.RangeFactory rangeFactory;
 
     public DirectQueryDriver(SleeperInstanceContext instance) {
         this.instance = instance;
-        this.rangeFactory = new Range.RangeFactory(instance.getTableProperties().getSchema());
     }
 
     public List<Record> run(Query query) {
@@ -63,13 +58,6 @@ public class DirectQueryDriver implements QueryDriver {
         } catch (QueryException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public List<Record> run(String key, List<QueryRange> ranges) {
-        return run(new Query(instance.getTableName(), UUID.randomUUID().toString(),
-                ranges.stream()
-                        .map(range -> new Region(rangeFactory.createRange(key, range.getMin(), range.getMax())))
-                        .collect(Collectors.toList())));
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {
