@@ -32,7 +32,7 @@ public class SystemTestQuery {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
     private final QueryCreator queryCreator;
-    private QueryDriver driver;
+    private QueryDriver driver = null;
 
     public SystemTestQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
