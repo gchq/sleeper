@@ -19,13 +19,9 @@ package sleeper.systemtest.datageneration;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.Type;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -38,8 +34,8 @@ public class GenerateNumberedRecords {
         this(GenerateNumberedValue::forField, schema);
     }
 
-    public GenerateNumberedRecords(Schema schema, PartialConfiguration partialConfiguration) {
-        this(configureOverrides(partialConfiguration), schema);
+    public GenerateNumberedRecords(Schema schema, GenerateNumberedValueOverride overrides) {
+        this(configureOverrides(overrides), schema);
     }
 
     private GenerateNumberedRecords(Configuration configuration, Schema schema) {
@@ -47,7 +43,7 @@ public class GenerateNumberedRecords {
         this.schema = schema;
     }
 
-    private static Configuration configureOverrides(PartialConfiguration overrides) {
+    private static Configuration configureOverrides(GenerateNumberedValueOverride overrides) {
         return (keyType, field) ->
                 overrides.getGenerator(keyType, field)
                         .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
@@ -88,39 +84,5 @@ public class GenerateNumberedRecords {
 
     private interface Configuration {
         GenerateNumberedValue getGenerator(KeyType keyType, Field field);
-    }
-
-    public interface PartialConfiguration {
-        Optional<GenerateNumberedValue> getGenerator(KeyType keyType, Field field);
-
-        static PartialConfiguration overrides(PartialConfiguration... overrides) {
-            return (keyType, field) ->
-                    Stream.of(overrides)
-                            .flatMap(override -> override.getGenerator(keyType, field).stream())
-                            .findFirst();
-        }
-
-        static PartialConfiguration overrideKeyAndFieldType(
-                KeyType keyType, Class<? extends Type> fieldType, GenerateNumberedValue generator) {
-            return overrideIf((foundKeyType, field) ->
-                            keyType == foundKeyType && fieldType.isInstance(field.getType()),
-                    generator);
-        }
-
-        static PartialConfiguration overrideField(String fieldName, GenerateNumberedValue generator) {
-            return overrideIf((keyType, field) ->
-                            Objects.equals(fieldName, field.getName()),
-                    generator);
-        }
-
-        static PartialConfiguration overrideIf(BiPredicate<KeyType, Field> condition, GenerateNumberedValue generator) {
-            return (keyType, field) -> {
-                if (condition.test(keyType, field)) {
-                    return Optional.of(generator);
-                } else {
-                    return Optional.empty();
-                }
-            };
-        }
     }
 }
