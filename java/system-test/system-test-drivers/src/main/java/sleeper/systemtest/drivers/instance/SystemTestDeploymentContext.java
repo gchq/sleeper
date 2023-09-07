@@ -36,6 +36,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
@@ -123,7 +124,8 @@ public class SystemTestDeploymentContext {
         } catch (CloudFormationException e) {
             try {
                 uploadJarsAndDockerImages();
-                Path propertiesFile = parameters.getGeneratedDirectory().resolve("system-test.properties");
+                Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());
+                Path propertiesFile = generatedDirectory.resolve("system-test.properties");
                 generateProperties().save(propertiesFile);
                 InvokeCdkForInstance.builder()
                         .propertiesFile(propertiesFile)
