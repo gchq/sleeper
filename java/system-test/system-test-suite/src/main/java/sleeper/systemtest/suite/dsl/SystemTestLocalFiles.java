@@ -22,7 +22,6 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.io.IOException;
@@ -33,20 +32,20 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 public class SystemTestLocalFiles {
-    private final SleeperInstanceContext instanceContext;
+    private final SleeperInstanceContext instance;
     private final Path tempDir;
 
-    public SystemTestLocalFiles(SleeperInstanceContext instanceContext, Path tempDir) {
-        this.instanceContext = instanceContext;
+    public SystemTestLocalFiles(SleeperInstanceContext instance, Path tempDir) {
+        this.instance = instance;
         this.tempDir = tempDir;
     }
 
     public void createWithNumberedRecords(String file, LongStream numbers) {
-        create(tempDir.resolve(file), GenerateNumberedRecords.from(instanceContext.getTableProperties().getSchema(), numbers));
+        create(tempDir.resolve(file), instance.generateNumberedRecords(numbers));
     }
 
     private void create(Path file, Stream<Record> records) {
-        writeFile(instanceContext.getTableProperties(), file.toString(), records.iterator());
+        writeFile(instance.getTableProperties(), file.toString(), records.iterator());
     }
 
     public void writeFile(TableProperties tableProperties, String filePath, Iterator<Record> records) {
