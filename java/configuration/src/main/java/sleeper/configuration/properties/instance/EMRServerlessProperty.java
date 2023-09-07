@@ -26,7 +26,7 @@ public interface EMRServerlessProperty {
 
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
-            .description("The architecture for EMR Serverless to use. X86_64 or ARM (Coming soon)")
+            .description("The architecture for EMR Serverless to use. X86_64 or ARM64 (Coming soon)")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue("X86_64")
             .validationPredicate(Predicate.isEqual("X86_64"))
             .runCDKDeployWhenChanged(true).build();
