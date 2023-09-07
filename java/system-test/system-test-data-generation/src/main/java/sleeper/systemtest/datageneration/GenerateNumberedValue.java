@@ -42,11 +42,11 @@ public interface GenerateNumberedValue {
             switch (keyType) {
                 case ROW:
                 default:
-                    return num -> "row-" + StringUtils.leftPad(num + "", 19, "0");
+                    return stringFromPrefixAndPadToSize("row-", 19);
                 case SORT:
-                    return num -> "sort-" + StringUtils.leftPad(num + "", 19, "0");
+                    return stringFromPrefixAndPadToSize("sort-", 19);
                 case VALUE:
-                    return num -> "Value " + StringUtils.leftPad(num + "", 19, "0");
+                    return stringFromPrefixAndPadToSize("Value ", 19);
             }
         }
         if (fieldType instanceof ByteArrayType) {
@@ -57,5 +57,9 @@ public interface GenerateNumberedValue {
             };
         }
         throw new IllegalArgumentException("Unknown type " + fieldType);
+    }
+
+    static GenerateNumberedValue stringFromPrefixAndPadToSize(String prefix, int size) {
+        return num -> prefix + StringUtils.leftPad(num + "", size, "0");
     }
 }

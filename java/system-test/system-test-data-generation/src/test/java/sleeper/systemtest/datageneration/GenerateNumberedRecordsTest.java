@@ -30,6 +30,13 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.systemtest.datageneration.GenerateNumberedRecords.PartialConfiguration.overrideField;
+import static sleeper.systemtest.datageneration.GenerateNumberedRecords.PartialConfiguration.overrideKeyAndFieldType;
+import static sleeper.systemtest.datageneration.GenerateNumberedRecords.PartialConfiguration.overrides;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.KeyType.ROW;
+import static sleeper.systemtest.datageneration.KeyType.SORT;
+import static sleeper.systemtest.datageneration.KeyType.VALUE;
 
 public class GenerateNumberedRecordsTest {
     @Test
@@ -118,5 +125,88 @@ public class GenerateNumberedRecordsTest {
                                 "rowkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 2},
                                 "sortkey", new byte[]{0, 0, 0, 0, 0, 0, 0, 2},
                                 "value", new byte[]{0, 0, 0, 0, 0, 0, 0, 2})));
+    }
+
+    @Test
+    void shouldOverrideStringGeneratorForOneFieldType() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("rowkey", new StringType()))
+                .sortKeyFields(new Field("sortkey", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        GenerateNumberedRecords generator = new GenerateNumberedRecords(schema,
+                overrideKeyAndFieldType(ROW, StringType.class,
+                        stringFromPrefixAndPadToSize("customrow-", 3)));
+
+        // When/Then
+        assertThat(generator.generate(LongStream.of(1, 999)))
+                .containsExactly(
+                        new Record(Map.of(
+                                "rowkey", "customrow-001",
+                                "sortkey", "sort-0000000000000000001",
+                                "value", "Value 0000000000000000001")),
+                        new Record(Map.of(
+                                "rowkey", "customrow-999",
+                                "sortkey", "sort-0000000000000000999",
+                                "value", "Value 0000000000000000999")));
+    }
+
+    @Test
+    void shouldOverrideStringGeneratorForAllFieldTypes() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("rowkey", new StringType()))
+                .sortKeyFields(new Field("sortkey", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        GenerateNumberedRecords generator = new GenerateNumberedRecords(schema, overrides(
+                overrideKeyAndFieldType(ROW, StringType.class,
+                        stringFromPrefixAndPadToSize("customrow-", 3)),
+                overrideKeyAndFieldType(SORT, StringType.class,
+                        stringFromPrefixAndPadToSize("customsort-", 3)),
+                overrideKeyAndFieldType(VALUE, StringType.class,
+                        stringFromPrefixAndPadToSize("Custom value ", 3))));
+
+        // When/Then
+        assertThat(generator.generate(LongStream.of(1, 999)))
+                .containsExactly(
+                        new Record(Map.of(
+                                "rowkey", "customrow-001",
+                                "sortkey", "customsort-001",
+                                "value", "Custom value 001")),
+                        new Record(Map.of(
+                                "rowkey", "customrow-999",
+                                "sortkey", "customsort-999",
+                                "value", "Custom value 999")));
+    }
+
+    @Test
+    void shouldOverrideStringGeneratorForFieldByName() {
+        // Given
+        Schema schema = Schema.builder()
+                .rowKeyFields(new Field("rowkey", new StringType()))
+                .sortKeyFields(new Field("sortkey", new StringType()))
+                .valueFields(new Field("value", new StringType()))
+                .build();
+        GenerateNumberedRecords generator = new GenerateNumberedRecords(schema, overrides(
+                overrideField("rowkey",
+                        stringFromPrefixAndPadToSize("rowkey-", 5)),
+                overrideField("sortkey",
+                        stringFromPrefixAndPadToSize("sortkey-", 5)),
+                overrideField("value",
+                        stringFromPrefixAndPadToSize("A value ", 5))));
+
+        // When/Then
+        assertThat(generator.generate(LongStream.of(1, 12345)))
+                .containsExactly(
+                        new Record(Map.of(
+                                "rowkey", "rowkey-00001",
+                                "sortkey", "sortkey-00001",
+                                "value", "A value 00001")),
+                        new Record(Map.of(
+                                "rowkey", "rowkey-12345",
+                                "sortkey", "sortkey-12345",
+                                "value", "A value 12345")));
     }
 }
