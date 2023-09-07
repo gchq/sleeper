@@ -26,13 +26,12 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 public class SystemTestSQSQuery {
     private final SQSQueryDriver sqsQueryDriver;
     private final S3ResultsDriver s3ResultsDriver;
     private final WaitForQueryDriver waitForQueryDriver;
-    private String queryId;
 
     public SystemTestSQSQuery(SleeperInstanceContext instance, SystemTestClients clients) {
         this.sqsQueryDriver = new SQSQueryDriver(instance, clients.getSqs());
@@ -40,26 +39,21 @@ public class SystemTestSQSQuery {
         this.waitForQueryDriver = new WaitForQueryDriver(instance, clients.getDynamoDB());
     }
 
-    public SystemTestSQSQuery allRecordsInTable() {
+    public List<Record> allRecordsInTable() throws InterruptedException {
         String queryId = UUID.randomUUID().toString();
         sqsQueryDriver.allRecords(queryId);
-        this.queryId = queryId;
-        return this;
+        return waitAndReturn(queryId);
     }
 
-    public SystemTestSQSQuery byRowKey(String key, QueryRange... ranges) {
+    public List<Record> byRowKey(String key, QueryRange... ranges) throws InterruptedException {
         String queryId = UUID.randomUUID().toString();
         sqsQueryDriver.run(queryId, key, List.of(ranges));
-        this.queryId = queryId;
-        return this;
+        return waitAndReturn(queryId);
     }
 
-    public SystemTestSQSQuery waitForQuery() throws InterruptedException {
+    private List<Record> waitAndReturn(String queryId) throws InterruptedException {
         waitForQueryDriver.waitForQuery(queryId);
-        return this;
-    }
-
-    public Stream<Record> results() {
-        return s3ResultsDriver.results(queryId);
+        return s3ResultsDriver.results(queryId)
+                .collect(Collectors.toUnmodifiableList());
     }
 }

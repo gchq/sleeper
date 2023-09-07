@@ -114,8 +114,7 @@ public class QueryIT {
 
             // When/Then
             assertThat(sleeper.query().byQueue()
-                    .allRecordsInTable()
-                    .waitForQuery().results())
+                    .allRecordsInTable())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
         }
 
@@ -127,8 +126,7 @@ public class QueryIT {
             // When/Then
             assertThat(sleeper.query().byQueue()
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD,
-                            range("row-0000000000000000010", "row-0000000000000000020"))
-                    .waitForQuery().results())
+                            range("row-0000000000000000010", "row-0000000000000000020")))
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 20)));
         }
 
@@ -141,8 +139,7 @@ public class QueryIT {
             assertThat(sleeper.query().byQueue()
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD,
                             range("row-0000000000000000010", "row-0000000000000000030"),
-                            range("row-0000000000000000020", "row-0000000000000000040"))
-                    .waitForQuery().results())
+                            range("row-0000000000000000020", "row-0000000000000000040")))
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(10, 40)));
         }
 
@@ -155,8 +152,7 @@ public class QueryIT {
             assertThat(sleeper.query().byQueue()
                     .byRowKey(SystemTestSchema.ROW_KEY_FIELD,
                             range("row-0000000000000000010", "row-0000000000000000020"),
-                            range("row-0000000000000000030", "row-0000000000000000040"))
-                    .waitForQuery().results())
+                            range("row-0000000000000000030", "row-0000000000000000040")))
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.concat(
                             LongStream.range(10, 20), LongStream.range(30, 40))));
         }
