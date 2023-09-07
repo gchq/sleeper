@@ -53,7 +53,6 @@ public class BulkImportArguments {
 
     public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, boolean isServerlessJob) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
-        LOGGER.info("Using Spark config {}", userConfig);
 
         String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
@@ -71,6 +70,7 @@ public class BulkImportArguments {
                 args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
             }
         }
+        LOGGER.info("Using args {}", args.toString());
         return args;
     }
 

@@ -133,7 +133,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
         sparkArgs.replace("spark.executor.memory",
                 platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY));
-        sparkArgs.put("spark.executor.instances",
+        sparkArgs.replace("spark.executor.instances",
                 platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES));
         sparkArgs.replace("spark.executor.heartbeat.interval", instanceProperties
                 .get(BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
