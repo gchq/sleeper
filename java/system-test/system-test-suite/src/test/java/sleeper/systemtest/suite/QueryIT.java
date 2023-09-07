@@ -104,7 +104,7 @@ public class QueryIT {
     class SQSQuery {
         @AfterEach
         void tearDown() {
-            sleeper.queryResults().emptyBucket();
+            sleeper.query().emptyResultsBucket();
         }
 
         @Test

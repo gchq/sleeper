@@ -18,6 +18,7 @@ package sleeper.systemtest.suite.dsl.query;
 
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.systemtest.drivers.query.S3ResultsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 
 public class SystemTestQuery {
@@ -37,7 +38,7 @@ public class SystemTestQuery {
         return new SystemTestDirectQuery(new DirectQueryDriver(instance));
     }
 
-    public SystemTestQueryResults results() {
-        return new SystemTestQueryResults(instance, clients);
+    public void emptyResultsBucket() {
+        new S3ResultsDriver(instance, clients.getS3()).emptyBucket();
     }
 }

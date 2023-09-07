@@ -31,7 +31,6 @@ import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.suite.dsl.query.SystemTestDirectQuery;
 import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
-import sleeper.systemtest.suite.dsl.query.SystemTestQueryResults;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
@@ -136,10 +135,6 @@ public class SleeperSystemTest {
 
     public SystemTestQuery query() {
         return new SystemTestQuery(instance, clients);
-    }
-
-    public SystemTestQueryResults queryResults() {
-        return query().results();
     }
 
     public SystemTestDirectQuery directQuery() {
