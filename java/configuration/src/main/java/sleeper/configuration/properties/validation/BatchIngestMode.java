@@ -22,7 +22,8 @@ public enum BatchIngestMode {
     STANDARD_INGEST,
     BULK_IMPORT_EMR,
     BULK_IMPORT_PERSISTENT_EMR,
-    BULK_IMPORT_EKS;
+    BULK_IMPORT_EKS,
+    BULK_IMPORT_EMR_SERVERLESS;
 
     public static boolean isValidMode(String value) {
         return EnumUtils.isValidEnumIgnoreCase(BatchIngestMode.class, value);

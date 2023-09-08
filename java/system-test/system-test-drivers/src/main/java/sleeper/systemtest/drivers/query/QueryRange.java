@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.drivers.query;
 
-import com.amazonaws.services.s3.AmazonS3;
+public class QueryRange {
+    private final Object min;
+    private final Object max;
 
-import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
-import sleeper.systemtest.drivers.query.S3ResultsDriver;
-
-public class SystemTestQueryResults {
-    private final S3ResultsDriver s3ResultsDriver;
-
-    public SystemTestQueryResults(SleeperInstanceContext instance, AmazonS3 s3) {
-        this.s3ResultsDriver = new S3ResultsDriver(instance, s3);
+    private QueryRange(Object min, Object max) {
+        this.min = min;
+        this.max = max;
     }
 
-    public void emptyBucket() {
-        s3ResultsDriver.emptyBucket();
+    public static QueryRange range(Object min, Object max) {
+        return new QueryRange(min, max);
+    }
+
+    public Object getMin() {
+        return min;
+    }
+
+    public Object getMax() {
+        return max;
     }
 }

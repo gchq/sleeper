@@ -34,14 +34,19 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -74,6 +79,7 @@ public class SleeperInstanceContext {
 
     public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
         currentInstance = deployed.connectTo(identifier, deployInstanceConfiguration);
+        currentInstance.setGeneratorOverrides(GenerateNumberedValueOverrides.none());
     }
 
     public void disconnect() {
@@ -114,6 +120,10 @@ public class SleeperInstanceContext {
 
     public StateStoreProvider getStateStoreProvider() {
         return currentInstance.getStateStoreProvider();
+    }
+
+    public Stream<Record> generateNumberedRecords(LongStream numbers) {
+        return currentInstance.generateNumberedRecords(numbers);
     }
 
     public StateStore getStateStore() {
@@ -168,6 +178,10 @@ public class SleeperInstanceContext {
         }
     }
 
+    public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
+        currentInstance.setGeneratorOverrides(overrides);
+    }
+
     private class DeployedInstances {
         private final Map<String, Exception> failureById = new HashMap<>();
         private final Map<String, Instance> instanceById = new HashMap<>();
@@ -191,6 +205,7 @@ public class SleeperInstanceContext {
         private final TableProperties tableProperties;
         private final TablePropertiesProvider tablePropertiesProvider;
         private final StateStoreProvider stateStoreProvider;
+        private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
         public Instance(InstanceProperties instanceProperties, TableProperties tableProperties,
                         TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
@@ -214,6 +229,14 @@ public class SleeperInstanceContext {
 
         public StateStoreProvider getStateStoreProvider() {
             return stateStoreProvider;
+        }
+
+        public Stream<Record> generateNumberedRecords(LongStream numbers) {
+            return GenerateNumberedRecords.from(tableProperties.getSchema(), generatorOverrides, numbers);
+        }
+
+        public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
+            this.generatorOverrides = overrides;
         }
     }
 

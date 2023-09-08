@@ -110,8 +110,8 @@ public class InvokeCdkForInstance {
         private Builder() {
         }
 
-        public Builder propertiesFile(Path instancePropertiesFile) {
-            this.propertiesFile = instancePropertiesFile;
+        public Builder propertiesFile(Path propertiesFile) {
+            this.propertiesFile = propertiesFile;
             return this;
         }
 
