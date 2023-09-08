@@ -237,7 +237,8 @@ public class SleeperCdkApp extends Stack {
         if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
             new IngestBatcherStack(this, "IngestBatcher",
                     instanceProperties, jars,
-                    ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack);
+                    ingestStack, emrBulkImportStack, persistentEmrBulkImportStack,
+                    eksBulkImportStack, emrServerlessBulkImportStack);
         }
 
         if (optionalStacks.contains(DashboardStack.class.getSimpleName())) {

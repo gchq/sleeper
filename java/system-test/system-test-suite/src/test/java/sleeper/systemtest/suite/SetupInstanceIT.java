@@ -54,7 +54,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestOneRecord() {
+    void shouldIngestOneRecord() throws InterruptedException {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",

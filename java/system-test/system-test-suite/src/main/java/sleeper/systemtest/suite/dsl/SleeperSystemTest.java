@@ -20,16 +20,16 @@ import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
@@ -132,8 +132,12 @@ public class SleeperSystemTest {
         return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
-    public SystemTestDirectQuery directQuery() {
-        return new SystemTestDirectQuery(new DirectQueryDriver(instance));
+    public SystemTestQuery query() {
+        return new SystemTestQuery(instance, clients);
+    }
+
+    public SystemTestQuery directQuery() {
+        return query().direct();
     }
 
     public SystemTestCompaction compaction() {
@@ -156,14 +160,12 @@ public class SleeperSystemTest {
         return new SystemTestLocalFiles(instance, tempDir);
     }
 
-    public SystemTestQueryResults queryResults() {
-        return new SystemTestQueryResults(instance, clients.getS3());
+    public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
+        instance.setGeneratorOverrides(overrides);
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return () -> GenerateNumberedRecords.from(
-                        instance.getTableProperties().getSchema(), numbers)
-                .iterator();
+        return () -> instance.generateNumberedRecords(numbers).iterator();
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {

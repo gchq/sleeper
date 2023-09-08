@@ -68,31 +68,31 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
-            .description("The CPU architecture to run compaction tasks on.\n" +
+            .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
                     "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
             .defaultValue("X86_64")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_CPU = Index.propertyBuilder("sleeper.compaction.task.arm.cpu")
-            .description("The CPU for a compaction task using an ARM architecture.\n" +
+            .description("The CPU for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory")
-            .description("The memory for a compaction task using an ARM architecture.\n" +
+            .description("The memory for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_CPU = Index.propertyBuilder("sleeper.compaction.task.x86.cpu")
-            .description("The CPU for a compaction task using an x86 architecture.\n" +
+            .description("The CPU for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory")
-            .description("The memory for a compaction task using an x86 architecture.\n" +
+            .description("The memory for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)

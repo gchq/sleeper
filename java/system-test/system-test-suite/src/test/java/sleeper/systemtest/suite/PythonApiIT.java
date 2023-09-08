@@ -139,7 +139,7 @@ public class PythonApiIT {
     class RunSQSQuery {
         @AfterEach
         void tearDown() {
-            sleeper.queryResults().emptyBucket();
+            sleeper.query().emptyResultsBucket();
         }
 
         @Test

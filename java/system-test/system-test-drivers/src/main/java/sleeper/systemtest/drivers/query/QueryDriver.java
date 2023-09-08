@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.dsl;
+package sleeper.systemtest.drivers.query;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.drivers.query.DirectQueryDriver;
+import sleeper.query.model.Query;
 
 import java.util.List;
 
-public class SystemTestDirectQuery {
-
-    private final DirectQueryDriver context;
-
-    public SystemTestDirectQuery(DirectQueryDriver context) {
-        this.context = context;
-    }
-
-    public List<Record> allRecordsInTable() {
-        return context.getAllRecordsInTable();
-    }
+public interface QueryDriver {
+    List<Record> run(Query query) throws InterruptedException;
 }

@@ -39,6 +39,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
+import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -83,7 +84,8 @@ public class IngestBatcherStack extends NestedStack {
             IngestStack ingestStack,
             EmrBulkImportStack emrBulkImportStack,
             PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-            EksBulkImportStack eksBulkImportStack) {
+            EksBulkImportStack eksBulkImportStack,
+            EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
         super(scope, id);
 
         // Queue to submit files to the batcher
@@ -170,7 +172,7 @@ public class IngestBatcherStack extends NestedStack {
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
         configBucket.grantRead(jobCreatorLambda);
-        ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack)
+        ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack)
                 .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
 
         // CloudWatch rule to trigger the batcher to create jobs from file ingest requests
@@ -188,12 +190,14 @@ public class IngestBatcherStack extends NestedStack {
     private static Stream<Queue> ingestQueues(IngestStack ingestStack,
                                               EmrBulkImportStack emrBulkImportStack,
                                               PersistentEmrBulkImportStack persistentEmrBulkImportStack,
-                                              EksBulkImportStack eksBulkImportStack) {
+                                              EksBulkImportStack eksBulkImportStack,
+                                              EmrServerlessBulkImportStack emrServerlessBulkImportStack) {
         return Stream.of(
                         ingestQueue(ingestStack, IngestStack::getIngestJobQueue),
                         ingestQueue(emrBulkImportStack, EmrBulkImportStack::getBulkImportJobQueue),
                         ingestQueue(persistentEmrBulkImportStack, PersistentEmrBulkImportStack::getBulkImportJobQueue),
-                        ingestQueue(eksBulkImportStack, EksBulkImportStack::getBulkImportJobQueue))
+                        ingestQueue(eksBulkImportStack, EksBulkImportStack::getBulkImportJobQueue),
+                        ingestQueue(emrServerlessBulkImportStack, EmrServerlessBulkImportStack::getBulkImportJobQueue))
                 .flatMap(Optional::stream);
     }
 
