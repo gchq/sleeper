@@ -36,7 +36,7 @@ import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 public class ReportingExtensionTest {
 
     @TempDir
-    private static Path TEMP_DIR;
+    private static Path staticTempDir;
 
     @Nested
     @DisplayName("Run reports as a JUnit extension")
@@ -44,7 +44,7 @@ public class ReportingExtensionTest {
 
         @RegisterExtension
         public final ReportingExtension extension = ReportingExtension.reportAlways(
-                SystemTestReports.builder(new ReportingContext(TEMP_DIR))
+                SystemTestReports.builder(new ReportingContext(staticTempDir))
                         .report(fixedReport("test report")));
 
         @Test
@@ -55,7 +55,7 @@ public class ReportingExtensionTest {
 
     @AfterAll
     static void afterAll() {
-        assertThat(TEMP_DIR.resolve("ReportingExtensionTest.RunAsExtension.shouldOutputAReport.report.log"))
+        assertThat(staticTempDir.resolve("ReportingExtensionTest.RunAsExtension.shouldOutputAReport.report.log"))
                 .hasContent("test report");
     }
 
@@ -88,5 +88,8 @@ public class ReportingExtensionTest {
 
     private static SystemTestReport fixedReport(String report) {
         return (out, startTime) -> out.print(report);
+    }
+
+    private ReportingExtensionTest() {
     }
 }
