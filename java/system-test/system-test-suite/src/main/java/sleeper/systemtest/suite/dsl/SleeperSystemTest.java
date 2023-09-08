@@ -149,7 +149,7 @@ public class SleeperSystemTest {
         return new SystemTestReporting(instance, clients, reportingContext);
     }
 
-    public SystemTestReports.SystemTestBuilder reports() {
+    public SystemTestReports.SystemTestBuilder reportsForExtension() {
         return SystemTestReports.builder(reportingContext, instance, clients);
     }
 

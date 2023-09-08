@@ -42,7 +42,7 @@ public class CompactionPerformanceIT {
 
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reports().compactionTasksAndJobs());
+            sleeper.reportsForExtension().compactionTasksAndJobs());
 
     @BeforeEach
     void setUp() {
