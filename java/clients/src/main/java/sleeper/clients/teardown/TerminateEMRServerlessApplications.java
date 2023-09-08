@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.CancelJobRunRequest;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
@@ -91,7 +90,8 @@ public class TerminateEMRServerlessApplications {
             try {
                 pollUntilCancelled(application);
             } catch (InterruptedException e) {
-                LOGGER.error("An error has occurred whilst waiting for jobs to cancel", e);
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
             emrServerlessClient.stopApplication(StopApplicationRequest.builder().applicationId(application).build());
         });
@@ -108,8 +108,7 @@ public class TerminateEMRServerlessApplications {
     private boolean allApplicationsTerminated() {
         List<ApplicationSummary> applications = listActiveApplications(emrServerlessClient).applications();
         long applicationsStillRunning = applications.stream()
-                .filter(application -> application.name().startsWith(applicationPrefix))
-                .filter(application -> application.state().equals(ApplicationState.STOPPED)).count();
+                .filter(application -> application.name().startsWith(applicationPrefix)).count();
         LOGGER.info("{} apps are still terminating for instance", applicationsStillRunning);
         return applicationsStillRunning == 0;
     }
@@ -118,8 +117,11 @@ public class TerminateEMRServerlessApplications {
         ListJobRunsResponse jobRunResponse = emrServerlessClient
                     .listJobRuns(ListJobRunsRequest.builder().applicationId(applicationId).build());
 
-        long terminatedJobs = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.CANCELLED)).count();
-        long runningJobs = jobRunResponse.jobRuns().size() - terminatedJobs;
+        long failedCount = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.FAILED)).count();
+        long successCount = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.SUCCESS)).count();
+        long cancelledCount = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.CANCELLED)).count();
+
+        long runningJobs = jobRunResponse.jobRuns().size() - (failedCount + successCount + cancelledCount);
         LOGGER.info("{} jobs are still cancelling for application {}", runningJobs, applicationId);
         return runningJobs == 0;
     }

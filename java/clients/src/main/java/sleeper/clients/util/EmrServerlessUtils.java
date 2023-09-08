@@ -30,7 +30,7 @@ public class EmrServerlessUtils {
     }
 
     private static List<ApplicationState> runningStates = List.of(ApplicationState.STARTING,
-        ApplicationState.STARTED);
+        ApplicationState.STARTED, ApplicationState.STOPPING);
 
     public static ListApplicationsResponse listActiveApplications(EmrServerlessClient emrServerlessClient) {
         ListApplicationsResponse applications =  emrServerlessClient.listApplications(ListApplicationsRequest.builder().build());
