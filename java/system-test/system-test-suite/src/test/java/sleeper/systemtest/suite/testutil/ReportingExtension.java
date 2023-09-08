@@ -20,37 +20,32 @@ import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import sleeper.systemtest.drivers.instance.ReportingContext;
-import sleeper.systemtest.drivers.instance.SystemTestReport;
 import sleeper.systemtest.drivers.util.TestContext;
-
-import java.util.List;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 public class ReportingExtension implements BeforeEachCallback, AfterEachCallback {
 
-    private final ReportingContext context;
-    private final List<SystemTestReport> reports;
+    private final SystemTestReports reports;
     private final boolean reportIfPassed;
 
-    public ReportingExtension(ReportingContext context, List<SystemTestReport> reports, boolean reportIfPassed) {
-        this.context = context;
+    public ReportingExtension(SystemTestReports reports, boolean reportIfPassed) {
         this.reports = reports;
         this.reportIfPassed = reportIfPassed;
     }
 
-    public static ReportingExtension reportAlways(ReportingContext context, SystemTestReport... reports) {
-        return new ReportingExtension(context, List.of(reports), true);
+    public static ReportingExtension reportAlways(SystemTestReports.Builder reports) {
+        return new ReportingExtension(reports.build(), true);
     }
 
-    public static ReportingExtension reportIfFailed(ReportingContext context, SystemTestReport... reports) {
-        return new ReportingExtension(context, List.of(reports), false);
+    public static ReportingExtension reportIfFailed(SystemTestReports.Builder reports) {
+        return new ReportingExtension(reports.build(), false);
     }
 
     @Override
     public void beforeEach(ExtensionContext testContext) {
-        context.startRecording();
+        reports.startRecording();
     }
 
     @Override
@@ -64,16 +59,11 @@ public class ReportingExtension implements BeforeEachCallback, AfterEachCallback
 
     public void afterTestPassed(TestContext testContext) {
         if (reportIfPassed) {
-            printReports(testContext);
+            reports.print(testContext);
         }
     }
 
     public void afterTestFailed(TestContext testContext) {
-        printReports(testContext);
-    }
-
-    private void printReports(TestContext testContext) {
-        context.print(testContext, (out, startTime) ->
-                reports.forEach(report -> report.print(out, startTime)));
+        reports.print(testContext);
     }
 }
