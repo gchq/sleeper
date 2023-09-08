@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+unset CDPATH
 
 source "$(dirname "${BASH_SOURCE[0]}")/../timeUtils.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/runTestUtils.sh"

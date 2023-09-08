@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ ! -f "$HOME/.aws/config" ]; then
   echo "No AWS configuration found. Running 'aws configure'"

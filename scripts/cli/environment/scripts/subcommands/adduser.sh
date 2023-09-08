@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -lt 1 ]; then
   echo "Usage: environment adduser <username>"

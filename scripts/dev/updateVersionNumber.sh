@@ -16,6 +16,7 @@
 #
 
 set -e
+unset CDPATH
 
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <new-version-number>"
