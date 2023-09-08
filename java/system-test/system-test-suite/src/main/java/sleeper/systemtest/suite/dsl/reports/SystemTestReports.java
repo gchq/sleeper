@@ -80,7 +80,7 @@ public class SystemTestReports {
         private final SleeperInstanceContext instance;
         private final SystemTestClients clients;
 
-        public SystemTestBuilder(ReportingContext context, SleeperInstanceContext instance, SystemTestClients clients) {
+        private SystemTestBuilder(ReportingContext context, SleeperInstanceContext instance, SystemTestClients clients) {
             super(context);
             this.instance = instance;
             this.clients = clients;
