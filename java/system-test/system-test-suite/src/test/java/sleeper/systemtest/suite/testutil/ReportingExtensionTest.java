@@ -36,7 +36,7 @@ public class ReportingExtensionTest {
     private final ReportingContext context = new ReportingContext(TEMP_DIR);
 
     @RegisterExtension
-    private final ReportingExtension extension = new ReportingExtension(context, List.of(fixedReport("test report")));
+    public final ReportingExtension extension = new ReportingExtension(context, List.of(fixedReport("test report")));
 
     @Test
     void shouldOutputAReport() {
