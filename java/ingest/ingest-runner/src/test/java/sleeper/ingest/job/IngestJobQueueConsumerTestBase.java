@@ -16,27 +16,41 @@
 
 package sleeper.ingest.job;
 
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -49,92 +63,96 @@ import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
+import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
+@Testcontainers
 public abstract class IngestJobQueueConsumerTestBase {
-    @RegisterExtension
-    public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
-            LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.SQS,
-            LocalStackContainer.Service.DYNAMODB,
-            LocalStackContainer.Service.CLOUDWATCH);
-    protected static final String TEST_INSTANCE_NAME = "myinstance";
-    protected static final String TEST_TABLE_NAME = "mytable";
-    protected static final String INGEST_QUEUE_NAME = TEST_INSTANCE_NAME + "-ingestqueue";
-    protected static final String CONFIG_BUCKET_NAME = TEST_INSTANCE_NAME + "-configbucket";
-    protected static final String INGEST_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-ingestdata";
-    protected static final String TABLE_DATA_BUCKET_NAME = TEST_INSTANCE_NAME + "-" + TEST_TABLE_NAME + "-tabledata";
-    protected static final String FILE_SYSTEM_PREFIX = "s3a://";
+
+    @Container
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB,
+                    LocalStackContainer.Service.SQS, LocalStackContainer.Service.CLOUDWATCH);
+
+    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
+    protected final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected final AmazonCloudWatch cloudWatch = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
+    protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
+
+    private final String instanceId = UUID.randomUUID().toString();
+    protected final String tableName = UUID.randomUUID().toString();
+    private final String ingestQueueName = instanceId + "-ingestqueue";
+    private final String configBucketName = instanceId + "-configbucket";
+    private final String ingestDataBucketName = tableName + "-ingestdata";
+    private final String tableDataBucketName = tableName + "-tabledata";
+    private final String fileSystemPrefix = "s3a://";
     @TempDir
     public java.nio.file.Path temporaryFolder;
+    protected final InstanceProperties instanceProperties = new InstanceProperties();
 
     @BeforeEach
     public void before() throws IOException {
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(CONFIG_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(TABLE_DATA_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(INGEST_DATA_BUCKET_NAME);
-        AWS_EXTERNAL_RESOURCE.getSqsClient().createQueue(INGEST_QUEUE_NAME);
-    }
-
-    @AfterEach
-    public void after() {
-        AWS_EXTERNAL_RESOURCE.clear();
-    }
-
-    protected InstanceProperties getInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, TEST_INSTANCE_NAME);
-        instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
-        instanceProperties.set(INGEST_JOB_QUEUE_URL, AWS_EXTERNAL_RESOURCE.getSqsClient().getQueueUrl(INGEST_QUEUE_NAME).getQueueUrl());
-        instanceProperties.set(FILE_SYSTEM, FILE_SYSTEM_PREFIX);
+        s3.createBucket(configBucketName);
+        s3.createBucket(tableDataBucketName);
+        s3.createBucket(ingestDataBucketName);
+        sqs.createQueue(ingestQueueName);
+        instanceProperties.set(ID, instanceId);
+        instanceProperties.set(CONFIG_BUCKET, configBucketName);
+        instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
+        instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        return instanceProperties;
     }
 
-    protected TableProperties createTable(Schema schema) throws IOException, StateStoreException {
-        InstanceProperties instanceProperties = getInstanceProperties();
+    protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
+        StateStore stateStore = new DynamoDBStateStoreCreator(
+                instanceProperties, createTableProperties(schema), dynamoDB)
+                .create();
+        stateStore.initialise();
+        return stateStore;
+    }
 
+    private TableProperties createTableProperties(Schema schema) throws IOException {
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, TEST_TABLE_NAME);
+        tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(DATA_BUCKET, getTableDataBucket());
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, TEST_TABLE_NAME + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, TEST_TABLE_NAME + "-p");
-        tableProperties.saveToS3(AWS_EXTERNAL_RESOURCE.getS3Client());
-
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(
-                instanceProperties,
-                tableProperties,
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient());
-        dynamoDBStateStoreCreator.create();
-
+        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
+        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
+        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
+        tableProperties.saveToS3(s3);
         return tableProperties;
     }
 
     protected String getTableDataBucket() {
-        return TABLE_DATA_BUCKET_NAME;
+        return tableDataBucketName;
     }
 
     protected String getIngestBucket() {
-        return INGEST_DATA_BUCKET_NAME;
+        return ingestDataBucketName;
     }
 
     protected List<String> writeParquetFilesForIngest(
             RecordGenerator.RecordListAndSchema recordListAndSchema,
             String subDirectory,
-            int numberOfFiles) throws IOException {
+            int numberOfFiles) {
         List<String> files = new ArrayList<>();
 
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
             String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", getIngestBucket(), subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
-            Path path = new Path(FILE_SYSTEM_PREFIX + fileWithoutSystemPrefix);
-            ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, recordListAndSchema.sleeperSchema, AWS_EXTERNAL_RESOURCE.getHadoopConfiguration());
-            for (Record record : recordListAndSchema.recordList) {
-                writer.write(record);
+            Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
+            try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
+                    path, recordListAndSchema.sleeperSchema, hadoopConfiguration)) {
+                for (Record record : recordListAndSchema.recordList) {
+                    writer.write(record);
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-            writer.close();
         }
 
         return files;

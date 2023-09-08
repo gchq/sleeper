@@ -21,3 +21,6 @@ __pycache__
 *.pem
 *.drawio.bkp
 *.drawio.dtmp
+python/build/
+python/src/sleeper.egg-info/
+python/env/

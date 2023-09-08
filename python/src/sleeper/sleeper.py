@@ -1,32 +1,30 @@
-# Copyright 2022-2023 Crown Copyright
+#  Copyright 2022-2023 Crown Copyright
 # 
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
 # 
-#     http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 # 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
 import configparser
 import json
 import logging
 import tempfile
-import math
 import time
 import uuid
-import sys
 from contextlib import contextmanager
 from typing import Dict, List, Tuple
 
 import boto3
-from boto3.dynamodb.conditions import Key
-from pq.parquet_serial import ParquetSerialiser
-from pq.parquet_deserial import ParquetDeserialiser
 import s3fs
+from boto3.dynamodb.conditions import Key
+from pq.parquet_deserial import ParquetDeserialiser
+from pq.parquet_serial import ParquetSerialiser
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -59,13 +57,14 @@ class SleeperClient:
         self._emr_bulk_import_queue = resources[1]
         self._persistent_emr_bulk_import_queue = resources[2]
         self._eks_bulk_import_queue = resources[3]
-        self._query_queue = resources[4]
-        self._query_results_bucket = resources[5]
-        self._dynamodb_query_tracker_table = resources[6]
+        self._emr_serverless_bulk_import_queue = resources[4]
+        self._query_queue = resources[5]
+        self._query_results_bucket = resources[6]
+        self._dynamodb_query_tracker_table = resources[7]
         logger.debug("Loaded properties from config bucket sleeper-" + self._basename + "-config")
-        self._s3fs = s3fs.S3FileSystem(anon = False)  # uses default credentials
+        self._s3fs = s3fs.S3FileSystem(anon=False)  # uses default credentials
 
-    def write_single_batch(self, table_name: str, records_to_write: list):
+    def write_single_batch(self, table_name: str, records_to_write: list, job_id: str = None):
         """
         Perform a write of the given records to Sleeper.
         These are treated as a single block of records to write. Each
@@ -73,6 +72,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param records_to_write: list of the dictionaries containing the records to write
+        :param job_id: the id of the ingest job, will be randomly generated if not provided 
         """
         # Generate a filename to write to
         databucket: str = _make_ingest_bucket_name(
@@ -82,24 +82,25 @@ class SleeperClient:
         # Upload it
         _write_and_upload_parquet(records_to_write, databucket_file)
         # Inform Sleeper
-        _ingest(table_name, [databucket_file], self._ingest_queue)
+        _ingest(table_name, [databucket_file], self._ingest_queue, job_id)
 
-    def ingest_parquet_files_from_s3(self, table_name: str, files: list):
+    def ingest_parquet_files_from_s3(self, table_name: str, files: list, job_id: str = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name. This is
-        done by posting a messagen containing the list of files to the ingest queue. These
+        done by posting a message containing the list of files to the ingest queue. These
         files must be in S3. They can be either files or directories. If they are directories
         then all Parquet files under the directory will be ingested. Files should be specified
         in the format 'bucket/file'.
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
+        :param job_id: the id of the ingest job, will be randomly generated if not provided 
         """
-        _ingest(table_name, files, self._ingest_queue)
-
+        _ingest(table_name, files, self._ingest_queue, job_id)
 
     def bulk_import_parquet_files_from_s3(self, table_name: str, files: list,
-        id: str = None, platform: str = "EMR", platform_spec: dict = None, class_name: str = None):
+                                          id: str = None, platform: str = "EMR", platform_spec: dict = None,
+                                          class_name: str = None):
         """
         Ingests the data in the given files to the Sleeper table with name table_name using the bulk
         import method. This is done by posting a message containing the list of files to the bulk
@@ -113,43 +114,46 @@ class SleeperClient:
         :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
         :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
         """
-        _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue, self._eks_bulk_import_queue, id, platform, platform_spec, class_name)
+        _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue,
+                     self._eks_bulk_import_queue, self._emr_serverless_bulk_import_queue, id, platform, platform_spec,
+                     class_name)
 
-
-    def exact_key_query(self, table_name: str, keys) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str = str(uuid.uuid4())) -> list:
         """
         Query a Sleeper table for records where the key matches a given list of query keys.
 
         :param table_name: the table to query
-        :param keys: either a dict with key the row-key field name and value a list of values to query for, or a list of dicts where the key is a row-key field name and the value is the value
+        :param keys: either a single dict where the key is the row-key field name and the value is a list of values 
+        to query for, or a list of dicts where the key is a row-key field name and the value is the value to query for
+        :param query_id: the query ID, will be randomly generated if not provided
 
         :return: list of result records
         """
         if not isinstance(keys, list) and not isinstance(keys, dict):
-            raise Exception("keys must be either (a) a single dict where the key is the row-key field name and the value is a list of values to query for"
+            raise Exception(
+                "keys must be either (a) a single dict where the key is the row-key field name and the value is a list of values to query for"
                 + " or (b) a list of dicts where the key is a row-key field name and the value is the value to query for")
         if len(keys) == 0:
             raise Exception("Must provide at least one key")
 
         if isinstance(keys, dict):
             if len(keys) != 1:
-                raise Exception("If keys is a dict, there must be only one entry, with key of the row-key field and the value a list of the values to query for")
+                raise Exception(
+                    "If keys is a dict, there must be only one entry, with key of the row-key field and the value a list of the values to query for")
             for key in keys:
-                return self._exact_key_query_from_list_of_values(table_name, key, keys[key])
-            
-        return self._exact_key_query_from_dicts(table_name, keys)
-    
+                return self._exact_key_query_from_list_of_values(table_name, key, keys[key], query_id)
 
-    def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list) -> list:
+        return self._exact_key_query_from_dicts(table_name, keys, query_id)
+
+    def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list,
+                                             query_id: str = str(uuid.uuid4())) -> list:
         regions = []
         for value in values:
-            region = {}
-            region[row_key_field_name] = [value, True, value, True]
+            region = {row_key_field_name: [value, True, value, True]}
             regions.append(region)
-        return self.range_key_query(table_name, regions)
+        return self.range_key_query(table_name, regions, query_id)
 
-
-    def _exact_key_query_from_dicts(self, table_name: str, keys: list) -> list:
+    def _exact_key_query_from_dicts(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4())) -> list:
         regions = []
         for key in keys:
             if not isinstance(key, dict):
@@ -160,10 +164,9 @@ class SleeperClient:
             for field_name in key:
                 region[field_name] = [key[field_name], True, key[field_name], True]
             regions.append(region)
-        return self.range_key_query(table_name, regions)
+        return self.range_key_query(table_name, regions, query_id)
 
-
-    def range_key_query(self, table_name: str, regions: list) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str = str(uuid.uuid4())) -> list:
         """
         Query a Sleeper table for records where the key is within one of the provided list of ranges.
 
@@ -174,7 +177,7 @@ class SleeperClient:
             maximum). If length 4 then the first element is the min of the range, the next is a boolean specifying
             whether the minimum is inclusive, the third is the max of the range and the next is a boolean specifying
             whether the maximum is inclusive.
-        :param key_schema_name: name given to the key in the Sleeper schema
+        :param query_id: the query ID, will be randomly generated if not provided
 
         :return: list of the result records
         """
@@ -192,7 +195,8 @@ class SleeperClient:
             for field_name in region:
                 range_as_tuple = region[field_name]
                 if not len(range_as_tuple) == 2 and not len(range_as_tuple) == 4:
-                    raise Exception("Each range must be of length 2 (min, max) or 4 (min, minInclusive, max, maxInclusive)")
+                    raise Exception(
+                        "Each range must be of length 2 (min, max) or 4 (min, minInclusive, max, maxInclusive)")
                 if len(range_as_tuple) == 2:
                     min = range_as_tuple[0]
                     max = range_as_tuple[1]
@@ -214,7 +218,6 @@ class SleeperClient:
                 json_region["stringsBase64Encoded"] = False
             json_regions_list.append(json_region)
 
-        query_id = str(uuid.uuid4())
         query_message = {
             'queryId': query_id,
             'tableName': table_name,
@@ -226,17 +229,16 @@ class SleeperClient:
 
         # Convert query message to json and send to query queue
         query_message_json = json.dumps(query_message)
-        query_queue_sqs = _sqs.get_queue_by_name(QueueName = self._query_queue)
-        query_queue_sqs.send_message(MessageBody = query_message_json)
+        query_queue_sqs = _sqs.get_queue_by_name(QueueName=self._query_queue)
+        query_queue_sqs.send_message(MessageBody=query_message_json)
 
         logger.debug(f"Submitted query with id {query_id}")
 
         located_records = _receive_messages(self, query_id)
         return located_records
 
-
     @contextmanager
-    def create_batch_writer(self, table_name: str):
+    def create_batch_writer(self, table_name: str, job_id: str = None):
         """
         Creates an object for writing large batches of events to Sleeper.
         Designed to be used within a context manager ('with' statement).
@@ -252,12 +254,14 @@ class SleeperClient:
         See the examples for how to use this method.
 
         :param table_name: the table to ingest to
+        :param job_id: the id of the ingest job, will be randomly generated if not provided 
         :return: an object for use with context managers
         """
         # Create a temporary file to write data to as it is batched
         with tempfile.NamedTemporaryFile() as fp:
             try:
                 parquet_file = ParquetSerialiser(fp)
+
                 # Return an instance of RecordWriter that is bound to this batch writer
 
                 class RecordWriter:
@@ -292,9 +296,10 @@ class SleeperClient:
                 logger.debug(f"Uploaded {writer.num_records} records to S3")
 
                 # Notify Sleeper
-                _ingest(table_name, [s3_filename], self._ingest_queue)
+                _ingest(table_name, [s3_filename], self._ingest_queue, job_id)
 
-def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str]:
+
+def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str, str, str]:
     """
     Gets SQS queue names from S3 for the posting of messages to Sleeper.
 
@@ -319,12 +324,17 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
 
     persistent_emr_bulk_import_queue = None
     if 'sleeper.bulk.import.persistent.emr.job.queue.url' in config['asection']:
-        persistent_emr_bulk_import_queue = (config['asection']['sleeper.bulk.import.persistent.emr.job.queue.url']).rsplit('/', 1)[1]
+        persistent_emr_bulk_import_queue = \
+            (config['asection']['sleeper.bulk.import.persistent.emr.job.queue.url']).rsplit('/', 1)[1]
+
+    emr_serverless_bulk_import_queue = None
+    if 'sleeper.bulk.import.emr.serverless.job.queue.url' in config['asection']:
+        emr_serverless_bulk_import_queue = \
+            (config['asection']['sleeper.bulk.import.emr.serverless.job.queue.url']).rsplit('/', 1)[1]
 
     eks_bulk_import_queue = None
     if 'sleeper.bulk.import.eks.job.queue.url' in config['asection']:
         eks_bulk_import_queue = (config['asection']['sleeper.bulk.import.eks.job.queue.url']).rsplit('/', 1)[1]
-
     query_queue = None
     if 'sleeper.query.queue.url' in config['asection']:
         query_queue = (config['asection']['sleeper.query.queue.url']).rsplit('/', 1)[1]
@@ -337,7 +347,9 @@ def _get_resource_names(configbucket: str) -> Tuple[str, str, str, str, str, str
     if 'sleeper.query.tracker.table.name' in config['asection']:
         dynamodb_query_tracker_table = (config['asection']['sleeper.query.tracker.table.name'])
 
-    return (ingest_queue, emr_bulk_import_queue, persistent_emr_bulk_import_queue, eks_bulk_import_queue, query_queue, query_results_bucket, dynamodb_query_tracker_table)
+    return (ingest_queue, emr_bulk_import_queue, persistent_emr_bulk_import_queue, eks_bulk_import_queue,
+            emr_serverless_bulk_import_queue, query_queue,
+            query_results_bucket, dynamodb_query_tracker_table)
 
 
 def _write_and_upload_parquet(records_to_write: list, s3_file: str):
@@ -346,7 +358,7 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
 
     :param records_to_write: list of the dictionaries containing the records to user wants to write to the Parquet file
 
-    :param databucket_file: name of the databucket concatenated with the name of the Parquet file
+    :param s3_file: name of the databucket concatenated with the name of the Parquet file
     """
     # Separates the argument into the databucket name and the filename they want to appear in the bucket
     databucket_name = s3_file.split('/', 1)[0]
@@ -361,12 +373,12 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
         _s3.upload_file(fp.name, databucket_name, file_name)
 
 
-def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
+def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: str = str(uuid.uuid4())):
     """
     Instructs Sleeper to ingest the given file from S3.
 
     :param table_name: table name to ingest to
-    :param file_to_ingest: path to the file on the S3 databucket which is to be ingested
+    :param files_to_ingest: path to the file on the S3 databucket which is to be ingested
     :param ingest_queue: name of the Sleeper instance's ingest queue
     """
     if ingest_queue == None:
@@ -374,7 +386,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
 
     # Creates the ingest message and generates an ID
     ingest_message = {
-        "id": str(uuid.uuid4()),
+        "id": job_id,
         "tableName": table_name,
         "files": files_to_ingest
     }
@@ -382,25 +394,28 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str):
     # Converts ingest message to json and sends to the SQS queue
     ingest_message_json = json.dumps(ingest_message)
     logger.debug(f"Sending JSON message to queue {ingest_message_json}")
-    ingest_queue_sqs = _sqs.get_queue_by_name(QueueName = ingest_queue)
-    ingest_queue_sqs.send_message(MessageBody = ingest_message_json)
+    ingest_queue_sqs = _sqs.get_queue_by_name(QueueName=ingest_queue)
+    ingest_queue_sqs.send_message(MessageBody=ingest_message_json)
 
 
 def _bulk_import(table_name: str, files_to_ingest: list,
-        emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
-        id: str, platform: str, platform_spec: dict, class_name: str):
+                 emr_bulk_import_queue: str, persistent_emr_bulk_import_queue: str, eks_bulk_import_queue: str,
+                 emr_serverless_bulk_import_queue: str, job_id: str, platform: str, platform_spec: dict,
+                 class_name: str):
     """
-    Instructs Sleeper to bulk imoport the given files from S3.
+    Instructs Sleeper to bulk import the given files from S3.
 
     :param table_name: table name to bulk import to
-    :param file_to_ingest: path to the file on the S3 databucket which is to be bulk imported
-    :param bulk_import_queue: name of the Sleeper instance's ingest queue
-    :param id: the id of the bulk import job
-    :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
+    :param files_to_ingest: path to the file on the S3 databucket which is to be bulk imported
+    :param emr_bulk_import_queue: name of the Sleeper instance's non-persistent EMR bulk import queue
+    :param persistent_emr_bulk_import_queue: name of the Sleeper instance's persistent EMR bulk import queue
+    :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
+    :param job_id: the id of the bulk import job, will be randomly generated if not provided 
+    :param platform: the platform to use - either "EMR", "PersistentEMR", "EKS", or "EMRServerless"
     :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
     """
-    if platform != "EMR" and platform != "EKS" and platform != "PersistentEMR":
-        raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS'")
+    if platform != "EMR" and platform != "EKS" and platform != "PersistentEMR" and platform != "EMRServerless":
+        raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS' or 'EMRServerless'")
 
     if platform == "EMR":
         if emr_bulk_import_queue == None:
@@ -408,19 +423,24 @@ def _bulk_import(table_name: str, files_to_ingest: list,
         queue = emr_bulk_import_queue
     elif platform == "PersistentEMR":
         if persistent_emr_bulk_import_queue == None:
-            raise Exception("Persistent EMR bulk import queue is not defined - was the PersistentEmrBulkImportStack deployed?")
+            raise Exception(
+                "Persistent EMR bulk import queue is not defined - was the PersistentEmrBulkImportStack deployed?")
         queue = persistent_emr_bulk_import_queue
-    else:
+    elif platform == "EKS":
         if eks_bulk_import_queue == None:
             raise Exception("EKS bulk import queue is not defined - was the EksBulkImportStack deployed?")
         queue = eks_bulk_import_queue
-
-    if id == None:
-        id = str(uuid.uuid4())
+    else:
+        if emr_serverless_bulk_import_queue == None:
+            raise Exception(
+                "EMR serverless bulk import queue is not defined - was the EmrServerlessBulkImportStack deployed?")
+        queue = emr_serverless_bulk_import_queue
+    if job_id == None:
+        job_id = str(uuid.uuid4())
 
     # Creates the ingest message and generates and ID
     bulk_import_message = {
-        "id": id,
+        "id": job_id,
         "tableName": table_name,
         "files": files_to_ingest
     }
@@ -431,9 +451,9 @@ def _bulk_import(table_name: str, files_to_ingest: list,
 
     # Converts bulk import message to json and sends to the SQS queue
     bulk_import_message_json = json.dumps(bulk_import_message)
-    logger.debug(f"Sending JSON message to queue {bulk_import_message_json}")
-    bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName = queue)
-    bulk_import_queue_sqs.send_message(MessageBody = bulk_import_message_json)
+    logger.debug(f"Sending JSON message to {platform} queue: {bulk_import_message_json}")
+    bulk_import_queue_sqs = _sqs.get_queue_by_name(QueueName=queue)
+    bulk_import_queue_sqs.send_message(MessageBody=bulk_import_message_json)
 
 
 def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME) -> List:
@@ -448,7 +468,7 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
     # This while loop will poll the DynamoDB query tracker until the query is completed. Upon completion the
     # results will be read from S3 into a list and returned.
     results_table = _dynanmodb.Table(self._dynamodb_query_tracker_table)
-    
+
     timer = time.time()
     end_time = timeout + timer
     count = 0
@@ -462,12 +482,12 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
         count += 1
         logger.debug(f"Sleeping for {sleep_time} seconds before polling DynamoDB query results tracker")
         time.sleep(sleep_time)
-        
+
         # Get current status of query
         query_status_response = results_table.query(
-            KeyConditionExpression = Key('queryId').eq(query_id) & Key('subQueryId').eq("-")
+            KeyConditionExpression=Key('queryId').eq(query_id) & Key('subQueryId').eq("-")
         )
-        
+
         if len(query_status_response['Items']) == 0:
             continue
 
@@ -480,7 +500,8 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
             # Query results are put as Parquet files in the results bucket under "query-<query id>/"
             # (see Java class S3ResultsOutput for the precise formation of the location of the result files)
             results_files = []
-            for object_summary in _s3_resource.Bucket(self._query_results_bucket).objects.filter(Prefix = f"query-{query_id}"):
+            for object_summary in _s3_resource.Bucket(self._query_results_bucket).objects.filter(
+                    Prefix=f"query-{query_id}"):
                 logger.debug(f"Found {object_summary.key}")
                 if object_summary.key.endswith(".parquet"):
                     results_files.append(object_summary.key)

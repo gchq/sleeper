@@ -87,7 +87,7 @@ public class CommonEmrBulkImportHelper {
     // Queue for messages to trigger jobs - note that each concrete substack
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
-    public Queue createJobQueue(SystemDefinedInstanceProperty jobQueueUrl, ITopic errorsTopic) {
+    public Queue createJobQueue(SystemDefinedInstanceProperty jobQueueUrl, SystemDefinedInstanceProperty jobQueueArn, ITopic errorsTopic) {
         String instanceId = instanceProperties.get(ID);
         Queue queueForDLs = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobDeadLetterQueue")
@@ -121,6 +121,7 @@ public class CommonEmrBulkImportHelper {
                 .build();
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
+        instanceProperties.set(jobQueueArn, emrBulkImportJobQueue.getQueueArn());
         addIngestSourceRoleReferences(scope, scope.getNode().getId() + "Writer", instanceProperties)
                 .forEach(emrBulkImportJobQueue::grantSendMessages);
 
