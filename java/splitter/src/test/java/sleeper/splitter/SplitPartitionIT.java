@@ -17,6 +17,7 @@ package sleeper.splitter;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -410,6 +411,35 @@ public class SplitPartitionIT {
                     .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
+                            .buildList());
+        }
+
+        @Test
+        @Disabled("TODO")
+        public void shouldSplitIntKeyOnFirstDimensionWhenSecondDimensionCanBeSplit() throws Exception {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
+                    .build();
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .singlePartition("A")
+                    .buildList());
+            IntStream.range(0, 10).forEach(i ->
+                    ingestFileFromRecords(schema, stateStore,
+                            IntStream.range(0, 100).mapToObj(r ->
+                                    new Record(Map.of(
+                                            "key1", r,
+                                            "key2", i))))
+            );
+
+            // When
+            splitSinglePartition(schema, stateStore, generateIds("B", "C", "D", "E"));
+
+            // Then
+            assertThat(stateStore.getAllPartitions())
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("A")
+                            .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
                             .buildList());
         }
 
