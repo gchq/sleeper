@@ -26,6 +26,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 
 import java.nio.file.Path;
 
@@ -43,7 +44,8 @@ public class ReportingExtensionTest {
 
         @RegisterExtension
         public final ReportingExtension extension = ReportingExtension.reportAlways(
-                new ReportingContext(TEMP_DIR), fixedReport("test report"));
+                SystemTestReports.builder(new ReportingContext(TEMP_DIR))
+                        .report(fixedReport("test report")));
 
         @Test
         void shouldOutputAReport() {
@@ -79,8 +81,8 @@ public class ReportingExtensionTest {
 
         private ReportingExtension extensionReportIfFailed() {
             return ReportingExtension.reportIfFailed(
-                    new ReportingContext(tempDir),
-                    fixedReport("test report"));
+                    SystemTestReports.builder(new ReportingContext(tempDir))
+                            .report(fixedReport("test report")));
         }
     }
 

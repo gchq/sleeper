@@ -16,16 +16,16 @@
 
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.time.Duration;
 
@@ -35,21 +35,18 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECO
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class CompactionPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
+    @RegisterExtension
+    public final ReportingExtension reporting = ReportingExtension.reportAlways(
+            sleeper.reports().compactionTasksAndJobs());
+
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(COMPACTION_PERFORMANCE);
-        sleeper.reporting().startRecording();
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printCompactionTasksAndJobs(testContext(testInfo));
     }
 
     @Test
