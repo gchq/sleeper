@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.suite.testutil;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
@@ -28,5 +30,16 @@ public class TestContextTest {
     void shouldGetTestNameAndClass(TestInfo info) {
         assertThat(testContext(info).getTestClassAndMethod())
                 .isEqualTo("TestContextTest.shouldGetTestNameAndClass");
+    }
+
+    @DisplayName("Test nested class")
+    @Nested
+    class NestedClass {
+
+        @Test
+        void shouldGetNestedTestNameAndClass(TestInfo info) {
+            assertThat(testContext(info).getTestClassAndMethod())
+                    .isEqualTo("TestContextTest.NestedClass.shouldGetNestedTestNameAndClass");
+        }
     }
 }

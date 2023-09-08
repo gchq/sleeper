@@ -267,7 +267,7 @@ docker push $TAG
 
 #### Building for Graviton
 
-If you'd like to run operations in AWS Graviton-based instances, in ARM64 architecture, you can use Docker BuildX to
+If you'd like to run operations in AWS Graviton-based instances, on the ARM64 architecture, you can use Docker BuildX to
 build multiplatform images.
 
 These commands will create or recreate a builder:

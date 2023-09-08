@@ -20,6 +20,8 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TestContext {
 
@@ -56,7 +58,22 @@ public class TestContext {
     }
 
     public String getTestClassAndMethod() {
-        return testClass.getSimpleName() + "." + testMethod.getName();
+        return getTestClassName() + "." + testMethod.getName();
+    }
+
+    private String getTestClassName() {
+        return classAndAncestors(testClass)
+                .map(Class::getSimpleName)
+                .collect(Collectors.joining("."));
+    }
+
+    private static Stream<Class<?>> classAndAncestors(Class<?> clazz) {
+        Class<?> host = clazz.getNestHost();
+        if (host == clazz) {
+            return Stream.of(clazz);
+        } else {
+            return Stream.concat(classAndAncestors(host), Stream.of(clazz));
+        }
     }
 
     public static final class Builder {
