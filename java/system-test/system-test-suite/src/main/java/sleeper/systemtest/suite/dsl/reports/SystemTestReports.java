@@ -58,7 +58,7 @@ public class SystemTestReports {
     }
 
     public static class Builder {
-        protected final ReportingContext context;
+        private final ReportingContext context;
         private final List<SystemTestReport> reports = new ArrayList<>();
 
         private Builder(ReportingContext context) {
