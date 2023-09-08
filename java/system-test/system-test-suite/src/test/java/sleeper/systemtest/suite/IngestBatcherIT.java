@@ -36,7 +36,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
+import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR_SERVERLESS;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
@@ -90,7 +90,7 @@ public class IngestBatcherIT {
     void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(tableProperties -> {
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR.toString());
+            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
