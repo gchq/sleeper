@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -100,72 +101,40 @@ public class SplitMultiDimensionalPartitionImpl {
             LOGGER.info("Testing field {} of type {} (dimension {}) to see if it can be split",
                     schema.getRowKeyFieldNames().get(dimension), rowKeyType, dimension);
             if (rowKeyType instanceof IntType) {
-                Triple<Integer, Integer, Integer> minMedianMax = getMinMedianMaxIntKey(dimension);
-                int min = minMedianMax.getLeft();
-                int median = minMedianMax.getMiddle();
-                int max = minMedianMax.getRight();
-                LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
-                if (min > max) {
-                    throw new RuntimeException("Min > max");
-                }
-                if (min < median && median < max) {
-                    LOGGER.info("For dimension {} min < median && median < max, so splitting", dimension);
-                    splitPartition(partition, median, dimension);
-                    return;
-                } else {
-                    LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
-                }
+                splitPartitionForDimension(getMinMedianMaxIntKey(dimension), dimension);
             } else if (rowKeyType instanceof LongType) {
-                Triple<Long, Long, Long> minMedianMax = getMinMedianMaxLongKey(dimension);
-                long min = minMedianMax.getLeft();
-                long median = minMedianMax.getMiddle();
-                long max = minMedianMax.getRight();
-                LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
-                if (min > max) {
-                    throw new RuntimeException("Min > max");
-                }
-                if (min < median && median < max) {
-                    LOGGER.debug("For dimension {} min < median && median < max", dimension);
-                    splitPartition(partition, median, dimension);
-                    return;
-                } else {
-                    LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
-                }
+                splitPartitionForDimension(getMinMedianMaxLongKey(dimension), dimension);
             } else if (rowKeyType instanceof StringType) {
-                Triple<String, String, String> minMedianMax = getMinMedianMaxStringKey(dimension);
-                String min = minMedianMax.getLeft();
-                String median = minMedianMax.getMiddle();
-                String max = minMedianMax.getRight();
-                LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
-                if (min.compareTo(max) > 0) {
-                    throw new RuntimeException("Min > max");
-                }
-                if (min.compareTo(median) < 0 && median.compareTo(max) < 0) {
-                    LOGGER.debug("For dimension {} min < median && median < max", dimension);
-                    splitPartition(partition, median, dimension);
-                    return;
-                } else {
-                    LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
-                }
+                splitPartitionForDimension(getMinMedianMaxStringKey(dimension), dimension);
             } else if (rowKeyType instanceof ByteArrayType) {
-                Triple<ByteArray, ByteArray, ByteArray> minMedianMax = getMinMedianMaxByteArrayKey(dimension);
-                ByteArray min = minMedianMax.getLeft();
-                ByteArray median = minMedianMax.getMiddle();
-                ByteArray max = minMedianMax.getRight();
-                LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
-                if (min.compareTo(max) > 0) {
-                    throw new RuntimeException("Min > max");
-                }
-                if (min.compareTo(median) < 0 && median.compareTo(max) < 0) {
-                    LOGGER.debug("For dimension {} min < median && median < max", dimension);
-                    splitPartition(partition, median.getArray(), dimension);
-                    return;
-                } else {
-                    LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
-                }
+                splitPartitionForDimension(getMinMedianMaxByteArrayKey(dimension), dimension, ByteArray::getArray);
             } else {
                 throw new RuntimeException("Unknown type " + rowKeyType);
             }
+        }
+    }
+
+    private <T extends Comparable<T>> void splitPartitionForDimension(
+            Triple<T, T, T> minMedianMax, int dimension)
+            throws StateStoreException {
+        splitPartitionForDimension(minMedianMax, dimension, median -> median);
+    }
+
+    private <T extends Comparable<T>> void splitPartitionForDimension(
+            Triple<T, T, T> minMedianMax, int dimension, Function<T, Object> getValue)
+            throws StateStoreException {
+        T min = minMedianMax.getLeft();
+        T median = minMedianMax.getMiddle();
+        T max = minMedianMax.getRight();
+        LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
+        if (min.compareTo(max) > 0) {
+            throw new RuntimeException("Min > max");
+        }
+        if (min.compareTo(median) < 0 && median.compareTo(max) < 0) {
+            LOGGER.debug("For dimension {} min < median && median < max", dimension);
+            splitPartition(partition, getValue.apply(median), dimension);
+        } else {
+            LOGGER.info("For dimension {} it is not true that min < median && median < max, so NOT splitting", dimension);
         }
     }
 
