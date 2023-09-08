@@ -129,7 +129,7 @@ sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
-Note that this script currently needs to be run from an x86 machine as we do not yet have cross-architecture Docker
+Note that this script currently needs to be run from an x86_64 machine as we do not yet have cross-architecture Docker
 builds. Then CDK will be used to deploy a Sleeper instance. This will take around 20 minutes. Once that is complete,
 some tasks are started on an ECS cluster. These tasks generate some random data and write it to Sleeper. 11 ECS tasks
 will be created. Each of these will write 40 million records. As all writes to Sleeper are asynchronous, it will take a
