@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
+import sleeper.systemtest.drivers.util.TestContext;
 
 import java.util.List;
 
@@ -31,10 +32,20 @@ public class ReportingExtension implements BeforeEachCallback, AfterEachCallback
 
     private final ReportingContext context;
     private final List<SystemTestReport> reports;
+    private final boolean reportIfPassed;
 
-    public ReportingExtension(ReportingContext context, List<SystemTestReport> reports) {
+    public ReportingExtension(ReportingContext context, List<SystemTestReport> reports, boolean reportIfPassed) {
         this.context = context;
         this.reports = reports;
+        this.reportIfPassed = reportIfPassed;
+    }
+
+    public static ReportingExtension reportAlways(ReportingContext context, SystemTestReport... reports) {
+        return new ReportingExtension(context, List.of(reports), true);
+    }
+
+    public static ReportingExtension reportIfFailed(ReportingContext context, SystemTestReport... reports) {
+        return new ReportingExtension(context, List.of(reports), false);
     }
 
     @Override
@@ -44,7 +55,25 @@ public class ReportingExtension implements BeforeEachCallback, AfterEachCallback
 
     @Override
     public void afterEach(ExtensionContext testContext) {
-        context.print(testContext(testContext), (out, startTime) ->
+        if (testContext.getExecutionException().isPresent()) {
+            afterTestFailed(testContext(testContext));
+        } else {
+            afterTestPassed(testContext(testContext));
+        }
+    }
+
+    public void afterTestPassed(TestContext testContext) {
+        if (reportIfPassed) {
+            printReports(testContext);
+        }
+    }
+
+    public void afterTestFailed(TestContext testContext) {
+        printReports(testContext);
+    }
+
+    private void printReports(TestContext testContext) {
+        context.print(testContext, (out, startTime) ->
                 reports.forEach(report -> report.print(out, startTime)));
     }
 }
