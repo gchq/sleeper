@@ -17,7 +17,6 @@ package sleeper.splitter;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -415,7 +414,6 @@ public class SplitPartitionIT {
         }
 
         @Test
-        @Disabled("TODO")
         public void shouldSplitIntKeyOnFirstDimensionWhenSecondDimensionCanBeSplit() throws Exception {
             // Given
             Schema schema = Schema.builder()
@@ -429,11 +427,10 @@ public class SplitPartitionIT {
                             IntStream.range(0, 100).mapToObj(r ->
                                     new Record(Map.of(
                                             "key1", r,
-                                            "key2", i))))
-            );
+                                            "key2", i)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C", "D", "E"));
+            splitSinglePartition(schema, stateStore, generateIdsStartingFrom('B'));
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -575,6 +572,10 @@ public class SplitPartitionIT {
 
     private static Supplier<String> generateIds(String... ids) {
         return Arrays.stream(ids).iterator()::next;
+    }
+
+    private static Supplier<String> generateIdsStartingFrom(char start) {
+        return Stream.iterate(start, c -> (char) (c + 1)).map(String::valueOf).iterator()::next;
     }
 
     private static Supplier<String> generateNoIds() {
