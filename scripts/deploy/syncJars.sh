@@ -16,6 +16,7 @@
 #
 
 set -e
+unset CDPATH
 
 if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
   echo "Usage: $0 <bucket-name> <region> <optional-delete-old-jars>"

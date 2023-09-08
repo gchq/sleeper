@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 BASE_DIR=$(cd "$(dirname "$0")" && cd "../../" && pwd)
 MAVEN_DIR="$BASE_DIR/java"

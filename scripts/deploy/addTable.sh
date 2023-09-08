@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <uniqueId> <table-name>"
