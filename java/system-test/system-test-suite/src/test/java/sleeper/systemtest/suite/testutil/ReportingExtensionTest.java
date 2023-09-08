@@ -17,6 +17,8 @@
 package sleeper.systemtest.suite.testutil;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -33,19 +35,24 @@ public class ReportingExtensionTest {
 
     @TempDir
     private static Path TEMP_DIR;
-    private final ReportingContext context = new ReportingContext(TEMP_DIR);
 
-    @RegisterExtension
-    public final ReportingExtension extension = new ReportingExtension(context, List.of(fixedReport("test report")));
+    @Nested
+    @DisplayName("Run reports as a JUnit extension")
+    class RunAsExtension {
 
-    @Test
-    void shouldOutputAReport() {
-        // Reporting handled by extension
+        @RegisterExtension
+        public final ReportingExtension extension = new ReportingExtension(
+                new ReportingContext(TEMP_DIR), List.of(fixedReport("test report")));
+
+        @Test
+        void shouldOutputAReport() {
+            // Reporting handled by extension
+        }
     }
 
     @AfterAll
     static void afterAll() {
-        assertThat(TEMP_DIR.resolve("ReportingExtensionTest.shouldOutputAReport.report.log"))
+        assertThat(TEMP_DIR.resolve("ReportingExtensionTest.RunAsExtension.shouldOutputAReport.report.log"))
                 .content().isEqualTo("test report");
     }
 
