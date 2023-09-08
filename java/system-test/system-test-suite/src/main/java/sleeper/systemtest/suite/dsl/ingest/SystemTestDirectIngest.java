@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite.dsl.ingest;
 
 import sleeper.core.record.Record;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
@@ -35,7 +34,7 @@ public class SystemTestDirectIngest {
     }
 
     public void numberedRecords(LongStream numbers) {
-        context.ingest(GenerateNumberedRecords.from(instance.getTableProperties().getSchema(), numbers).iterator());
+        context.ingest(instance.generateNumberedRecords(numbers).iterator());
     }
 
     public void records(Record... records) {

@@ -19,10 +19,6 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.util.HashMap;
@@ -95,11 +91,7 @@ public enum SystemTestInstance {
                 "SystemTestInstance", "main"));
 
         TableProperties tableProperties = new TableProperties(properties);
-        tableProperties.setSchema(Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("timestamp", new LongType()))
-                .valueFields(new Field("value", new StringType()))
-                .build());
+        tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
 
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)
