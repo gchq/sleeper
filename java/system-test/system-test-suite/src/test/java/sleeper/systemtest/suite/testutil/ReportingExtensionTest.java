@@ -68,21 +68,21 @@ public class ReportingExtensionTest {
 
         @Test
         void shouldNotOutputReportWhenTestPassed(TestInfo info) {
-            extensionReportIfFailed().afterTestPassed(testContext(info));
+            extensionReportIfFailed("test passed").afterTestPassed(testContext(info));
             assertThat(tempDir).isEmptyDirectory();
         }
 
         @Test
         void shouldOutputReportWhenTestFailed(TestInfo info) {
-            extensionReportIfFailed().afterTestFailed(testContext(info));
+            extensionReportIfFailed("test failed").afterTestFailed(testContext(info));
             assertThat(tempDir.resolve("ReportingExtensionTest.OnlyReportWhenTestFailed.shouldOutputReportWhenTestFailed.report.log"))
-                    .hasContent("test report");
+                    .hasContent("test failed");
         }
 
-        private ReportingExtension extensionReportIfFailed() {
+        private ReportingExtension extensionReportIfFailed(String report) {
             return ReportingExtension.reportIfFailed(
                     SystemTestReports.builder(new ReportingContext(tempDir))
-                            .report(fixedReport("test report")));
+                            .report(fixedReport(report)));
         }
     }
 
