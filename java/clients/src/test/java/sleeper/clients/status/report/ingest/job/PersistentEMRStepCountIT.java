@@ -29,8 +29,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listStepsRequestWithClusterId;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listStepsRequestWithClusterId;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 

@@ -20,24 +20,19 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
-import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
 
-public class WiremockEMRTestHelper {
-    private WiremockEMRTestHelper() {
+public class WiremockEmrTestHelper {
+    private WiremockEmrTestHelper() {
     }
 
     public static final String OPERATION_HEADER = "X-Amz-Target";
@@ -63,7 +58,7 @@ public class WiremockEMRTestHelper {
         return delete(urlEqualTo("/applications/" + applicationId + "/jobruns/" + jobId));
     }
 
-    public static MappingBuilder  stopJobForApplicationsRequest(String applicationId) {
+    public static MappingBuilder stopJobForApplicationsRequest(String applicationId) {
         return post(urlEqualTo("/applications/" + applicationId + "/stop"));
     }
 
@@ -80,10 +75,6 @@ public class WiremockEMRTestHelper {
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
     }
 
-    public static RequestPatternBuilder listActiveApplicationRequested() {
-        return getRequestedFor(urlEqualTo("/applications"));
-    }
-
     public static ResponseDefinitionBuilder aResponseWithNumRunningClusters(int numRunningClusters) {
         StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
         for (int i = 1; i <= numRunningClusters; i++) {
@@ -98,54 +89,5 @@ public class WiremockEMRTestHelper {
         }
         clustersBody.append("]}");
         return aResponse().withStatus(200).withBody(clustersBody.toString());
-    }
-
-     public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(int numRunningApplications) {
-        List<ApplicationState> states = new ArrayList<>();
-        for (int i = 0; i < numRunningApplications; i++) {
-            states.add(ApplicationState.STARTED);
-        }
-        return aResponseWithNumRunningApplications(states);
-     }
-
-    public static ResponseDefinitionBuilder aResponseWithNumRunningApplications(List<ApplicationState> states) {
-        StringBuilder applicationBody = new StringBuilder("{\"applications\": [");
-        for (int i = 1; i < states.size(); i++) {
-            applicationBody.append("{" +
-                    "\"name\": \"sleeper-test-instance-test-application-" + i + "\"," +
-                    "\"id\": \"test-application-id-" + i + "\"," +
-                    "\"state\": \"" + states.get(i).toString() + "\"" +
-                    "}");
-            if (i != states.size()) {
-                applicationBody.append(",");
-            }
-        }
-        applicationBody.append("]}");
-        return aResponse().withStatus(200).withBody(applicationBody.toString());
-    }
-    public static ResponseDefinitionBuilder aResponseWithNumRunningJobsOnApplication(int numRunningJobs) {
-        return aResponseWithNumRunningJobsOnApplication(numRunningJobs, false);
-    }
-
-    public static ResponseDefinitionBuilder aResponseWithNumRunningJobsOnApplication(int numRunningJobs, boolean includeSuccessState) {
-        StringBuilder jobRunBody = new StringBuilder("{\"jobRuns\": [");
-        for (int i = 1; i <= numRunningJobs; i++) {
-
-            String state = "RUNNING";
-
-            if (i == 1 && includeSuccessState) {
-                state = "SUCCESS";
-            }
-            jobRunBody.append("{" +
-                    "\"applicationId\": \"sleeper-test-instance-test-application-" + i + "\"," +
-                    "\"id\": \"test-job-run-id-" + i + "\"," +
-                    "\"state\": \"" + state + "\"" +
-                    "}");
-            if (i != numRunningJobs) {
-                jobRunBody.append(",");
-            }
-        }
-        jobRunBody.append("]}");
-        return aResponse().withStatus(200).withBody(jobRunBody.toString());
     }
 }

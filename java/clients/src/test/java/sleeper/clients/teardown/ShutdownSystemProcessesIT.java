@@ -45,17 +45,17 @@ import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningApplications;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningClusters;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningJobsOnApplication;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.deleteJobsForApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationRequested;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listJobsForApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.stopJobForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNumRunningApplications;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNumRunningJobsOnApplication;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.OPERATION_HEADER;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNumRunningClusters;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.deleteJobsForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequested;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listJobsForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.stopJobForApplicationsRequest;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -142,6 +142,10 @@ class ShutdownSystemProcessesIT {
         @BeforeEach
         void setup() {
             properties.set(INGEST_CLUSTER, "test-ingest-cluster");
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
         }
 
         @Test
@@ -154,10 +158,6 @@ class ShutdownSystemProcessesIT {
             stubFor(post("/")
                     .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                     .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponseWithNumRunningClusters(0)));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdownWithExtraEcsClusters(extraECSClusters);
@@ -180,10 +180,6 @@ class ShutdownSystemProcessesIT {
             stubFor(post("/")
                     .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                     .willReturn(aResponse().withStatus(200)));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponseWithNumRunningClusters(0)));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdown();
@@ -203,6 +199,8 @@ class ShutdownSystemProcessesIT {
         @BeforeEach
         void setup() {
             properties.set(ID, "test-instance");
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
         }
 
         @Test
@@ -223,8 +221,6 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdown();
@@ -248,8 +244,6 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdown();
@@ -268,8 +262,6 @@ class ShutdownSystemProcessesIT {
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": []}")));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdown();
@@ -282,8 +274,6 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
             // Given
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +
