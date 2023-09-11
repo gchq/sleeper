@@ -33,7 +33,6 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
@@ -73,9 +72,7 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster sendAllGeneratedFilesAsOneJob(InstanceProperty queueUrlProperty) {
-        String jobId = UUID.randomUUID().toString();
-        byQueueDriver.sendJob(queueUrlProperty, jobId, lastGeneratedFiles.getIngestJobFilesCombiningAll());
-        jobIds.add(jobId);
+        jobIds.add(byQueueDriver.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
         return this;
     }
 

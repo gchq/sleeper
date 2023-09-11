@@ -24,7 +24,6 @@ import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
@@ -53,9 +52,7 @@ public class SystemTestIngestByQueue {
     }
 
     private SystemTestIngestByQueue sendSourceFiles(InstanceProperty queueProperty, Stream<String> files) {
-        String jobId = UUID.randomUUID().toString();
-        sentJobIds.add(jobId);
-        driver.sendJob(queueProperty, jobId, sourceFiles.getIngestJobFilesInBucket(files));
+        sentJobIds.add(driver.sendJobGetId(queueProperty, sourceFiles.getIngestJobFilesInBucket(files)));
         return this;
     }
 
