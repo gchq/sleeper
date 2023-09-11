@@ -15,16 +15,20 @@
  */
 package sleeper.ingest.impl;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
+import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -51,7 +55,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -61,6 +64,7 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 import static sleeper.ingest.testutils.ResultVerifier.assertOnSketch;
@@ -68,23 +72,22 @@ import static sleeper.ingest.testutils.ResultVerifier.createFieldToItemSketchMap
 import static sleeper.ingest.testutils.ResultVerifier.readFieldToItemSketchMap;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
+@Testcontainers
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
-    @RegisterExtension
-    public static final AwsExternalResource AWS_EXTERNAL_RESOURCE = new AwsExternalResource(
-            LocalStackContainer.Service.S3,
-            LocalStackContainer.Service.DYNAMODB);
-    private static final String DATA_BUCKET_NAME = "databucket";
+    @Container
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB,
+            AmazonDynamoDBClientBuilder.standard());
+    private static final String TABLE_NAME = "test-table";
     @TempDir
     public Path temporaryFolder;
 
-    @BeforeEach
-    public void before() {
-        AWS_EXTERNAL_RESOURCE.getS3Client().createBucket(DATA_BUCKET_NAME);
-    }
-
     @AfterEach
     public void after() {
-        AWS_EXTERNAL_RESOURCE.clear();
+        dynamoDB.deleteTable(TABLE_NAME + "-af");
+        dynamoDB.deleteTable(TABLE_NAME + "-rgcf");
+        dynamoDB.deleteTable(TABLE_NAME + "-p");
     }
 
     @Test
@@ -162,10 +165,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                                  Function<Key, Integer> keyToPartitionNoMappingFn,
                                  Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws Exception {
         Schema schema = recordListAndSchema.sleeperSchema;
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema,
-                AWS_EXTERNAL_RESOURCE.getDynamoDBClient()).create();
+        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(TABLE_NAME, schema, dynamoDB).create();
         stateStore.initialise(tree.getAllPartitions());
-        Configuration configuration = AWS_EXTERNAL_RESOURCE.getHadoopConfiguration();
+        Configuration configuration = AwsExternalResource.getHadoopConfiguration(localStackContainer);
         ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, configuration);
 
         String localWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
