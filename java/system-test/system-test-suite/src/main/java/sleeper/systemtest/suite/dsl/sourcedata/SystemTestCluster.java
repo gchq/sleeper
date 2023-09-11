@@ -72,9 +72,9 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster sendAllGeneratedFilesAsOneJob(InstanceProperty queueProperty) {
+    public SystemTestCluster sendAllGeneratedFilesAsOneJob(InstanceProperty queueUrlProperty) {
         String jobId = UUID.randomUUID().toString();
-        byQueueDriver.sendJob(queueProperty, jobId, lastGeneratedFiles.getIngestJobFilesCombiningAll());
+        byQueueDriver.sendJob(queueUrlProperty, jobId, lastGeneratedFiles.getIngestJobFilesCombiningAll());
         jobIds.add(jobId);
         return this;
     }

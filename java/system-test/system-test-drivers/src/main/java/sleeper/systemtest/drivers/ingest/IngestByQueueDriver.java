@@ -33,6 +33,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
@@ -51,8 +52,11 @@ public class IngestByQueueDriver {
         this.sqsClient = sqsClient;
     }
 
-    public void sendJob(InstanceProperty queueUrl, String jobId, List<String> files) {
-        sqsClient.sendMessage(instance.getInstanceProperties().get(queueUrl),
+    public void sendJob(InstanceProperty queueUrlProperty, String jobId, List<String> files) {
+        String queue = Objects.requireNonNull(instance.getInstanceProperties().get(queueUrlProperty),
+                "queue URL property must be non-null: " + queueUrlProperty.getPropertyName());
+        LOGGER.info("Sending ingest job to queue {} with {} files", queue, files.size());
+        sqsClient.sendMessage(queue,
                 new IngestJobSerDe().toJson(IngestJob.builder()
                         .id(jobId)
                         .tableName(instance.getTableName())
