@@ -41,6 +41,8 @@ import static sleeper.job.common.WiremockTestHelper.wiremockEndpointConfiguratio
 
 public class ClientWiremockTestHelper {
 
+    public static final String OPERATION_HEADER = "X-Amz-Target";
+
     private ClientWiremockTestHelper() {
     }
 
