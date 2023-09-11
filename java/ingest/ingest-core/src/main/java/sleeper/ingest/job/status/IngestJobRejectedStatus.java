@@ -16,13 +16,15 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
+public class IngestJobRejectedStatus implements IngestJobValidatedStatus, ProcessRunFinishedUpdate {
     private final Instant validationTime;
     private final Instant updateTime;
     private final int inputFileCount;
@@ -67,6 +69,16 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus {
     @Override
     public boolean isValid() {
         return false;
+    }
+
+    @Override
+    public RecordsProcessedSummary getSummary() {
+        return RecordsProcessedSummary.noProcessingDoneAtTime(validationTime);
+    }
+
+    @Override
+    public boolean isPartOfRun() {
+        return true;
     }
 
     @Override

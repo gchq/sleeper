@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.status.store.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
@@ -118,7 +117,6 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
     }
 
     @Test
-    @Disabled("TODO")
     void shouldExcludeRejectedIngestJobFromRangeQueryWhenRejectedTimeIsBeforeStartOfRange() {
         // Given
         IngestJob job = jobWithFiles("file");
