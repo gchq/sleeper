@@ -69,7 +69,7 @@ public class EmrBulkImportPerformanceIT {
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         assertThat(sleeper.tableFiles().active())
-                .hasSize(640)
+                .hasSize(2560)
                 .matches(files -> numberOfRecordsIn(files) == 5_000_000_000L,
                         "contain 5 billion records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
