@@ -23,9 +23,11 @@ import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
@@ -38,6 +40,7 @@ public class WiremockEmrTestHelper {
     public static final String OPERATION_HEADER = "X-Amz-Target";
     private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
     private static final StringValuePattern MATCHING_LIST_STEPS_OPERATION = matching("ElasticMapReduce.ListSteps");
+    private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
 
     public static MappingBuilder listActiveClustersRequest() {
         return post("/")
@@ -89,5 +92,37 @@ public class WiremockEmrTestHelper {
         }
         clustersBody.append("]}");
         return aResponse().withStatus(200).withBody(clustersBody.toString());
+    }
+
+    public static MappingBuilder terminateJobFlowsRequest() {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                .willReturn(aResponse().withStatus(200));
+    }
+
+    public static MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
+        return post("/")
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
+                        equalTo(jobIdsCount + "")))
+                .willReturn(aResponse().withStatus(200));
+    }
+
+
+    public static RequestPatternBuilder terminateJobFlowsRequested() {
+        return postRequestedFor(urlEqualTo("/"))
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
+    }
+
+    public static RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
+        return terminateJobFlowsRequested()
+                .withRequestBody(matchingJsonPath("$.JobFlowIds",
+                        equalTo(clusterId)));
+    }
+
+    public static RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
+        return terminateJobFlowsRequested()
+                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
+                        equalTo(jobIdsCount + "")));
     }
 }

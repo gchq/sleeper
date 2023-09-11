@@ -15,7 +15,6 @@
  */
 package sleeper.clients.teardown;
 
-import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -56,6 +55,10 @@ import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersR
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequested;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listJobsForApplicationsRequest;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.stopJobForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestWithJobIdCount;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedFor;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedWithJobIdsCount;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -76,7 +79,6 @@ class ShutdownSystemProcessesIT {
     private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
     private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
-    private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
 
     private final InstanceProperties properties = createTestInstanceProperties();
     private ShutdownSystemProcesses shutdown;
@@ -402,38 +404,6 @@ class ShutdownSystemProcessesIT {
             verify(1, getRequestedFor(urlEqualTo("/applications")));
             verify(1, listActiveApplicationRequested());
         }
-    }
-
-    private static MappingBuilder terminateJobFlowsRequest() {
-        return post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
-                .willReturn(aResponse().withStatus(200));
-    }
-
-    private static MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
-        return post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
-                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
-                        equalTo(jobIdsCount + "")))
-                .willReturn(aResponse().withStatus(200));
-    }
-
-
-    private static RequestPatternBuilder terminateJobFlowsRequested() {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
-    }
-
-    private static RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
-        return terminateJobFlowsRequested()
-                .withRequestBody(matchingJsonPath("$.JobFlowIds",
-                        equalTo(clusterId)));
-    }
-
-    private static RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
-        return terminateJobFlowsRequested()
-                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
-                        equalTo(jobIdsCount + "")));
     }
 
     private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
