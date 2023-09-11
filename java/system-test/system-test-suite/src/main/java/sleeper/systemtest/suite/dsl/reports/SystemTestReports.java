@@ -48,10 +48,6 @@ public class SystemTestReports {
         return new SystemTestBuilder(context, instance, clients);
     }
 
-    public void startRecording() {
-        context.startRecording();
-    }
-
     public void print(TestContext testContext) {
         context.print(testContext, (out, startTime) ->
                 reports.forEach(report -> report.print(out, startTime)));
