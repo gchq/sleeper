@@ -18,6 +18,9 @@ package sleeper.ingest.testutils;
 
 import sleeper.core.record.Record;
 import sleeper.ingest.impl.IngestCoordinator;
+import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
+
+import java.util.function.Consumer;
 
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrayList;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
@@ -38,6 +41,14 @@ public class TestIngestType {
 
     public String getFilePrefix(IngestCoordinatorTestParameters parameters) {
         return getFilePrefix.getFilePrefix(parameters);
+    }
+
+    public static TestIngestType directWriteBackedByArrowWriteToLocalFile(
+            Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) {
+        return new TestIngestType(
+                parameters ->
+                        ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(), arrowConfig),
+                IngestCoordinatorTestParameters::getLocalFilePrefix);
     }
 
     public static TestIngestType directWriteBackedByArrowWriteToLocalFile() {
