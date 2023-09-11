@@ -36,13 +36,13 @@ public class SystemTestReporting {
 
     public SystemTestIngestJobsReport ingestJobs() {
         return new SystemTestIngestJobsReport(
-                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+                new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr())
                         .jobs(context));
     }
 
     public SystemTestCompactionJobsReport compactionJobs() {
         return new SystemTestCompactionJobsReport(
-                new CompactionReportsDriver(clients.getDynamoDB(), instance)
+                new CompactionReportsDriver(instance, clients.getDynamoDB())
                         .jobs(context)
         );
     }

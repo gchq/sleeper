@@ -91,7 +91,7 @@ public class SystemTestReports {
         }
 
         public Builder compactionTasksAndJobs() {
-            return report(new CompactionReportsDriver(clients.getDynamoDB(), instance)
+            return report(new CompactionReportsDriver(instance, clients.getDynamoDB())
                     .tasksAndJobsReport());
         }
 
@@ -100,7 +100,7 @@ public class SystemTestReports {
         }
 
         private IngestReportsDriver ingest() {
-            return new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance);
+            return new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr());
         }
     }
 }
