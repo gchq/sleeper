@@ -30,7 +30,7 @@ import sleeper.systemtest.suite.testutil.ReportingExtension;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.configuration.SystemTestProperty.BULK_IMPORT_QUEUE_PROPERTY;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
@@ -61,11 +61,11 @@ public class EmrBulkImportPerformanceIT {
                     properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10000000");
                 })
                 .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
-                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_QUEUE_PROPERTY)
-                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_QUEUE_PROPERTY)
-                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_QUEUE_PROPERTY)
-                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_QUEUE_PROPERTY)
-                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_QUEUE_PROPERTY)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
 
         assertThat(sleeper.tableFiles().active())
