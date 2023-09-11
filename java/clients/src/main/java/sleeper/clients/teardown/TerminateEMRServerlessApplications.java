@@ -22,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
-import software.amazon.awssdk.services.emrserverless.model.CancelJobRunRequest;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.ListJobRunsRequest;
 import software.amazon.awssdk.services.emrserverless.model.ListJobRunsResponse;
@@ -40,19 +39,16 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class TerminateEMRServerlessApplications {
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(TerminateEMRServerlessApplications.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TerminateEMRServerlessApplications.class);
     private static final long POLL_INTERVAL_MILLIS = 30000;
     private static final int MAX_POLLS = 30;
 
-    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS,
-            MAX_POLLS);
-
+    private final PollWithRetries poll = PollWithRetries.intervalAndMaxPolls(POLL_INTERVAL_MILLIS, MAX_POLLS);
     private final EmrServerlessClient emrServerlessClient;
     private final String applicationPrefix;
 
     public TerminateEMRServerlessApplications(EmrServerlessClient emrServerlessClient,
-            InstanceProperties properties) {
+                                              InstanceProperties properties) {
         this.emrServerlessClient = emrServerlessClient;
         this.applicationPrefix = "sleeper-" + properties.get(ID) + "-";
     }
@@ -73,27 +69,17 @@ public class TerminateEMRServerlessApplications {
         }
     }
 
-    private void stopApplications(List<String> applications) {
+    private void stopApplications(List<String> applications) throws InterruptedException {
         List<JobRunState> runningStates = List.of(JobRunState.RUNNING, JobRunState.SCHEDULED, JobRunState.PENDING, JobRunState.SUBMITTED);
-        applications.stream().forEach(application -> {
-            ListJobRunsResponse jobRunResponse = emrServerlessClient
-                    .listJobRuns(ListJobRunsRequest.builder().applicationId(application).build());
+        for (String application : applications) {
+            emrServerlessClient.listJobRuns(request -> request.applicationId(application).states(runningStates))
+                    .jobRuns().forEach(jobRun ->
+                            emrServerlessClient.cancelJobRun(req -> req
+                                    .applicationId(application).jobRunId(jobRun.id())));
 
-            if (jobRunResponse.hasJobRuns()) {
-                jobRunResponse.jobRuns().stream().filter(job -> runningStates.contains(job.state()))
-                .forEach(jobRun -> {
-                    emrServerlessClient.cancelJobRun((CancelJobRunRequest.builder()
-                            .applicationId(application).jobRunId(jobRun.id()).build()));
-                });
-            }
-            try {
-                pollUntilCancelled(application);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
+            pollUntilCancelled(application);
             emrServerlessClient.stopApplication(StopApplicationRequest.builder().applicationId(application).build());
-        });
+        }
     }
 
     private void pollUntilTerminated() throws InterruptedException {
@@ -114,7 +100,7 @@ public class TerminateEMRServerlessApplications {
 
     private boolean allJobsCancelled(String applicationId) {
         ListJobRunsResponse jobRunResponse = emrServerlessClient
-                    .listJobRuns(ListJobRunsRequest.builder().applicationId(applicationId).build());
+                .listJobRuns(ListJobRunsRequest.builder().applicationId(applicationId).build());
 
         long failedCount = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.FAILED)).count();
         long successCount = jobRunResponse.jobRuns().stream().filter(jobRun -> jobRun.state().equals(JobRunState.SUCCESS)).count();
