@@ -202,7 +202,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L);
         TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile();
         assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, ingestType, arrowConfig))
-                .hasCauseInstanceOf(OutOfMemoryException.class)
+                .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }
 

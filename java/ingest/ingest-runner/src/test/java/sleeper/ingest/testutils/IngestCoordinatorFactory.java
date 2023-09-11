@@ -40,27 +40,23 @@ public class IngestCoordinatorFactory {
             IngestCoordinatorTestParameters parameters, String filePathPrefix,
             Consumer<ArrowRecordBatchFactory.Builder<U>> arrowConfig,
             T recordWriter) {
-        try {
-            ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
-            ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builder()
-                    .schema(parameters.getSchema())
-                    .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                    .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                    .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                    .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
-                    .maxNoOfBytesToWriteLocally(512 * 1024 * 1024L)
-                    .recordWriter(recordWriter)
-                    .localWorkingDirectory(parameters.getWorkingDir());
-            arrowConfig.accept(arrowConfigBuilder);
-            return standardIngestCoordinatorBuilder(parameters,
-                    arrowConfigBuilder.build(),
-                    DirectPartitionFileWriterFactory.from(
-                            parquetConfiguration, filePathPrefix,
-                            parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
-                    .build();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(parameters);
+        ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builder()
+                .schema(parameters.getSchema())
+                .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
+                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                .minBatchBufferAllocatorBytes(16 * 1024 * 1024L)
+                .maxBatchBufferAllocatorBytes(16 * 1024 * 1024L)
+                .maxNoOfBytesToWriteLocally(512 * 1024 * 1024L)
+                .recordWriter(recordWriter)
+                .localWorkingDirectory(parameters.getWorkingDir());
+        arrowConfig.accept(arrowConfigBuilder);
+        return standardIngestCoordinatorBuilder(parameters,
+                arrowConfigBuilder.build(),
+                DirectPartitionFileWriterFactory.from(
+                        parquetConfiguration, filePathPrefix,
+                        parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
+                .build();
     }
 
     public static IngestCoordinator<Record> ingestCoordinatorDirectWriteBackedByArrow(

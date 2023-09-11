@@ -228,7 +228,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         // When/Then
         Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig = arrow -> arrow
                 .workingBufferAllocatorBytes(32 * 1024L)
-                .batchBufferAllocatorBytes(1024 * 1024L)
+                .batchBufferAllocatorBytes(32 * 1024L)
                 .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L);
         TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
         assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, ingestType))
