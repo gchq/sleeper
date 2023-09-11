@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.status.store.job;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.job.IngestJob;
@@ -25,6 +26,7 @@ import java.time.Instant;
 import java.time.Period;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -47,7 +49,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(
                         defaultJobStartedStatus(job2, startedTime2),
                         defaultJobStartedStatus(job1, startedTime1));
@@ -89,7 +91,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableName, epochStart, farFuture))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
 
@@ -111,8 +113,26 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
+                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(defaultJobFinishedStatus(job, startedTime, finishedTime));
     }
 
+    @Test
+    @Disabled("TODO")
+    void shouldExcludeRejectedIngestJobFromRangeQueryWhenRejectedTimeIsBeforeStartOfRange() {
+        // Given
+        IngestJob job = jobWithFiles("file");
+        Instant rejectedTime = Instant.parse("2023-01-02T14:50:00.001Z");
+        Instant rejectedUpdateTime = Instant.parse("2023-01-02T14:50:00.123Z");
+        Instant periodStart = Instant.parse("2023-01-02T14:52:00.001Z");
+        Instant periodEnd = Instant.parse("2023-01-02T14:54:00.001Z");
+        IngestJobStatusStore store = storeWithUpdateTimes(rejectedUpdateTime);
+
+        // When
+        store.jobValidated(ingestJobRejected(job, rejectedTime, "Test reason"));
+
+        // Then
+        assertThat(store.getJobsInTimePeriod(tableName, periodStart, periodEnd))
+                .isEmpty();
+    }
 }
