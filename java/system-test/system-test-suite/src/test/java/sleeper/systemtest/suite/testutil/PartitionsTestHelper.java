@@ -21,9 +21,12 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class PartitionsTestHelper {
 
@@ -31,46 +34,30 @@ public class PartitionsTestHelper {
     }
 
     public static PartitionTree create128StringPartitions(SleeperSystemTest sleeper) {
-        return create128StringPartitions(sleeper.tableProperties().getSchema());
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "128-partitions.txt");
     }
 
     public static PartitionTree create512StringPartitions(SleeperSystemTest sleeper) {
-        return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(), create511StringSplitPoints());
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "512-partitions.txt");
     }
 
-    static PartitionTree create128StringPartitions(Schema schema) {
-        return createPartitionsFromSplitPoints(schema, create127StringSplitPoints());
-    }
-
-    static List<Object> create127StringSplitPoints() {
-        return IntStream.range(1, 128)
-                .mapToObj(i -> "" + (char) (i / 5 + 'a') + SECONDARY_SPLITS_FOR_127.get(i % 5))
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    static List<Object> create511StringSplitPoints() {
-        return IntStream.range(1, 512)
-                .mapToObj(i -> "" + (char) (i / 20 + 'a') + SECONDARY_SPLITS_FOR_511.get(i % 20))
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    private static final List<Character> SECONDARY_SPLITS_FOR_127 = secondarySplitCharacters(5);
-    private static final List<Character> SECONDARY_SPLITS_FOR_511 = secondarySplitCharacters(20);
-
-    private static List<Character> secondarySplitCharacters(int n) {
-        double step = 26.0 / (double) n;
-        return IntStream.range(0, n)
-                .map(i -> (int) (i * step))
-                .mapToObj(PartitionsTestHelper::charN)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    private static char charN(int n) {
-        return (char) (n + 'a');
+    public static PartitionTree createStringPartitionsFromSplitPointsDirectory(
+            SleeperSystemTest sleeper, String filename) {
+        return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(),
+                readStringSplitPoints(sleeper.getSplitPointsDirectory()
+                        .resolve("string").resolve(filename)));
     }
 
     private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
         return new PartitionTree(schema,
                 new PartitionsFromSplitPoints(schema, splitPoints).construct());
+    }
+
+    private static List<Object> readStringSplitPoints(Path file) {
+        try {
+            return Collections.unmodifiableList(Files.readAllLines(file));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
