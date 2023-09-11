@@ -78,8 +78,8 @@ class ShutdownSystemProcessesIT {
     private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
     private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
 
+    private final InstanceProperties properties = createTestInstanceProperties();
     private ShutdownSystemProcesses shutdown;
-    private InstanceProperties properties;
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
@@ -87,22 +87,18 @@ class ShutdownSystemProcessesIT {
                 wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo));
     }
 
-    private void shutdown(InstanceProperties instanceProperties) throws Exception {
-        shutdown.shutdown(instanceProperties, List.of());
+    private void shutdown() throws Exception {
+        shutdownWithExtraEcsClusters(List.of());
     }
 
-    private void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws Exception {
-        shutdown.shutdown(instanceProperties, extraECSClusters);
+    private void shutdownWithExtraEcsClusters(List<String> extraECSClusters) throws Exception {
+        shutdown.shutdown(properties, extraECSClusters);
     }
 
     @Nested
     @DisplayName("Shutdown Cloud Watch Rules")
     class ShutdownCloudWatchRules {
 
-        @BeforeEach
-        void setUp() {
-            properties = createTestInstanceProperties();
-        }
         @Test
         void shouldShutdownCloudWatchRulesWhenSet() throws Exception {
             // Given
@@ -123,7 +119,7 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(9, postRequestedFor(urlEqualTo("/")));
@@ -145,7 +141,6 @@ class ShutdownSystemProcessesIT {
 
         @BeforeEach
         void setup() {
-            properties = createTestInstanceProperties();
             properties.set(INGEST_CLUSTER, "test-ingest-cluster");
         }
 
@@ -165,7 +160,7 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties, extraECSClusters);
+            shutdownWithExtraEcsClusters(extraECSClusters);
 
             // Then
             verify(5, postRequestedFor(urlEqualTo("/")));
@@ -191,7 +186,7 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(3, postRequestedFor(urlEqualTo("/")));
@@ -207,7 +202,7 @@ class ShutdownSystemProcessesIT {
 
         @BeforeEach
         void setup() {
-            properties = createTestInstancePropertiesWithEmrStack();
+            properties.set(ID, "test-instance");
         }
 
         @Test
@@ -229,10 +224,10 @@ class ShutdownSystemProcessesIT {
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
             stubFor(listActiveApplicationsRequest()
-                   .willReturn(aResponseWithNumRunningApplications(0)));
+                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(3, postRequestedFor(urlEqualTo("/")));
@@ -257,7 +252,7 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(4, postRequestedFor(urlEqualTo("/")));
@@ -277,7 +272,7 @@ class ShutdownSystemProcessesIT {
                     .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, postRequestedFor(urlEqualTo("/")));
@@ -298,7 +293,7 @@ class ShutdownSystemProcessesIT {
                             "}]}")));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, postRequestedFor(urlEqualTo("/")));
@@ -312,20 +307,20 @@ class ShutdownSystemProcessesIT {
     class TerminateEMRServerlessApplications {
 
         @BeforeEach
-        void setUp(WireMockRuntimeInfo runtimeInfo) {
-            properties = createTestInstancePropertiesWithEmrStack();
+        void setUp() {
+            properties.set(ID, "test-instance");
             stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
+                    .willReturn(aResponseWithNumRunningClusters(0)));
         }
 
         @Test
         void shouldAllowEmrServerlessWithNoApplications() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(0)));
+                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
@@ -336,10 +331,10 @@ class ShutdownSystemProcessesIT {
         void shouldAllowEmrServerlessWithAStoppedApplication() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.STOPPED))));
+                    .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.STOPPED))));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
@@ -350,10 +345,10 @@ class ShutdownSystemProcessesIT {
         void shouldAllowEmrServerlessWithACreatedApplication() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.CREATED))));
+                    .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.CREATED))));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
@@ -364,16 +359,16 @@ class ShutdownSystemProcessesIT {
         void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJobs() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
+                    .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(10, true)));
+                    .willReturn(aResponseWithNumRunningJobsOnApplication(10, true)));
             stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
             stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
-                .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
+                    .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
@@ -384,16 +379,16 @@ class ShutdownSystemProcessesIT {
         void shouldStopEMRServerlessWhenApplicationIsStartedWithOnlySuccessJobs() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
+                    .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(1, true)));
+                    .willReturn(aResponseWithNumRunningJobsOnApplication(1, true)));
             stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
             stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
-                .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
+                    .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
@@ -404,14 +399,14 @@ class ShutdownSystemProcessesIT {
         void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
             //Given
             stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
+                    .willReturn(aResponseWithNumRunningApplications(1)));
             stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
             stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
+                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
             verify(1, getRequestedFor(urlEqualTo("/applications")));
@@ -419,13 +414,13 @@ class ShutdownSystemProcessesIT {
         }
     }
 
-    private MappingBuilder terminateJobFlowsRequest() {
+    private static MappingBuilder terminateJobFlowsRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
                 .willReturn(aResponse().withStatus(200));
     }
 
-    private MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
+    private static MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
                 .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
@@ -434,27 +429,21 @@ class ShutdownSystemProcessesIT {
     }
 
 
-    private RequestPatternBuilder terminateJobFlowsRequested() {
+    private static RequestPatternBuilder terminateJobFlowsRequested() {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
     }
 
-    private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
+    private static RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
         return terminateJobFlowsRequested()
                 .withRequestBody(matchingJsonPath("$.JobFlowIds",
                         equalTo(clusterId)));
     }
 
-    private RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
+    private static RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
         return terminateJobFlowsRequested()
                 .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
                         equalTo(jobIdsCount + "")));
-    }
-
-    private InstanceProperties createTestInstancePropertiesWithEmrStack() {
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ID, "test-instance");
-        return properties;
     }
 
     private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
