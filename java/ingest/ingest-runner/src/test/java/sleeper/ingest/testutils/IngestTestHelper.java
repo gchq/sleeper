@@ -21,7 +21,6 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.key.Key;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -29,7 +28,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
@@ -71,7 +69,7 @@ public class IngestTestHelper<T> {
     private final String localWorkingDirectory;
     private final Schema schema;
     private final List<Record> expectedRecords;
-    private Iterable<T> toWrite;
+    private final Iterable<T> toWrite;
     private StateStore stateStore;
     private RecordBatchFactory<T> recordBatchFactory;
     private PartitionFileWriterFactory partitionFileWriterFactory;
@@ -121,22 +119,6 @@ public class IngestTestHelper<T> {
         return stateStore(stateStore);
     }
 
-    public IngestTestHelper<T> stateStoreInMemory(
-            Consumer<PartitionsBuilder> partitionsConfig) {
-        return stateStoreInMemory(partitionsConfig, files -> {
-        });
-    }
-
-    public IngestTestHelper<T> stateStoreInMemory(
-            Consumer<PartitionsBuilder> partitionsConfig,
-            Consumer<StateStoreTestBuilder> filesConfig) {
-        PartitionsBuilder partitions = new PartitionsBuilder(schema);
-        partitionsConfig.accept(partitions);
-        StateStoreTestBuilder builder = StateStoreTestBuilder.from(partitions);
-        filesConfig.accept(builder);
-        return stateStore(builder.buildStateStore());
-    }
-
     public IngestTestHelper<T> directWrite() throws IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, hadoopConfiguration);
         String ingestToDirectory = createTempDirectory(temporaryFolder, null).toString();
@@ -163,11 +145,6 @@ public class IngestTestHelper<T> {
     public IngestTestHelper<T> stateStore(StateStore stateStore) {
         this.stateStore = stateStore;
         return this;
-    }
-
-    public <N> IngestTestHelper<N> toWrite(Iterable<N> toWrite) {
-        this.toWrite = (Iterable<T>) toWrite;
-        return (IngestTestHelper<N>) this;
     }
 
     public <N> IngestTestHelper<N> recordBatchFactory(RecordBatchFactory<N> recordBatchFactory) {

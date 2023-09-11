@@ -78,11 +78,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
 
-        test(recordListAndSchema, tree, arrow -> arrow
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .batchBufferAllocatorBytes(4 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+        ingestAndVerify(recordListAndSchema, tree, arrow -> arrow
+                        .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                        .batchBufferAllocatorBytes(4 * 1024 * 1024L)
+                        .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L),
+                keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     @Test
@@ -100,11 +100,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
 
-        test(recordListAndSchema, tree, arrow -> arrow
-                .workingBufferAllocatorBytes(16 * 1024 * 1024L)
-                .batchBufferAllocatorBytes(4 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+        ingestAndVerify(recordListAndSchema, tree, arrow -> arrow
+                        .workingBufferAllocatorBytes(16 * 1024 * 1024L)
+                        .batchBufferAllocatorBytes(4 * 1024 * 1024L)
+                        .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L),
+                keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
     @Test
@@ -122,24 +122,27 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
 
-        IngestTestHelper<Record> test = test(recordListAndSchema, tree, arrow -> arrow
-                .workingBufferAllocatorBytes(32 * 1024L)
-                .batchBufferAllocatorBytes(1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
         assertThatThrownBy(() ->
-                test.ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
+                ingestAndVerify(recordListAndSchema, tree, arrow -> arrow
+                                .workingBufferAllocatorBytes(32 * 1024L)
+                                .batchBufferAllocatorBytes(1024 * 1024L)
+                                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L),
+                        keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }
 
-    private IngestTestHelper<Record> test(RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                          PartitionTree tree,
-                                          Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
-        return IngestTestHelper.from(temporaryFolder,
+    private void ingestAndVerify(RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                 PartitionTree tree,
+                                 Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig,
+                                 Function<Key, Integer> keyToPartitionNoMappingFn,
+                                 Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws Exception {
+        IngestTestHelper.from(temporaryFolder,
                         AWS_EXTERNAL_RESOURCE.getHadoopConfiguration(),
                         recordListAndSchema)
                 .createStateStore(AWS_EXTERNAL_RESOURCE.getDynamoDBClient(), tree)
                 .directWrite()
-                .backedByArrow(arrowConfig);
+                .backedByArrow(arrowConfig)
+                .ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 }
