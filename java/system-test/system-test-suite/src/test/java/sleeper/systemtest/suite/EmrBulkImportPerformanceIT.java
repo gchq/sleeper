@@ -60,13 +60,13 @@ public class EmrBulkImportPerformanceIT {
                     properties.set(NUMBER_OF_WRITERS, "100");
                     properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10000000");
                 })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
+                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
                 .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
         assertThat(sleeper.tableFiles().active())
                 .hasSize(2560)
