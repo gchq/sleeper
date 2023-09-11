@@ -131,12 +131,12 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         StateStore stateStore = StateStoreTestBuilder.from(partitions).buildStateStore();
         ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
 
-        String localDirectory = createTempDirectory(temporaryFolder, null).toString();
+        String localWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         String ingestToDirectory = createTempDirectory(temporaryFolder, null).toString();
         PartitionFileWriterFactory partitionFileWriterFactory = DirectPartitionFileWriterFactory.from(
                 parquetConfiguration, ingestToDirectory);
         ArrowRecordBatchFactory<RecordList> arrowRecordBatchFactory = createArrowRecordBatchFactory(
-                localDirectory, schema, arrowConfig);
+                localWorkingDirectory, schema, arrowConfig);
 
         try (IngestCoordinator<RecordList> ingestCoordinator = standardIngestCoordinator(
                 stateStore, schema, arrowRecordBatchFactory, partitionFileWriterFactory)) {
@@ -144,13 +144,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 ingestCoordinator.write(write);
             }
         }
-        verify(localDirectory, schema, stateStore, recordListAndSchema.recordList,
+        verify(localWorkingDirectory, schema, stateStore, recordListAndSchema.recordList,
                 keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
     }
 
-    private void verify(String localWorkingDirectory, Schema schema, StateStore stateStore, List<Record> expectedRecords,
-                        Function<Key, Integer> keyToPartitionNoMappingFn,
-                        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws StateStoreException {
+    private static void verify(String localWorkingDirectory, Schema schema, StateStore stateStore, List<Record> expectedRecords,
+                               Function<Key, Integer> keyToPartitionNoMappingFn,
+                               Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws StateStoreException {
         assertThat(Path.of(localWorkingDirectory)).isEmptyDirectory();
 
         PartitionTree partitionTree = new PartitionTree(schema, stateStore.getAllPartitions());
@@ -192,8 +192,8 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList())));
     }
 
-    private void verifyPartition(Schema schema, Configuration hadoopConfiguration, List<FileInfo> partitionFileInfoList,
-                                 int expectedNoOfFiles, List<Record> expectedRecords) {
+    private static void verifyPartition(Schema schema, Configuration hadoopConfiguration, List<FileInfo> partitionFileInfoList,
+                                        int expectedNoOfFiles, List<Record> expectedRecords) {
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(schema, partitionFileInfoList, hadoopConfiguration);
 
         assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles);
