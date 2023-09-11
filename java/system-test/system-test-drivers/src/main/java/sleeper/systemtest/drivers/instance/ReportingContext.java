@@ -50,7 +50,7 @@ public class ReportingContext {
 
     public void startRecording() {
         recordingStartTime = Instant.now();
-        LOGGER.info("Ingest recording window started at {}", recordingStartTime);
+        LOGGER.info("Reports recording window started at {}", recordingStartTime);
     }
 
     public Instant getRecordingStartTime() {
