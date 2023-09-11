@@ -15,6 +15,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -lt 1 ] || [ "$1" == "latest" ]; then
   VERSION="main"

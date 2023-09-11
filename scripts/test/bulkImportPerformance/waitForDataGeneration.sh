@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 TABLE_NAME="system-test"
 SCRIPTS_DIR=$(cd "$(dirname "$0")" && cd ../.. && pwd)

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
   echo "Usage: $0 <uniqueId> <vpc> <subnet> <optional-deploy-paused-flag> <optional-split-points-file>"

@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ];  then
   echo "Usage: $0 <instance-id> <optional-number-of-records>"

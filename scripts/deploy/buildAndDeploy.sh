@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -ne 4 ]; then
   echo "Usage: $0 <uniqueId> <vpc> <subnet> <table-name>"
