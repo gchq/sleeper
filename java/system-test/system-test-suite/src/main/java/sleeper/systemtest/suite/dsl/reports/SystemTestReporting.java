@@ -42,7 +42,7 @@ public class SystemTestReporting {
 
     public SystemTestCompactionJobsReport compactionJobs() {
         return new SystemTestCompactionJobsReport(
-                new CompactionReportsDriver(clients.getDynamoDB(), instance)
+                new CompactionReportsDriver(instance, clients.getDynamoDB())
                         .jobs(context)
         );
     }

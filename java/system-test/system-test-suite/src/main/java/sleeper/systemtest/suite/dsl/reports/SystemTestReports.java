@@ -88,7 +88,7 @@ public class SystemTestReports {
         }
 
         public Builder compactionTasksAndJobs() {
-            return report(new CompactionReportsDriver(clients.getDynamoDB(), instance)
+            return report(new CompactionReportsDriver(instance, clients.getDynamoDB())
                     .tasksAndJobsReport());
         }
 
