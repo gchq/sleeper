@@ -169,6 +169,9 @@ public class ProcessRun {
 
         public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
             this.startedStatus = startedStatus;
+            if (startedStatus instanceof ProcessRunFinishedUpdate) {
+                this.finishedStatus = (ProcessRunFinishedUpdate) startedStatus;
+            }
             this.statusUpdates.add(startedStatus);
             return this;
         }
