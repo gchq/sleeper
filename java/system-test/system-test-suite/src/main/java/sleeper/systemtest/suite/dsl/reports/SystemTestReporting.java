@@ -36,7 +36,7 @@ public class SystemTestReporting {
 
     public SystemTestIngestJobsReport ingestJobs() {
         return new SystemTestIngestJobsReport(
-                new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+                new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr())
                         .jobs(context));
     }
 

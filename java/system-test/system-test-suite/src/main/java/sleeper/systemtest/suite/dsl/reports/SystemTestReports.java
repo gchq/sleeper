@@ -83,7 +83,7 @@ public class SystemTestReports {
         }
 
         public Builder ingestTasksAndJobs() {
-            return report(new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+            return report(new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr())
                     .tasksAndJobsReport());
         }
 
