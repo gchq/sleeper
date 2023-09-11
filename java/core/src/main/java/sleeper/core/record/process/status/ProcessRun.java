@@ -28,7 +28,7 @@ import java.util.Optional;
 public class ProcessRun {
     private final String taskId;
     private final ProcessRunStartedUpdate startedStatus;
-    private final ProcessFinishedStatus finishedStatus;
+    private final ProcessRunFinishedUpdate finishedStatus;
     private final List<ProcessStatusUpdate> statusUpdates;
 
     private ProcessRun(Builder builder) {
@@ -48,7 +48,7 @@ public class ProcessRun {
                 .build();
     }
 
-    public static ProcessRun finished(String taskId, ProcessRunStartedUpdate startedStatus, ProcessFinishedStatus finishedStatus) {
+    public static ProcessRun finished(String taskId, ProcessRunStartedUpdate startedStatus, ProcessRunFinishedUpdate finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -63,7 +63,7 @@ public class ProcessRun {
         return startedStatus;
     }
 
-    public ProcessFinishedStatus getFinishedStatus() {
+    public ProcessRunFinishedUpdate getFinishedStatus() {
         return finishedStatus;
     }
 
@@ -156,7 +156,7 @@ public class ProcessRun {
     public static final class Builder {
         private String taskId;
         private ProcessRunStartedUpdate startedStatus;
-        private ProcessFinishedStatus finishedStatus;
+        private ProcessRunFinishedUpdate finishedStatus;
         private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
 
         private Builder() {
@@ -173,7 +173,7 @@ public class ProcessRun {
             return this;
         }
 
-        public Builder finishedStatus(ProcessFinishedStatus finishedStatus) {
+        public Builder finishedStatus(ProcessRunFinishedUpdate finishedStatus) {
             this.finishedStatus = finishedStatus;
             this.statusUpdates.add(finishedStatus);
             return this;
