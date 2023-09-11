@@ -103,7 +103,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
     }
 
     @Test
-    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
+    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
@@ -126,22 +126,18 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                                  Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig,
                                  Function<Key, Integer> keyToPartitionNoMappingFn,
                                  Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap) throws Exception {
-        Configuration hadoopConfiguration = new Configuration();
         Schema schema = recordListAndSchema.sleeperSchema;
-        PartitionsBuilder partitions = new PartitionsBuilder(schema);
-        partitions.treeWithSingleSplitPoint(0L);
+        PartitionsBuilder partitions = new PartitionsBuilder(schema).treeWithSingleSplitPoint(0L);
         StateStore stateStore = StateStoreTestBuilder.from(partitions).buildStateStore();
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, hadoopConfiguration);
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
 
         String localDirectory = createTempDirectory(temporaryFolder, null).toString();
         String ingestToDirectory = createTempDirectory(temporaryFolder, null).toString();
-        PartitionFileWriterFactory partitionFileWriterFactory = DirectPartitionFileWriterFactory.from(parquetConfiguration, ingestToDirectory);
-        ArrowRecordBatchFactory.Builder<RecordList> arrowBuilder = ArrowRecordBatchFactory.builder().schema(schema)
-                .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
-                .localWorkingDirectory(localDirectory)
-                .recordWriter(new ArrowRecordWriterAcceptingRecordList());
-        arrowConfig.accept(arrowBuilder);
-        ArrowRecordBatchFactory<RecordList> arrowRecordBatchFactory = arrowBuilder.build();
+        PartitionFileWriterFactory partitionFileWriterFactory = DirectPartitionFileWriterFactory.from(
+                parquetConfiguration, ingestToDirectory);
+        ArrowRecordBatchFactory<RecordList> arrowRecordBatchFactory = createArrowRecordBatchFactory(
+                localDirectory, schema, arrowConfig);
+
         try (IngestCoordinator<RecordList> ingestCoordinator = standardIngestCoordinator(
                 stateStore, schema, arrowRecordBatchFactory, partitionFileWriterFactory)) {
             for (RecordList write : buildScrambledRecordLists(recordListAndSchema)) {
@@ -196,10 +192,8 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 partitionNoToExpectedRecordsMap.getOrDefault(partitionNo, Collections.emptyList())));
     }
 
-    private void verifyPartition(Schema schema, Configuration hadoopConfiguration,
-                                 List<FileInfo> partitionFileInfoList,
-                                 int expectedNoOfFiles,
-                                 List<Record> expectedRecords) {
+    private void verifyPartition(Schema schema, Configuration hadoopConfiguration, List<FileInfo> partitionFileInfoList,
+                                 int expectedNoOfFiles, List<Record> expectedRecords) {
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(schema, partitionFileInfoList, hadoopConfiguration);
 
         assertThat(partitionFileInfoList).hasSize(expectedNoOfFiles);
@@ -231,6 +225,16 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
             schema.getRowKeyFields().forEach(field ->
                     assertOnSketch(field, expectedFieldToItemsSketchMap.get(field), savedFieldToItemsSketchMap.get(field)));
         }
+    }
+
+    private static ArrowRecordBatchFactory<RecordList> createArrowRecordBatchFactory(
+            String localDirectory, Schema schema, Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) {
+        ArrowRecordBatchFactory.Builder<RecordList> arrowBuilder = ArrowRecordBatchFactory.builder().schema(schema)
+                .maxNoOfRecordsToWriteToArrowFileAtOnce(128)
+                .localWorkingDirectory(localDirectory)
+                .recordWriter(new ArrowRecordWriterAcceptingRecordList());
+        arrowConfig.accept(arrowBuilder);
+        return arrowBuilder.build();
     }
 
     private List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
