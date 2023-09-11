@@ -28,7 +28,7 @@ import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 
 public class PythonRunner {
-    private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandInheritIO;
+    private final CommandPipelineRunner pipelineRunner = ClientUtils::runCommandLogOutput;
     private final Path pythonDir;
 
     public PythonRunner(Path pythonDir) {

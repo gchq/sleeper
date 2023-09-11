@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+unset CDPATH
+
 # GNU sed lets you check the version number,
 # and has different syntax for in-place editing with no backup
 if sed --version &>/dev/null; then
