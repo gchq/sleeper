@@ -24,6 +24,7 @@ import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -45,15 +46,15 @@ public class RedeployInstanceDriver {
         this.ecr = ecr;
     }
 
-    public <T extends NestedStack> void addOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
+    public <T extends NestedStack> void addOptionalStack(Class<T> stackClass) throws InterruptedException {
         updateOptionalStacks(stacks -> stacks.add(stackClass.getSimpleName()));
     }
 
-    public <T extends NestedStack> void removeOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
+    public <T extends NestedStack> void removeOptionalStack(Class<T> stackClass) throws InterruptedException {
         updateOptionalStacks(stacks -> stacks.remove(stackClass.getSimpleName()));
     }
 
-    private void updateOptionalStacks(Consumer<List<String>> update) throws IOException, InterruptedException {
+    private void updateOptionalStacks(Consumer<List<String>> update) throws InterruptedException {
         InstanceProperties properties = instance.getInstanceProperties();
         List<String> optionalStacks = properties.getList(OPTIONAL_STACKS);
         update.accept(optionalStacks);
@@ -61,12 +62,16 @@ public class RedeployInstanceDriver {
         redeploy();
     }
 
-    private void redeploy() throws IOException, InterruptedException {
-        DeployExistingInstance.builder()
-                .s3v2(s3v2).ecr(ecr)
-                .properties(instance.getInstanceProperties())
-                .tableProperties(instance.getTableProperties())
-                .scriptsDirectory(parameters.getScriptsDirectory())
-                .build().update();
+    private void redeploy() throws InterruptedException {
+        try {
+            DeployExistingInstance.builder()
+                    .s3v2(s3v2).ecr(ecr)
+                    .properties(instance.getInstanceProperties())
+                    .tableProperties(instance.getTableProperties())
+                    .scriptsDirectory(parameters.getScriptsDirectory())
+                    .build().update();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

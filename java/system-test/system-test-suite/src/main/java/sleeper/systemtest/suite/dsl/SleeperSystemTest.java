@@ -186,11 +186,11 @@ public class SleeperSystemTest {
                 .resolve("test/splitpoints");
     }
 
-    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
+    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws InterruptedException {
         redeployDriver().addOptionalStack(stackClass);
     }
 
-    public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
+    public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws InterruptedException {
         redeployDriver().removeOptionalStack(stackClass);
     }
 

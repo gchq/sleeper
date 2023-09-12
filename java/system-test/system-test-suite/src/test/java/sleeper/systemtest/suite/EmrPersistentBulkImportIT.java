@@ -27,7 +27,6 @@ import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
-import java.io.IOException;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,13 +46,13 @@ public class EmrPersistentBulkImportIT {
             sleeper.reportsForExtension().ingestJobs());
 
     @BeforeEach
-    void setUp() throws IOException, InterruptedException {
+    void setUp() throws InterruptedException {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
     }
 
     @AfterEach
-    void tearDown() throws IOException, InterruptedException {
+    void tearDown() throws InterruptedException {
         sleeper.disableOptionalStack(PersistentEmrBulkImportStack.class);
     }
 
