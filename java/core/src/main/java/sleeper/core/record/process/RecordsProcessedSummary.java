@@ -47,6 +47,12 @@ public class RecordsProcessedSummary {
         this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / (this.timeInProcess.toMillis() / 1000.0);
     }
 
+    public static RecordsProcessedSummary noProcessingDoneAtTime(Instant startTime) {
+        return new RecordsProcessedSummary(
+                new RecordsProcessed(0, 0),
+                startTime, Duration.ZERO);
+    }
+
     public long getRecordsRead() {
         return recordsProcessed.getRecordsRead();
     }

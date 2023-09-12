@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.record.process.status.CustomProcessStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.CustomProcessStatus.partOfRunWithUpdateTime;
 import static sleeper.core.record.process.status.ProcessStartedStatusWithStartOfRunFlag.startedStatusNotStartOfRun;
@@ -386,6 +387,67 @@ class ProcessRunsTest {
             // Then
             assertThat(runs.getRunsLatestFirst())
                     .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, startedStatus));
+        }
+    }
+
+    @DisplayName("An update can be the start and end of a run")
+    @Nested
+    class UpdateCanBeStartAndEndOfRun {
+
+        @Test
+        void shouldCreateRunWithOneUpdateWhichIsStartAndFinish() {
+            // Given
+            ProcessStartedAndFinishedStatus status = ProcessStartedAndFinishedStatus.updateAndSummary(
+                    Instant.parse("2022-09-24T09:23:30.123Z"),
+                    summary(Instant.parse("2022-09-24T09:23:30Z"), Duration.ZERO, 0L, 0L));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(status);
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .containsExactly(ProcessRun.started(DEFAULT_TASK_ID, status));
+            assertThat(runs.isStarted()).isTrue();
+            assertThat(runs.isFinished()).isTrue();
+        }
+
+        @Test
+        void shouldStartAnotherRunAfterAStartedAndFinishedUpdate() {
+            // Given
+            ProcessStartedAndFinishedStatus startedAndFinished = ProcessStartedAndFinishedStatus.updateAndSummary(
+                    Instant.parse("2022-09-24T09:23:30.123Z"),
+                    summary(Instant.parse("2022-09-24T09:23:30Z"), Duration.ZERO, 0L, 0L));
+            ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:24:00.001Z"));
+
+            // When
+            ProcessRuns runs = runsFromUpdates(startedAndFinished, started);
+
+            // Then
+            assertThat(runs.getRunsLatestFirst()).containsExactly(
+                    ProcessRun.started(DEFAULT_TASK_ID, started),
+                    ProcessRun.started(DEFAULT_TASK_ID, startedAndFinished));
+            assertThat(runs.isStarted()).isTrue();
+            assertThat(runs.isFinished()).isFalse();
+        }
+
+        @Test
+        void shouldFinishAnotherRunAfterAStartedAndFinishedUpdate() {
+            // Given
+            ProcessStartedAndFinishedStatus startedAndFinished = ProcessStartedAndFinishedStatus.updateAndSummary(
+                    Instant.parse("2022-09-24T09:23:30.123Z"),
+                    summary(Instant.parse("2022-09-24T09:23:30Z"), Duration.ZERO, 0L, 0L));
+            ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:24:00.001Z"));
+            ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+
+            // When
+            ProcessRuns runs = runsFromUpdates(startedAndFinished, started, finished);
+
+            // Then
+            assertThat(runs.getRunsLatestFirst()).containsExactly(
+                    ProcessRun.finished(DEFAULT_TASK_ID, started, finished),
+                    ProcessRun.started(DEFAULT_TASK_ID, startedAndFinished));
+            assertThat(runs.isStarted()).isTrue();
+            assertThat(runs.isFinished()).isTrue();
         }
     }
 
