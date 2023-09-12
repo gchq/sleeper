@@ -48,10 +48,6 @@ public class SystemTestReports {
         return new SystemTestBuilder(context, instance, clients);
     }
 
-    public void startRecording() {
-        context.startRecording();
-    }
-
     public void print(TestContext testContext) {
         context.print(testContext, (out, startTime) ->
                 reports.forEach(report -> report.print(out, startTime)));
@@ -87,12 +83,12 @@ public class SystemTestReports {
         }
 
         public Builder ingestTasksAndJobs() {
-            return report(new IngestReportsDriver(clients.getDynamoDB(), clients.getSqs(), clients.getEmr(), instance)
+            return report(new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr())
                     .tasksAndJobsReport());
         }
 
         public Builder compactionTasksAndJobs() {
-            return report(new CompactionReportsDriver(clients.getDynamoDB(), instance)
+            return report(new CompactionReportsDriver(instance, clients.getDynamoDB())
                     .tasksAndJobsReport());
         }
 

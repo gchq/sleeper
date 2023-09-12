@@ -60,6 +60,8 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
+    protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
+            .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID));

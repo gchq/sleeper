@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite.testutil;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import sleeper.systemtest.drivers.util.TestContext;
@@ -25,7 +24,7 @@ import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 
 import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
-public class ReportingExtension implements BeforeEachCallback, AfterEachCallback {
+public class ReportingExtension implements AfterEachCallback {
 
     private final SystemTestReports reports;
     private final boolean reportIfPassed;
@@ -41,11 +40,6 @@ public class ReportingExtension implements BeforeEachCallback, AfterEachCallback
 
     public static ReportingExtension reportIfFailed(SystemTestReports.Builder reports) {
         return new ReportingExtension(reports.build(), false);
-    }
-
-    @Override
-    public void beforeEach(ExtensionContext testContext) {
-        reports.startRecording();
     }
 
     @Override

@@ -87,6 +87,7 @@ public class SleeperSystemTest {
             systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
             instance.disconnect();
+            reportingContext.startRecording();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
