@@ -143,6 +143,15 @@ public class DeployExistingInstance {
             return this;
         }
 
+        public Builder tableProperties(TableProperties... tableProperties) {
+            return tablePropertiesList(List.of(tableProperties));
+        }
+
+        public Builder tablePropertiesList(List<TableProperties> tablePropertiesList) {
+            this.tablePropertiesList = tablePropertiesList;
+            return this;
+        }
+
         public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
             return this;

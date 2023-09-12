@@ -17,13 +17,16 @@
 package sleeper.systemtest.drivers.instance;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import org.eclipse.jetty.io.RuntimeIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.status.update.ReinitialiseTable;
@@ -180,6 +183,15 @@ public class SleeperInstanceContext {
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         currentInstance.setGeneratorOverrides(overrides);
+    }
+
+    public void redeployExistingInstance(S3Client s3v2, AmazonECR ecr) throws IOException, InterruptedException {
+        DeployExistingInstance.builder()
+                .s3v2(s3v2).ecr(ecr)
+                .properties(getInstanceProperties())
+                .tableProperties(getTableProperties())
+                .scriptsDirectory(parameters.getScriptsDirectory())
+                .build().update();
     }
 
     private class DeployedInstances {

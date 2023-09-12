@@ -42,8 +42,11 @@ import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
+
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 /**
  * This class is the entry point that all system tests use to interact with the system.
@@ -185,10 +188,19 @@ public class SleeperSystemTest {
                 .resolve("test/splitpoints");
     }
 
-    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) {
+    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
+        applyOptionalStacks(optionalStacks -> optionalStacks.add(stackClass.getSimpleName()));
     }
 
-    public <T extends NestedStack> void resetOptionalStacks() {
+    public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
+        applyOptionalStacks(optionalStacks -> optionalStacks.remove(stackClass.getSimpleName()));
+    }
 
+    private void applyOptionalStacks(Consumer<List<String>> applyToOptionalStacks) throws IOException, InterruptedException {
+        InstanceProperties properties = instance.getInstanceProperties();
+        List<String> optionalStacks = properties.getList(OPTIONAL_STACKS);
+        applyToOptionalStacks.accept(optionalStacks);
+        properties.set(OPTIONAL_STACKS, String.join(",", optionalStacks));
+        instance.redeployExistingInstance(clients.getS3V2(), clients.getEcr());
     }
 }
