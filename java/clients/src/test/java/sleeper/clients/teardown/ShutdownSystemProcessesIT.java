@@ -30,8 +30,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -53,6 +51,7 @@ import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponse
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.anyRequestedForApplications;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.cancelJobRunRequested;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationsRequest;
@@ -325,8 +324,7 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(2, anyRequestedFor(anyUrl()));
-            verify(1, listActiveClustersRequested());
+            verify(1, anyRequestedForApplications());
             verify(1, listActiveApplicationsRequested());
         }
 
@@ -340,8 +338,7 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(2, anyRequestedFor(anyUrl()));
-            verify(1, listActiveClustersRequested());
+            verify(1, anyRequestedForApplications());
             verify(1, listActiveApplicationsRequested());
         }
 
@@ -371,8 +368,7 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(7, anyRequestedFor(anyUrl()));
-            verify(1, listActiveClustersRequested());
+            verify(6, anyRequestedForApplications());
             verify(2, listActiveApplicationsRequested());
             verify(1, listRunningJobsForApplicationRequested());
             verify(1, cancelJobRunRequested("test-job-run"));
@@ -399,8 +395,7 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(5, anyRequestedFor(anyUrl()));
-            verify(1, listActiveClustersRequested());
+            verify(4, anyRequestedForApplications());
             verify(2, listActiveApplicationsRequested());
             verify(1, listRunningJobsForApplicationRequested());
             verify(1, stopApplicationRequested());

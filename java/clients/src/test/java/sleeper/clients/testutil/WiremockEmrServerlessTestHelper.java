@@ -24,6 +24,7 @@ import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.deleteRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -31,12 +32,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 
 public class WiremockEmrServerlessTestHelper {
 
     private WiremockEmrServerlessTestHelper() {
     }
-
 
     public static MappingBuilder listActiveApplicationsRequest() {
         return get(listRunningApplicationsUrl());
@@ -56,6 +57,10 @@ public class WiremockEmrServerlessTestHelper {
 
     public static MappingBuilder stopApplicationRequest() {
         return post(stopApplicationUrl());
+    }
+
+    public static RequestPatternBuilder anyRequestedForApplications() {
+        return anyRequestedFor(urlMatching("/applications.*"));
     }
 
     public static RequestPatternBuilder listActiveApplicationsRequested() {
