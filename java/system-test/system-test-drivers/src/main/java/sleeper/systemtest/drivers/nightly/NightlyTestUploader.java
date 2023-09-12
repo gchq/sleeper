@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class NightlyTestUploader {
     private static final Logger LOGGER = LoggerFactory.getLogger(NightlyTestUploader.class);
@@ -50,7 +51,7 @@ public class NightlyTestUploader {
     }
 
     public void upload(Path file) {
-        String filename = file.getFileName().toString();
+        String filename = Objects.toString(file.getFileName());
         LOGGER.info("Uploading {}", filename);
         s3Client.putObject(bucketName, prefix + "/" + filename, file.toFile());
         LOGGER.info("Uploaded {}", filename);
