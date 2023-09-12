@@ -25,8 +25,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class IngestBatcherStatusReporterTestHelper {
-    private IngestBatcherStatusReporterTestHelper() {
+public class IngestBatcherReporterTestHelper {
+    private IngestBatcherReporterTestHelper() {
     }
 
     public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
@@ -75,13 +75,13 @@ public class IngestBatcherStatusReporterTestHelper {
 
     public static String getStandardReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, queryType);
+        new StandardIngestBatcherReporter(output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
     }
 
     public static String getJsonReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, queryType);
+        new JsonIngestBatcherReporter(output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
     }
 }

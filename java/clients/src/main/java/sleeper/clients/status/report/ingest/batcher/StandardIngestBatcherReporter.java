@@ -24,7 +24,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import java.io.PrintStream;
 import java.util.List;
 
-public class StandardIngestBatcherStatusReporter implements IngestBatcherStatusReporter {
+public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     private final TableField fileNameField;
     private final TableField fileSizeBytesField;
     private final TableField tableNameField;
@@ -34,7 +34,11 @@ public class StandardIngestBatcherStatusReporter implements IngestBatcherStatusR
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
 
-    public StandardIngestBatcherStatusReporter(PrintStream out) {
+    public StandardIngestBatcherReporter() {
+        this(System.out);
+    }
+
+    public StandardIngestBatcherReporter(PrintStream out) {
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
         fileNameField = tableFactoryBuilder.addField("FILENAME");

@@ -20,7 +20,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.util.List;
 
-public interface IngestBatcherStatusReporter {
+public interface IngestBatcherReporter {
 
     void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType);
 }

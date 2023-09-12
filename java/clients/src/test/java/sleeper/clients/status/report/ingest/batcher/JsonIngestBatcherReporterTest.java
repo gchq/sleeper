@@ -27,11 +27,11 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.getJsonReport;
-import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.onePendingAndTwoBatchedFiles;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.getJsonReport;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
-public class JsonIngestBatcherStatusReporterTest {
+public class JsonIngestBatcherReporterTest {
     @Nested
     @DisplayName("Query all files")
     class QueryAllFiles {

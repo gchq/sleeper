@@ -25,11 +25,15 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import java.io.PrintStream;
 import java.util.List;
 
-public class JsonIngestBatcherStatusReporter implements IngestBatcherStatusReporter {
+public class JsonIngestBatcherReporter implements IngestBatcherReporter {
     private final Gson gson = GsonConfig.standardBuilder().create();
     private final PrintStream out;
 
-    public JsonIngestBatcherStatusReporter(PrintStream out) {
+    public JsonIngestBatcherReporter() {
+        this(System.out);
+    }
+
+    public JsonIngestBatcherReporter(PrintStream out) {
         this.out = out;
     }
 
