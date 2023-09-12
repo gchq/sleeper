@@ -33,7 +33,7 @@ import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_M
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
-public class BulkImportIT {
+public class EmrServerlessBulkImportIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 

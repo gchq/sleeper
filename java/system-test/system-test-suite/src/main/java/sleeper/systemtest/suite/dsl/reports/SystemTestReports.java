@@ -83,8 +83,11 @@ public class SystemTestReports {
         }
 
         public Builder ingestTasksAndJobs() {
-            return report(new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr())
-                    .tasksAndJobsReport());
+            return report(ingest().tasksAndJobsReport());
+        }
+
+        public Builder ingestJobs() {
+            return report(ingest().jobsReport());
         }
 
         public Builder compactionTasksAndJobs() {
@@ -93,7 +96,11 @@ public class SystemTestReports {
         }
 
         public Builder partitionStatus() {
-            return report(new PartitionReportDriver(instance).partitionStatusReport());
+            return report(new PartitionReportDriver(instance).statusReport());
+        }
+
+        private IngestReportsDriver ingest() {
+            return new IngestReportsDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getEmr());
         }
     }
 }

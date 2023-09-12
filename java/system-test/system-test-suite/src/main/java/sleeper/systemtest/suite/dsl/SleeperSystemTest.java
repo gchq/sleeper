@@ -177,4 +177,9 @@ public class SleeperSystemTest {
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
         return RecordNumbers.scrambleNumberedRecords(longStream);
     }
+
+    public Path getSplitPointsDirectory() {
+        return parameters.getScriptsDirectory()
+                .resolve("test/splitpoints");
+    }
 }

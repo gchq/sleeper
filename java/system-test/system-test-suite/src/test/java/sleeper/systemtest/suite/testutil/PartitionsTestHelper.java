@@ -22,32 +22,44 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 public class PartitionsTestHelper {
 
     private PartitionsTestHelper() {
     }
 
-    public static PartitionTree create128Partitions(SleeperSystemTest sleeper) {
-        return create128Partitions(sleeper.tableProperties().getSchema());
+    public static PartitionTree create128StringPartitions(SleeperSystemTest sleeper) {
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "128-partitions.txt");
     }
 
-    static PartitionTree create128Partitions(Schema schema) {
-        return createPartitionsFromSplitPoints(schema, create127SplitPoints());
+    public static PartitionTree create512StringPartitions(SleeperSystemTest sleeper) {
+        return createStringPartitionsFromSplitPointsDirectory(sleeper, "512-partitions.txt");
     }
 
-    static List<Object> create127SplitPoints() {
-        return LongStream.range(1, 128)
-                .mapToObj(i -> "" + (char) (i / 5 + 'a') + (char) (i % 5 * 5 + 'a'))
-                .collect(Collectors.toUnmodifiableList());
+    public static PartitionTree createStringPartitionsFromSplitPointsDirectory(
+            SleeperSystemTest sleeper, String filename) {
+        return createPartitionsFromSplitPoints(sleeper.tableProperties().getSchema(),
+                readStringSplitPoints(sleeper.getSplitPointsDirectory()
+                        .resolve("string").resolve(filename)));
     }
 
     private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
         return new PartitionTree(schema,
                 new PartitionsFromSplitPoints(schema, splitPoints).construct());
+    }
+
+    private static List<Object> readStringSplitPoints(Path file) {
+        try {
+            return Collections.unmodifiableList(Files.readAllLines(file));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static PartitionsBuilder partitionsBuilder(SleeperSystemTest sleeper) {

@@ -22,4 +22,12 @@ import java.time.Instant;
 public interface SystemTestReport {
 
     void print(PrintStream out, Instant startTime);
+
+    static SystemTestReport join(SystemTestReport... reports) {
+        return (out, startTime) -> {
+            for (SystemTestReport report : reports) {
+                report.print(out, startTime);
+            }
+        };
+    }
 }

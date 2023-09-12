@@ -30,47 +30,51 @@ import sleeper.systemtest.suite.testutil.ReportingExtension;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_WRITER;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create512StringPartitions;
 
 @Tag("SystemTest")
-public class IngestPerformanceIT {
+public class EmrBulkImportPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportAlways(
-            sleeper.reportsForExtension().ingestTasksAndJobs());
+            sleeper.reportsForExtension().ingestJobs());
 
     @BeforeEach
     void setUp() {
-        sleeper.connectToInstance(INGEST_PERFORMANCE);
+        sleeper.connectToInstance(BULK_IMPORT_PERFORMANCE);
     }
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
-        sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
+    void shouldMeetBulkImportPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
+        sleeper.partitioning().setPartitions(create512StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
-                    properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
-                    properties.set(NUMBER_OF_WRITERS, "11");
-                    properties.set(NUMBER_OF_RECORDS_PER_WRITER, "40000000");
+                    properties.set(INGEST_MODE, IngestMode.GENERATE_ONLY.toString());
+                    properties.set(NUMBER_OF_WRITERS, "100");
+                    properties.set(NUMBER_OF_RECORDS_PER_WRITER, "10000000");
                 })
-                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)))
-                .invokeStandardIngestTasks(11,
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(10)))
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(40)));
+                .generateData(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(5)))
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .sendAllGeneratedFilesAsOneJob(BULK_IMPORT_EMR_JOB_QUEUE_URL)
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(20)));
 
         assertThat(sleeper.tableFiles().active())
-                .hasSize(1408)
-                .matches(files -> numberOfRecordsIn(files) == 440_000_000,
-                        "contain 440 million records");
+                .hasSize(2560)
+                .matches(files -> numberOfRecordsIn(files) == 5_000_000_000L,
+                        "contain 5 billion records");
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
-                .matches(stats -> stats.isAllFinishedOneRunEach(11)
-                                && stats.isMinAverageRunRecordsPerSecond(130_000),
+                .matches(stats -> stats.isAllFinishedOneRunEach(5)
+                                && stats.isMinAverageRunRecordsPerSecond(3_500_000),
                         "meets minimum performance");
     }
 

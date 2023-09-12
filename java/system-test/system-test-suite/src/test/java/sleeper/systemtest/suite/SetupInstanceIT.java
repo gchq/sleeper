@@ -82,7 +82,7 @@ public class SetupInstanceIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .hasSize(246);
-        assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket())
+        assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .hasSize(2)
                 .containsExactlyInAnyOrderElementsOf(sleeper.reporting().ingestJobs().jobIds());
     }

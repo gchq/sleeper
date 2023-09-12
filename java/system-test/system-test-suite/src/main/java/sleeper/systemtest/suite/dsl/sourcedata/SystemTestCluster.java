@@ -18,9 +18,11 @@ package sleeper.systemtest.suite.dsl.sourcedata;
 
 import com.amazonaws.services.ecs.model.Task;
 
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.drivers.ingest.DataGenerationDriver;
+import sleeper.systemtest.drivers.ingest.GeneratedIngestSourceFiles;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -42,6 +44,7 @@ public class SystemTestCluster {
     private final IngestByQueueDriver byQueueDriver;
     private final IngestSourceFilesDriver sourceFiles;
     private final WaitForJobsDriver waitForJobsDriver;
+    private GeneratedIngestSourceFiles lastGeneratedFiles;
     private final List<String> jobIds = new ArrayList<>();
 
     public SystemTestCluster(SystemTestDeploymentContext context, SleeperInstanceContext instance, SystemTestClients clients) {
@@ -64,7 +67,12 @@ public class SystemTestCluster {
     public SystemTestCluster generateData(PollWithRetries poll) throws InterruptedException {
         List<Task> tasks = driver.startTasks();
         driver.waitForTasks(tasks, poll);
-        jobIds.addAll(sourceFiles.findGeneratedIngestJobIds());
+        lastGeneratedFiles = sourceFiles.findGeneratedFiles();
+        return this;
+    }
+
+    public SystemTestCluster sendAllGeneratedFilesAsOneJob(InstanceProperty queueUrlProperty) {
+        jobIds.add(byQueueDriver.sendJobGetId(queueUrlProperty, lastGeneratedFiles.getIngestJobFilesCombiningAll()));
         return this;
     }
 
@@ -79,15 +87,22 @@ public class SystemTestCluster {
     }
 
     public void waitForJobs() throws InterruptedException {
-        waitForJobsDriver.waitForJobs(jobIds);
+        waitForJobsDriver.waitForJobs(jobIds());
     }
 
     public void waitForJobs(PollWithRetries poll) throws InterruptedException {
-        waitForJobsDriver.waitForJobs(jobIds, poll);
+        waitForJobsDriver.waitForJobs(jobIds(), poll);
     }
 
-    public List<String> ingestJobIdsInSourceBucket() {
-        return sourceFiles.findGeneratedIngestJobIds();
+    private List<String> jobIds() {
+        if (jobIds.isEmpty()) {
+            jobIds.addAll(lastGeneratedFiles.getJobIdsFromIndividualFiles());
+        }
+        return jobIds;
+    }
+
+    public List<String> findIngestJobIdsInSourceBucket() {
+        return sourceFiles.findGeneratedFiles().getJobIdsFromIndividualFiles();
     }
 
     public boolean isDisabled() {

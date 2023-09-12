@@ -56,17 +56,24 @@ public class IngestReportsDriver {
     }
 
     public SystemTestReport tasksAndJobsReport() {
-        return (out, startTime) -> {
-            new IngestTaskStatusReport(taskStore(),
-                    new StandardIngestTaskStatusReporter(out),
-                    IngestTaskQuery.forPeriod(startTime, Instant.MAX))
-                    .run();
-            new IngestJobStatusReport(jobStore(),
-                    JobQuery.Type.RANGE, new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX),
-                    new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
-                    PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
-                    .run();
-        };
+        return SystemTestReport.join(tasksReport(), jobsReport());
+    }
+
+    public SystemTestReport tasksReport() {
+        return (out, startTime) ->
+                new IngestTaskStatusReport(taskStore(),
+                        new StandardIngestTaskStatusReporter(out),
+                        IngestTaskQuery.forPeriod(startTime, Instant.MAX))
+                        .run();
+    }
+
+    public SystemTestReport jobsReport() {
+        return (out, startTime) ->
+                new IngestJobStatusReport(jobStore(), JobQuery.Type.RANGE,
+                        new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX),
+                        new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
+                        PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
+                        .run();
     }
 
     public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
