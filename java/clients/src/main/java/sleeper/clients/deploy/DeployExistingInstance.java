@@ -36,20 +36,24 @@ import sleeper.core.SleeperVersion;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static sleeper.configuration.properties.table.TableProperties.streamTablesFromS3;
 
 public class DeployExistingInstance {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DeployExistingInstance.class);
     private final Path scriptsDirectory;
-    private final String instanceId;
-    private final AmazonS3 s3;
+    private final InstanceProperties properties;
+    private final List<TableProperties> tablePropertiesList;
     private final S3Client s3v2;
     private final AmazonECR ecr;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
-        instanceId = builder.instanceId;
-        s3 = builder.s3;
+        properties = builder.properties;
+        tablePropertiesList = builder.tablePropertiesList;
         s3v2 = builder.s3v2;
         ecr = builder.ecr;
     }
@@ -69,6 +73,7 @@ public class DeployExistingInstance {
             builder().s3(s3).s3v2(s3v2).ecr(ecr)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
+                    .loadPropertiesFromS3()
                     .build().update();
         }
     }
@@ -78,13 +83,11 @@ public class DeployExistingInstance {
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
         // Get instance properties from s3
-        InstanceProperties properties = new InstanceProperties();
-        properties.loadFromS3GivenInstanceId(s3, instanceId);
         Path generatedDirectory = scriptsDirectory.resolve("generated");
         Path jarsDirectory = scriptsDirectory.resolve("jars");
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
-        SaveLocalProperties.saveToDirectory(generatedDirectory, properties, TableProperties.streamTablesFromS3(s3, properties));
+        SaveLocalProperties.saveToDirectory(generatedDirectory, properties, tablePropertiesList.stream());
 
         SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
@@ -116,6 +119,8 @@ public class DeployExistingInstance {
     public static final class Builder {
         private Path scriptsDirectory;
         private String instanceId;
+        private InstanceProperties properties;
+        private List<TableProperties> tablePropertiesList;
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonECR ecr;
@@ -133,6 +138,11 @@ public class DeployExistingInstance {
             return this;
         }
 
+        public Builder properties(InstanceProperties properties) {
+            this.properties = properties;
+            return this;
+        }
+
         public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
             return this;
@@ -145,6 +155,13 @@ public class DeployExistingInstance {
 
         public Builder ecr(AmazonECR ecr) {
             this.ecr = ecr;
+            return this;
+        }
+
+        public Builder loadPropertiesFromS3() throws IOException {
+            properties = new InstanceProperties();
+            properties.loadFromS3GivenInstanceId(s3, instanceId);
+            tablePropertiesList = streamTablesFromS3(s3, properties).collect(Collectors.toList());
             return this;
         }
 
