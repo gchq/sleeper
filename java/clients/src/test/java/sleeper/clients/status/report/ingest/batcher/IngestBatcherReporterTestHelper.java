@@ -67,6 +67,25 @@ public class IngestBatcherReporterTestHelper {
         );
     }
 
+    public static List<FileIngestRequest> filesWithLargeAndDecimalSizes() {
+        return List.of(
+                FileIngestRequest.builder().file("file1.parquet")
+                        .fileSizeBytes(1_200L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
+                FileIngestRequest.builder().file("file2.parquet")
+                        .fileSizeBytes(12_300_000L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
+                        .jobId("test-job-1").build(),
+                FileIngestRequest.builder().file("file3.parquet")
+                        .fileSizeBytes(123_400_000_000L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:23:00Z"))
+                        .jobId("test-job-1").build()
+        );
+    }
+
     public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {
         return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
                 .map(IngestJobStatus::getJobId)

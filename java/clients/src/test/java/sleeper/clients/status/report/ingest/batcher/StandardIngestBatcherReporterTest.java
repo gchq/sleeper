@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.filesWithLargeAndDecimalSizes;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.getStandardReport;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.multiplePendingFiles;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherReporterTestHelper.onePendingAndTwoBatchedFiles;
@@ -54,6 +55,16 @@ public class StandardIngestBatcherReporterTest {
             // When / Then
             assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
                     example("reports/ingest/batcher/standard/all/onePendingAndTwoBatchedFiles.txt"));
+        }
+
+        @Test
+        void shouldReportLargeAndDecimalFileSizes() throws IOException {
+            // Given
+            List<FileIngestRequest> fileIngestRequestList = filesWithLargeAndDecimalSizes();
+
+            // When / Then
+            assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
+                    example("reports/ingest/batcher/standard/all/largeAndDecimalFileSizes.txt"));
         }
     }
 

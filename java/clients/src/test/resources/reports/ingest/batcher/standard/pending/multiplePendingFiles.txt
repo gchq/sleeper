@@ -4,7 +4,7 @@ Ingest Batcher Status Report
 Total pending files: 3
 --------------------------------------------------------------------------
 | STATE   | FILENAME      | FILESIZE | TABLE_NAME | RECEIVED_TIME        |
-| PENDING | file1.parquet | 123      | test-table | 2023-09-12T13:23:00Z |
-| PENDING | file2.parquet | 456      | test-table | 2023-09-12T13:25:00Z |
-| PENDING | file3.parquet | 789      | test-table | 2023-09-12T13:28:00Z |
+| PENDING | file1.parquet | 123B     | test-table | 2023-09-12T13:23:00Z |
+| PENDING | file2.parquet | 456B     | test-table | 2023-09-12T13:25:00Z |
+| PENDING | file3.parquet | 789B     | test-table | 2023-09-12T13:28:00Z |
 --------------------------------------------------------------------------
