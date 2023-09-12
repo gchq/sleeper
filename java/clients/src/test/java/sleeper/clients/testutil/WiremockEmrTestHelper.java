@@ -21,11 +21,12 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.delete;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -49,22 +50,6 @@ public class WiremockEmrTestHelper {
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
     }
 
-    public static MappingBuilder listActiveApplicationsRequest() {
-        return get("/applications");
-    }
-
-    public static MappingBuilder listJobsForApplicationsRequest(String applicationId) {
-        return get(urlEqualTo("/applications/" + applicationId + "/jobruns"));
-    }
-
-    public static MappingBuilder deleteJobsForApplicationsRequest(String applicationId, String jobId) {
-        return delete(urlEqualTo("/applications/" + applicationId + "/jobruns/" + jobId));
-    }
-
-    public static MappingBuilder stopJobForApplicationsRequest(String applicationId) {
-        return post(urlEqualTo("/applications/" + applicationId + "/stop"));
-    }
-
     public static MappingBuilder listStepsRequestWithClusterId(String clusterId) {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_STEPS_OPERATION)
@@ -79,19 +64,14 @@ public class WiremockEmrTestHelper {
     }
 
     public static ResponseDefinitionBuilder aResponseWithNumRunningClusters(int numRunningClusters) {
-        StringBuilder clustersBody = new StringBuilder("{\"Clusters\": [");
-        for (int i = 1; i <= numRunningClusters; i++) {
-            clustersBody.append("{" +
-                    "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
-                    "\"Id\": \"test-cluster-id-" + i + "\"," +
-                    "\"Status\": {\"State\": \"RUNNING\"}" +
-                    "}");
-            if (i != numRunningClusters) {
-                clustersBody.append(",");
-            }
-        }
-        clustersBody.append("]}");
-        return aResponse().withStatus(200).withBody(clustersBody.toString());
+        String clustersJson = IntStream.rangeClosed(1, numRunningClusters)
+                .mapToObj(i -> "{" +
+                        "\"Name\": \"sleeper-test-instance-test-cluster-" + i + "\"," +
+                        "\"Id\": \"test-cluster-id-" + i + "\"," +
+                        "\"Status\": {\"State\": \"RUNNING\"}" +
+                        "}")
+                .collect(Collectors.joining(",", "{\"Clusters\": [", "]}"));
+        return aResponse().withStatus(200).withBody(clustersJson);
     }
 
     public static MappingBuilder terminateJobFlowsRequest() {

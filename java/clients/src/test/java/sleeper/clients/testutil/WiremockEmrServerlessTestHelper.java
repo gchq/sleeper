@@ -16,6 +16,7 @@
 
 package sleeper.clients.testutil;
 
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
@@ -24,12 +25,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.delete;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
 public class WiremockEmrServerlessTestHelper {
 
     private WiremockEmrServerlessTestHelper() {
+    }
+
+
+    public static MappingBuilder listActiveApplicationsRequest() {
+        return get("/applications");
+    }
+
+    public static MappingBuilder listJobsForApplicationsRequest(String applicationId) {
+        return get(urlEqualTo("/applications/" + applicationId + "/jobruns"));
+    }
+
+    public static MappingBuilder deleteJobsForApplicationsRequest(String applicationId, String jobId) {
+        return delete(urlEqualTo("/applications/" + applicationId + "/jobruns/" + jobId));
+    }
+
+    public static MappingBuilder stopJobForApplicationsRequest(String applicationId) {
+        return post(urlEqualTo("/applications/" + applicationId + "/stop"));
     }
 
     public static RequestPatternBuilder listActiveApplicationRequested() {
