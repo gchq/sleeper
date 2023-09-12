@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import software.amazon.awscdk.NestedStack;
+
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -181,5 +183,12 @@ public class SleeperSystemTest {
     public Path getSplitPointsDirectory() {
         return parameters.getScriptsDirectory()
                 .resolve("test/splitpoints");
+    }
+
+    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) {
+    }
+
+    public <T extends NestedStack> void resetOptionalStacks() {
+
     }
 }
