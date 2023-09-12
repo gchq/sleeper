@@ -20,26 +20,38 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.Objects;
 
-public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
+public class ProcessStartedAndFinishedStatus implements ProcessRunStartedUpdate, ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
 
-    private ProcessFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
-        this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.summary = Objects.requireNonNull(summary, "summary must not be null");
+    private ProcessStartedAndFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
+        this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
+        this.summary = Objects.requireNonNull(summary, "summary may not be null");
     }
 
-    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
-        return new ProcessFinishedStatus(updateTime, summary);
+    public static ProcessStartedAndFinishedStatus updateAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+        return new ProcessStartedAndFinishedStatus(updateTime, summary);
     }
 
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
     }
 
+    @Override
+    public Instant getStartTime() {
+        return summary.getStartTime();
+    }
+
+    @Override
     public RecordsProcessedSummary getSummary() {
         return summary;
+    }
+
+    @Override
+    public boolean isPartOfRun() {
+        return true;
     }
 
     @Override
@@ -50,7 +62,7 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessFinishedStatus that = (ProcessFinishedStatus) o;
+        ProcessStartedAndFinishedStatus that = (ProcessStartedAndFinishedStatus) o;
         return updateTime.equals(that.updateTime) && summary.equals(that.summary);
     }
 
@@ -61,7 +73,7 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
 
     @Override
     public String toString() {
-        return "ProcessFinishedStatus{" +
+        return "ProcessStartedAndFinishedStatus{" +
                 "updateTime=" + updateTime +
                 ", summary=" + summary +
                 '}';
