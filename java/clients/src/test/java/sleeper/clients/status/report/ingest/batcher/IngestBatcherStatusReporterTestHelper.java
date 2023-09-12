@@ -54,9 +54,15 @@ public class IngestBatcherStatusReporterTestHelper {
                 .collect(Collectors.toList()), example);
     }
 
-    public static String getStandardReport(BatcherQuery query, List<FileIngestRequest> statusList) {
+    public static String getStandardReport(BatcherQuery query, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestBatcherStatusReporter(output.getPrintStream()).report(statusList, query);
+        new StandardIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, query);
+        return output.toString();
+    }
+
+    public static String getJsonReport(BatcherQuery query, List<FileIngestRequest> fileRequestList) {
+        ToStringPrintStream output = new ToStringPrintStream();
+        new JsonIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, query);
         return output.toString();
     }
 }

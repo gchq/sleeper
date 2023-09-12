@@ -29,24 +29,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
-public class StandardIngestBatcherStatusReporterAllQueryTest {
+public class JsonIngestBatcherStatusReporterAllQueryTest {
     @Test
     void shouldReportNoFiles() throws IOException {
         // Given
         List<FileIngestRequest> noFiles = Collections.emptyList();
 
         // When / Then
-        assertThat(IngestBatcherStatusReporterTestHelper.getStandardReport(new AllFilesQuery(), noFiles)).hasToString(
-                example("reports/ingest/batcher/standard/all/noFiles.txt"));
+        assertThat(IngestBatcherStatusReporterTestHelper.getJsonReport(new AllFilesQuery(), noFiles)).hasToString(
+                example("reports/ingest/batcher/json/noFiles.json"));
     }
 
     @Test
     void shouldReportOnePendingFileAndTwoBatchedFiles() throws IOException {
         // Given
-        List<FileIngestRequest> fileIngestRequestList = onePendingAndTwoBatchedFiles();
+        List<FileIngestRequest> onePendingAndTwoBatchedFiles = onePendingAndTwoBatchedFiles();
 
         // When / Then
-        assertThat(IngestBatcherStatusReporterTestHelper.getStandardReport(new AllFilesQuery(), fileIngestRequestList)).hasToString(
-                example("reports/ingest/batcher/standard/all/onePendingAndTwoBatchedFiles.txt"));
+        assertThat(IngestBatcherStatusReporterTestHelper.getJsonReport(new AllFilesQuery(), onePendingAndTwoBatchedFiles)).hasToString(
+                example("reports/ingest/batcher/json/onePendingAndTwoBatchedFiles.json"));
     }
 }
