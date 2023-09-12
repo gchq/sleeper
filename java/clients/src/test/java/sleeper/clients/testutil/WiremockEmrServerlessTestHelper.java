@@ -39,7 +39,7 @@ public class WiremockEmrServerlessTestHelper {
     private WiremockEmrServerlessTestHelper() {
     }
 
-    public static MappingBuilder listActiveApplicationsRequest() {
+    public static MappingBuilder listActiveEmrApplicationsRequest() {
         return get(listRunningApplicationsUrl());
     }
 
@@ -59,7 +59,7 @@ public class WiremockEmrServerlessTestHelper {
         return post(stopApplicationUrl());
     }
 
-    public static RequestPatternBuilder anyRequestedForApplications() {
+    public static RequestPatternBuilder anyRequestedForEmrServerless() {
         return anyRequestedFor(urlMatching("/applications.*"));
     }
 

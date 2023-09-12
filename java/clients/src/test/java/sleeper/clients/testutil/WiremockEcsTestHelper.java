@@ -19,6 +19,8 @@ package sleeper.clients.testutil;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
@@ -45,5 +47,10 @@ public class WiremockEcsTestHelper {
                 .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                 .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
                         .and(matchingJsonPath("$.task", equalTo(taskArn))));
+    }
+
+    public static RequestPatternBuilder anyRequestedForEcs() {
+        return anyRequestedFor(anyUrl())
+                .withHeader(OPERATION_HEADER, matching("^AmazonEC2ContainerServiceV\\d+\\..*"));
     }
 }

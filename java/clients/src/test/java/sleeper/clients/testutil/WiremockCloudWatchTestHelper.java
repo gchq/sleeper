@@ -20,6 +20,8 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
@@ -44,5 +46,10 @@ public class WiremockCloudWatchTestHelper {
         return postRequestedFor(urlEqualTo("/"))
                 .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
                 .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
+    }
+
+    public static RequestPatternBuilder anyRequestedForCloudWatchEvents() {
+        return anyRequestedFor(anyUrl())
+                .withHeader(OPERATION_HEADER, matching("^AWSEvents\\..*"));
     }
 }

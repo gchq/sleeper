@@ -25,8 +25,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -42,7 +45,7 @@ public class WiremockEmrTestHelper {
     private static final StringValuePattern MATCHING_LIST_STEPS_OPERATION = equalTo("ElasticMapReduce.ListSteps");
     private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = equalTo("ElasticMapReduce.TerminateJobFlows");
 
-    public static MappingBuilder listActiveClustersRequest() {
+    public static MappingBuilder listActiveEmrClustersRequest() {
         return post("/")
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterStates\":[" +
@@ -60,6 +63,15 @@ public class WiremockEmrTestHelper {
                 .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterStates\":[" +
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
+    }
+
+    public static RequestPatternBuilder anyRequestedForEmr() {
+        return anyRequestedFor(anyUrl())
+                .withHeader(OPERATION_HEADER, matching("^ElasticMapReduce\\..*"));
+    }
+
+    public static ResponseDefinitionBuilder aResponseWithNoClusters() {
+        return aResponse().withStatus(200).withBody("{\"Clusters\": []}");
     }
 
     public static ResponseDefinitionBuilder aResponseWithNumRunningClusters(int numRunningClusters) {
