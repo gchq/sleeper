@@ -15,33 +15,23 @@
  */
 package sleeper.ingest.impl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
-import sleeper.ingest.testutils.AwsExternalResource;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -53,37 +43,21 @@ import java.util.stream.LongStream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
-@Testcontainers
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB,
-            AmazonDynamoDBClientBuilder.standard());
-    private final Configuration configuration = AwsExternalResource.getHadoopConfiguration(localStackContainer);
-    private static final String TABLE_NAME = "test-table";
-    private static final String DATA_BUCKET_NAME = "databucket";
     @TempDir
     public Path temporaryFolder;
-
-    @AfterEach
-    public void after() {
-        dynamoDB.deleteTable(TABLE_NAME + "-af");
-        dynamoDB.deleteTable(TABLE_NAME + "-rgcf");
-        dynamoDB.deleteTable(TABLE_NAME + "-p");
-    }
+    private final Configuration configuration = new Configuration();
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(
-                TABLE_NAME, recordListAndSchema.sleeperSchema, dynamoDB).create();
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
@@ -133,7 +107,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                AwsExternalResource.getHadoopConfiguration(localStackContainer)
+                configuration
         );
     }
 
@@ -143,8 +117,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(
-                TABLE_NAME, recordListAndSchema.sleeperSchema, dynamoDB).create();
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
@@ -198,7 +171,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
                 actualFiles,
-                AwsExternalResource.getHadoopConfiguration(localStackContainer)
+                configuration
         );
     }
 
@@ -208,8 +181,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(
-                TABLE_NAME, recordListAndSchema.sleeperSchema, dynamoDB).create();
+        StateStore stateStore = inMemoryStateStoreWithSinglePartition(recordListAndSchema.sleeperSchema);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
@@ -240,16 +212,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         return IngestCoordinatorTestParameters
                 .builder()
                 .temporaryFolder(temporaryFolder)
-                .hadoopConfiguration(AwsExternalResource.getHadoopConfiguration(localStackContainer))
-                .dataBucketName(DATA_BUCKET_NAME);
+                .hadoopConfiguration(configuration);
     }
 
     private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
                                       IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
                                       TestIngestType ingestType) throws Exception {
         try (IngestCoordinator<Record> ingestCoordinator =
-                     ingestType.createIngestCoordinator(
-                             ingestCoordinatorTestParameters)) {
+                     ingestType.createIngestCoordinator(ingestCoordinatorTestParameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
