@@ -25,14 +25,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
+import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -47,13 +49,21 @@ import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClien
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequest;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequestedFor;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNumRunningApplications;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNumRunningJobsOnApplication;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.deleteJobsForApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithNameAndState;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithState;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.cancelJobRunRequested;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listJobsForApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.stopJobForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationsRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningJobsForApplicationRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningJobsForApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningOrCancellingJobsForApplicationRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningOrCancellingJobsForApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.stopApplicationRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.stopApplicationRequested;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNumRunningClusters;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequest;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequested;
@@ -107,7 +117,7 @@ class ShutdownSystemProcessesIT {
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
+                    .willReturn(aResponseWithNoApplications()));
         }
 
         @Test
@@ -151,7 +161,7 @@ class ShutdownSystemProcessesIT {
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponseWithNumRunningClusters(0)));
             stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
+                    .willReturn(aResponseWithNoApplications()));
         }
 
         @Test
@@ -206,7 +216,7 @@ class ShutdownSystemProcessesIT {
         void setup() {
             properties.set(ID, "test-instance");
             stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
+                    .willReturn(aResponseWithNoApplications()));
         }
 
         @Test
@@ -304,109 +314,100 @@ class ShutdownSystemProcessesIT {
 
         @BeforeEach
         void setUp() {
-            properties.set(ID, "test-instance");
+            properties.set(ID, "test");
             stubFor(listActiveClustersRequest()
                     .willReturn(aResponseWithNumRunningClusters(0)));
         }
 
         @Test
-        void shouldAllowEmrServerlessWithNoApplications() throws Exception {
-            //Given
+        void shouldAllowEmrServerlessWithNoRunningApplications() throws Exception {
+            // Given
             stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
+                    .willReturn(aResponseWithNoApplications()));
 
             // When
             shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(2, anyRequestedFor(anyUrl()));
+            verify(1, listActiveClustersRequested());
+            verify(1, listActiveApplicationsRequested());
         }
 
         @Test
-        void shouldAllowEmrServerlessWithAStoppedApplication() throws Exception {
-            //Given
+        void shouldAllowEmrServerlessWithARunningApplicationNotMatchingPrefix() throws Exception {
+            // Given
             stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.STOPPED))));
+                    .willReturn(aResponseWithApplicationWithNameAndState("unmanaged-app", ApplicationState.STARTED)));
 
             // When
             shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(2, anyRequestedFor(anyUrl()));
+            verify(1, listActiveClustersRequested());
+            verify(1, listActiveApplicationsRequested());
         }
 
         @Test
-        void shouldAllowEmrServerlessWithACreatedApplication() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(List.of(ApplicationState.CREATED))));
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJob() throws Exception {
+            // Given
+            stubFor(listActiveApplicationsRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(listRunningJobsForApplicationRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithJobRunWithState("test-job-run", JobRunState.RUNNING))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(cancelJobRunRequest("test-job-run").inScenario("StopJob")
+                    .willReturn(ResponseDefinitionBuilder.okForEmptyJson())
+                    .whenScenarioStateIs(STARTED).willSetStateTo("JobStopped"));
+            stubFor(listRunningOrCancellingJobsForApplicationRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithNoJobRuns())
+                    .whenScenarioStateIs("JobStopped"));
+            stubFor(stopApplicationRequest().inScenario("StopJob")
+                    .willReturn(aResponse().withStatus(200))
+                    .whenScenarioStateIs("JobStopped").willSetStateTo("AppStopped"));
+            stubFor(listActiveApplicationsRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithNoApplications())
+                    .whenScenarioStateIs("AppStopped"));
 
             // When
             shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(7, anyRequestedFor(anyUrl()));
+            verify(1, listActiveClustersRequested());
+            verify(2, listActiveApplicationsRequested());
+            verify(1, listRunningJobsForApplicationRequested());
+            verify(1, cancelJobRunRequested("test-job-run"));
+            verify(1, listRunningOrCancellingJobsForApplicationRequested());
+            verify(1, stopApplicationRequested());
         }
 
         @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJobs() throws Exception {
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoRunningJobs() throws Exception {
             //Given
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                    .willReturn(aResponseWithNumRunningJobsOnApplication(10, true)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
-                    .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
+            stubFor(listActiveApplicationsRequest().inScenario("StopApplication")
+                    .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(listRunningJobsForApplicationRequest()
+                    .willReturn(aResponseWithNoJobRuns()));
+            stubFor(stopApplicationRequest().inScenario("StopApplication")
+                    .willReturn(aResponse().withStatus(200))
+                    .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopped"));
+            stubFor(listActiveApplicationsRequest().inScenario("StopApplication")
+                    .willReturn(aResponseWithNoApplications())
+                    .whenScenarioStateIs("ApplicationStopped"));
 
             // When
             shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
-        }
-
-        @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithOnlySuccessJobs() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                    .willReturn(aResponseWithNumRunningJobsOnApplication(1, true)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
-                    .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
-
-            // When
-            shutdown();
-
-            // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
-        }
-
-        @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                    .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-
-            // When
-            shutdown();
-
-            // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(5, anyRequestedFor(anyUrl()));
+            verify(1, listActiveClustersRequested());
+            verify(2, listActiveApplicationsRequested());
+            verify(1, listRunningJobsForApplicationRequested());
+            verify(1, stopApplicationRequested());
         }
     }
 
