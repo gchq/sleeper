@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.status.report.ingest.batcher.query.AllFilesQuery;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.io.IOException;
@@ -28,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.getJsonReport;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
@@ -41,7 +41,7 @@ public class JsonIngestBatcherStatusReporterTest {
             List<FileIngestRequest> noFiles = Collections.emptyList();
 
             // When / Then
-            assertThat(IngestBatcherStatusReporterTestHelper.getJsonReport(new AllFilesQuery(), noFiles)).hasToString(
+            assertThat(getJsonReport(BatcherQuery.Type.ALL, noFiles)).hasToString(
                     example("reports/ingest/batcher/json/noFiles.json"));
         }
 
@@ -51,7 +51,7 @@ public class JsonIngestBatcherStatusReporterTest {
             List<FileIngestRequest> onePendingAndTwoBatchedFiles = onePendingAndTwoBatchedFiles();
 
             // When / Then
-            assertThat(IngestBatcherStatusReporterTestHelper.getJsonReport(new AllFilesQuery(), onePendingAndTwoBatchedFiles)).hasToString(
+            assertThat(getJsonReport(BatcherQuery.Type.ALL, onePendingAndTwoBatchedFiles)).hasToString(
                     example("reports/ingest/batcher/json/onePendingAndTwoBatchedFiles.json"));
         }
     }

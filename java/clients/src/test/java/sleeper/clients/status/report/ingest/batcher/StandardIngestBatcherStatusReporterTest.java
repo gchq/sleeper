@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.status.report.ingest.batcher.query.AllFilesQuery;
 import sleeper.ingest.batcher.FileIngestRequest;
 
 import java.io.IOException;
@@ -28,6 +27,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.getStandardReport;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.multiplePendingFiles;
 import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
@@ -41,7 +42,7 @@ public class StandardIngestBatcherStatusReporterTest {
             List<FileIngestRequest> noFiles = Collections.emptyList();
 
             // When / Then
-            assertThat(IngestBatcherStatusReporterTestHelper.getStandardReport(new AllFilesQuery(), noFiles)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.Type.ALL, noFiles)).hasToString(
                     example("reports/ingest/batcher/standard/all/noFiles.txt"));
         }
 
@@ -51,8 +52,32 @@ public class StandardIngestBatcherStatusReporterTest {
             List<FileIngestRequest> fileIngestRequestList = onePendingAndTwoBatchedFiles();
 
             // When / Then
-            assertThat(IngestBatcherStatusReporterTestHelper.getStandardReport(new AllFilesQuery(), fileIngestRequestList)).hasToString(
+            assertThat(getStandardReport(BatcherQuery.Type.ALL, fileIngestRequestList)).hasToString(
                     example("reports/ingest/batcher/standard/all/onePendingAndTwoBatchedFiles.txt"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Query pending files")
+    class QueryPendingFiles {
+        @Test
+        void shouldReportNoFiles() throws IOException {
+            // Given
+            List<FileIngestRequest> noFiles = Collections.emptyList();
+
+            // When / Then
+            assertThat(getStandardReport(BatcherQuery.Type.PENDING, noFiles)).hasToString(
+                    example("reports/ingest/batcher/standard/pending/noFiles.txt"));
+        }
+
+        @Test
+        void shouldReportMultiplePendingFiles() throws IOException {
+            // Given
+            List<FileIngestRequest> fileIngestRequestList = multiplePendingFiles();
+
+            // When / Then
+            assertThat(getStandardReport(BatcherQuery.Type.PENDING, fileIngestRequestList)).hasToString(
+                    example("reports/ingest/batcher/standard/pending/multiplePendingFiles.txt"));
         }
     }
 }

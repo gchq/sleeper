@@ -16,6 +16,8 @@
 
 package sleeper.clients.status.report.ingest.batcher;
 
+import sleeper.clients.status.report.ingest.batcher.query.AllFilesQuery;
+import sleeper.clients.status.report.ingest.batcher.query.PendingFilesQuery;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 
@@ -23,4 +25,19 @@ import java.util.List;
 
 public interface BatcherQuery {
     List<FileIngestRequest> run(IngestBatcherStore store);
+
+    static BatcherQuery from(BatcherQuery.Type queryType) {
+        if (queryType == Type.ALL) {
+            return new AllFilesQuery();
+        } else if (queryType == Type.PENDING) {
+            return new PendingFilesQuery();
+        } else {
+            throw new IllegalArgumentException("Unexpected query type: " + queryType);
+        }
+    }
+
+    enum Type {
+        ALL,
+        PENDING
+    }
 }

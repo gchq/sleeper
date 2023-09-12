@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.ingest.batcher;
+package sleeper.clients.status.report.ingest.batcher.query;
 
+import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
 import sleeper.ingest.batcher.FileIngestRequest;
+import sleeper.ingest.batcher.IngestBatcherStore;
 
 import java.util.List;
 
-public interface IngestBatcherStatusReporter {
-
-    void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType);
+public class PendingFilesQuery implements BatcherQuery {
+    @Override
+    public List<FileIngestRequest> run(IngestBatcherStore store) {
+        return store.getPendingFilesOldestFirst();
+    }
 }

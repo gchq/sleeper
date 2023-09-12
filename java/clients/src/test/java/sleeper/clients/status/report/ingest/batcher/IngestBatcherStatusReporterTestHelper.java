@@ -48,21 +48,40 @@ public class IngestBatcherStatusReporterTestHelper {
         );
     }
 
+    public static List<FileIngestRequest> multiplePendingFiles() {
+        return List.of(
+                FileIngestRequest.builder().file("file1.parquet")
+                        .fileSizeBytes(123L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:23:00Z")).build(),
+                FileIngestRequest.builder().file("file2.parquet")
+                        .fileSizeBytes(456L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
+                        .build(),
+                FileIngestRequest.builder().file("file3.parquet")
+                        .fileSizeBytes(789L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:28:00Z"))
+                        .build()
+        );
+    }
+
     public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {
         return StatusReporterTestHelper.replaceBracketedJobIds(job.stream()
                 .map(IngestJobStatus::getJobId)
                 .collect(Collectors.toList()), example);
     }
 
-    public static String getStandardReport(BatcherQuery query, List<FileIngestRequest> fileRequestList) {
+    public static String getStandardReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new StandardIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, query);
+        new StandardIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
     }
 
-    public static String getJsonReport(BatcherQuery query, List<FileIngestRequest> fileRequestList) {
+    public static String getJsonReport(BatcherQuery.Type queryType, List<FileIngestRequest> fileRequestList) {
         ToStringPrintStream output = new ToStringPrintStream();
-        new JsonIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, query);
+        new JsonIngestBatcherStatusReporter(output.getPrintStream()).report(fileRequestList, queryType);
         return output.toString();
     }
 }
