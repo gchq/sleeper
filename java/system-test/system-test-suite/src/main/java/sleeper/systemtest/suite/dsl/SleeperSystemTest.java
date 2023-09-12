@@ -25,6 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.instance.RedeployInstanceDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
@@ -42,11 +43,8 @@ import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
-
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 /**
  * This class is the entry point that all system tests use to interact with the system.
@@ -189,18 +187,14 @@ public class SleeperSystemTest {
     }
 
     public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
-        applyOptionalStacks(optionalStacks -> optionalStacks.add(stackClass.getSimpleName()));
+        redeployDriver().addOptionalStack(stackClass);
     }
 
     public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws IOException, InterruptedException {
-        applyOptionalStacks(optionalStacks -> optionalStacks.remove(stackClass.getSimpleName()));
+        redeployDriver().removeOptionalStack(stackClass);
     }
 
-    private void applyOptionalStacks(Consumer<List<String>> applyToOptionalStacks) throws IOException, InterruptedException {
-        InstanceProperties properties = instance.getInstanceProperties();
-        List<String> optionalStacks = properties.getList(OPTIONAL_STACKS);
-        applyToOptionalStacks.accept(optionalStacks);
-        properties.set(OPTIONAL_STACKS, String.join(",", optionalStacks));
-        instance.redeployExistingInstance(clients.getS3V2(), clients.getEcr());
+    private RedeployInstanceDriver redeployDriver() {
+        return new RedeployInstanceDriver(parameters, instance, clients.getS3V2(), clients.getEcr());
     }
 }
