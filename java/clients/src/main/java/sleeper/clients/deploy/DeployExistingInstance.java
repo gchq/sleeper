@@ -27,6 +27,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
+import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
@@ -49,6 +50,7 @@ public class DeployExistingInstance {
     private final List<TableProperties> tablePropertiesList;
     private final S3Client s3v2;
     private final AmazonECR ecr;
+    private final CdkDeploy deployCommand;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -56,6 +58,7 @@ public class DeployExistingInstance {
         tablePropertiesList = builder.tablePropertiesList;
         s3v2 = builder.s3v2;
         ecr = builder.ecr;
+        deployCommand = builder.deployCommand;
     }
 
     public static Builder builder() {
@@ -107,7 +110,7 @@ public class DeployExistingInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)
-                .build().invokeInferringType(properties, CdkCommand.deployExisting());
+                .build().invokeInferringType(properties, deployCommand);
 
         // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
         // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.
@@ -124,6 +127,7 @@ public class DeployExistingInstance {
         private AmazonS3 s3;
         private S3Client s3v2;
         private AmazonECR ecr;
+        private CdkDeploy deployCommand = CdkCommand.deployExisting();
 
         private Builder() {
         }
@@ -164,6 +168,11 @@ public class DeployExistingInstance {
 
         public Builder ecr(AmazonECR ecr) {
             this.ecr = ecr;
+            return this;
+        }
+
+        public Builder deployCommand(CdkDeploy deployCommand) {
+            this.deployCommand = deployCommand;
             return this;
         }
 
