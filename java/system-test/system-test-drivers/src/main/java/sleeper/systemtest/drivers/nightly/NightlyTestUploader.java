@@ -32,10 +32,10 @@ public class NightlyTestUploader {
     private final String prefix;
 
     private NightlyTestUploader(Builder builder) {
-        s3Client = builder.s3Client;
-        bucketName = builder.bucketName;
-        timestamp = builder.timestamp;
-        prefix = builder.timestamp.getS3FolderName();
+        s3Client = Objects.requireNonNull(builder.s3Client, "s3Client must not be null");
+        bucketName = Objects.requireNonNull(builder.bucketName, "bucketName must not be null");
+        timestamp = Objects.requireNonNull(builder.timestamp, "timestamp must not be null");
+        prefix = timestamp.getS3FolderName();
     }
 
     public static Builder builder() {
