@@ -31,6 +31,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
 
 
 public class WiremockEmrTestHelper {
@@ -43,7 +44,7 @@ public class WiremockEmrTestHelper {
 
     public static MappingBuilder listActiveClustersRequest() {
         return post("/")
-                .withHeader(ClientWiremockTestHelper.OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterStates\":[" +
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
     }
@@ -66,13 +67,13 @@ public class WiremockEmrTestHelper {
 
     public static MappingBuilder listStepsRequestWithClusterId(String clusterId) {
         return post("/")
-                .withHeader(ClientWiremockTestHelper.OPERATION_HEADER, MATCHING_LIST_STEPS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_STEPS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterId\":\"" + clusterId + "\"}"));
     }
 
     public static RequestPatternBuilder listActiveClustersRequested() {
         return postRequestedFor(urlEqualTo("/"))
-                .withHeader(ClientWiremockTestHelper.OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_LIST_CLUSTERS_OPERATION)
                 .withRequestBody(equalToJson("{\"ClusterStates\":[" +
                         "\"STARTING\",\"BOOTSTRAPPING\",\"RUNNING\",\"WAITING\",\"TERMINATING\"]}"));
     }
@@ -95,13 +96,13 @@ public class WiremockEmrTestHelper {
 
     public static MappingBuilder terminateJobFlowsRequest() {
         return post("/")
-                .withHeader(ClientWiremockTestHelper.OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
                 .willReturn(aResponse().withStatus(200));
     }
 
     public static MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
         return post("/")
-                .withHeader(ClientWiremockTestHelper.OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
                 .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
                         equalTo(jobIdsCount + "")))
                 .willReturn(aResponse().withStatus(200));
@@ -110,7 +111,7 @@ public class WiremockEmrTestHelper {
 
     public static RequestPatternBuilder terminateJobFlowsRequested() {
         return postRequestedFor(urlEqualTo("/"))
-                .withHeader(ClientWiremockTestHelper.OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
+                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
     }
 
     public static RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {

@@ -45,6 +45,8 @@ import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
+import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequest;
+import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequestedFor;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNumRunningApplications;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNumRunningJobsOnApplication;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationRequested;
@@ -76,7 +78,6 @@ import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 @WireMockTest
 class ShutdownSystemProcessesIT {
 
-    private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
     private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
 
@@ -101,6 +102,14 @@ class ShutdownSystemProcessesIT {
     @DisplayName("Shutdown Cloud Watch Rules")
     class ShutdownCloudWatchRules {
 
+        @BeforeEach
+        void setup() {
+            stubFor(listActiveClustersRequest()
+                    .willReturn(aResponseWithNumRunningClusters(0)));
+            stubFor(listActiveApplicationsRequest()
+                    .willReturn(aResponseWithNumRunningApplications(0)));
+        }
+
         @Test
         void shouldShutdownCloudWatchRulesWhenSet() throws Exception {
             // Given
@@ -112,13 +121,8 @@ class ShutdownSystemProcessesIT {
             properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
             properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
 
-            stubFor(post("/")
-                    .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
+            stubFor(disableRuleRequest()
                     .willReturn(aResponse().withStatus(200)));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponseWithNumRunningClusters(0)));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
             shutdown();
@@ -404,12 +408,6 @@ class ShutdownSystemProcessesIT {
             verify(1, getRequestedFor(urlEqualTo("/applications")));
             verify(1, listActiveApplicationRequested());
         }
-    }
-
-    private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
-                .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
     }
 
     private RequestPatternBuilder listTasksRequestedFor(String clusterName) {
