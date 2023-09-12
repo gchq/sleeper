@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
 import software.amazon.awssdk.services.emrserverless.model.ApplicationSummary;
 import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
-import software.amazon.awssdk.services.emrserverless.model.StopApplicationRequest;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
@@ -71,14 +70,14 @@ public class TerminateEMRServerlessApplications {
                     .jobRuns();
 
             jobRuns.forEach(jobRun ->
-                    emrServerlessClient.cancelJobRun(req -> req
+                    emrServerlessClient.cancelJobRun(request -> request
                             .applicationId(application.id()).jobRunId(jobRun.id())));
 
             if (!jobRuns.isEmpty()) {
                 poll.pollUntil("all EMR Serverless jobs finished", () -> allJobsFinished(application.id()));
             }
 
-            emrServerlessClient.stopApplication(StopApplicationRequest.builder().applicationId(application.id()).build());
+            emrServerlessClient.stopApplication(request -> request.applicationId(application.id()));
         }
     }
 
@@ -90,7 +89,7 @@ public class TerminateEMRServerlessApplications {
 
     private boolean allJobsFinished(String applicationId) {
         List<JobRunSummary> unfinishedJobRuns = emrServerlessClient
-                .listJobRuns(req -> req.applicationId(applicationId)
+                .listJobRuns(request -> request.applicationId(applicationId)
                         .states(JobRunState.RUNNING, JobRunState.SCHEDULED, JobRunState.PENDING, JobRunState.SUBMITTED, JobRunState.CANCELLING))
                 .jobRuns();
 
@@ -104,7 +103,7 @@ public class TerminateEMRServerlessApplications {
 
 
     private List<ApplicationSummary> listActiveApplications() {
-        return emrServerlessClient.listApplications(req -> req.states(
+        return emrServerlessClient.listApplications(request -> request.states(
                         ApplicationState.STARTING, ApplicationState.STARTED, ApplicationState.STOPPING))
                 .applications().stream()
                 .filter(summary -> summary.name().startsWith(applicationPrefix))
