@@ -79,7 +79,7 @@ public class IngestBatcherReport {
             IngestBatcherReporter reporter = getReporter(args, 1);
             BatcherQuery.Type queryType = optionalArgument(args, 2)
                     .map(QUERY_TYPES::get)
-                    .orElseThrow();
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid query type: " + args[2]));
 
             AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
