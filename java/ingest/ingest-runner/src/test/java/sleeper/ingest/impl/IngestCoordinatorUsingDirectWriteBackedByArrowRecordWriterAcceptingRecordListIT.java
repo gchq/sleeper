@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -151,22 +152,31 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .build();
         FileInfo leftFile1 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
                 "/partition_left/leftFile1.parquet", 5950, -9999L, -1L);
-        FileInfo rightFile1 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
-                "/partition_right/rightFile1.parquet", 6050, 1L, 9998L);
         FileInfo leftFile2 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
                 "/partition_left/leftFile2.parquet", 4050, -10000L, -3L);
+        FileInfo rightFile1 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+                "/partition_right/rightFile1.parquet", 6050, 1L, 9998L);
         FileInfo rightFile2 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
                 "/partition_right/rightFile2.parquet", 3950, 0L, 9999L);
 
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, actualFiles, new Configuration());
+        List<Record> leftFile1Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(leftFile1), configuration);
+        List<Record> leftFile2Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(leftFile2), configuration);
+        List<Record> rightFile1Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(rightFile1), configuration);
+        List<Record> rightFile2Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(rightFile2), configuration);
+        List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(LongStream.range(-10000, 10000).boxed()
-                        .map(List::<Object>of)
-                        .collect(Collectors.toList()));
+        assertThatOrderedRecordsInRange(leftFile1Records, LongStream.range(-9999L, 0));
+        assertThatOrderedRecordsInRange(leftFile2Records, LongStream.range(-10000L, -2));
+        assertThatOrderedRecordsInRange(rightFile1Records, LongStream.range(1L, 9999));
+        assertThatOrderedRecordsInRange(rightFile2Records, LongStream.range(0, 10000));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -246,6 +256,15 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                                                                          Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) {
         return ingestCoordinatorDirectWriteBackedByArrow(parameters, ingestType.getFilePrefix(parameters),
                 arrowConfig, new ArrowRecordWriterAcceptingRecordList());
+    }
+
+    private static void assertThatOrderedRecordsInRange(List<Record> records, LongStream range) {
+        assertThat(range.boxed()
+                .map(List::<Object>of)
+                .collect(Collectors.toList()))
+                .containsSubsequence(records.stream()
+                        .map(record -> record.getValues(List.of("key0")))
+                        .collect(Collectors.toList()));
     }
 
     static class RecordList {

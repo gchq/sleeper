@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +100,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(LongStream.range(-10000, 10000).boxed()
+                .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
 
@@ -157,15 +158,24 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         FileInfo rightFile2 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
                 "/partition_right/rightFile2.parquet", 2209, 0L, 9999L);
 
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, actualFiles, configuration);
+        List<Record> leftFile1Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(leftFile1), configuration);
+        List<Record> leftFile2Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(leftFile2), configuration);
+        List<Record> rightFile1Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(rightFile1), configuration);
+        List<Record> rightFile2Records = readMergedRecordsFromPartitionDataFiles(
+                recordListAndSchema.sleeperSchema, List.of(rightFile2), configuration);
+        List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, leftFile2, rightFile1, rightFile2);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(LongStream.range(-10000, 10000).boxed()
-                        .map(List::<Object>of)
-                        .collect(Collectors.toList()));
+        assertThatOrderedRecordsInRange(leftFile1Records, LongStream.range(-10000, -1));
+        assertThatOrderedRecordsInRange(leftFile2Records, LongStream.range(-9998L, 0));
+        assertThatOrderedRecordsInRange(rightFile1Records, LongStream.range(1L, 9999));
+        assertThatOrderedRecordsInRange(rightFile2Records, LongStream.range(0, 10000));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -224,5 +234,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 ingestCoordinator.write(record);
             }
         }
+    }
+
+    private static void assertThatOrderedRecordsInRange(List<Record> records, LongStream range) {
+        assertThat(range.boxed()
+                .map(List::<Object>of)
+                .collect(Collectors.toList()))
+                .containsSubsequence(records.stream()
+                        .map(record -> record.getValues(List.of("key0")))
+                        .collect(Collectors.toList()));
     }
 }
