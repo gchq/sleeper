@@ -28,6 +28,9 @@ import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER
 
 public class WiremockEcsTestHelper {
 
+    private WiremockEcsTestHelper() {
+    }
+
     public static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
     public static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
 

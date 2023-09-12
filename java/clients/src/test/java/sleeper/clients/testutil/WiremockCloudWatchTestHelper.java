@@ -29,6 +29,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
 
 public class WiremockCloudWatchTestHelper {
+
+    private WiremockCloudWatchTestHelper() {
+    }
+
     public static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
 
     public static MappingBuilder disableRuleRequest() {
