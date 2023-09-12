@@ -18,8 +18,6 @@ package sleeper.clients.teardown;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,9 +32,6 @@ import java.util.List;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
@@ -49,6 +44,10 @@ import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClien
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequest;
 import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequestedFor;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.MATCHING_LIST_TASKS_OPERATION;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.MATCHING_STOP_TASK_OPERATION;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.listTasksRequestedFor;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.stopTaskRequestedFor;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithNameAndState;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithState;
 import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
@@ -87,9 +86,6 @@ import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 
 @WireMockTest
 class ShutdownSystemProcessesIT {
-
-    private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
-    private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
 
     private final InstanceProperties properties = createTestInstanceProperties();
     private ShutdownSystemProcesses shutdown;
@@ -409,18 +405,5 @@ class ShutdownSystemProcessesIT {
             verify(1, listRunningJobsForApplicationRequested());
             verify(1, stopApplicationRequested());
         }
-    }
-
-    private RequestPatternBuilder listTasksRequestedFor(String clusterName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
-    }
-
-    private RequestPatternBuilder stopTaskRequestedFor(String clusterName, String taskArn) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
-                        .and(matchingJsonPath("$.task", equalTo(taskArn))));
     }
 }
