@@ -27,7 +27,6 @@ import java.util.stream.IntStream;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -39,9 +38,9 @@ public class WiremockEmrTestHelper {
     private WiremockEmrTestHelper() {
     }
 
-    private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = matching("ElasticMapReduce.ListClusters");
-    private static final StringValuePattern MATCHING_LIST_STEPS_OPERATION = matching("ElasticMapReduce.ListSteps");
-    private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
+    private static final StringValuePattern MATCHING_LIST_CLUSTERS_OPERATION = equalTo("ElasticMapReduce.ListClusters");
+    private static final StringValuePattern MATCHING_LIST_STEPS_OPERATION = equalTo("ElasticMapReduce.ListSteps");
+    private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = equalTo("ElasticMapReduce.TerminateJobFlows");
 
     public static MappingBuilder listActiveClustersRequest() {
         return post("/")
