@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.clients.status.report.ingest.batcher.IngestBatcherStatusReporterTestHelper.onePendingAndTwoBatchedFiles;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardIngestBatcherStatusReporterAllQueryTest {
@@ -37,5 +38,15 @@ public class StandardIngestBatcherStatusReporterAllQueryTest {
         // When / Then
         assertThat(IngestBatcherStatusReporterTestHelper.getStandardReport(new AllFilesQuery(), noFiles)).hasToString(
                 example("reports/ingest/batcher/standard/all/noFiles.txt"));
+    }
+
+    @Test
+    void shouldReportOnePendingFileAndTwoBatchedFiles() throws IOException {
+        // Given
+        List<FileIngestRequest> noFiles = onePendingAndTwoBatchedFiles();
+
+        // When / Then
+        assertThat(IngestBatcherStatusReporterTestHelper.getStandardReport(new AllFilesQuery(), noFiles)).hasToString(
+                example("reports/ingest/batcher/standard/all/onePendingAndTwoBatchedFiles.txt"));
     }
 }

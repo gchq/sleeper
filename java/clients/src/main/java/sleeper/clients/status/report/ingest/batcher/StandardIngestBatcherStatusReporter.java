@@ -34,10 +34,6 @@ public class StandardIngestBatcherStatusReporter implements IngestBatcherStatusR
     private final TableWriterFactory tableFactory;
     private final PrintStream out;
 
-    public StandardIngestBatcherStatusReporter() {
-        this(System.out);
-    }
-
     public StandardIngestBatcherStatusReporter(PrintStream out) {
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();
         stateField = tableFactoryBuilder.addField("STATE");
@@ -69,7 +65,7 @@ public class StandardIngestBatcherStatusReporter implements IngestBatcherStatusR
 
     private void writeFileRequest(FileIngestRequest fileIngestRequest, TableRow.Builder builder) {
         builder
-                .value(stateField, fileIngestRequest.isAssignedToJob() ? "PENDING" : "BATCHED")
+                .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
                 .value(fileSizeBytesField, fileIngestRequest.getFileSizeBytes())
                 .value(tableNameField, fileIngestRequest.getTableName())

@@ -21,11 +21,31 @@ import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.job.status.IngestJobStatus;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class IngestBatcherStatusReporterTestHelper {
     private IngestBatcherStatusReporterTestHelper() {
+    }
+
+    public static List<FileIngestRequest> onePendingAndTwoBatchedFiles() {
+        return List.of(
+                FileIngestRequest.builder().file("file1.parquet")
+                        .fileSizeBytes(123L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:28:00Z")).build(),
+                FileIngestRequest.builder().file("file2.parquet")
+                        .fileSizeBytes(456L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
+                        .jobId("test-job-1").build(),
+                FileIngestRequest.builder().file("file3.parquet")
+                        .fileSizeBytes(789L)
+                        .tableName("test-table")
+                        .receivedTime(Instant.parse("2023-09-12T13:25:00Z"))
+                        .jobId("test-job-1").build()
+        );
     }
 
     public static String replaceBracketedJobIds(List<IngestJobStatus> job, String example) {
