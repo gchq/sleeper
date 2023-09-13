@@ -82,7 +82,7 @@ public class IngestBatcherReport {
             instanceId = args[0];
             reporter = getReporter(args, 1);
             queryType = optionalArgument(args, 2)
-                    .map(QUERY_TYPES::get)
+                    .map(IngestBatcherReport::readQueryType)
                     .orElse(BatcherQuery.Type.PROMPT);
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
@@ -99,6 +99,13 @@ public class IngestBatcherReport {
 
         amazonS3.shutdown();
         dynamoDBClient.shutdown();
+    }
+
+    private static BatcherQuery.Type readQueryType(String queryTypeStr) {
+        if (!QUERY_TYPES.containsKey(queryTypeStr)) {
+            throw new IllegalArgumentException("Invalid query type " + queryTypeStr);
+        }
+        return QUERY_TYPES.get(queryTypeStr);
     }
 
     private static void printUsage() {
