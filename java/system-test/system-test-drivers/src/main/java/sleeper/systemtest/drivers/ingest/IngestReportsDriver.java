@@ -26,7 +26,6 @@ import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -69,7 +68,7 @@ public class IngestReportsDriver {
 
     public SystemTestReport jobsReport() {
         return (out, startTime) ->
-                new IngestJobStatusReport(jobStore(), JobQuery.Type.RANGE,
+                new IngestJobStatusReport(jobStore(),
                         new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX),
                         new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
                         PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
