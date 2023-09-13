@@ -27,7 +27,8 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
@@ -56,9 +57,9 @@ public class RedeployInstanceDriver {
         updateOptionalStacks(stacks -> stacks.remove(stackClass.getSimpleName()));
     }
 
-    private void updateOptionalStacks(Consumer<List<String>> update) throws InterruptedException {
+    private void updateOptionalStacks(Consumer<Set<String>> update) throws InterruptedException {
         InstanceProperties properties = instance.getInstanceProperties();
-        List<String> optionalStacks = properties.getList(OPTIONAL_STACKS);
+        Set<String> optionalStacks = new LinkedHashSet<>(properties.getList(OPTIONAL_STACKS));
         update.accept(optionalStacks);
         properties.set(OPTIONAL_STACKS, String.join(",", optionalStacks));
         redeploy();
