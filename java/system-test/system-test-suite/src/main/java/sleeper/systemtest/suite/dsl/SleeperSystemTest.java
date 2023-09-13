@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import software.amazon.awscdk.NestedStack;
+
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -23,6 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.instance.RedeployInstanceDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
@@ -181,5 +184,17 @@ public class SleeperSystemTest {
     public Path getSplitPointsDirectory() {
         return parameters.getScriptsDirectory()
                 .resolve("test/splitpoints");
+    }
+
+    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws InterruptedException {
+        redeployDriver().addOptionalStack(stackClass);
+    }
+
+    public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws InterruptedException {
+        redeployDriver().removeOptionalStack(stackClass);
+    }
+
+    private RedeployInstanceDriver redeployDriver() {
+        return new RedeployInstanceDriver(parameters, instance, clients.getS3V2(), clients.getEcr());
     }
 }

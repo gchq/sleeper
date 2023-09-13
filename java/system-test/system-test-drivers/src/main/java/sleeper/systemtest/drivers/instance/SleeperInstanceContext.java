@@ -29,11 +29,9 @@ import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.status.update.ReinitialiseTable;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
-import sleeper.configuration.properties.instance.CommonProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -49,9 +47,11 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.systemtest.drivers.instance.OutputInstanceIds.addInstanceIdToOutput;
 
 public class SleeperInstanceContext {
@@ -96,8 +96,8 @@ public class SleeperInstanceContext {
     public void reinitialise() {
         try {
             new ReinitialiseTable(s3Client, dynamoDBClient,
-                    currentInstance.getInstanceProperties().get(CommonProperty.ID),
-                    currentInstance.getTableProperties().get(TableProperty.TABLE_NAME),
+                    currentInstance.getInstanceProperties().get(ID),
+                    currentInstance.getTableProperties().get(TABLE_NAME),
                     true).run();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -131,7 +131,11 @@ public class SleeperInstanceContext {
     }
 
     public String getTableName() {
-        return getTableProperties().get(TableProperty.TABLE_NAME);
+        return getTableProperties().get(TABLE_NAME);
+    }
+
+    public void reloadProperties() {
+        currentInstance = deployed.reload(currentInstance);
     }
 
     private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
@@ -166,13 +170,19 @@ public class SleeperInstanceContext {
                 throw new RuntimeException(ex);
             }
         }
+        return loadInstance(identifier, instanceId, tableName);
+    }
+
+    private Instance loadInstance(String identifier, String instanceId, String tableName) {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
             TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
             StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-            return new Instance(instanceProperties, tableProperties, tablePropertiesProvider, stateStoreProvider);
+            return new Instance(identifier,
+                    instanceProperties, tableProperties,
+                    tablePropertiesProvider, stateStoreProvider);
         } catch (IOException e) {
             throw new RuntimeIOException(e);
         }
@@ -198,17 +208,28 @@ public class SleeperInstanceContext {
                 throw e;
             }
         }
+
+        public Instance reload(Instance instance) {
+            Instance loaded = loadInstance(
+                    instance.identifier,
+                    instance.instanceProperties.get(ID),
+                    instance.tableProperties.get(TABLE_NAME));
+            instanceById.put(loaded.identifier, loaded);
+            return loaded;
+        }
     }
 
-    public static class Instance {
+    private static class Instance {
+        private final String identifier;
         private final InstanceProperties instanceProperties;
         private final TableProperties tableProperties;
         private final TablePropertiesProvider tablePropertiesProvider;
         private final StateStoreProvider stateStoreProvider;
         private GenerateNumberedValueOverrides generatorOverrides = GenerateNumberedValueOverrides.none();
 
-        public Instance(InstanceProperties instanceProperties, TableProperties tableProperties,
-                        TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+        Instance(String identifier, InstanceProperties instanceProperties, TableProperties tableProperties,
+                 TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
+            this.identifier = identifier;
             this.instanceProperties = instanceProperties;
             this.tableProperties = tableProperties;
             this.tablePropertiesProvider = tablePropertiesProvider;
