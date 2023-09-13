@@ -17,6 +17,8 @@
 package sleeper.systemtest.drivers.instance;
 
 import com.amazonaws.services.ecr.AmazonECR;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 
 public class RedeployInstanceDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RedeployInstanceDriver.class);
 
     private final SystemTestParameters parameters;
     private final SleeperInstanceContext instance;
@@ -50,17 +53,24 @@ public class RedeployInstanceDriver {
     }
 
     public <T extends NestedStack> void addOptionalStack(Class<T> stackClass) throws InterruptedException {
+        LOGGER.info("Adding optional stack: {}", stackClass);
         updateOptionalStacks(stacks -> stacks.add(stackClass.getSimpleName()));
     }
 
     public <T extends NestedStack> void removeOptionalStack(Class<T> stackClass) throws InterruptedException {
+        LOGGER.info("Removing optional stack: {}", stackClass);
         updateOptionalStacks(stacks -> stacks.remove(stackClass.getSimpleName()));
     }
 
     private void updateOptionalStacks(Consumer<Set<String>> update) throws InterruptedException {
         InstanceProperties properties = instance.getInstanceProperties();
         Set<String> optionalStacks = new LinkedHashSet<>(properties.getList(OPTIONAL_STACKS));
+        Set<String> before = new LinkedHashSet<>(optionalStacks);
         update.accept(optionalStacks);
+        if (before.equals(optionalStacks)) {
+            LOGGER.info("Optional stacks unchanged, not redeploying");
+            return;
+        }
         properties.set(OPTIONAL_STACKS, String.join(",", optionalStacks));
         redeploy();
     }
