@@ -34,13 +34,17 @@ RESULTS_BUCKET=$3
 if [ "$4" = "performance" ]; then
   EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
 else
-  EXTRA_MAVEN_PARAMS=""
+  EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
 fi
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
+if [ "$4" = "performance" ]; then
+  OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
+else
+  OUTPUT_DIR="/tmp/sleeper/functionalTests/$START_TIME"
+fi
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
