@@ -28,6 +28,8 @@ import java.util.List;
 public interface BatcherQuery {
     List<FileIngestRequest> run(IngestBatcherStore store);
 
+    Type getType();
+
     static BatcherQuery from(BatcherQuery.Type queryType, ConsoleInput in) {
         if (queryType == Type.PROMPT) {
             return BatcherQueryPrompt.from(in);

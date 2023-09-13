@@ -60,8 +60,8 @@ public class IngestBatcherReport {
                                BatcherQuery.Type queryType) {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
-        this.queryType = queryType;
         this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
+        this.queryType = query.getType();
     }
 
     public void run() {

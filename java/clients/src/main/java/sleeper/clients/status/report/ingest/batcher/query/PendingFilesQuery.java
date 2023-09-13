@@ -27,4 +27,9 @@ public class PendingFilesQuery implements BatcherQuery {
     public List<FileIngestRequest> run(IngestBatcherStore store) {
         return store.getPendingFilesOldestFirst();
     }
+
+    @Override
+    public Type getType() {
+        return Type.PENDING;
+    }
 }

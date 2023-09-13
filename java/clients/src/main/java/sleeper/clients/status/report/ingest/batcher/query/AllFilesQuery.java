@@ -28,4 +28,9 @@ public class AllFilesQuery implements BatcherQuery {
     public List<FileIngestRequest> run(IngestBatcherStore store) {
         return store.getAllFilesNewestFirst();
     }
+
+    @Override
+    public Type getType() {
+        return Type.ALL;
+    }
 }
