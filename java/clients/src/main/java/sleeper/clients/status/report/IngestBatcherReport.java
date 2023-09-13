@@ -72,36 +72,37 @@ public class IngestBatcherReport {
     }
 
     public static void main(String[] args) throws IOException {
+        if (args.length < 2 || args.length > 5) {
+            throw new IllegalArgumentException("Wrong number of arguments");
+        }
+        String instanceId = args[0];
+        IngestBatcherReporter reporter = null;
+        BatcherQuery.Type queryType = null;
         try {
-            if (args.length < 2 || args.length > 5) {
-                throw new IllegalArgumentException("Wrong number of arguments");
-            }
-            String instanceId = args[0];
-            IngestBatcherReporter reporter = getReporter(args, 1);
-            BatcherQuery.Type queryType = optionalArgument(args, 2)
+            reporter = getReporter(args, 1);
+            queryType = optionalArgument(args, 2)
                     .map(QUERY_TYPES::get)
                     .orElse(BatcherQuery.Type.PROMPT);
-
-            AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
-            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-
-            AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
-            IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
-                    new TablePropertiesProvider(amazonS3, instanceProperties));
-            new IngestBatcherReport(statusStore, reporter, queryType).run();
-
-            amazonS3.shutdown();
-            dynamoDBClient.shutdown();
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             printUsage();
             System.exit(1);
         }
+        AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
+                new TablePropertiesProvider(amazonS3, instanceProperties));
+        new IngestBatcherReport(statusStore, reporter, queryType).run();
+
+        amazonS3.shutdown();
+        dynamoDBClient.shutdown();
     }
 
     private static void printUsage() {
         System.out.println("" +
-                "Usage: <instance id> <report_type_standard_or_json> <query_type>\n" +
+                "Usage: <instance id> <report_type_standard_or_json> <optional_query_type>\n" +
                 "Query types are:\n" +
                 "-a (All files)\n" +
                 "-p (Pending files)");
