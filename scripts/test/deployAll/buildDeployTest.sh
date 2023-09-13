@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
 
 if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+  echo "Usage: $0 <instance-id> <vpc> <subnets>"
   exit 1
 fi
 

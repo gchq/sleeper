@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +13,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
 
 if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet> <optional-deploy-paused-flag> <optional-split-points-file>"
+  echo "Usage: $0 <instance-id> <vpc> <subnets> <optional-deploy-paused-flag> <optional-split-points-file>"
   exit 1
 fi
 
@@ -37,7 +39,8 @@ WRITE_DATA_OUTPUT_FILE="$GENERATED_DIR/writeDataOutput.json"
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-"$SCRIPTS_DIR/test/deploy.sh" "$THIS_DIR/system-test-instance.properties" "$@"
+java -cp "$SCRIPTS_DIR/jars/system-test-${VERSION}-utility.jar" sleeper.systemtest.drivers.cdk.DeployNewTestInstance \
+  "$SCRIPTS_DIR" "$THIS_DIR/system-test-instance.properties" "$@"
 END_DEPLOY_TIME=$(record_time)
 
 echo "-------------------------------------------------------------------------------"
