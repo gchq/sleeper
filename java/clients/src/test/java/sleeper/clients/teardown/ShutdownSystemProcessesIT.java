@@ -15,46 +15,64 @@
  */
 package sleeper.clients.teardown;
 
-import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.emrserverless.model.ApplicationState;
+import software.amazon.awssdk.services.emrserverless.model.JobRunState;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.matching;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED;
+import static sleeper.clients.testutil.ClientWiremockTestHelper.OPERATION_HEADER;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockCloudWatchClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrServerlessClient;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.OPERATION_HEADER;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningApplications;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningClusters;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.aResponseWithNumRunningJobsOnApplication;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.deleteJobsForApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationRequested;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequested;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listJobsForApplicationsRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.stopJobForApplicationsRequest;
+import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.anyRequestedForCloudWatchEvents;
+import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequest;
+import static sleeper.clients.testutil.WiremockCloudWatchTestHelper.disableRuleRequestedFor;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.MATCHING_LIST_TASKS_OPERATION;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.MATCHING_STOP_TASK_OPERATION;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.anyRequestedForEcs;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.listTasksRequestedFor;
+import static sleeper.clients.testutil.WiremockEcsTestHelper.stopTaskRequestedFor;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithNameAndState;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithApplicationWithState;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithJobRunWithState;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoApplications;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.aResponseWithNoJobRuns;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.anyRequestedForEmrServerless;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.cancelJobRunRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.cancelJobRunRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveApplicationsRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listActiveEmrApplicationsRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningJobsForApplicationRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningJobsForApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningOrCancellingJobsForApplicationRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.listRunningOrCancellingJobsForApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.stopApplicationRequest;
+import static sleeper.clients.testutil.WiremockEmrServerlessTestHelper.stopApplicationRequested;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNoClusters;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.aResponseWithNumRunningClusters;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.anyRequestedForEmr;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveClustersRequested;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveEmrClustersRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestWithJobIdCount;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedFor;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.terminateJobFlowsRequestedWithJobIdsCount;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
@@ -72,13 +90,8 @@ import static sleeper.job.common.WiremockTestHelper.wiremockEcsClient;
 @WireMockTest
 class ShutdownSystemProcessesIT {
 
-    private static final StringValuePattern MATCHING_DISABLE_RULE_OPERATION = matching("^AWSEvents\\.DisableRule$");
-    private static final StringValuePattern MATCHING_LIST_TASKS_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.ListTasks");
-    private static final StringValuePattern MATCHING_STOP_TASK_OPERATION = matching("^AmazonEC2ContainerServiceV\\d+\\.StopTask");
-    private static final StringValuePattern MATCHING_TERMINATE_JOB_FLOWS_OPERATION = matching("ElasticMapReduce.TerminateJobFlows");
-
+    private final InstanceProperties properties = createTestInstanceProperties();
     private ShutdownSystemProcesses shutdown;
-    private InstanceProperties properties;
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
@@ -86,12 +99,29 @@ class ShutdownSystemProcessesIT {
                 wiremockEmrClient(runtimeInfo), wiremockEmrServerlessClient(runtimeInfo));
     }
 
-    private void shutdown(InstanceProperties instanceProperties) throws Exception {
-        shutdown.shutdown(instanceProperties, List.of());
+    private void shutdown() throws Exception {
+        shutdownWithExtraEcsClusters(List.of());
     }
 
-    private void shutdown(InstanceProperties instanceProperties, List<String> extraECSClusters) throws Exception {
-        shutdown.shutdown(instanceProperties, extraECSClusters);
+    private void shutdownWithExtraEcsClusters(List<String> extraECSClusters) throws Exception {
+        shutdown.shutdown(properties, extraECSClusters);
+    }
+
+    @Test
+    void shouldPerformNoShutdownWhenNothingToDo() throws Exception {
+        // Given
+        stubFor(listActiveEmrClustersRequest()
+                .willReturn(aResponseWithNoClusters()));
+        stubFor(listActiveEmrApplicationsRequest()
+                .willReturn(aResponseWithNoApplications()));
+
+        // When
+        shutdown();
+
+        // Then
+        verify(2, anyRequestedFor(anyUrl()));
+        verify(1, listActiveClustersRequested());
+        verify(1, listActiveApplicationsRequested());
     }
 
     @Nested
@@ -99,9 +129,13 @@ class ShutdownSystemProcessesIT {
     class ShutdownCloudWatchRules {
 
         @BeforeEach
-        void setUp() {
-            properties = createTestInstanceProperties();
+        void setup() {
+            stubFor(listActiveEmrClustersRequest()
+                    .willReturn(aResponseWithNoClusters()));
+            stubFor(listActiveEmrApplicationsRequest()
+                    .willReturn(aResponseWithNoApplications()));
         }
+
         @Test
         void shouldShutdownCloudWatchRulesWhenSet() throws Exception {
             // Given
@@ -113,20 +147,14 @@ class ShutdownSystemProcessesIT {
             properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
             properties.set(TABLE_METRICS_RULES, "test-table-metrics-rule-1,test-table-metrics-rule-2");
 
-            stubFor(post("/")
-                    .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
+            stubFor(disableRuleRequest()
                     .willReturn(aResponse().withStatus(200)));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponseWithNumRunningClusters(0)));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(9, postRequestedFor(urlEqualTo("/")));
-            verify(1, listActiveClustersRequested());
+            verify(8, anyRequestedForCloudWatchEvents());
             verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
             verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
             verify(1, disableRuleRequestedFor("test-splitting-compaction-task-creation-rule"));
@@ -144,8 +172,11 @@ class ShutdownSystemProcessesIT {
 
         @BeforeEach
         void setup() {
-            properties = createTestInstanceProperties();
             properties.set(INGEST_CLUSTER, "test-ingest-cluster");
+            stubFor(listActiveEmrClustersRequest()
+                    .willReturn(aResponseWithNoClusters()));
+            stubFor(listActiveEmrApplicationsRequest()
+                    .willReturn(aResponseWithNoApplications()));
         }
 
         @Test
@@ -158,17 +189,12 @@ class ShutdownSystemProcessesIT {
             stubFor(post("/")
                     .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
                     .willReturn(aResponse().withStatus(200).withBody("{\"nextToken\":null,\"taskArns\":[]}")));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponseWithNumRunningClusters(0)));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties, extraECSClusters);
+            shutdownWithExtraEcsClusters(extraECSClusters);
 
             // Then
-            verify(5, postRequestedFor(urlEqualTo("/")));
-            verify(1, listActiveClustersRequested());
+            verify(4, anyRequestedForEcs());
             verify(1, listTasksRequestedFor("test-ingest-cluster"));
             verify(1, listTasksRequestedFor("test-compaction-cluster"));
             verify(1, listTasksRequestedFor("test-splitting-compaction-cluster"));
@@ -184,17 +210,12 @@ class ShutdownSystemProcessesIT {
             stubFor(post("/")
                     .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
                     .willReturn(aResponse().withStatus(200)));
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponseWithNumRunningClusters(0)));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(3, postRequestedFor(urlEqualTo("/")));
-            verify(1, listActiveClustersRequested());
+            verify(2, anyRequestedForEcs());
             verify(1, listTasksRequestedFor("test-ingest-cluster"));
             verify(1, stopTaskRequestedFor("test-ingest-cluster", "test-task"));
         }
@@ -206,13 +227,15 @@ class ShutdownSystemProcessesIT {
 
         @BeforeEach
         void setup() {
-            properties = createTestInstancePropertiesWithEmrStack();
+            properties.set(ID, "test-instance");
+            stubFor(listActiveEmrApplicationsRequest()
+                    .willReturn(aResponseWithNoApplications()));
         }
 
         @Test
         void shouldTerminateEMRClusterWhenOneClusterIsRunning() throws Exception {
             // Given
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +
                             "   \"Name\": \"sleeper-test-instance-test-cluster\"," +
@@ -223,18 +246,16 @@ class ShutdownSystemProcessesIT {
             stubFor(terminateJobFlowsRequest().inScenario("TerminateEMRClusters")
                     .whenScenarioStateIs(STARTED)
                     .willSetStateTo("TERMINATED"));
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponse().withStatus(200).withBody(
                             "{\"Clusters\": []}"))
                     .whenScenarioStateIs("TERMINATED"));
-            stubFor(listActiveApplicationsRequest()
-                   .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(3, postRequestedFor(urlEqualTo("/")));
+            verify(3, anyRequestedForEmr());
             verify(2, listActiveClustersRequested());
             verify(1, terminateJobFlowsRequestedFor("test-cluster-id"));
         }
@@ -242,53 +263,31 @@ class ShutdownSystemProcessesIT {
         @Test
         void shouldTerminateEMRClustersInBatchesOfTen() throws Exception {
             // Given
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
+            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
                     .willReturn(aResponseWithNumRunningClusters(11))
                     .whenScenarioStateIs(STARTED));
-            stubFor(terminateJobFlowsRequestWithJobIdCount(10));
+            stubFor(terminateJobFlowsRequestWithJobIdCount(10).inScenario("TerminateEMRClusters")
+                    .whenScenarioStateIs(STARTED).willSetStateTo("PART_TERMINATED"));
             stubFor(terminateJobFlowsRequestWithJobIdCount(1).inScenario("TerminateEMRClusters")
-                    .willSetStateTo("TERMINATED"));
-            stubFor(listActiveClustersRequest().inScenario("TerminateEMRClusters")
-                    .willReturn(aResponse().withStatus(200).withBody(
-                            "{\"Clusters\": []}"))
+                    .whenScenarioStateIs("PART_TERMINATED").willSetStateTo("TERMINATED"));
+            stubFor(listActiveEmrClustersRequest().inScenario("TerminateEMRClusters")
+                    .willReturn(aResponseWithNoClusters())
                     .whenScenarioStateIs("TERMINATED"));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(4, postRequestedFor(urlEqualTo("/")));
+            verify(4, anyRequestedForEmr());
             verify(2, listActiveClustersRequested());
-
-            verify(terminateJobFlowsRequestedWithJobIdsCount(10));
-            verify(terminateJobFlowsRequestedWithJobIdsCount(1));
-        }
-
-        @Test
-        void shouldNotTerminateEMRClusterWhenClusterIsTerminated() throws Exception {
-            // Given
-            stubFor(listActiveClustersRequest()
-                    .willReturn(aResponse().withStatus(200).withBody("" +
-                            "{\"Clusters\": []}")));
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
-
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(1, postRequestedFor(urlEqualTo("/")));
-            verify(1, listActiveClustersRequested());
+            verify(1, terminateJobFlowsRequestedWithJobIdsCount(10));
+            verify(1, terminateJobFlowsRequestedWithJobIdsCount(1));
         }
 
         @Test
         void shouldNotTerminateEMRClusterWhenClusterBelongsToAnotherInstance() throws Exception {
             // Given
-            stubFor(listActiveApplicationsRequest()
-                    .willReturn(aResponseWithNumRunningApplications(0)));
-            stubFor(listActiveClustersRequest()
+            stubFor(listActiveEmrClustersRequest()
                     .willReturn(aResponse().withStatus(200).withBody("" +
                             "{\"Clusters\": [{" +
                             "   \"Name\": \"sleeper-another-instance-test-cluster\"," +
@@ -297,10 +296,10 @@ class ShutdownSystemProcessesIT {
                             "}]}")));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(1, postRequestedFor(urlEqualTo("/")));
+            verify(1, anyRequestedForEmr());
             verify(1, listActiveClustersRequested());
         }
     }
@@ -311,153 +310,83 @@ class ShutdownSystemProcessesIT {
     class TerminateEMRServerlessApplications {
 
         @BeforeEach
-        void setUp(WireMockRuntimeInfo runtimeInfo) {
-            properties = createTestInstancePropertiesWithEmrStack();
-            stubFor(listActiveClustersRequest()
-                .willReturn(aResponseWithNumRunningClusters(0)));
+        void setUp() {
+            properties.set(ID, "test");
+            stubFor(listActiveEmrClustersRequest()
+                    .willReturn(aResponseWithNoClusters()));
         }
 
         @Test
-        void shouldAllowEmrServerlessWithNoApplications() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(0)));
+        void shouldIgnoreARunningApplicationNotMatchingPrefix() throws Exception {
+            // Given
+            stubFor(listActiveEmrApplicationsRequest()
+                    .willReturn(aResponseWithApplicationWithNameAndState("unmanaged-app", ApplicationState.STARTED)));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(1, anyRequestedForEmrServerless());
+            verify(1, listActiveApplicationsRequested());
         }
 
         @Test
-        void shouldAllowEmrServerlessWithAStoppedApplication() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1, true)));
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJob() throws Exception {
+            // Given
+            stubFor(listActiveEmrApplicationsRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(listRunningJobsForApplicationRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithJobRunWithState("test-job-run", JobRunState.RUNNING))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(cancelJobRunRequest("test-job-run").inScenario("StopJob")
+                    .willReturn(ResponseDefinitionBuilder.okForEmptyJson())
+                    .whenScenarioStateIs(STARTED).willSetStateTo("JobStopped"));
+            stubFor(listRunningOrCancellingJobsForApplicationRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithNoJobRuns())
+                    .whenScenarioStateIs("JobStopped"));
+            stubFor(stopApplicationRequest().inScenario("StopJob")
+                    .willReturn(aResponse().withStatus(200))
+                    .whenScenarioStateIs("JobStopped").willSetStateTo("AppStopped"));
+            stubFor(listActiveEmrApplicationsRequest().inScenario("StopJob")
+                    .willReturn(aResponseWithNoApplications())
+                    .whenScenarioStateIs("AppStopped"));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(6, anyRequestedForEmrServerless());
+            verify(2, listActiveApplicationsRequested());
+            verify(1, listRunningJobsForApplicationRequested());
+            verify(1, cancelJobRunRequested("test-job-run"));
+            verify(1, listRunningOrCancellingJobsForApplicationRequested());
+            verify(1, stopApplicationRequested());
         }
 
         @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithRunningJobs() throws Exception {
+        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoRunningJobs() throws Exception {
             //Given
-            stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(10, true)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
-                .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
+            stubFor(listActiveEmrApplicationsRequest().inScenario("StopApplication")
+                    .willReturn(aResponseWithApplicationWithState(ApplicationState.STARTED))
+                    .whenScenarioStateIs(STARTED));
+            stubFor(listRunningJobsForApplicationRequest()
+                    .willReturn(aResponseWithNoJobRuns()));
+            stubFor(stopApplicationRequest().inScenario("StopApplication")
+                    .willReturn(aResponse().withStatus(200))
+                    .whenScenarioStateIs(STARTED).willSetStateTo("ApplicationStopped"));
+            stubFor(listActiveEmrApplicationsRequest().inScenario("StopApplication")
+                    .willReturn(aResponseWithNoApplications())
+                    .whenScenarioStateIs("ApplicationStopped"));
 
             // When
-            shutdown(properties);
+            shutdown();
 
             // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
+            verify(4, anyRequestedForEmrServerless());
+            verify(2, listActiveApplicationsRequested());
+            verify(1, listRunningJobsForApplicationRequested());
+            verify(1, stopApplicationRequested());
         }
-
-        @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithOnlySuccessJobs() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(1, true)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(deleteJobsForApplicationsRequest("test-application-id-1", "test-job-run-id-1")
-                .willReturn(ResponseDefinitionBuilder.okForEmptyJson()));
-
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
-        }
-
-        @Test
-        void shouldStopEMRServerlessWhenApplicationIsStartedWithNoJobs() throws Exception {
-            //Given
-            stubFor(listActiveApplicationsRequest()
-                .willReturn(aResponseWithNumRunningApplications(1)));
-            stubFor(listJobsForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-            stubFor(stopJobForApplicationsRequest("test-application-id-1")
-                .willReturn(aResponseWithNumRunningJobsOnApplication(0)));
-
-            // When
-            shutdown(properties);
-
-            // Then
-            verify(1, getRequestedFor(urlEqualTo("/applications")));
-            verify(1, listActiveApplicationRequested());
-        }
-    }
-
-    private MappingBuilder terminateJobFlowsRequest() {
-        return post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
-                .willReturn(aResponse().withStatus(200));
-    }
-
-    private MappingBuilder terminateJobFlowsRequestWithJobIdCount(int jobIdsCount) {
-        return post("/")
-                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION)
-                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
-                        equalTo(jobIdsCount + "")))
-                .willReturn(aResponse().withStatus(200));
-    }
-
-
-    private RequestPatternBuilder terminateJobFlowsRequested() {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_TERMINATE_JOB_FLOWS_OPERATION);
-    }
-
-    private RequestPatternBuilder terminateJobFlowsRequestedFor(String clusterId) {
-        return terminateJobFlowsRequested()
-                .withRequestBody(matchingJsonPath("$.JobFlowIds",
-                        equalTo(clusterId)));
-    }
-
-    private RequestPatternBuilder terminateJobFlowsRequestedWithJobIdsCount(int jobIdsCount) {
-        return terminateJobFlowsRequested()
-                .withRequestBody(matchingJsonPath("$.JobFlowIds.size()",
-                        equalTo(jobIdsCount + "")));
-    }
-
-    private InstanceProperties createTestInstancePropertiesWithEmrStack() {
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(ID, "test-instance");
-        return properties;
-    }
-
-    private RequestPatternBuilder disableRuleRequestedFor(String ruleName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_DISABLE_RULE_OPERATION)
-                .withRequestBody(matchingJsonPath("$.Name", equalTo(ruleName)));
-    }
-
-    private RequestPatternBuilder listTasksRequestedFor(String clusterName) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_LIST_TASKS_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName)));
-    }
-
-    private RequestPatternBuilder stopTaskRequestedFor(String clusterName, String taskArn) {
-        return postRequestedFor(urlEqualTo("/"))
-                .withHeader(OPERATION_HEADER, MATCHING_STOP_TASK_OPERATION)
-                .withRequestBody(matchingJsonPath("$.cluster", equalTo(clusterName))
-                        .and(matchingJsonPath("$.task", equalTo(taskArn))));
     }
 }
