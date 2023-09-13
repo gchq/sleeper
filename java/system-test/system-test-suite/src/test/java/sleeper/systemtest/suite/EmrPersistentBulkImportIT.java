@@ -60,7 +60,7 @@ public class EmrPersistentBulkImportIT {
     void shouldBulkImport100Records() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(properties ->
-                properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "0"));
+                properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                 .rootFirst("root")
                 .splitToNewChildren("root", "A", "B", "row-50")
