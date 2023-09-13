@@ -659,3 +659,15 @@ For details of the batcher configuration, see the property descriptions in the e
 [instance.properties](../example/full/instance.properties) files. The relevant table properties are under
 `sleeper.table.ingest.batcher`. The relevant instance properties are under `sleeper.ingest.batcher` and
 `sleeper.default.ingest.batcher`.
+
+You can query the files being processed by the ingest batcher by using the following utility script:
+
+```shell
+./scripts/utility/ingestBatcherReport.sh <instance-id> <report-type-standard-or-json> <optional-query-type>
+```
+
+If you do not provide a query type as a parameter to the script you will be prompted to select one of the query
+types below:
+
+- ALL, which will show you files waiting to be batched, and files that have been batched.
+- PENDING, which will only show you files that are waiting to be batched.
