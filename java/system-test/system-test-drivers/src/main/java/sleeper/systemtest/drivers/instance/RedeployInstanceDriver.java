@@ -21,6 +21,7 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployExistingInstance;
+import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -71,6 +72,7 @@ public class RedeployInstanceDriver {
                     .tableProperties(instance.getTableProperties())
                     .scriptsDirectory(parameters.getScriptsDirectory())
                     .deployCommand(CdkCommand.deployExistingPaused())
+                    .runCommand(ClientUtils::runCommandLogOutput)
                     .build().update();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

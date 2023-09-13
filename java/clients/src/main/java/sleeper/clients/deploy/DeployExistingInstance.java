@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.CdkDeploy;
@@ -51,6 +52,7 @@ public class DeployExistingInstance {
     private final S3Client s3v2;
     private final AmazonECR ecr;
     private final CdkDeploy deployCommand;
+    private final CommandPipelineRunner runCommand;
 
     private DeployExistingInstance(Builder builder) {
         scriptsDirectory = builder.scriptsDirectory;
@@ -59,6 +61,7 @@ public class DeployExistingInstance {
         s3v2 = builder.s3v2;
         ecr = builder.ecr;
         deployCommand = builder.deployCommand;
+        runCommand = builder.runCommand;
     }
 
     public static Builder builder() {
@@ -101,7 +104,7 @@ public class DeployExistingInstance {
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .instanceProperties(properties)
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(ClientUtils::runCommandInheritIO);
+                .build().upload(runCommand);
 
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Deploying Stacks");
@@ -110,7 +113,7 @@ public class DeployExistingInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .version(SleeperVersion.getVersion())
                 .jarsDirectory(jarsDirectory)
-                .build().invokeInferringType(properties, deployCommand);
+                .build().invokeInferringType(properties, deployCommand, runCommand);
 
         // We can use RestartTasks here to terminate indefinitely running ECS tasks, in order to get them onto the new
         // version of the jars. That will be part of issues #639 and #640 once graceful termination is implemented.
@@ -128,6 +131,7 @@ public class DeployExistingInstance {
         private S3Client s3v2;
         private AmazonECR ecr;
         private CdkDeploy deployCommand = CdkCommand.deployExisting();
+        private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
 
         private Builder() {
         }
@@ -173,6 +177,11 @@ public class DeployExistingInstance {
 
         public Builder deployCommand(CdkDeploy deployCommand) {
             this.deployCommand = deployCommand;
+            return this;
+        }
+
+        public Builder runCommand(CommandPipelineRunner runCommand) {
+            this.runCommand = runCommand;
             return this;
         }
 
