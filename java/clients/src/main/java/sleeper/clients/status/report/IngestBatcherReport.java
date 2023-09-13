@@ -100,7 +100,7 @@ public class IngestBatcherReport {
                 "Usage: <instance id> <report_type_standard_or_json> <query_type>\n" +
                 "Query types are:\n" +
                 "-a (All files)\n" +
-                "-d (Pending files)");
+                "-p (Pending files)");
     }
 
     private static IngestBatcherReporter getReporter(String[] args, int index) {
