@@ -38,4 +38,9 @@ public class UnfinishedJobsQuery implements JobQuery {
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
         return statusStore.getUnfinishedJobs(tableName);
     }
+
+    @Override
+    public Type getType() {
+        return Type.UNFINISHED;
+    }
 }

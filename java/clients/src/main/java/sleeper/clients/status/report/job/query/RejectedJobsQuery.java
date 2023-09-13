@@ -34,4 +34,9 @@ public class RejectedJobsQuery implements JobQuery {
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
         return statusStore.getInvalidJobs();
     }
+
+    @Override
+    public Type getType() {
+        return Type.REJECTED;
+    }
 }

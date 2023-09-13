@@ -70,18 +70,18 @@ public class IngestJobStatusReport {
             String tableName, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
-        this(ingestJobStatusStore, queryType, JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
+        this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
                 reporter, queueClient, properties, persistentEmrStepCount);
     }
 
     public IngestJobStatusReport(
-            IngestJobStatusStore ingestJobStatusStore, JobQuery.Type queryType, JobQuery query,
+            IngestJobStatusStore ingestJobStatusStore, JobQuery query,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this.statusStore = ingestJobStatusStore;
-        this.queryType = queryType;
         this.query = query;
+        this.queryType = query.getType();
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;

@@ -44,6 +44,11 @@ public class DetailedJobsQuery implements JobQuery {
         return run(statusStore::getJob);
     }
 
+    @Override
+    public Type getType() {
+        return Type.DETAILED;
+    }
+
     private <T> List<T> run(Function<String, Optional<T>> getJob) {
         return jobIds.stream()
                 .map(getJob)
