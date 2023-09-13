@@ -26,6 +26,7 @@ import sleeper.clients.status.report.ingest.batcher.IngestBatcherReporter;
 import sleeper.clients.status.report.ingest.batcher.JsonIngestBatcherReporter;
 import sleeper.clients.status.report.ingest.batcher.StandardIngestBatcherReporter;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
@@ -60,7 +61,7 @@ public class IngestBatcherReport {
         this.batcherStore = batcherStore;
         this.reporter = reporter;
         this.queryType = queryType;
-        this.query = BatcherQuery.from(queryType);
+        this.query = BatcherQuery.from(queryType, new ConsoleInput(System.console()));
     }
 
     public void run() {
@@ -79,7 +80,7 @@ public class IngestBatcherReport {
             IngestBatcherReporter reporter = getReporter(args, 1);
             BatcherQuery.Type queryType = optionalArgument(args, 2)
                     .map(QUERY_TYPES::get)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid query type: " + args[2]));
+                    .orElse(BatcherQuery.Type.PROMPT);
 
             AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
             InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
