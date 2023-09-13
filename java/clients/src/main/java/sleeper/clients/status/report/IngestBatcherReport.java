@@ -102,7 +102,7 @@ public class IngestBatcherReport {
 
     private static void printUsage() {
         System.out.println("" +
-                "Usage: <instance id> <report_type_standard_or_json> <optional_query_type>\n" +
+                "Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
                 "Query types are:\n" +
                 "-a (All files)\n" +
                 "-p (Pending files)");
