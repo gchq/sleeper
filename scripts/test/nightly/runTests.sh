@@ -22,7 +22,7 @@ MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
-if [ "$#" -lt 3 ]; || [ "$#" -gt 4 ]; then
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
   echo "Usage: $0 <vpc> <subnet> <results bucket> <optional-test-type>"
   echo "Default test type is functional, valid test types are: performance, functional"
   exit 1
