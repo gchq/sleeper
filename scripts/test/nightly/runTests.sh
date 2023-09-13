@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 set -e
 unset CDPATH
@@ -24,20 +22,29 @@ MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <vpc> <subnet> <results bucket>"
+if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+  echo "Usage: $0 <vpc> <subnet> <results bucket> <optional-test-type>"
+  echo "Default test type is functional, valid test types are: performance, functional"
   exit 1
 fi
 
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-
+if [ "$4" = "performance" ]; then
+  EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
+else
+  EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
+fi
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
+if [ "$4" = "performance" ]; then
+  OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
+else
+  OUTPUT_DIR="/tmp/sleeper/functionalTests/$START_TIME"
+fi
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
@@ -51,7 +58,7 @@ runMavenSystemTests() {
     mkdir "$OUTPUT_DIR/$TEST_NAME"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
-      -Dsleeper.system.test.cluster.enabled=true \
+      "$EXTRA_MAVEN_PARAMS" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
     echo -n "$EXIT_CODE $SHORT_ID" > "$OUTPUT_DIR/$TEST_NAME.status"
