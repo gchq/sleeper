@@ -105,5 +105,5 @@ See the documentation contained in the docs folder:
 11. [Common problems and their solutions](docs/11-common-problems-and-their-solutions.md)
 12. [Performance test](docs/12-performance-test.md)
 13. [Trino](docs/13-trino.md)
-14. [Deploying to LocalStack](docs/15-roadmap.md)
+14. [Deploying to LocalStack](docs/14-deploy-to-localstack.md)
 15. [Roadmap](docs/15-roadmap.md)
