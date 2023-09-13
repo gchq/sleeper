@@ -45,7 +45,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
+import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
@@ -91,13 +91,22 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         FileInfo rightFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile.parquet", 10000, 0L, 9999L);
 
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, actualFiles, configuration);
+        List<Record> leftFileRecords = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile, configuration);
+        List<Record> rightFileRecords = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile, configuration);
+        List<Record> actualRecords = Stream.of(leftFileRecords, rightFileRecords)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
+        assertThat(leftFileRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
+                        .map(List::<Object>of)
+                        .collect(Collectors.toList()));
+        assertThat(rightFileRecords).extracting(record -> record.getValues(List.of("key0")))
+                .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .map(List::<Object>of)
                         .collect(Collectors.toList()));
 
@@ -152,24 +161,28 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         FileInfo rightFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile2.parquet", 2209, 0L, 9999L);
 
-        List<Record> leftFile1Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(leftFile1), configuration);
-        List<Record> leftFile2Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(leftFile2), configuration);
-        List<Record> rightFile1Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(rightFile1), configuration);
-        List<Record> rightFile2Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(rightFile2), configuration);
+        List<Record> leftFile1Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile1, configuration);
+        List<Record> leftFile2Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile2, configuration);
+        List<Record> rightFile1Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile1, configuration);
+        List<Record> rightFile2Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile2, configuration);
         List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
                 .flatMap(List::stream)
                 .collect(Collectors.toUnmodifiableList());
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, leftFile2, rightFile1, rightFile2);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThatOrderedRecordsInRange(leftFile1Records, LongStream.range(-10000, -1));
-        assertThatOrderedRecordsInRange(leftFile2Records, LongStream.range(-9998L, 0));
-        assertThatOrderedRecordsInRange(rightFile1Records, LongStream.range(1L, 9999));
-        assertThatOrderedRecordsInRange(rightFile2Records, LongStream.range(0, 10000));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile1Records,
+                "key0", LongStream.range(-10000, -1));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile2Records,
+                "key0", LongStream.range(-9998L, 0));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile1Records,
+                "key0", LongStream.range(1L, 9999));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile2Records,
+                "key0", LongStream.range(0, 10000));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -226,12 +239,10 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
         }
     }
 
-    private static void assertThatOrderedRecordsInRange(List<Record> records, LongStream range) {
-        assertThat(range.boxed()
-                .map(List::<Object>of)
-                .collect(Collectors.toList()))
+    private static void assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Record> records, String fieldName, LongStream range) {
+        assertThat(range.boxed())
                 .containsSubsequence(records.stream()
-                        .map(record -> record.getValues(List.of("key0")))
-                        .collect(Collectors.toList()));
+                        .mapToLong(record -> (long) record.get(fieldName))
+                        .boxed().collect(Collectors.toList()));
     }
 }
