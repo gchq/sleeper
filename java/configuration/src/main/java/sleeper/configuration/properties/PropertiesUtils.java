@@ -34,7 +34,6 @@ public class PropertiesUtils {
     private PropertiesUtils() {
     }
 
-
     public static Properties loadProperties(Path file) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(file)) {
             return loadProperties(reader);

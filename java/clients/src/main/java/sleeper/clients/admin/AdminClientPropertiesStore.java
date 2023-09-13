@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {
@@ -59,20 +60,17 @@ public class AdminClientPropertiesStore {
     }
 
     public InstanceProperties loadInstanceProperties(String instanceId) {
-        InstanceProperties instanceProperties = new InstanceProperties();
         try {
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+            return new InstanceProperties(loadPropertiesFromS3GivenInstanceId(s3, instanceId));
         } catch (IOException | AmazonS3Exception e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
-        return instanceProperties;
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            TableProperties properties = new TableProperties(instanceProperties);
-            properties.loadFromS3(s3, tableName);
-            return properties;
+            return new TableProperties(instanceProperties,
+                    TableProperties.loadPropertiesFromS3(s3, instanceProperties, tableName));
         } catch (AmazonS3Exception | IOException e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
