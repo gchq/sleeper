@@ -19,7 +19,6 @@ import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -37,7 +36,6 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,12 +49,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
-import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
+import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 
-class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT {
-    @TempDir
-    public Path temporaryFolder;
-    private final Configuration configuration = new Configuration();
+class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT extends DirectWriteBackedByArrowTestBase {
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
@@ -96,14 +91,24 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         FileInfo rightFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile.parquet", 10000, 0L, 9999L);
 
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, actualFiles, new Configuration());
+        List<Record> leftFileRecords = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile, new Configuration());
+        List<Record> rightFileRecords = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile, new Configuration());
+        List<Record> actualRecords = Stream.of(leftFileRecords, rightFileRecords)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyInAnyOrderElementsOf(LongStream.range(-10000, 10000).boxed()
-                        .map(List::<Object>of)
+        assertThat(actualRecords).extracting(record -> record.get("key0"))
+                .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
+                        .collect(Collectors.toList()));
+        assertThat(leftFileRecords).extracting(record -> record.get("key0"))
+                .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
+                        .collect(Collectors.toList()));
+        assertThat(rightFileRecords).extracting(record -> record.get("key0"))
+                .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
@@ -156,24 +161,28 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         FileInfo rightFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile2.parquet", 3950, 0L, 9999L);
 
-        List<Record> leftFile1Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(leftFile1), configuration);
-        List<Record> leftFile2Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(leftFile2), configuration);
-        List<Record> rightFile1Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(rightFile1), configuration);
-        List<Record> rightFile2Records = readMergedRecordsFromPartitionDataFiles(
-                recordListAndSchema.sleeperSchema, List.of(rightFile2), configuration);
+        List<Record> leftFile1Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile1, configuration);
+        List<Record> leftFile2Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile2, configuration);
+        List<Record> rightFile1Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile1, configuration);
+        List<Record> rightFile2Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile2, configuration);
         List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
                 .flatMap(List::stream)
                 .collect(Collectors.toUnmodifiableList());
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThatOrderedRecordsInRange(leftFile1Records, LongStream.range(-9999L, 0));
-        assertThatOrderedRecordsInRange(leftFile2Records, LongStream.range(-10000L, -2));
-        assertThatOrderedRecordsInRange(rightFile1Records, LongStream.range(1L, 9999));
-        assertThatOrderedRecordsInRange(rightFile2Records, LongStream.range(0, 10000));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile1Records,
+                "key0", LongStream.range(-9999L, 0));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile2Records,
+                "key0", LongStream.range(-10000L, -2));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile1Records,
+                "key0", LongStream.range(1L, 9999));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile2Records,
+                "key0", LongStream.range(0, 10000));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
@@ -229,13 +238,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         return List.of(recordLists);
     }
 
-    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
-        return IngestCoordinatorTestParameters
-                .builder()
-                .temporaryFolder(temporaryFolder)
-                .hadoopConfiguration(configuration);
-    }
-
     private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
                                       IngestCoordinatorTestParameters parameters,
                                       Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) throws Exception {
@@ -250,15 +252,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                                                                          Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) {
         return ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
                 arrowConfig, new ArrowRecordWriterAcceptingRecordList());
-    }
-
-    private static void assertThatOrderedRecordsInRange(List<Record> records, LongStream range) {
-        assertThat(range.boxed()
-                .map(List::<Object>of)
-                .collect(Collectors.toList()))
-                .containsSubsequence(records.stream()
-                        .map(record -> record.getValues(List.of("key0")))
-                        .collect(Collectors.toList()));
     }
 
     static class RecordList {

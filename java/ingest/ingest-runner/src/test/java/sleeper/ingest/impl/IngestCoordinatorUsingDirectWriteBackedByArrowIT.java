@@ -16,9 +16,7 @@
 package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -33,7 +31,6 @@ import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
 
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
@@ -48,11 +45,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
-class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
-    @TempDir
-    public Path temporaryFolder;
-    private final Configuration configuration = new Configuration();
-
+class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
@@ -101,13 +94,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
 
         assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(leftFileRecords).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(leftFileRecords).extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
-                        .map(List::<Object>of)
                         .collect(Collectors.toList()));
-        assertThat(rightFileRecords).extracting(record -> record.getValues(List.of("key0")))
+        assertThat(rightFileRecords).extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
-                        .map(List::<Object>of)
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
@@ -221,13 +212,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .hasNoSuppressedExceptions();
     }
 
-    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
-        return IngestCoordinatorTestParameters
-                .builder()
-                .temporaryFolder(temporaryFolder)
-                .hadoopConfiguration(configuration);
-    }
-
     private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
                                       IngestCoordinatorTestParameters parameters,
                                       Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
@@ -237,12 +221,5 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 ingestCoordinator.write(record);
             }
         }
-    }
-
-    private static void assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Record> records, String fieldName, LongStream range) {
-        assertThat(range.boxed())
-                .containsSubsequence(records.stream()
-                        .mapToLong(record -> (long) record.get(fieldName))
-                        .boxed().collect(Collectors.toList()));
     }
 }
