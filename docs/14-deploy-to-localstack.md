@@ -1,9 +1,8 @@
-Building and deploying Sleeper locally
-======================================
+Deploying to LocalStack in Docker
+=================================
 
-You can also run a LocalStack container locally and deploy an instance of Sleeper to it. This deployment method has
-limited
-functionality, but will allow you to peform a queue-based standard ingest, and run compactions on a single table.
+You can run a LocalStack container locally and deploy an instance of Sleeper to it. This deployment method has limited
+functionality, but will allow you to perform a queue-based standard ingest, and run compactions on a single table.
 
 ## Prerequesites
 
