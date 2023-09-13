@@ -72,13 +72,14 @@ public class IngestBatcherReport {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Wrong number of arguments");
-        }
-        String instanceId = args[0];
+        String instanceId = null;
         IngestBatcherReporter reporter = null;
         BatcherQuery.Type queryType = null;
         try {
+            if (args.length < 2 || args.length > 3) {
+                throw new IllegalArgumentException("Wrong number of arguments");
+            }
+            instanceId = args[0];
             reporter = getReporter(args, 1);
             queryType = optionalArgument(args, 2)
                     .map(QUERY_TYPES::get)
