@@ -75,12 +75,10 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .build();
 
         // When
-        Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig = config -> config
+        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L);
-        TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L));
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -89,9 +87,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+        FileInfo leftFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_left/leftFile.parquet", 10000, -10000L, -1L);
-        FileInfo rightFile = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+        FileInfo rightFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile.parquet", 10000, 0L, 9999L);
 
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(
@@ -135,12 +133,10 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .build();
 
         // When
-        Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig = arrow -> arrow
+        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(4 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L);
-        TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
-        ingestRecords(recordListAndSchema, parameters, ingestType);
+                .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L));
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -149,13 +145,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo leftFile1 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+        FileInfo leftFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_left/leftFile1.parquet", 7908, -10000L, -2L);
-        FileInfo leftFile2 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+        FileInfo leftFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_left/leftFile2.parquet", 2092, -9998L, -1L);
-        FileInfo rightFile1 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+        FileInfo rightFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile1.parquet", 7791, 1L, 9998L);
-        FileInfo rightFile2 = fileInfoFactory.leafFile(ingestType.getFilePrefix(parameters) +
+        FileInfo rightFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
                 "/partition_right/rightFile2.parquet", 2209, 0L, 9999L);
 
         List<Record> leftFile1Records = readMergedRecordsFromPartitionDataFiles(
@@ -208,12 +204,10 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
                 .build();
 
         // When/Then
-        Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig = arrow -> arrow
+        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
                 .workingBufferAllocatorBytes(32 * 1024L)
                 .batchBufferAllocatorBytes(32 * 1024L)
-                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L);
-        TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
-        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, ingestType))
+                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L)))
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }
@@ -226,10 +220,10 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT {
     }
 
     private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                      IngestCoordinatorTestParameters ingestCoordinatorTestParameters,
-                                      TestIngestType ingestType) throws Exception {
-        try (IngestCoordinator<Record> ingestCoordinator =
-                     ingestType.createIngestCoordinator(ingestCoordinatorTestParameters)) {
+                                      IngestCoordinatorTestParameters parameters,
+                                      Consumer<ArrowRecordBatchFactory.Builder<Record>> arrowConfig) throws Exception {
+        TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile(arrowConfig);
+        try (IngestCoordinator<Record> ingestCoordinator = ingestType.createIngestCoordinator(parameters)) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }
