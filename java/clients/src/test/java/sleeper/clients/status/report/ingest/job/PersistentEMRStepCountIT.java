@@ -29,8 +29,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClient;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listActiveClustersRequest;
-import static sleeper.clients.testutil.WiremockEMRTestHelper.listStepsRequestWithClusterId;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveEmrClustersRequest;
+import static sleeper.clients.testutil.WiremockEmrTestHelper.listStepsRequestWithClusterId;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
@@ -42,7 +42,7 @@ class PersistentEMRStepCountIT {
     void shouldFindNoStepsForCluster(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
-        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+        stubFor(listActiveEmrClustersRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"Clusters\": [{" +
                         "\"Name\":\"test-emr-cluster\"," +
                         "\"Id\":\"test-cluster-id\"" +
@@ -59,7 +59,7 @@ class PersistentEMRStepCountIT {
     void shouldFindNoStepsWhenClusterHasTerminated(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
-        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+        stubFor(listActiveEmrClustersRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"Clusters\": []}")));
 
         // When / Then
@@ -81,7 +81,7 @@ class PersistentEMRStepCountIT {
     void shouldFindOnePendingStepForCluster(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
-        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+        stubFor(listActiveEmrClustersRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"Clusters\": [{" +
                         "\"Name\":\"test-emr-cluster\"," +
                         "\"Id\":\"test-cluster-id\"" +
@@ -100,7 +100,7 @@ class PersistentEMRStepCountIT {
     void shouldFindOnePendingStepForClusterWhenOtherClustersArePresent(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
-        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+        stubFor(listActiveEmrClustersRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"Clusters\": [{" +
                         "\"Name\":\"test-emr-cluster\"," +
                         "\"Id\":\"test-cluster-id\"" +
@@ -126,7 +126,7 @@ class PersistentEMRStepCountIT {
     void shouldFindStepsWithDifferentStatesForCluster(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
-        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+        stubFor(listActiveEmrClustersRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"Clusters\": [{" +
                         "\"Name\":\"test-emr-cluster\"," +
                         "\"Id\":\"test-cluster-id\"" +
@@ -151,7 +151,7 @@ class PersistentEMRStepCountIT {
     void shouldCountMultipleStepsWithSameStateForCluster(WireMockRuntimeInfo runtimeInfo) {
         // Given
         properties.set(BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME, "test-emr-cluster");
-        stubFor(listActiveClustersRequest().willReturn(aResponse().withStatus(200)
+        stubFor(listActiveEmrClustersRequest().willReturn(aResponse().withStatus(200)
                 .withBody("{\"Clusters\": [{" +
                         "\"Name\":\"test-emr-cluster\"," +
                         "\"Id\":\"test-cluster-id\"" +

@@ -23,7 +23,6 @@ import sleeper.clients.status.report.CompactionTaskStatusReport;
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -54,7 +53,7 @@ public class CompactionReportsDriver {
                     .run();
             new CompactionJobStatusReport(jobStore(),
                     new StandardCompactionJobStatusReporter(out),
-                    JobQuery.Type.RANGE, new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX))
+                    new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX))
                     .run();
         };
     }

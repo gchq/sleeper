@@ -44,11 +44,13 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -341,6 +343,31 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
                         .extracting(table -> table.getBoolean(ENCRYPTED))
                         .containsExactly(true);
             }
+        }
+    }
+
+    @DisplayName("Load invalid properties")
+    @Nested
+    class LoadInvalidProperties {
+
+        @Test
+        void shouldLoadInvalidInstanceProperties() {
+            // Given
+            updateInstanceProperty(INSTANCE_ID, MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When / Then
+            assertThat(store().loadInstanceProperties(INSTANCE_ID).get(MAXIMUM_CONNECTIONS_TO_S3))
+                    .isEqualTo("abc");
+        }
+
+        @Test
+        void shouldLoadInvalidTableProperties() throws IOException {
+            // Given
+            createTableInS3("test-table", table -> table.set(PARTITION_SPLIT_THRESHOLD, "abc"));
+
+            // When / Then
+            assertThat(store().loadTableProperties(instanceProperties, "test-table").get(PARTITION_SPLIT_THRESHOLD))
+                    .isEqualTo("abc");
         }
     }
 
