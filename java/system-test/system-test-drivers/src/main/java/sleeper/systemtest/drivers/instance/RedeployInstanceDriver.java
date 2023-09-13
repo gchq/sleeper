@@ -85,6 +85,7 @@ public class RedeployInstanceDriver {
                     .deployCommand(CdkCommand.deployExistingPaused())
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .build().update();
+            instance.reloadProperties();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
