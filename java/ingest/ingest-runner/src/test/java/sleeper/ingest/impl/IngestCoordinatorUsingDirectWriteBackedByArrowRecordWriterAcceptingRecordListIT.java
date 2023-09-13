@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -28,7 +29,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
@@ -64,10 +65,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L);
-        StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder).buildStateStore();
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -89,7 +91,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(partitionsBuilder.buildTree())
+                .partitionTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
@@ -121,10 +123,11 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L);
-        StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder).buildStateStore();
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -146,7 +149,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
         FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(partitionsBuilder.buildTree())
+                .partitionTree(tree)
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
@@ -191,10 +194,12 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        PartitionsBuilder partitionsBuilder = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 0L);
-        StateStore stateStore = StateStoreTestBuilder.from(partitionsBuilder).buildStateStore();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
+                new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 0L)
+                        .buildList()
+        );
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
