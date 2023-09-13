@@ -72,7 +72,7 @@ public class IngestBatcherReport {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2 || args.length > 5) {
+        if (args.length < 2 || args.length > 3) {
             throw new IllegalArgumentException("Wrong number of arguments");
         }
         String instanceId = args[0];
