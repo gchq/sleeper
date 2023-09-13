@@ -89,6 +89,9 @@ public class IngestBatcherReport {
             IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
                     new TablePropertiesProvider(amazonS3, instanceProperties));
             new IngestBatcherReport(statusStore, reporter, queryType).run();
+
+            amazonS3.shutdown();
+            dynamoDBClient.shutdown();
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
             printUsage();
