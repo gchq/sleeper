@@ -63,7 +63,7 @@ public enum SystemTestInstance {
     COMPACTION_PERFORMANCE("compaction", SystemTestInstance::buildCompactionPerformanceConfiguration),
     BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
 
-    private static final String MAIN_EMR_INSTANCE_TYPES = "m4.large,m6a.xlarge,m6i.xlarge,m5a.xlarge,m5.xlarge";
+    private static final String MAIN_EMR_INSTANCE_TYPES = "m6a.xlarge,m6i.xlarge,m5a.xlarge,m5.xlarge";
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
