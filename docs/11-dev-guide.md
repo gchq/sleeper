@@ -102,8 +102,8 @@ mvn clean compile checkstyle:check spotbugs:check
 ### Testing
 
 The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
-We also have a setup for manual testing against a deployed instance of Sleeper, documented
-under [system tests](13-system-tests.md#manual-testing).
+We also have a setup for manual testing against a deployed instance of Sleeper, documented in
+the [system tests guide](13-system-tests.md#manual-testing).
 
 A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
 If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
@@ -112,7 +112,7 @@ should be a particular behaviour or scenario, rather than eg. a specific method.
 A system test is a test that works with a deployed instance of Sleeper. These can be found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
 instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
-under [system tests](13-system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
+in the [system tests guide](13-system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
 cases to this test suite, as a complement to more detailed unit testing.
 
 An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
