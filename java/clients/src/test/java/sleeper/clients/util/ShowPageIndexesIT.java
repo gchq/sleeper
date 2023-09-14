@@ -17,6 +17,7 @@
 package sleeper.clients.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -24,9 +25,12 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.IntType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
@@ -35,6 +39,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,18 +50,97 @@ public class ShowPageIndexesIT {
     private Path tempDir;
 
     @Test
-    void shouldShowPageIndexesForFileWithOneRowKeyFieldAndTenRecords() throws Exception {
-        Schema schema = Schema.builder()
+    void shouldShowPageIndexesForFileWithOneRowKeyField() throws Exception {
+        // Given
+        TableProperties tableProperties = createTableProperties(Schema.builder()
                 .rowKeyFields(new Field("test-key", new StringType()))
-                .build();
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.setSchema(schema);
-
+                .build());
         Path file = tempDir.resolve("test.parquet");
-        try (ParquetWriter<Record> writer = createRecordWriter(file, schema)) {
-            LongStream.rangeClosed(1, 10).boxed().forEach(i -> {
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) ->
+                record.put("test-key", String.format("row-%03d", i)));
+
+        // When/Then
+        assertThat(runShowPageIndexes(file))
+                .isEqualTo(example("util/showPageIndexes/oneRowKeyField.txt"));
+    }
+
+    @Test
+    void shouldShowPageIndexesForFileWithTwoRowKeyFields() throws Exception {
+        // Given
+        TableProperties tableProperties = createTableProperties(Schema.builder()
+                .rowKeyFields(
+                        new Field("test-key1", new StringType()),
+                        new Field("test-key2", new StringType()))
+                .build());
+        Path file = tempDir.resolve("test.parquet");
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) -> {
+            record.put("test-key1", String.format("row1-%03d", i));
+            record.put("test-key2", String.format("row2-%03d", i));
+        });
+
+        // When/Then
+        assertThat(runShowPageIndexes(file))
+                .isEqualTo(example("util/showPageIndexes/multipleRowKeyFields.txt"));
+    }
+
+    @Test
+    void shouldShowPageIndexesForFileWithRowKeySortKeyAndValueFields() throws Exception {
+        // Given
+        TableProperties tableProperties = createTableProperties(Schema.builder()
+                .rowKeyFields(new Field("test-key", new StringType()))
+                .sortKeyFields(new Field("test-sort", new IntType()))
+                .valueFields(new Field("test-value", new LongType()))
+                .build());
+        Path file = tempDir.resolve("test.parquet");
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 100), (i, record) -> {
+            record.put("test-key", String.format("row-%03d", i));
+            record.put("test-sort", i.intValue());
+            record.put("test-value", i * 10L);
+        });
+
+        // When/Then
+        assertThat(runShowPageIndexes(file))
+                .isEqualTo(example("util/showPageIndexes/rowKeySortKeyAndValueFields.txt"));
+    }
+
+    @Test
+    void shouldShowPageIndexesForFileWithMultiplePages() throws Exception {
+        // Given
+        TableProperties tableProperties = createTableProperties(Schema.builder()
+                .rowKeyFields(new Field("test-key", new StringType()))
+                .build());
+        tableProperties.set(TableProperty.PAGE_SIZE, "100");
+        Path file = tempDir.resolve("test.parquet");
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) ->
+                record.put("test-key", String.format("row-%04d", i)));
+
+        // When/Then
+        assertThat(runShowPageIndexes(file))
+                .isEqualTo(example("util/showPageIndexes/multiplePages.txt"));
+    }
+
+    @Test
+    void shouldShowPageIndexesForFileWithMultipleRowGroups() throws Exception {
+        // Given
+        TableProperties tableProperties = createTableProperties(Schema.builder()
+                .rowKeyFields(new Field("test-key", new StringType()))
+                .build());
+        tableProperties.set(TableProperty.ROW_GROUP_SIZE, "1");
+        Path file = tempDir.resolve("test.parquet");
+        writeRecords(file, tableProperties, LongStream.rangeClosed(1, 1000), (i, record) ->
+                record.put("test-key", String.format("row-%04d", i)));
+
+        // When/Then
+        assertThat(runShowPageIndexes(file))
+                .isEqualTo(example("util/showPageIndexes/multipleRowGroups.txt"));
+    }
+
+    private static void writeRecords(Path file, TableProperties tableProperties,
+                                     LongStream range, BiConsumer<Long, Record> recordCreator) throws IOException {
+        try (ParquetWriter<Record> writer = createRecordWriter(file, tableProperties)) {
+            range.boxed().forEach(i -> {
                 Record record = new Record();
-                record.put("test-key", String.format("row-%02d", i));
+                recordCreator.accept(i, record);
                 try {
                     writer.write(record);
                 } catch (IOException e) {
@@ -64,13 +148,16 @@ public class ShowPageIndexesIT {
                 }
             });
         }
-
-        assertThat(runShowPageIndexes(file.toString()))
-                .isEqualTo(example("util/showPageIndexes/oneRowKeyField.txt"));
     }
 
-    private static ParquetWriter<Record> createRecordWriter(Path file, Schema schema) throws IOException {
-        return createParquetRecordWriter(new org.apache.hadoop.fs.Path(file.toString()), schema);
+    private static TableProperties createTableProperties(Schema schema) {
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.setSchema(schema);
+        return tableProperties;
+    }
+
+    private static ParquetWriter<Record> createRecordWriter(Path file, TableProperties tableProperties) throws IOException {
+        return createParquetRecordWriter(new org.apache.hadoop.fs.Path(file.toString()), tableProperties, new Configuration());
     }
 
     private static String example(String path) throws IOException {
@@ -78,9 +165,9 @@ public class ShowPageIndexesIT {
         return IOUtils.toString(Objects.requireNonNull(url), Charset.defaultCharset());
     }
 
-    private String runShowPageIndexes(String file) throws Exception {
+    private String runShowPageIndexes(Path file) throws Exception {
         ToStringPrintStream output = new ToStringPrintStream();
-        new ShowPageIndexes(output.getPrintStream()).run(file);
+        new ShowPageIndexes(output.getPrintStream()).run(file.toString());
         return output.toString();
     }
 }
