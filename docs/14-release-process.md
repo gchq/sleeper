@@ -14,21 +14,43 @@ VERSION=0.12.0
 ./scripts/dev/updateVersionNumber.sh ${VERSION}
 ```
 
-4. Push the branch to github and open a pull request so that the tests run. If there are any failures, fix them.
+4. Push the branch to GitHub and open a pull request so that the tests run. If there are any failures, fix them.
 
-5. Get the performance figures from the nightly system tests:
+5. Get the performance figures from the nightly system tests.
 
-If you have the nightly test setup, you can get the performance figures from the results bucket. They can be found
-in the reports for the compactionPerformance test here:
-
-`<results-bucket>/<date>/CompactionPerformanceIT.shouldMeetCompactionPerformanceStandards.report.log`
-
-If you have not got the nightly tests setup, you can run them manually using the following command inside an EC2
-instance.
-Note that the entire test suite takes a long time, so its best to redirect the output of the command to a log file.
+There should be a cron job configured to run these nightly. If you want to run it manually you can do it like this with
+the Sleeper CLI, if you've checked out Sleeper in a builder as documented in
+the [developer guide](11-dev-guide.md#install-prerequisite-software):
 
 ```bash
-sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" "<output-bucket-name>"
+sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperTests.log
+```
+
+This will take 4 hours or so. You can check output in `/tmp/sleeperTests.log`, but once the suite starts that file will
+only update once the suite finishes. If you connect to the Docker container that's running the tests you can find the
+output of the test suite:
+
+```bash
+docker images # Find the image ID of the sleeper-builder image with the 'current' tag
+docker ps # Find the container ID running the updateAndRunTests command with that image
+docker exec -it <container ID> bash
+cd /tmp/sleeper/performanceTests
+ls # Find the directory named by the start time of the test suite
+less -R <directory>/performance.log # Once this opens, use shift+F to follow the output of the test
+```
+
+Once the tests have finished, you can get the performance figures from the results S3 bucket. First, check the tests
+passed in the summary with this S3 key:
+
+```
+<results-bucket>/summary.txt
+```
+
+The performance reports can be found here:
+
+```
+<results-bucket>/<date>/CompactionPerformanceIT.shouldMeetCompactionPerformanceStandards.report.log
+<results-bucket>/<date>/IngestPerformanceIT.shouldMeetIngestPerformanceStandardsAcrossManyPartitions.report.log
 ```
 
 6. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
