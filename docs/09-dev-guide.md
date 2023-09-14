@@ -99,9 +99,11 @@ cd java
 mvn clean compile checkstyle:check spotbugs:check
 ```
 
-### Tests
+### Testing
 
 The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
+We also have a setup for manual testing against a deployed instance of Sleeper, documented
+in [12-system-tests.md](12-system-tests.md#manual-testing).
 
 A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
 If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
@@ -109,7 +111,9 @@ should be a particular behaviour or scenario, rather than eg. a specific method.
 
 A system test is a test that works with a deployed instance of Sleeper. These can be found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
-instance of Sleeper. They need extra configuration to run, which will be documented separately.
+instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
+in [12-system-tests.md](12-system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
+cases to this test suite, as a complement to more detailed unit testing.
 
 An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
 external dependencies with TestContainers, tests network calls with WireMock, or uses the local file system.
@@ -157,61 +161,6 @@ instance ID when deploying a new instance to avoid naming collisions with existi
 
 This is used during the release process to update the version number across the project (see below).
 
-## System Tests
-
-Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of
-Sleeper. This is useful to ensure that performance degradations have not been introduced when we release new versions.
-More information about the performance tests can be found in [12-performance-test.md](12-performance-test.md).
-
-They can also be used to test the functionality of different components, and provide a way to create an instance quickly
-for testing purposes, which generates random test data for you to work with.
-
-The easiest test to run if you are not sure about what stacks you need deployed is the deployAll system test. This test
-deploys most of the stacks. To run the deployAll system test, run the following command:
-
-```bash
-./scripts/test/deployAll/buildDeployTest.sh <unique-identifier> <vpc-id> <subnet-id>
-```
-
-This will generate everything for you including:
-
-* An S3 Bucket containing all the necessary jars
-* ECR repositories for ingest, compaction and system test images
-* The Sleeper properties file
-* Random test data in the `system-test` table.
-
-Once generated, it deploys Sleeper using CDK.
-
-Each system test has an instance properties file next to the deploy script called `system-test-instance.properties`.
-When running the deploy script, the `scripts/test/<test-name>` directory is scanned for `table.properties`,
-`tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test.
-If they are not present, then the template files in `scripts/templates` are used. Note that properties in these
-files with the value `changeme` will be overwritten by the script.
-
-You can also change any system test specific properties in the
-file `scripts/test/<test-name>/system-test-instance.properties`.
-This includes the optional stacks property - you may want to customise this to experiment with different stacks.
-
-All resources are tagged with the tags defined in the file `deploy/templates/tags.template`, or a `tags.properties` file
-placed next to the `system-test-instance.properties`.
-
-You can get a report of your instance by running:
-
-```bash
-./scripts/test/systemTestStatusReport.sh
-```
-
-Finally, when you are ready to tear down the instance, run:
-
-```bash
-./scripts/test/tearDown.sh
-```
-
-Note you will still need the files in the `/generated` folder that are created during deployment for this tear down
-script to work correctly.
-
-This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
-
 ## Standalone deployment
 
 See the [deployment guide](02-deployment-guide.md) for notes on how to deploy Sleeper.
@@ -251,7 +200,8 @@ Run this occasionally until it reports that there are 440 million records in the
 
 6. Publish the performance statistics.
 
-Record the ingest and compaction rate in the [performance figures](12-performance-test.md) documentation.
+Record the ingest and compaction rate in the [performance figures](12-system-tests.md#performance-benchmarks)
+documentation.
 
 ```bash
 # Ingest performance figures can be found by running the following reports
