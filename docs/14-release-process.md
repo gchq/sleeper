@@ -65,24 +65,5 @@ should be quicker.
 
 Choose the same options as above, and results should be returned.
 
-10. Test the Python API:
-
-```bash
-cd python
-pip install .
-```
-
-Then
-
-```python
-from sleeper.sleeper import SleeperClient
-
-s = SleeperClient("instance-id")
-region = {"key": ["aaaaaa", True, "aaaazz", False]}
-s.range_key_query("system-test", [region])
-```
-
-Around 900 results should be returned.
-
-11. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
+10. Once the above tests have been done, merge the pull request into main. Then checkout the main branch,
     set the tag to `v${VERSION}` and push the tag using `git push --tags`.
