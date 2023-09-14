@@ -78,8 +78,9 @@ the suite skips the performance tests. You can run the default test suite, with 
 ```
 
 The short ID will be used to generate the instance IDs of Sleeper instances deployed for the tests. The feature tests
-will run on one Sleeper instance, but the performance tests will deploy more. A separate CDK stack will also be deployed
-with `SystemTestStandaloneApp`, for resources shared between tests. This will use the short ID as its stack name.
+will run on one Sleeper instance, but the performance tests will deploy more. A separate system test CDK stack will also
+be deployed with `SystemTestStandaloneApp`, for resources shared between tests. The system test stack will use the short
+ID as its stack name.
 
 After the tests, the instances will remain deployed. If you run again with the same short ID, the same instances will
 be used without redeploying them. You can tear down all resources associated with a short ID like this:
@@ -102,16 +103,16 @@ You can run specific performance tests like this:
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
 ```
 
-Performance tests use an ECS cluster for generating data, and will deploy that with `SystemTestStandaloneApp`. For
-non-performance tests, that stack will still be used, but the data generation cluster will be disabled. When an instance
-of that has been deployed for a short ID, the test suite will reuse it without checking whether it has the data
-generation cluster enabled.
+Performance tests use an ECS cluster for generating data, and will deploy that in the system test CDK stack
+with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For non-performance tests,
+the system test stack is still deployed, but the data generation cluster is not. When the system test stack is already
+deployed with the same short ID, the test suite will reuse it without checking whether it has the data generation
+cluster enabled.
 
-The test suite decides whether to run performance tests or not based on whether a data generation cluster has been
-deployed in the shared resources stack for that short ID. If you reuse a short ID for `performanceTest.sh` that was
-previously deployed for a non-performance test, without the data generation cluster, performance tests will not be run.
-If you use a short ID for `buildDeployTest.sh` or `deployTest.sh` which was previously deployed for a performance test,
-performance tests will be run.
+The test suite decides whether to run performance tests or not by whether a data generation cluster has been deployed in
+the system test stack. If you reuse a short ID for `performanceTest.sh` which was deployed for a non-performance test,
+then it won't have the data generation cluster, and performance tests will not be run. If you use a short ID
+for `buildDeployTest.sh` or `deployTest.sh` which was deployed for a performance test, performance tests will be run.
 
 You can run all tests in one execution, including performance tests, like this:
 
