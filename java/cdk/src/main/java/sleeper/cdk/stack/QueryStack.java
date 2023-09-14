@@ -152,7 +152,9 @@ public class QueryStack extends NestedStack {
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_QUEUE_URL, queriesQueue.getQueueUrl());
+        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_QUEUE_ARN, queriesQueue.getQueueArn());
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_DLQ_URL, queueForDLs.getQueueUrl());
+        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_DLQ_ARN, queueForDLs.getQueueArn());
 
         // Queue for results
         String queryResultsQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryResultsQ");
@@ -162,6 +164,7 @@ public class QueryStack extends NestedStack {
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, queryResultsQueue.getQueueUrl());
+        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_ARN, queryResultsQueue.getQueueArn());
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 

@@ -43,6 +43,7 @@ import java.util.Properties;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
@@ -137,8 +138,16 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     }
 
     public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
+        loadFromString(loadStringFromS3(s3Client, instanceProperties, tableName));
+    }
+
+    public static Properties loadPropertiesFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) throws IOException {
+        return loadProperties(loadStringFromS3(s3Client, instanceProperties, tableName));
+    }
+
+    private static String loadStringFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
         LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
-        loadFromString(s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName));
+        return s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
     }
 
     @Override

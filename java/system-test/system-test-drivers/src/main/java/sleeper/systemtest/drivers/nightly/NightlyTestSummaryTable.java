@@ -19,6 +19,8 @@ package sleeper.systemtest.drivers.nightly;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.clients.util.GsonConfig;
 import sleeper.clients.util.table.TableField;
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
 
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
 public class NightlyTestSummaryTable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NightlyTestSummaryTable.class);
 
     private static final Gson GSON = GsonConfig.standardBuilder().create();
 
@@ -54,16 +57,22 @@ public class NightlyTestSummaryTable {
     }
 
     public static NightlyTestSummaryTable fromS3(AmazonS3 s3Client, String bucketName) {
+        LOGGER.info("Loading existing test summary from S3");
         if (s3Client.doesObjectExist(bucketName, "summary.json")) {
-            return fromJson(s3Client.getObjectAsString(bucketName, "summary.json"));
+            NightlyTestSummaryTable summary = fromJson(s3Client.getObjectAsString(bucketName, "summary.json"));
+            LOGGER.info("Found test summary with {} executions", summary.executions.size());
+            return summary;
         } else {
+            LOGGER.info("Found no test summary");
             return empty();
         }
     }
 
     public void saveToS3(AmazonS3 s3Client, String bucketName) {
+        LOGGER.info("Saving test summary with {} executions to S3 bucket: {}", executions.size(), bucketName);
         s3Client.putObject(bucketName, "summary.json", toJson());
         s3Client.putObject(bucketName, "summary.txt", toTableString());
+        LOGGER.info("Saved test summary to S3");
     }
 
     public NightlyTestSummaryTable add(

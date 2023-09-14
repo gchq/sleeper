@@ -38,6 +38,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static sleeper.clients.util.Command.command;
+import static sleeper.clients.util.CommandPipeline.pipeline;
+
 public class ClientUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
 
@@ -81,6 +84,20 @@ public class ClientUtils {
         }
     }
 
+    public static String formatBytes(long fileSize) {
+        if (fileSize < K_COUNT) {
+            return fileSize + "B";
+        } else if (fileSize < M_COUNT) {
+            return String.format("%.1fKB", fileSize / (double) K_COUNT);
+        } else if (fileSize < G_COUNT) {
+            return String.format("%.1fMB", fileSize / (double) M_COUNT);
+        } else if (fileSize < T_COUNT) {
+            return String.format("%.1fGB", (fileSize / (double) G_COUNT));
+        } else {
+            return countWithCommas(Math.round((double) fileSize / T_COUNT)) + "TB";
+        }
+    }
+
     public static String countWithCommas(long count) {
         return splitNonDecimalIntoParts("" + count);
     }
@@ -119,15 +136,25 @@ public class ClientUtils {
     }
 
     public static int runCommandLogOutput(String... commands) throws IOException, InterruptedException {
-        LOGGER.info("Running command: {}", (Object) commands);
-        Process process = new ProcessBuilder(commands).start();
-        CompletableFuture<Void> logOutput = CompletableFuture.allOf(
+        return runCommandLogOutput(pipeline(command(commands))).getLastExitCode();
+    }
+
+    public static CommandPipelineResult runCommandLogOutput(CommandPipeline pipeline) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", pipeline);
+        List<Process> processes = pipeline.startProcesses();
+        CompletableFuture<Void> logOutput = CompletableFuture.allOf(processes.stream()
+                .map(ClientUtils::logOutput)
+                .toArray(CompletableFuture[]::new));
+        CommandPipelineResult result = waitFor(processes);
+        logOutput.join();
+        LOGGER.info("Exit code: {}", result);
+        return result;
+    }
+
+    private static CompletableFuture<Void> logOutput(Process process) {
+        return CompletableFuture.allOf(
                 CompletableFuture.runAsync(() -> logTo(process.getInputStream(), LOGGER::info)),
                 CompletableFuture.runAsync(() -> logTo(process.getErrorStream(), LOGGER::error)));
-        int exitCode = process.waitFor();
-        logOutput.join();
-        LOGGER.info("Exit code: {}", exitCode);
-        return exitCode;
     }
 
     private static void logTo(InputStream stream, Consumer<String> logLine) {
@@ -143,8 +170,24 @@ public class ClientUtils {
         }
     }
 
-    public static int runCommandInheritIO(String... commands) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(commands).inheritIO().start();
-        return process.waitFor();
+    public static int runCommandInheritIO(String... command) throws IOException, InterruptedException {
+        return runCommandInheritIO(pipeline(command(command))).getLastExitCode();
+    }
+
+    public static CommandPipelineResult runCommandInheritIO(CommandPipeline pipeline) throws IOException, InterruptedException {
+        LOGGER.info("Running command: {}", pipeline);
+        List<Process> processes = pipeline.startProcessesInheritIO();
+        CommandPipelineResult result = waitFor(processes);
+        LOGGER.info("Exit code: {}", result);
+        return result;
+    }
+
+    private static CommandPipelineResult waitFor(List<Process> processes) throws InterruptedException {
+        int size = processes.size();
+        int[] exitCodes = new int[size];
+        for (int i = 0; i < size; i++) {
+            exitCodes[i] = processes.get(i).waitFor();
+        }
+        return new CommandPipelineResult(exitCodes);
     }
 }

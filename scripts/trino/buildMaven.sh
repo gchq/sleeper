@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)

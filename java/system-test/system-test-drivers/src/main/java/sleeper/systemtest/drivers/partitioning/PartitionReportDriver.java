@@ -30,7 +30,7 @@ public class PartitionReportDriver {
         this.instance = instance;
     }
 
-    public SystemTestReport partitionStatusReport() {
+    public SystemTestReport statusReport() {
         return (out, startTime) -> {
             try {
                 new PartitionsStatusReporter(out)

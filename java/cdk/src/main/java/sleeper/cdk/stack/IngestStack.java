@@ -83,7 +83,9 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TA
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_CLUSTER;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
@@ -150,12 +152,22 @@ public class IngestStack extends NestedStack {
                 .collect(Collectors.toList());
     }
 
+    // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
+    //          the IAM policy. This means the resulting ID must be unique within your AWS account. This is a bug in
+    //          the CDK.
     public static List<IRole> addIngestSourceRoleReferences(Construct scope, String id, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
         return instanceProperties.getList(INGEST_SOURCE_ROLE).stream()
                 .filter(not(String::isEmpty))
-                .map(roleName -> Role.fromRoleName(scope, id + index.getAndIncrement(), roleName))
+                .map(name -> Role.fromRoleName(scope, ingestSourceRoleReferenceId(id, instanceProperties, index), name))
                 .collect(Collectors.toUnmodifiableList());
+    }
+
+    private static String ingestSourceRoleReferenceId(
+            String id, InstanceProperties instanceProperties, AtomicInteger index) {
+        return Utils.truncateTo64Characters(String.join("-",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT),
+                String.valueOf(index.getAndIncrement()), id));
     }
 
     private Queue sqsQueueForIngestJobs(Topic topic) {
@@ -178,7 +190,9 @@ public class IngestStack extends NestedStack {
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, ingestJobQueue.getQueueUrl());
+        instanceProperties.set(INGEST_JOB_QUEUE_ARN, ingestJobQueue.getQueueArn());
         instanceProperties.set(INGEST_JOB_DLQ_URL, ingestJobDeadLetterQueue.getQueue().getQueueUrl());
+        instanceProperties.set(INGEST_JOB_DLQ_ARN, ingestJobDeadLetterQueue.getQueue().getQueueArn());
         addIngestSourceRoleReferences(this, "IngestSourceRole", instanceProperties)
                 .forEach(ingestJobQueue::grantSendMessages);
 

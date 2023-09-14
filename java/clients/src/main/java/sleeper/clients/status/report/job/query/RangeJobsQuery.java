@@ -57,6 +57,11 @@ public class RangeJobsQuery implements JobQuery {
         return statusStore.getJobsInTimePeriod(tableName, start, end);
     }
 
+    @Override
+    public Type getType() {
+        return Type.RANGE;
+    }
+
     public static JobQuery fromParameters(String tableName, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();

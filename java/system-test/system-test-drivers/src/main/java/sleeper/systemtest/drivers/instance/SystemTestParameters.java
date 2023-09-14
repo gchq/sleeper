@@ -36,6 +36,7 @@ public class SystemTestParameters {
     private final String subnetIds;
     private final Path scriptsDirectory;
     private final Path outputDirectory;
+    private final Path pythonDirectory;
     private final boolean systemTestClusterEnabled;
 
     private SystemTestParameters(Builder builder) {
@@ -46,6 +47,7 @@ public class SystemTestParameters {
         subnetIds = builder.subnetIds;
         scriptsDirectory = builder.scriptsDirectory;
         outputDirectory = builder.outputDirectory;
+        pythonDirectory = builder.pythonDirectory;
         systemTestClusterEnabled = builder.systemTestClusterEnabled;
     }
 
@@ -58,6 +60,7 @@ public class SystemTestParameters {
                 .vpcId(System.getProperty("sleeper.system.test.vpc.id"))
                 .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
                 .scriptsDirectory(findScriptsDir())
+                .pythonDirectory(findPythonDir())
                 .outputDirectory(Optional.ofNullable(System.getProperty("sleeper.system.test.output.dir"))
                         .filter(not(String::isEmpty))
                         .map(Path::of)
@@ -68,7 +71,7 @@ public class SystemTestParameters {
                 .build();
     }
 
-    public String getSystemTestDeploymentId() {
+    public String getSystemTestShortId() {
         return shortTestId;
     }
 
@@ -132,6 +135,10 @@ public class SystemTestParameters {
         return outputDirectory;
     }
 
+    public Path getPythonDirectory() {
+        return pythonDirectory;
+    }
+
     public boolean isSystemTestClusterEnabled() {
         return systemTestClusterEnabled;
     }
@@ -156,6 +163,10 @@ public class SystemTestParameters {
         }
     }
 
+    private static Path findPythonDir() {
+        return getParentOrFail(findJavaDir()).resolve("python");
+    }
+
     private static Path getParentOrFail(Path path) {
         Path parent = path.getParent();
         if (parent == null) {
@@ -173,6 +184,7 @@ public class SystemTestParameters {
         private String subnetIds;
         private Path scriptsDirectory;
         private Path outputDirectory;
+        private Path pythonDirectory;
         private boolean systemTestClusterEnabled;
 
         private Builder() {
@@ -210,6 +222,11 @@ public class SystemTestParameters {
 
         public Builder outputDirectory(Path outputDirectory) {
             this.outputDirectory = outputDirectory;
+            return this;
+        }
+
+        public Builder pythonDirectory(Path pythonDirectory) {
+            this.pythonDirectory = pythonDirectory;
             return this;
         }
 

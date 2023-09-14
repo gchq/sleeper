@@ -1,0 +1,11 @@
+
+Ingest Batcher Status Report
+----------------------------
+Total pending files: 1
+Total batched files: 2
+---------------------------------------------------------------------------------------
+| STATE   | FILENAME      | FILESIZE | TABLE_NAME | RECEIVED_TIME        | JOB_ID     |
+| PENDING | file1.parquet | 123B     | test-table | 2023-09-12T13:28:00Z |            |
+| BATCHED | file2.parquet | 456B     | test-table | 2023-09-12T13:25:00Z | test-job-1 |
+| BATCHED | file3.parquet | 789B     | test-table | 2023-09-12T13:25:00Z | test-job-1 |
+---------------------------------------------------------------------------------------

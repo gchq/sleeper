@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -50,6 +51,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     public InstanceProperties(Properties properties) {
         super(properties);
+        tags = csvTagsToMap(get(TAGS));
     }
 
     @Override
@@ -101,6 +103,15 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
 
     public void loadFromS3(AmazonS3 s3Client, String bucket) throws IOException {
         super.loadFromS3(s3Client, bucket, S3_INSTANCE_PROPERTIES_FILE);
+    }
+
+    public static Properties loadPropertiesFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) throws IOException {
+        return loadProperties(loadStringFromS3GivenInstanceId(s3Client, instanceId));
+    }
+
+    private static String loadStringFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
+        String configBucket = getConfigBucketFromInstanceId(instanceId);
+        return s3Client.getObjectAsString(configBucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 
     public void saveToS3(AmazonS3 s3Client) throws IOException {

@@ -18,10 +18,11 @@ package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.job.IngestJob;
@@ -31,44 +32,54 @@ import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class IngestByQueueDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestByQueueDriver.class);
 
-    private final InstanceProperties properties;
-    private final IngestTaskStatusStore taskStatusStore;
+    private final SleeperInstanceContext instance;
+    private final AmazonDynamoDB dynamoDBClient;
     private final LambdaClient lambdaClient;
     private final AmazonSQS sqsClient;
-    private final PollWithRetries pollUntilTasksStarted = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3));
 
-    public IngestByQueueDriver(SleeperInstanceContext instance,
-                               AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
-        this(instance.getInstanceProperties(),
-                IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties()),
-                lambdaClient, sqsClient);
-    }
-
-    public IngestByQueueDriver(InstanceProperties properties,
-                               IngestTaskStatusStore taskStatusStore,
-                               LambdaClient lambdaClient,
-                               AmazonSQS sqsClient) {
-        this.properties = properties;
-        this.taskStatusStore = taskStatusStore;
+    public IngestByQueueDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDBClient, LambdaClient lambdaClient, AmazonSQS sqsClient) {
+        this.instance = instance;
+        this.dynamoDBClient = dynamoDBClient;
         this.lambdaClient = lambdaClient;
         this.sqsClient = sqsClient;
     }
 
-    public void sendJob(InstanceProperty queueUrl, IngestJob job) {
-        sqsClient.sendMessage(properties.get(queueUrl), new IngestJobSerDe().toJson(job));
+    public String sendJobGetId(InstanceProperty queueUrlProperty, List<String> files) {
+        String queue = Objects.requireNonNull(instance.getInstanceProperties().get(queueUrlProperty),
+                "queue URL property must be non-null: " + queueUrlProperty.getPropertyName());
+        LOGGER.info("Sending ingest job with {} files to queue: {}", files.size(), queue);
+        String jobId = UUID.randomUUID().toString();
+        sqsClient.sendMessage(queue,
+                new IngestJobSerDe().toJson(IngestJob.builder()
+                        .id(jobId)
+                        .tableName(instance.getTableName())
+                        .files(files)
+                        .build()));
+        return jobId;
     }
 
-    public void invokeStandardIngestTasks() throws InterruptedException {
+    public void invokeStandardIngestTask() throws InterruptedException {
+        invokeStandardIngestTasks(1,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+    }
+
+    public void invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) throws InterruptedException {
+        IngestTaskStatusStore taskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         int tasksFinishedBefore = taskStatusStore.getAllTasks().size() - taskStatusStore.getTasksInProgress().size();
-        pollUntilTasksStarted.pollUntil("tasks are started", () -> {
-            InvokeLambda.invokeWith(lambdaClient, properties.get(INGEST_LAMBDA_FUNCTION));
-            return taskStatusStore.getAllTasks().size() > tasksFinishedBefore;
+        poll.pollUntil("tasks are started", () -> {
+            InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(INGEST_LAMBDA_FUNCTION));
+            int tasksStarted = taskStatusStore.getAllTasks().size() - tasksFinishedBefore;
+            LOGGER.info("Found {} new ingest tasks", tasksStarted);
+            return tasksStarted >= expectedTasks;
         });
     }
 }

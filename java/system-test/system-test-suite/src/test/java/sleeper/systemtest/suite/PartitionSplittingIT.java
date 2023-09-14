@@ -16,24 +16,27 @@
 
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.nio.file.Path;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
+import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.fileInfoFactory;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsBuilder;
 
 @Tag("SystemTest")
 public class PartitionSplittingIT {
@@ -41,45 +44,59 @@ public class PartitionSplittingIT {
     private Path tempDir;
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
+    @RegisterExtension
+    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+            sleeper.reportsForExtension().partitionStatus());
+
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.reporting().startRecording();
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printPartitionStatus(testContext(testInfo));
     }
 
     @Test
     void shouldSplitPartitionsWith100RecordsAndThresholdOf20() throws InterruptedException {
         // Given
+        sleeper.setGeneratorOverrides(
+                overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
+                        stringFromPrefixAndPadToSize("row-", 2)));
         sleeper.updateTableProperties(properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
-        sleeper.partitionSplitting().split();
-        sleeper.compaction().runSplitting();
-        sleeper.partitionSplitting().split();
-        sleeper.compaction().runSplitting();
-        sleeper.partitionSplitting().split();
-        sleeper.compaction().runSplitting();
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
+        sleeper.partitioning().split();
+        sleeper.compaction().createJobs().invokeSplittingTasks(1).waitForJobs();
 
         // Then
         FileInfoFactory fileFactory = fileInfoFactory(sleeper);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.stateStore().activeFiles())
+        assertThat(sleeper.tableFiles().active())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("filename", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        fileFactory.leafFile(12, "row-0000000000000000000", "row-0000000000000000011"),
-                        fileFactory.leafFile(13, "row-0000000000000000012", "row-0000000000000000024"),
-                        fileFactory.leafFile(12, "row-0000000000000000025", "row-0000000000000000036"),
-                        fileFactory.leafFile(13, "row-0000000000000000037", "row-0000000000000000049"),
-                        fileFactory.leafFile(12, "row-0000000000000000050", "row-0000000000000000061"),
-                        fileFactory.leafFile(13, "row-0000000000000000062", "row-0000000000000000074"),
-                        fileFactory.leafFile(12, "row-0000000000000000075", "row-0000000000000000086"),
-                        fileFactory.leafFile(13, "row-0000000000000000087", "row-0000000000000000099"));
+                        fileFactory.leafFile(12, "row-00", "row-11"),
+                        fileFactory.leafFile(13, "row-12", "row-24"),
+                        fileFactory.leafFile(12, "row-25", "row-36"),
+                        fileFactory.leafFile(13, "row-37", "row-49"),
+                        fileFactory.leafFile(12, "row-50", "row-61"),
+                        fileFactory.leafFile(13, "row-62", "row-74"),
+                        fileFactory.leafFile(12, "row-75", "row-86"),
+                        fileFactory.leafFile(13, "row-87", "row-99"));
+        assertThat(sleeper.partitioning().allPartitions())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
+                .containsExactlyInAnyOrderElementsOf(
+                        partitionsBuilder(sleeper)
+                                .rootFirst("root")
+                                .splitToNewChildren("root", "L", "R", "row-50")
+                                .splitToNewChildren("L", "LL", "LR", "row-25")
+                                .splitToNewChildren("R", "RL", "RR", "row-75")
+                                .splitToNewChildren("LL", "LLL", "LLR", "row-12")
+                                .splitToNewChildren("LR", "LRL", "LRR", "row-37")
+                                .splitToNewChildren("RL", "RLL", "RLR", "row-62")
+                                .splitToNewChildren("RR", "RRL", "RRR", "row-87")
+                                .buildList());
     }
 }

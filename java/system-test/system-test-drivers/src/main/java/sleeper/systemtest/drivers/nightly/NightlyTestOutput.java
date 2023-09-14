@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,23 +52,20 @@ public class NightlyTestOutput {
     }
 
     public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
-        streamLogFiles().forEach(logFile ->
-                s3Client.putObject(bucketName,
-                        filePathInS3(timestamp, logFile),
-                        logFile.toFile()));
-        if (siteFile != null && Files.exists(siteFile)) {
-            s3Client.putObject(bucketName, filePathInS3(timestamp, siteFile), siteFile.toFile());
-        }
-        NightlyTestSummaryTable.fromS3(s3Client, bucketName)
-                .add(timestamp, this)
-                .saveToS3(s3Client, bucketName);
+        NightlyTestUploader.builder()
+                .s3Client(s3Client)
+                .bucketName(bucketName)
+                .timestamp(timestamp)
+                .build().upload(this);
     }
 
-    private static String filePathInS3(NightlyTestTimestamp timestamp, Path filePath) {
-        return timestamp.getS3FolderName() + "/" + filePath.getFileName();
+    public Stream<Path> filesToUpload() {
+        return Stream.concat(
+                streamLogFiles(),
+                Optional.ofNullable(siteFile).filter(Files::exists).stream());
     }
 
-    public Stream<Path> streamLogFiles() {
+    private Stream<Path> streamLogFiles() {
         return tests.stream()
                 .flatMap(TestResult::streamLogFiles);
     }

@@ -95,6 +95,7 @@
         </dependency>
     </dependencies>
 
+    <!-- Shading required for sleeper.utils.ShowPageIndexes -->
     <build>
         <plugins>
             <plugin>
@@ -103,4 +104,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

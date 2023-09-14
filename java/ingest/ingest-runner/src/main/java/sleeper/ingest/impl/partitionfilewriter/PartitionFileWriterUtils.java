@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * A utility class providing static functions that are useful when wrtiting partition files.
@@ -135,32 +134,32 @@ public class PartitionFileWriterUtils {
     }
 
     /**
-     * Construct the filename for the Parquet partition file, to maintain consistency across different file writer
+     * Construct the full path for the Parquet partition file, to maintain consistency across different file writer
      * implementations.
      *
      * @param filePathPrefix -
      * @param partition      -
-     * @param uuid           -
-     * @return The file name
+     * @param fileName       -
+     * @return The file path
      */
-    public static String constructPartitionParquetFileName(String filePathPrefix,
+    public static String constructPartitionParquetFilePath(String filePathPrefix,
                                                            Partition partition,
-                                                           UUID uuid) {
-        return String.format("%s/partition_%s/%s.parquet", filePathPrefix, partition.getId(), uuid);
+                                                           String fileName) {
+        return String.format("%s/partition_%s/%s.parquet", filePathPrefix, partition.getId(), fileName);
     }
 
     /**
-     * Construct the filename for the quantile sketches file, to maintain consistency across different file writer
+     * Construct the full path for the quantile sketches file, to maintain consistency across different file writer
      * implementations.
      *
      * @param filePathPrefix -
      * @param partition      -
-     * @param uuid           -
-     * @return The file name
+     * @param fileName       -
+     * @return The file path
      */
-    public static String constructQuantileSketchesFileName(String filePathPrefix,
+    public static String constructQuantileSketchesFilePath(String filePathPrefix,
                                                            Partition partition,
-                                                           UUID uuid) {
-        return String.format("%s/partition_%s/%s.sketches", filePathPrefix, partition.getId(), uuid);
+                                                           String fileName) {
+        return String.format("%s/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
     }
 }

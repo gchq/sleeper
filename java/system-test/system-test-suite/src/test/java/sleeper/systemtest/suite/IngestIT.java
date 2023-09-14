@@ -16,33 +16,30 @@
 
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class IngestIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
+    @RegisterExtension
+    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+            sleeper.reportsForExtension().ingestTasksAndJobs());
+
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.reporting().startRecording();
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
     }
 
     @Test
@@ -53,12 +50,12 @@ public class IngestIT {
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
-                .invokeTasks().waitForJobs();
+                .invokeTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
+        assertThat(sleeper.tableFiles().active()).hasSize(1);
     }
 
     @Test
@@ -72,12 +69,12 @@ public class IngestIT {
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invokeTasks().waitForJobs();
+                .invokeTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(1);
+        assertThat(sleeper.tableFiles().active()).hasSize(1);
     }
 
     @Test
@@ -93,11 +90,11 @@ public class IngestIT {
         sleeper.ingest().byQueue()
                 .sendSourceFiles("file1.parquet", "file2.parquet")
                 .sendSourceFiles("file3.parquet", "file4.parquet")
-                .invokeTasks().waitForJobs();
+                .invokeTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
-        assertThat(sleeper.stateStore().numActiveFiles()).isEqualTo(2);
+        assertThat(sleeper.tableFiles().active()).hasSize(2);
     }
 }

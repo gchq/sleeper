@@ -47,6 +47,11 @@
             <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>dynamodb-tools</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
@@ -88,12 +93,4 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 </project>

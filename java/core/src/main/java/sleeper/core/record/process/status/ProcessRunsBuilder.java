@@ -56,9 +56,9 @@ class ProcessRunsBuilder {
 
     private Optional<ProcessRun.Builder> addToBuilderByKey(
             ProcessStatusUpdate statusUpdate, Map<String, ProcessRun.Builder> builderMap, String key) {
-        if (statusUpdate instanceof ProcessFinishedStatus) {
+        if (statusUpdate instanceof ProcessRunFinishedUpdate) {
             return Optional.of(builderMap.remove(key)
-                    .finishedStatus((ProcessFinishedStatus) statusUpdate));
+                    .finishedStatus((ProcessRunFinishedUpdate) statusUpdate));
         } else if (statusUpdate.isPartOfRun()) {
             return Optional.of(builderMap.get(key)
                     .statusUpdate(statusUpdate));

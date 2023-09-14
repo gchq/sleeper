@@ -1,0 +1,7 @@
+
+Ingest Batcher Status Report
+----------------------------
+Total pending files: 0
+------------------------------------------------------------
+| STATE | FILENAME | FILESIZE | TABLE_NAME | RECEIVED_TIME |
+------------------------------------------------------------

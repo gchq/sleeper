@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 set -e
+unset CDPATH
+
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 docker compose -f "$THIS_DIR/docker-compose.yml" up -d 
 echo "Running localstack container on port 4566"

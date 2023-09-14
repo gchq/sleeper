@@ -13,6 +13,8 @@ on:
       - 'java/compaction/compaction-job-creation/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/splitter/**'
+      - 'java/ingest/ingest-batcher-store/**'
+      - 'java/ingest/ingest-batcher-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/sketches/**'
       - 'java/tables/**'

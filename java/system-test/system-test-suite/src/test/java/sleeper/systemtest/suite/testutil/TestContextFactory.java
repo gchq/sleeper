@@ -17,6 +17,7 @@
 package sleeper.systemtest.suite.testutil;
 
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import sleeper.systemtest.drivers.util.TestContext;
 
@@ -31,6 +32,15 @@ public class TestContextFactory {
                 .tags(info.getTags())
                 .testClass(info.getTestClass().orElse(null))
                 .testMethod(info.getTestMethod().orElse(null))
+                .build();
+    }
+
+    public static TestContext testContext(ExtensionContext context) {
+        return TestContext.builder()
+                .displayName(context.getDisplayName())
+                .tags(context.getTags())
+                .testClass(context.getTestClass().orElse(null))
+                .testMethod(context.getTestMethod().orElse(null))
                 .build();
     }
 }

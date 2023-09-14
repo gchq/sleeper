@@ -31,5 +31,6 @@
         <module>compaction-job-creation</module>
         <module>compaction-job-execution</module>
         <module>compaction-status-store</module>
+        <module>compaction-task-creation</module>
     </modules>
 </project>

@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.ObjectUtils.requireNonEmpty;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
@@ -88,14 +89,15 @@ public class PopulateInstanceProperties {
     }
 
     public static InstanceProperties populateDefaultsFromInstanceId(InstanceProperties properties, String instanceId) {
+        String ecrPrefix = Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX)).orElse(instanceId);
         properties.set(ID, instanceId);
         properties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(instanceId));
         properties.set(JARS_BUCKET, String.format("sleeper-%s-jars", instanceId));
         properties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
-        properties.set(ECR_COMPACTION_REPO, instanceId + "/compaction-job-execution");
-        properties.set(ECR_INGEST_REPO, instanceId + "/ingest");
-        properties.set(BULK_IMPORT_REPO, instanceId + "/bulk-import-runner");
-        properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, instanceId + "/bulk-import-runner-emr-serverless");
+        properties.set(ECR_COMPACTION_REPO, ecrPrefix + "/compaction-job-execution");
+        properties.set(ECR_INGEST_REPO, ecrPrefix + "/ingest");
+        properties.set(BULK_IMPORT_REPO, ecrPrefix + "/bulk-import-runner");
+        properties.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, ecrPrefix + "/bulk-import-runner-emr-serverless");
         return properties;
     }
 
