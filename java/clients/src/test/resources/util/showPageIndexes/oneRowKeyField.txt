@@ -1,0 +1,10 @@
+Row group 0
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-01                                     row-10                                   
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                         4                73                     0
+

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.utils;
+package sleeper.clients.util;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -25,30 +25,40 @@ import org.apache.parquet.hadoop.util.HadoopInputFile;
 import org.apache.parquet.internal.column.columnindex.ColumnIndex;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
 
+import sleeper.clients.util.console.ConsoleOutput;
+
 import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * A utility class to show the page indexes in a Parquet file.
  */
 public class ShowPageIndexes {
 
+    private final ConsoleOutput out;
+
     private ShowPageIndexes() {
+        this(System.out);
     }
 
-    public static void run(String file) throws IOException {
+    ShowPageIndexes(PrintStream out) {
+        this.out = new ConsoleOutput(out);
+    }
+
+    public void run(String file) throws IOException {
         int rowGroup = 0;
         try (ParquetFileReader reader = ParquetFileReader.open(HadoopInputFile.fromPath(new Path(file), new Configuration()))) {
             ParquetMetadata footer = reader.getFooter();
             for (BlockMetaData blockMetaData : footer.getBlocks()) {
-                System.out.println("Row group " + rowGroup);
+                out.println("Row group " + rowGroup);
                 for (ColumnChunkMetaData columnChunkMetaData : blockMetaData.getColumns()) {
                     String path = columnChunkMetaData.getPath().toDotString();
-                    System.out.println("Column index for column " + path);
+                    out.println("Column index for column " + path);
                     ColumnIndex columnIndex = reader.readColumnIndex(columnChunkMetaData);
-                    System.out.println(columnIndex);
-                    System.out.println("Page index for column " + path);
+                    out.println(columnIndex.toString());
+                    out.println("Page index for column " + path);
                     OffsetIndex pageIndex = reader.readOffsetIndex(columnChunkMetaData);
-                    System.out.println(pageIndex);
+                    out.println(pageIndex.toString());
                 }
                 rowGroup++;
             }
@@ -56,6 +66,10 @@ public class ShowPageIndexes {
     }
 
     public static void main(String[] args) throws IOException {
-        ShowPageIndexes.run(args[0]);
+        if (args.length != 1) {
+            System.out.println("Usage: <filename>");
+            System.exit(1);
+        }
+        new ShowPageIndexes().run(args[0]);
     }
 }
