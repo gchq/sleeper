@@ -71,7 +71,7 @@ specific language (DSL) for working with a deployed instance of Sleeper in JUnit
 of that class, and look at the tests in that module for examples.
 
 This test suite contains both feature tests, and performance tests which work with a larger bulk of data. By default,
-the suite skips the performance tests. You can run that like this:
+the suite skips the performance tests. You can run the default test suite, with just the feature tests, like this:
 
 ```bash
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets>
