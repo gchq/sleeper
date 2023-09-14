@@ -159,18 +159,18 @@ This is used during the release process to update the version number across the 
 
 ## System Tests
 
-Sleeper's system tests can be used to measure the performance of the standard ingest and compaction components of
-Sleeper. This is useful to ensure that performance degradations have not been introduced when we release new versions.
-More information about the performance tests can be found in [12-performance-test.md](12-performance-test.md).
+Sleeper's acceptance test suite can be used to perform automated tests of features in a deployed instance, and to
+measure performance. This is used to establish releasability, and to ensure that performance has not degraded when we
+release new versions. We run this test suite nightly. If you add a new feature, please add one or two simple cases to
+this test suite, as a complement to more detailed unit testing. These are the system tests in the Maven
+module `system-test/system-test-suite`, which can be run with `./scripts/test/maven/buildDeployTest.sh`. More
+information about these tests can be found in [12-acceptance-tests.md](12-acceptance-tests.md).
 
-They can also be used to test the functionality of different components, and provide a way to create an instance quickly
-for testing purposes, which generates random test data for you to work with.
-
-The easiest test to run if you are not sure about what stacks you need deployed is the deployAll system test. This test
-deploys most of the stacks. To run the deployAll system test, run the following command:
+There's also a script to create an instance quickly for testing purposes, which generates random test data for you to
+work with. This deployAll test deploys most of the stacks. To run it, use the following command:
 
 ```bash
-./scripts/test/deployAll/buildDeployTest.sh <unique-identifier> <vpc-id> <subnet-id>
+./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc-id> <subnet-id>
 ```
 
 This will generate everything for you including:
@@ -182,18 +182,20 @@ This will generate everything for you including:
 
 Once generated, it deploys Sleeper using CDK.
 
-Each system test has an instance properties file next to the deploy script called `system-test-instance.properties`.
-When running the deploy script, the `scripts/test/<test-name>` directory is scanned for `table.properties`,
+This test has an instance properties file next to the deploy script called `system-test-instance.properties`.
+When running the deploy script, the `scripts/test/deployAll` directory is scanned for `table.properties`,
 `tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test.
 If they are not present, then the template files in `scripts/templates` are used. Note that properties in these
 files with the value `changeme` will be overwritten by the script.
 
-You can also change any system test specific properties in the
-file `scripts/test/<test-name>/system-test-instance.properties`.
-This includes the optional stacks property - you may want to customise this to experiment with different stacks.
+There's an optional stacks property which determines which components will be deployed - you may want to customise this
+to experiment with different stacks.
 
-All resources are tagged with the tags defined in the file `deploy/templates/tags.template`, or a `tags.properties` file
-placed next to the `system-test-instance.properties`.
+There are also properties specific to system tests, which can also be changed in `system-test-instance.properties`.
+These can be used to configure how much test data will be generated, and how much that data can vary.
+
+All resources are tagged with the tags defined in the file `scripts/templates/tags.template`, or a `tags.properties`
+file placed next to the `system-test-instance.properties`.
 
 You can get a report of your instance by running:
 
@@ -207,8 +209,13 @@ Finally, when you are ready to tear down the instance, run:
 ./scripts/test/tearDown.sh
 ```
 
-Note you will still need the files in the `/generated` folder that are created during deployment for this tear down
-script to work correctly.
+This will check the `scripts/generated` folder for the instance to tear down. That gets created during deployment, or
+with `scripts/utility/downloadConfig.sh`. Alternatively, you can skip reading the generated folder by giving an instance
+ID:
+
+```bash
+./scripts/test/tearDown.sh <instance-id>
+```
 
 This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
 
@@ -251,7 +258,8 @@ Run this occasionally until it reports that there are 440 million records in the
 
 6. Publish the performance statistics.
 
-Record the ingest and compaction rate in the [performance figures](12-performance-test.md) documentation.
+Record the ingest and compaction rate in the [performance figures](12-acceptance-tests.md#performance-benchmarks)
+documentation.
 
 ```bash
 # Ingest performance figures can be found by running the following reports
