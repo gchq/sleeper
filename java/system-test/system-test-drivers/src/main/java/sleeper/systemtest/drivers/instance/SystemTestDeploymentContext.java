@@ -125,6 +125,7 @@ public class SystemTestDeploymentContext {
             String deploymentId = parameters.getSystemTestShortId();
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
             LOGGER.info("Deployment already exists: {}", deploymentId);
+            properties = loadProperties();
         } catch (CloudFormationException e) {
             deploy(generateProperties());
         }
@@ -148,7 +149,15 @@ public class SystemTestDeploymentContext {
                     .build().invoke(SYSTEM_TEST_STANDALONE,
                             CdkCommand.deploySystemTestStandalone(),
                             ClientUtils::runCommandLogOutput);
-            properties = SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
+            properties = loadProperties();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private SystemTestStandaloneProperties loadProperties() {
+        try {
+            return SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
