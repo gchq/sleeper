@@ -1,6 +1,17 @@
 Getting started
 ===============
 
+There are 2 ways of deploying Sleeper and interacting with an instance. The first way is to deploy to the cloud using 
+AWS. If you do not wish to start spending money on cloud infrastructure, the second way is to deploy to a LocalStack 
+container on your machine. This has limited functionality but will allow you to deploy an instance, ingest some files, 
+and run reports and scripts against the instance.
+
+## Deploy to LocalStack
+
+See the documentation on [deploying to localstack](10-deploy-to-localstack.md) for more information.
+
+## Deploy to AWS
+
 The easiest way to deploy an instance of Sleeper and interact with it is to use the "system test" functionality. This
 deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can then
 use the status scripts to see how much data is in the system, run some example queries, and view logs to help understand
