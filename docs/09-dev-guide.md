@@ -166,8 +166,9 @@ this test suite, as a complement to more detailed unit testing. These are the sy
 module `system-test/system-test-suite`, which can be run with `./scripts/test/maven/buildDeployTest.sh`. More
 information about these tests can be found in [12-acceptance-tests.md](12-acceptance-tests.md).
 
-There's also a script to create an instance quickly for testing purposes, which generates random test data for you to
-work with. This deployAll test deploys most of the stacks. To run it, use the following command:
+There's also a script to create an instance quickly for manual testing purposes, which generates random test data for
+you to work with. This deployAll test deploys most of the stacks. Note that this instance can't be reused by the
+automated acceptance test suite. To run it, use the following command:
 
 ```bash
 ./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc-id> <subnet-id>
