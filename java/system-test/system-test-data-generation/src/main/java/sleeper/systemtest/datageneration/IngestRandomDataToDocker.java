@@ -20,6 +20,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
@@ -74,6 +76,8 @@ public class IngestRandomDataToDocker {
         if (customEndpoint != null) {
             return builder
                     .endpointOverride(customEndpoint)
+                    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                            "test-access-key", "test-secret-key")))
                     .region(Region.US_EAST_1)
                     .forcePathStyle(true)
                     .build();

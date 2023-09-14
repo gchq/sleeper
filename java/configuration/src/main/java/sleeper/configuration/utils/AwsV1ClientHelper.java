@@ -16,6 +16,8 @@
 
 package sleeper.configuration.utils;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
@@ -34,6 +36,8 @@ public class AwsV1ClientHelper {
             return builder
                     .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
                             endpoint, "us-east-1"))
+                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
+                            "test-access-key", "test-secret-key")))
                     .build();
         } else {
             return builder.build();
