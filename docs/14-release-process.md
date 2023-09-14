@@ -21,6 +21,8 @@ VERSION=0.12.0
 There should be a cron job configured to run these nightly. Running it manually and retrieving the results is documented
 in the [system tests guide](13-system-tests.md#nightly-test-scripts).
 
+Update the performance figures in the [system tests guide](13-system-tests.md#performance-benchmarks).
+
 6. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide an instance ID that's different from the compactionPerformance test:
 
