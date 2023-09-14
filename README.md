@@ -105,6 +105,6 @@ See the documentation contained in the docs folder:
 11. [Developer guide](docs/11-dev-guide.md)
 12. [Design](docs/12-design.md)
 13. [System tests](docs/13-system-tests.md)
-14. [Release process](docs/13-system-tests.md)
+14. [Release process](docs/14-release-process.md)
 15. [Common problems and their solutions](docs/15-common-problems-and-their-solutions.md)
 16. [Roadmap](docs/16-roadmap.md)
