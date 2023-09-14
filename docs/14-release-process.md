@@ -24,10 +24,10 @@ in the [system tests guide](13-system-tests.md#nightly-test-scripts).
 Update the performance figures in the [system tests guide](13-system-tests.md#performance-benchmarks).
 
 6. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
-   provide an instance ID that's different from the compactionPerformance test:
+   provide a fresh instance ID that has not been used before:
 
 ```bash
-ID=<a-unique-id>
+ID=<instance-id>
 VPC=<your-vpc-id>
 SUBNETS=<your-subnet-ids>
 ./scripts/test/deployAll/buildDeployTest.sh ${ID} ${VPC} ${SUBNETS}
