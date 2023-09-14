@@ -66,6 +66,10 @@ functions in a deployed environment, and help us understand whether changes to t
 performance. The tests sit in the Maven module `system-test/system-test-suite`. There are scripts to run these tests
 under `scripts/test/maven`. We run this test suite nightly.
 
+These tests run in JUnit, and use the class `SleeperSystemTest` as the entry point. That class defines the domain
+specific language (DSL) for working with a deployed instance of Sleeper in JUnit. Please review the comment at the top
+of that class, and look at the tests in that module for examples.
+
 This test suite contains both feature tests, and performance tests which work with a larger bulk of data. By default,
 the suite skips the performance tests. You can run that like this:
 
