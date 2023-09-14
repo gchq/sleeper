@@ -15,6 +15,9 @@
  */
 package sleeper.utils;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -40,8 +43,7 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES));
         conf.set("fs.s3a.readahead.range", tableProperties.get(S3A_READAHEAD_RANGE));
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
-            conf.set("fs.s3a.path.style.access", "true");
+            setLocalStackConfiguration(conf);
         }
         return conf;
     }
@@ -50,8 +52,7 @@ public class HadoopConfigurationProvider {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
-            conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
-            conf.set("fs.s3a.path.style.access", "true");
+            setLocalStackConfiguration(conf);
         } else {
             conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
         }
@@ -60,5 +61,24 @@ public class HadoopConfigurationProvider {
         // by 21% in comparison to the default value of "normal".
         conf.set("fs.s3a.experimental.input.fadvise", "sequential");
         return conf;
+    }
+
+    private static void setLocalStackConfiguration(Configuration conf) {
+        conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
+        conf.set("fs.s3a.path.style.access", "true");
+        conf.set("fs.s3a.aws.credentials.provider", LocalStackCredentialsProvider.class.getName());
+        conf.set("fs.s3a.access.key", "test-access-key");
+        conf.set("fs.s3a.secret.key", "test-secret-key");
+    }
+
+    public static class LocalStackCredentialsProvider implements AWSCredentialsProvider {
+        @Override
+        public AWSCredentials getCredentials() {
+            return new BasicAWSCredentials("test-access-key", "test-secret-key");
+        }
+
+        @Override
+        public void refresh() {
+        }
     }
 }
