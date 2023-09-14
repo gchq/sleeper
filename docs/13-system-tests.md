@@ -146,7 +146,7 @@ on which tests were run, including information about failures. This will deploy 
 afterwards.
 
 If you want to run this manually you can do it like this with the Sleeper CLI, if you've checked out Sleeper in a
-builder as documented in the [developer guide](09-dev-guide.md#install-prerequisite-software):
+builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software):
 
 ```bash
 sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperTests.log
