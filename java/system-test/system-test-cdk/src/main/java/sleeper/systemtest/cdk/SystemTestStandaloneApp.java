@@ -53,6 +53,7 @@ public class SystemTestStandaloneApp extends Stack {
 
         Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesfile"));
         SystemTestStandaloneProperties systemTestProperties = SystemTestStandaloneProperties.fromFile(propertiesFile);
+        systemTestProperties.getPropertiesIndex().getSystemDefined().forEach(systemTestProperties::unset);
 
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         BuiltJars jars = new BuiltJars(s3Client, systemTestProperties.get(SYSTEM_TEST_JARS_BUCKET));
