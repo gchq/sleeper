@@ -68,7 +68,7 @@ public class ShowPageIndexes {
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
             System.out.println("Wrong number of arguments");
-            System.out.println("Usage: <filename>");
+            System.out.println("Usage: <path-to-file>");
             System.exit(1);
         }
         new ShowPageIndexes().run(args[0]);
