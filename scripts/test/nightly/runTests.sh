@@ -31,10 +31,10 @@ fi
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-if [ "$4" = "performance" ]; then
+if [ "$4" == "performance" ]; then
   EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
   TEST_NAME="performance"
-elif [ "$4" = "functional" ]; then
+elif [ "$4" == "functional" ]; then
   EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
   TEST_NAME="functional"
 else
