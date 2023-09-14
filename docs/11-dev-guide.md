@@ -59,7 +59,7 @@ mvn clean install -Pquick
 
 ## Using the codebase
 
-The codebase is structured around the components explained in the [design document](10-design.md). The elements of the
+The codebase is structured around the components explained in the [design document](12-design.md). The elements of the
 design largely correspond to Maven modules. Core or common modules contain shared model code. Other modules contain
 integrations with libraries which are not needed by all components of the system, eg. AWS API clients.
 
@@ -103,7 +103,7 @@ mvn clean compile checkstyle:check spotbugs:check
 
 The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
 We also have a setup for manual testing against a deployed instance of Sleeper, documented
-in [12-system-tests.md](12-system-tests.md#manual-testing).
+under [system tests](13-system-tests.md#manual-testing).
 
 A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
 If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
@@ -112,7 +112,7 @@ should be a particular behaviour or scenario, rather than eg. a specific method.
 A system test is a test that works with a deployed instance of Sleeper. These can be found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
 instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
-in [12-system-tests.md](12-system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
+under [system tests](13-system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
 cases to this test suite, as a complement to more detailed unit testing.
 
 An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
@@ -167,4 +167,4 @@ See the [deployment guide](02-deployment-guide.md) for notes on how to deploy Sl
 
 ## Release Process
 
-See the [release process guide](16-release-process.md) for instructions on how to publish a release of Sleeper
+See the [release process guide](14-release-process.md) for instructions on how to publish a release of Sleeper

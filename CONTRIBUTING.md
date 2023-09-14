@@ -11,7 +11,7 @@ Comment on an issue to let us know you're interested.
 
 ### Contributing code
 
-To get an overview of the project, read the [README](README.md). Read the [developer guide](docs/09-dev-guide.md) for
+To get an overview of the project, read the [README](README.md). Read the [developer guide](docs/11-dev-guide.md) for
 help setting up a development environment.
 
 You can contribute code for any issue by raising a pull request from your own fork of the repository. Raise an issue
@@ -40,7 +40,7 @@ Actions > General > Workflow permissions > Select "Read and write permissions".
 
 ### Getting help
 
-Read our [common problems and their solutions](docs/11-common-problems-and-their-solutions.md) to see if your problem
+Read our [common problems and their solutions](docs/15-common-problems-and-their-solutions.md) to see if your problem
 is covered there.
 
 For help with an issue you can post in the issue's comments.
