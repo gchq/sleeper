@@ -67,8 +67,6 @@ public class HadoopConfigurationProvider {
         conf.set("fs.s3a.endpoint", System.getenv("AWS_ENDPOINT_URL"));
         conf.set("fs.s3a.path.style.access", "true");
         conf.set("fs.s3a.aws.credentials.provider", LocalStackCredentialsProvider.class.getName());
-        conf.set("fs.s3a.access.key", "test-access-key");
-        conf.set("fs.s3a.secret.key", "test-secret-key");
     }
 
     public static class LocalStackCredentialsProvider implements AWSCredentialsProvider {
