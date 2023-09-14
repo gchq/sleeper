@@ -1,10 +1,70 @@
-Acceptance tests
-================
+System tests
+============
 
-The following notes describe how to run the system tests we use to judge releasability of the system. These tell us
-whether the system can perform its functions in a deployed environment, and help us understand whether changes to the
-code have increased or decreased the performance. The tests sit in the Maven module `system-test/system-test-suite`.
-There are scripts to run these tests under `scripts/test/maven`.
+The following notes describe how to use the system tests that work with a deployed instance of the system.
+
+## Manual testing
+
+There's a script to create an instance quickly for manual testing purposes, which generates random test data for
+you to work with. This deployAll test deploys most of the stacks. Note that this instance can't be reused by the
+automated acceptance test suite. To run it, use the following command:
+
+```bash
+./scripts/test/deployAll/buildDeployTest.sh <instance-id> <vpc-id> <subnet-id>
+```
+
+This will generate everything for you including:
+
+* An S3 Bucket containing all the necessary jars
+* ECR repositories for ingest, compaction and system test images
+* The Sleeper properties file
+* Random test data in the `system-test` table.
+
+Once generated, it deploys Sleeper using CDK.
+
+This test has an instance properties file next to the deploy script called `system-test-instance.properties`.
+When running the deploy script, the `scripts/test/deployAll` directory is scanned for `table.properties`,
+`tags.properties`, and `schema.properties` files. If they are found, they are picked up and used by the test.
+If they are not present, then the template files in `scripts/templates` are used. Note that properties in these
+files with the value `changeme` will be overwritten by the script.
+
+There's an optional stacks property which determines which components will be deployed - you may want to customise this
+to experiment with different stacks.
+
+There are also properties specific to system tests, which can also be changed in `system-test-instance.properties`.
+These can be used to configure how much test data will be generated, and how much that data can vary.
+
+All resources are tagged with the tags defined in the file `scripts/templates/tags.template`, or a `tags.properties`
+file placed next to the `system-test-instance.properties`.
+
+You can get a report of your instance by running:
+
+```bash
+./scripts/test/systemTestStatusReport.sh
+```
+
+Finally, when you are ready to tear down the instance, run:
+
+```bash
+./scripts/test/tearDown.sh
+```
+
+This will check the `scripts/generated` folder for the instance to tear down. That gets created during deployment, or
+with `scripts/utility/downloadConfig.sh`. Alternatively, you can skip reading the generated folder by giving an instance
+ID:
+
+```bash
+./scripts/test/tearDown.sh <instance-id>
+```
+
+This will remove your deployment, including any ECR repos, S3 buckets and local files that have been generated.
+
+## Acceptance tests
+
+We use an acceptance test suite to judge releasability of the system. These tell us whether the system can perform its
+functions in a deployed environment, and help us understand whether changes to the code have increased or decreased the
+performance. The tests sit in the Maven module `system-test/system-test-suite`. There are scripts to run these tests
+under `scripts/test/maven`. We run this test suite nightly.
 
 This test suite contains both feature tests, and performance tests which work with a larger bulk of data. By default,
 the suite skips the performance tests. You can run that like this:
@@ -29,7 +89,7 @@ find the different test IDs in the SystemTestInstance class. These are the ident
 and you can find references to those enum values to find the tests that use them. When a test runs, it deploys an
 instance with the associated instance ID if one does not exist.
 
-## Performance tests
+### Performance tests
 
 You can run specific performance tests like this:
 
@@ -74,7 +134,7 @@ less /tmp/sleeper/output/IngestPerformanceIT.shouldMeetIngestPerformanceStandard
 less -R test.log # The -R option presents colours correctly. When it opens, use shift+F to follow output as it's written to the file.
 ```
 
-## Nightly test scripts
+### Nightly test scripts
 
 We run the acceptance test suite nightly. The scripts and crontab we use for this are available
 in `scripts/test/nightly`. This uploads the output to an S3 bucket, including an HTML site with Maven Failsafe reports

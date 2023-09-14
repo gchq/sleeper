@@ -103,7 +103,7 @@ See the documentation contained in the docs folder:
 9. [Developer guide](docs/09-dev-guide.md)
 10. [Design](docs/10-design.md)
 11. [Common problems and their solutions](docs/11-common-problems-and-their-solutions.md)
-12. [Acceptance tests](docs/12-acceptance-tests.md)
+12. [System tests](docs/12-system-tests.md)
 13. [Trino](docs/13-trino.md)
 14. [Deploying to LocalStack](docs/14-deploy-to-localstack.md)
 15. [Roadmap](docs/15-roadmap.md)
