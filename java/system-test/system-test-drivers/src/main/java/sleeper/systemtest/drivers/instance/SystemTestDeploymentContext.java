@@ -141,6 +141,7 @@ public class SystemTestDeploymentContext {
         }
         if (parameters.isForceRedeploySystemTest()) {
             LOGGER.info("Forcing redeploy");
+            redeployNeeded = true;
         }
         if (redeployNeeded) {
             deploy(properties);
