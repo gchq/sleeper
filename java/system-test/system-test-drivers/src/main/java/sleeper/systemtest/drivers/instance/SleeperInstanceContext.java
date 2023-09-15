@@ -359,16 +359,13 @@ public class SleeperInstanceContext {
                 // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
                 continue;
             }
-            boolean deploySet = deployProperties.isSet(property);
-            boolean foundSet = foundProperties.isSet(property);
+            if (!deployProperties.isSet(property)) {
+                continue;
+            }
             String deployValue = deployProperties.get(property);
             String foundValue = foundProperties.get(property);
-            if (deploySet != foundSet || !Objects.equals(deployValue, foundValue)) {
-                if (deploySet) {
-                    foundProperties.set(property, deployValue);
-                } else {
-                    foundProperties.unset(property);
-                }
+            if (!foundProperties.isSet(property) || !Objects.equals(deployValue, foundValue)) {
+                foundProperties.set(property, deployValue);
                 LOGGER.info("Redeploy required as property changed: {}", property);
                 LOGGER.info("Required value: {}", deployValue);
                 LOGGER.info("Found value: {}", foundValue);
