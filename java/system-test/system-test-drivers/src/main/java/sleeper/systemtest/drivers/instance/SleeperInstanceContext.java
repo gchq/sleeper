@@ -28,10 +28,12 @@ import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.DeployExistingInstance;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.clients.deploy.DeployNewInstance;
 import sleeper.clients.status.update.ReinitialiseTable;
 import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -114,6 +116,22 @@ public class SleeperInstanceContext {
             throw new UncheckedIOException(e);
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void redeploy() throws InterruptedException {
+        try {
+            DeployExistingInstance.builder()
+                    .s3v2(s3v2).ecr(ecr)
+                    .properties(currentInstance.getInstanceProperties())
+                    .tableProperties(currentInstance.getTableProperties())
+                    .scriptsDirectory(parameters.getScriptsDirectory())
+                    .deployCommand(CdkCommand.deployExistingPaused())
+                    .runCommand(ClientUtils::runCommandLogOutput)
+                    .build().update();
+            reloadProperties();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
