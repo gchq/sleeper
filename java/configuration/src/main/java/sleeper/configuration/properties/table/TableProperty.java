@@ -400,6 +400,10 @@ public interface TableProperty extends SleeperProperty {
         return Index.INSTANCE.getSystemDefined();
     }
 
+    static List<TableProperty> getUserDefined() {
+        return Index.INSTANCE.getUserDefined();
+    }
+
     static boolean has(String propertyName) {
         return Index.INSTANCE.getByName(propertyName).isPresent();
     }

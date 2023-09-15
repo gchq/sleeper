@@ -34,9 +34,13 @@ import sleeper.clients.status.update.ReinitialiseTable;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
+import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.instance.SleeperProperty;
+import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
@@ -49,7 +53,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -200,7 +206,7 @@ public class SleeperInstanceContext {
             cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
             LOGGER.info("Instance already exists: {}", instanceId);
             return loadInstance(identifier, instanceId, tableName)
-                    .redeployIfNeededNoDeployedUpdate();
+                    .redeployIfNeededNoDeployedUpdate(deployInstanceConfiguration);
         } catch (CloudFormationException e) {
             LOGGER.info("Deploying instance: {}", instanceId);
             InstanceProperties properties = deployInstanceConfiguration.getInstanceProperties();
@@ -286,7 +292,7 @@ public class SleeperInstanceContext {
                     tableProperties.get(TABLE_NAME));
         }
 
-        public Instance redeployIfNeededNoDeployedUpdate() throws InterruptedException {
+        public Instance redeployIfNeededNoDeployedUpdate(DeployInstanceConfiguration deployConfig) throws InterruptedException {
             boolean redeployNeeded = false;
 
             Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
@@ -301,6 +307,16 @@ public class SleeperInstanceContext {
             if (!SleeperVersion.getVersion().equals(instanceProperties.get(VERSION))) {
                 redeployNeeded = true;
                 LOGGER.info("Redeploy required as version number does not match");
+            }
+
+            if (isRedeployDueToPropertyChange(UserDefinedInstanceProperty.getAll(),
+                    deployConfig.getInstanceProperties(), instanceProperties)) {
+                redeployNeeded = true;
+            }
+
+            if (isRedeployDueToPropertyChange(TableProperty.getUserDefined(),
+                    deployConfig.getTableProperties(), tableProperties)) {
+                redeployNeeded = true;
             }
 
             if (parameters.isForceRedeployInstances()) {
@@ -333,6 +349,33 @@ public class SleeperInstanceContext {
                 throw new UncheckedIOException(e);
             }
         }
+    }
+
+    private static <P extends SleeperProperty, T extends SleeperProperties<P>> boolean isRedeployDueToPropertyChange(
+            List<? extends P> userDefinedProperties, T deployProperties, T foundProperties) {
+        boolean redeployNeeded = false;
+        for (P property : userDefinedProperties) {
+            if (!property.isEditable() || !property.isRunCDKDeployWhenChanged()) {
+                // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
+                continue;
+            }
+            boolean deploySet = deployProperties.isSet(property);
+            boolean foundSet = foundProperties.isSet(property);
+            String deployValue = deployProperties.get(property);
+            String foundValue = foundProperties.get(property);
+            if (deploySet != foundSet || !Objects.equals(deployValue, foundValue)) {
+                if (deploySet) {
+                    foundProperties.set(property, deployValue);
+                } else {
+                    foundProperties.unset(property);
+                }
+                LOGGER.info("Redeploy required as property changed: {}", property);
+                LOGGER.info("Required value: {}", deployValue);
+                LOGGER.info("Found value: {}", foundValue);
+                redeployNeeded = true;
+            }
+        }
+        return redeployNeeded;
     }
 
 }
