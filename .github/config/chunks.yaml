@@ -22,7 +22,7 @@ chunks:
   compaction:
     name: Compaction
     workflow: chunk-compaction.yaml
-    modules: [ compaction, compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-status-store, compaction/compaction-core, splitter ]
+    modules: [ compaction, compaction/compaction-job-execution, compaction/compaction-task-creation, compaction/compaction-job-creation, compaction/compaction-status-store, compaction/compaction-core, compaction/compaction-rust, splitter ]
   data:
     name: Data
     workflow: chunk-data.yaml
