@@ -37,6 +37,7 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -58,6 +59,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -287,14 +289,18 @@ public class SleeperInstanceContext {
         public Instance redeployIfNeededNoDeployedUpdate() throws InterruptedException {
             boolean redeployNeeded = false;
 
-            // Redeploy if system test cluster does not have access to existing instance
             Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
             if (systemTest.isSystemTestClusterEnabled() &&
                     !ingestRoles.contains(systemTest.getSystemTestWriterRoleName())) {
                 ingestRoles.add(systemTest.getSystemTestWriterRoleName());
                 instanceProperties.set(INGEST_SOURCE_ROLE, String.join(",", ingestRoles));
                 redeployNeeded = true;
-                LOGGER.info("Redeploying to give system test cluster access to the instance");
+                LOGGER.info("Redeploy required to give system test cluster access to the instance");
+            }
+
+            if (!SleeperVersion.getVersion().equals(instanceProperties.get(VERSION))) {
+                redeployNeeded = true;
+                LOGGER.info("Redeploy required as version number does not match");
             }
 
             if (redeployNeeded) {
