@@ -103,6 +103,10 @@ Apache Commons Configuration (org.apache.commons:commons-configuration2:2.9.0):
 
 - Apache License, Version 2.0
 
+Apache Commons Compress (org.apache.commons:commons-compress:1.24.0):
+
+- Apache License, Version 2.0
+
 Apache Commons Text (org.apache.commons:commons-text:1.10.0):
 
 - Apache License, Version 2.0
@@ -175,7 +179,7 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.75):
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:localstack:1.17.6, org.testcontainers:testcontainers:1.17.6, org.testcontainers:junit-jupiter:1.17.6):
+Testcontainers (org.testcontainers:localstack:1.19.0, org.testcontainers:testcontainers:1.19.0, org.testcontainers:junit-jupiter:1.19.0):
 
 - MIT License
 
