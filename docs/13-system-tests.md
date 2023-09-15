@@ -158,8 +158,9 @@ in `scripts/test/nightly`. This uploads the output to an S3 bucket, including an
 on which tests were run, including information about failures. This will deploy fresh instances, and tear them down
 afterwards.
 
-If you want to run this manually you can do it like this with the Sleeper CLI, if you've checked out Sleeper in a
-builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software):
+If you want to run this manually you can use the Sleeper CLI. Once you've checked out Sleeper in a
+builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software), you can run this from the
+host machine:
 
 ```bash
 sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperTests.log
