@@ -30,6 +30,7 @@
         <module>compaction-core</module>
         <module>compaction-job-creation</module>
         <module>compaction-job-execution</module>
+        <module>compaction-rust</module>
         <module>compaction-status-store</module>
         <module>compaction-task-creation</module>
     </modules>

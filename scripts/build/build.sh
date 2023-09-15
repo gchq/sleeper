@@ -26,7 +26,7 @@ DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
 if [ "$#" -lt 1 ]; then
-  MAVEN_PARAMS=(clean install -q -Pquick -T 1C)
+  MAVEN_PARAMS=(clean install -q -Pquick -Prust -T 1C)
 else
   MAVEN_PARAMS=("$@")
 fi

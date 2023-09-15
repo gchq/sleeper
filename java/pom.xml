@@ -150,6 +150,8 @@
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht.version>1.4</jungrapht.version>
+        <jnr.ffi.version>2.2.13</jnr.ffi.version>
+        <scijava.native.version>2.4.0</scijava.native.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
@@ -180,6 +182,8 @@
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
         <dependency-check.plugin.version>8.3.1</dependency-check.plugin.version>
         <site.plugin.version>3.12.1</site.plugin.version>
+        <exec.plugin.version>3.1.0</exec.plugin.version>
+        <resources.plugin.version>3.3.1</resources.plugin.version>
         <!--
         java.nio.Buffer is accessed by Apache Arrow MemoryUtil, used for ingest & athena
         sun.io.ch.DirectBuffer is accessed by Apache Spark StorageUtils, used in the bulk import job runner
