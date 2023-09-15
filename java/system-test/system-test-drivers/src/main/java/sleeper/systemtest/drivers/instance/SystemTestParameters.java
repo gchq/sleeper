@@ -38,6 +38,8 @@ public class SystemTestParameters {
     private final Path outputDirectory;
     private final Path pythonDirectory;
     private final boolean systemTestClusterEnabled;
+    private final boolean forceRedeploySystemTest;
+    private final boolean forceRedeployInstances;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = builder.shortTestId;
@@ -49,6 +51,8 @@ public class SystemTestParameters {
         outputDirectory = builder.outputDirectory;
         pythonDirectory = builder.pythonDirectory;
         systemTestClusterEnabled = builder.systemTestClusterEnabled;
+        forceRedeploySystemTest = builder.forceRedeploySystemTest;
+        forceRedeployInstances = builder.forceRedeployInstances;
     }
 
     public static SystemTestParameters loadFromSystemProperties() {
@@ -65,10 +69,16 @@ public class SystemTestParameters {
                         .filter(not(String::isEmpty))
                         .map(Path::of)
                         .orElse(null))
-                .systemTestClusterEnabled(Optional.ofNullable(System.getProperty("sleeper.system.test.cluster.enabled"))
-                        .map(Boolean::valueOf)
-                        .orElse(false))
+                .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
+                .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
+                .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
                 .build();
+    }
+
+    private static boolean getBooleanProperty(String property, boolean defaultValue) {
+        return Optional.ofNullable(System.getProperty(property))
+                .map(Boolean::valueOf)
+                .orElse(defaultValue);
     }
 
     public String getSystemTestShortId() {
@@ -143,6 +153,14 @@ public class SystemTestParameters {
         return systemTestClusterEnabled;
     }
 
+    public boolean isForceRedeploySystemTest() {
+        return forceRedeploySystemTest;
+    }
+
+    public boolean isForceRedeployInstances() {
+        return forceRedeployInstances;
+    }
+
     private static Builder builder() {
         return new Builder();
     }
@@ -186,6 +204,8 @@ public class SystemTestParameters {
         private Path outputDirectory;
         private Path pythonDirectory;
         private boolean systemTestClusterEnabled;
+        private boolean forceRedeploySystemTest;
+        private boolean forceRedeployInstances;
 
         private Builder() {
         }
@@ -232,6 +252,16 @@ public class SystemTestParameters {
 
         public Builder systemTestClusterEnabled(boolean systemTestClusterEnabled) {
             this.systemTestClusterEnabled = systemTestClusterEnabled;
+            return this;
+        }
+
+        public Builder forceRedeploySystemTest(boolean forceRedeploySystemTest) {
+            this.forceRedeploySystemTest = forceRedeploySystemTest;
+            return this;
+        }
+
+        public Builder forceRedeployInstances(boolean forceRedeployInstances) {
+            this.forceRedeployInstances = forceRedeployInstances;
             return this;
         }
 

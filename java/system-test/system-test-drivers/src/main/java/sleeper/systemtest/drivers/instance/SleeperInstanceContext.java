@@ -303,6 +303,10 @@ public class SleeperInstanceContext {
                 LOGGER.info("Redeploy required as version number does not match");
             }
 
+            if (parameters.isForceRedeployInstances()) {
+                LOGGER.info("Forcing redeploy");
+            }
+
             if (redeployNeeded) {
                 return redeployNoDeployedUpdate();
             } else {

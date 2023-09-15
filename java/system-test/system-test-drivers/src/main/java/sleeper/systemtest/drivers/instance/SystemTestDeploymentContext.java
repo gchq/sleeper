@@ -126,12 +126,23 @@ public class SystemTestDeploymentContext {
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
             LOGGER.info("Deployment already exists: {}", deploymentId);
             properties = loadProperties();
+            redeployIfNeeded();
         } catch (CloudFormationException e) {
             deploy(generateProperties());
         }
+    }
+
+    private void redeployIfNeeded() throws InterruptedException {
+        boolean redeployNeeded = false;
         if (parameters.isSystemTestClusterEnabled() && !properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
-            LOGGER.info("System test cluster not present, deploying");
             properties.set(SYSTEM_TEST_CLUSTER_ENABLED, "true");
+            LOGGER.info("System test cluster not present, deploying");
+            redeployNeeded = true;
+        }
+        if (parameters.isForceRedeploySystemTest()) {
+            LOGGER.info("Forcing redeploy");
+        }
+        if (redeployNeeded) {
             deploy(properties);
         }
     }
