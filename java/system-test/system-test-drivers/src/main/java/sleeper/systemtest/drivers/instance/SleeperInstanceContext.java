@@ -322,6 +322,7 @@ public class SleeperInstanceContext {
 
             if (parameters.isForceRedeployInstances()) {
                 LOGGER.info("Forcing redeploy");
+                redeployNeeded = true;
             }
 
             if (redeployNeeded) {
