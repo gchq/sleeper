@@ -2,7 +2,7 @@ Releases
 =========
 
 This page documents the releases of Sleeper. Performance figures for each release
-are available [here](docs/12-performance-test.md)
+are available [here](docs/13-system-tests.md#performance-benchmarks)
 
 ## Version 0.18.0
 
@@ -75,7 +75,7 @@ This contains the following improvements:
 Ingest batcher:
 
 - Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md)
-  and [docs/10-design.md](./docs/10-design.md) for more information.
+  and [docs/10-design.md](./docs/12-design.md) for more information.
 
 Bulk Import:
 
@@ -112,7 +112,7 @@ This contains the following improvements:
 
 Trino:
 
-- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/13-trino.md). This is an
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/09-trino.md). This is an
   experimental feature.
 
 Bulk Import:

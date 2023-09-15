@@ -15,6 +15,8 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
@@ -104,6 +106,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         if (customEndpoint != null) {
             return builder
                     .endpointOverride(customEndpoint)
+                    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                            "test-access-key", "test-secret-key")))
                     .region(Region.US_EAST_1)
                     .forcePathStyle(true)
                     .build();
