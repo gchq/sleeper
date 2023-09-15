@@ -73,7 +73,8 @@ public class SleeperSystemTest {
     private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
             parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+            parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
+            clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
 

@@ -17,12 +17,16 @@
 package sleeper.systemtest.drivers.instance;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import org.eclipse.jetty.io.RuntimeIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.clients.deploy.DeployNewInstance;
@@ -59,22 +63,29 @@ public class SleeperInstanceContext {
 
     private final SystemTestParameters parameters;
     private final SystemTestDeploymentContext systemTest;
+    private final AmazonDynamoDB dynamoDB;
+    private final AmazonS3 s3;
+    private final S3Client s3v2;
+    private final AWSSecurityTokenService sts;
+    private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoDBClient;
+    private final AmazonECR ecr;
     private final DeployedInstances deployed = new DeployedInstances();
     private Instance currentInstance;
 
-    public SleeperInstanceContext(SystemTestParameters parameters,
-                                  SystemTestDeploymentContext systemTest,
-                                  CloudFormationClient cloudFormationClient,
-                                  AmazonS3 s3Client,
-                                  AmazonDynamoDB dynamoDBClient) {
+    public SleeperInstanceContext(SystemTestParameters parameters, SystemTestDeploymentContext systemTest,
+                                  AmazonDynamoDB dynamoDB, AmazonS3 s3, S3Client s3v2,
+                                  AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
+                                  CloudFormationClient cloudFormationClient, AmazonECR ecr) {
         this.parameters = parameters;
         this.systemTest = systemTest;
+        this.dynamoDB = dynamoDB;
+        this.s3 = s3;
+        this.s3v2 = s3v2;
+        this.sts = sts;
+        this.regionProvider = regionProvider;
         this.cloudFormationClient = cloudFormationClient;
-        this.s3Client = s3Client;
-        this.dynamoDBClient = dynamoDBClient;
+        this.ecr = ecr;
     }
 
     public void connectTo(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
@@ -90,12 +101,12 @@ public class SleeperInstanceContext {
         ResetProperties.reset(configuration,
                 currentInstance.getInstanceProperties(),
                 currentInstance.getTableProperties(),
-                s3Client);
+                s3);
     }
 
     public void reinitialise() {
         try {
-            new ReinitialiseTable(s3Client, dynamoDBClient,
+            new ReinitialiseTable(s3, dynamoDB,
                     currentInstance.getInstanceProperties().get(ID),
                     currentInstance.getTableProperties().get(TABLE_NAME),
                     true).run();
@@ -163,7 +174,7 @@ public class SleeperInstanceContext {
                         .runCommand(ClientUtils::runCommandLogOutput)
                         .extraInstanceProperties(instanceProperties ->
                                 instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                        .deployWithDefaultClients();
+                        .deployWithClients(sts, regionProvider, s3v2, ecr);
             } catch (IOException ex) {
                 throw new RuntimeIOException(ex);
             } catch (InterruptedException ex) {
@@ -176,10 +187,10 @@ public class SleeperInstanceContext {
     private Instance loadInstance(String identifier, String instanceId, String tableName) {
         try {
             InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
             return new Instance(identifier,
                     instanceProperties, tableProperties,
                     tablePropertiesProvider, stateStoreProvider);
