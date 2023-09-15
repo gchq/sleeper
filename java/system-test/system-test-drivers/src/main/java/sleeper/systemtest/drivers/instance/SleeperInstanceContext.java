@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import org.eclipse.jetty.io.RuntimeIOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
@@ -48,7 +47,9 @@ import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -58,7 +59,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCK
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.systemtest.drivers.instance.OutputInstanceIds.addInstanceIdToOutput;
 
 public class SleeperInstanceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(SleeperInstanceContext.class);
@@ -120,19 +120,7 @@ public class SleeperInstanceContext {
     }
 
     public void redeploy() throws InterruptedException {
-        try {
-            DeployExistingInstance.builder()
-                    .s3v2(s3v2).ecr(ecr)
-                    .properties(currentInstance.getInstanceProperties())
-                    .tableProperties(currentInstance.getTableProperties())
-                    .scriptsDirectory(parameters.getScriptsDirectory())
-                    .deployCommand(CdkCommand.deployExistingPaused())
-                    .runCommand(ClientUtils::runCommandLogOutput)
-                    .build().update();
-            reloadProperties();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        currentInstance = deployed.redeploy(currentInstance);
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -163,60 +151,6 @@ public class SleeperInstanceContext {
         return getTableProperties().get(TABLE_NAME);
     }
 
-    public void reloadProperties() {
-        currentInstance = deployed.reload(currentInstance);
-    }
-
-    private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
-        String instanceId = parameters.buildInstanceId(identifier);
-        String tableName = "system-test";
-        addInstanceIdToOutput(instanceId, parameters);
-        try {
-            cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
-            LOGGER.info("Instance already exists: {}", instanceId);
-        } catch (CloudFormationException e) {
-            LOGGER.info("Deploying instance: {}", instanceId);
-            try {
-                InstanceProperties properties = deployInstanceConfiguration.getInstanceProperties();
-                properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
-                properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
-                properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
-                DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
-                        .deployInstanceConfiguration(deployInstanceConfiguration)
-                        .instanceId(instanceId)
-                        .vpcId(parameters.getVpcId())
-                        .subnetIds(parameters.getSubnetIds())
-                        .deployPaused(true)
-                        .tableName(tableName)
-                        .instanceType(InvokeCdkForInstance.Type.STANDARD)
-                        .runCommand(ClientUtils::runCommandLogOutput)
-                        .extraInstanceProperties(instanceProperties ->
-                                instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                        .deployWithClients(sts, regionProvider, s3v2, ecr);
-            } catch (IOException ex) {
-                throw new RuntimeIOException(ex);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        return loadInstance(identifier, instanceId, tableName);
-    }
-
-    private Instance loadInstance(String identifier, String instanceId, String tableName) {
-        try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
-            return new Instance(identifier,
-                    instanceProperties, tableProperties,
-                    tablePropertiesProvider, stateStoreProvider);
-        } catch (IOException e) {
-            throw new RuntimeIOException(e);
-        }
-    }
-
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         currentInstance.setGeneratorOverrides(overrides);
     }
@@ -238,17 +172,71 @@ public class SleeperInstanceContext {
             }
         }
 
-        public Instance reload(Instance instance) {
-            Instance loaded = loadInstance(
-                    instance.identifier,
-                    instance.instanceProperties.get(ID),
-                    instance.tableProperties.get(TABLE_NAME));
+        public Instance redeploy(Instance instance) throws InterruptedException {
+            Instance loaded = instance.redeployNoDeployedUpdate();
             instanceById.put(loaded.identifier, loaded);
             return loaded;
         }
     }
 
-    private static class Instance {
+    private Instance createInstanceIfMissing(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) {
+        try {
+            return createInstanceIfMissingOrThrow(identifier, deployInstanceConfiguration);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private Instance createInstanceIfMissingOrThrow(String identifier, DeployInstanceConfiguration deployInstanceConfiguration) throws InterruptedException, IOException {
+        String instanceId = parameters.buildInstanceId(identifier);
+        String tableName = "system-test";
+        OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
+        try {
+            cloudFormationClient.describeStacks(builder -> builder.stackName(instanceId));
+            LOGGER.info("Instance already exists: {}", instanceId);
+            return loadInstance(identifier, instanceId, tableName)
+                    .redeployIfNeededNoDeployedUpdate();
+        } catch (CloudFormationException e) {
+            LOGGER.info("Deploying instance: {}", instanceId);
+            InstanceProperties properties = deployInstanceConfiguration.getInstanceProperties();
+            properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
+            properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
+            properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
+            DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
+                    .deployInstanceConfiguration(deployInstanceConfiguration)
+                    .instanceId(instanceId)
+                    .vpcId(parameters.getVpcId())
+                    .subnetIds(parameters.getSubnetIds())
+                    .deployPaused(true)
+                    .tableName(tableName)
+                    .instanceType(InvokeCdkForInstance.Type.STANDARD)
+                    .runCommand(ClientUtils::runCommandLogOutput)
+                    .extraInstanceProperties(instanceProperties ->
+                            instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
+                    .deployWithClients(sts, regionProvider, s3v2, ecr);
+            return loadInstance(identifier, instanceId, tableName);
+        }
+    }
+
+    private Instance loadInstance(String identifier, String instanceId, String tableName) {
+        try {
+            InstanceProperties instanceProperties = new InstanceProperties();
+            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
+            return new Instance(identifier,
+                    instanceProperties, tableProperties,
+                    tablePropertiesProvider, stateStoreProvider);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private class Instance {
         private final String identifier;
         private final InstanceProperties instanceProperties;
         private final TableProperties tableProperties;
@@ -287,6 +275,53 @@ public class SleeperInstanceContext {
 
         public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
             this.generatorOverrides = overrides;
+        }
+
+        public Instance reloadNoDeployedUpdate() {
+            return loadInstance(
+                    identifier,
+                    instanceProperties.get(ID),
+                    tableProperties.get(TABLE_NAME));
+        }
+
+        public Instance redeployIfNeededNoDeployedUpdate() throws InterruptedException {
+            boolean redeployNeeded = false;
+
+            // Redeploy if system test cluster does not have access to existing instance
+            Set<String> ingestRoles = new LinkedHashSet<>(instanceProperties.getList(INGEST_SOURCE_ROLE));
+            if (systemTest.isSystemTestClusterEnabled() &&
+                    !ingestRoles.contains(systemTest.getSystemTestWriterRoleName())) {
+                ingestRoles.add(systemTest.getSystemTestWriterRoleName());
+                instanceProperties.set(INGEST_SOURCE_ROLE, String.join(",", ingestRoles));
+                redeployNeeded = true;
+                LOGGER.info("Redeploying to give system test cluster access to the instance");
+            }
+
+            if (redeployNeeded) {
+                return redeployNoDeployedUpdate();
+            } else {
+                return this;
+            }
+        }
+
+        public Instance redeployNoDeployedUpdate() throws InterruptedException {
+            redeployNoReload();
+            return reloadNoDeployedUpdate();
+        }
+
+        private void redeployNoReload() throws InterruptedException {
+            try {
+                DeployExistingInstance.builder()
+                        .clients(s3v2, ecr)
+                        .properties(instanceProperties)
+                        .tableProperties(tableProperties)
+                        .scriptsDirectory(parameters.getScriptsDirectory())
+                        .deployCommand(CdkCommand.deployExistingPaused())
+                        .runCommand(ClientUtils::runCommandLogOutput)
+                        .build().update();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
