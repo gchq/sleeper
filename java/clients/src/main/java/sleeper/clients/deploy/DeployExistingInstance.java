@@ -88,7 +88,8 @@ public class DeployExistingInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
-        // Get instance properties from s3
+
+        // Write properties files for CDK
         Path generatedDirectory = scriptsDirectory.resolve("generated");
         Path jarsDirectory = scriptsDirectory.resolve("jars");
         Files.createDirectories(generatedDirectory);
