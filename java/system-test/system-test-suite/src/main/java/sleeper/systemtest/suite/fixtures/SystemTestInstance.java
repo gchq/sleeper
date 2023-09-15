@@ -19,7 +19,6 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.util.HashMap;
@@ -45,12 +44,7 @@ import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PA
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY;
-import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
-import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE;
-import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
@@ -62,8 +56,6 @@ public enum SystemTestInstance {
     INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
     COMPACTION_PERFORMANCE("compaction", SystemTestInstance::buildCompactionPerformanceConfiguration),
     BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
-
-    private static final String MAIN_EMR_INSTANCE_TYPES = "m6a.xlarge,m6i.xlarge,m5a.xlarge,m5.xlarge";
 
     private final String identifier;
     private final Function<SystemTestParameters, DeployInstanceConfiguration> instanceConfiguration;
@@ -89,13 +81,8 @@ public enum SystemTestInstance {
                 "CompactionStack,GarbageCollectorStack,PartitionSplittingStack,QueryStack");
         properties.set(RETAIN_INFRA_AFTER_DESTROY, "false");
         properties.set(FORCE_RELOAD_PROPERTIES, "true");
-        properties.set(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_INSTANCE_TYPES);
-        properties.set(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_INSTANCE_TYPES);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "1");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "1");
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_MASTER_X86_INSTANCE_TYPES, MAIN_EMR_INSTANCE_TYPES);
-        properties.set(BULK_IMPORT_PERSISTENT_EMR_EXECUTOR_X86_INSTANCE_TYPES, MAIN_EMR_INSTANCE_TYPES);
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
