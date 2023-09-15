@@ -63,6 +63,7 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
@@ -359,7 +360,7 @@ public class SleeperInstanceContext {
                 // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
                 continue;
             }
-            if (!deployProperties.isSet(property)) {
+            if (!deployProperties.isSet(property) || property == TAGS) {
                 continue;
             }
             String deployValue = deployProperties.get(property);
