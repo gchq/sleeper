@@ -1,9 +1,9 @@
 Getting started
 ===============
 
-There are 2 ways of deploying Sleeper and interacting with an instance. The first way is to deploy to the cloud using 
-AWS. If you do not wish to start spending money on cloud infrastructure, the second way is to deploy to a LocalStack 
-container on your machine. This has limited functionality but will allow you to deploy an instance, ingest some files, 
+There are 2 ways of deploying Sleeper and interacting with an instance. The first way is to deploy to AWS. If you do 
+not wish to start spending money on cloud infrastructure, the second way is to deploy to a LocalStack container on 
+your local machine. This has limited functionality but will allow you to deploy an instance, ingest some files, 
 and run reports and scripts against the instance.
 
 ## Deploy to LocalStack
