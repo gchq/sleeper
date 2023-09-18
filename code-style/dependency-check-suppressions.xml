@@ -27,14 +27,6 @@
         <notes><![CDATA[
         Spark is suppressed as the version we are able to use is restricted by support in AWS EMR:
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.spark/spark\-core_2\.12@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-22946</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Spark is suppressed as the version we are able to use is restricted by support in AWS EMR:
-        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
 
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
