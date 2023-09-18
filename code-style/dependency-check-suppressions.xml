@@ -21,7 +21,7 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.spark/.*$</packageUrl>
-        <cpe>cpe:/a:apache:spark:3.3.1</cpe>
+        <cpe>cpe:/a:apache:spark:3.4.1</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -39,7 +39,7 @@
         Some of the Spark dependencies were not identified by the Spark CPE, so we've added this to catch
         several shaded dependencies.
         ]]></notes>
-        <filePath regex="true">^.*/spark-[^/]+-3\.3\.1\.jar/.*$</filePath>
+        <filePath regex="true">^.*/spark-[^/]+-3\.4\.1\.jar/.*$</filePath>
         <vulnerabilityName regex="true">.*</vulnerabilityName>
     </suppress>
     <suppress>
@@ -135,15 +135,6 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-(ipc|mapred)@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Janino/commons-compiler is used by Spark SQL to compile SQL. Our tests against Spark fail with the latest
-        version of Janino, and we can't upgrade Spark because we're restricted by support in AWS EMR:
-        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.codehaus\.janino/(commons\-compiler|janino)@.*$</packageUrl>
-        <cve>CVE-2023-33546</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
