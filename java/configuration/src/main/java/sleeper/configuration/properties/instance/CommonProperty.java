@@ -158,7 +158,7 @@ public interface CommonProperty {
                     "Note: This is only used by the deployment scripts to upload Docker images, not the CDK. " +
                     "We may add the ability to use this in the CDK in the future.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
+            .editable(false).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
