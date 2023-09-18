@@ -44,7 +44,12 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-job-creation</artifactId>
+            <artifactId>compaction-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>compaction-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -109,6 +114,12 @@
             <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>tables</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
