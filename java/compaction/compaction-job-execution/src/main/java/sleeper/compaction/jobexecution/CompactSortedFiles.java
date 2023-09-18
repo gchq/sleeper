@@ -199,7 +199,7 @@ public class CompactSortedFiles {
                 finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
-        LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
+        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
@@ -314,7 +314,7 @@ public class CompactSortedFiles {
                 finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
-        LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
+        LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
