@@ -62,10 +62,10 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.3.1</spark.version>
+        <spark.version>3.4.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
         <parquet-hadoop.version>1.13.1</parquet-hadoop.version>
-        <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
+        <joom.spark.platform.version>0.3.8</joom.spark.platform.version>
         <!--
         Hadoop AWS uses an old version of wildfly-openssl.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
@@ -119,7 +119,7 @@
         <commons-configuration.version>2.9.0</commons-configuration.version>
         <commons-compress.version>1.24.0</commons-compress.version>
         <commons-text.version>1.10.0</commons-text.version>
-        <janino.version>3.0.16</janino.version>
+        <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.15.2</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
@@ -134,7 +134,7 @@
         <slf4j.version>2.0.6</slf4j.version>
         <reload4j.version>1.2.24</reload4j.version>
         <java-websocket.version>1.5.3</java-websocket.version>
-        <arrow.version>10.0.1</arrow.version>
+        <arrow.version>11.0.0</arrow.version>
         <bouncycastle.version>1.75</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
@@ -281,6 +281,55 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-buffer</artifactId>
                 <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-kqueue</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-aarch_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${netty.version}</version>
+                <classifier>osx-aarch_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${netty.version}</version>
+                <classifier>osx-x86_64</classifier>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -476,6 +525,36 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-core</artifactId>
                 <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-core</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-unsafe</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-netty</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-algorithm</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-format</artifactId>
+                <version>${arrow.version}</version>
             </dependency>
             <!-- Apache commons -->
             <dependency>
