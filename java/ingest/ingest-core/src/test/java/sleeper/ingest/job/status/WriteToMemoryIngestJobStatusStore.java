@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -102,10 +103,21 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public List<IngestJobStatus> getInvalidJobs() {
-        return IngestJobStatus.streamFrom(tableNameToJobs.values().stream()
-                        .flatMap(TableJobs::streamAllRecords))
+        return streamAllJobs()
                 .filter(status -> status.getFurthestStatusType().equals(REJECTED))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<IngestJobStatus> getJob(String jobId) {
+        return streamAllJobs()
+                .filter(status -> Objects.equals(jobId, status.getJobId()))
+                .findFirst();
+    }
+
+    public Stream<IngestJobStatus> streamAllJobs() {
+        return IngestJobStatus.streamFrom(tableNameToJobs.values().stream()
+                .flatMap(TableJobs::streamAllRecords));
     }
 
     public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
