@@ -36,6 +36,7 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
@@ -92,6 +93,7 @@ public class AdminClientPropertiesStore {
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
         try {
             LOGGER.info("Saving to local configuration");
+            Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
@@ -126,6 +128,7 @@ public class AdminClientPropertiesStore {
         String tableName = properties.get(TABLE_NAME);
         try {
             LOGGER.info("Saving to local configuration");
+            Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
                     streamTableProperties(instanceProperties)
