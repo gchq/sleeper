@@ -71,7 +71,7 @@ public class SetupInstanceIT {
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldIngestSomeData() throws InterruptedException {
+    void shouldIngestWithSystemTestCluster() throws InterruptedException {
         // When
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.set(INGEST_MODE, IngestMode.QUEUE.toString());

@@ -25,7 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
-import sleeper.systemtest.drivers.instance.RedeployInstanceDriver;
+import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
@@ -73,7 +73,8 @@ public class SleeperSystemTest {
     private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
             parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+            parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
+            clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
 
@@ -187,14 +188,10 @@ public class SleeperSystemTest {
     }
 
     public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws InterruptedException {
-        redeployDriver().addOptionalStack(stackClass);
+        new OptionalStacksDriver(instance).addOptionalStack(stackClass);
     }
 
     public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws InterruptedException {
-        redeployDriver().removeOptionalStack(stackClass);
-    }
-
-    private RedeployInstanceDriver redeployDriver() {
-        return new RedeployInstanceDriver(parameters, instance, clients.getS3V2(), clients.getEcr());
+        new OptionalStacksDriver(instance).removeOptionalStack(stackClass);
     }
 }

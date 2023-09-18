@@ -49,7 +49,7 @@ public class DeployExistingInstance {
     private final Path scriptsDirectory;
     private final InstanceProperties properties;
     private final List<TableProperties> tablePropertiesList;
-    private final S3Client s3v2;
+    private final S3Client s3;
     private final AmazonECR ecr;
     private final CdkDeploy deployCommand;
     private final CommandPipelineRunner runCommand;
@@ -58,7 +58,7 @@ public class DeployExistingInstance {
         scriptsDirectory = builder.scriptsDirectory;
         properties = builder.properties;
         tablePropertiesList = builder.tablePropertiesList;
-        s3v2 = builder.s3v2;
+        s3 = builder.s3;
         ecr = builder.ecr;
         deployCommand = builder.deployCommand;
         runCommand = builder.runCommand;
@@ -76,10 +76,10 @@ public class DeployExistingInstance {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
         try (S3Client s3v2 = S3Client.create()) {
-            builder().s3(s3).s3v2(s3v2).ecr(ecr)
+            builder().clients(s3v2, ecr)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
-                    .loadPropertiesFromS3()
+                    .loadPropertiesFromS3(s3)
                     .build().update();
         }
     }
@@ -88,14 +88,15 @@ public class DeployExistingInstance {
         LOGGER.info("-------------------------------------------------------");
         LOGGER.info("Running Deployment");
         LOGGER.info("-------------------------------------------------------");
-        // Get instance properties from s3
+
+        // Write properties files for CDK
         Path generatedDirectory = scriptsDirectory.resolve("generated");
         Path jarsDirectory = scriptsDirectory.resolve("jars");
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
         SaveLocalProperties.saveToDirectory(generatedDirectory, properties, tablePropertiesList.stream());
 
-        SyncJars.builder().s3(s3v2)
+        SyncJars.builder().s3(s3)
                 .jarsDirectory(jarsDirectory).instanceProperties(properties)
                 .deleteOldJars(false)
                 .build().sync();
@@ -127,8 +128,7 @@ public class DeployExistingInstance {
         private String instanceId;
         private InstanceProperties properties;
         private List<TableProperties> tablePropertiesList;
-        private AmazonS3 s3;
-        private S3Client s3v2;
+        private S3Client s3;
         private AmazonECR ecr;
         private CdkDeploy deployCommand = CdkCommand.deployExisting();
         private CommandPipelineRunner runCommand = ClientUtils::runCommandInheritIO;
@@ -160,17 +160,8 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder s3(AmazonS3 s3) {
+        public Builder clients(S3Client s3, AmazonECR ecr) {
             this.s3 = s3;
-            return this;
-        }
-
-        public Builder s3v2(S3Client s3v2) {
-            this.s3v2 = s3v2;
-            return this;
-        }
-
-        public Builder ecr(AmazonECR ecr) {
             this.ecr = ecr;
             return this;
         }
@@ -185,7 +176,7 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder loadPropertiesFromS3() throws IOException {
+        public Builder loadPropertiesFromS3(AmazonS3 s3) throws IOException {
             properties = new InstanceProperties();
             properties.loadFromS3GivenInstanceId(s3, instanceId);
             tablePropertiesList = streamTablesFromS3(s3, properties).collect(Collectors.toList());

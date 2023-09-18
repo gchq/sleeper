@@ -268,12 +268,19 @@ public class DeployNewInstance {
         public void deployWithDefaultClients() throws IOException, InterruptedException {
 
             try (S3Client s3Client = S3Client.create()) {
-                sts(AWSSecurityTokenServiceClientBuilder.defaultClient());
-                regionProvider(DefaultAwsRegionProviderChain.builder().build());
-                s3(s3Client);
-                ecr(AmazonECRClientBuilder.defaultClient());
-                build().deploy();
+                deployWithClients(
+                        AWSSecurityTokenServiceClientBuilder.defaultClient(),
+                        DefaultAwsRegionProviderChain.builder().build(),
+                        s3Client,
+                        AmazonECRClientBuilder.defaultClient());
             }
+        }
+
+        public void deployWithClients(AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
+                                      S3Client s3, AmazonECR ecr) throws IOException, InterruptedException {
+            sts(sts).regionProvider(regionProvider)
+                    .s3(s3).ecr(ecr)
+                    .build().deploy();
         }
     }
 }

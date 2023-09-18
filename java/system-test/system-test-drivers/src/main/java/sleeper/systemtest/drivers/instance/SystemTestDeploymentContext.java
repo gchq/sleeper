@@ -116,30 +116,60 @@ public class SystemTestDeploymentContext {
                         .forEach(properties::unset));
     }
 
+    public boolean isSystemTestClusterEnabled() {
+        return parameters.isSystemTestClusterEnabled() && properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED);
+    }
+
     private void deployIfMissingNoFailureTracking() throws InterruptedException {
         try {
             String deploymentId = parameters.getSystemTestShortId();
             cloudFormation.describeStacks(builder -> builder.stackName(deploymentId));
             LOGGER.info("Deployment already exists: {}", deploymentId);
+            properties = loadProperties();
+            redeployIfNeeded();
         } catch (CloudFormationException e) {
-            try {
-                uploadJarsAndDockerImages();
-                Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());
-                Path propertiesFile = generatedDirectory.resolve("system-test.properties");
-                generateProperties().save(propertiesFile);
-                InvokeCdkForInstance.builder()
-                        .propertiesFile(propertiesFile)
-                        .jarsDirectory(parameters.getJarsDirectory())
-                        .version(SleeperVersion.getVersion())
-                        .build().invoke(SYSTEM_TEST_STANDALONE,
-                                CdkCommand.deploySystemTestStandalone(),
-                                ClientUtils::runCommandLogOutput);
-            } catch (IOException e1) {
-                throw new UncheckedIOException(e1);
-            }
+            deploy(generateProperties());
         }
+    }
+
+    private void redeployIfNeeded() throws InterruptedException {
+        boolean redeployNeeded = false;
+        if (parameters.isSystemTestClusterEnabled() && !properties.getBoolean(SYSTEM_TEST_CLUSTER_ENABLED)) {
+            properties.set(SYSTEM_TEST_CLUSTER_ENABLED, "true");
+            LOGGER.info("System test cluster not present, deploying");
+            redeployNeeded = true;
+        }
+        if (parameters.isForceRedeploySystemTest()) {
+            LOGGER.info("Forcing redeploy");
+            redeployNeeded = true;
+        }
+        if (redeployNeeded) {
+            deploy(properties);
+        }
+    }
+
+    private void deploy(SystemTestStandaloneProperties deployProperties) throws InterruptedException {
         try {
-            properties = SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
+            uploadJarsAndDockerImages();
+            Path generatedDirectory = Files.createDirectories(parameters.getGeneratedDirectory());
+            Path propertiesFile = generatedDirectory.resolve("system-test.properties");
+            deployProperties.save(propertiesFile);
+            InvokeCdkForInstance.builder()
+                    .propertiesFile(propertiesFile)
+                    .jarsDirectory(parameters.getJarsDirectory())
+                    .version(SleeperVersion.getVersion())
+                    .build().invoke(SYSTEM_TEST_STANDALONE,
+                            CdkCommand.deploySystemTestStandalone(),
+                            ClientUtils::runCommandLogOutput);
+            properties = loadProperties();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private SystemTestStandaloneProperties loadProperties() {
+        try {
+            return SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
