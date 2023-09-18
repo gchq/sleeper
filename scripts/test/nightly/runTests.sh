@@ -22,29 +22,31 @@ MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
 
 pushd "$SCRIPTS_DIR/test"
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
-  echo "Usage: $0 <vpc> <subnet> <results bucket> <optional-test-type>"
-  echo "Default test type is functional, valid test types are: performance, functional"
+if [ "$#" -ne 4 ]; then
+  echo "Usage: $0 <vpc> <subnet> <results bucket> <test-type>"
+  echo "Valid test types are: performance, functional"
   exit 1
 fi
 
 VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
-if [ "$4" = "performance" ]; then
+if [ "$4" == "performance" ]; then
   EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
-else
+  TEST_NAME="performance"
+elif [ "$4" == "functional" ]; then
   EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
+  TEST_NAME="functional"
+else
+  echo "Invalid test type: $4"
+  echo "Valid test types are: performance, functional"
+  exit 1
 fi
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-if [ "$4" = "performance" ]; then
-  OUTPUT_DIR="/tmp/sleeper/performanceTests/$START_TIME"
-else
-  OUTPUT_DIR="/tmp/sleeper/functionalTests/$START_TIME"
-fi
+OUTPUT_DIR="/tmp/sleeper/${TEST_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
@@ -54,7 +56,6 @@ set +e
 
 runMavenSystemTests() {
     SHORT_ID=$1
-    TEST_NAME="maven"
     mkdir "$OUTPUT_DIR/$TEST_NAME"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
