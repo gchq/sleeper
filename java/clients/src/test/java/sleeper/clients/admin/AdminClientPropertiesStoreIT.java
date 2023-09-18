@@ -29,6 +29,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -371,18 +372,61 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
     }
 
+    @DisplayName("Create generated directory when missing")
+    @Nested
+    class CreateGeneratedDirectoryWhenMissing {
+
+        @Test
+        void shouldCreateGeneratedDirectoryWhenSavingInstanceProperties() {
+            // Given
+            Path generatedDir = tempDir.resolve("dir-to-create");
+
+            // When
+            updateInstanceProperty(storeWithGeneratedDirectory(generatedDir),
+                    INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            assertThat(loadInstancePropertiesFromDirectory(generatedDir).get(FARGATE_VERSION))
+                    .isEqualTo("1.2.3");
+        }
+
+        @Test
+        void shouldCreateGeneratedDirectoryWhenSavingTableProperties() throws IOException {
+            // Given
+            Path generatedDir = tempDir.resolve("dir-to-create");
+            createTableInS3("test-table");
+
+            // When
+            updateTableProperty(storeWithGeneratedDirectory(generatedDir),
+                    INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, generatedDir))
+                    .extracting(properties -> properties.getInt(ROW_GROUP_SIZE))
+                    .containsExactly(123);
+        }
+    }
+
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
-        InstanceProperties properties = store().loadInstanceProperties(instanceId);
+        updateInstanceProperty(store(), instanceId, property, value);
+    }
+
+    private static void updateInstanceProperty(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {
+        InstanceProperties properties = store.loadInstanceProperties(instanceId);
         String valueBefore = properties.get(property);
         properties.set(property, value);
-        store().saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
-        TableProperties properties = store().loadTableProperties(instanceProperties, tableName);
+        updateTableProperty(store(), instanceId, tableName, property, value);
+    }
+
+    private void updateTableProperty(AdminClientPropertiesStore store, String instanceId, String tableName, TableProperty property, String value) {
+        TableProperties properties = store.loadTableProperties(instanceProperties, tableName);
         String valueBefore = properties.get(property);
         properties.set(property, value);
-        store().saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(

@@ -46,7 +46,7 @@ public class RemoveECRRepositories {
                 .parallel().forEach(repositoryName -> deleteRepository(ecr, repositoryName));
     }
 
-    public static void deleteRepository(AmazonECR ecr, String repositoryName) {
+    private static void deleteRepository(AmazonECR ecr, String repositoryName) {
         LOGGER.info("Deleting repository {}", repositoryName);
         try {
             ecr.deleteRepository(new DeleteRepositoryRequest()

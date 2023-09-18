@@ -56,11 +56,15 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Override
     public AdminClientPropertiesStore getStore() {
-        return new AdminClientPropertiesStore(s3, null, cdk, tempDir);
+        return storeWithGeneratedDirectory(tempDir);
     }
 
     protected AdminClientPropertiesStore store() {
         return getStore();
+    }
+
+    protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
+        return new AdminClientPropertiesStore(s3, null, cdk, path);
     }
 
     @BeforeEach

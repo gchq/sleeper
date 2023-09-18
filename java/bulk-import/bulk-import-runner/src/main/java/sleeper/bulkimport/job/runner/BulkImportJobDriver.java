@@ -114,7 +114,7 @@ public class BulkImportJobDriver {
         try {
             stateStoreProvider.getStateStore(job.getTableName(), tablePropertiesProvider)
                     .addFiles(output.fileInfos());
-            LOGGER.info("Added {} files to statestore", output.numFiles());
+            LOGGER.info("Added {} files to statestore for job {}", output.numFiles(), job.getId());
         } catch (Exception e) {
             statusStore.jobFinished(ingestJobFinished(job.toIngestJob(), new RecordsProcessedSummary(
                     new RecordsProcessed(0, 0), startTime, getTime.get()))
