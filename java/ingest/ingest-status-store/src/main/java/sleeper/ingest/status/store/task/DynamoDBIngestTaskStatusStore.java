@@ -73,10 +73,10 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     public void taskStarted(IngestTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(format.createTaskStartedRecord(taskStatus));
-            LOGGER.debug("Put started event for task {} to table {}, capacity consumed = {}",
+            LOGGER.info("Put started event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in taskStarted", e);
+            throw new IngestStatusStoreException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
         }
     }
 
@@ -84,10 +84,10 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
     public void taskFinished(IngestTaskStatus taskStatus) {
         try {
             PutItemResult result = putItem(format.createTaskFinishedRecord(taskStatus));
-            LOGGER.debug("Put finished event for task {} to table {}, capacity consumed = {}",
+            LOGGER.info("Put finished event for task {} to table {}, capacity consumed = {}",
                     taskStatus.getTaskId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in taskFinished", e);
+            throw new IngestStatusStoreException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
         }
     }
 
