@@ -2,8 +2,8 @@ Deploying to LocalStack in Docker
 =================================
 
 You can run a LocalStack container locally and deploy an instance of Sleeper to it. This deployment method has limited
-functionality, but will allow you to perform a queue-based standard ingest, and run reports and scripts against the 
-instance.
+functionality and will only work with small volumes of data, but will allow you to perform a queue-based standard
+ingest, and run reports and scripts against the instance.
 
 ## Prerequesites
 
