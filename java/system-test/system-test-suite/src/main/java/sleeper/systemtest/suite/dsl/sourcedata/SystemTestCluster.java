@@ -35,8 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_ENABLED;
-
 public class SystemTestCluster {
 
     private final SystemTestDeploymentContext context;
@@ -106,6 +104,6 @@ public class SystemTestCluster {
     }
 
     public boolean isDisabled() {
-        return !context.getProperties().getBoolean(SYSTEM_TEST_CLUSTER_ENABLED);
+        return !context.isSystemTestClusterEnabled();
     }
 }

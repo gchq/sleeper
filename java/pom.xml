@@ -163,6 +163,8 @@
         <sleeper.system.test.subnet.ids/>
         <sleeper.system.test.output.dir/>
         <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
+        <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
+        <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -952,6 +954,14 @@
                             <property>
                                 <name>sleeper.system.test.cluster.enabled</name>
                                 <value>${sleeper.system.test.cluster.enabled}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.force.redeploy</name>
+                                <value>${sleeper.system.test.force.redeploy}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.instances.force.redeploy</name>
+                                <value>${sleeper.system.test.instances.force.redeploy}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>

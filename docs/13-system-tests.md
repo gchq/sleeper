@@ -83,7 +83,21 @@ be deployed with `SystemTestStandaloneApp`, for resources shared between tests. 
 ID as its stack name.
 
 After the tests, the instances will remain deployed. If you run again with the same short ID, the same instances will
-be used without redeploying them. You can tear down all resources associated with a short ID like this:
+be used. Usually they will not be redeployed, but if configuration has changed which requires it, they will be updated
+automatically. If you've rebuilt the system, this will not automatically cause redeployment. You can force redeployment
+by setting the Maven property `sleeper.system.test.force.redeploy` for the system test stack,
+and `sleeper.system.test.instances.force.redeploy` for the Sleeper instances, like this:
+
+```bash
+./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> \
+  -Dsleeper.system.test.force.redeploy=true \
+  -Dsleeper.system.test.instances.force.redeploy=true
+```
+
+If you've only changed test code and just want to re-run the tests against the same instance, you can avoid rebuilding
+the whole system by using `deployTest.sh` instead of `buildDeployTest.sh`.
+
+You can tear down all resources associated with a short ID like this:
 
 ```bash
 ./scripts/test/maven/tearDown.sh <short-id> <instance-ids>
@@ -103,18 +117,16 @@ You can run specific performance tests like this:
 ./scripts/test/maven/performanceTest.sh <short-id> <vpc> <subnets> CompactionPerformanceIT,IngestPerformanceIT
 ```
 
-Performance tests use an ECS cluster for generating data, and will deploy that in the system test CDK stack
-with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For non-performance tests,
-the system test stack is still deployed, but the data generation cluster is not. When the system test stack is already
-deployed with the same short ID, the test suite will reuse it without checking whether it has the data generation
-cluster enabled.
+Performance tests use an ECS cluster for generating data, which we call the system test cluster. This is deployed in the
+system test CDK stack with `SystemTestStandaloneApp`. This is a CloudFormation stack with the short ID as its name. For
+non-performance tests, the system test stack is still deployed, but the system test cluster is not.
 
-The test suite decides whether to run performance tests or not by whether a data generation cluster has been deployed in
-the system test stack. If you reuse a short ID for `performanceTest.sh` which was deployed for a non-performance test,
-then it won't have the data generation cluster, and performance tests will not be run. If you use a short ID
-for `buildDeployTest.sh` or `deployTest.sh` which was deployed for a performance test, performance tests will be run.
+When a system test has already deployed with the same short ID, the test suite will add the system test cluster to the
+stack if it's needed. This will also redeploy all instances to give the system test cluster access to them.
 
-You can run all tests in one execution, including performance tests, like this:
+The test suite decides whether to run performance tests or not by whether the system test cluster is enabled.
+The `performanceTest.sh` script enables the system test cluster. You can also run all tests in one execution, including
+performance tests, like this:
 
 ```bash
 ./scripts/test/maven/buildDeployTest.sh <short-id> <vpc> <subnets> -Dsleeper.system.test.cluster.enabled=true
@@ -146,8 +158,9 @@ in `scripts/test/nightly`. This uploads the output to an S3 bucket, including an
 on which tests were run, including information about failures. This will deploy fresh instances, and tear them down
 afterwards.
 
-If you want to run this manually you can do it like this with the Sleeper CLI, if you've checked out Sleeper in a
-builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software):
+If you want to run this manually you can use the Sleeper CLI. Once you've checked out Sleeper in a
+builder as documented in the [developer guide](11-dev-guide.md#install-prerequisite-software), you can run this from the
+host machine:
 
 ```bash
 sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperTests.log
