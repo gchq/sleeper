@@ -211,7 +211,7 @@ Netty (io.netty:*:4.1.94.Final):
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.4.51.v20230217):
+Eclipse Jetty (org.eclipse.jetty:*:9.4.52.v20230823):
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
