@@ -130,6 +130,15 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        Janino/commons-compiler is used by Spark SQL to compile SQL. Our tests against Spark fail with the latest
+        version of Janino, and we can't upgrade Spark because we're restricted by support in AWS EMR:
+        https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.codehaus\.janino/(commons\-compiler|janino)@.*$</packageUrl>
+        <cve>CVE-2023-33546</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         Spark SQL integrates with Apache Hive, but we don't use it.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.hive/hive\-storage\-api@.*$</packageUrl>
