@@ -98,6 +98,10 @@ public class UploadDockerImages {
         return !ecrClient.versionExistsInRepository(repositoryName, data.getVersion());
     }
 
+    public DockerImageConfiguration getDockerImageConfig() {
+        return dockerImageConfig;
+    }
+
     public static final class Builder {
         private Path baseDockerDirectory;
         private EcrRepositoryCreator.Client ecrClient;

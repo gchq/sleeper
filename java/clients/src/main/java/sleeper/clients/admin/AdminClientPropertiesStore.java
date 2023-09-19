@@ -139,9 +139,12 @@ public class AdminClientPropertiesStore {
             return false;
         }
         PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<String> oldStacks = new HashSet<>(List.of(stackDiff.getOldValue().split(",")));
+        Set<String> stacksBefore = new HashSet<>(List.of(stackDiff.getOldValue().split(",")));
         Set<String> newStacks = new HashSet<>(List.of(stackDiff.getNewValue().split(",")));
-        return !oldStacks.containsAll(newStacks);
+        newStacks.removeAll(stacksBefore);
+        return newStacks.stream()
+                .map(stack -> uploadDockerImages.getDockerImageConfig().getStackImage(stack))
+                .flatMap(Optional::stream).findAny().isPresent();
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {

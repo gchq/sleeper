@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.clients.deploy.DockerCommandData;
+import sleeper.clients.deploy.DockerImageConfiguration;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -43,8 +44,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -416,17 +419,22 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     @Nested
     @DisplayName("Upload docker images")
     class UploadDockerImages {
+        @BeforeEach
+        void setup() {
+            when(uploadDockerImages.getDockerImageConfig()).thenReturn(new DockerImageConfiguration());
+        }
+
         @Test
-        void shouldUploadDockerImagesIfOneStackEnabled() throws IOException, InterruptedException {
+        void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
+            addOptionalStack("IngestStack");
 
             // Then
             verify(uploadDockerImages).upload(withStacks("QueryStack", "CompactionStack", "IngestStack"));
         }
 
         @Test
-        void shouldNotUploadDockerImagesIfNoNewStacksAreEnabled() {
+        void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
             // When
             updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
 
@@ -435,22 +443,35 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldNotUploadDockerImagesIfStackIsDisabled() {
+        void shouldNotUploadDockerImagesWhenStackIsDisabled() throws IOException, InterruptedException {
             // When
             updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack");
 
             // Then
-            verifyNoInteractions(uploadDockerImages);
+            verify(uploadDockerImages, times(0)).upload(withStacks("QueryStack"));
         }
 
         @Test
-        void shouldUploadDockerImagesIfOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
+        void shouldUploadDockerImagesWhenOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
             // When
             updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,IngestStack");
 
             // Then
             verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
         }
+
+        @Test
+        void shouldNotUploadDockerImagesWhenStackIsEnabledThatRequiresNoImage() throws IOException, InterruptedException {
+            // When
+            addOptionalStack("GarbageCollectorStack");
+
+            // Then
+            verify(uploadDockerImages, times(0)).upload(withStacks("QueryStack", "CompactionStack", "GarbageCollectorStack"));
+        }
+    }
+
+    private void addOptionalStack(String stack) {
+        updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, instanceProperties.get(OPTIONAL_STACKS) + "," + stack);
     }
 
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
