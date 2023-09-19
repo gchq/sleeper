@@ -448,7 +448,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack");
 
             // Then
-            verify(uploadDockerImages, times(0)).upload(withStacks("QueryStack"));
+            verify(uploadDockerImages, times(0)).upload(any());
         }
 
         @Test
@@ -466,7 +466,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             addOptionalStack("GarbageCollectorStack");
 
             // Then
-            verify(uploadDockerImages, times(0)).upload(withStacks("QueryStack", "CompactionStack", "GarbageCollectorStack"));
+            verify(uploadDockerImages, times(0)).upload(any());
         }
     }
 
