@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -101,7 +102,9 @@ public class AdminClientPropertiesStore {
             Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
-            uploadDockerImages.upload(DockerCommandData.from(properties));
+            if (stacksHaveChanged(diff)) {
+                uploadDockerImages.upload(DockerCommandData.from(properties));
+            }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
@@ -123,6 +126,11 @@ public class AdminClientPropertiesStore {
             }
             throw wrapped;
         }
+    }
+
+    private boolean stacksHaveChanged(PropertiesDiff diff) {
+        return diff.getChanges().stream()
+                .anyMatch(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()));
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {

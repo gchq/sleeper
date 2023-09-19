@@ -429,6 +429,15 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             // Then
             verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
         }
+
+        @Test
+        void shouldNotUploadDockerImagesIfNoNewStacksAreEnabled() {
+            // When
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            verifyNoInteractions(uploadDockerImages);
+        }
     }
 
     private void addOptionalStack(String instanceId, String optionalStack) {
