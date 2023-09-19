@@ -43,6 +43,7 @@ Misc:
 - Added a utility script to show Parquet file page indexes
 - Upgraded to use EMR version 6.13.0 and Spark 3.4.1
 - Logging improvements in ingest, compaction, ingest batcher
+- Use Python conventions for non-release version numbers in Python code
 
 Bugfixes:
 
