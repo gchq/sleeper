@@ -21,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.testutil.RunCommandTestHelper;
 import sleeper.clients.util.CommandFailedException;
 import sleeper.clients.util.CommandPipeline;
 import sleeper.clients.util.EcrRepositoriesInMemory;
@@ -48,6 +49,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOS
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 public class UploadDockerImagesTest {
     private static final List<StackDockerImage> STACK_DOCKER_IMAGES = List.of(
@@ -64,16 +66,19 @@ public class UploadDockerImagesTest {
         properties.set(ID, "test-instance");
         properties.set(ACCOUNT, "123");
         properties.set(REGION, "test-region");
+        properties.set(VERSION, "1.0.0");
     }
 
     private sleeper.clients.deploy.UploadDockerImages uploader() {
         return sleeper.clients.deploy.UploadDockerImages.builder()
                 .baseDockerDirectory(Path.of("./docker"))
-                .version("1.0.0")
-                .instanceProperties(properties)
                 .ecrClient(ecrClient)
                 .dockerImageConfig(from(STACK_DOCKER_IMAGES))
                 .build();
+    }
+
+    private RunCommandTestHelper.PipelineInvoker upload(InstanceProperties properties) {
+        return runCommand -> uploader().upload(runCommand, DockerCommandData.from(properties));
     }
 
     @Nested
@@ -86,7 +91,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -105,7 +110,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack,EksBulkImportStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -128,7 +133,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/custom-ecr-prefix/ingest:1.0.0";
@@ -151,7 +156,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "OtherStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             assertThat(commandsThatRan).isEmpty();
@@ -164,7 +169,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "OtherStack,IngestStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             assertThat(commandsThatRan)
@@ -185,7 +190,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "BuildxStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/buildx:1.0.0";
@@ -205,7 +210,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack,BuildxStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -234,7 +239,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "IngestStack,EmrServerlessBulkImportStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag1 = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -264,7 +269,7 @@ public class UploadDockerImagesTest {
 
             // When / Then
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCode(123))
+                    uploader().upload(returningExitCode(123), DockerCommandData.from(properties))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -278,7 +283,7 @@ public class UploadDockerImagesTest {
             properties.set(OPTIONAL_STACKS, "BuildxStack");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload,
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties),
                     returningExitCodeForCommand(123, removeOldBuildxBuilderInstanceCommand()));
 
             // Then
@@ -301,7 +306,7 @@ public class UploadDockerImagesTest {
             // When / Then
             assertThatThrownBy(() ->
                     uploader().upload(returningExitCodeForCommand(
-                            123, createNewBuildxBuilderInstanceCommand()))
+                            123, createNewBuildxBuilderInstanceCommand()), DockerCommandData.from(properties))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -319,7 +324,7 @@ public class UploadDockerImagesTest {
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand))
+                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand), DockerCommandData.from(properties))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                 assertThat(e.getExitCode()).isEqualTo(42);
@@ -339,7 +344,7 @@ public class UploadDockerImagesTest {
             ecrClient.addVersionToRepository("test-instance/ingest", "0.9.0");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             String expectedTag = "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0";
@@ -360,7 +365,7 @@ public class UploadDockerImagesTest {
             ecrClient.addVersionToRepository("test-instance/ingest", "1.0.0");
 
             // When
-            List<CommandPipeline> commandsThatRan = pipelinesRunOn(uploader()::upload);
+            List<CommandPipeline> commandsThatRan = pipelinesRunOn(upload(properties));
 
             // Then
             assertThat(commandsThatRan).isEmpty();

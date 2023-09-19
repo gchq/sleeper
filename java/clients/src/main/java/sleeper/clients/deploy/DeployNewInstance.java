@@ -147,8 +147,7 @@ public class DeployNewInstance {
         UploadDockerImages.builder()
                 .baseDockerDirectory(scriptsDirectory.resolve("docker"))
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .instanceProperties(instanceProperties)
-                .build().upload(runCommand);
+                .build().upload(runCommand, DockerCommandData.from(instanceProperties));
 
         Files.createDirectories(generatedDirectory);
         ClientUtils.clearDirectory(generatedDirectory);
