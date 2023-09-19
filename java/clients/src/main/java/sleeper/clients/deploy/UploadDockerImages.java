@@ -60,7 +60,7 @@ public class UploadDockerImages {
                 .collect(Collectors.toUnmodifiableList());
 
         if (stacksToBuild.isEmpty()) {
-            LOGGER.info("No images need to be built and uploaded, exiting");
+            LOGGER.info("No images need to be built and uploaded, skipping");
             return;
         } else {
             runCommand.runOrThrow(pipeline(
