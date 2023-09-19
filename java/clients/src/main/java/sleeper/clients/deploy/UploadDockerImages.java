@@ -59,7 +59,10 @@ public class UploadDockerImages {
                 .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
                 .collect(Collectors.toUnmodifiableList());
 
-        if (!stacksToBuild.isEmpty()) {
+        if (stacksToBuild.isEmpty()) {
+            LOGGER.info("No images need to be built and uploaded, exiting");
+            return;
+        } else {
             runCommand.runOrThrow(pipeline(
                     command("aws", "ecr", "get-login-password", "--region", data.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
