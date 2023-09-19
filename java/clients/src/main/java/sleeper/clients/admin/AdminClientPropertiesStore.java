@@ -106,7 +106,7 @@ public class AdminClientPropertiesStore {
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             if (shouldUploadDockerImages(diff)) {
-                LOGGER.info("New stack has been added which requires a docker image. Uploading docker images.");
+                LOGGER.info("New stack has been added which requires a docker image. Uploading missing images.");
                 uploadDockerImages.upload(DockerCommandData.from(properties));
             }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
