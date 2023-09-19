@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
 
@@ -41,6 +42,10 @@ public class UploadDockerImages {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public void upload(DockerCommandData data) throws IOException, InterruptedException {
+        upload(ClientUtils::runCommandInheritIO, data);
     }
 
     public void upload(CommandPipelineRunner runCommand, DockerCommandData data) throws IOException, InterruptedException {

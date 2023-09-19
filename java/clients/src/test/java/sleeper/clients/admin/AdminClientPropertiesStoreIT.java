@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
+import sleeper.clients.deploy.DockerCommandData;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -44,9 +45,14 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
@@ -407,8 +413,40 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
     }
 
+    @Nested
+    @DisplayName("Upload docker images")
+    class UploadDockerImages {
+        @BeforeEach
+        void setup() {
+            instanceProperties.set(OPTIONAL_STACKS, "QueryStack");
+        }
+
+        @Test
+        void shouldUploadDockerImagesIfIngestStackEnabled() throws IOException, InterruptedException {
+            // When
+            addOptionalStack(INSTANCE_ID, "IngestStack");
+
+            // Then
+            verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
+        }
+    }
+
+    private void addOptionalStack(String instanceId, String optionalStack) {
+        updateInstanceProperty(instanceId, OPTIONAL_STACKS, instanceProperties.get(OPTIONAL_STACKS) + "," + optionalStack);
+    }
+
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
         updateInstanceProperty(store(), instanceId, property, value);
+    }
+
+    private DockerCommandData withStacks(String... stacks) {
+        return DockerCommandData.builder()
+                .ecrPrefix(instanceProperties.get(ID))
+                .account(instanceProperties.get(ACCOUNT))
+                .region(instanceProperties.get(REGION))
+                .version(instanceProperties.get(VERSION))
+                .stacks(List.of(stacks))
+                .build();
     }
 
     private static void updateInstanceProperty(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {

@@ -27,6 +27,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.admin.AdminClientPropertiesStore;
+import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -50,6 +51,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
+    protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
 
     @TempDir
     protected Path tempDir;
@@ -64,7 +66,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
-        return new AdminClientPropertiesStore(s3, null, cdk, path);
+        return new AdminClientPropertiesStore(s3, null, cdk, path, uploadDockerImages);
     }
 
     @BeforeEach

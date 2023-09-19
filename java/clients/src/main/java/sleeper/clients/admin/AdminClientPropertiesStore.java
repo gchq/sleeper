@@ -22,6 +22,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.DockerCommandData;
+import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -51,11 +53,14 @@ public class AdminClientPropertiesStore {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
+    private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
-    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB,
+                                      InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
+        this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
     }
@@ -96,6 +101,7 @@ public class AdminClientPropertiesStore {
             Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
+            uploadDockerImages.upload(DockerCommandData.from(properties));
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);

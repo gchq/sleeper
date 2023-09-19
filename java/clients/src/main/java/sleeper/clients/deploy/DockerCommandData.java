@@ -19,6 +19,7 @@ package sleeper.clients.deploy;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -76,6 +77,38 @@ public class DockerCommandData {
 
     public List<String> getStacks() {
         return stacks;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DockerCommandData that = (DockerCommandData) o;
+        return Objects.equals(ecrPrefix, that.ecrPrefix)
+                && Objects.equals(account, that.account)
+                && Objects.equals(region, that.region)
+                && Objects.equals(version, that.version)
+                && Objects.equals(stacks, that.stacks);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ecrPrefix, account, region, version, stacks);
+    }
+
+    @Override
+    public String toString() {
+        return "DockerCommandData{" +
+                "ecrPrefix='" + ecrPrefix + '\'' +
+                ", account='" + account + '\'' +
+                ", region='" + region + '\'' +
+                ", version='" + version + '\'' +
+                ", stacks=" + stacks +
+                '}';
     }
 
     public static final class Builder {
