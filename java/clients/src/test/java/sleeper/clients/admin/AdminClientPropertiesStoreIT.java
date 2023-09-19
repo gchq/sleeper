@@ -416,18 +416,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     @Nested
     @DisplayName("Upload docker images")
     class UploadDockerImages {
-        @BeforeEach
-        void setup() {
-            instanceProperties.set(OPTIONAL_STACKS, "QueryStack");
-        }
-
         @Test
-        void shouldUploadDockerImagesIfIngestStackEnabled() throws IOException, InterruptedException {
+        void shouldUploadDockerImagesIfOneStackEnabled() throws IOException, InterruptedException {
             // When
-            addOptionalStack(INSTANCE_ID, "IngestStack");
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
-            verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
+            verify(uploadDockerImages).upload(withStacks("QueryStack", "CompactionStack", "IngestStack"));
         }
 
         @Test
@@ -438,10 +433,24 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             // Then
             verifyNoInteractions(uploadDockerImages);
         }
-    }
 
-    private void addOptionalStack(String instanceId, String optionalStack) {
-        updateInstanceProperty(instanceId, OPTIONAL_STACKS, instanceProperties.get(OPTIONAL_STACKS) + "," + optionalStack);
+        @Test
+        void shouldNotUploadDockerImagesIfStackIsDisabled() {
+            // When
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack");
+
+            // Then
+            verifyNoInteractions(uploadDockerImages);
+        }
+
+        @Test
+        void shouldUploadDockerImagesIfOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
+            // When
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,IngestStack");
+
+            // Then
+            verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
+        }
     }
 
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {

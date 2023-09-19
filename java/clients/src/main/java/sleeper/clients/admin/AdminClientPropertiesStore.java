@@ -40,7 +40,10 @@ import sleeper.table.job.TableLister;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -129,8 +132,16 @@ public class AdminClientPropertiesStore {
     }
 
     private boolean stacksHaveChanged(PropertiesDiff diff) {
-        return diff.getChanges().stream()
-                .anyMatch(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()));
+        Optional<PropertyDiff> stackDiffOptional = diff.getChanges().stream()
+                .filter(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()))
+                .findFirst();
+        if (stackDiffOptional.isEmpty()) {
+            return false;
+        }
+        PropertyDiff stackDiff = stackDiffOptional.get();
+        Set<String> oldStacks = new HashSet<>(List.of(stackDiff.getOldValue().split(",")));
+        Set<String> newStacks = new HashSet<>(List.of(stackDiff.getNewValue().split(",")));
+        return !oldStacks.containsAll(newStacks);
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {

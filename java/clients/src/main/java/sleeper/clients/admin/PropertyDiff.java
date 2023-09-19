@@ -95,6 +95,14 @@ public class PropertyDiff {
         return propertyName;
     }
 
+    public String getOldValue() {
+        return oldValue;
+    }
+
+    public String getNewValue() {
+        return newValue;
+    }
+
     public <T extends SleeperProperty> Optional<T> getProperty(SleeperPropertyIndex<T> propertyIndex) {
         return propertyIndex.getByName(propertyName);
     }
