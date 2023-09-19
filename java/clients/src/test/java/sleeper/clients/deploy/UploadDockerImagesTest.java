@@ -69,8 +69,8 @@ public class UploadDockerImagesTest {
         properties.set(VERSION, "1.0.0");
     }
 
-    private sleeper.clients.deploy.UploadDockerImages uploader() {
-        return sleeper.clients.deploy.UploadDockerImages.builder()
+    private UploadDockerImages uploader() {
+        return UploadDockerImages.builder()
                 .baseDockerDirectory(Path.of("./docker"))
                 .ecrClient(ecrClient)
                 .dockerImageConfig(from(STACK_DOCKER_IMAGES))
@@ -82,8 +82,8 @@ public class UploadDockerImagesTest {
     }
 
     @Nested
-    @DisplayName("Upload Docker images")
-    class UploadDockerImages {
+    @DisplayName("Upload images")
+    class UploadImages {
 
         @Test
         void shouldCreateRepositoryAndPushImageForIngestStack() throws Exception {
