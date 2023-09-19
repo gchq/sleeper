@@ -420,14 +420,16 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     @DisplayName("Upload docker images")
     class UploadDockerImages {
         @BeforeEach
-        void setup() {
+        void setup() throws IOException {
+            instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
+            instanceProperties.saveToS3(s3);
             when(uploadDockerImages.getDockerImageConfig()).thenReturn(new DockerImageConfiguration());
         }
 
         @Test
         void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-            addOptionalStack("IngestStack");
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
             verify(uploadDockerImages).upload(withStacks("QueryStack", "CompactionStack", "IngestStack"));
@@ -463,15 +465,11 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldNotUploadDockerImagesWhenStackIsEnabledThatRequiresNoImage() throws IOException, InterruptedException {
             // When
-            addOptionalStack("GarbageCollectorStack");
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
 
             // Then
             verify(uploadDockerImages, times(0)).upload(any());
         }
-    }
-
-    private void addOptionalStack(String stack) {
-        updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, instanceProperties.get(OPTIONAL_STACKS) + "," + stack);
     }
 
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {

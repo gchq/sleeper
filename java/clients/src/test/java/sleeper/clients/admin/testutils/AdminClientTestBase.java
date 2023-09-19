@@ -35,7 +35,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -85,7 +84,6 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
-        instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
         return instanceProperties;
     }
 
