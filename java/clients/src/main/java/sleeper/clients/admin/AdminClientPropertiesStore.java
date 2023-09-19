@@ -105,7 +105,8 @@ public class AdminClientPropertiesStore {
             Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
-            if (stacksHaveChanged(diff)) {
+            if (shouldUploadDockerImages(diff)) {
+                LOGGER.info("New stack has been added which requires a docker image. Uploading docker images.");
                 uploadDockerImages.upload(DockerCommandData.from(properties));
             }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
@@ -131,7 +132,7 @@ public class AdminClientPropertiesStore {
         }
     }
 
-    private boolean stacksHaveChanged(PropertiesDiff diff) {
+    private boolean shouldUploadDockerImages(PropertiesDiff diff) {
         Optional<PropertyDiff> stackDiffOptional = diff.getChanges().stream()
                 .filter(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()))
                 .findFirst();
