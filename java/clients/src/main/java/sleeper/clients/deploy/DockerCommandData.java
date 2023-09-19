@@ -50,12 +50,16 @@ public class DockerCommandData {
     }
 
     public static DockerCommandData from(InstanceProperties properties) {
+        return from(properties, properties.get(VERSION));
+    }
+
+    public static DockerCommandData from(InstanceProperties properties, String version) {
         return builder()
                 .ecrPrefix(Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX))
                         .orElse(properties.get(ID)))
                 .account(properties.get(ACCOUNT))
                 .region(properties.get(REGION))
-                .version(properties.get(VERSION))
+                .version(version)
                 .stacks(properties.getList(OPTIONAL_STACKS)).build();
     }
 
