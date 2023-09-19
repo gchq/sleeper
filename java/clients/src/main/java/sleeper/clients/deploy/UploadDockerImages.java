@@ -16,6 +16,9 @@
 
 package sleeper.clients.deploy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
@@ -30,6 +33,7 @@ import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 
 public class UploadDockerImages {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
     private final Path baseDockerDirectory;
     private final EcrRepositoryCreator.Client ecrClient;
     private final DockerImageConfiguration dockerImageConfig;
@@ -52,7 +56,7 @@ public class UploadDockerImages {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
         List<StackDockerImage> stacksToBuild = data.getStacks().stream()
                 .flatMap(stack -> dockerImageConfig.getStackImage(stack).stream())
-                .filter(stackDockerImage -> repositoryExistsWithVersion(stackDockerImage, data))
+                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
                 .collect(Collectors.toUnmodifiableList());
 
         if (!stacksToBuild.isEmpty()) {
@@ -93,9 +97,17 @@ public class UploadDockerImages {
         }
     }
 
-    private boolean repositoryExistsWithVersion(StackDockerImage stackDockerImage, DockerCommandData data) {
-        String repositoryName = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
-        return !ecrClient.versionExistsInRepository(repositoryName, data.getVersion());
+    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, DockerCommandData data) {
+        String imagePath = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        if (ecrClient.versionExistsInRepository(imagePath, data.getVersion())) {
+            LOGGER.info("Stack image {} already exists in ECR with version {}",
+                    stackDockerImage.getImageName(), data.getVersion());
+            return false;
+        } else {
+            LOGGER.info("Stack image {} does not exist in ECR with version {}",
+                    stackDockerImage.getImageName(), data.getVersion());
+            return true;
+        }
     }
 
     public DockerImageConfiguration getDockerImageConfig() {
