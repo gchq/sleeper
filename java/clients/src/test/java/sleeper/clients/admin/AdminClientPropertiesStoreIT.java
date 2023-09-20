@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.DockerCommandData;
 import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -476,8 +476,8 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         updateInstanceProperty(store(), instanceId, property, value);
     }
 
-    private DockerCommandData withStacks(String... stacks) {
-        return DockerCommandData.builder()
+    private StacksForDockerUpload withStacks(String... stacks) {
+        return StacksForDockerUpload.builder()
                 .ecrPrefix(instanceProperties.get(ID))
                 .account(instanceProperties.get(ACCOUNT))
                 .region(instanceProperties.get(REGION))

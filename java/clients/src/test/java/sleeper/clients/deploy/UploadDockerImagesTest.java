@@ -78,7 +78,7 @@ public class UploadDockerImagesTest {
     }
 
     private RunCommandTestHelper.PipelineInvoker upload(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, DockerCommandData.from(properties));
+        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.from(properties));
     }
 
     @Nested
@@ -269,7 +269,7 @@ public class UploadDockerImagesTest {
 
             // When / Then
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCode(123), DockerCommandData.from(properties))
+                    uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -306,7 +306,7 @@ public class UploadDockerImagesTest {
             // When / Then
             assertThatThrownBy(() ->
                     uploader().upload(returningExitCodeForCommand(
-                            123, createNewBuildxBuilderInstanceCommand()), DockerCommandData.from(properties))
+                            123, createNewBuildxBuilderInstanceCommand()), StacksForDockerUpload.from(properties))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -324,7 +324,7 @@ public class UploadDockerImagesTest {
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand), DockerCommandData.from(properties))
+                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand), StacksForDockerUpload.from(properties))
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                 assertThat(e.getExitCode()).isEqualTo(42);

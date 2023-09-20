@@ -48,11 +48,11 @@ public class UploadDockerImages {
         return new Builder();
     }
 
-    public void upload(DockerCommandData data) throws IOException, InterruptedException {
+    public void upload(StacksForDockerUpload data) throws IOException, InterruptedException {
         upload(ClientUtils::runCommandInheritIO, data);
     }
 
-    public void upload(CommandPipelineRunner runCommand, DockerCommandData data) throws IOException, InterruptedException {
+    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data) throws IOException, InterruptedException {
         String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
         List<StackDockerImage> stacksToBuild = data.getStacks().stream()
                 .flatMap(stack -> dockerImageConfig.getStackImage(stack).stream())
@@ -100,7 +100,7 @@ public class UploadDockerImages {
         }
     }
 
-    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, DockerCommandData data) {
+    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, StacksForDockerUpload data) {
         String imagePath = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
         if (ecrClient.versionExistsInRepository(imagePath, data.getVersion())) {
             LOGGER.info("Stack image {} already exists in ECR with version {}",

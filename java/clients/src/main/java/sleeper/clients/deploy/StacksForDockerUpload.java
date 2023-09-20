@@ -30,14 +30,14 @@ import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
-public class DockerCommandData {
+public class StacksForDockerUpload {
     private final String ecrPrefix;
     private final String account;
     private final String region;
     private final String version;
     private final List<String> stacks;
 
-    private DockerCommandData(Builder builder) {
+    private StacksForDockerUpload(Builder builder) {
         ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
         account = requireNonNull(builder.account, "account must not be null");
         region = requireNonNull(builder.region, "region must not be null");
@@ -49,11 +49,11 @@ public class DockerCommandData {
         return new Builder();
     }
 
-    public static DockerCommandData from(InstanceProperties properties) {
+    public static StacksForDockerUpload from(InstanceProperties properties) {
         return from(properties, properties.get(VERSION));
     }
 
-    public static DockerCommandData from(InstanceProperties properties, String version) {
+    public static StacksForDockerUpload from(InstanceProperties properties, String version) {
         return builder()
                 .ecrPrefix(Optional.ofNullable(properties.get(ECR_REPOSITORY_PREFIX))
                         .orElse(properties.get(ID)))
@@ -91,7 +91,7 @@ public class DockerCommandData {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DockerCommandData that = (DockerCommandData) o;
+        StacksForDockerUpload that = (StacksForDockerUpload) o;
         return Objects.equals(ecrPrefix, that.ecrPrefix)
                 && Objects.equals(account, that.account)
                 && Objects.equals(region, that.region)
@@ -106,7 +106,7 @@ public class DockerCommandData {
 
     @Override
     public String toString() {
-        return "DockerCommandData{" +
+        return "StacksForDockerUpload{" +
                 "ecrPrefix='" + ecrPrefix + '\'' +
                 ", account='" + account + '\'' +
                 ", region='" + region + '\'' +
@@ -150,8 +150,8 @@ public class DockerCommandData {
             return this;
         }
 
-        public DockerCommandData build() {
-            return new DockerCommandData(this);
+        public StacksForDockerUpload build() {
+            return new StacksForDockerUpload(this);
         }
     }
 }

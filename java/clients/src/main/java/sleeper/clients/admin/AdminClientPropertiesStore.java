@@ -22,7 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.clients.deploy.DockerCommandData;
+import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
@@ -107,7 +107,7 @@ public class AdminClientPropertiesStore {
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
             if (shouldUploadDockerImages(diff)) {
                 LOGGER.info("New stack has been added which requires a docker image. Uploading missing images.");
-                uploadDockerImages.upload(DockerCommandData.from(properties));
+                uploadDockerImages.upload(StacksForDockerUpload.from(properties));
             }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
