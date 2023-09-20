@@ -45,8 +45,8 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
                 .thenReturn(onePendingAndTwoBatchedFiles());
 
         // When/Then
-        String output = runIngestBatcherReport()
-                .enterPrompts(BATCHER_QUERY_ALL_OPTION, CONFIRM_PROMPT)
+        String output = runClientWithStoreEnabled()
+                .enterPrompts(INGEST_BATCHER_REPORT_OPTION, BATCHER_QUERY_ALL_OPTION, CONFIRM_PROMPT)
                 .exitGetOutput();
         assertThat(output)
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
@@ -68,8 +68,8 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
                 .thenReturn(multiplePendingFiles());
 
         // When/Then
-        String output = runIngestBatcherReport()
-                .enterPrompts(BATCHER_QUERY_PENDING_OPTION, CONFIRM_PROMPT)
+        String output = runClientWithStoreEnabled()
+                .enterPrompts(INGEST_BATCHER_REPORT_OPTION, BATCHER_QUERY_PENDING_OPTION, CONFIRM_PROMPT)
                 .exitGetOutput();
         assertThat(output)
                 .startsWith(CLEAR_CONSOLE + MAIN_SCREEN + CLEAR_CONSOLE)
@@ -83,9 +83,26 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
         verifyWithNumberOfPromptsBeforeExit(2);
     }
 
-    private RunAdminClient runIngestBatcherReport() {
+    @Test
+    void shouldReturnToMenuWhenIngestBatcherStackDisabled() throws Exception {
+        // When/Then
+        String output = runClientWithStoreDisabled()
+                .enterPrompts(INGEST_BATCHER_REPORT_OPTION, CONFIRM_PROMPT)
+                .exitGetOutput();
+        assertThat(output)
+                .startsWith(CLEAR_CONSOLE + MAIN_SCREEN)
+                .endsWith(PROMPT_RETURN_TO_MAIN + CLEAR_CONSOLE + MAIN_SCREEN)
+                .contains("Ingest batcher stack not enabled. Please enable the optional stack IngestBatcherStack.");
+
+        verifyWithNumberOfPromptsBeforeExit(1);
+    }
+
+    private RunAdminClient runClientWithStoreDisabled() {
         setInstanceProperties(createValidInstanceProperties());
-        return runClient().enterPrompts(INGEST_BATCHER_REPORT_OPTION)
-                .statusStore(ingestBatcherStore);
+        return runClient();
+    }
+
+    private RunAdminClient runClientWithStoreEnabled() {
+        return runClientWithStoreDisabled().batcherStore(ingestBatcherStore);
     }
 }

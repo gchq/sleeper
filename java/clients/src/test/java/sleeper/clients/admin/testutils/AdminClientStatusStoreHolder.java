@@ -83,8 +83,7 @@ public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFacto
     }
 
     @Override
-    public IngestBatcherStore loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
-        return Optional.ofNullable(ingestBatcherStoreByInstance.get(properties.get(ID)))
-                .orElse(IngestBatcherStore.NONE);
+    public Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
+        return Optional.ofNullable(ingestBatcherStoreByInstance.get(properties.get(ID)));
     }
 }

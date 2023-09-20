@@ -162,7 +162,7 @@ public class RunAdminClient {
         return this;
     }
 
-    public RunAdminClient statusStore(IngestBatcherStore store) {
+    public RunAdminClient batcherStore(IngestBatcherStore store) {
         statusStores.setStore(instanceId, store);
         return this;
     }
