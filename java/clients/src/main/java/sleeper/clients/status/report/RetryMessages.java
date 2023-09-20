@@ -107,7 +107,7 @@ public class RetryMessages {
 
     public static void main(String[] args) throws IOException {
         if (3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> [compaction|splittingcompaction|ingest|query] max_messages");
+            throw new IllegalArgumentException("Usage: <instance-id> [compaction|splittingcompaction|ingest|query] <max-messages>");
         }
         Set<String> validStacks = new HashSet<>();
         validStacks.add("compaction");

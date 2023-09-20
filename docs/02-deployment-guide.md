@@ -144,7 +144,7 @@ editor templates/instanceproperties.template
 editor templates/schema.template
 editor templates/tableproperties.template
 editor templates/tags.template
-deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-ids> <table-name>
+deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> <table-name>
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.

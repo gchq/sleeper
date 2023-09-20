@@ -34,7 +34,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -65,7 +64,7 @@ public class ExportPartitions {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void writePartitionsToFile(String filename) throws FileNotFoundException, IOException, StateStoreException {
+    public void writePartitionsToFile(String filename) throws IOException, StateStoreException {
         List<String> partitionsAsJsonStrings = getPartitionsAsJsonStrings();
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8))) {
             for (String partition : partitionsAsJsonStrings) {
@@ -78,7 +77,7 @@ public class ExportPartitions {
 
     public static void main(String[] args) throws IOException, StateStoreException {
         if (3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> <output file>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-file>");
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

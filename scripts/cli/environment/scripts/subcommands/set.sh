@@ -24,7 +24,7 @@ list_environments() {
 }
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: environment set <uniqueId>"
+  echo "Usage: environment set <unique-id>"
   list_environments
   exit 1
 fi

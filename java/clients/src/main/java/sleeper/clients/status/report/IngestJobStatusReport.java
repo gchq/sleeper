@@ -128,7 +128,7 @@ public class IngestJobStatusReport {
 
     private static void printUsage() {
         System.out.println("" +
-                "Usage: <instance id> <table name> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
+                "Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +

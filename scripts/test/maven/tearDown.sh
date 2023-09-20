@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 set -e
 unset CDPATH
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: $0 <short id> <instance ids if any are deployed>"
+  echo "Usage: $0 <short-id> <instance-ids-if-any-are-deployed>"
   exit 1
 fi
 

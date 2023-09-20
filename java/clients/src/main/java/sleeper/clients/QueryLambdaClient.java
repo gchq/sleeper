@@ -136,7 +136,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
 
     public static void main(String[] args) throws IOException, StateStoreException {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

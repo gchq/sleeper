@@ -231,7 +231,7 @@ public class ReinitialiseTable {
 
     public static void main(String[] args) {
         if (args.length < 2 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> <optional_delete_partitions_true_or_false>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-delete-partitions-true-or-false>");
         }
         String instanceId = args[0];
         String tableName = args[1];

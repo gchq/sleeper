@@ -38,7 +38,7 @@ public class TrackedQueryProgressReport {
 
     public static void main(String[] args) throws IOException, StateStoreException, QueryTrackerException {
         if (2 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> <query id>");
+            throw new IllegalArgumentException("Usage: <instance-id> <query-id>");
         }
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);

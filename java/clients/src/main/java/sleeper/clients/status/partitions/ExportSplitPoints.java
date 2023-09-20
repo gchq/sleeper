@@ -74,10 +74,10 @@ public class ExportSplitPoints {
             Object max = range.getMax();
             if (rowKey0Type instanceof ByteArrayType) {
                 if (null != min) {
-                    splitPoints.add((Comparable) ByteArray.wrap((byte[]) min));
+                    splitPoints.add(ByteArray.wrap((byte[]) min));
                 }
                 if (null != max) {
-                    splitPoints.add((Comparable) ByteArray.wrap((byte[]) max));
+                    splitPoints.add(ByteArray.wrap((byte[]) max));
                 }
             } else {
                 if (null != min) {
@@ -114,7 +114,7 @@ public class ExportSplitPoints {
 
     public static void main(String[] args) throws IOException, StateStoreException {
         if (3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> <output file>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-file>");
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

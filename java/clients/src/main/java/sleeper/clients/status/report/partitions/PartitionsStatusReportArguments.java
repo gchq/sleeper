@@ -47,7 +47,7 @@ public class PartitionsStatusReportArguments {
     }
 
     public static void printUsage(PrintStream out) {
-        out.println("Usage: <instance id> <table name>");
+        out.println("Usage: <instance-id> <table-name>");
     }
 
     public static PartitionsStatusReportArguments fromArgs(String... args) {

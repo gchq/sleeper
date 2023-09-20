@@ -102,7 +102,7 @@ public class StatusReport {
 
     public static void main(String[] args) throws IOException, StateStoreException {
         if (2 != args.length && 3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> <optional_verbose_true_or_false>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-verbose-true-or-false>");
         }
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
