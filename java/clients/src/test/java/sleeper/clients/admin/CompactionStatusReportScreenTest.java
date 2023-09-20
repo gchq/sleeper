@@ -93,7 +93,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total standard jobs in progress: 1\n" +
                             "Total standard jobs finished: 0");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         @Test
@@ -114,7 +114,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total unfinished jobs in progress: 1\n" +
                             "Total unfinished jobs not started: 0");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         @Test
@@ -133,7 +133,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "----------------------------\n" +
                             "Details for job " + exampleJob.getId());
 
-            verifyWithNumberOfInvocations(5);
+            verifyWithNumberOfPromptsBeforeExit(5);
         }
 
         @Test
@@ -152,7 +152,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "----------------------------\n" +
                             "Total jobs in defined range: 1");
 
-            verifyWithNumberOfInvocations(6);
+            verifyWithNumberOfPromptsBeforeExit(6);
         }
 
         private RunAdminClient runCompactionJobStatusReport() {
@@ -196,7 +196,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total splitting tasks in progress: 0\n" +
                             "Total splitting tasks finished: 0\n");
 
-            verifyWithNumberOfInvocations(3);
+            verifyWithNumberOfPromptsBeforeExit(3);
         }
 
         @Test
@@ -218,7 +218,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total standard tasks in progress: 1\n" +
                             "Total splitting tasks in progress: 0\n");
 
-            verifyWithNumberOfInvocations(3);
+            verifyWithNumberOfPromptsBeforeExit(3);
         }
 
         private RunAdminClient runCompactionTaskStatusReport() {
@@ -246,6 +246,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
                         COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
-        verifyWithNumberOfInvocations(1);
+        verifyWithNumberOfPromptsBeforeExit(1);
     }
 }

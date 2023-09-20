@@ -74,7 +74,7 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
                 .thenReturn(stateStore);
     }
 
-    protected void verifyWithNumberOfInvocations(int numberOfInvocations) {
+    protected void verifyWithNumberOfPromptsBeforeExit(int numberOfInvocations) {
         InOrder order = Mockito.inOrder(in.mock);
         order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
         order.verify(in.mock).waitForLine();

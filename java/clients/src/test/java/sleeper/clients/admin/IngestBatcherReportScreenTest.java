@@ -58,7 +58,7 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
                         "Total batched files: 2\n" +
                         "----------------------");
 
-        verifyWithNumberOfInvocations(2);
+        verifyWithNumberOfPromptsBeforeExit(2);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class IngestBatcherReportScreenTest extends AdminClientMockStoreBase {
                         "Total pending files: 3\n" +
                         "----------------------");
 
-        verifyWithNumberOfInvocations(2);
+        verifyWithNumberOfPromptsBeforeExit(2);
     }
 
     private RunAdminClient runIngestBatcherReport() {
