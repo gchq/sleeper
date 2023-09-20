@@ -31,9 +31,13 @@ run_in_docker() {
   if [ -t 1 ]; then # Only pass TTY to Docker if connected to terminal
     RUN_PARAMS+=(-it)
   fi
+  # We ensure the container ID is available as a file inside the container
+  # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
     --network=host
+    --cidfile /tmp/container.id
+    -v /tmp/container.id:/tmp/container.id
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
     -e AWS_ACCESS_KEY_ID
@@ -48,6 +52,7 @@ run_in_docker() {
     -e SUBNET
     "$@"
   )
+  [ -f "/tmp/container.id" ] && rm "/tmp/container.id"
   docker run "${RUN_PARAMS[@]}"
 }
 
