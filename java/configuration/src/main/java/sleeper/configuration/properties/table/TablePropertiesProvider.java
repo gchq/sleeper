@@ -19,8 +19,6 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -54,11 +52,7 @@ public class TablePropertiesProvider {
     private static TableProperties getTablePropertiesFromS3(
             AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        try {
-            tableProperties.loadFromS3(s3Client, tableName);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Exception while trying to download table properties", e);
-        }
+        tableProperties.loadFromS3(s3Client, tableName);
         return tableProperties;
     }
 

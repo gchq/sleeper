@@ -36,7 +36,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -88,7 +87,7 @@ public class InitialiseStateStore {
         stateStore.initialise(initialPartitions);
     }
 
-    public static void main(String[] args) throws StateStoreException, IOException {
+    public static void main(String[] args) throws StateStoreException {
         if (2 != args.length) {
             System.out.println("Usage: <Sleeper S3 Config Bucket> <Table name>");
             return;

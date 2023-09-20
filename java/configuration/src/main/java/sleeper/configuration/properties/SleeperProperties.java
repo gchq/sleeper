@@ -37,6 +37,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -122,55 +123,83 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         return properties;
     }
 
-    public void load(InputStream inputStream) throws IOException {
+    public void load(InputStream inputStream) {
         try (inputStream) {
             properties.load(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
         this.init();
     }
 
-    public void load(File file) throws IOException {
-        InputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-        load(inputStream);
+    public void load(File file) {
+        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(file))) {
+            load(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public void load(Path file) throws IOException {
-        InputStream inputStream = new BufferedInputStream(Files.newInputStream(file));
-        load(inputStream);
+    public void load(Path file) {
+        try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(file))) {
+            load(inputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public void save(OutputStream oututStream) throws IOException {
-        properties.store(oututStream, "");
+    public void save(OutputStream oututStream) {
+        try {
+            properties.store(oututStream, "");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public void save(File file) throws IOException {
-        OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
-        save(outputStream);
+    public void save(File file) {
+        try {
+            OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file));
+            save(outputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public void save(Path file) throws IOException {
-        OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(file));
-        save(outputStream);
+    public void save(Path file) {
+        try {
+            OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(file));
+            save(outputStream);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public String saveAsString() throws IOException {
+    public String saveAsString() {
         StringWriter stringWriter = new StringWriter();
-        properties.store(stringWriter, "");
+        try {
+            properties.store(stringWriter, "");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return stringWriter.toString();
     }
 
-    public void loadFromString(String propertiesAsString) throws IOException {
+    public void loadFromString(String propertiesAsString) {
         StringReader stringReader = new StringReader(propertiesAsString);
-        properties.load(stringReader);
+        try {
+            properties.load(stringReader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         this.init();
     }
 
-    protected void saveToS3(AmazonS3 s3Client, String bucket, String key) throws IOException {
+    protected void saveToS3(AmazonS3 s3Client, String bucket, String key) {
         LOGGER.debug("Uploading config to bucket {}", bucket);
         s3Client.putObject(bucket, key, saveAsString());
     }
 
-    protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) throws IOException {
+    protected void loadFromS3(AmazonS3 s3Client, String bucket, String key) {
         String propertiesString = s3Client.getObjectAsString(bucket, key);
         loadFromString(propertiesString);
     }

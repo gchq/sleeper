@@ -63,7 +63,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         );
     }
 
-    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, String configBucket) throws IOException {
+    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);

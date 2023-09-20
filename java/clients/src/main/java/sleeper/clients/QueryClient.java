@@ -40,7 +40,6 @@ import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +114,7 @@ public class QueryClient extends QueryCommandLineClient {
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException, StateStoreException, IteratorException, ObjectFactoryException {
+    public static void main(String[] args) throws ExecutionException, InterruptedException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id>");
         }

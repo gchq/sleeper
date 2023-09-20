@@ -30,7 +30,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -58,11 +57,7 @@ public class PropertiesStack extends NestedStack {
         LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
-        try {
-            properties.put("properties", instanceProperties.saveAsString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to serialise properties");
-        }
+        properties.put("properties", instanceProperties.saveAsString());
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "properties-writer"));

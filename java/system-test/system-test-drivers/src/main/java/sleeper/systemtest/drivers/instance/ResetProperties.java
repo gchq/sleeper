@@ -24,9 +24,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
 import static java.util.function.Predicate.not;
 
 public class ResetProperties {
@@ -38,14 +35,10 @@ public class ResetProperties {
                              InstanceProperties instanceProperties,
                              TableProperties tableProperties,
                              AmazonS3 s3Client) {
-        try {
-            reset(instanceProperties, configuration.getInstanceProperties());
-            instanceProperties.saveToS3(s3Client);
-            reset(tableProperties, configuration.getTableProperties());
-            tableProperties.saveToS3(s3Client);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        reset(instanceProperties, configuration.getInstanceProperties());
+        instanceProperties.saveToS3(s3Client);
+        reset(tableProperties, configuration.getTableProperties());
+        tableProperties.saveToS3(s3Client);
     }
 
     private static <T extends SleeperProperty> void reset(

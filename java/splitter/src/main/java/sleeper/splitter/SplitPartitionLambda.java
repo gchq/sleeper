@@ -50,7 +50,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
     private final StateStoreProvider stateStoreProvider;
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public SplitPartitionLambda() throws IOException {
+    public SplitPartitionLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");

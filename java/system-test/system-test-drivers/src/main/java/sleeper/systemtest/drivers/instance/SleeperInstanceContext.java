@@ -231,18 +231,14 @@ public class SleeperInstanceContext {
     }
 
     private Instance loadInstance(String identifier, String instanceId, String tableName) {
-        try {
-            InstanceProperties instanceProperties = new InstanceProperties();
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-            TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-            StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
-            return new Instance(identifier,
-                    instanceProperties, tableProperties,
-                    tablePropertiesProvider, stateStoreProvider);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
+        return new Instance(identifier,
+                instanceProperties, tableProperties,
+                tablePropertiesProvider, stateStoreProvider);
     }
 
     private class Instance {

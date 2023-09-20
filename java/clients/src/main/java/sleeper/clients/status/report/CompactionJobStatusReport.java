@@ -32,7 +32,6 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
@@ -87,7 +86,7 @@ public class CompactionJobStatusReport {
         compactionJobStatusReporter.report(query.run(compactionJobStatusStore), queryType);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         try {
             if (args.length < 2 || args.length > 5) {
                 throw new IllegalArgumentException("Wrong number of arguments");

@@ -27,7 +27,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
-import java.io.IOException;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -87,13 +86,7 @@ public class TableCreator {
         } catch (StateStoreException e) {
             throw new RuntimeException("Failed to create the table", e);
         }
-
-        try {
-            tableProperties.saveToS3(s3Client);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store table properties in the configuration bucket." +
-                    " Failing at this stage may cause errors as it will not appear as if the table exists", e);
-        }
+        tableProperties.saveToS3(s3Client);
     }
 
     private DynamoDBStateStore createStateStore(TableProperties tableProperties) throws StateStoreException {

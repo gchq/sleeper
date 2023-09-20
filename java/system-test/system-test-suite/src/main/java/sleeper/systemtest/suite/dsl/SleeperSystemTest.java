@@ -40,8 +40,6 @@ import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
@@ -115,11 +113,7 @@ public class SleeperSystemTest {
 
     public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
         tablePropertiesConsumer.accept(instance.getTableProperties());
-        try {
-            instance.getTableProperties().saveToS3(clients.getS3());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        instance.getTableProperties().saveToS3(clients.getS3());
     }
 
     public SystemTestSourceFiles sourceFiles() {

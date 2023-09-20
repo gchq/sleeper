@@ -38,7 +38,6 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopPathUtils;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -63,7 +62,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     private final Supplier<String> invalidJobIdSupplier;
     private final Supplier<Instant> timeSupplier;
 
-    public BulkImportStarterLambda() throws IOException {
+    public BulkImportStarterLambda() {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
         instanceProperties = loadInstanceProperties(s3);
@@ -124,7 +123,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         return Optional.of(builder.files(files).build());
     }
 
-    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) throws IOException {
+    private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
         return instanceProperties;

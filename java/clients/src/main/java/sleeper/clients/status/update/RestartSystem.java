@@ -26,7 +26,6 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
 import java.util.List;
 
 public class RestartSystem {
@@ -34,7 +33,7 @@ public class RestartSystem {
     private RestartSystem() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id>");
         }

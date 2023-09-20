@@ -36,7 +36,6 @@ import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +65,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void init(TableProperties tableProperties) throws StateStoreException {
+    protected void init(TableProperties tableProperties) {
         // No-op
     }
 
@@ -134,7 +133,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
         sqsClient.sendMessage(queryQueueUrl, querySerDe.toJson(query));
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws StateStoreException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id>");
         }

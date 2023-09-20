@@ -34,8 +34,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -120,11 +118,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
 
     private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client, String configBucket) {
         InstanceProperties properties = new InstanceProperties();
-        try {
-            properties.loadFromS3(s3Client, configBucket);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load instance properties");
-        }
+        properties.loadFromS3(s3Client, configBucket);
         return properties;
     }
 

@@ -56,7 +56,7 @@ public class FindPartitionsToSplitLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplitLambda.class);
     private final TablePropertiesProvider tablePropertiesProvider;
 
-    public FindPartitionsToSplitLambda() throws IOException {
+    public FindPartitionsToSplitLambda() {
         this.s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {

@@ -40,8 +40,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
-
 import static sleeper.clients.util.ClientUtils.optionalArgument;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -100,7 +98,7 @@ public class StatusReport {
         new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider).run();
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws StateStoreException {
         if (2 != args.length && 3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance id> <table name> <optional_verbose_true_or_false>");
         }

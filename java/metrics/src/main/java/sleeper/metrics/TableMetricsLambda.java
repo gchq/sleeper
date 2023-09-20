@@ -38,7 +38,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.stream.Collectors;
@@ -83,7 +82,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         return null;
     }
 
-    public void publishStateStoreMetrics(String configBucketName, String tableName) throws IOException, StateStoreException {
+    public void publishStateStoreMetrics(String configBucketName, String tableName) throws StateStoreException {
         LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucketName);
@@ -133,7 +132,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         metricsLogger.flush();
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws StateStoreException {
         if (args.length != 2) {
             throw new RuntimeException("Syntax: " + TableMetricsLambda.class.getSimpleName() + " <configBucketName> <tableName>");
         }

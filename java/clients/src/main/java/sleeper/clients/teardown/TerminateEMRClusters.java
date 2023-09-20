@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,7 +94,7 @@ public class TerminateEMRClusters {
         return clustersStillRunning == 0;
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         if (args.length != 1) {
             System.out.println("Usage: <instance id>");
             return;

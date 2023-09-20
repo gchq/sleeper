@@ -32,7 +32,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class IngestBatcherReport {
         reporter.report(query.run(batcherStore), queryType);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         String instanceId = null;
         IngestBatcherReporter reporter = null;
         BatcherQuery.Type queryType = null;

@@ -68,7 +68,7 @@ public class SafeTerminationLambda implements RequestStreamHandler {
     private final AmazonECS ecsClient;
     private final String ecsClusterName;
 
-    public SafeTerminationLambda() throws IOException {
+    public SafeTerminationLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         String type = validateParameter("type");
 

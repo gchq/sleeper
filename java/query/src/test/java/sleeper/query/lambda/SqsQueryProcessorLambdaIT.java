@@ -807,8 +807,6 @@ public class SqsQueryProcessorLambdaIT {
 
         try {
             instanceProperties.saveToS3(s3Client);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } finally {
             s3Client.shutdown();
         }

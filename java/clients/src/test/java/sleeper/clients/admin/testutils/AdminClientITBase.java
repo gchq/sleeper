@@ -32,8 +32,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 
 import static org.mockito.Mockito.mock;
@@ -82,21 +80,13 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
-        try {
-            instanceProperties.saveToS3(s3);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        instanceProperties.saveToS3(s3);
     }
 
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         setInstanceProperties(instanceProperties);
-        try {
-            tableProperties.saveToS3(s3);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        tableProperties.saveToS3(s3);
     }
 
 }

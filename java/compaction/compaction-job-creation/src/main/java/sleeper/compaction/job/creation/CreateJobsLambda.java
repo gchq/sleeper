@@ -69,7 +69,7 @@ public class CreateJobsLambda {
      * @throws IOException            if instance properties cannot be loaded from S3
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
-    public CreateJobsLambda() throws IOException, ObjectFactoryException {
+    public CreateJobsLambda() throws ObjectFactoryException {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
 
