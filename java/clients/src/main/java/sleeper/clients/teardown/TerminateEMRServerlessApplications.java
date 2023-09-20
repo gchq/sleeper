@@ -112,7 +112,7 @@ public class TerminateEMRServerlessApplications {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length != 1) {
-            System.out.println("Usage: <instance id>");
+            System.out.println("Usage: <instance-id>");
             return;
         }
 

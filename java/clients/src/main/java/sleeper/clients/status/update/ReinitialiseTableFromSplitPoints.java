@@ -113,9 +113,9 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
 
     public static void main(String[] args) {
         if (args.length < 3 || args.length > 4) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> " +
-                    "<split_points_file_location> " +
-                    "<optional_split_points_file_is_base64_encoded_true_or_false>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> " +
+                    "<split-points-file-location> " +
+                    "<optional-split-points-file-is-base64-encoded-true-or-false>");
         }
         String instanceId = args[0];
         String tableName = args[1];

@@ -34,7 +34,7 @@ public class DownloadConfig {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 2) {
-            throw new IllegalArgumentException("Usage: <instance id> <directory to write to>");
+            throw new IllegalArgumentException("Usage: <instance-id> <directory-to-write-to>");
         }
         String instanceId = args[0];
         Path basePath = Path.of(args[1]);

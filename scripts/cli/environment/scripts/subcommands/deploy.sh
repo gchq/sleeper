@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: environment deploy <uniqueId> <optional_cdk_parameters>"
+  echo "Usage: environment deploy <uniqueId> <optional-cdk-parameters>"
   exit 1
 fi
 

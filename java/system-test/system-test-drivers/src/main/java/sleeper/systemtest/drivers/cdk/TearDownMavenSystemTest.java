@@ -44,7 +44,7 @@ public class TearDownMavenSystemTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 2) {
-            throw new IllegalArgumentException("Usage: <scripts directory> <short id> <instance ids>");
+            throw new IllegalArgumentException("Usage: <scripts-directory> <short-id> <instance-ids>");
         }
         Path scriptsDir = Path.of(args[0]);
         String shortId = args[1];

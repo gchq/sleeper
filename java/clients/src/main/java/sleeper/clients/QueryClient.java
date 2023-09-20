@@ -117,7 +117,7 @@ public class QueryClient extends QueryCommandLineClient {
 
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException, StateStoreException, IteratorException, ObjectFactoryException {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
         AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
