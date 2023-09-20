@@ -148,9 +148,9 @@ public abstract class SleeperProperties<T extends SleeperProperty> implements Sl
         }
     }
 
-    public void save(OutputStream oututStream) {
+    public void save(OutputStream outputStream) {
         try {
-            properties.store(oututStream, "");
+            properties.store(outputStream, "");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
