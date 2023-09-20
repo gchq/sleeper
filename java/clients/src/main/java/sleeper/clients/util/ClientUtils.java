@@ -30,7 +30,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -83,20 +82,6 @@ public class ClientUtils {
         } else {
             return countWithCommas(Math.round((double) records / T_COUNT)) + "T (" + countWithCommas(records) + ")";
         }
-    }
-
-    private static String splitNonDecimalIntoParts(String str) {
-        int length = str.length();
-        int firstPartEnd = length % 3;
-
-        List<String> parts = new ArrayList<>();
-        if (firstPartEnd != 0) {
-            parts.add(str.substring(0, firstPartEnd));
-        }
-        for (int i = firstPartEnd; i < length; i += 3) {
-            parts.add(str.substring(i, i + 3));
-        }
-        return String.join(",", parts);
     }
 
     public static void clearDirectory(Path tempDir) throws IOException {
