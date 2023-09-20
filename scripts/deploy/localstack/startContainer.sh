@@ -18,7 +18,11 @@ THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 docker compose -f "$THIS_DIR/docker-compose.yml" up -d 
 echo "Running localstack container on port 4566"
 echo "To use sleeper with this container, set the AWS_ENDPOINT_URL environment variable:"
-echo "export AWS_ENDPOINT_URL=http://localhost:4566"
+if [ "$IN_DEPLOYMENT_CONTAINER" = "true" ]; then
+  echo "export AWS_ENDPOINT_URL=http://host.docker.internal:4566"
+else
+  echo "export AWS_ENDPOINT_URL=http://localhost:4566"
+fi
 echo ""
 echo "To revert to using the default AWS endpoint, you can unset this environment variable:"
 echo "unset AWS_ENDPOINT_URL"
