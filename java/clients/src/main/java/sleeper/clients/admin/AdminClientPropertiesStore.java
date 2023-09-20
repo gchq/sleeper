@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
@@ -140,8 +141,8 @@ public class AdminClientPropertiesStore {
             return false;
         }
         PropertyDiff stackDiff = stackDiffOptional.get();
-        Set<String> stacksBefore = new HashSet<>(List.of(stackDiff.getOldValue().split(",")));
-        Set<String> newStacks = new HashSet<>(List.of(stackDiff.getNewValue().split(",")));
+        Set<String> stacksBefore = new HashSet<>(readList(stackDiff.getOldValue()));
+        Set<String> newStacks = new HashSet<>(readList(stackDiff.getNewValue()));
         newStacks.removeAll(stacksBefore);
         return newStacks.stream()
                 .map(stack -> uploadDockerImages.getDockerImageConfig().getStackImage(stack))
