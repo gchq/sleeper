@@ -130,6 +130,7 @@ public class ExpectedAdminConsoleValues {
     public static final String INGEST_JOB_STATUS_REPORT_OPTION = "1";
     public static final String INGEST_TASK_STATUS_REPORT_OPTION = "2";
     public static final String BATCHER_QUERY_ALL_OPTION = "1";
+    public static final String BATCHER_QUERY_PENDING_OPTION = "2";
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final class SaveChangesScreen {
