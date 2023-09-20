@@ -19,24 +19,13 @@ package sleeper.ingest.batcher;
 import java.util.List;
 
 public interface IngestBatcherStore {
-    IngestBatcherStore NONE = new IngestBatcherStore() {
-    };
+    void addFile(FileIngestRequest fileIngestRequest);
 
-    default void addFile(FileIngestRequest fileIngestRequest) {
-    }
+    List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob);
 
-    default List<String> assignJobGetAssigned(String jobId, List<FileIngestRequest> filesInJob) {
-        throw new UnsupportedOperationException("Instance has no ingest batcher store");
-    }
+    List<FileIngestRequest> getAllFilesNewestFirst();
 
-    default List<FileIngestRequest> getAllFilesNewestFirst() {
-        throw new UnsupportedOperationException("Instance has no ingest batcher store");
-    }
+    List<FileIngestRequest> getPendingFilesOldestFirst();
 
-    default List<FileIngestRequest> getPendingFilesOldestFirst() {
-        throw new UnsupportedOperationException("Instance has no ingest batcher store");
-    }
-
-    default void deleteAllPending() {
-    }
+    void deleteAllPending();
 }
