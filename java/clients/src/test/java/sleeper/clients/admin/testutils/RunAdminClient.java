@@ -26,6 +26,7 @@ import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 import sleeper.job.common.QueueMessageCount;
@@ -157,6 +158,11 @@ public class RunAdminClient {
     }
 
     public RunAdminClient statusStore(IngestTaskStatusStore store) {
+        statusStores.setStore(instanceId, store);
+        return this;
+    }
+
+    public RunAdminClient statusStore(IngestBatcherStore store) {
         statusStores.setStore(instanceId, store);
         return this;
     }

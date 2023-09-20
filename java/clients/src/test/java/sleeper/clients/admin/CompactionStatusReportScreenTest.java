@@ -20,8 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
@@ -37,8 +35,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE;
@@ -251,13 +247,5 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                         COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         verifyWithNumberOfInvocations(1);
-    }
-
-    private void verifyWithNumberOfInvocations(int numberOfInvocations) {
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
-        order.verify(in.mock).waitForLine();
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
     }
 }

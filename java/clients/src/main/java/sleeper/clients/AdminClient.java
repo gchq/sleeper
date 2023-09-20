@@ -28,6 +28,7 @@ import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.CompactionStatusReportScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
+import sleeper.clients.admin.IngestBatcherReportScreen;
 import sleeper.clients.admin.IngestStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
@@ -131,5 +132,9 @@ public class AdminClient {
 
     public IngestStatusReportScreen ingestStatusReportScreen() {
         return new IngestStatusReportScreen(out, in, store, statusStores, queueClient, getStepCount);
+    }
+
+    public IngestBatcherReportScreen ingestBatcherReportScreen() {
+        return new IngestBatcherReportScreen(out, in, store, statusStores);
     }
 }

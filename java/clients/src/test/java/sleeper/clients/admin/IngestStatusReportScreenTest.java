@@ -19,8 +19,6 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
@@ -40,9 +38,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
@@ -302,13 +298,5 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                         INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         verifyWithNumberOfInvocations(1);
-    }
-
-    private void verifyWithNumberOfInvocations(int numberOfInvocations) {
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
-        order.verify(in.mock).waitForLine();
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
     }
 }

@@ -30,6 +30,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
@@ -160,6 +161,10 @@ public class AdminClientPropertiesStore {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return stateStoreProvider.getStateStore(tableProperties);
+    }
+
+    public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
+        return new TablePropertiesProvider(s3, properties);
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

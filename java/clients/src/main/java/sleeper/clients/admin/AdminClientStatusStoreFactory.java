@@ -22,6 +22,9 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.batcher.IngestBatcherStore;
+import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
@@ -36,6 +39,8 @@ public interface AdminClientStatusStoreFactory {
     IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties);
 
     IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties);
+
+    IngestBatcherStore loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
     static AdminClientStatusStoreFactory from(AmazonDynamoDB dynamoDB) {
         return new AdminClientStatusStoreFactory() {
@@ -57,6 +62,11 @@ public interface AdminClientStatusStoreFactory {
             @Override
             public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
                 return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            }
+
+            @Override
+            public IngestBatcherStore loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
+                return new DynamoDBIngestBatcherStore(dynamoDB, properties, tablePropertiesProvider);
             }
         };
     }
