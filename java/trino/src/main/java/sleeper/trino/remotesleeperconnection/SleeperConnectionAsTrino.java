@@ -50,7 +50,6 @@ import sleeper.trino.utils.SleeperTypeConversionUtils;
 
 import javax.inject.Inject;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -80,7 +79,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
                                     AmazonS3 s3Client,
                                     S3AsyncClient s3AsyncClient,
                                     AmazonDynamoDB dynamoDbClient,
-                                    HadoopConfigurationProvider hadoopConfigurationProvider) throws IOException, ObjectFactoryException {
+                                    HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
         this.sleeperRawAwsConnection = new SleeperRawAwsConnection(sleeperConfig, s3Client, s3AsyncClient, dynamoDbClient, hadoopConfigurationProvider);
         this.tableHandleMap = this.sleeperRawAwsConnection.getAllSleeperTableNames().stream()

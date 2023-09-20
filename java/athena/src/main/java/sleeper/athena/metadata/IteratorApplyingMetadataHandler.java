@@ -38,7 +38,6 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.PrimitiveType;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -61,7 +60,7 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
     public static final String MAX_ROW_KEY_PREFIX = "_MaxRowKey";
     public static final Predicate<String> ROW_KEY_PREFIX_TEST = Pattern.compile("_M[a-z]{2}RowKey").asPredicate();
 
-    public IteratorApplyingMetadataHandler() throws IOException {
+    public IteratorApplyingMetadataHandler() {
         super();
     }
 
@@ -73,7 +72,7 @@ public class IteratorApplyingMetadataHandler extends SleeperMetadataHandler {
             AWSSecretsManager secretsManager,
             AmazonAthena athena,
             String spillBucket,
-            String spillPrefix) throws IOException {
+            String spillPrefix) {
         super(s3Client, dynamoDBClient, configBucket, encryptionKeyFactory, secretsManager, athena, spillBucket, spillPrefix);
     }
 

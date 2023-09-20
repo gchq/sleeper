@@ -51,7 +51,7 @@ public class QueryResultsSQSQueuePoller {
         this.resultsSQSQueueUrl = resultsSQSQueueUrl;
     }
 
-    public void run() throws IOException {
+    public void run() {
         int numConsecutiveNoMessages = 0;
         while (numConsecutiveNoMessages < 15) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()

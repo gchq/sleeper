@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
@@ -43,7 +42,7 @@ public class IngestRandomData {
     private IngestRandomData() {
     }
 
-    public static void main(String[] args) throws IOException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException {
         InstanceProperties instanceProperties;
         SystemTestPropertyValues systemTestProperties;
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();

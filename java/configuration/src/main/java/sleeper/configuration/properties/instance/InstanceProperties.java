@@ -105,7 +105,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         super.loadFromS3(s3Client, bucket, S3_INSTANCE_PROPERTIES_FILE);
     }
 
-    public static Properties loadPropertiesFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) throws IOException {
+    public static Properties loadPropertiesFromS3GivenInstanceId(AmazonS3 s3Client, String instanceId) {
         return loadProperties(loadStringFromS3GivenInstanceId(s3Client, instanceId));
     }
 

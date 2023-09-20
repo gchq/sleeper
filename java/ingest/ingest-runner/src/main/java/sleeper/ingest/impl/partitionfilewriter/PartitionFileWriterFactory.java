@@ -23,6 +23,6 @@ public interface PartitionFileWriterFactory extends AutoCloseable {
     PartitionFileWriter createPartitionFileWriter(Partition partition);
 
     @Override
-    default void close() throws Exception {
+    default void close() {
     }
 }

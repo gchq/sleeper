@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
@@ -81,15 +80,11 @@ public class TableCreator {
                 "table", tableName, "partitions").toLowerCase(Locale.ROOT));
 
         // Create Dynamo tables
-        try {
-            createStateStore(tableProperties);
-        } catch (StateStoreException e) {
-            throw new RuntimeException("Failed to create the table", e);
-        }
+        createStateStore(tableProperties);
         tableProperties.saveToS3(s3Client);
     }
 
-    private DynamoDBStateStore createStateStore(TableProperties tableProperties) throws StateStoreException {
+    private DynamoDBStateStore createStateStore(TableProperties tableProperties) {
         return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
     }
 

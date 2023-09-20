@@ -74,7 +74,7 @@ public class CompactSortedFilesTestUtils {
         return dynamoStateStore;
     }
 
-    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
+    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) {
         return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 

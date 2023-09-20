@@ -373,7 +373,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldAddFilesUnderContention() throws IOException, StateStoreException, InterruptedException {
+    public void shouldAddFilesUnderContention() throws IOException, StateStoreException {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -414,7 +414,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testGetFilesThatAreReadyForGC() throws IOException, InterruptedException, StateStoreException {
+    public void testGetFilesThatAreReadyForGC() throws IOException, StateStoreException {
         // Given
         Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
         Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");

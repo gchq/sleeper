@@ -120,9 +120,7 @@ public class CreateJobsLambda {
         CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, tableLister, jobStatusStore);
         try {
             createJobs.createJobs();
-        } catch (StateStoreException | IOException | ClassNotFoundException |
-                 IllegalAccessException | InstantiationException |
-                 ObjectFactoryException e) {
+        } catch (StateStoreException | IOException | ObjectFactoryException e) {
             LOGGER.error("Exception thrown whilst creating jobs", e);
         }
 

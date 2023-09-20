@@ -88,12 +88,12 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket) throws IOException {
+    public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket) {
         super(s3Client, configBucket);
         objectFactory = createObjectFactory(s3Client);
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) throws IOException {
+    public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
         super(s3Client, configBucket, secretsManager, athena);
         objectFactory = createObjectFactory(s3Client);
     }

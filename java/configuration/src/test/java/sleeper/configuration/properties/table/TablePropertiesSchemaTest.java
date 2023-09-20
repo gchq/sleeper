@@ -22,7 +22,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +55,7 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldFailToConstructFromPropertiesIfTableSchemaIsAbsent() throws IOException {
+    void shouldFailToConstructFromPropertiesIfTableSchemaIsAbsent() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
@@ -69,7 +68,7 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldLoadAndValidateSuccessfullyIfTableSchemaIsInPropertyInConstructor() throws IOException {
+    void shouldLoadAndValidateSuccessfullyIfTableSchemaIsInPropertyInConstructor() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n" +
@@ -86,7 +85,7 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldLoadFromStringSuccessfullyIfTableSchemaIsSetBeforeLoad() throws IOException {
+    void shouldLoadFromStringSuccessfullyIfTableSchemaIsSetBeforeLoad() {
         // Given
         String input = "" +
                 "sleeper.table.name=myTable\n";
@@ -103,7 +102,7 @@ class TablePropertiesSchemaTest {
     }
 
     @Test
-    void shouldFailToLoadAndValidateIfMandatoryPropertyIsMissing() throws IOException {
+    void shouldFailToLoadAndValidateIfMandatoryPropertyIsMissing() {
         // Given
         String input = "" +
                 "sleeper.table.schema={\"rowKeyFields\":[{\"name\":\"key\",\"type\":\"StringType\"}]}\n";

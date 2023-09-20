@@ -44,7 +44,7 @@ public class FileStatusCollector {
         return run(StateStoreSnapshot.from(stateStore, maxNumberOfReadyForGCFilesToCount));
     }
 
-    public static FileStatus run(StateStoreSnapshot state) throws StateStoreException {
+    public static FileStatus run(StateStoreSnapshot state) {
         FileStatus fileStatusReport = new FileStatus();
 
         StateStoreReadyForGC readyForGC = state.getReadyForGC();
