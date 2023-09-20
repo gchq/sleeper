@@ -24,7 +24,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.clients.util.ClientUtils.formatBytes;
+import static sleeper.core.util.CoreUtils.formatBytes;
 
 public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     private final TableField fileNameField;

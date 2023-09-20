@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.core.util.CoreUtils.countWithCommas;
 
 public class ClientUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
@@ -81,34 +82,6 @@ public class ClientUtils {
             return Math.round((double) records / G_COUNT) + "G (" + countWithCommas(records) + ")";
         } else {
             return countWithCommas(Math.round((double) records / T_COUNT)) + "T (" + countWithCommas(records) + ")";
-        }
-    }
-
-    public static String formatBytes(long fileSize) {
-        if (fileSize < K_COUNT) {
-            return fileSize + "B";
-        } else if (fileSize < M_COUNT) {
-            return String.format("%.1fKB", fileSize / (double) K_COUNT);
-        } else if (fileSize < G_COUNT) {
-            return String.format("%.1fMB", fileSize / (double) M_COUNT);
-        } else if (fileSize < T_COUNT) {
-            return String.format("%.1fGB", (fileSize / (double) G_COUNT));
-        } else {
-            return countWithCommas(Math.round((double) fileSize / T_COUNT)) + "TB";
-        }
-    }
-
-    public static String countWithCommas(long count) {
-        return splitNonDecimalIntoParts("" + count);
-    }
-
-    public static String decimalWithCommas(String formatStr, double decimal) {
-        String str = String.format(formatStr, decimal);
-        int decimalIndex = str.indexOf('.');
-        if (decimalIndex > 0) {
-            return splitNonDecimalIntoParts(str.substring(0, decimalIndex)) + str.substring(decimalIndex);
-        } else {
-            return splitNonDecimalIntoParts(str);
         }
     }
 
