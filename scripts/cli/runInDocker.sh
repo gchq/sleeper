@@ -33,6 +33,7 @@ run_in_docker() {
     --rm
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -e IN_CLI_CONTAINER=true \
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
     -e AWS_SESSION_TOKEN
@@ -56,7 +57,6 @@ run_in_environment_docker() {
 
 run_in_deployment_docker() {
   run_in_docker \
-    -e IN_DEPLOYMENT_CONTAINER=true \
     -v "$HOME/.sleeper/generated:/sleeper/generated" \
     sleeper-deployment:current "$@"
 }
