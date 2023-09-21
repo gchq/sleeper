@@ -46,7 +46,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -77,8 +76,7 @@ public class PartitionSplittingStack extends NestedStack {
                                    String id,
                                    InstanceProperties instanceProperties,
                                    BuiltJars jars,
-                                   List<IBucket> dataBuckets,
-                                   List<StateStoreStack> stateStoreStacks,
+                                   TableStack tableStack, TableDataStack dataStack,
                                    Topic topic) {
         super(scope, id);
 
@@ -159,8 +157,8 @@ public class PartitionSplittingStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(findPartitionsToSplitLambda);
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(findPartitionsToSplitLambda));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(findPartitionsToSplitLambda));
+        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(findPartitionsToSplitLambda));
+        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(findPartitionsToSplitLambda));
 
         // Grant this function permission to write to the SQS queue
         partitionSplittingQueue.grantSendMessages(findPartitionsToSplitLambda);
@@ -204,8 +202,9 @@ public class PartitionSplittingStack extends NestedStack {
         // Grant this function permission to read config files and to read
         // from / write to the DynamoDB table
         configBucket.grantRead(splitPartitionLambda);
-        dataBuckets.forEach(bucket -> bucket.grantRead(splitPartitionLambda));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(splitPartitionLambda));
+        tableStack.getDataBuckets().forEach(bucket -> bucket.grantRead(splitPartitionLambda));
+        dataStack.getDataBucket().grantRead(splitPartitionLambda);
+        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(splitPartitionLambda));
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
