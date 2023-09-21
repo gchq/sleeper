@@ -31,8 +31,14 @@ This will also output commands you can use to point Sleeper scripts to your Loca
 
 For Sleeper commands to interact with LocalStack, ensure that the `AWS_ENDPOINT_URL` environment variable
 is set. Commands to do this are provided by the `startContainer.sh` script, but you can also manually set this by
-running the following command:
+running the following commands:
 
+- If you are inside a docker container:
+```shell
+export AWS_ENDPOINT_URL=http://host.docker.internal:4566
+```
+
+- If you are on your host machine:
 ```shell
 export AWS_ENDPOINT_URL=http://localhost:4566
 ```
