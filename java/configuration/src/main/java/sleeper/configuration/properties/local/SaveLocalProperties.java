@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SaveLocalProperties {
@@ -74,9 +73,8 @@ public class SaveLocalProperties {
         Files.createDirectories(tableDir);
         writeTableProperties(tableProperties, tableDir.resolve("table.properties"));
 
-        // Unpack properties for schema & table bucket
+        // Write schema
         tableProperties.getSchema().save(tableDir.resolve("schema.json"));
-        writeStringIfSet(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
     }
 
     private static void writeStringIfSet(Path file, String value) throws IOException {

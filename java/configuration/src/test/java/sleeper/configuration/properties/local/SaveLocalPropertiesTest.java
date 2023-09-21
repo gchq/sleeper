@@ -134,22 +134,6 @@ class SaveLocalPropertiesTest {
     }
 
     @Test
-    void shouldSaveTableBucketFile() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
-        tableProperties.set(TABLE_NAME, "test-table");
-        tableProperties.set(DATA_BUCKET, "test-data-bucket");
-
-        // When
-        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
-
-        // Then
-        assertThat(Files.readString(tempDir.resolve("tables/test-table/tableBucket.txt")))
-                .isEqualTo("test-data-bucket");
-    }
-
-    @Test
     void shouldNotSaveTableBucketFileIfNotYetSetByCdk() throws IOException {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
