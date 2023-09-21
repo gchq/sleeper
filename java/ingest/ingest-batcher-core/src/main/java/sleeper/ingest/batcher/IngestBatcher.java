@@ -51,7 +51,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.core.util.CoreUtils.formatBytes;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcher.class);

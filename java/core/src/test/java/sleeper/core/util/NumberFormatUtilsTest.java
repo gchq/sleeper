@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.util.CoreUtils.formatBytes;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
-public class CoreUtilsTest {
+public class NumberFormatUtilsTest {
     @Nested
     @DisplayName("Format bytes as string")
     class FormatBytesAsString {

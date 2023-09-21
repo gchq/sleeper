@@ -37,7 +37,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.util.CoreUtils.formatBytes;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);

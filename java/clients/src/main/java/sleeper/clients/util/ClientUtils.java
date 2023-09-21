@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
-import static sleeper.core.util.CoreUtils.countWithCommas;
+import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 
 public class ClientUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);

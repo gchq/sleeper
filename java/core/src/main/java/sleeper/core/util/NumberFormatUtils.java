@@ -19,8 +19,8 @@ package sleeper.core.util;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CoreUtils {
-    private CoreUtils() {
+public class NumberFormatUtils {
+    private NumberFormatUtils() {
     }
 
     private static final long K_COUNT = 1_000;
