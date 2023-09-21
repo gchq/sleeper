@@ -44,6 +44,7 @@ import software.constructs.Construct;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.IngestStatusStoreResources;
+import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -81,14 +82,14 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             Construct scope, String id,
             InstanceProperties instanceProperties, BuiltJars jars,
             BulkImportBucketStack importBucketStack, TopicStack errorsTopicStack,
-            TableStack tableStack,
+            TableStack tableStack, TableDataStack dataStack,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
         createEmrServerlessApplication(instanceProperties);
         IBucket configBucket = Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         List<IBucket> ingestBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
         IRole emrRole = createEmrServerlessRole(
-                instanceProperties, importBucketStack, statusStoreResources, tableStack, configBucket, ingestBuckets);
+                instanceProperties, importBucketStack, statusStoreResources, tableStack, dataStack, configBucket, ingestBuckets);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 "EMRServerless", instanceProperties, statusStoreResources, configBucket, ingestBuckets);
         bulkImportJobQueue = commonHelper.createJobQueue(
@@ -160,7 +161,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
             BulkImportBucketStack bulkImportBucketStack, IngestStatusStoreResources statusStoreResources,
-            TableStack tableStack, IBucket configBucket, List<IBucket> ingestBuckets) {
+            TableStack tableStack, TableDataStack dataStack, IBucket configBucket, List<IBucket> ingestBuckets) {
         String instanceId = instanceProperties.get(ID);
         Role role = new Role(this, "EmrServerlessRole", RoleProps.builder()
                 .roleName(String.join("-", "sleeper", instanceId, "EMR-Serverless-Role"))
@@ -182,6 +183,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
             sss.grantReadWriteActiveFileMetadata(role);
         });
         tableStack.getDataBuckets().forEach(b -> b.grantReadWrite(role));
+        dataStack.getDataBucket().grantReadWrite(role);
         return role;
     }
 

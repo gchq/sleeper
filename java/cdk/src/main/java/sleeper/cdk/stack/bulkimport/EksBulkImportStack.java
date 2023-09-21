@@ -71,6 +71,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -114,7 +115,7 @@ public final class EksBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             BulkImportBucketStack importBucketStack,
-            TableStack tableStack,
+            TableStack tableStack, TableDataStack dataStack,
             TopicStack errorsTopicStack,
             IngestStatusStoreStack statusStoreStack,
             List<StateStoreStack> stateStoreStacks) {
@@ -231,7 +232,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        grantAccesses(tableStack.getDataBuckets(), tableStack.getStateStoreStacks(), configBucket);
+        grantAccesses(tableStack, dataStack, configBucket);
 
         this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
@@ -308,10 +309,10 @@ public final class EksBulkImportStack extends NestedStack {
                 ).build();
     }
 
-    private void grantAccesses(List<IBucket> dataBuckets,
-                               List<StateStoreStack> stateStoreStacks, IBucket configBucket) {
-        dataBuckets.forEach(bucket -> bucket.grantReadWrite(sparkServiceAccount));
-        stateStoreStacks.forEach(sss -> {
+    private void grantAccesses(TableStack tableStack, TableDataStack dataStack, IBucket configBucket) {
+        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(sparkServiceAccount));
+        dataStack.getDataBucket().grantReadWrite(sparkServiceAccount);
+        tableStack.getStateStoreStacks().forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(sparkServiceAccount);
             sss.grantReadPartitionMetadata(sparkServiceAccount);
         });

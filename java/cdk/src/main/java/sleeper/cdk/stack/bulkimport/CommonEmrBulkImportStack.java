@@ -42,7 +42,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.StateStoreStack;
+import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
@@ -73,10 +73,11 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                     InstanceProperties instanceProperties,
                                     BulkImportBucketStack importBucketStack,
                                     TableStack tableStack,
+                                    TableDataStack dataStack,
                                     IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
-                importBucketStack.getImportBucket(), tableStack.getDataBuckets(), tableStack.getStateStoreStacks());
+                importBucketStack.getImportBucket(), tableStack, dataStack);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
         IngestStatusStoreResources statusStore = statusStoreStack.getResources();
@@ -86,7 +87,8 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            List<IBucket> dataBuckets, List<StateStoreStack> stateStoreStacks) {
+            TableStack tableStack,
+            TableDataStack dataStack) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
@@ -95,8 +97,9 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
-        dataBuckets.forEach(bucket -> bucket.grantReadWrite(role));
-        stateStoreStacks.forEach(sss -> {
+        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(role));
+        dataStack.getDataBucket().grantReadWrite(role);
+        tableStack.getStateStoreStacks().forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(role);
             sss.grantReadPartitionMetadata(role);
         });
