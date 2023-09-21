@@ -34,7 +34,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.clients.deploy.DockerImageConfiguration.from;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildImage;
 import static sleeper.clients.deploy.StackDockerImage.dockerBuildxImage;
 import static sleeper.clients.deploy.StackDockerImage.emrServerlessImage;
@@ -60,6 +59,7 @@ public class UploadDockerImagesTest {
     );
     private final EcrRepositoriesInMemory ecrClient = new EcrRepositoriesInMemory();
     private final InstanceProperties properties = createTestInstanceProperties();
+    private final DockerImageConfiguration dockerImageConfiguration = DockerImageConfiguration.from(STACK_DOCKER_IMAGES);
 
     @BeforeEach
     void setUp() {
@@ -73,12 +73,12 @@ public class UploadDockerImagesTest {
         return UploadDockerImages.builder()
                 .baseDockerDirectory(Path.of("./docker"))
                 .ecrClient(ecrClient)
-                .dockerImageConfig(from(STACK_DOCKER_IMAGES))
                 .build();
     }
 
     private RunCommandTestHelper.PipelineInvoker upload(InstanceProperties properties) {
-        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.from(properties));
+        return runCommand -> uploader().upload(runCommand, StacksForDockerUpload.from(properties),
+                DockerImageConfiguration.from(STACK_DOCKER_IMAGES));
     }
 
     @Nested
@@ -269,7 +269,7 @@ public class UploadDockerImagesTest {
 
             // When / Then
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties))
+                    uploader().upload(returningExitCode(123), StacksForDockerUpload.from(properties), dockerImageConfiguration)
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(loginDockerCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -305,8 +305,8 @@ public class UploadDockerImagesTest {
 
             // When / Then
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCodeForCommand(
-                            123, createNewBuildxBuilderInstanceCommand()), StacksForDockerUpload.from(properties))
+                    uploader().upload(returningExitCodeForCommand(123, createNewBuildxBuilderInstanceCommand()),
+                            StacksForDockerUpload.from(properties), dockerImageConfiguration)
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(createNewBuildxBuilderInstanceCommand());
                 assertThat(e.getExitCode()).isEqualTo(123);
@@ -324,7 +324,8 @@ public class UploadDockerImagesTest {
                     "123.dkr.ecr.test-region.amazonaws.com/test-instance/ingest:1.0.0",
                     "./docker/ingest");
             assertThatThrownBy(() ->
-                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand), StacksForDockerUpload.from(properties))
+                    uploader().upload(returningExitCodeForCommand(42, buildImageCommand),
+                            StacksForDockerUpload.from(properties), dockerImageConfiguration)
             ).isInstanceOfSatisfying(CommandFailedException.class, e -> {
                 assertThat(e.getCommand()).isEqualTo(buildImageCommand);
                 assertThat(e.getExitCode()).isEqualTo(42);

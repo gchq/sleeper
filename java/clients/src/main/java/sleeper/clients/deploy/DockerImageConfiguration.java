@@ -16,6 +16,7 @@
 
 package sleeper.clients.deploy;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +49,13 @@ public class DockerImageConfiguration {
     public static DockerImageConfiguration from(List<StackDockerImage> images) {
         return new DockerImageConfiguration(images.stream()
                 .collect(Collectors.toMap(StackDockerImage::getStackName, image -> image)));
+    }
+
+    public List<StackDockerImage> getStacksToDeploy(Collection<String> stacks) {
+        return stacks.stream()
+                .map(this::getStackImage)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toList());
     }
 
     public Optional<StackDockerImage> getStackImage(String stack) {

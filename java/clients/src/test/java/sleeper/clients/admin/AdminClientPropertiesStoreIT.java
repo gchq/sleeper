@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.clients.deploy.DockerImageConfiguration;
 import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -47,7 +46,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -423,7 +421,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void setup() throws IOException {
             instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
             instanceProperties.saveToS3(s3);
-            when(uploadDockerImages.getDockerImageConfig()).thenReturn(new DockerImageConfiguration());
         }
 
         @Test

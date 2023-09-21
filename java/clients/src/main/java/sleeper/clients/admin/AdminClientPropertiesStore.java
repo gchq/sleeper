@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.DockerImageConfiguration;
 import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
@@ -58,6 +59,7 @@ public class AdminClientPropertiesStore {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
+    private final DockerImageConfiguration dockerImageConfiguration;
     private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
@@ -65,6 +67,7 @@ public class AdminClientPropertiesStore {
                                       InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
+        this.dockerImageConfiguration = new DockerImageConfiguration();
         this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
@@ -144,9 +147,7 @@ public class AdminClientPropertiesStore {
         Set<String> stacksBefore = new HashSet<>(readList(stackDiff.getOldValue()));
         Set<String> newStacks = new HashSet<>(readList(stackDiff.getNewValue()));
         newStacks.removeAll(stacksBefore);
-        return newStacks.stream()
-                .map(stack -> uploadDockerImages.getDockerImageConfig().getStackImage(stack))
-                .flatMap(Optional::stream).findAny().isPresent();
+        return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
