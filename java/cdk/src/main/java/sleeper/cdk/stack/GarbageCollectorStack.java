@@ -34,7 +34,6 @@ import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
@@ -57,8 +56,7 @@ public class GarbageCollectorStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            List<StateStoreStack> stateStoreStacks,
-            List<IBucket> dataBuckets) {
+            TableStack tableStack, TableDataStack dataStack) {
         super(scope, id);
 
         // Config bucket
@@ -91,9 +89,11 @@ public class GarbageCollectorStack extends NestedStack {
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
-        dataBuckets.forEach(bucket -> bucket.grantRead(handler));
-        dataBuckets.forEach(bucket -> bucket.grantDelete(handler));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(handler));
+        tableStack.getDataBuckets().forEach(bucket -> bucket.grantRead(handler));
+        tableStack.getDataBuckets().forEach(bucket -> bucket.grantDelete(handler));
+        dataStack.getDataBucket().grantRead(handler);
+        dataStack.getDataBucket().grantDelete(handler);
+        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(handler));
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
