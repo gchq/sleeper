@@ -42,6 +42,20 @@ public class NumberFormatUtils {
         }
     }
 
+    public static String formatBytesAsHumanReadableString(long fileSize) {
+        if (fileSize < K_COUNT) {
+            return fileSize + "B";
+        } else if (fileSize < M_COUNT) {
+            return String.format("%.1fKB", fileSize / (double) K_COUNT);
+        } else if (fileSize < G_COUNT) {
+            return String.format("%.1fMB", fileSize / (double) M_COUNT);
+        } else if (fileSize < T_COUNT) {
+            return String.format("%.1fGB", fileSize / (double) G_COUNT);
+        } else {
+            return countWithCommas(Math.round((double) fileSize / T_COUNT)) + "TB";
+        }
+    }
+
     public static String countWithCommas(long count) {
         return splitNonDecimalIntoParts("" + count);
     }

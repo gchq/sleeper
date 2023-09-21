@@ -22,11 +22,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.util.NumberFormatUtils.formatBytes;
+import static sleeper.core.util.NumberFormatUtils.formatBytesAsHumanReadableString;
 
 public class NumberFormatUtilsTest {
     @Nested
-    @DisplayName("Format bytes as string")
-    class FormatBytesAsString {
+    @DisplayName("Format bytes as bytes and human-readable string")
+    class FormatBytesAsBytesAndHumanReadableString {
         @Test
         void shouldFormatNumberOfBytesBelow1KB() {
             assertThat(formatBytes(123L))
@@ -79,6 +80,46 @@ public class NumberFormatUtilsTest {
         void shouldFormatNumberOfBytesAbove1000TB() {
             assertThat(formatBytes(1_234_000_000_000_000L))
                     .isEqualTo("1,234TB");
+        }
+    }
+
+    @Nested
+    @DisplayName("Format bytes as human-readable string")
+    class FormatBytesAsHumanReadableString {
+        @Test
+        void shouldFormatNumberOfBytesAsKB() {
+            assertThat(formatBytesAsHumanReadableString(1_234L))
+                    .isEqualTo("1.2KB");
+        }
+
+        @Test
+        void shouldFormatNumberOfBytesAsKBWithRounding() {
+            assertThat(formatBytesAsHumanReadableString(5_678L))
+                    .isEqualTo("5.7KB");
+        }
+
+        @Test
+        void shouldFormatNumberOfBytesEqualTo1KB() {
+            assertThat(formatBytesAsHumanReadableString(1_000L))
+                    .isEqualTo("1.0KB");
+        }
+
+        @Test
+        void shouldFormatNumberOfBytesAs10KB() {
+            assertThat(formatBytesAsHumanReadableString(10_000L))
+                    .isEqualTo("10.0KB");
+        }
+
+        @Test
+        void shouldFormatNumberOfBytesAsMB() {
+            assertThat(formatBytesAsHumanReadableString(1_234_000L))
+                    .isEqualTo("1.2MB");
+        }
+
+        @Test
+        void shouldFormatNumberOfBytesAsGB() {
+            assertThat(formatBytesAsHumanReadableString(1_234_000_000L))
+                    .isEqualTo("1.2GB");
         }
     }
 }
