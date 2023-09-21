@@ -26,7 +26,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -34,13 +33,10 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
 import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -103,49 +99,6 @@ class SaveLocalPropertiesTest {
         // Then
         assertThat(loadProperties(tempDir.resolve("tags.properties")))
                 .isEqualTo(tags);
-    }
-
-    @Test
-    void shouldSaveConfigBucketFile() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(CONFIG_BUCKET, "test-config-bucket");
-
-        // When
-        saveToDirectory(tempDir, properties, Stream.empty());
-
-        // Then
-        assertThat(Files.readString(tempDir.resolve("configBucket.txt")))
-                .isEqualTo("test-config-bucket");
-    }
-
-    @Test
-    void shouldSaveQueryBucketFile() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        properties.set(QUERY_RESULTS_BUCKET, "test-query-bucket");
-
-        // When
-        saveToDirectory(tempDir, properties, Stream.empty());
-
-        // Then
-        assertThat(Files.readString(tempDir.resolve("queryResultsBucket.txt")))
-                .isEqualTo("test-query-bucket");
-    }
-
-    @Test
-    void shouldNotSaveTableBucketFileIfNotYetSetByCdk() throws IOException {
-        // Given
-        InstanceProperties properties = createTestInstanceProperties();
-        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
-        tableProperties.set(TABLE_NAME, "test-table");
-        tableProperties.unset(DATA_BUCKET);
-
-        // When
-        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
-
-        // Then
-        assertThat(tempDir.resolve("tables/test-table/tableBucket.txt")).doesNotExist();
     }
 
     @Test

@@ -43,7 +43,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
-class SaveLocalPropertiesIT {
+class SaveLocalPropertiesS3IT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3);
