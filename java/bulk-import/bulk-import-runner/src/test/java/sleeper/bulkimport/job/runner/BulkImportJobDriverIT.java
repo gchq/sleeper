@@ -24,7 +24,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -78,7 +77,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -102,7 +100,6 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJo
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 @Testcontainers
-@Disabled("TODO")
 class BulkImportJobDriverIT {
 
     private static Stream<Arguments> getParameters() {
@@ -326,7 +323,7 @@ class BulkImportJobDriverIT {
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
-        inputFiles.add("/import/a.parquet");
+        inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
@@ -367,14 +364,14 @@ class BulkImportJobDriverIT {
     void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder, null).toString();
+        String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getRecordsIdenticalRowKey();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
-        inputFiles.add("/import/a.parquet");
+        inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
@@ -415,14 +412,14 @@ class BulkImportJobDriverIT {
     void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder, null).toString();
+        String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
-        inputFiles.add("/import/a.parquet");
+        inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.singletonList(50));
 
@@ -456,14 +453,14 @@ class BulkImportJobDriverIT {
     void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder, null).toString();
+        String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
         List<Record> records = getLotsOfRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
-        inputFiles.add("/import/a.parquet");
+        inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
@@ -526,7 +523,7 @@ class BulkImportJobDriverIT {
     void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder, null).toString();
+        String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported
@@ -540,7 +537,7 @@ class BulkImportJobDriverIT {
         StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
 
         // When
-        BulkImportJob job = BulkImportJob.builder().id("my-job").files(Lists.newArrayList("/import/"))
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(Lists.newArrayList(dataDir + "/import/"))
                 .tableName(tableProperties.get(TABLE_NAME)).build();
         runJob(runner, instanceProperties, job);
 
