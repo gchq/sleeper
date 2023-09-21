@@ -213,6 +213,7 @@ public class SystemTestDeploymentContext {
                         .ecrPrefix(parameters.getSystemTestShortId())
                         .account(parameters.getAccount())
                         .region(parameters.getRegion())
+                        .version(SleeperVersion.getVersion())
                         .stacks(List.of("SystemTestStack")).build());
     }
 
