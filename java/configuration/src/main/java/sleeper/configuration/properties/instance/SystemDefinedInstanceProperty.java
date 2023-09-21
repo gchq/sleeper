@@ -39,6 +39,12 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    // Data
+    SystemDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
+            .description("The S3 bucket name used to store table data.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // Table metrics
     SystemDefinedInstanceProperty TABLE_METRICS_RULES = Index.propertyBuilder("sleeper.table.metrics.rulenames")
             .description("The names of the CloudWatch rules that trigger generation of metrics for tables.")

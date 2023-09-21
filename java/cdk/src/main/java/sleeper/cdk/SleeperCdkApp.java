@@ -35,6 +35,7 @@ import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
+import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.VpcStack;
@@ -65,6 +66,7 @@ public class SleeperCdkApp extends Stack {
     private final App app;
     private IngestStack ingestStack;
     private TableStack tableStack;
+    private TableDataStack dataStack;
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
@@ -118,6 +120,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for tables
         tableStack = new TableStack(this, "Table", instanceProperties, jars);
+        dataStack = new TableDataStack(this, "TableData", instanceProperties);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
@@ -265,6 +268,10 @@ public class SleeperCdkApp extends Stack {
 
     public TableStack getTableStack() {
         return tableStack;
+    }
+
+    public TableDataStack getDataStack() {
+        return dataStack;
     }
 
     public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {
