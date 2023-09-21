@@ -70,7 +70,7 @@ public class S3FileInfoStore implements FileInfoStore {
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final KeySerDe keySerDe;
     private final String fs;
-    private final String s3Bucket;
+    private final String s3Path;
     private final AmazonDynamoDB dynamoDB;
     private final String dynamoRevisionIdTable;
     private final Schema fileSchema;
@@ -80,7 +80,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
     private S3FileInfoStore(Builder builder) {
         this.fs = Objects.requireNonNull(builder.fs, "fs must not be null");
-        this.s3Bucket = Objects.requireNonNull(builder.s3Bucket, "s3Bucket must not be null");
+        this.s3Path = Objects.requireNonNull(builder.s3Path, "s3Path must not be null");
         this.dynamoRevisionIdTable = Objects.requireNonNull(builder.dynamoRevisionIdTable, "dynamoRevisionIdTable must not be null");
         this.rowKeyTypes = builder.rowKeyTypes;
         this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
@@ -451,7 +451,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     private String getFilesPath(RevisionId revisionId) {
-        return fs + s3Bucket + "/statestore/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
+        return fs + s3Path + "/statestore/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
     private Record getRecordFromFileInfo(FileInfo fileInfo) throws IOException {
@@ -518,7 +518,7 @@ public class S3FileInfoStore implements FileInfoStore {
         private String dynamoRevisionIdTable;
         private List<PrimitiveType> rowKeyTypes;
         private String fs;
-        private String s3Bucket;
+        private String s3Path;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
 
@@ -545,8 +545,8 @@ public class S3FileInfoStore implements FileInfoStore {
             return this;
         }
 
-        public Builder s3Bucket(String s3Bucket) {
-            this.s3Bucket = s3Bucket;
+        public Builder s3Path(String s3Path) {
+            this.s3Path = s3Path;
             return this;
         }
 
