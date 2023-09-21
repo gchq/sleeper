@@ -41,8 +41,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicCompactionStrategyTest {
@@ -52,9 +52,9 @@ public class BasicCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -99,7 +99,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -113,9 +113,9 @@ public class BasicCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -156,7 +156,7 @@ public class BasicCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .inputFiles(inputFiles)
                     .isSplittingJob(false)
-                    .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
+                    .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
                     .childPartitions(null)
                     .splitPoint(null)
                     .dimension(-1)
@@ -170,9 +170,9 @@ public class BasicCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -219,9 +219,9 @@ public class BasicCompactionStrategyTest {
         // jobs, the "right" child partition only has files for 1 compaction job
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -320,7 +320,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -332,7 +332,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .inputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -344,7 +344,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("right")
                 .inputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -361,9 +361,9 @@ public class BasicCompactionStrategyTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         tableProperties.setSchema(schema);
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
