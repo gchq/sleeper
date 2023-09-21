@@ -182,8 +182,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     tableStack, dataStack,
                     topicStack,
-                    ingestStatusStoreStack,
-                    tableStack.getStateStoreStacks()
+                    ingestStatusStoreStack
             );
         }
 

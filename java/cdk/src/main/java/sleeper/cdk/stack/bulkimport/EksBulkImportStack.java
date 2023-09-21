@@ -70,7 +70,6 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.StateStoreStack;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
@@ -117,8 +116,7 @@ public final class EksBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             TableStack tableStack, TableDataStack dataStack,
             TopicStack errorsTopicStack,
-            IngestStatusStoreStack statusStoreStack,
-            List<StateStoreStack> stateStoreStacks) {
+            IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
 
         List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
@@ -185,7 +183,7 @@ public final class EksBulkImportStack extends NestedStack {
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
-        stateStoreStacks.forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
+        tableStack.getStateStoreStacks().forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
