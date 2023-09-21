@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CoreUtils {
+    private CoreUtils() {
+    }
+
     private static final long K_COUNT = 1_000;
     private static final long M_COUNT = 1_000_000;
     private static final long G_COUNT = 1_000_000_000;
