@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExportSplitPointsIT extends DynamoDBTestBase {
 
-    private StateStore getStateStore(Schema schema) throws StateStoreException {
+    private StateStore getStateStore(Schema schema) {
         String id = UUID.randomUUID().toString();
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
         return dynamoDBStateStoreCreator.create();

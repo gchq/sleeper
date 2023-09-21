@@ -38,7 +38,7 @@ public class ExtractKeyFunction implements PairFunction<Row, Key, Row> {
     }
 
     @Override
-    public Tuple2<Key, Row> call(Row row) throws Exception {
+    public Tuple2<Key, Row> call(Row row) {
         List<Object> keys = new ArrayList<>(numRowKeys);
         for (int i = 0; i < numRowKeys; i++) {
             keys.add(row.get(i));

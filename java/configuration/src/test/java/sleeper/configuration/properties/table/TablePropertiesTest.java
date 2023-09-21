@@ -21,7 +21,6 @@ import sleeper.configuration.properties.DummySleeperProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -144,7 +143,7 @@ class TablePropertiesTest {
     }
 
     @Test
-    void shouldGetUnknownPropertyValues() throws IOException {
+    void shouldGetUnknownPropertyValues() {
         // Given
         InstanceProperties instanceProperties = createTestInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));

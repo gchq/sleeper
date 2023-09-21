@@ -87,13 +87,13 @@ public class ComparePropertiesTemplates {
         out.println();
     }
 
-    private static InstanceProperties loadInstanceProperties(Path file) throws IOException {
+    private static InstanceProperties loadInstanceProperties(Path file) {
         InstanceProperties properties = new InstanceProperties();
         properties.load(file);
         return properties;
     }
 
-    private static TableProperties loadTableProperties(InstanceProperties instanceProperties, Path file) throws IOException {
+    private static TableProperties loadTableProperties(InstanceProperties instanceProperties, Path file) {
         TableProperties properties = new TableProperties(instanceProperties);
         properties.setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new StringType()))
@@ -102,7 +102,7 @@ public class ComparePropertiesTemplates {
         return properties;
     }
 
-    private static InstanceProperties generateInstanceProperties(Consumer<Writer> generator) throws IOException {
+    private static InstanceProperties generateInstanceProperties(Consumer<Writer> generator) {
         StringWriter writer = new StringWriter();
         generator.accept(writer);
         InstanceProperties properties = new InstanceProperties();
@@ -111,7 +111,7 @@ public class ComparePropertiesTemplates {
     }
 
     private static TableProperties generateTableProperties(
-            InstanceProperties instanceProperties, Consumer<Writer> generator) throws IOException {
+            InstanceProperties instanceProperties, Consumer<Writer> generator) {
         StringWriter writer = new StringWriter();
         generator.accept(writer);
         TableProperties properties = new TableProperties(instanceProperties);

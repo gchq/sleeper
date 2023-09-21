@@ -59,7 +59,7 @@ class LoadLocalPropertiesInstanceTest {
     }
 
     @Test
-    void shouldSetNoTagsWhenTagsFileAndPropertyMissing() throws IOException {
+    void shouldSetNoTagsWhenTagsFileAndPropertyMissing() {
         // Given
         instanceProperties.save(instancePropertiesFile);
 
@@ -72,7 +72,7 @@ class LoadLocalPropertiesInstanceTest {
     }
 
     @Test
-    void shouldKeepTagsPropertyWhenTagsFileMissing() throws IOException {
+    void shouldKeepTagsPropertyWhenTagsFileMissing() {
         // Given
         instanceProperties.setTags(Map.of("tag-1", "property-value-1"));
         instanceProperties.save(instancePropertiesFile);

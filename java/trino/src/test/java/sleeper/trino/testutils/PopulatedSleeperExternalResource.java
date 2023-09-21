@@ -40,7 +40,6 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreProvider;
@@ -48,7 +47,6 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -137,7 +135,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 .build().ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
-    private InstanceProperties createInstanceProperties() throws IOException {
+    private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, TEST_CONFIG_BUCKET_NAME);
@@ -156,7 +154,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     private TableProperties createTable(InstanceProperties instanceProperties,
-                                        TableDefinition tableDefinition) throws IOException, StateStoreException {
+                                        TableDefinition tableDefinition) {
         // Use the table name to generate the data bucket name, abiding by the bucket-naming rules
         String dataBucket = tableDefinition.tableName
                 .toLowerCase()
@@ -184,18 +182,18 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         return tableProperties;
     }
 
-    private InstanceProperties getInstanceProperties() throws IOException {
+    private InstanceProperties getInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(this.s3Client, TEST_CONFIG_BUCKET_NAME);
         return instanceProperties;
     }
 
-    private TableProperties getTableProperties(String tableName) throws IOException {
+    private TableProperties getTableProperties(String tableName) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(this.s3Client, this.getInstanceProperties());
         return tablePropertiesProvider.getTableProperties(tableName);
     }
 
-    public StateStore getStateStore(String tableName) throws IOException {
+    public StateStore getStateStore(String tableName) {
         StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, this.getInstanceProperties());
         return stateStoreProvider.getStateStore(this.getTableProperties(tableName));
     }
@@ -250,7 +248,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         this.queryAssertions.close();
         this.s3Client.shutdown();
         this.dynamoDBClient.shutdown();

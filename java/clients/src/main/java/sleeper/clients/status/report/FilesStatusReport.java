@@ -34,7 +34,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -96,9 +95,9 @@ public class FilesStatusReport {
         fileStatusReporter.report(fileStatus, verbose);
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws StateStoreException {
         if (!(args.length >= 2 && args.length <= 5)) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> <optional_max_num_ready_for_gc_files_to_count> <optional_verbose_true_or_false> <optional_report_type_standard_or_csv_or_json>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-max-num_ready-for-gc-files-to-count> <optional-verbose-true-or-false> <optional-report-type-standard-or-csv-or-json>");
         }
 
         boolean verbose = false;

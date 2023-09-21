@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
 
 set -e
 unset CDPATH
@@ -35,11 +33,11 @@ run_in_docker() {
   # See scripts/cli/builder/Dockerfile for why
   RUN_PARAMS+=(
     --rm
-    --network=host
     --cidfile /tmp/container.id
     -v /tmp/container.id:/tmp/container.id
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -e IN_CLI_CONTAINER=true \
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
     -e AWS_SESSION_TOKEN

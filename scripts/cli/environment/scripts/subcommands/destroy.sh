@@ -17,7 +17,7 @@ set -e
 unset CDPATH
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: environment destroy <uniqueId> <optional_cdk_parameters>"
+  echo "Usage: environment destroy <unique-id> <optional-cdk-parameters>"
   exit 1
 fi
 

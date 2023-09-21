@@ -186,7 +186,7 @@ class BulkImportJobDriverIT {
         return instanceProperties;
     }
 
-    public TableProperties createTable(InstanceProperties instanceProperties) throws IOException, StateStoreException {
+    public TableProperties createTable(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);

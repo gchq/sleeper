@@ -28,7 +28,6 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -40,11 +39,9 @@ import sleeper.query.model.Query;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -94,7 +91,7 @@ public class QueryClient extends QueryCommandLineClient {
         long startTime = System.currentTimeMillis();
         try {
             records = runQuery(query);
-        } catch (QueryException | StateStoreException e) {
+        } catch (QueryException e) {
             System.out.println("Encountered an error while running query " + query.getQueryId());
             e.printStackTrace();
             return;
@@ -110,14 +107,14 @@ public class QueryClient extends QueryCommandLineClient {
         System.out.println("Query took " + delta + " seconds to return " + count + " records");
     }
 
-    private CloseableIterator<Record> runQuery(Query query) throws StateStoreException, QueryException {
+    private CloseableIterator<Record> runQuery(Query query) throws QueryException {
         QueryExecutor queryExecutor = cachedQueryExecutors.get(query.getTableName());
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException, StateStoreException, IteratorException, ObjectFactoryException {
+    public static void main(String[] args) throws StateStoreException, ObjectFactoryException {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
         AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());

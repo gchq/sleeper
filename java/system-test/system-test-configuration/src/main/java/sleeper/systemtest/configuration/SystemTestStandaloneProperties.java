@@ -26,7 +26,6 @@ import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.List;
@@ -38,19 +37,19 @@ public class SystemTestStandaloneProperties
         implements SystemTestPropertyValues, SystemTestPropertySetter {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStandaloneProperties.class);
 
-    public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) throws IOException {
+    public static SystemTestStandaloneProperties fromS3(AmazonS3 s3Client, String bucket) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         properties.loadFromS3(s3Client, bucket, InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
         return properties;
     }
 
-    public static SystemTestStandaloneProperties fromFile(Path propertiesFile) throws IOException {
+    public static SystemTestStandaloneProperties fromFile(Path propertiesFile) {
         SystemTestStandaloneProperties properties = new SystemTestStandaloneProperties();
         properties.load(propertiesFile);
         return properties;
     }
 
-    public void saveToS3(AmazonS3 s3Client) throws IOException {
+    public void saveToS3(AmazonS3 s3Client) {
         saveToS3(s3Client, get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);
         LOGGER.info("Saved system test properties to bucket {}, key {}",
                 get(SYSTEM_TEST_BUCKET_NAME), InstanceProperties.S3_INSTANCE_PROPERTIES_FILE);

@@ -63,7 +63,7 @@ public class AdminClientPropertiesStore {
     public InstanceProperties loadInstanceProperties(String instanceId) {
         try {
             return new InstanceProperties(loadPropertiesFromS3GivenInstanceId(s3, instanceId));
-        } catch (IOException | AmazonS3Exception e) {
+        } catch (AmazonS3Exception e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
     }
@@ -72,7 +72,7 @@ public class AdminClientPropertiesStore {
         try {
             return new TableProperties(instanceProperties,
                     TableProperties.loadPropertiesFromS3(s3, instanceProperties, tableName));
-        } catch (AmazonS3Exception | IOException e) {
+        } catch (AmazonS3Exception e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
     }

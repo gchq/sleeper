@@ -46,7 +46,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -110,11 +109,7 @@ public class DynamoDBPartitionStore implements PartitionStore {
         }
         List<TransactWriteItem> writes = new ArrayList<>();
         Map<String, AttributeValue> item;
-        try {
-            item = partitionFormat.getItemFromPartition(splitPartition);
-        } catch (IOException e) {
-            throw new StateStoreException("IOException getting item from partition", e);
-        }
+        item = partitionFormat.getItemFromPartition(splitPartition);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":true", new AttributeValue("true"));
         Put put = new Put()
@@ -125,11 +120,7 @@ public class DynamoDBPartitionStore implements PartitionStore {
         writes.add(new TransactWriteItem().withPut(put));
         for (Partition partition : Arrays.asList(newPartition1, newPartition2)) {
             Map<String, AttributeValue> item2;
-            try {
-                item2 = partitionFormat.getItemFromPartition(partition);
-            } catch (IOException e) {
-                throw new StateStoreException("IOException getting item from partition", e);
-            }
+            item2 = partitionFormat.getItemFromPartition(partition);
             Put put2 = new Put()
                     .withTableName(tableName)
                     .withItem(item2);
@@ -170,8 +161,8 @@ public class DynamoDBPartitionStore implements PartitionStore {
                 partitionResults.add(partitionFormat.getPartitionFromAttributeValues(map));
             }
             return partitionResults;
-        } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                 | InternalServerErrorException | IOException e) {
+        } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException |
+                 InternalServerErrorException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
     }
@@ -214,10 +205,9 @@ public class DynamoDBPartitionStore implements PartitionStore {
             PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
             LOGGER.debug("Added partition with id {}, capacity consumed = {}",
                     partition.getId(), putItemResult.getConsumedCapacity().getCapacityUnits());
-        } catch (IOException | ConditionalCheckFailedException | ProvisionedThroughputExceededException
-                 | ResourceNotFoundException | ItemCollectionSizeLimitExceededException
-                 | TransactionConflictException | RequestLimitExceededException
-                 | InternalServerErrorException e) {
+        } catch (ConditionalCheckFailedException | ProvisionedThroughputExceededException | ResourceNotFoundException |
+                 ItemCollectionSizeLimitExceededException | TransactionConflictException |
+                 RequestLimitExceededException | InternalServerErrorException e) {
             throw new StateStoreException("Exception calling putItem", e);
         }
     }

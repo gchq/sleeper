@@ -94,7 +94,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected final InstanceProperties instanceProperties = new InstanceProperties();
 
     @BeforeEach
-    public void before() throws IOException {
+    public void before() {
         s3.createBucket(configBucketName);
         s3.createBucket(tableDataBucketName);
         s3.createBucket(ingestDataBucketName);
@@ -115,7 +115,7 @@ public abstract class IngestJobQueueConsumerTestBase {
         return stateStore;
     }
 
-    private TableProperties createTableProperties(Schema schema) throws IOException {
+    private TableProperties createTableProperties(Schema schema) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);

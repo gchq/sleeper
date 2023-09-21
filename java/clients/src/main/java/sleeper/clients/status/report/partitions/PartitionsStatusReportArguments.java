@@ -29,7 +29,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.function.Function;
 
@@ -47,7 +46,7 @@ public class PartitionsStatusReportArguments {
     }
 
     public static void printUsage(PrintStream out) {
-        out.println("Usage: <instance id> <table name>");
+        out.println("Usage: <instance-id> <table-name>");
     }
 
     public static PartitionsStatusReportArguments fromArgs(String... args) {
@@ -57,7 +56,7 @@ public class PartitionsStatusReportArguments {
         return new PartitionsStatusReportArguments(args[0], args[1], PartitionsStatusReporter::new);
     }
 
-    public void runReport(AmazonS3 amazonS3, AmazonDynamoDB dynamoDBClient, PrintStream out) throws IOException, StateStoreException {
+    public void runReport(AmazonS3 amazonS3, AmazonDynamoDB dynamoDBClient, PrintStream out) throws StateStoreException {
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);

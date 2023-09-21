@@ -53,7 +53,7 @@ public class InitialiseStateStoreFromExportedPartitions {
 
     public static void main(String[] args) throws StateStoreException, IOException {
         if (3 != args.length) {
-            System.out.println("Usage: <instance id> <table name> <partitions file>");
+            System.out.println("Usage: <instance-id> <table-name> <partitions-file>");
             return;
         }
 

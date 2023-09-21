@@ -29,7 +29,6 @@ import software.amazon.awssdk.services.emrserverless.model.JobRunSummary;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,9 +109,9 @@ public class TerminateEMRServerlessApplications {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         if (args.length != 1) {
-            System.out.println("Usage: <instance id>");
+            System.out.println("Usage: <instance-id>");
             return;
         }
 

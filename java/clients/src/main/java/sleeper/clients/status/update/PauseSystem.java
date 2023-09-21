@@ -26,7 +26,6 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
 import java.util.List;
 
 public class PauseSystem {
@@ -34,9 +33,9 @@ public class PauseSystem {
     private PauseSystem() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

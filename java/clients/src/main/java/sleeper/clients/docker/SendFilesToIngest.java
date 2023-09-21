@@ -41,7 +41,7 @@ public class SendFilesToIngest {
     private SendFilesToIngest() {
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (args.length < 2) {
             throw new IllegalArgumentException("Usage: <instance-id> <files>");
         }

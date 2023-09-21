@@ -35,7 +35,7 @@ public class IngestRecords {
         this.ingestCoordinator = ingestCoordinator;
     }
 
-    public void init() throws StateStoreException {
+    public void init() {
         // Do nothing
     }
 

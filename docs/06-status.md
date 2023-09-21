@@ -97,7 +97,7 @@ with Sleeper or if you created a table with the wrong schema.
 You can reinitialise the table quickly by running the following command:
 
 ```bash
-sleeper deployment utility/reinitialiseTable.sh <Instance id> <Table Name> <OPTIONAL_delete_partitions_true_or_false> <OPTIONAL_split_points_file_location> <optional_split_points_file_base64_encoded_true_or_false>
+sleeper deployment utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
 ```
 
 For example

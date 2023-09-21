@@ -29,8 +29,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.table.job.TableInitialiser;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -48,7 +46,7 @@ public class SleeperTableLambda {
         this.dynamoDBClient = dynamoDBClient;
     }
 
-    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) throws IOException {
+    public void handleEvent(CloudFormationCustomResourceEvent event, Context context) {
         LOGGER.info("Received event: {}", event);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromString((String) event.getResourceProperties().get("instanceProperties"));
@@ -70,7 +68,7 @@ public class SleeperTableLambda {
         }
     }
 
-    private void updateTableProperties(TableProperties tableProperties) throws IOException {
+    private void updateTableProperties(TableProperties tableProperties) {
         LOGGER.info("Updating properties");
         tableProperties.saveToS3(s3Client);
     }
@@ -80,7 +78,7 @@ public class SleeperTableLambda {
         s3Client.deleteObject(bucket, TableProperties.TABLES_PREFIX + "/" + tableProperties.get(TABLE_NAME));
     }
 
-    private void initialiseTable(InstanceProperties instanceProperties, TableProperties tableProperties, String bucket) throws IOException {
+    private void initialiseTable(InstanceProperties instanceProperties, TableProperties tableProperties, String bucket) {
         LOGGER.info("Initialising Table");
         // Initialise Table
         new TableInitialiser(s3Client, dynamoDBClient).initialise(instanceProperties, tableProperties, bucket, new Configuration());

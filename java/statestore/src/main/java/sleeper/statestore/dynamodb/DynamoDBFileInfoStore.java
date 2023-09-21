@@ -274,7 +274,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void deleteReadyForGCFile(FileInfo fileInfo) throws StateStoreException {
+    public void deleteReadyForGCFile(FileInfo fileInfo) {
         // Delete record for file for current status
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(FILE_NAME, new AttributeValue(fileInfo.getFilename()));
@@ -383,7 +383,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void initialise() throws StateStoreException {
+    public void initialise() {
     }
 
     /**

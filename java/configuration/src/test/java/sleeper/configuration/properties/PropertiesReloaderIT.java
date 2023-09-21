@@ -131,7 +131,7 @@ public class PropertiesReloaderIT {
     }
 
     private InstanceProperties updatePropertiesInS3(
-            InstanceProperties propertiesBefore, Consumer<InstanceProperties> extraProperties) throws Exception {
+            InstanceProperties propertiesBefore, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties propertiesAfter = new InstanceProperties();
         propertiesAfter.loadFromS3(s3Client, propertiesBefore.get(CONFIG_BUCKET));
         extraProperties.accept(propertiesAfter);
@@ -141,7 +141,7 @@ public class PropertiesReloaderIT {
 
     private TableProperties updatePropertiesInS3(
             InstanceProperties instanceProperties, String tableName,
-            Consumer<TableProperties> extraProperties) throws Exception {
+            Consumer<TableProperties> extraProperties) {
         TableProperties propertiesAfter = new TableProperties(instanceProperties);
         propertiesAfter.loadFromS3(s3Client, tableName);
         extraProperties.accept(propertiesAfter);

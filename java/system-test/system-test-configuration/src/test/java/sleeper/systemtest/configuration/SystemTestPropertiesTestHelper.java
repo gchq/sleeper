@@ -15,8 +15,6 @@
  */
 package sleeper.systemtest.configuration;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.systemtest.configuration.IngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
@@ -35,11 +33,7 @@ public class SystemTestPropertiesTestHelper {
         properties.set(NUMBER_OF_RECORDS_PER_WRITER, "5");
         properties.set(INGEST_MODE, DIRECT.name());
         properties.set(SYSTEM_TEST_REPO, "test-repo");
-        try {
-            properties.loadFromString(createTestInstanceProperties().saveAsString());
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed setting instance properties", e);
-        }
+        properties.loadFromString(createTestInstanceProperties().saveAsString());
         return properties;
     }
 }

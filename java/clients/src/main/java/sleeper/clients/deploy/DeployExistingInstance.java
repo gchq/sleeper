@@ -176,7 +176,7 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder loadPropertiesFromS3(AmazonS3 s3) throws IOException {
+        public Builder loadPropertiesFromS3(AmazonS3 s3) {
             properties = new InstanceProperties();
             properties.loadFromS3GivenInstanceId(s3, instanceId);
             tablePropertiesList = streamTablesFromS3(s3, properties).collect(Collectors.toList());

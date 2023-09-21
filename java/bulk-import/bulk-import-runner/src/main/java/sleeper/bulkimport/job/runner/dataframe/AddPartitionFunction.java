@@ -44,7 +44,7 @@ public class AddPartitionFunction implements MapPartitionsFunction<Row, Row> {
     }
 
     @Override
-    public Iterator<Row> call(Iterator<Row> input) throws Exception {
+    public Iterator<Row> call(Iterator<Row> input) {
         Schema schema = new SchemaSerDe().fromJson(schemaAsString);
         List<Partition> partitions = broadcastPartitions.getValue();
         PartitionTree partitionTree = new PartitionTree(schema, partitions);

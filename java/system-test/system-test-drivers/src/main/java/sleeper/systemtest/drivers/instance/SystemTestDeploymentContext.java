@@ -83,11 +83,7 @@ public class SystemTestDeploymentContext {
 
     public void updateProperties(Consumer<SystemTestStandaloneProperties> config) {
         config.accept(properties);
-        try {
-            properties.saveToS3(s3);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        properties.saveToS3(s3);
     }
 
     public SystemTestStandaloneProperties getProperties() {
@@ -168,11 +164,7 @@ public class SystemTestDeploymentContext {
     }
 
     private SystemTestStandaloneProperties loadProperties() {
-        try {
-            return SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        return SystemTestStandaloneProperties.fromS3(s3, parameters.buildSystemTestBucketName());
     }
 
     private SystemTestStandaloneProperties generateProperties() {

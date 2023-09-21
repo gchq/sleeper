@@ -60,7 +60,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     private final InstanceProperties instanceProperties = createValidInstanceProperties();
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         instanceProperties.saveToS3(s3);
     }
 
@@ -441,11 +441,11 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
     }
 
-    private void createTableInS3(String tableName) throws IOException {
+    private void createTableInS3(String tableName) {
         createValidTableProperties(instanceProperties, tableName).saveToS3(s3);
     }
 
-    private void createTableInS3(String tableName, Consumer<TableProperties> config) throws IOException {
+    private void createTableInS3(String tableName, Consumer<TableProperties> config) {
         TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
         config.accept(tableProperties);
         tableProperties.saveToS3(s3);

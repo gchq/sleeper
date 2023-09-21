@@ -70,7 +70,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,11 +95,11 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     private TablePropertiesProvider tablePropertiesProvider;
     private StateStoreProvider stateStoreProvider;
 
-    public SleeperMetadataHandler() throws IOException {
+    public SleeperMetadataHandler() {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SleeperMetadataHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) throws IOException {
+    public SleeperMetadataHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) {
         super(SOURCE_TYPE);
         this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
@@ -116,7 +115,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
                                   AWSSecretsManager secretsManager,
                                   AmazonAthena athena,
                                   String spillBucket,
-                                  String spillPrefix) throws IOException {
+                                  String spillPrefix) {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
         this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
@@ -206,7 +205,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * 4. A catalog name corresponding the Athena catalog that was queried.
      */
     @Override
-    public GetTableResponse doGetTable(BlockAllocator blockAllocator, GetTableRequest getTableRequest) throws Exception {
+    public GetTableResponse doGetTable(BlockAllocator blockAllocator, GetTableRequest getTableRequest) {
         LOGGER.info("Received Get Table Request: {}", getTableRequest);
         String tableName = getTableRequest.getTableName().getTableName();
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
