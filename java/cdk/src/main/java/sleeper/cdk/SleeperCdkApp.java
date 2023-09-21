@@ -226,8 +226,7 @@ public class SleeperCdkApp extends Stack {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
-                    tableStack.getStateStoreStacks(),
-                    tableStack.getDataBuckets(),
+                    tableStack, dataStack,
                     topicStack.getTopic(),
                     ingestStatusStoreStack);
         }
