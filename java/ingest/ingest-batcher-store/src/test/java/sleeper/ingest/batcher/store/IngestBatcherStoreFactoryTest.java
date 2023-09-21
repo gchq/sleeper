@@ -16,8 +16,6 @@
 
 package sleeper.ingest.batcher.store;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -33,34 +31,32 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.DynamoDBWiremockTestHelper.wiremockDynamoDBClient;
 
-@WireMockTest
-public class IngestBatcherStoreFactoryIT {
+public class IngestBatcherStoreFactoryTest {
     @Test
-    void shouldGetIngestBatcherStoreWhenOptionalStackEnabled(WireMockRuntimeInfo runtimeInfo) {
+    void shouldGetIngestBatcherStoreWhenOptionalStackEnabled() {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(OPTIONAL_STACKS, "IngestBatcherStack");
 
         // When/Then
-        assertThat(getStore(runtimeInfo, properties))
+        assertThat(getStore(properties))
                 .isPresent();
     }
 
     @Test
-    void shouldNotGetIngestBatcherStoreWhenOptionalStackDisabled(WireMockRuntimeInfo runtimeInfo) {
+    void shouldNotGetIngestBatcherStoreWhenOptionalStackDisabled() {
         // Given
         InstanceProperties properties = createTestInstanceProperties();
         properties.set(OPTIONAL_STACKS, "CompactionStack");
 
         // When/Then
-        assertThat(getStore(runtimeInfo, properties))
+        assertThat(getStore(properties))
                 .isNotPresent();
     }
 
-    private static Optional<IngestBatcherStore> getStore(WireMockRuntimeInfo runtimeInfo, InstanceProperties properties) {
-        return IngestBatcherStoreFactory.getStore(wiremockDynamoDBClient(runtimeInfo),
+    private static Optional<IngestBatcherStore> getStore(InstanceProperties properties) {
+        return IngestBatcherStoreFactory.getStore(null,
                 properties, createTablePropertiesProvider(properties));
     }
 
