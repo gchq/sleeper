@@ -27,8 +27,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.IOException;
-
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -50,7 +48,7 @@ public class PartitionsStatusReport {
         reporter.report(PartitionsStatus.from(tableProperties, store));
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws StateStoreException {
         PartitionsStatusReportArguments arguments;
         try {
             arguments = PartitionsStatusReportArguments.fromArgs(args);

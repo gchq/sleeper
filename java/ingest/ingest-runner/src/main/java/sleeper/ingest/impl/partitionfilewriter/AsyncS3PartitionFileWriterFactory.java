@@ -141,7 +141,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         if (s3AsyncClient != null && closeS3AsyncClient) {
             s3AsyncClient.close();
         }

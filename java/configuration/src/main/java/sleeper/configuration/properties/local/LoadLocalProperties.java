@@ -47,15 +47,11 @@ public class LoadLocalProperties {
     }
 
     public static <T extends InstanceProperties> T loadInstanceProperties(T properties, Path file) {
-        try {
-            properties.load(file);
-            Path tagsFile = directoryOf(file).resolve("tags.properties");
-            if (Files.exists(tagsFile)) {
-                Properties tagsProperties = loadProperties(tagsFile);
-                properties.loadTags(tagsProperties);
-            }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        properties.load(file);
+        Path tagsFile = directoryOf(file).resolve("tags.properties");
+        if (Files.exists(tagsFile)) {
+            Properties tagsProperties = loadProperties(tagsFile);
+            properties.loadTags(tagsProperties);
         }
         return properties;
     }

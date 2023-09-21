@@ -44,7 +44,6 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -81,7 +80,7 @@ public class TableInitialiserIT {
     }
 
     @Test
-    public void shouldInitialiseStateStoreWithNoSplitPoints() throws IOException {
+    public void shouldInitialiseStateStoreWithNoSplitPoints() {
         // Given
         AmazonS3 s3Client = getS3Client();
         AmazonDynamoDB dynamoClient = getDynamoClient();
@@ -111,7 +110,7 @@ public class TableInitialiserIT {
     }
 
     @Test
-    public void shouldInitialiseTableWithStringSplitPoints() throws IOException, StateStoreException {
+    public void shouldInitialiseTableWithStringSplitPoints() throws StateStoreException {
         // Given
         AmazonS3 s3Client = getS3Client();
         AmazonDynamoDB dynamoClient = getDynamoClient();
@@ -145,7 +144,7 @@ public class TableInitialiserIT {
     }
 
     @Test
-    public void shouldInitialiseWithBase64EncodedStringSplitPoints() throws IOException, StateStoreException {
+    public void shouldInitialiseWithBase64EncodedStringSplitPoints() throws StateStoreException {
         // Given
         AmazonS3 s3Client = getS3Client();
         AmazonDynamoDB dynamoClient = getDynamoClient();
@@ -183,7 +182,7 @@ public class TableInitialiserIT {
     }
 
     @Test
-    public void shouldInitialiseTableWithLongSplitPoints() throws IOException, StateStoreException {
+    public void shouldInitialiseTableWithLongSplitPoints() throws StateStoreException {
         // Given
         AmazonS3 s3Client = getS3Client();
         AmazonDynamoDB dynamoClient = getDynamoClient();
@@ -218,7 +217,7 @@ public class TableInitialiserIT {
     }
 
     @Test
-    public void shouldInitialiseTableWithIntegerSplitPoints() throws IOException, StateStoreException {
+    public void shouldInitialiseTableWithIntegerSplitPoints() throws StateStoreException {
         // Given
         AmazonS3 s3Client = getS3Client();
         AmazonDynamoDB dynamoClient = getDynamoClient();
@@ -253,7 +252,7 @@ public class TableInitialiserIT {
     }
 
     @Test
-    public void shouldInitialiseWithBase64EncodedByteArraySplitPoints() throws IOException, StateStoreException {
+    public void shouldInitialiseWithBase64EncodedByteArraySplitPoints() throws StateStoreException {
         // Given
         AmazonS3 s3Client = getS3Client();
         AmazonDynamoDB dynamoClient = getDynamoClient();

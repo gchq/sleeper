@@ -28,8 +28,6 @@ import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.ContainerConstants;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
@@ -39,7 +37,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 public class RunTasksLambda {
     private final RunTasks runTasks;
 
-    public RunTasksLambda() throws IOException {
+    public RunTasksLambda() {
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();

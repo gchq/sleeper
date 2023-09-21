@@ -28,8 +28,6 @@ import sleeper.bulkimport.job.runner.SparkFileInfoRow;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.io.IOException;
-
 /**
  * This class runs {@link BulkImportJobDriver} with a {@link BulkImportJobRunner} which
  * uses the Spark RDD API to partition the data according to the Sleeper
@@ -43,7 +41,7 @@ public class BulkImportJobRDDDriver {
         BulkImportJobDriver.start(args, BulkImportJobRDDDriver::createFileInfos);
     }
 
-    public static Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException {
+    public static Dataset<Row> createFileInfos(BulkImportJobInput input) {
         Schema schema = input.tableProperties().getSchema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         JavaRDD<Row> rdd = input.rows().javaRDD()

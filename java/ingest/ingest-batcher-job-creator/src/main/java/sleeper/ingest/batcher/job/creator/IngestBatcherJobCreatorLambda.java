@@ -31,8 +31,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.batcher.IngestBatcher;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -76,11 +74,7 @@ public class IngestBatcherJobCreatorLambda {
 
     public void batchFiles() {
         InstanceProperties instanceProperties = new InstanceProperties();
-        try {
-            instanceProperties.loadFromS3(s3Client, configBucket);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        instanceProperties.loadFromS3(s3Client, configBucket);
         LOGGER.info("Loaded instance properties from bucket {}", configBucket);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         IngestBatcher batcher = IngestBatcher.builder()

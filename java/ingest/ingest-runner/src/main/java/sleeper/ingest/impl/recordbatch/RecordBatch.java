@@ -54,9 +54,7 @@ public interface RecordBatch<INCOMINGDATATYPE> extends AutoCloseable {
 
     /**
      * Close the batch, freeing all memory, clearing temporary disk and other resources
-     *
-     * @throws IOException -
      */
     @Override
-    void close() throws IOException;
+    void close();
 }

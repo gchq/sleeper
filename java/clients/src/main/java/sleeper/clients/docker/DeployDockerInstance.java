@@ -61,7 +61,7 @@ public class DeployDockerInstance {
         deploy(instanceId, s3Client, dynamoDB, sqsClient);
     }
 
-    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) throws Exception {
+    public static void deploy(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         InstanceProperties instanceProperties = generateInstanceProperties(instanceId);
         TableProperties tableProperties = generateTableProperties(instanceProperties);
 

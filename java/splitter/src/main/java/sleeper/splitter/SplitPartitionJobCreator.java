@@ -25,7 +25,6 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -58,7 +57,7 @@ public class SplitPartitionJobCreator {
         this.sqs = sqs;
     }
 
-    public void run() throws IOException {
+    public void run() {
         // Create definition of partition splitting job to be done
         SplitPartitionJobDefinition partitionSplittingJobDefinition = new SplitPartitionJobDefinition(tableName, partition, fileNames);
 

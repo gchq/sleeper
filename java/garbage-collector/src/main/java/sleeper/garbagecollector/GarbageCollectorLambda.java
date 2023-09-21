@@ -47,7 +47,7 @@ public class GarbageCollectorLambda {
 
     private final GarbageCollector garbageCollector;
 
-    public GarbageCollectorLambda() throws IOException {
+    public GarbageCollectorLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClient.builder().build();
 

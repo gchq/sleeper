@@ -49,8 +49,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.utils.HadoopConfigurationProvider;
 
-import java.io.IOException;
-
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.SOURCE_TYPE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -65,18 +63,18 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
 
-    public SleeperRecordHandler() throws IOException {
+    public SleeperRecordHandler() {
         this(AmazonS3ClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SleeperRecordHandler(AmazonS3 s3Client, String configBucket) throws IOException {
+    public SleeperRecordHandler(AmazonS3 s3Client, String configBucket) {
         super(SOURCE_TYPE);
         this.instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
     }
 
-    public SleeperRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) throws IOException {
+    public SleeperRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
         super(s3Client, secretsManager, athena, SOURCE_TYPE);
         this.instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);

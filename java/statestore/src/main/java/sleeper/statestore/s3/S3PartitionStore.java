@@ -322,7 +322,7 @@ public class S3PartitionStore implements PartitionStore {
         return partitions;
     }
 
-    private Record getRecordFromPartition(Partition partition) throws IOException {
+    private Record getRecordFromPartition(Partition partition) {
         Record record = new Record();
         record.put("partitionId", partition.getId());
         record.put("leafPartition", "" + partition.isLeafPartition()); // TODO Change to boolean once boolean is a supported type
@@ -339,7 +339,7 @@ public class S3PartitionStore implements PartitionStore {
         return record;
     }
 
-    private Partition getPartitionFromRecord(Record record) throws IOException {
+    private Partition getPartitionFromRecord(Record record) {
         Partition.Builder partitionBuilder = Partition.builder()
                 .id((String) record.get("partitionId"))
                 .leafPartition(record.get("leafPartition").equals("true"))

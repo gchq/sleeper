@@ -46,14 +46,12 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableLister;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
@@ -321,8 +319,7 @@ public class GarbageCollectorIT {
         stateStore.addFile(fileInfo);
     }
 
-    private void createDynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties)
-            throws StateStoreException {
+    private void createDynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
         new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
     }
 
@@ -348,20 +345,18 @@ public class GarbageCollectorIT {
         return instanceProperties;
     }
 
-    private TableProperties createTableWithGCDelay(String tableName, InstanceProperties instanceProperties, int gcDelay)
-            throws IOException {
+    private TableProperties createTableWithGCDelay(String tableName, InstanceProperties instanceProperties, int gcDelay) {
         return createTable(tableName, instanceProperties, tableProperties ->
                 tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, gcDelay));
     }
 
-    private TableProperties createTable(String tableName, InstanceProperties instanceProperties) throws IOException {
+    private TableProperties createTable(String tableName, InstanceProperties instanceProperties) {
         return createTable(tableName, instanceProperties, tableProperties -> {
         });
     }
 
     private TableProperties createTable(
-            String tableName, InstanceProperties instanceProperties, Consumer<TableProperties> extraProperties)
-            throws IOException {
+            String tableName, InstanceProperties instanceProperties, Consumer<TableProperties> extraProperties) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(TEST_SCHEMA);

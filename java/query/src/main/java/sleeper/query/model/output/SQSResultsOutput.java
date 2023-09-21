@@ -112,7 +112,7 @@ public class SQSResultsOutput implements ResultsOutput {
         LOGGER.info("Sent " + resultsBatch.getRecords().size() + " records to SQS (batch number " + batchNumber + ")");
     }
 
-    private void sendResultsToSQS(ResultsBatch resultsBatch, String sqsUrl) throws IOException {
+    private void sendResultsToSQS(ResultsBatch resultsBatch, String sqsUrl) {
         String serialisedResults = new JSONResultsBatchSerialiser().serialise(resultsBatch);
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(sqsUrl)

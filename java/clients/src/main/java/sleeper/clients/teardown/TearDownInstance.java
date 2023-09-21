@@ -135,7 +135,7 @@ public class TearDownInstance {
         return new Builder();
     }
 
-    private InstanceProperties loadInstanceConfig() throws IOException {
+    private InstanceProperties loadInstanceConfig() {
         String instanceId;
         if (instanceIdArg == null) {
             InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesFromDirectory(generatedDir);

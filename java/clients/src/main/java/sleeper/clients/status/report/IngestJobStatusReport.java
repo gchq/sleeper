@@ -40,7 +40,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
@@ -98,7 +97,7 @@ public class IngestJobStatusReport {
                 persistentEmrStepCount);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         try {
             if (args.length < 2 || args.length > 5) {
                 throw new IllegalArgumentException("Wrong number of arguments");

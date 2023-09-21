@@ -21,9 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -38,15 +35,11 @@ public interface PropertiesReloader {
     static PropertiesReloader ifConfigured(
             AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
         return () -> {
-            try {
-                if (instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
-                    instanceProperties.loadFromS3(s3Client, instanceProperties.get(CONFIG_BUCKET));
-                    if (tablePropertiesProvider != null) {
-                        tablePropertiesProvider.clearCache();
-                    }
+            if (instanceProperties.getBoolean(FORCE_RELOAD_PROPERTIES)) {
+                instanceProperties.loadFromS3(s3Client, instanceProperties.get(CONFIG_BUCKET));
+                if (tablePropertiesProvider != null) {
+                    tablePropertiesProvider.clearCache();
                 }
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
             }
         };
     }

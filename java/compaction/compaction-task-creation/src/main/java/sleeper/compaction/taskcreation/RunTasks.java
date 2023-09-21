@@ -36,7 +36,6 @@ import sleeper.job.common.CommonJobUtils;
 import sleeper.job.common.QueueMessageCount;
 import sleeper.job.common.RunECSTasks;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -87,7 +86,7 @@ public class RunTasks {
                     AmazonS3 s3Client,
                     AmazonAutoScaling asClient,
                     String s3Bucket,
-                    String type) throws IOException {
+                    String type) {
         this.sqsClient = sqsClient;
         this.ecsClient = ecsClient;
         this.s3Bucket = s3Bucket;

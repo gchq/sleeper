@@ -19,7 +19,6 @@ package sleeper.systemtest.datageneration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
@@ -47,7 +46,7 @@ public class GenerateRandomDataFiles {
                 tableProperties, WriteRandomData.createRecordIterator(systemTestProperties, tableProperties));
     }
 
-    public static void main(String[] args) throws IOException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException {
         if (args.length < 2 || args.length > 3) {
             throw new IllegalArgumentException("Usage: <instance-id> <output-directory> <optional-number-of-records>");
         }

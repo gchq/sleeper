@@ -84,18 +84,14 @@ public class TestUtils {
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
 
-        try {
-            instanceProperties.saveToS3(s3Client);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        instanceProperties.saveToS3(s3Client);
 
         s3Client.shutdown();
 
         return instanceProperties;
     }
 
-    public static TableProperties createTable(InstanceProperties instance, Schema schema, String dataDir, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) throws IOException {
+    public static TableProperties createTable(InstanceProperties instance, Schema schema, String dataDir, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
         TableProperties tableProperties = new TableProperties(instance);
         tableProperties.setSchema(schema);
         String tableName = UUID.randomUUID().toString();

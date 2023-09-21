@@ -20,14 +20,12 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TablePropertiesIT extends TablePropertiesS3TestBase {
 
     @Test
-    void shouldSaveToS3() throws IOException {
+    void shouldSaveToS3() {
         // Given
         TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
                 "test", "save-properties");
@@ -41,7 +39,7 @@ class TablePropertiesIT extends TablePropertiesS3TestBase {
     }
 
     @Test
-    void shouldLoadFromS3() throws IOException {
+    void shouldLoadFromS3() {
         // Given
         TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
                 "test", "load-properties");
