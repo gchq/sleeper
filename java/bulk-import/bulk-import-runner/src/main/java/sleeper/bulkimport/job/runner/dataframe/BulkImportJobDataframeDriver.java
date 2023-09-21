@@ -35,7 +35,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +55,7 @@ public class BulkImportJobDataframeDriver {
         BulkImportJobDriver.start(args, BulkImportJobDataframeDriver::createFileInfos);
     }
 
-    public static Dataset<Row> createFileInfos(BulkImportJobInput input) throws IOException {
+    public static Dataset<Row> createFileInfos(BulkImportJobInput input) {
         Schema schema = input.schema();
         String schemaAsString = new SchemaSerDe().toJson(schema);
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);

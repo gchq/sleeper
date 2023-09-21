@@ -118,7 +118,7 @@ class InstancePropertiesTest {
     }
 
     @Test
-    void shouldLoadAndSaveFromString() throws IOException {
+    void shouldLoadAndSaveFromString() {
         // Given
         InstanceProperties instanceProperties = getSleeperProperties();
 
@@ -211,7 +211,7 @@ class InstancePropertiesTest {
     }
 
     @Test
-    void shouldDetectSystemTestPropertySetWhenValidPropertiesAlsoSet() throws IOException {
+    void shouldDetectSystemTestPropertySetWhenValidPropertiesAlsoSet() {
         // Given
         InstanceProperties properties = new InstanceProperties(loadProperties(
                 createTestInstanceProperties().saveAsString() + "\n" +
@@ -221,7 +221,7 @@ class InstancePropertiesTest {
     }
 
     @Test
-    void shouldGetUnknownPropertyValues() throws IOException {
+    void shouldGetUnknownPropertyValues() {
         // Given
         InstanceProperties properties = new InstanceProperties(loadProperties(
                 createTestInstanceProperties().saveAsString() + "\n" +

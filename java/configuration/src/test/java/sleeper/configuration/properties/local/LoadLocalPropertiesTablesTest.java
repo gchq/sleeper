@@ -46,7 +46,7 @@ class LoadLocalPropertiesTablesTest {
     private Path instancePropertiesFile;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         instancePropertiesFile = tempDir.resolve("instance.properties");
         instanceProperties.save(instancePropertiesFile);
     }
@@ -112,7 +112,7 @@ class LoadLocalPropertiesTablesTest {
     }
 
     @Test
-    void shouldFailToLoadWhenNoSchemaSpecified() throws IOException {
+    void shouldFailToLoadWhenNoSchemaSpecified() {
         // Given
         TableProperties properties = createTestTablePropertiesWithNoSchema(instanceProperties);
         properties.save(tempDir.resolve("table.properties"));
@@ -126,7 +126,7 @@ class LoadLocalPropertiesTablesTest {
     }
 
     @Test
-    void shouldLoadFileNextToInstancePropertiesFileWithSchemaInProperties() throws IOException {
+    void shouldLoadFileNextToInstancePropertiesFileWithSchemaInProperties() {
         // Given
         TableProperties properties = createTestTableProperties(instanceProperties, schemaWithKey("test-key"));
         properties.save(tempDir.resolve("table.properties"));

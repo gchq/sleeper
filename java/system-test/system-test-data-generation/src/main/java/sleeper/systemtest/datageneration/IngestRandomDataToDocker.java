@@ -27,7 +27,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
@@ -94,7 +93,7 @@ public class IngestRandomDataToDocker {
         return null;
     }
 
-    public static void main(String[] args) throws IOException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException {
         if (args.length < 1 || args.length > 2) {
             throw new IllegalArgumentException("Usage: <instance-id> <optional-number-of-records>");
         }

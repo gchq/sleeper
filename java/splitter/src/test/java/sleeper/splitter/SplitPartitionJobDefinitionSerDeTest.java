@@ -31,7 +31,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.splitter.FindPartitionsToSplitIT.TestTablePropertiesProvider;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SplitPartitionJobDefinitionSerDeTest {
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithIntKey() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithIntKey() {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -86,7 +85,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithLongKey() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithLongKey() {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -132,7 +131,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithStringKey() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithStringKey() {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -178,7 +177,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMax() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMax() {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -224,7 +223,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithByteArrayKey() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithByteArrayKey() {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -270,7 +269,7 @@ public class SplitPartitionJobDefinitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMax() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMax() {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();

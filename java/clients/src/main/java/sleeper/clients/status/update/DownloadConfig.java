@@ -32,7 +32,7 @@ public class DownloadConfig {
     private DownloadConfig() {
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (args.length != 2) {
             throw new IllegalArgumentException("Usage: <instance-id> <directory-to-write-to>");
         }

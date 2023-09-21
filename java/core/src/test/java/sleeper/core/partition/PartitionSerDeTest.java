@@ -26,14 +26,12 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class PartitionSerDeTest {
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithIntKeyCorrectly() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithIntKeyCorrectly() {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -58,7 +56,7 @@ public class PartitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithLongKeyCorrectly() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithLongKeyCorrectly() {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -83,7 +81,7 @@ public class PartitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithStringKeyCorrectly() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithStringKeyCorrectly() {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -108,7 +106,7 @@ public class PartitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMaxCorrectly() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithStringKeyWithNullMaxCorrectly() {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -133,7 +131,7 @@ public class PartitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithByteArrayKeyCorrectly() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithByteArrayKeyCorrectly() {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -158,7 +156,7 @@ public class PartitionSerDeTest {
     }
 
     @Test
-    public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMaxCorrectly() throws IOException {
+    public void shouldSerialiseAndDeserialiseWithByteArrayKeyWithNullMaxCorrectly() {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();

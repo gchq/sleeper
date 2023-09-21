@@ -234,11 +234,7 @@ class GeneratePropertiesTemplatesTest {
 
     private InstanceProperties instancePropertiesFromString(String propertiesString) {
         InstanceProperties properties = new InstanceProperties();
-        try {
-            properties.loadFromString(propertiesString);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        properties.loadFromString(propertiesString);
         return properties;
     }
 
@@ -246,11 +242,7 @@ class GeneratePropertiesTemplatesTest {
         InstanceProperties instanceProperties = new InstanceProperties();
         TableProperties properties = new TableProperties(instanceProperties);
         properties.setSchema(schemaWithKey("key"));
-        try {
-            properties.loadFromString(propertiesString);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        properties.loadFromString(propertiesString);
         return properties;
     }
 }

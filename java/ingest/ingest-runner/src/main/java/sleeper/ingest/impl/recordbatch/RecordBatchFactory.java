@@ -21,6 +21,6 @@ public interface RecordBatchFactory<INCOMINGDATATYPE> extends AutoCloseable {
     RecordBatch<INCOMINGDATATYPE> createRecordBatch();
 
     @Override
-    default void close() throws Exception {
+    default void close() {
     }
 }

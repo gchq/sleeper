@@ -166,7 +166,7 @@ public class CreateJobsIT {
         return instanceProperties;
     }
 
-    private static TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Schema schema) throws IOException {
+    private static TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
         TableCreator tableCreator = new TableCreator(s3, dynamoDB, instanceProperties);
         tableCreator.createTable(tableProperties);

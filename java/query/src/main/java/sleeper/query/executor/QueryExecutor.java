@@ -208,7 +208,7 @@ public class QueryExecutor {
         return leafPartitionQueriesList;
     }
 
-    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries, TableProperties tableProperties) throws QueryException {
+    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries, TableProperties tableProperties) {
         List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
 
         for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {

@@ -16,7 +16,6 @@
 package sleeper.clients.util;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +46,7 @@ public class ClientUtils {
     private ClientUtils() {
     }
 
-    public static InstanceProperties getInstanceProperties(String instanceId) throws IOException {
-        return getInstanceProperties(AmazonS3ClientBuilder.defaultClient(), instanceId);
-    }
-
-    public static InstanceProperties getInstanceProperties(AmazonS3 amazonS3, String instanceId) throws IOException {
+    public static InstanceProperties getInstanceProperties(AmazonS3 amazonS3, String instanceId) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(amazonS3, instanceId);
         return instanceProperties;

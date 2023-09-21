@@ -38,7 +38,7 @@ public class RetrieveTask implements Callable<Pair<Record, CloseableIterator<Rec
     }
 
     @Override
-    public Pair<Record, CloseableIterator<Record>> call() throws Exception {
+    public Pair<Record, CloseableIterator<Record>> call() {
         CloseableIterator<Record> iterator;
         try {
             iterator = new ParquetReaderIterator(reader);

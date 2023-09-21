@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientITBase;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
@@ -49,7 +47,7 @@ class TableSelectHelperIT extends AdminClientITBase {
     }
 
     @Test
-    void shouldReturnToMenuIfTableDoesNotExist() throws IOException {
+    void shouldReturnToMenuIfTableDoesNotExist() {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
         instanceProperties.saveToS3(s3);

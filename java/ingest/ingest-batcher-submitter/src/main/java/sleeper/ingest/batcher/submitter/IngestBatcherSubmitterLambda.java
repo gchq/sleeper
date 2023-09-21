@@ -32,7 +32,6 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
@@ -46,7 +45,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Configuration configuration;
 
-    public IngestBatcherSubmitterLambda() throws IOException {
+    public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");

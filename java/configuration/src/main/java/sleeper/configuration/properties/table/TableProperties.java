@@ -132,16 +132,16 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
     }
 
-    public void saveToS3(AmazonS3 s3Client) throws IOException {
+    public void saveToS3(AmazonS3 s3Client) {
         super.saveToS3(s3Client, instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + get(TableProperty.TABLE_NAME));
         LOGGER.info("Saved table properties to bucket {}, key {}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + get(TABLE_NAME));
     }
 
-    public void loadFromS3(AmazonS3 s3Client, String tableName) throws IOException {
+    public void loadFromS3(AmazonS3 s3Client, String tableName) {
         loadFromString(loadStringFromS3(s3Client, instanceProperties, tableName));
     }
 
-    public static Properties loadPropertiesFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) throws IOException {
+    public static Properties loadPropertiesFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
         return loadProperties(loadStringFromS3(s3Client, instanceProperties, tableName));
     }
 

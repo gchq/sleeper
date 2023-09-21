@@ -87,7 +87,7 @@ class SystemTestPropertiesTest {
                 .isEmpty();
     }
 
-    private SystemTestProperties validProperties() throws IOException {
+    private SystemTestProperties validProperties() {
         SystemTestProperties properties = new SystemTestProperties();
         properties.set(NUMBER_OF_WRITERS, "1");
         properties.set(NUMBER_OF_RECORDS_PER_WRITER, "1");

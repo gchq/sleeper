@@ -42,7 +42,6 @@ import sleeper.systemtest.configuration.SystemTestProperties;
 import sleeper.systemtest.datageneration.RandomRecordSupplier;
 import sleeper.systemtest.datageneration.RandomRecordSupplierConfig;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -137,7 +136,7 @@ public class MultipleQueries {
         LOGGER.info("{} records returned in {} seconds at {} per second)", totalResults, duration, String.format("%.2f", rate));
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (args.length != 3) {
             System.out.println("Usage: <S3 config Bucket> <table name> <Number of queries>");
         }

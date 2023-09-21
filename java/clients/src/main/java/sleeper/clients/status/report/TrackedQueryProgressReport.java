@@ -22,11 +22,8 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.exception.QueryTrackerException;
-
-import java.io.IOException;
 
 /**
  *
@@ -36,7 +33,7 @@ public class TrackedQueryProgressReport {
     private TrackedQueryProgressReport() {
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException, QueryTrackerException {
+    public static void main(String[] args) throws QueryTrackerException {
         if (2 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <query-id>");
         }

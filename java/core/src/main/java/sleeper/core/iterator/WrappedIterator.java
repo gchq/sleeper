@@ -15,7 +15,6 @@
  */
 package sleeper.core.iterator;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 /**
@@ -39,7 +38,7 @@ public class WrappedIterator<T> implements CloseableIterator<T> {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
     }
 }
 

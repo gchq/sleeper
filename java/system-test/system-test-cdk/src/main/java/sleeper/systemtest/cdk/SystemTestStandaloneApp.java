@@ -26,7 +26,6 @@ import software.amazon.awscdk.StackProps;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ACCOUNT;
@@ -48,7 +47,7 @@ public class SystemTestStandaloneApp extends Stack {
         new SystemTestPropertiesStack(this, "SystemTestProperties", properties, bucketStack, jars);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         App app = new App();
 
         Path propertiesFile = Path.of((String) app.getNode().tryGetContext("propertiesfile"));
