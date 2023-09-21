@@ -36,37 +36,37 @@ public class NumberFormatUtilsTest {
         @Test
         void shouldFormatNumberOfBytesAsKB() {
             assertThat(formatBytes(1_234L))
-                    .isEqualTo("1.2KB");
+                    .isEqualTo("1234B (1.2KB)");
         }
 
         @Test
         void shouldFormatNumberOfBytesAsKBWithRounding() {
             assertThat(formatBytes(5_678L))
-                    .isEqualTo("5.7KB");
+                    .isEqualTo("5678B (5.7KB)");
         }
 
         @Test
         void shouldFormatNumberOfBytesEqualTo1KB() {
             assertThat(formatBytes(1_000L))
-                    .isEqualTo("1.0KB");
+                    .isEqualTo("1000B (1.0KB)");
         }
 
         @Test
         void shouldFormatNumberOfBytesAs10KB() {
             assertThat(formatBytes(10_000L))
-                    .isEqualTo("10.0KB");
+                    .isEqualTo("10000B (10.0KB)");
         }
 
         @Test
         void shouldFormatNumberOfBytesAsMB() {
             assertThat(formatBytes(1_234_000L))
-                    .isEqualTo("1.2MB");
+                    .isEqualTo("1234000B (1.2MB)");
         }
 
         @Test
         void shouldFormatNumberOfBytesAsGB() {
             assertThat(formatBytes(1_234_000_000L))
-                    .isEqualTo("1.2GB");
+                    .isEqualTo("1234000000B (1.2GB)");
         }
 
         @Test

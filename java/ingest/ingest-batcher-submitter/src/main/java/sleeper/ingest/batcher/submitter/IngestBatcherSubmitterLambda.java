@@ -97,8 +97,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             return;
         }
         requests.forEach(request -> {
-            LOGGER.info("Storing ingest request for file {} with size {}B ({}) to table {}", request.getFile(),
-                    request.getFileSizeBytes(), formatBytes(request.getFileSizeBytes()), request.getTableName());
+            LOGGER.info("Storing ingest request for file {} with size {} to table {}",
+                    request.getFile(), formatBytes(request.getFileSizeBytes()), request.getTableName());
             store.addFile(request);
         });
     }
