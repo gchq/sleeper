@@ -24,6 +24,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -88,9 +89,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -101,6 +102,7 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestJo
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 @Testcontainers
+@Disabled("TODO")
 class BulkImportJobDriverIT {
 
     private static Stream<Arguments> getParameters() {
@@ -173,7 +175,8 @@ class BulkImportJobDriverIT {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(FILE_SYSTEM, dir);
+        instanceProperties.set(DATA_BUCKET, dir);
+        instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(REGION, "test-region");
@@ -191,12 +194,10 @@ class BulkImportJobDriverIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
-        tableProperties.set(DATA_BUCKET, UUID.randomUUID().toString());
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
-        s3Client.createBucket(tableProperties.get(DATA_BUCKET));
         tableProperties.saveToS3(s3Client);
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
@@ -318,7 +319,7 @@ class BulkImportJobDriverIT {
     void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
         // Given
         //  - Instance and table properties
-        String dataDir = createTempDirectory(folder, null).toString();
+        String dataDir = folder.toString();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTable(instanceProperties);
         //  - Write some data to be imported

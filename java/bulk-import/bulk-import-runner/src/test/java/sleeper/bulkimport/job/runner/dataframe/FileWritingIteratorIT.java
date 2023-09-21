@@ -25,7 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -39,41 +38,16 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class FileWritingIteratorIT {
 
     @TempDir
     public java.nio.file.Path tempFolder;
-
-    private Schema createSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .sortKeyFields(new Field("int", new IntType()))
-                .valueFields(new Field("value", new IntType()))
-                .build();
-    }
-
-    private TableProperties createTableProperties() {
-        TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.setSchema(createSchema());
-        try {
-            tableProperties.set(TableProperty.DATA_BUCKET, createTempDirectory(tempFolder, null).toString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create temp folder for test", e);
-        }
-
-        return tableProperties;
-    }
-
-    private InstanceProperties createInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(FILE_SYSTEM, "file://");
-        return instanceProperties;
-    }
 
     @Test
     void shouldReturnFalseForHasNextWithEmptyIterator() {
@@ -188,6 +162,28 @@ class FileWritingIteratorIT {
                                 createRecord("d", 1, 2, "b")),
                         List.of(
                                 createRecord("e", 1, 2, "c")));
+    }
+
+    private Schema createSchema() {
+        return Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .sortKeyFields(new Field("int", new IntType()))
+                .valueFields(new Field("value", new IntType()))
+                .build();
+    }
+
+    private TableProperties createTableProperties() {
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.setSchema(createSchema());
+        tableProperties.set(TABLE_NAME, "test-table");
+        return tableProperties;
+    }
+
+    private InstanceProperties createInstanceProperties() {
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, tempFolder.toString());
+        return instanceProperties;
     }
 
     private Record createRecord(Object... values) {
