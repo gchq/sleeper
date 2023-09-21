@@ -40,7 +40,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-class SaveLocalPropertiesTest {
+class SaveLocalPropertiesIT {
     @TempDir
     private Path tempDir;
 
