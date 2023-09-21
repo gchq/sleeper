@@ -124,7 +124,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, getTableStack().getStateStoreStacks(), getTableStack().getDataBuckets());
+            new AthenaStack(this, "Athena", instanceProperties, jars, tableStack, dataStack);
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
