@@ -89,10 +89,10 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -720,7 +720,7 @@ public class ReinitialiseTableIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
-        tableProperties.set(ENCRYPTED, "false");
+        tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "false");
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, "sleeper" + "-" + tableName + "-" + "active-files");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, "sleeper" + "-" + tableName + "-" + "gc-files");
         tableProperties.set(PARTITION_TABLENAME, "sleeper" + "-" + tableName + "-" + "partitions");
