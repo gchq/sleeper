@@ -68,8 +68,8 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
@@ -1265,9 +1265,7 @@ public class QueryExecutorIT {
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
                               TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
-        instanceProperties.set(FILE_SYSTEM, "file://");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(folder, null).toString())
@@ -1377,9 +1375,11 @@ public class QueryExecutorIT {
         return record;
     }
 
-    private static InstanceProperties createInstanceProperties() {
+    private InstanceProperties createInstanceProperties() throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         return instanceProperties;
     }
 }
