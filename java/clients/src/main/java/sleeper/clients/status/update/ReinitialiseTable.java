@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -100,9 +100,6 @@ public class ReinitialiseTable {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
 
-        String instanceTableName = instanceProperties.get(ID) + "-table-" + tableName;
-        String s3TableBucketName = "sleeper-" + instanceTableName;
-
         boolean isS3StateStore = false;
         if (tableProperties.get(STATESTORE_CLASSNAME).equals("sleeper.statestore.s3.S3StateStore")) {
             LOGGER.info("S3 State Store detected");
@@ -113,7 +110,7 @@ public class ReinitialiseTable {
 
         if (deletePartitions) {
             deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
-            deleteObjectsInTableBucket(s3TableBucketName, isS3StateStore);
+            deleteObjectsInTableBucket(instanceProperties, isS3StateStore);
 
             LOGGER.info("Fully reinitialising table");
             StateStore statestore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf)
@@ -121,7 +118,7 @@ public class ReinitialiseTable {
             initialiseStateStore(tableProperties, statestore);
         } else {
             deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
-            deleteObjectsInTableBucket(s3TableBucketName, isS3StateStore);
+            deleteObjectsInTableBucket(instanceProperties, isS3StateStore);
             if (isS3StateStore) {
                 LOGGER.info("Recreating files information file and adding it into the revisions table");
                 S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties,
@@ -135,14 +132,16 @@ public class ReinitialiseTable {
         InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
     }
 
-    private void deleteObjectsInTableBucket(String s3TableBucketName, boolean isS3StateStore) {
+    private void deleteObjectsInTableBucket(InstanceProperties instanceProperties, boolean isS3StateStore) {
         List<String> objectKeysForDeletion = new ArrayList<>();
+        String dataBucketName = instanceProperties.get(DATA_BUCKET);
         ListObjectsV2Request req = new ListObjectsV2Request()
-                .withBucketName(s3TableBucketName)
+                .withBucketName(dataBucketName)
+                .withPrefix(tableName + "/")
                 .withMaxKeys(100);
         ListObjectsV2Result result;
 
-        LOGGER.info("Deleting all objects within partitions in the table's bucket");
+        LOGGER.info("Deleting all objects for table {} in the data bucket", tableName);
         int totalObjectsDeleted = 0;
         do {
             objectKeysForDeletion.clear();
@@ -162,7 +161,7 @@ public class ReinitialiseTable {
             }
             String token = result.getNextContinuationToken();
             req.setContinuationToken(token);
-            totalObjectsDeleted += deleteObjects(s3TableBucketName, objectKeysForDeletion);
+            totalObjectsDeleted += deleteObjects(dataBucketName, objectKeysForDeletion);
         } while (result.isTruncated());
         LOGGER.info("A total of {} objects were deleted", totalObjectsDeleted);
     }
@@ -175,7 +174,7 @@ public class ReinitialiseTable {
                     .withQuiet(false);
             DeleteObjectsResult delObjRes = s3Client.deleteObjects(multiObjectDeleteRequest);
             successfulDeletes = delObjRes.getDeletedObjects().size();
-            LOGGER.info("{} objects successfully deleted from the {} S3 bucket", successfulDeletes, bucketName);
+            LOGGER.info("{} objects successfully deleted from S3 bucket: {}", successfulDeletes, bucketName);
         }
         return successfulDeletes;
     }
