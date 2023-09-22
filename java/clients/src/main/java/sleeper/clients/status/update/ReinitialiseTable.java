@@ -144,17 +144,18 @@ public class ReinitialiseTable {
         LOGGER.info("Deleting all objects for table {} in the data bucket", tableName);
         int totalObjectsDeleted = 0;
         do {
+
             objectKeysForDeletion.clear();
             result = s3Client.listObjectsV2(req);
             for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
                 String objectKey = objectSummary.getKey();
-                if (objectKey.matches("partition.*/.*")) {
+                if (objectKey.matches(tableName + "/partition.*/.*")) {
                     objectKeysForDeletion.add(objectSummary.getKey());
                 }
                 if (isS3StateStore) {
-                    if (deletePartitions && objectKey.matches("statestore/.*")) {
+                    if (deletePartitions && objectKey.matches(tableName + "/statestore/.*")) {
                         objectKeysForDeletion.add(objectSummary.getKey());
-                    } else if (objectKey.matches("statestore/files/.*")) {
+                    } else if (objectKey.matches(tableName + "/statestore/files/.*")) {
                         objectKeysForDeletion.add(objectSummary.getKey());
                     }
                 }
