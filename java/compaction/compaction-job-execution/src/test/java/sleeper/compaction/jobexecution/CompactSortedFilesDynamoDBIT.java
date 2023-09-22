@@ -38,6 +38,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,10 +52,10 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -67,6 +68,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
 
     private static AmazonDynamoDB dynamoDBClient;
     private static CompactionJobStatusStore jobStatusStore;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @BeforeAll
     public static void beforeAll() {
@@ -83,11 +85,18 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         dynamoDBClient = null;
     }
 
+    private StateStore createStateStore(Schema schema) {
+        return new DynamoDBStateStoreCreator(instanceProperties,
+                createTestTableProperties(instanceProperties, schema),
+                dynamoDBClient).create();
+    }
+
     @Test
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createInitStateStore("fsmcadulk", schema, dynamoDBClient);
+        StateStore stateStore = createStateStore(schema);
+        stateStore.initialise();
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
@@ -123,7 +132,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createStateStore("fsmascadu", schema, dynamoDBClient);
+        StateStore stateStore = createStateStore(schema);
         stateStore.initialise(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                 .parentJoining("C", "A", "B")

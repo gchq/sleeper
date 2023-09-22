@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +61,6 @@ public class DynamoDBStateStoreCreator {
     private final String readyForGCFileInfoTablename;
     private final String partitionTableName;
     private final Schema schema;
-    private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final boolean stronglyConsistentReads;
     private final Collection<Tag> tags;
@@ -80,15 +78,11 @@ public class DynamoDBStateStoreCreator {
         this.readyForGCFileInfoTablename = Objects.requireNonNull(readyForGCFileInfoTablename, "readyForGCFileInfoTablename must not be null");
         this.partitionTableName = Objects.requireNonNull(partitionTablename, "partitionTableName must not be null");
         this.schema = Objects.requireNonNull(schema, "schema must not be null");
-        this.rowKeyTypes = schema.getRowKeyTypes();
-        if (this.rowKeyTypes.isEmpty()) {
-            throw new IllegalArgumentException("rowKeyTypes must not be empty");
-        }
         this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
         this.stronglyConsistentReads = stronglyConsistentReads;
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
         if (null == tags) {
-            this.tags = Collections.EMPTY_SET;
+            this.tags = Collections.emptySet();
         } else {
             this.tags = tags
                     .entrySet()
@@ -102,15 +96,7 @@ public class DynamoDBStateStoreCreator {
             String tablenameStub,
             Schema schema,
             AmazonDynamoDB dynamoDB) {
-        this(tablenameStub, schema, 0, dynamoDB);
-    }
-
-    public DynamoDBStateStoreCreator(
-            String tablenameStub,
-            Schema schema,
-            int garbageCollectorDelayBeforeDeletionInMinutes,
-            AmazonDynamoDB dynamoDB) {
-        this(tablenameStub + "-af", tablenameStub + "-rgcf", tablenameStub + "-p", schema, garbageCollectorDelayBeforeDeletionInMinutes, false, dynamoDB, Collections.EMPTY_MAP);
+        this(tablenameStub + "-af", tablenameStub + "-rgcf", tablenameStub + "-p", schema, 0, false, dynamoDB, Collections.emptyMap());
     }
 
     public DynamoDBStateStoreCreator(
@@ -121,7 +107,7 @@ public class DynamoDBStateStoreCreator {
                 tableProperties.get(PARTITION_TABLENAME), tableProperties.getSchema(),
                 tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
                 tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS),
-                dynamoDB, Collections.EMPTY_MAP);
+                dynamoDB, Collections.emptyMap());
     }
 
     public DynamoDBStateStore create() {
@@ -157,7 +143,7 @@ public class DynamoDBStateStoreCreator {
                 .withKeySchema(keySchemaElements)
                 .withBillingMode(BillingMode.PAY_PER_REQUEST);
         String message = "";
-        if (tags.size() > 0) {
+        if (!tags.isEmpty()) {
             request = request.withTags(tags);
             message = " with tags " + tags;
         }

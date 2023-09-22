@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.jobexecution.testutils;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.assertj.core.groups.Tuple;
 
 import sleeper.compaction.job.CompactionJob;
@@ -32,7 +31,6 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -66,16 +64,6 @@ public class CompactSortedFilesTestUtils {
                 .rowKeyFields(key)
                 .valueFields(new Field("timestamp", new LongType()), new Field("value", new LongType()))
                 .build();
-    }
-
-    public static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        StateStore dynamoStateStore = createStateStore(tablenameStub, schema, dynamoDBClient);
-        dynamoStateStore.initialise();
-        return dynamoStateStore;
-    }
-
-    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) {
-        return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
     }
 
     public static CompactSortedFiles createCompactSortedFiles(
