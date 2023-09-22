@@ -82,7 +82,7 @@ public class IngestCoordinatorFactory {
                             .parquetConfiguration(parquetConfiguration)
                             .s3AsyncClient(parameters.getS3AsyncClient())
                             .localWorkingDirectory(parameters.getWorkingDir())
-                            .s3BucketName(parameters.getDataBucketName())
+                            .s3BucketPath(parameters.getDataBucketPath())
                             .fileNameGenerator(parameters.getFileNameGenerator())
                             .timeSupplier(parameters.getFileUpdatedTimeSupplier())
                             .build())
