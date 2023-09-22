@@ -22,7 +22,6 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -36,10 +35,10 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = getStateStore(schema);
+        DynamoDBStateStore stateStore = getStateStore();
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -58,7 +57,7 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
         assertThat(readRecords.get(0)).isEqualTo(getRecords().get(0));
         assertThat(readRecords.get(1)).isEqualTo(getRecords().get(1));
         //  - Local files should have been deleted
-        assertThat(Files.walk(Paths.get(inputFolderName)).filter(Files::isRegularFile).count()).isZero();
+        assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, fileInfo.getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)
@@ -72,10 +71,10 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
     @Test
     public void shouldWriteNoRecordsSuccessfully() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = getStateStore(schema);
+        DynamoDBStateStore stateStore = getStateStore();
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, Collections.emptyList()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, Collections.emptyList()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written

@@ -23,12 +23,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.CommonTestConstants;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-
-import java.util.UUID;
 
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
@@ -40,11 +37,9 @@ public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
             .withExposedPorts(DYNAMO_PORT);
 
-    protected DynamoDBStateStore getStateStore(Schema schema)
-            throws StateStoreException {
+    protected DynamoDBStateStore getStateStore() throws StateStoreException {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
-        String tableNameStub = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(tableNameStub, schema, dynamoDBClient);
+        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient);
         DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
         stateStore.initialise();
         return stateStore;
