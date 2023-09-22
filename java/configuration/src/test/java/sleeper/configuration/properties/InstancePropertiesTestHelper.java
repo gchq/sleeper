@@ -21,6 +21,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -64,7 +65,7 @@ public class InstancePropertiesTestHelper {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(id));
-        instanceProperties.set(DATA_BUCKET, "test-table-data-bucket");
+        instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + id.toLowerCase(Locale.ROOT));
         instanceProperties.set(JARS_BUCKET, "test-bucket");
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(REGION, "test-region");
