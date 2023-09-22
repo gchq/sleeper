@@ -221,9 +221,6 @@ public class SleeperTableLambdaIT {
         String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         AmazonDynamoDB dynamoClient = createDynamoClient();
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket(tableName);
-        s3Client.shutdown();
         new DynamoDBStateStoreCreator(tableName, KEY_VALUE_SCHEMA, dynamoClient)
                 .create();
         dynamoClient.shutdown();
