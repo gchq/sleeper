@@ -308,7 +308,6 @@ public final class EksBulkImportStack extends NestedStack {
     }
 
     private void grantAccesses(TableStack tableStack, TableDataStack dataStack, IBucket configBucket) {
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(sparkServiceAccount));
         dataStack.getDataBucket().grantReadWrite(sparkServiceAccount);
         tableStack.getStateStoreStacks().forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(sparkServiceAccount);

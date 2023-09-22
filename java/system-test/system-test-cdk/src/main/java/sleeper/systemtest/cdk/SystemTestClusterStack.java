@@ -98,7 +98,6 @@ public class SystemTestClusterStack extends NestedStack {
                 .forEach(bucket -> bucket.grantReadWrite(taskRole));
         Bucket.fromBucketName(this, "ConfigBucket", properties.get(CONFIG_BUCKET)).grantRead(taskRole);
 
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(taskRole));
         dataStack.getDataBucket().grantReadWrite(taskRole);
         tableStack.getStateStoreStacks().forEach(stateStoreStack -> {
             stateStoreStack.grantReadWriteActiveFileMetadata(taskRole);

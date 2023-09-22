@@ -129,7 +129,6 @@ public class AthenaStack extends NestedStack {
                 sss.grantReadActiveFileMetadata(handler);
                 sss.grantReadPartitionMetadata(handler);
             });
-            tableStack.getDataBuckets().forEach(bucket -> bucket.grantRead(handler));
             dataStack.getDataBucket().grantRead(handler);
             configBucket.grantRead(handler);
             spillBucket.grantReadWrite(handler);

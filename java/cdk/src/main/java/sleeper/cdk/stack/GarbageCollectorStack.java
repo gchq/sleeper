@@ -89,8 +89,6 @@ public class GarbageCollectorStack extends NestedStack {
         // Grant this function permission delete files from the data bucket and
         // to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantRead(handler));
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantDelete(handler));
         dataStack.getDataBucket().grantRead(handler);
         dataStack.getDataBucket().grantDelete(handler);
         tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(handler));

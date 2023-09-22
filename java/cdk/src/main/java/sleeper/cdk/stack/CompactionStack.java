@@ -419,7 +419,6 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
             dataStack.getDataBucket().grantReadWrite(taskDef.getTaskRole());
             tableStack.getStateStoreStacks().forEach(
                     stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
@@ -495,7 +494,6 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
             dataStack.getDataBucket().grantReadWrite(taskDef.getTaskRole());
             tableStack.getStateStoreStacks().forEach(
                     stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));

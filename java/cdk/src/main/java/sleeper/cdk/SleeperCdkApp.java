@@ -119,8 +119,8 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stack for tables
-        tableStack = new TableStack(this, "Table", instanceProperties, jars);
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
+        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {

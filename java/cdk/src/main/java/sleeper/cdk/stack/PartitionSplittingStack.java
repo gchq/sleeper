@@ -202,7 +202,6 @@ public class PartitionSplittingStack extends NestedStack {
         // Grant this function permission to read config files and to read
         // from / write to the DynamoDB table
         configBucket.grantRead(splitPartitionLambda);
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantRead(splitPartitionLambda));
         dataStack.getDataBucket().grantRead(splitPartitionLambda);
         tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(splitPartitionLambda));
 

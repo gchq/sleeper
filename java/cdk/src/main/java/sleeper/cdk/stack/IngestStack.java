@@ -273,7 +273,6 @@ public class IngestStack extends NestedStack {
 
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
         dataStack.getDataBucket().grantReadWrite(taskDefinition.getTaskRole());
         tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
         tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));

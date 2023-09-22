@@ -22,7 +22,6 @@ import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -39,14 +38,14 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class S3StateStoreStack implements StateStoreStack {
     private final Table revisionTable;
-    private final Bucket dataBucket;
+    private final TableDataStack dataStack;
 
     public S3StateStoreStack(Construct scope,
-                             Bucket dataBucket,
+                             TableDataStack dataStack,
                              InstanceProperties instanceProperties,
                              TableProperties tableProperties,
                              Provider tablesProvider) {
-        this.dataBucket = dataBucket;
+        this.dataStack = dataStack;
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
@@ -102,11 +101,11 @@ public class S3StateStoreStack implements StateStoreStack {
 
     private void grantReadWrite(IGrantable grantee) {
         revisionTable.grantReadWriteData(grantee);
-        dataBucket.grantReadWrite(grantee); // TODO Only needs access to keys starting with 'statestore'
+        dataStack.getDataBucket().grantReadWrite(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
     }
 
     private void grantRead(IGrantable grantee) {
         revisionTable.grantReadData(grantee);
-        dataBucket.grantRead(grantee); // TODO Only needs access to keys starting with 'statestore'
+        dataStack.getDataBucket().grantRead(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
     }
 }

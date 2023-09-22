@@ -97,7 +97,6 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(role));
         dataStack.getDataBucket().grantReadWrite(role);
         tableStack.getStateStoreStacks().forEach(sss -> {
             sss.grantReadWriteActiveFileMetadata(role);
