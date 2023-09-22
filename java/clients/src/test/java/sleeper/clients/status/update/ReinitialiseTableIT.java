@@ -86,9 +86,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -140,7 +140,7 @@ public class ReinitialiseTableIT {
     }
 
     @TempDir
-    public Path folder;
+    public Path tempDir;
 
     @Test
     public void shouldThrowExceptionIfBucketIsEmpty() {
@@ -154,7 +154,7 @@ public class ReinitialiseTableIT {
 
     @Test
     public void shouldThrowExceptionIfTableIsEmpty() {
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, CONFIG_BUCKET_NAME, "", false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, INSTANCE_NAME, "", false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -165,8 +165,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, false);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, false);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -194,8 +193,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, true);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, true);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -229,8 +227,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, false);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, false);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -259,8 +256,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, true);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, true);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -296,8 +292,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, false);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, false);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -333,8 +328,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, true);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, true);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -378,8 +372,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, false);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, false);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -415,8 +408,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, true);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, true);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -460,8 +452,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, false);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, false);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -494,8 +485,7 @@ public class ReinitialiseTableIT {
         String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
         setupS3buckets(tableBucketName, true);
 
-        InstanceProperties validInstanceProperties =
-                createValidInstanceProperties(tableName, true);
+        InstanceProperties validInstanceProperties = createValidInstanceProperties();
         validInstanceProperties.saveToS3(s3Client);
 
         TableProperties validTableProperties =
@@ -642,11 +632,8 @@ public class ReinitialiseTableIT {
     private S3StateStore setupS3StateStore(InstanceProperties instanceProperties, TableProperties tableProperties)
             throws IOException, StateStoreException {
         //  - CreateS3StateStore
-        String revisionTableName = createRevisionDynamoTable(tableProperties.get(REVISION_TABLENAME));
-        S3StateStore s3StateStore = new S3StateStore(instanceProperties.get(FILE_SYSTEM), 5,
-                tableProperties.get(DATA_BUCKET), revisionTableName,
-                tableProperties.getSchema(), 10,
-                dynamoDBClient, new Configuration());
+        createRevisionDynamoTable(tableProperties.get(REVISION_TABLENAME));
+        S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         s3StateStore.initialise();
 
         setupPartitionsAndAddFileInfo(s3StateStore);
@@ -669,7 +656,7 @@ public class ReinitialiseTableIT {
         //  - Get root partition
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         //  - Create two files of sorted data
-        String folderName = createTempDirectory(folder, null).toString();
+        String folderName = createTempDirectory(tempDir, null).toString();
         String file1 = folderName + "/file1.parquet";
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
@@ -695,7 +682,7 @@ public class ReinitialiseTableIT {
 
     private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId,
                                     Key minRowKey, Key maxRowKey) {
-        FileInfo fileInfo = FileInfo.builder()
+        return FileInfo.builder()
                 .rowKeyTypes(new StringType())
                 .filename(filename)
                 .fileStatus(fileStatus)
@@ -705,17 +692,16 @@ public class ReinitialiseTableIT {
                 .maxRowKey(maxRowKey)
                 .lastStateStoreUpdateTime(100L)
                 .build();
-
-        return fileInfo;
     }
 
-    private InstanceProperties createValidInstanceProperties(String tableName, boolean isS3StateStore) {
+    private InstanceProperties createValidInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, INSTANCE_NAME);
         instanceProperties.set(ACCOUNT, "1234567890");
         instanceProperties.set(REGION, "eu-west-2");
         instanceProperties.set(VERSION, "0.1");
         instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
+        instanceProperties.set(DATA_BUCKET, tempDir.toString());
         instanceProperties.set(JARS_BUCKET, "bucket");
         instanceProperties.set(SUBNETS, "subnet1");
         Map<String, String> tags = new HashMap<>();
@@ -724,17 +710,13 @@ public class ReinitialiseTableIT {
         instanceProperties.setTags(tags);
         instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
-        if (isS3StateStore) {
-            instanceProperties.set(FILE_SYSTEM, "file://");
-        } else {
-            instanceProperties.set(FILE_SYSTEM, "s3a://");
-        }
+        instanceProperties.set(FILE_SYSTEM, "file://");
 
         return instanceProperties;
     }
 
     private TableProperties createValidTableProperties(InstanceProperties instanceProperties, String tableName,
-                                                       boolean isS3StateStore) throws IOException {
+                                                       boolean isS3StateStore) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
@@ -745,7 +727,6 @@ public class ReinitialiseTableIT {
         tableProperties.set(REVISION_TABLENAME, "sleeper" + "-" + tableName + "-" + "revisions");
         if (isS3StateStore) {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
-            tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         } else {
             tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
         }
@@ -753,8 +734,7 @@ public class ReinitialiseTableIT {
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {
-        String folderName = createTempDirectory(folder, null).toString();
-        String splitPointsFileName = folderName + "/split-points.txt";
+        String splitPointsFileName = tempDir.toString() + "/split-points.txt";
         FileWriter fstream = new FileWriter(splitPointsFileName, StandardCharsets.UTF_8);
         BufferedWriter info = new BufferedWriter(fstream);
         if (encoded) {
@@ -770,7 +750,7 @@ public class ReinitialiseTableIT {
         return splitPointsFileName;
     }
 
-    private String createRevisionDynamoTable(String tableName) {
+    private void createRevisionDynamoTable(String tableName) {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(new AttributeDefinition(REVISION_ID_KEY, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
@@ -781,6 +761,5 @@ public class ReinitialiseTableIT {
                 .withKeySchema(keySchemaElements)
                 .withBillingMode(BillingMode.PAY_PER_REQUEST);
         dynamoDBClient.createTable(request);
-        return tableName;
     }
 }
