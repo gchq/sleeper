@@ -73,13 +73,13 @@ public class NumberFormatUtilsTest {
         @Test
         void shouldFormatNumberOfBytesAbove1TB() {
             assertThat(formatBytes(1_234_000_000_000L))
-                    .isEqualTo("1TB");
+                    .isEqualTo("1234000000000B (1TB)");
         }
 
         @Test
         void shouldFormatNumberOfBytesAbove1000TB() {
             assertThat(formatBytes(1_234_000_000_000_000L))
-                    .isEqualTo("1,234TB");
+                    .isEqualTo("1234000000000000B (1,234TB)");
         }
     }
 

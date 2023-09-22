@@ -38,7 +38,7 @@ public class NumberFormatUtils {
         } else if (fileSize < T_COUNT) {
             return String.format("%dB (%.1fGB)", fileSize, fileSize / (double) G_COUNT);
         } else {
-            return countWithCommas(Math.round((double) fileSize / T_COUNT)) + "TB";
+            return fileSize + "B (" + countWithCommas(Math.round((double) fileSize / T_COUNT)) + "TB)";
         }
     }
 
