@@ -40,7 +40,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 public class ExportSplitPointsIT extends DynamoDBTestBase {
-    private InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private StateStore getStateStore(Schema schema) {
         return new DynamoDBStateStoreCreator(instanceProperties, createTableProperties(schema), dynamoDBClient).create();
