@@ -55,9 +55,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -67,12 +67,13 @@ public class TestUtils {
     private TestUtils() {
     }
 
-    public static InstanceProperties createInstance(AmazonS3 s3Client) {
+    public static InstanceProperties createInstance(AmazonS3 s3Client, String dataDir) {
         String configBucket = s3Client.createBucket(UUID.randomUUID().toString()).getName();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(VERSION, "1");
         instanceProperties.set(CONFIG_BUCKET, configBucket);
+        instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://"); // Overwrite S3 because we're going to use the standard fs.
         instanceProperties.set(JARS_BUCKET, "unused");
         instanceProperties.set(ACCOUNT, "unused");
@@ -91,14 +92,11 @@ public class TestUtils {
         return instanceProperties;
     }
 
-    public static TableProperties createTable(InstanceProperties instance, Schema schema, String dataDir, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
+    public static TableProperties createTable(InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
         TableProperties tableProperties = new TableProperties(instance);
         tableProperties.setSchema(schema);
         String tableName = UUID.randomUUID().toString();
         tableProperties.set(TABLE_NAME, tableName);
-
-        // Create a place for data to go
-        tableProperties.set(DATA_BUCKET, dataDir);
 
         // Create a state store
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
