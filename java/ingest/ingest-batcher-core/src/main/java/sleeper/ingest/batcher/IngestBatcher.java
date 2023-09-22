@@ -132,12 +132,12 @@ public class IngestBatcher {
                     inputFiles.size(), minFiles);
         }
         if (totalBytes < minBytes) {
-            LOGGER.info("Total size for files ({}B) does not satisfy the minimum size for a job ({}B)",
-                    totalBytes, minBytes);
+            LOGGER.info("Total size for files {} does not satisfy the minimum size for a job {}",
+                    formatBytes(totalBytes), formatBytes(minBytes));
             meetsMinFiles = false;
         } else {
-            LOGGER.info("Total size for files ({}B) satisfies the minimum size for a job ({}B)",
-                    totalBytes, minBytes);
+            LOGGER.info("Total size for files {} satisfies the minimum size for a job {}",
+                    formatBytes(totalBytes), formatBytes(minBytes));
         }
         return meetsMinFiles;
     }
