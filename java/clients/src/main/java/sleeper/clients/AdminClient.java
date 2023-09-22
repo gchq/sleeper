@@ -17,6 +17,8 @@ package sleeper.clients;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.ecr.AmazonECR;
+import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -34,7 +36,9 @@ import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
 import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
+import sleeper.clients.util.EcrRepositoryCreator;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
@@ -79,6 +83,7 @@ public class AdminClient {
         String instanceId = args[1];
         Path generatedDir = scriptsDir.resolve("generated");
         Path jarsDir = scriptsDir.resolve("jars");
+        Path baseDockerDir = scriptsDir.resolve("docker");
         String version = Files.readString(scriptsDir.resolve("templates/version.txt"));
         InvokeCdkForInstance cdk = InvokeCdkForInstance.builder()
                 .propertiesFile(generatedDir.resolve("instance.properties"))
@@ -87,11 +92,15 @@ public class AdminClient {
         AmazonS3 s3Client = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         AmazonSQS sqsClient = AwsV1ClientHelper.buildAwsV1Client(AmazonSQSClientBuilder.standard());
+        AmazonECR ecrClient = AwsV1ClientHelper.buildAwsV1Client(AmazonECRClientBuilder.standard());
         new AdminClient(
                 new AdminClientPropertiesStore(
                         s3Client,
                         dynamoDB,
-                        cdk, generatedDir),
+                        cdk, generatedDir,
+                        UploadDockerImages.builder()
+                                .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
+                                .baseDockerDirectory(baseDockerDir).build()),
                 AdminClientStatusStoreFactory.from(dynamoDB),
                 new UpdatePropertiesWithNano(Path.of("/tmp")),
                 new ConsoleOutput(System.out),

@@ -16,61 +16,64 @@
 
 package sleeper.clients.deploy;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.SleeperVersion;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 
 public class UploadDockerImages {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UploadDockerImages.class);
     private final Path baseDockerDirectory;
-    private final String ecrPrefix;
-    private final String account;
-    private final String region;
-    private final String version;
-    private final List<String> stacks;
     private final EcrRepositoryCreator.Client ecrClient;
-    private final DockerImageConfiguration dockerImageConfig;
 
     private UploadDockerImages(Builder builder) {
         baseDockerDirectory = requireNonNull(builder.baseDockerDirectory, "baseDockerDirectory must not be null");
-        ecrPrefix = requireNonNull(builder.ecrPrefix, "ecrPrefix must not be null");
-        account = requireNonNull(builder.account, "account must not be null");
-        region = requireNonNull(builder.region, "region must not be null");
-        version = requireNonNull(builder.version, "version must not be null");
-        stacks = requireNonNull(builder.stacks, "stacks must not be null");
         ecrClient = requireNonNull(builder.ecrClient, "ecrClient must not be null");
-        dockerImageConfig = requireNonNull(builder.dockerImageConfig, "dockerImageConfig must not be null");
     }
+
 
     public static Builder builder() {
         return new Builder();
     }
 
-    public void upload(CommandPipelineRunner runCommand) throws IOException, InterruptedException {
-        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", account, region);
-        List<StackDockerImage> stacksToBuild = stacks.stream()
-                .flatMap(stack -> dockerImageConfig.getStackImage(stack).stream())
-                .filter(this::repositoryExistsWithVersion)
+    public void upload(StacksForDockerUpload data) throws IOException, InterruptedException {
+        upload(ClientUtils::runCommandInheritIO, data);
+    }
+
+    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data)
+            throws IOException, InterruptedException {
+        upload(runCommand, data, new DockerImageConfiguration());
+    }
+
+    public void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, DockerImageConfiguration dockerImageConfig)
+            throws IOException, InterruptedException {
+        upload(runCommand, data, dockerImageConfig.getStacksToDeploy(data.getStacks()));
+    }
+
+    private void upload(CommandPipelineRunner runCommand, StacksForDockerUpload data, List<StackDockerImage> stacksToUpload)
+            throws IOException, InterruptedException {
+        String repositoryHost = String.format("%s.dkr.ecr.%s.amazonaws.com", data.getAccount(), data.getRegion());
+        List<StackDockerImage> stacksToBuild = stacksToUpload.stream()
+                .filter(stackDockerImage -> imageDoesNotExistInRepositoryWithVersion(stackDockerImage, data))
                 .collect(Collectors.toUnmodifiableList());
 
-        if (!stacksToBuild.isEmpty()) {
+        if (stacksToBuild.isEmpty()) {
+            LOGGER.info("No images need to be built and uploaded, skipping");
+            return;
+        } else {
             runCommand.runOrThrow(pipeline(
-                    command("aws", "ecr", "get-login-password", "--region", region),
+                    command("aws", "ecr", "get-login-password", "--region", data.getRegion()),
                     command("docker", "login", "--username", "AWS", "--password-stdin", repositoryHost)));
         }
 
@@ -81,12 +84,12 @@ public class UploadDockerImages {
 
         for (StackDockerImage stackImage : stacksToBuild) {
             String directory = baseDockerDirectory.resolve(stackImage.getDirectoryName()).toString();
-            String repositoryName = repositoryNameForImage(stackImage.getImageName());
+            String repositoryName = data.getEcrPrefix() + "/" + stackImage.getImageName();
             if (!ecrClient.repositoryExists(repositoryName)) {
                 ecrClient.createRepository(repositoryName);
             }
 
-            String tag = repositoryHost + "/" + repositoryName + ":" + version;
+            String tag = repositoryHost + "/" + repositoryName + ":" + data.getVersion();
             try {
                 if (stackImage.isCreateEmrServerlessPolicy()) {
                     ecrClient.createEmrServerlessAccessPolicy(repositoryName);
@@ -106,24 +109,22 @@ public class UploadDockerImages {
         }
     }
 
-    private String repositoryNameForImage(String image) {
-        return ecrPrefix + "/" + image;
-    }
-
-    private boolean repositoryExistsWithVersion(StackDockerImage stackDockerImage) {
-        String repositoryName = repositoryNameForImage(stackDockerImage.getImageName());
-        return !ecrClient.versionExistsInRepository(repositoryName, version);
+    private boolean imageDoesNotExistInRepositoryWithVersion(StackDockerImage stackDockerImage, StacksForDockerUpload data) {
+        String imagePath = data.getEcrPrefix() + "/" + stackDockerImage.getImageName();
+        if (ecrClient.versionExistsInRepository(imagePath, data.getVersion())) {
+            LOGGER.info("Stack image {} already exists in ECR with version {}",
+                    stackDockerImage.getImageName(), data.getVersion());
+            return false;
+        } else {
+            LOGGER.info("Stack image {} does not exist in ECR with version {}",
+                    stackDockerImage.getImageName(), data.getVersion());
+            return true;
+        }
     }
 
     public static final class Builder {
         private Path baseDockerDirectory;
-        private String ecrPrefix;
-        private String account;
-        private String region;
-        private String version = SleeperVersion.getVersion();
-        private List<String> stacks;
         private EcrRepositoryCreator.Client ecrClient;
-        private DockerImageConfiguration dockerImageConfig = new DockerImageConfiguration();
 
         private Builder() {
         }
@@ -133,47 +134,8 @@ public class UploadDockerImages {
             return this;
         }
 
-        public Builder instanceProperties(InstanceProperties instanceProperties) {
-            return ecrPrefix(
-                    Optional.ofNullable(instanceProperties.get(ECR_REPOSITORY_PREFIX))
-                            .orElse(instanceProperties.get(ID)))
-                    .account(instanceProperties.get(ACCOUNT))
-                    .region(instanceProperties.get(REGION))
-                    .stacks(instanceProperties.getList(OPTIONAL_STACKS));
-        }
-
-        public Builder ecrPrefix(String ecrPrefix) {
-            this.ecrPrefix = ecrPrefix;
-            return this;
-        }
-
-        public Builder account(String account) {
-            this.account = account;
-            return this;
-        }
-
-        public Builder region(String region) {
-            this.region = region;
-            return this;
-        }
-
-        public Builder version(String version) {
-            this.version = version;
-            return this;
-        }
-
-        public Builder stacks(List<String> stacks) {
-            this.stacks = stacks;
-            return this;
-        }
-
         public Builder ecrClient(EcrRepositoryCreator.Client ecrClient) {
             this.ecrClient = ecrClient;
-            return this;
-        }
-
-        public Builder dockerImageConfig(DockerImageConfiguration dockerImageConfig) {
-            this.dockerImageConfig = dockerImageConfig;
             return this;
         }
 

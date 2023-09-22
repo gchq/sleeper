@@ -22,6 +22,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.deploy.StacksForDockerUpload;
+import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -39,10 +42,15 @@ import sleeper.table.job.TableLister;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -52,11 +60,16 @@ public class AdminClientPropertiesStore {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
+    private final DockerImageConfiguration dockerImageConfiguration;
+    private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
-    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB,
+                                      InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
+        this.dockerImageConfiguration = new DockerImageConfiguration();
+        this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
     }
@@ -97,6 +110,10 @@ public class AdminClientPropertiesStore {
             Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
+            if (shouldUploadDockerImages(diff)) {
+                LOGGER.info("New stack has been added which requires a docker image. Uploading missing images.");
+                uploadDockerImages.upload(StacksForDockerUpload.from(properties));
+            }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
@@ -118,6 +135,20 @@ public class AdminClientPropertiesStore {
             }
             throw wrapped;
         }
+    }
+
+    private boolean shouldUploadDockerImages(PropertiesDiff diff) {
+        Optional<PropertyDiff> stackDiffOptional = diff.getChanges().stream()
+                .filter(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()))
+                .findFirst();
+        if (stackDiffOptional.isEmpty()) {
+            return false;
+        }
+        PropertyDiff stackDiff = stackDiffOptional.get();
+        Set<String> stacksBefore = new HashSet<>(readList(stackDiff.getOldValue()));
+        Set<String> newStacks = new HashSet<>(readList(stackDiff.getNewValue()));
+        newStacks.removeAll(stacksBefore);
+        return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
     }
 
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
