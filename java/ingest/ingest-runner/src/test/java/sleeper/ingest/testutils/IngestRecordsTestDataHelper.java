@@ -49,8 +49,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -61,20 +61,20 @@ public class IngestRecordsTestDataHelper {
     private IngestRecordsTestDataHelper() {
     }
 
-    public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName, InstanceProperties instanceProperties) {
+    public static TableProperties defaultTableProperties(Schema schema, String tableName, InstanceProperties instanceProperties) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setNumber(ROW_GROUP_SIZE, ParquetWriter.DEFAULT_BLOCK_SIZE);
         tableProperties.setNumber(PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE);
         tableProperties.set(COMPRESSION_CODEC, "zstd");
-        tableProperties.set(DATA_BUCKET, bucketName);
         return tableProperties;
     }
 
-    public static InstanceProperties defaultInstanceProperties() {
+    public static InstanceProperties defaultInstanceProperties(String dataBucket) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, dataBucket);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
