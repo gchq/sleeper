@@ -593,11 +593,11 @@ public class QueryExecutorIT {
         Partition leftPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
                 .findFirst()
-                .get();
+                .orElseThrow();
         Partition rightPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == 5L))
                 .findFirst()
-                .get();
+                .orElseThrow();
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsMultidimRowKey().iterator());
         }
@@ -980,19 +980,19 @@ public class QueryExecutorIT {
         LeafPartitionQuery leafPartition1Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P1"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery leafPartition2Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P2"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery leafPartition3Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P3"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery leafPartition4Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P4"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery.Builder(
                 "myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1",
                 tree.getPartition("P1").getRegion(), filesInLeafPartition1
