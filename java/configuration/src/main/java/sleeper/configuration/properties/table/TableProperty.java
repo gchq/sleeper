@@ -28,6 +28,7 @@ import java.util.Objects;
 
 import static sleeper.configuration.Utils.describeEnumValuesInLowerCase;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.configuration.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
@@ -202,6 +203,14 @@ public interface TableProperty extends SleeperProperty {
                     "concurrently per partition.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
+
+    TableProperty COMPACTION_METHOD = Index.propertyBuilder("sleeper.table.compaction.method")
+            .defaultProperty(DEFAULT_COMPACTION_METHOD)
+            .description("Select what compation method to use on a table. Current options are JAVA and RUST. Rust compaction support is" +
+            "experimental.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+
     TableProperty STATESTORE_CLASSNAME = Index.propertyBuilder("sleeper.table.statestore.classname")
             .defaultValue("sleeper.statestore.dynamodb.DynamoDBStateStore")
             .description("The name of the class used for the metadata store. The default is DynamoDBStateStore. " +

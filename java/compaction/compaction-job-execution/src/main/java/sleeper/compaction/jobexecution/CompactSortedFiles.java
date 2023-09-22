@@ -15,10 +15,10 @@
  */
 package sleeper.compaction.jobexecution;
 
+import com.amazonaws.services.sqs.model.UnsupportedOperationException;
 import com.facebook.collections.ByteArray;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.store.StoreUtils;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -37,7 +38,6 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.record.process.RecordsProcessed;
@@ -45,10 +45,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
@@ -68,10 +65,10 @@ import java.util.Map;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 
 /**
- * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single
- * output file (in the case of a compaction job within a partition) or into
- * two output files (in the case of a splitting compaction job which reads
- * files in one partition and outputs files to the split partition).
+ * Executes a compaction {@link CompactionJob}, i.e. compacts N input files into a single output
+ * file (in the case of a compaction job within a partition) or into two output files (in the case
+ * of a splitting compaction job which reads files in one partition and outputs files to the split
+ * partition).
  */
 public class CompactSortedFiles {
     private final InstanceProperties instanceProperties;
@@ -87,12 +84,9 @@ public class CompactSortedFiles {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactSortedFiles.class);
 
     public CompactSortedFiles(InstanceProperties instanceProperties,
-                              TableProperties tableProperties,
-                              ObjectFactory objectFactory,
-                              CompactionJob compactionJob,
-                              StateStore stateStore,
-                              CompactionJobStatusStore jobStatusStore,
-                              String taskId) {
+            TableProperties tableProperties, ObjectFactory objectFactory,
+            CompactionJob compactionJob, StateStore stateStore,
+            CompactionJobStatusStore jobStatusStore, String taskId) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
@@ -110,11 +104,27 @@ public class CompactSortedFiles {
         LOGGER.info("Compaction job {}: compaction called at {}", id, startTime);
         jobStatusStore.jobStarted(compactionJob, startTime, taskId);
 
+        CompactionMethod method = CompactionMethod.determineCompactionMethod(this.tableProperties,
+                this.compactionJob);
+
         RecordsProcessed recordsProcessed;
-        if (!compactionJob.isSplittingJob()) {
-            recordsProcessed = compactNoSplitting();
+        // If using non-default method, try that and fallback to default if it fails,
+        // otherwise, just use default
+        if (method != CompactionMethod.DEFAULT) {
+            try {
+                switch (method) {
+                case RUST:
+                    recordsProcessed = RustCompaction.compact(this.schema, this.tableProperties, this.compactionJob, this.stateStore);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("compaction method unknown");
+                }
+            } catch (IOException e) {
+                LOGGER.error("Compaction failed with method " + method.toString(), e);
+                recordsProcessed = useJavaCompaction();
+            }
         } else {
-            recordsProcessed = compactSplitting();
+            recordsProcessed = useJavaCompaction();
         }
 
         Instant finishTime = Instant.now();
@@ -129,6 +139,14 @@ public class CompactSortedFiles {
         return summary;
     }
 
+    private RecordsProcessed useJavaCompaction() throws IOException, IteratorException {
+        if (compactionJob.isSplittingJob()) {
+            return compactSplitting();
+        } else {
+            return compactNoSplitting();
+        }
+    }
+
     private RecordsProcessed compactNoSplitting() throws IOException, IteratorException {
         Configuration conf = getConfiguration();
 
@@ -141,13 +159,16 @@ public class CompactSortedFiles {
         // Create writer
         LOGGER.debug("Creating writer for file {}", compactionJob.getOutputFile());
         Path outputPath = new Path(compactionJob.getOutputFile());
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(outputPath, tableProperties, conf);
+        ParquetWriter<Record> writer = ParquetRecordWriterFactory
+                .createParquetRecordWriter(outputPath, tableProperties, conf);
 
-        LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFile());
+        LOGGER.info("Compaction job {}: Created writer for file {}", compactionJob.getId(),
+                compactionJob.getOutputFile());
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
         long recordsWritten = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
+        // Record min and max of the first dimension of the row key (the min is from the first
+        // record, the max is from
         // the last).
         Object minKey = null;
         Object maxKey = null;
@@ -163,7 +184,8 @@ public class CompactSortedFiles {
             writer.write(record);
             recordsWritten++;
             if (0 == recordsWritten % 1_000_000) {
-                LOGGER.info("Compaction job {}: Written {} records", compactionJob.getId(), recordsWritten);
+                LOGGER.info("Compaction job {}: Written {} records", compactionJob.getId(),
+                        recordsWritten);
             }
         }
         writer.close();
@@ -174,8 +196,10 @@ public class CompactSortedFiles {
         sketchesFilename = FilenameUtils.removeExtension(sketchesFilename);
         sketchesFilename = sketchesFilename + ".sketches";
         Path sketchesPath = new Path(sketchesFilename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, new Sketches(keyFieldToSketch), conf);
-        LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(), sketchesPath);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, new Sketches(keyFieldToSketch),
+                conf);
+        LOGGER.info("Compaction job {}: Wrote sketches file to {}", compactionJob.getId(),
+                sketchesPath);
 
         for (CloseableIterator<Record> iterator : inputIterators) {
             iterator.close();
@@ -190,16 +214,9 @@ public class CompactSortedFiles {
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
-        updateStateStoreSuccess(compactionJob.getInputFiles(),
-                compactionJob.getOutputFile(),
-                compactionJob.getPartitionId(),
-                recordsWritten,
-                minKey,
-                maxKey,
-                finishTime,
-                stateStore,
-                schema.getRowKeyTypes());
-        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
+        StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFile(), compactionJob.getPartitionId(), recordsWritten, minKey, maxKey, finishTime,
+                stateStore, schema.getRowKeyTypes());
+        LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
@@ -215,34 +232,43 @@ public class CompactSortedFiles {
 
         // Create writers
         Path leftPath = new Path(compactionJob.getOutputFiles().getLeft());
-        ParquetWriter<Record> leftWriter = ParquetRecordWriterFactory.createParquetRecordWriter(leftPath, tableProperties, conf);
-        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getLeft());
+        ParquetWriter<Record> leftWriter = ParquetRecordWriterFactory
+                .createParquetRecordWriter(leftPath, tableProperties, conf);
+        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(),
+                compactionJob.getOutputFiles().getLeft());
 
         Path rightPath = new Path(compactionJob.getOutputFiles().getRight());
-        ParquetWriter<Record> rightWriter = ParquetRecordWriterFactory.createParquetRecordWriter(rightPath, tableProperties, conf);
-        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(), compactionJob.getOutputFiles().getRight());
+        ParquetWriter<Record> rightWriter = ParquetRecordWriterFactory
+                .createParquetRecordWriter(rightPath, tableProperties, conf);
+        LOGGER.debug("Compaction job {}: Created writer for file {}", compactionJob.getId(),
+                compactionJob.getOutputFiles().getRight());
 
         Map<String, ItemsSketch> leftKeyFieldToSketch = getSketches();
         Map<String, ItemsSketch> rightKeyFieldToSketch = getSketches();
 
         long recordsWrittenToLeftFile = 0L;
         long recordsWrittenToRightFile = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
+        // Record min and max of the first dimension of the row key (the min is from the first
+        // record, the max is from
         // the last) from both files.
         Object minKeyLeftFile = null;
         Object minKeyRightFile = null;
         Object maxKeyLeftFile = null;
         Object maxKeyRightFile = null;
         int dimension = compactionJob.getDimension();
-        // Compare using the key of dimension compactionJob.getDimension(), i.e. of that position in the list
-        SingleKeyComparator keyComparator = new SingleKeyComparator(schema.getRowKeyTypes().get(dimension));
+        // Compare using the key of dimension compactionJob.getDimension(), i.e. of that position in
+        // the list
+        SingleKeyComparator keyComparator = new SingleKeyComparator(
+                schema.getRowKeyTypes().get(dimension));
         String comparisonKeyFieldName = schema.getRowKeyFieldNames().get(dimension);
-        LOGGER.debug("Splitting on dimension {} (field name {})", dimension, comparisonKeyFieldName);
+        LOGGER.debug("Splitting on dimension {} (field name {})", dimension,
+                comparisonKeyFieldName);
 
         Object splitPoint = compactionJob.getSplitPoint();
         LOGGER.info("Split point is " + splitPoint);
 
-        // TODO This is unnecessarily complicated as the records for the left file will all be written in one go,
+        // TODO This is unnecessarily complicated as the records for the left file will all be
+        // written in one go,
         // followed by the records to the right file.
         while (mergingIterator.hasNext()) {
             Record record = mergingIterator.next();
@@ -265,8 +291,10 @@ public class CompactSortedFiles {
             }
 
             if ((recordsWrittenToLeftFile > 0 && 0 == recordsWrittenToLeftFile % 1_000_000)
-                    || (recordsWrittenToRightFile > 0 && 0 == recordsWrittenToRightFile % 1_000_000)) {
-                LOGGER.info("Compaction job {}: Written {} records to left file and {} records to right file",
+                    || (recordsWrittenToRightFile > 0
+                            && 0 == recordsWrittenToRightFile % 1_000_000)) {
+                LOGGER.info(
+                        "Compaction job {}: Written {} records to left file and {} records to right file",
                         compactionJob.getId(), recordsWrittenToLeftFile, recordsWrittenToRightFile);
             }
 
@@ -280,13 +308,15 @@ public class CompactSortedFiles {
         leftSketchesFilename = FilenameUtils.removeExtension(leftSketchesFilename);
         leftSketchesFilename = leftSketchesFilename + ".sketches";
         Path leftSketchesPath = new Path(leftSketchesFilename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(leftSketchesPath, new Sketches(leftKeyFieldToSketch), conf);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(leftSketchesPath,
+                new Sketches(leftKeyFieldToSketch), conf);
 
         String rightSketchesFilename = compactionJob.getOutputFiles().getRight();
         rightSketchesFilename = FilenameUtils.removeExtension(rightSketchesFilename);
         rightSketchesFilename = rightSketchesFilename + ".sketches";
         Path rightSketchesPath = new Path(rightSketchesFilename);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(rightSketchesPath, new Sketches(rightKeyFieldToSketch), conf);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(rightSketchesPath,
+                new Sketches(rightKeyFieldToSketch), conf);
 
         LOGGER.info("Wrote sketches to {} and {}", leftSketchesPath, rightSketchesPath);
 
@@ -302,43 +332,48 @@ public class CompactSortedFiles {
         }
 
         LOGGER.info("Compaction job {}: Read {} records and wrote ({}, {}) records",
-                compactionJob.getId(), totalNumberOfRecordsRead, recordsWrittenToLeftFile, recordsWrittenToRightFile);
+                compactionJob.getId(), totalNumberOfRecordsRead, recordsWrittenToLeftFile,
+                recordsWrittenToRightFile);
 
-        updateStateStoreSuccess(compactionJob.getInputFiles(),
-                compactionJob.getOutputFiles(),
-                compactionJob.getPartitionId(),
-                compactionJob.getChildPartitions(),
+        StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFiles(),
+                compactionJob.getPartitionId(), compactionJob.getChildPartitions(),
                 new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
                 new ImmutablePair<>(minKeyLeftFile, minKeyRightFile),
-                new ImmutablePair<>(maxKeyLeftFile, maxKeyRightFile),
-                finishTime,
-                stateStore,
+                new ImmutablePair<>(maxKeyLeftFile, maxKeyRightFile), finishTime, stateStore,
                 schema.getRowKeyTypes());
-        LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
-        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
+        LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
+                LocalDateTime.now());
+        return new RecordsProcessed(totalNumberOfRecordsRead,
+                recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
-    private List<CloseableIterator<Record>> createInputIterators(Configuration conf) throws IOException {
+    private List<CloseableIterator<Record>> createInputIterators(Configuration conf)
+            throws IOException {
         List<CloseableIterator<Record>> inputIterators = new ArrayList<>();
         for (String file : compactionJob.getInputFiles()) {
-            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema).withConf(conf).build();
+            ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(file), schema)
+                    .withConf(conf).build();
             ParquetReaderIterator recordIterator = new ParquetReaderIterator(reader);
             inputIterators.add(recordIterator);
-            LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(), file);
+            LOGGER.debug("Compaction job {}: Created reader for file {}", compactionJob.getId(),
+                    file);
         }
         return inputIterators;
     }
 
-    private CloseableIterator<Record> getMergingIterator(List<CloseableIterator<Record>> inputIterators) throws IteratorException {
+    private CloseableIterator<Record> getMergingIterator(
+            List<CloseableIterator<Record>> inputIterators) throws IteratorException {
         CloseableIterator<Record> mergingIterator = new MergingIterator(schema, inputIterators);
 
         // Apply an iterator if one is provided
         if (null != compactionJob.getIteratorClassName()) {
             SortedRecordIterator iterator = null;
             try {
-                iterator = objectFactory.getObject(compactionJob.getIteratorClassName(), SortedRecordIterator.class);
+                iterator = objectFactory.getObject(compactionJob.getIteratorClassName(),
+                        SortedRecordIterator.class);
             } catch (ObjectFactoryException e) {
-                throw new IteratorException("ObjectFactoryException creating iterator of class " + compactionJob.getIteratorClassName(), e);
+                throw new IteratorException("ObjectFactoryException creating iterator of class "
+                        + compactionJob.getIteratorClassName(), e);
             }
             LOGGER.debug("Created iterator of class {}", compactionJob.getIteratorClassName());
             iterator.init(compactionJob.getIteratorConfig(), schema);
@@ -352,98 +387,8 @@ public class CompactSortedFiles {
         return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 
-    private static boolean updateStateStoreSuccess(List<String> inputFiles,
-                                                   String outputFile,
-                                                   String partitionId,
-                                                   long recordsWritten,
-                                                   Object minRowKey0,
-                                                   Object maxRowKey0,
-                                                   long finishTime,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
-        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
-        for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(rowKeyTypes)
-                    .filename(file)
-                    .partitionId(partitionId)
-                    .lastStateStoreUpdateTime(finishTime)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .build();
-            filesToBeMarkedReadyForGC.add(fileInfo);
-        }
-        FileInfo fileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .filename(outputFile)
-                .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(recordsWritten)
-                .minRowKey(recordsWritten > 0 ? Key.create(minRowKey0) : null)
-                .maxRowKey(recordsWritten > 0 ? Key.create(maxRowKey0) : null)
-                .lastStateStoreUpdateTime(finishTime)
-                .build();
-        try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
-            LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
-            return true;
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
-            return false;
-        }
-    }
-
-    private static boolean updateStateStoreSuccess(List<String> inputFiles,
-                                                   Pair<String, String> outputFiles,
-                                                   String partition,
-                                                   List<String> childPartitions,
-                                                   Pair<Long, Long> recordsWritten,
-                                                   Pair<Object, Object> minKeys,
-                                                   Pair<Object, Object> maxKeys,
-                                                   long finishTime,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
-        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
-        for (String file : inputFiles) {
-            FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(rowKeyTypes)
-                    .filename(file)
-                    .partitionId(partition)
-                    .lastStateStoreUpdateTime(finishTime)
-                    .fileStatus(FileInfo.FileStatus.ACTIVE)
-                    .build();
-            filesToBeMarkedReadyForGC.add(fileInfo);
-        }
-        FileInfo leftFileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .filename(outputFiles.getLeft())
-                .partitionId(childPartitions.get(0))
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(recordsWritten.getLeft())
-                .minRowKey(recordsWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
-                .maxRowKey(recordsWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
-                .lastStateStoreUpdateTime(finishTime)
-                .build();
-        FileInfo rightFileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
-                .filename(outputFiles.getRight())
-                .partitionId(childPartitions.get(1))
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(recordsWritten.getRight())
-                .minRowKey(recordsWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
-                .maxRowKey(recordsWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)
-                .lastStateStoreUpdateTime(finishTime)
-                .build();
-        try {
-            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
-            LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
-            return true;
-        } catch (StateStoreException e) {
-            LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
-            return false;
-        }
-    }
-
-    // TODO These methods are copies of the same ones in IngestRecordsFromIterator - move to sketches module
+    // TODO These methods are copies of the same ones in IngestRecordsFromIterator - move to
+    // sketches module
     private Map<String, ItemsSketch> getSketches() {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {
