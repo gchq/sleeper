@@ -32,6 +32,7 @@ import sleeper.clients.docker.TearDownDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
@@ -44,8 +45,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -67,7 +68,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
     }
 
     @Test
-    void shouldTearDownInstance() throws Exception {
+    void shouldTearDownInstance() {
         // Given
         DeployDockerInstance.deploy("test-instance-2", s3Client, dynamoDB, sqsClient);
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -81,7 +82,9 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         // Then
         assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
                 .isInstanceOf(AmazonServiceException.class);
-        assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(tableProperties.get(DATA_BUCKET))))
+        assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
+                .isInstanceOf(AmazonServiceException.class);
+        assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(tableProperties.get(TableProperty.DATA_BUCKET))))
                 .isInstanceOf(AmazonServiceException.class);
         assertThatThrownBy(() -> dynamoDB.describeTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME)))
                 .isInstanceOf(ResourceNotFoundException.class);
