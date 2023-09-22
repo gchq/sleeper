@@ -93,6 +93,7 @@ public class SleeperTableLambdaIT {
 
         AmazonS3 s3Client = createS3Client();
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
         s3Client.shutdown();
         return instanceProperties;
     }
