@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -32,8 +31,8 @@ import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
@@ -64,7 +63,7 @@ public class TableDockerStack implements DockerStack {
 
     public void deploy() {
         String dataBucket = String.join("-", "sleeper", instanceProperties.get(ID), "table-data").toLowerCase(Locale.ROOT);
-        instanceProperties.set(SystemDefinedInstanceProperty.DATA_BUCKET, dataBucket);
+        instanceProperties.set(DATA_BUCKET, dataBucket);
         s3Client.createBucket(dataBucket);
         new TableCreator(s3Client, dynamoDB, instanceProperties).createTable(tableProperties);
         try {
@@ -80,8 +79,7 @@ public class TableDockerStack implements DockerStack {
         dynamoDB.deleteTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME));
         dynamoDB.deleteTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
         dynamoDB.deleteTable(tableProperties.get(PARTITION_TABLENAME));
-        tearDownBucket(s3Client, instanceProperties.get(SystemDefinedInstanceProperty.DATA_BUCKET));
-        tearDownBucket(s3Client, tableProperties.get(DATA_BUCKET));
+        tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));
     }
 
     public TableProperties getTableProperties() {

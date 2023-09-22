@@ -32,7 +32,6 @@ import sleeper.clients.docker.TearDownDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
 import sleeper.ingest.IngestFactory;
@@ -83,8 +82,6 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
                 .isInstanceOf(AmazonServiceException.class);
         assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
-                .isInstanceOf(AmazonServiceException.class);
-        assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(tableProperties.get(TableProperty.DATA_BUCKET))))
                 .isInstanceOf(AmazonServiceException.class);
         assertThatThrownBy(() -> dynamoDB.describeTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME)))
                 .isInstanceOf(ResourceNotFoundException.class);
