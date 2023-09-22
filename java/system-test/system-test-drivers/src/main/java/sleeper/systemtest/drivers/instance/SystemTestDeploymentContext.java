@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.cloudformation.model.CloudFormationExcept
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.cdk.jars.BuiltJar;
+import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.deploy.SyncJars;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
@@ -199,12 +200,13 @@ public class SystemTestDeploymentContext {
         }
         UploadDockerImages.builder()
                 .baseDockerDirectory(parameters.getDockerDirectory())
-                .ecrPrefix(parameters.getSystemTestShortId())
-                .account(parameters.getAccount())
-                .region(parameters.getRegion())
-                .stacks(List.of("SystemTestStack"))
                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecr))
-                .build().upload(ClientUtils::runCommandLogOutput);
+                .build().upload(ClientUtils::runCommandLogOutput, StacksForDockerUpload.builder()
+                        .ecrPrefix(parameters.getSystemTestShortId())
+                        .account(parameters.getAccount())
+                        .region(parameters.getRegion())
+                        .version(SleeperVersion.getVersion())
+                        .stacks(List.of("SystemTestStack")).build());
     }
 
     public String getSystemTestBucketName() {

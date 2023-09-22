@@ -44,6 +44,7 @@ public class ExpectedAdminConsoleValues {
             "[6] Run files status report\n" +
             "[7] Run compaction status report\n" +
             "[8] Run ingest status report\n" +
+            "[9] Run ingest batcher report\n" +
             "\n" +
             "Input: \n";
     private static final List<PropertyGroup> INSTANCE_PROPERTY_GROUPS = InstancePropertyGroup.getAll();
@@ -114,6 +115,7 @@ public class ExpectedAdminConsoleValues {
     public static final String FILES_STATUS_REPORT_OPTION = "6";
     public static final String COMPACTION_STATUS_REPORT_OPTION = "7";
     public static final String INGEST_STATUS_REPORT_OPTION = "8";
+    public static final String INGEST_BATCHER_REPORT_OPTION = "9";
     public static final String COMPACTION_JOB_STATUS_REPORT_OPTION = "1";
     public static final String COMPACTION_TASK_STATUS_REPORT_OPTION = "2";
 
@@ -127,6 +129,8 @@ public class ExpectedAdminConsoleValues {
     public static final String TASK_QUERY_UNFINISHED_OPTION = "2";
     public static final String INGEST_JOB_STATUS_REPORT_OPTION = "1";
     public static final String INGEST_TASK_STATUS_REPORT_OPTION = "2";
+    public static final String BATCHER_QUERY_ALL_OPTION = "1";
+    public static final String BATCHER_QUERY_PENDING_OPTION = "2";
     public static final String PROMPT_INPUT_NOT_RECOGNISED = "\nInput not recognised please try again\n";
 
     public static final class SaveChangesScreen {

@@ -20,8 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
@@ -37,8 +35,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE;
@@ -97,7 +93,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total standard jobs in progress: 1\n" +
                             "Total standard jobs finished: 0");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         @Test
@@ -118,7 +114,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total unfinished jobs in progress: 1\n" +
                             "Total unfinished jobs not started: 0");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         @Test
@@ -137,7 +133,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "----------------------------\n" +
                             "Details for job " + exampleJob.getId());
 
-            verifyWithNumberOfInvocations(5);
+            verifyWithNumberOfPromptsBeforeExit(5);
         }
 
         @Test
@@ -156,7 +152,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "----------------------------\n" +
                             "Total jobs in defined range: 1");
 
-            verifyWithNumberOfInvocations(6);
+            verifyWithNumberOfPromptsBeforeExit(6);
         }
 
         private RunAdminClient runCompactionJobStatusReport() {
@@ -200,7 +196,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total splitting tasks in progress: 0\n" +
                             "Total splitting tasks finished: 0\n");
 
-            verifyWithNumberOfInvocations(3);
+            verifyWithNumberOfPromptsBeforeExit(3);
         }
 
         @Test
@@ -222,7 +218,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total standard tasks in progress: 1\n" +
                             "Total splitting tasks in progress: 0\n");
 
-            verifyWithNumberOfInvocations(3);
+            verifyWithNumberOfPromptsBeforeExit(3);
         }
 
         private RunAdminClient runCompactionTaskStatusReport() {
@@ -250,14 +246,6 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
                         COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
-        verifyWithNumberOfInvocations(1);
-    }
-
-    private void verifyWithNumberOfInvocations(int numberOfInvocations) {
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
-        order.verify(in.mock).waitForLine();
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
+        verifyWithNumberOfPromptsBeforeExit(1);
     }
 }

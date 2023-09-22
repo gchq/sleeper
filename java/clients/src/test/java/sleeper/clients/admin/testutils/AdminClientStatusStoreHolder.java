@@ -19,6 +19,8 @@ import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
@@ -34,6 +36,7 @@ public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFacto
     private final Map<String, CompactionTaskStatusStore> compactionTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
     private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
+    private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
     public void setStore(String instanceId, CompactionJobStatusStore store) {
         compactionJobStoreByInstance.put(instanceId, store);
@@ -49,6 +52,10 @@ public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFacto
 
     public void setStore(String instanceId, IngestTaskStatusStore store) {
         ingestTaskStoreByInstance.put(instanceId, store);
+    }
+
+    public void setStore(String instanceId, IngestBatcherStore store) {
+        ingestBatcherStoreByInstance.put(instanceId, store);
     }
 
     @Override
@@ -73,5 +80,10 @@ public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFacto
     public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
         return Optional.ofNullable(ingestTaskStoreByInstance.get(instanceProperties.get(ID)))
                 .orElse(IngestTaskStatusStore.NONE);
+    }
+
+    @Override
+    public Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
+        return Optional.ofNullable(ingestBatcherStoreByInstance.get(properties.get(ID)));
     }
 }

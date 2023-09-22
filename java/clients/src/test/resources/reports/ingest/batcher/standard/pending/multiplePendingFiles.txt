@@ -1,6 +1,6 @@
 
-Ingest Batcher Status Report
-----------------------------
+Ingest Batcher Report
+---------------------
 Total pending files: 3
 --------------------------------------------------------------------------
 | STATE   | FILENAME      | FILESIZE | TABLE_NAME | RECEIVED_TIME        |

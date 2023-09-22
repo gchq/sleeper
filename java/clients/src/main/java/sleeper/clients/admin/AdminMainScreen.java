@@ -53,7 +53,9 @@ public class AdminMainScreen {
                 new MenuOption("Run compaction status report", () ->
                         client.compactionStatusReportScreen().chooseArgsAndPrint(instanceId)),
                 new MenuOption("Run ingest status report", () ->
-                        client.ingestStatusReportScreen().chooseArgsAndPrint(instanceId))
+                        client.ingestStatusReportScreen().chooseArgsAndPrint(instanceId)),
+                new MenuOption("Run ingest batcher report", () ->
+                        client.ingestBatcherReportScreen().chooseArgsAndPrint(instanceId))
         );
         while (true) {
             try {
