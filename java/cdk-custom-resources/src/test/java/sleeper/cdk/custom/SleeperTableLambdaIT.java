@@ -220,19 +220,18 @@ public class SleeperTableLambdaIT {
     private TableProperties createTableProperties(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        AmazonDynamoDB dynamoClient = createDynamoClient();
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket(tableName);
-        s3Client.shutdown();
-        new DynamoDBStateStoreCreator(tableName, KEY_VALUE_SCHEMA, dynamoClient)
-                .create();
-        dynamoClient.shutdown();
-
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
+
+        AmazonDynamoDB dynamoClient = createDynamoClient();
+        AmazonS3 s3Client = createS3Client();
+        s3Client.createBucket(tableName);
+        s3Client.shutdown();
+        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoClient).create();
+        dynamoClient.shutdown();
         return tableProperties;
     }
 

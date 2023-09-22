@@ -17,6 +17,8 @@ package sleeper.clients.status.partitions;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -32,16 +34,16 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 public class ExportSplitPointsIT extends DynamoDBTestBase {
+    private InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private StateStore getStateStore(Schema schema) {
-        String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
-        return dynamoDBStateStoreCreator.create();
+        return new DynamoDBStateStoreCreator(instanceProperties, createTableProperties(schema), dynamoDBClient).create();
     }
 
     private Schema schemaWithKeyType(PrimitiveType type) {
@@ -50,6 +52,10 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new ByteArrayType()))
                 .build();
+    }
+
+    private TableProperties createTableProperties(Schema schema) {
+        return createTestTableProperties(instanceProperties, schema);
     }
 
     @Test
