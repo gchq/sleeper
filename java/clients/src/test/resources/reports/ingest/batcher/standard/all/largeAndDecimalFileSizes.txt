@@ -1,6 +1,6 @@
 
-Ingest Batcher Status Report
-----------------------------
+Ingest Batcher Report
+---------------------
 Total pending files: 1
 Total batched files: 2
 ---------------------------------------------------------------------------------------

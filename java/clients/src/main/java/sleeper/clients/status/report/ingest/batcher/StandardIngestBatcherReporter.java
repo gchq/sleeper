@@ -55,8 +55,8 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     @Override
     public void report(List<FileIngestRequest> statusList, BatcherQuery.Type queryType) {
         out.println();
-        out.println("Ingest Batcher Status Report");
-        out.println("----------------------------");
+        out.println("Ingest Batcher Report");
+        out.println("---------------------");
         printSummary(statusList, queryType);
         tableFactory.tableBuilder()
                 .itemsAndWriter(statusList, this::writeFileRequest)
