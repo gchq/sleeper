@@ -51,9 +51,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
@@ -84,6 +84,7 @@ public class SleeperTableLambdaIT {
         instanceProperties.set(ID, "id");
         instanceProperties.set(JARS_BUCKET, "myJars");
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
+        instanceProperties.set(DATA_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(REGION, "region");
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(SUBNETS, "subnet-12345");
@@ -228,7 +229,6 @@ public class SleeperTableLambdaIT {
         dynamoClient.shutdown();
 
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(DATA_BUCKET, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "rfgcf");
