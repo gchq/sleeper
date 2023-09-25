@@ -385,7 +385,7 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: s
     """
     if ingest_queue == None:
         raise Exception("Ingest queue is not defined - was the Ingest Stack deployed?")
-    if jod_id is None:
+    if job_id is None:
         job_id = str(uuid.uuid4())
 
     # Creates the ingest message and generates an ID
