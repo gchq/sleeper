@@ -75,8 +75,7 @@ class SleeperClient:
         :param job_id: the id of the ingest job, will be randomly generated if not provided 
         """
         # Generate a filename to write to
-        databucket: str = _make_ingest_bucket_name(
-            self._basename, table_name)
+        databucket: str = _make_ingest_bucket_name(self._basename)
         databucket_file = _make_ingest_s3_name(databucket)
         logger.debug(f"Writing to {databucket_file}")
         # Upload it
@@ -285,8 +284,7 @@ class SleeperClient:
                 parquet_file.write_tail()
 
                 # Get name of file to upload to on S3
-                databucket: str = _make_ingest_bucket_name(
-                    self._basename, table_name)
+                databucket: str = _make_ingest_bucket_name(self._basename)
                 s3_filename: str = _make_ingest_s3_name(databucket)
                 bucket: str = s3_filename.split('/', 1)[0]
                 key: str = s3_filename.split('/', 1)[1]
@@ -520,16 +518,15 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
     raise RuntimeError("No results received from Sleeper within specified timeout.")
 
 
-def _make_ingest_bucket_name(basename: str, table_name: str) -> str:
+def _make_ingest_bucket_name(basename: str) -> str:
     """
     Returns the S3 bucket name that Sleeper will use for storing table data.
 
     :param basename: the Sleeper instance base name (sleeper.id)
-    :param table_name: the table being worked with
 
     :return: S3 bucket name
     """
-    return f"sleeper-{basename}-table-{table_name}"
+    return f"sleeper-{basename}-table-data"
 
 
 def _make_ingest_s3_name(bucket: str) -> str:
