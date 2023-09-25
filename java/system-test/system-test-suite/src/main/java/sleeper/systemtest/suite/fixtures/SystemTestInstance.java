@@ -20,7 +20,6 @@ import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
 
 import java.util.HashMap;
@@ -57,7 +56,6 @@ import static sleeper.configuration.properties.instance.PersistentEMRProperty.BU
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.configuration.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 public enum SystemTestInstance {
 
@@ -114,7 +112,6 @@ public enum SystemTestInstance {
 
         TableProperties tableProperties = new TableProperties(properties);
         tableProperties.setSchema(SystemTestSchema.DEFAULT_SCHEMA);
-        tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
 
         return DeployInstanceConfiguration.builder()
                 .instanceProperties(properties)

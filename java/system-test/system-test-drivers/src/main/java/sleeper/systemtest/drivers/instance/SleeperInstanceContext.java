@@ -67,6 +67,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -214,6 +215,10 @@ public class SleeperInstanceContext {
             properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
             properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
             properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
+            if (parameters.getForceStateStoreClassname() != null) {
+                deployInstanceConfiguration.getTableProperties()
+                        .set(STATESTORE_CLASSNAME, parameters.getForceStateStoreClassname());
+            }
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployInstanceConfiguration)
                     .instanceId(instanceId)
