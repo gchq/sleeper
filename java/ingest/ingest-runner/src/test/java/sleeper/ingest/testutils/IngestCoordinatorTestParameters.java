@@ -37,7 +37,7 @@ public class IngestCoordinatorTestParameters {
     private final Schema schema;
     private final String iteratorClassName;
     private final String workingDir;
-    private final String dataBucketPath;
+    private final String dataBucketName;
     private final String localFilePrefix;
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
@@ -49,7 +49,7 @@ public class IngestCoordinatorTestParameters {
         schema = builder.schema;
         iteratorClassName = builder.iteratorClassName;
         workingDir = builder.workingDir;
-        dataBucketPath = builder.dataBucketPath;
+        dataBucketName = builder.dataBucketName;
         localFilePrefix = builder.localFilePrefix;
         hadoopConfiguration = builder.hadoopConfiguration;
         s3AsyncClient = builder.s3AsyncClient;
@@ -66,11 +66,11 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getAsyncS3Prefix() {
-        return "s3a://" + dataBucketPath;
+        return "s3a://" + dataBucketName;
     }
 
-    public String getDataBucketPath() {
-        return dataBucketPath;
+    public String getDataBucketName() {
+        return dataBucketName;
     }
 
     public Configuration getHadoopConfiguration() {
@@ -110,7 +110,7 @@ public class IngestCoordinatorTestParameters {
         private Schema schema;
         private String iteratorClassName;
         private String workingDir;
-        private String dataBucketPath;
+        private String dataBucketName;
         private String localFilePrefix;
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
@@ -140,8 +140,8 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder dataBucketPath(String dataBucketPath) {
-            this.dataBucketPath = dataBucketPath;
+        public Builder dataBucketName(String dataBucketName) {
+            this.dataBucketName = dataBucketName;
             return this;
         }
 

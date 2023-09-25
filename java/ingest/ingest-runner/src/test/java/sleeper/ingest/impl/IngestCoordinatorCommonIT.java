@@ -972,6 +972,6 @@ public class IngestCoordinatorCommonIT {
                 .temporaryFolder(temporaryFolder)
                 .hadoopConfiguration(hadoopConfiguration)
                 .s3AsyncClient(s3Async)
-                .dataBucketPath(dataBucketName);
+                .dataBucketName(dataBucketName);
     }
 }
