@@ -1013,7 +1013,7 @@ public class InitialiseStateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionIfSplitPointIsOfWrongType() throws StateStoreException {
+    public void shouldThrowExceptionIfSplitPointIsOfWrongType() {
         // Given
         Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
@@ -1026,7 +1026,7 @@ public class InitialiseStateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionIfDuplicateSplitPoints() throws StateStoreException {
+    public void shouldThrowExceptionIfDuplicateSplitPoints() {
         // Given
         Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
@@ -1040,7 +1040,7 @@ public class InitialiseStateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() throws StateStoreException {
+    public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() {
         // Given
         Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
         StateStore dynamoDBStateStore = getStateStore(schema);
