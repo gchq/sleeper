@@ -51,10 +51,12 @@ import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 public class DynamoDBStateStoreCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBStateStoreCreator.class);
     private final AmazonDynamoDB dynamoDB;
+    private final InstanceProperties instanceProperties;
     private final Collection<Tag> tags;
 
     public DynamoDBStateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
+        this.instanceProperties = instanceProperties;
         this.tags = instanceProperties.getTags()
                 .entrySet()
                 .stream()
@@ -62,10 +64,18 @@ public class DynamoDBStateStoreCreator {
                 .collect(Collectors.toList());
     }
 
+    public void create() {
+        createFileInfoTables();
+        createPartitionInfoTable();
+    }
+
     public DynamoDBStateStore create(TableProperties tableProperties) {
         createFileInfoTables(tableProperties);
         createPartitionInfoTable(tableProperties);
         return new DynamoDBStateStore(tableProperties, dynamoDB);
+    }
+
+    public void createFileInfoTables() {
     }
 
     public void createFileInfoTables(TableProperties tableProperties) {
@@ -75,6 +85,9 @@ public class DynamoDBStateStoreCreator {
         keySchemaElements.add(new KeySchemaElement(FILE_NAME, KeyType.HASH));
         initialiseTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
         initialiseTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
+    }
+
+    public void createPartitionInfoTable() {
     }
 
     public void createPartitionInfoTable(TableProperties tableProperties) {
