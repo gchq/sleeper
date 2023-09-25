@@ -22,7 +22,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -30,6 +29,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -74,15 +74,18 @@ public class DynamoDBStateStoreMultipleTablesIT {
     }
 
     private StateStore createTableStateStore() throws Exception {
-        StateStore stateStore = stateStoreFactory.getStateStore(
-                createTestTableProperties(instanceProperties, schema));
+        StateStore stateStore = getTableStateStore();
         stateStore.initialise();
         return stateStore;
     }
 
+    private StateStore getTableStateStore() {
+        return stateStoreFactory.getStateStore(
+                createTestTableProperties(instanceProperties, schema));
+    }
+
     @Test
-    @Disabled("TODO")
-    void shouldCreateOneStateStoreWithTwoTables() throws Exception {
+    void shouldCreateFilesForTwoTables() throws Exception {
         // Given
         StateStore stateStore1 = createTableStateStore();
         StateStore stateStore2 = createTableStateStore();
@@ -96,5 +99,22 @@ public class DynamoDBStateStoreMultipleTablesIT {
         // Then
         assertThat(stateStore1.getActiveFiles()).containsExactly(file1);
         assertThat(stateStore2.getActiveFiles()).containsExactly(file2);
+    }
+
+    @Test
+    void shouldCreatePartitionsForTwoTables() throws Exception {
+        // Given
+        StateStore stateStore1 = getTableStateStore();
+        StateStore stateStore2 = getTableStateStore();
+        PartitionTree tree1 = new PartitionsBuilder(schema).singlePartition("partition1").buildTree();
+        PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
+
+        // When
+        stateStore1.initialise(tree1.getAllPartitions());
+        stateStore2.initialise(tree2.getAllPartitions());
+
+        // Then
+        assertThat(stateStore1.getAllPartitions()).containsExactly(tree1.getRootPartition());
+        assertThat(stateStore2.getAllPartitions()).containsExactly(tree2.getRootPartition());
     }
 }

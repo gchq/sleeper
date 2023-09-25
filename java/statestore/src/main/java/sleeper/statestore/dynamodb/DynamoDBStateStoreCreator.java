@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 
 import java.util.Collection;
 import java.util.List;
@@ -71,8 +70,7 @@ public class DynamoDBStateStoreCreator {
     }
 
     public DynamoDBStateStore create(TableProperties tableProperties) {
-        createFileInfoTables(tableProperties);
-        createPartitionInfoTable(tableProperties);
+        create();
         return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
     }
 
@@ -95,19 +93,6 @@ public class DynamoDBStateStoreCreator {
                 new KeySchemaElement(TABLE_NAME, KeyType.HASH),
                 new KeySchemaElement(PARTITION_ID, KeyType.RANGE));
         initialiseTable(instanceProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
-    }
-
-    public void createFileInfoTables(TableProperties tableProperties) {
-        List<AttributeDefinition> attributeDefinitions = List.of(new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = List.of(new KeySchemaElement(FILE_NAME, KeyType.HASH));
-        initialiseTable(tableProperties.get(TableProperty.ACTIVE_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
-        initialiseTable(tableProperties.get(TableProperty.READY_FOR_GC_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
-    }
-
-    public void createPartitionInfoTable(TableProperties tableProperties) {
-        List<AttributeDefinition> attributeDefinitions = List.of(new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = List.of(new KeySchemaElement(PARTITION_ID, KeyType.HASH));
-        initialiseTable(tableProperties.get(TableProperty.PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
     }
 
     private void initialiseTable(

@@ -19,16 +19,16 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.DelegatingStateStore;
 
 import java.time.Instant;
 
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
 /**
  * An implementation of StateStore that uses DynamoDB to store the state.
@@ -40,32 +40,20 @@ public class DynamoDBStateStore extends DelegatingStateStore {
     public static final String TABLE_NAME = "TableName";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME),
-                tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
-                tableProperties.get(PARTITION_TABLENAME),
-                tableProperties.getSchema(),
-                tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
-                tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS),
-                dynamoDB);
-    }
-
-    public DynamoDBStateStore(
-            String activeFileInfoTablename,
-            String readyForGCFileInfoTablename,
-            String partitionTablename,
-            Schema schema,
-            int garbageCollectorDelayBeforeDeletionInMinutes,
-            boolean stronglyConsistentReads,
-            AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
-                .dynamoDB(dynamoDB).schema(schema)
-                .activeTablename(activeFileInfoTablename).readyForGCTablename(readyForGCFileInfoTablename)
-                .stronglyConsistentReads(stronglyConsistentReads)
-                .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
-                .build(), DynamoDBPartitionStore.builder()
-                .dynamoDB(dynamoDB).schema(schema)
-                .tableName(partitionTablename).stronglyConsistentReads(stronglyConsistentReads)
-                .build());
+                        .dynamoDB(dynamoDB).schema(tableProperties.getSchema())
+                        .activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
+                        .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
+                        .sleeperTableName(tableProperties.get(TableProperty.TABLE_NAME))
+                        .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
+                        .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
+                        .build(),
+                DynamoDBPartitionStore.builder()
+                        .dynamoDB(dynamoDB).schema(tableProperties.getSchema())
+                        .dynamoTableName(instanceProperties.get(PARTITION_TABLENAME))
+                        .sleeperTableName(tableProperties.get(TableProperty.TABLE_NAME))
+                        .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
+                        .build());
     }
 
     /**
