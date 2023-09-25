@@ -60,6 +60,8 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -75,6 +77,8 @@ public class FindPartitionsToSplitIT {
     public Path tempDir;
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
 
     private AmazonDynamoDB createDynamoClient() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
@@ -89,9 +93,7 @@ public class FindPartitionsToSplitIT {
     }
 
     private StateStore createStateStore(AmazonDynamoDB dynamoDB, List<Partition> partitions) throws StateStoreException {
-        String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, SCHEMA, dynamoDB);
-        StateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
+        StateStore dynamoStateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
         dynamoStateStore.initialise(partitions);
         return dynamoStateStore;
     }

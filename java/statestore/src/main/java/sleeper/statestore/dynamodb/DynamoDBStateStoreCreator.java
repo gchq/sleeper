@@ -93,13 +93,6 @@ public class DynamoDBStateStoreCreator {
     }
 
     public DynamoDBStateStoreCreator(
-            String tablenameStub,
-            Schema schema,
-            AmazonDynamoDB dynamoDB) {
-        this(tablenameStub + "-af", tablenameStub + "-rgcf", tablenameStub + "-p", schema, 0, false, dynamoDB, Collections.emptyMap());
-    }
-
-    public DynamoDBStateStoreCreator(
             InstanceProperties instanceProperties,
             TableProperties tableProperties,
             AmazonDynamoDB dynamoDB) {

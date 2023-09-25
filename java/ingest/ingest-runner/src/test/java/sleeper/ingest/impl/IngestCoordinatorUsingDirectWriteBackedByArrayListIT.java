@@ -28,6 +28,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;
@@ -58,6 +60,8 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -77,6 +81,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @BeforeEach
     public void before() {
@@ -84,7 +90,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     }
 
     private StateStore createStateStore(Schema schema) {
-        return new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema, dynamoDB).create();
+        tableProperties.setSchema(schema);
+        return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
     }
 
     @Test
