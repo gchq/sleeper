@@ -228,7 +228,7 @@ public class SleeperTableLambdaIT {
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
 
         AmazonDynamoDB dynamoClient = createDynamoClient();
-        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoClient).create(tableProperties);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create(tableProperties);
         dynamoClient.shutdown();
         return tableProperties;
     }

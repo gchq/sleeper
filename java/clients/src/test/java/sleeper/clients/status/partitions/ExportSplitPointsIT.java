@@ -44,7 +44,7 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
 
     private StateStore getStateStore(Schema schema) {
         TableProperties tableProperties = createTableProperties(schema);
-        return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create(tableProperties);
+        return new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create(tableProperties);
     }
 
     private Schema schemaWithKeyType(PrimitiveType type) {

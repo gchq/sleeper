@@ -111,7 +111,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
         TableProperties tableProperties = createTableProperties(schema);
         StateStore stateStore = new DynamoDBStateStoreCreator(
-                instanceProperties, tableProperties, dynamoDB)
+                instanceProperties, dynamoDB)
                 .create(tableProperties);
         stateStore.initialise();
         return stateStore;

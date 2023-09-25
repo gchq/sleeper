@@ -104,7 +104,7 @@ public class TestUtils {
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
 
         try {
-            DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instance, tableProperties, dynamoDB).create(tableProperties);
+            DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(instance, dynamoDB).create(tableProperties);
             InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Lists.newArrayList(splitPoints)).run();
         } catch (StateStoreException e) {
             throw new RuntimeException(e);

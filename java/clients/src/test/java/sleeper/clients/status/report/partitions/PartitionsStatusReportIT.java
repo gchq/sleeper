@@ -100,7 +100,7 @@ public class PartitionsStatusReportIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, s3, tableConfig);
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         try {
-            new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create(tableProperties);
+            new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create(tableProperties);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create state store", e);
         }

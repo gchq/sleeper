@@ -198,7 +198,7 @@ class BulkImportJobDriverIT {
         tableProperties.saveToS3(s3Client);
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
-                tableProperties, dynamoDBClient);
+                dynamoDBClient);
         dynamoDBStateStoreCreator.create(tableProperties);
         return tableProperties;
     }

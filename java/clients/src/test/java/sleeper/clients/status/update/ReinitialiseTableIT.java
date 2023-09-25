@@ -505,7 +505,7 @@ public class ReinitialiseTableIT {
             throws IOException, StateStoreException {
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator =
-                new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient);
+                new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient);
         DynamoDBStateStore dynamoDBStateStore = dynamoDBStateStoreCreator.create(tableProperties);
 
         dynamoDBStateStore.initialise();

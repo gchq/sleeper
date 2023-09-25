@@ -320,7 +320,7 @@ public class GarbageCollectorIT {
     }
 
     private void createDynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create(tableProperties);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create(tableProperties);
     }
 
     private InstanceProperties createInstancePropertiesWithGCBatchSize(int gcBatchSize) {

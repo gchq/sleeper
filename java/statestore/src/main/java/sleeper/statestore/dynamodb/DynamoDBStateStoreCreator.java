@@ -30,19 +30,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
@@ -55,75 +50,39 @@ import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
  */
 public class DynamoDBStateStoreCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBStateStoreCreator.class);
-
     private final AmazonDynamoDB dynamoDB;
-    private final String activeFileInfoTablename;
-    private final String readyForGCFileInfoTablename;
-    private final String partitionTableName;
-    private final Schema schema;
-    private final int garbageCollectorDelayBeforeDeletionInMinutes;
-    private final boolean stronglyConsistentReads;
     private final Collection<Tag> tags;
 
-    private DynamoDBStateStoreCreator(
-            String activeFileInfoTablename,
-            String readyForGCFileInfoTablename,
-            String partitionTablename,
-            Schema schema,
-            int garbageCollectorDelayBeforeDeletionInMinutes,
-            boolean stronglyConsistentReads,
-            AmazonDynamoDB dynamoDB,
-            Map<String, String> tags) {
-        this.activeFileInfoTablename = Objects.requireNonNull(activeFileInfoTablename, "activeFileInfoTablename must not be null");
-        this.readyForGCFileInfoTablename = Objects.requireNonNull(readyForGCFileInfoTablename, "readyForGCFileInfoTablename must not be null");
-        this.partitionTableName = Objects.requireNonNull(partitionTablename, "partitionTableName must not be null");
-        this.schema = Objects.requireNonNull(schema, "schema must not be null");
-        this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
-        this.stronglyConsistentReads = stronglyConsistentReads;
+    public DynamoDBStateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
-        if (null == tags) {
-            this.tags = Collections.emptySet();
-        } else {
-            this.tags = tags
-                    .entrySet()
-                    .stream()
-                    .map(e -> new Tag().withKey(e.getKey()).withValue(e.getValue()))
-                    .collect(Collectors.toList());
-        }
-    }
-
-    public DynamoDBStateStoreCreator(
-            InstanceProperties instanceProperties,
-            TableProperties tableProperties,
-            AmazonDynamoDB dynamoDB) {
-        this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
-                tableProperties.get(PARTITION_TABLENAME), tableProperties.getSchema(),
-                tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
-                tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS),
-                dynamoDB, Collections.emptyMap());
+        this.tags = instanceProperties.getTags()
+                .entrySet()
+                .stream()
+                .map(e -> new Tag().withKey(e.getKey()).withValue(e.getValue()))
+                .collect(Collectors.toList());
     }
 
     public DynamoDBStateStore create(TableProperties tableProperties) {
-        createFileInfoTables();
-        createPartitionInfoTable();
+        createFileInfoTables(tableProperties);
+        createPartitionInfoTable(tableProperties);
         return new DynamoDBStateStore(tableProperties, dynamoDB);
     }
 
-    public void createFileInfoTables() {
+    public void createFileInfoTables(TableProperties tableProperties) {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
         keySchemaElements.add(new KeySchemaElement(FILE_NAME, KeyType.HASH));
-        initialiseTable(activeFileInfoTablename, attributeDefinitions, keySchemaElements);
-        initialiseTable(readyForGCFileInfoTablename, attributeDefinitions, keySchemaElements);
+        initialiseTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
+        initialiseTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
     }
 
-    public void createPartitionInfoTable() {
+    public void createPartitionInfoTable(TableProperties tableProperties) {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
         keySchemaElements.add(new KeySchemaElement(PARTITION_ID, KeyType.HASH));
-        initialiseTable(partitionTableName, attributeDefinitions, keySchemaElements);
+        initialiseTable(tableProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
     }
 
     private void initialiseTable(

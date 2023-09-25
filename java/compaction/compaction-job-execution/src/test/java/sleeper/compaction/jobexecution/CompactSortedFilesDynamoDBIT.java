@@ -90,7 +90,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     private StateStore createStateStore(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create(tableProperties);
+        return new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create(tableProperties);
     }
 
     @Test
