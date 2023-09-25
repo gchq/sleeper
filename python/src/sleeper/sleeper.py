@@ -118,7 +118,7 @@ class SleeperClient:
                      self._eks_bulk_import_queue, self._emr_serverless_bulk_import_queue, id, platform, platform_spec,
                      class_name)
 
-    def exact_key_query(self, table_name: str, keys, query_id: str) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
         Query a Sleeper table for records where the key matches a given list of query keys.
 
@@ -166,7 +166,7 @@ class SleeperClient:
             regions.append(region)
         return self.range_key_query(table_name, regions, query_id)
 
-    def range_key_query(self, table_name: str, regions: list, query_id: str) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
         """
         Query a Sleeper table for records where the key is within one of the provided list of ranges.
 
