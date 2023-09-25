@@ -96,14 +96,14 @@ public class QueryClient extends QueryCommandLineClient {
             e.printStackTrace();
             return;
         }
-
-        double delta = (System.currentTimeMillis() - startTime) / 1000.0;
         System.out.println("Returned Records:");
         long count = 0L;
         while (records.hasNext()) {
             System.out.println(records.next().toString(schema));
             count++;
         }
+
+        double delta = (System.currentTimeMillis() - startTime) / 1000.0;
         System.out.println("Query took " + delta + " seconds to return " + count + " records");
     }
 
