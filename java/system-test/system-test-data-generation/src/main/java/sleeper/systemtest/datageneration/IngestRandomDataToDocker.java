@@ -20,12 +20,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
@@ -74,6 +75,8 @@ public class IngestRandomDataToDocker {
         if (customEndpoint != null) {
             return builder
                     .endpointOverride(customEndpoint)
+                    .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                            "test-access-key", "test-secret-key")))
                     .region(Region.US_EAST_1)
                     .forcePathStyle(true)
                     .build();
@@ -90,7 +93,7 @@ public class IngestRandomDataToDocker {
         return null;
     }
 
-    public static void main(String[] args) throws IOException, ObjectFactoryException {
+    public static void main(String[] args) throws IOException {
         if (args.length < 1 || args.length > 2) {
             throw new IllegalArgumentException("Usage: <instance-id> <optional-number-of-records>");
         }

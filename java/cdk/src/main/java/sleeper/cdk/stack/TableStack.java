@@ -47,7 +47,6 @@ import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -193,12 +192,8 @@ public class TableStack extends NestedStack {
         }
 
         Map<String, String> properties = new HashMap<>();
-        try {
-            properties.put("instanceProperties", instanceProperties.saveAsString());
-            properties.put("tableProperties", tableProperties.saveAsString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store instanceProperties or tableProperties in a string", e);
-        }
+        properties.put("instanceProperties", instanceProperties.saveAsString());
+        properties.put("tableProperties", tableProperties.saveAsString());
         CustomResource tableInitialisation = CustomResource.Builder.create(this, tableName + "SleeperTable")
                 .resourceType("Custom::SleeperTable")
                 .properties(properties)

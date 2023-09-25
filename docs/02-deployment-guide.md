@@ -144,7 +144,7 @@ editor templates/instanceproperties.template
 editor templates/schema.template
 editor templates/tableproperties.template
 editor templates/tags.template
-deploy/deployNew.sh <sleeper-instance-unique-id> <vpc-id> <subnet-ids> <table-name>
+deploy/deployNew.sh <instance-id> <vpc-id> <subnet-ids> <table-name>
 ```
 
 Here `vpc-id` and `subnet-ids` are the ids of the VPC and subnets that some components of Sleeper will be deployed into.
@@ -185,8 +185,8 @@ For Sleeper to be deployed manually, some resources have to be uploaded to AWS f
 the jar files need to be uploaded to an S3 bucket, and some Docker images
 need to be uploaded to an ECR repository.
 
-These instructions will assume you're using a development environment, so see [dev guide](09-dev-guide.md) for how to
-set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
+These instructions will assume you're using a development environment, so see [the dev guide](11-dev-guide.md) for how
+to set that up. You can also use the `sleeper builder` CLI command to get a shell in a suitable environment, if you have
 the CLI configured and authenticated with AWS.
 
 This guide assumes you start in the project root directory. First build the system:
@@ -267,7 +267,7 @@ docker push $TAG
 
 #### Building for Graviton
 
-If you'd like to run operations in AWS Graviton-based instances, in ARM64 architecture, you can use Docker BuildX to
+If you'd like to run operations in AWS Graviton-based instances, on the ARM64 architecture, you can use Docker BuildX to
 build multiplatform images.
 
 These commands will create or recreate a builder:

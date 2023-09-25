@@ -34,9 +34,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 
-import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,7 +69,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintPropertyDescriptionWithMultipleLines() throws Exception {
+        void shouldPrintPropertyDescriptionWithMultipleLines() {
             // When / Then
             assertThat(printInstanceProperties("sleeper.default.gc.delay.minutes=123"))
                     .contains("# A file will not be deleted until this number of minutes have passed after it has been marked as\n" +
@@ -82,7 +80,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintPropertyDescriptionWithCustomLineBreaks() throws Exception {
+        void shouldPrintPropertyDescriptionWithCustomLineBreaks() {
             // When / Then
             assertThat(printInstanceProperties("sleeper.ingest.partition.file.writer.type=direct"))
                     .contains("# The way in which partition files are written to the main Sleeper store.\n" +
@@ -94,7 +92,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintSystemDefinedProperty() throws Exception {
+        void shouldPrintSystemDefinedProperty() {
             // When / Then
             assertThat(printInstanceProperties("sleeper.version=1.2.3"))
                     .contains("# The version of Sleeper that is being used. This property is used to identify the correct jars in the\n" +
@@ -121,7 +119,7 @@ class SleeperPropertiesPrettyPrinterTest {
     @DisplayName("Print values")
     class PrintValues {
         @Test
-        void shouldPrintPropertyValueWithDescription() throws Exception {
+        void shouldPrintPropertyValueWithDescription() {
             // When / Then
             assertThat(printInstanceProperties("sleeper.account=1234567890"))
                     .contains("# The AWS account number. This is the AWS account that the instance will be deployed to.\n" +
@@ -154,14 +152,14 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintPropertyValueSetToEmptyString() throws Exception {
+        void shouldPrintPropertyValueSetToEmptyString() {
             // When / Then
             assertThat(printInstanceProperties("sleeper.logging.root.level="))
                     .contains("\n# sleeper.logging.root.level=\n");
         }
 
         @Test
-        void shouldPrintSpacingBetweenProperties() throws Exception {
+        void shouldPrintSpacingBetweenProperties() {
             // When / Then
             assertThat(printInstanceProperties("" +
                     "sleeper.logging.parquet.level=INFO\n" +
@@ -178,7 +176,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldPrintPropertiesNotKnownBySleeper() throws IOException {
+        void shouldPrintPropertiesNotKnownBySleeper() {
             assertThat(printInstanceProperties("unknown.property=test"))
                     .contains("\n\n" +
                             "# The following properties are not recognised by Sleeper.\n" +
@@ -192,7 +190,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldSortPropertiesNotKnownBySleeper() throws IOException {
+        void shouldSortPropertiesNotKnownBySleeper() {
             assertThat(printInstanceProperties("" +
                     "unknown.property.2=test\n" +
                     "unknown.property.1=test\n" +
@@ -205,7 +203,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldEscapeSpecialCharactersInPropertyKey() throws IOException {
+        void shouldEscapeSpecialCharactersInPropertyKey() {
             InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
                     "unknown\\=property=test"));
             assertThat(printInstanceProperties(instanceProperties))
@@ -240,7 +238,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldEscapeSpecialCharactersInPropertyValueForUnknownProperty() throws IOException {
+        void shouldEscapeSpecialCharactersInPropertyValueForUnknownProperty() {
             InstanceProperties instanceProperties = new InstanceProperties(loadProperties("" +
                     "multiline.property=one\\ntwo\\nthree"));
             assertThat(printInstanceProperties("multiline.property=one\\ntwo\\nthree"))
@@ -313,7 +311,7 @@ class SleeperPropertiesPrettyPrinterTest {
     @DisplayName("Filter by group")
     class FilterByGroup {
         @Test
-        void shouldFilterInstancePropertiesByGroup() throws IOException {
+        void shouldFilterInstancePropertiesByGroup() {
             // When
             String output = printInstancePropertiesByGroup("", InstancePropertyGroup.COMMON);
 
@@ -348,7 +346,7 @@ class SleeperPropertiesPrettyPrinterTest {
         }
 
         @Test
-        void shouldNotShowUnknownPropertiesWhenFilteringByGroup() throws IOException {
+        void shouldNotShowUnknownPropertiesWhenFilteringByGroup() {
             // When
             String output = printInstancePropertiesByGroup("unknown.property=123", InstancePropertyGroup.COMMON);
 
@@ -362,11 +360,11 @@ class SleeperPropertiesPrettyPrinterTest {
         return printInstanceProperties(new InstanceProperties());
     }
 
-    private static String printInstanceProperties(String properties) throws IOException {
+    private static String printInstanceProperties(String properties) {
         return printInstanceProperties(new InstanceProperties(loadProperties(properties)));
     }
 
-    private static String printInstancePropertiesByGroup(String properties, PropertyGroup group) throws IOException {
+    private static String printInstancePropertiesByGroup(String properties, PropertyGroup group) {
         return printInstancePropertiesByGroup(new InstanceProperties(loadProperties(properties)), group);
     }
 
@@ -385,11 +383,7 @@ class SleeperPropertiesPrettyPrinterTest {
 
     private static TableProperties createTablePropertiesWithSchemaInString(String properties) {
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(new InstanceProperties());
-        try {
-            tableProperties.loadFromString(properties);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        tableProperties.loadFromString(properties);
         return tableProperties;
     }
 

@@ -23,7 +23,6 @@ import org.apache.spark.util.SerializableConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 /**
@@ -46,7 +45,7 @@ public class WriteParquetFiles implements MapPartitionsFunction<Row, Row> {
     }
 
     @Override
-    public Iterator<Row> call(Iterator<Row> rowIter) throws IOException {
+    public Iterator<Row> call(Iterator<Row> rowIter) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromString(instancePropertiesStr);
 

@@ -1,6 +1,17 @@
 Getting started
 ===============
 
+There are 2 ways of deploying Sleeper and interacting with an instance. The first way is to deploy to AWS. If you do
+not wish to start spending money on cloud infrastructure, the second way is to deploy to a LocalStack container on
+your local machine. This has limited functionality and will only work with small volumes of data, but will allow you to
+deploy an instance, ingest some files, and run reports and scripts against the instance.
+
+## Deploy to LocalStack
+
+See the documentation on [deploying to localstack](10-deploy-to-localstack.md) for more information.
+
+## Deploy to AWS
+
 The easiest way to deploy an instance of Sleeper and interact with it is to use the "system test" functionality. This
 deploys a Sleeper instance with a simple schema, and writes some random data into a table in the instance. You can then
 use the status scripts to see how much data is in the system, run some example queries, and view logs to help understand
@@ -129,7 +140,7 @@ sleeper deployment test/deployAll/deployTest.sh ${ID} ${VPC} ${SUBNETS}
 ```
 
 An S3 bucket will be created for the jars, and ECR repos will be created and Docker images pushed to them.
-Note that this script currently needs to be run from an x86 machine as we do not yet have cross-architecture Docker
+Note that this script currently needs to be run from an x86_64 machine as we do not yet have cross-architecture Docker
 builds. Then CDK will be used to deploy a Sleeper instance. This will take around 20 minutes. Once that is complete,
 some tasks are started on an ECS cluster. These tasks generate some random data and write it to Sleeper. 11 ECS tasks
 will be created. Each of these will write 40 million records. As all writes to Sleeper are asynchronous, it will take a

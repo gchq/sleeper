@@ -33,7 +33,6 @@ import sleeper.core.schema.Schema;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,11 +46,11 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
  * to the results, however results will likely be returned faster as a consequence.
  */
 public class SimpleRecordHandler extends SleeperRecordHandler {
-    public SimpleRecordHandler() throws IOException {
+    public SimpleRecordHandler() {
         super();
     }
 
-    public SimpleRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) throws IOException {
+    public SimpleRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
         super(s3Client, configBucket, secretsManager, athena);
     }
 

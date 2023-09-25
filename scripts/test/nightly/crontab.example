@@ -23,4 +23,5 @@
 MAILTO=""
 SHELL=/usr/bin/bash
 PATH=$PATH:/usr/bin:/home/ubuntu/.local/bin
-0 3 * * * sleeper cli upgrade && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> &> /tmp/sleeperPerformanceTests.log
+0 3 * * TUE,THU,SAT,SUN docker system prune -af && sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "functional" &> /tmp/sleeperFunctionalTests.log
+0 3 * * MON,WED,FRI docker system prune -af && sleeper cli upgrade main && sleeper builder ./sleeper/scripts/test/nightly/updateAndRunTests.sh "<vpc>" "<subnet>" <output-bucket-name> "performance" &> /tmp/sleeperPerformanceTests.log

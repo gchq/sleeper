@@ -26,9 +26,7 @@ import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -43,38 +41,50 @@ import java.time.Instant;
 import java.util.List;
 
 public class IngestReportsDriver {
-    private final IngestJobStatusStore ingestJobStatusStore;
-    private final IngestTaskStatusStore ingestTaskStatusStore;
     private final SleeperInstanceContext instance;
-    private final QueueMessageCount.Client queueClient;
-    private final AmazonElasticMapReduce emrClient;
+    private final AmazonDynamoDB dynamoDB;
+    private final QueueMessageCount.Client queueMessages;
+    private final AmazonElasticMapReduce emr;
 
-    public IngestReportsDriver(AmazonDynamoDB dynamoDB, AmazonSQS sqs, AmazonElasticMapReduce emrClient,
-                               SleeperInstanceContext instance) {
-        InstanceProperties properties = instance.getInstanceProperties();
-        this.ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDB, properties);
-        this.ingestTaskStatusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, properties);
+    public IngestReportsDriver(SleeperInstanceContext instance,
+                               AmazonDynamoDB dynamoDB, AmazonSQS sqs, AmazonElasticMapReduce emr) {
         this.instance = instance;
-        this.queueClient = QueueMessageCount.withSqsClient(sqs);
-        this.emrClient = emrClient;
+        this.dynamoDB = dynamoDB;
+        this.queueMessages = QueueMessageCount.withSqsClient(sqs);
+        this.emr = emr;
     }
 
     public SystemTestReport tasksAndJobsReport() {
-        return (out, startTime) -> {
-            new IngestTaskStatusReport(ingestTaskStatusStore,
-                    new StandardIngestTaskStatusReporter(out),
-                    IngestTaskQuery.forPeriod(startTime, Instant.MAX))
-                    .run();
-            new IngestJobStatusReport(ingestJobStatusStore, JobQuery.Type.RANGE,
-                    new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX),
-                    new StandardIngestJobStatusReporter(out), queueClient, instance.getInstanceProperties(),
-                    PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emrClient))
-                    .run();
-        };
+        return SystemTestReport.join(tasksReport(), jobsReport());
+    }
+
+    public SystemTestReport tasksReport() {
+        return (out, startTime) ->
+                new IngestTaskStatusReport(taskStore(),
+                        new StandardIngestTaskStatusReporter(out),
+                        IngestTaskQuery.forPeriod(startTime, Instant.MAX))
+                        .run();
+    }
+
+    public SystemTestReport jobsReport() {
+        return (out, startTime) ->
+                new IngestJobStatusReport(jobStore(),
+                        new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX),
+                        new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
+                        PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
+                        .run();
     }
 
     public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
         return new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(ingestJobStatusStore);
+                .run(jobStore());
+    }
+
+    private IngestJobStatusStore jobStore() {
+        return IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+    }
+
+    private IngestTaskStatusStore taskStore() {
+        return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
     }
 }

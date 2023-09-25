@@ -32,11 +32,11 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import sleeper.ingest.batcher.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
@@ -46,7 +46,7 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
     private final TablePropertiesProvider tablePropertiesProvider;
     private final Configuration configuration;
 
-    public IngestBatcherSubmitterLambda() throws IOException {
+    public IngestBatcherSubmitterLambda() {
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
@@ -96,7 +96,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             return;
         }
         requests.forEach(request -> {
-            LOGGER.info("Adding {} to store", request.getFile());
+            LOGGER.info("Storing ingest request for file {} with size {} to table {}",
+                    request.getFile(), formatBytes(request.getFileSizeBytes()), request.getTableName());
             store.addFile(request);
         });
     }

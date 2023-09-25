@@ -29,7 +29,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import sleeper.clients.util.ClientUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -105,9 +104,9 @@ public class RetryMessages {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (3 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id> [compaction|splittingcompaction|ingest|query] max_messages");
+            throw new IllegalArgumentException("Usage: <instance-id> [compaction|splittingcompaction|ingest|query] <max-messages>");
         }
         Set<String> validStacks = new HashSet<>();
         validStacks.add("compaction");

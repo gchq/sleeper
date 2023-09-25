@@ -22,7 +22,6 @@ import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -49,7 +48,7 @@ class DynamoDBPartitionFormat {
         regionSerDe = new RegionSerDe(schema);
     }
 
-    Map<String, AttributeValue> getItemFromPartition(Partition partition) throws IOException {
+    Map<String, AttributeValue> getItemFromPartition(Partition partition) {
         Map<String, AttributeValue> map = new HashMap<>();
         map.put(ID, createStringAttribute(partition.getId()));
         map.put(IS_LEAF, createStringAttribute("" + partition.isLeafPartition()));
@@ -70,7 +69,7 @@ class DynamoDBPartitionFormat {
         return map;
     }
 
-    Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
+    Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) {
         Partition.Builder partitionBuilder = Partition.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .id(item.get(ID).getS())

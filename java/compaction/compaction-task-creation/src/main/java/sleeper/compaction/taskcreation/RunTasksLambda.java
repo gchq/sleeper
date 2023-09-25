@@ -26,8 +26,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
@@ -43,7 +41,7 @@ public class RunTasksLambda {
     private final String type;
     private final RunTasks runTasks;
 
-    public RunTasksLambda() throws IOException {
+    public RunTasksLambda() {
 
         this.s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         this.type = validateParameter("type");
@@ -54,7 +52,7 @@ public class RunTasksLambda {
         this.runTasks = new RunTasks(sqsClient, ecsClient, s3Client, asClient, s3Bucket, type);
     }
 
-    public void eventHandler(ScheduledEvent event, Context context) throws InterruptedException {
+    public void eventHandler(ScheduledEvent event, Context context) {
         runTasks.run();
     }
 

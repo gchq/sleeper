@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
+import sleeper.clients.deploy.StacksForDockerUpload;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -29,6 +30,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,14 +43,22 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
+import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -57,7 +67,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     private final InstanceProperties instanceProperties = createValidInstanceProperties();
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         instanceProperties.saveToS3(s3);
     }
 
@@ -344,18 +354,151 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
     }
 
+    @DisplayName("Load invalid properties")
+    @Nested
+    class LoadInvalidProperties {
+
+        @Test
+        void shouldLoadInvalidInstanceProperties() {
+            // Given
+            updateInstanceProperty(INSTANCE_ID, MAXIMUM_CONNECTIONS_TO_S3, "abc");
+
+            // When / Then
+            assertThat(store().loadInstanceProperties(INSTANCE_ID).get(MAXIMUM_CONNECTIONS_TO_S3))
+                    .isEqualTo("abc");
+        }
+
+        @Test
+        void shouldLoadInvalidTableProperties() throws IOException {
+            // Given
+            createTableInS3("test-table", table -> table.set(PARTITION_SPLIT_THRESHOLD, "abc"));
+
+            // When / Then
+            assertThat(store().loadTableProperties(instanceProperties, "test-table").get(PARTITION_SPLIT_THRESHOLD))
+                    .isEqualTo("abc");
+        }
+    }
+
+    @DisplayName("Create generated directory when missing")
+    @Nested
+    class CreateGeneratedDirectoryWhenMissing {
+
+        @Test
+        void shouldCreateGeneratedDirectoryWhenSavingInstanceProperties() {
+            // Given
+            Path generatedDir = tempDir.resolve("dir-to-create");
+
+            // When
+            updateInstanceProperty(storeWithGeneratedDirectory(generatedDir),
+                    INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            assertThat(loadInstancePropertiesFromDirectory(generatedDir).get(FARGATE_VERSION))
+                    .isEqualTo("1.2.3");
+        }
+
+        @Test
+        void shouldCreateGeneratedDirectoryWhenSavingTableProperties() throws IOException {
+            // Given
+            Path generatedDir = tempDir.resolve("dir-to-create");
+            createTableInS3("test-table");
+
+            // When
+            updateTableProperty(storeWithGeneratedDirectory(generatedDir),
+                    INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+
+            // Then
+            assertThat(loadTablesFromDirectory(instanceProperties, generatedDir))
+                    .extracting(properties -> properties.getInt(ROW_GROUP_SIZE))
+                    .containsExactly(123);
+        }
+    }
+
+    @Nested
+    @DisplayName("Upload docker images")
+    class UploadDockerImages {
+        @BeforeEach
+        void setup() throws IOException {
+            instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
+            instanceProperties.saveToS3(s3);
+        }
+
+        @Test
+        void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
+            // When
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
+
+            // Then
+            verify(uploadDockerImages).upload(withStacks("QueryStack", "CompactionStack", "IngestStack"));
+        }
+
+        @Test
+        void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
+            // When
+            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+
+            // Then
+            verifyNoInteractions(uploadDockerImages);
+        }
+
+        @Test
+        void shouldNotUploadDockerImagesWhenStackIsDisabled() throws IOException, InterruptedException {
+            // When
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack");
+
+            // Then
+            verify(uploadDockerImages, times(0)).upload(any());
+        }
+
+        @Test
+        void shouldUploadDockerImagesWhenOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
+            // When
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,IngestStack");
+
+            // Then
+            verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
+        }
+
+        @Test
+        void shouldNotUploadDockerImagesWhenStackIsEnabledThatRequiresNoImage() throws IOException, InterruptedException {
+            // When
+            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
+
+            // Then
+            verify(uploadDockerImages, times(0)).upload(any());
+        }
+    }
+
     private void updateInstanceProperty(String instanceId, InstanceProperty property, String value) {
-        InstanceProperties properties = store().loadInstanceProperties(instanceId);
+        updateInstanceProperty(store(), instanceId, property, value);
+    }
+
+    private StacksForDockerUpload withStacks(String... stacks) {
+        return StacksForDockerUpload.builder()
+                .ecrPrefix(instanceProperties.get(ID))
+                .account(instanceProperties.get(ACCOUNT))
+                .region(instanceProperties.get(REGION))
+                .version(instanceProperties.get(VERSION))
+                .stacks(List.of(stacks))
+                .build();
+    }
+
+    private static void updateInstanceProperty(AdminClientPropertiesStore store, String instanceId, InstanceProperty property, String value) {
+        InstanceProperties properties = store.loadInstanceProperties(instanceId);
         String valueBefore = properties.get(property);
         properties.set(property, value);
-        store().saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveInstanceProperties(properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void updateTableProperty(String instanceId, String tableName, TableProperty property, String value) {
-        TableProperties properties = store().loadTableProperties(instanceProperties, tableName);
+        updateTableProperty(store(), instanceId, tableName, property, value);
+    }
+
+    private void updateTableProperty(AdminClientPropertiesStore store, String instanceId, String tableName, TableProperty property, String value) {
+        TableProperties properties = store.loadTableProperties(instanceProperties, tableName);
         String valueBefore = properties.get(property);
         properties.set(property, value);
-        store().saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(
@@ -370,11 +513,11 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }).when(cdk).invokeInferringType(any(), eq(CdkCommand.deployPropertiesChange()));
     }
 
-    private void createTableInS3(String tableName) throws IOException {
+    private void createTableInS3(String tableName) {
         createValidTableProperties(instanceProperties, tableName).saveToS3(s3);
     }
 
-    private void createTableInS3(String tableName, Consumer<TableProperties> config) throws IOException {
+    private void createTableInS3(String tableName, Consumer<TableProperties> config) {
         TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
         config.accept(tableProperties);
         tableProperties.saveToS3(s3);

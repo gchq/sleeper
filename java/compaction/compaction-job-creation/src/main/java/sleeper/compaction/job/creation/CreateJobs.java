@@ -90,7 +90,7 @@ public class CreateJobs {
         this.jobStatusStore = jobStatusStore;
     }
 
-    public void createJobs() throws StateStoreException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException, ObjectFactoryException {
+    public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
         List<String> tables = tableLister.listTables();
         LOGGER.debug("Found {} tables", tables.size());
         for (String table : tables) {

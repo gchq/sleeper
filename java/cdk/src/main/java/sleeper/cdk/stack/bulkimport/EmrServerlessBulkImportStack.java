@@ -75,6 +75,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * executes the bulk import job and then terminates.
  */
 public class EmrServerlessBulkImportStack extends NestedStack {
+    private final Queue bulkImportJobQueue;
 
     public EmrServerlessBulkImportStack(
             Construct scope, String id,
@@ -90,7 +91,7 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 instanceProperties, importBucketStack, statusStoreResources, tableStack, configBucket, ingestBuckets);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(this,
                 "EMRServerless", instanceProperties, statusStoreResources, configBucket, ingestBuckets);
-        Queue bulkImportJobQueue = commonHelper.createJobQueue(
+        bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN,
                 errorsTopicStack.getTopic());
 
@@ -214,5 +215,9 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                                                 .resources(List.of("*")).build())))
                                 .build())
                         .build());
+    }
+
+    public Queue getBulkImportJobQueue() {
+        return bulkImportJobQueue;
     }
 }

@@ -74,10 +74,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public void jobCreated(CompactionJob job) {
         try {
             PutItemResult result = putItem(format.createJobCreatedRecord(job));
-            LOGGER.debug("Put created event for job {} to table {}, capacity consumed = {}",
+            LOGGER.info("Put created event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in jobCreated", e);
+            throw new CompactionStatusStoreException("Failed putItem in jobCreated for job " + job.getId(), e);
         }
     }
 
@@ -85,10 +85,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public void jobStarted(CompactionJob job, Instant startTime, String taskId) {
         try {
             PutItemResult result = putItem(format.createJobStartedRecord(job, startTime, taskId));
-            LOGGER.debug("Put started event for job {} to table {}, capacity consumed = {}",
+            LOGGER.info("Put started event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in jobStarted", e);
+            throw new CompactionStatusStoreException("Failed putItem in jobStarted for job " + job.getId(), e);
         }
     }
 
@@ -96,10 +96,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
         try {
             PutItemResult result = putItem(format.createJobFinishedRecord(job, summary, taskId));
-            LOGGER.debug("Put finished event for job {} to table {}, capacity consumed = {}",
+            LOGGER.info("Put finished event for job {} to table {}, capacity consumed = {}",
                     job.getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in jobFinished", e);
+            throw new CompactionStatusStoreException("Failed putItem in jobFinished for job " + job.getId(), e);
         }
     }
 

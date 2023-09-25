@@ -16,16 +16,16 @@
 
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.IngestMode;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.time.Duration;
 
@@ -35,28 +35,25 @@ import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECO
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
-import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128Partitions;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
+import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.create128StringPartitions;
 
 @Tag("SystemTest")
 public class IngestPerformanceIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
+    @RegisterExtension
+    public final ReportingExtension reporting = ReportingExtension.reportAlways(
+            sleeper.reportsForExtension().ingestTasksAndJobs());
+
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(INGEST_PERFORMANCE);
-        sleeper.reporting().startRecording();
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
     }
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
     void shouldMeetIngestPerformanceStandardsAcrossManyPartitions() throws InterruptedException {
-        sleeper.partitioning().setPartitions(create128Partitions(sleeper));
+        sleeper.partitioning().setPartitions(create128StringPartitions(sleeper));
         sleeper.systemTestCluster().updateProperties(properties -> {
                     properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
                     properties.set(NUMBER_OF_WRITERS, "11");

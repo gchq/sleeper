@@ -32,7 +32,6 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -55,11 +54,7 @@ public class SystemTestPropertiesStack extends NestedStack {
         LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
 
         HashMap<String, Object> properties = new HashMap<>();
-        try {
-            properties.put("properties", systemTestProperties.saveAsString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to serialise properties");
-        }
+        properties.put("properties", systemTestProperties.saveAsString());
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 systemTestProperties.get(SYSTEM_TEST_ID).toLowerCase(Locale.ROOT), "properties-writer"));

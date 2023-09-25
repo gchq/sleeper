@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -lt 1 ]; then
   echo "Usage: sleeper <command>"
@@ -30,9 +31,9 @@ run_in_docker() {
   fi
   RUN_PARAMS+=(
     --rm
-    --network=host
     -v /var/run/docker.sock:/var/run/docker.sock
     -v "$HOME/.aws:$HOME_IN_IMAGE/.aws"
+    -e IN_CLI_CONTAINER=true \
     -e AWS_ACCESS_KEY_ID
     -e AWS_SECRET_ACCESS_KEY
     -e AWS_SESSION_TOKEN
@@ -112,10 +113,12 @@ upgrade_cli() {
   parse_version "$@"
   echo "Updating CLI command"
   EXECUTABLE_PATH="${BASH_SOURCE[0]}"
-  TEMP_PATH="/tmp/sleeper"
+  TEMP_DIR="/tmp/sleeper/upgrade-cli"
+  mkdir -p "$TEMP_DIR"
+  TEMP_PATH="$TEMP_DIR/sleeper"
   curl "https://raw.githubusercontent.com/gchq/sleeper/$GIT_REF/scripts/cli/runInDocker.sh" --output "$TEMP_PATH"
   chmod a+x "$TEMP_PATH"
-  $TEMP_PATH cli pull-images "$VERSION"
+  "$TEMP_PATH" cli pull-images "$VERSION"
   mv "$TEMP_PATH" "$EXECUTABLE_PATH"
   echo "Updated"
 

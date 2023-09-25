@@ -20,8 +20,8 @@ import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
 import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 
@@ -33,8 +33,8 @@ import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static sleeper.clients.util.ClientUtils.countWithCommas;
-import static sleeper.clients.util.ClientUtils.decimalWithCommas;
+import static sleeper.core.util.NumberFormatUtils.countWithCommas;
+import static sleeper.core.util.NumberFormatUtils.decimalWithCommas;
 
 public class StandardProcessRunReporter {
 
@@ -90,7 +90,7 @@ public class StandardProcessRunReporter {
     private UpdatePrinter defaultUpdatePrinter() {
         return updatePrinters(
                 printUpdateType(ProcessRunStartedUpdate.class, this::printProcessStarted),
-                printUpdateType(ProcessFinishedStatus.class, this::printProcessFinished));
+                printUpdateType(ProcessRunFinishedUpdate.class, this::printProcessFinished));
     }
 
     private void printProcessJobRun(ProcessRun run, UpdatePrinter updatePrinter) {
@@ -136,7 +136,7 @@ public class StandardProcessRunReporter {
         out.printf("Start Update Time: %s%n", update.getUpdateTime());
     }
 
-    public void printProcessFinished(ProcessFinishedStatus update) {
+    public void printProcessFinished(ProcessRunFinishedUpdate update) {
         RecordsProcessedSummary summary = update.getSummary();
         out.printf("Finish Time: %s%n", summary.getFinishTime());
         out.printf("Finish Update Time: %s%n", update.getUpdateTime());

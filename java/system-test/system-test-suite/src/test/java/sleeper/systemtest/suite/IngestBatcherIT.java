@@ -16,16 +16,16 @@
 
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.time.Duration;
 import java.util.stream.LongStream;
@@ -36,26 +36,23 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR;
+import static sleeper.configuration.properties.validation.BatchIngestMode.BULK_IMPORT_EMR_SERVERLESS;
 import static sleeper.configuration.properties.validation.BatchIngestMode.STANDARD_INGEST;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class IngestBatcherIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
+    @RegisterExtension
+    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+            sleeper.reportsForExtension().ingestTasksAndJobs());
+
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
         sleeper.ingest().batcher().clearStore();
-        sleeper.reporting().startRecording();
-    }
-
-    @AfterEach
-    void tearDown(TestInfo testInfo) {
-        sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
     }
 
     @Test
@@ -90,7 +87,7 @@ public class IngestBatcherIT {
     void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
         // Given
         sleeper.updateTableProperties(tableProperties -> {
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR.toString());
+            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString());
             tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
             tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
             tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");

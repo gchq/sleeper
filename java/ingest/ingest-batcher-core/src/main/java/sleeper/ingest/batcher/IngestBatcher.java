@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
@@ -50,6 +51,7 @@ import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHE
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MAX_JOB_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcher.class);
@@ -89,11 +91,13 @@ public class IngestBatcher {
 
     private void batchTableFiles(String tableName, List<FileIngestRequest> inputFiles, Instant time) {
         long totalBytes = totalBytes(inputFiles);
-        LOGGER.info("Attempting to batch {} files of total size {} bytes for table {}", inputFiles.size(), totalBytes, tableName);
+        LOGGER.info("Attempting to batch {} files of total size {} for table {}",
+                inputFiles.size(), formatBytes(totalBytes), tableName);
         TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
         if (shouldCreateBatches(properties, inputFiles, time)) {
             BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
-            LOGGER.info("Creating batches for {} files with total bytes of {} for table {}", inputFiles.size(), totalBytes, tableName);
+            LOGGER.info("Creating batches for {} files with total size of {} for table {}",
+                    inputFiles.size(), formatBytes(totalBytes), tableName);
             List<Instant> receivedTimes = inputFiles.stream()
                     .map(FileIngestRequest::getReceivedTime)
                     .sorted().collect(toList());
@@ -128,12 +132,12 @@ public class IngestBatcher {
                     inputFiles.size(), minFiles);
         }
         if (totalBytes < minBytes) {
-            LOGGER.info("Total bytes for files ({}) does not satisfy the minimum size for a job ({} bytes)",
-                    totalBytes, minBytes);
+            LOGGER.info("Total size for files {} does not satisfy the minimum size for a job {}",
+                    formatBytes(totalBytes), formatBytes(minBytes));
             meetsMinFiles = false;
         } else {
-            LOGGER.info("Total bytes for files ({}) satisfies the minimum size for a job ({} bytes)",
-                    totalBytes, minBytes);
+            LOGGER.info("Total size for files {} satisfies the minimum size for a job {}",
+                    formatBytes(totalBytes), formatBytes(minBytes));
         }
         return meetsMinFiles;
     }
@@ -156,7 +160,8 @@ public class IngestBatcher {
             if (jobQueueUrl == null) {
                 LOGGER.error("Discarding created job with no queue configured for table {}: {}", tableName, job);
             } else {
-                LOGGER.info("Sending ingest job of id {} with {} files ({} bytes) to {}", jobId, job.getFiles().size(), totalBytes, batchIngestMode);
+                LOGGER.info("Sending ingest job of id {} with {} files and total size of {} to {}",
+                        jobId, job.getFiles().size(), formatBytes(totalBytes), batchIngestMode);
                 queueClient.send(jobQueueUrl, job);
             }
         } catch (RuntimeException e) {
@@ -186,6 +191,8 @@ public class IngestBatcher {
                 return BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
             case BULK_IMPORT_EKS:
                 return BULK_IMPORT_EKS_JOB_QUEUE_URL;
+            case BULK_IMPORT_EMR_SERVERLESS:
+                return BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
             default:
                 return null;
         }

@@ -38,4 +38,9 @@ public class AllJobsQuery implements JobQuery {
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
         return statusStore.getAllJobs(tableName);
     }
+
+    @Override
+    public Type getType() {
+        return Type.ALL;
+    }
 }

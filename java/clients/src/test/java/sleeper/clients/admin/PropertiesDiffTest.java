@@ -122,7 +122,7 @@ public class PropertiesDiffTest {
     @Nested
     class CompareUnknownProperties {
         @Test
-        void shouldDetectNoChanges() throws Exception {
+        void shouldDetectNoChanges() {
             // Given
             InstanceProperties before = new InstanceProperties(
                     loadProperties("unknown.property=1"));
@@ -134,7 +134,7 @@ public class PropertiesDiffTest {
         }
 
         @Test
-        void shouldDetectPropertyHasBeenUpdated() throws Exception {
+        void shouldDetectPropertyHasBeenUpdated() {
             // Given
             InstanceProperties before = new InstanceProperties(
                     loadProperties("unknown.property=1"));
@@ -147,7 +147,7 @@ public class PropertiesDiffTest {
         }
 
         @Test
-        void shouldDetectPropertyIsNewlySet() throws Exception {
+        void shouldDetectPropertyIsNewlySet() {
             // Given
             InstanceProperties before = new InstanceProperties();
             InstanceProperties after = new InstanceProperties(
@@ -159,7 +159,7 @@ public class PropertiesDiffTest {
         }
 
         @Test
-        void shouldDetectPropertyIsUnset() throws Exception {
+        void shouldDetectPropertyIsUnset() {
             // Given
             InstanceProperties before = new InstanceProperties(
                     loadProperties("unknown.property=12"));

@@ -71,7 +71,7 @@ public class InitialiseStateStoreIT {
         dynamoDBClient.shutdown();
     }
 
-    private static StateStore getStateStore(Schema schema) throws StateStoreException {
+    private static StateStore getStateStore(Schema schema) {
         String id = UUID.randomUUID().toString();
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
         return dynamoDBStateStoreCreator.create();

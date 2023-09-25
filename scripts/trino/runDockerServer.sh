@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 JARS_DIR="$THIS_DIR/jars"

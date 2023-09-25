@@ -22,6 +22,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.deploy.StacksForDockerUpload;
+import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.cdk.CdkCommand;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -30,17 +33,25 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.SleeperPropertyValues.readList;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
+import static sleeper.configuration.properties.instance.InstanceProperties.loadPropertiesFromS3GivenInstanceId;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStore {
@@ -49,31 +60,33 @@ public class AdminClientPropertiesStore {
     private final AmazonS3 s3;
     private final AmazonDynamoDB dynamoDB;
     private final InvokeCdkForInstance cdk;
+    private final DockerImageConfiguration dockerImageConfiguration;
+    private final UploadDockerImages uploadDockerImages;
     private final Path generatedDirectory;
 
-    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB, InvokeCdkForInstance cdk, Path generatedDirectory) {
+    public AdminClientPropertiesStore(AmazonS3 s3, AmazonDynamoDB dynamoDB,
+                                      InvokeCdkForInstance cdk, Path generatedDirectory, UploadDockerImages uploadDockerImages) {
         this.s3 = s3;
         this.dynamoDB = dynamoDB;
+        this.dockerImageConfiguration = new DockerImageConfiguration();
+        this.uploadDockerImages = uploadDockerImages;
         this.cdk = cdk;
         this.generatedDirectory = generatedDirectory;
     }
 
     public InstanceProperties loadInstanceProperties(String instanceId) {
-        InstanceProperties instanceProperties = new InstanceProperties();
         try {
-            instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        } catch (IOException | AmazonS3Exception e) {
+            return new InstanceProperties(loadPropertiesFromS3GivenInstanceId(s3, instanceId));
+        } catch (AmazonS3Exception e) {
             throw new CouldNotLoadInstanceProperties(instanceId, e);
         }
-        return instanceProperties;
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
         try {
-            TableProperties properties = new TableProperties(instanceProperties);
-            properties.loadFromS3(s3, tableName);
-            return properties;
-        } catch (AmazonS3Exception | IOException e) {
+            return new TableProperties(instanceProperties,
+                    TableProperties.loadPropertiesFromS3(s3, instanceProperties, tableName));
+        } catch (AmazonS3Exception e) {
             throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
         }
     }
@@ -94,8 +107,13 @@ public class AdminClientPropertiesStore {
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
         try {
             LOGGER.info("Saving to local configuration");
+            Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, properties, streamTableProperties(properties));
+            if (shouldUploadDockerImages(diff)) {
+                LOGGER.info("New stack has been added which requires a docker image. Uploading missing images.");
+                uploadDockerImages.upload(StacksForDockerUpload.from(properties));
+            }
             List<InstanceProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
             if (!propertiesDeployedByCdk.isEmpty()) {
                 LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
@@ -119,6 +137,20 @@ public class AdminClientPropertiesStore {
         }
     }
 
+    private boolean shouldUploadDockerImages(PropertiesDiff diff) {
+        Optional<PropertyDiff> stackDiffOptional = diff.getChanges().stream()
+                .filter(propertyDiff -> propertyDiff.getPropertyName().equals(OPTIONAL_STACKS.getPropertyName()))
+                .findFirst();
+        if (stackDiffOptional.isEmpty()) {
+            return false;
+        }
+        PropertyDiff stackDiff = stackDiffOptional.get();
+        Set<String> stacksBefore = new HashSet<>(readList(stackDiff.getOldValue()));
+        Set<String> newStacks = new HashSet<>(readList(stackDiff.getNewValue()));
+        newStacks.removeAll(stacksBefore);
+        return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
+    }
+
     public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
         saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
     }
@@ -128,6 +160,7 @@ public class AdminClientPropertiesStore {
         String tableName = properties.get(TABLE_NAME);
         try {
             LOGGER.info("Saving to local configuration");
+            Files.createDirectories(generatedDirectory);
             ClientUtils.clearDirectory(generatedDirectory);
             SaveLocalProperties.saveToDirectory(generatedDirectory, instanceProperties,
                     streamTableProperties(instanceProperties)
@@ -159,6 +192,10 @@ public class AdminClientPropertiesStore {
         InstanceProperties instanceProperties = loadInstanceProperties(instanceId);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return stateStoreProvider.getStateStore(tableProperties);
+    }
+
+    public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
+        return new TablePropertiesProvider(s3, properties);
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {

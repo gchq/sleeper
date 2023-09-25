@@ -39,7 +39,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -63,7 +62,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void init(TableProperties tableProperties) throws StateStoreException {
+    protected void init(TableProperties tableProperties) {
     }
 
     @Override
@@ -226,9 +225,9 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws StateStoreException {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

@@ -2,7 +2,60 @@ Releases
 =========
 
 This page documents the releases of Sleeper. Performance figures for each release
-are available [here](docs/12-performance-test.md)
+are available [here](docs/13-system-tests.md#performance-benchmarks)
+
+## Version 0.19.0
+
+This contains the following improvements:
+
+Bulk Import:
+
+- Use official Spark Docker image for bulk import in an EKS Kubernetes cluster
+- Added support for EMR Serverless in the ingest batcher
+
+Deployment:
+
+- Added ability to deploy to Docker with LocalStack
+
+Tests:
+
+- Converted all system tests to run through JUnit-based DSL
+- Added performance test for ingest
+- Added functional system tests for
+    - Ingest
+    - Queries, SQS and direct
+    - Bulk import via persistent EMR cluster
+    - Python API
+- Added Maven site reports to nightly system test output
+- Improved output of Sleeper reports in nightly system tests
+- Allow running either functional or performance test suite in nightly system tests
+- Improved integration test coverage of ingest and partition splitting
+
+Documentation:
+
+- Documented system tests
+- Updated deployment guide
+- Updated getting started guide
+- Updated release process
+
+Misc:
+
+- Added a utility script to show Parquet file page indexes
+- Upgraded to use EMR version 6.13.0 and Spark 3.4.1
+- Logging improvements in ingest, compaction, ingest batcher
+- Use Python conventions for non-release version numbers in Python code
+
+Bugfixes:
+
+- Ingest batcher can now include any number of files in a batch
+- Setting a property to an empty string will now behave the same as not setting it at all
+- Admin client can now load properties which were set to an invalid value, and fix them
+- Made reports output correctly based on query type when the query type was prompted
+- Improved teardown of EMR Serverless to properly stop jobs and application before invoking CDK
+- Scripts no longer fail when CDPATH variable is set
+- Stopped building unused fat jars
+- Stopped tear down and admin client failing when generated directory does not exist
+- Prune Docker system in nightly tests to avoid disk filling up with images
 
 ## Version 0.18.0
 
@@ -75,7 +128,7 @@ This contains the following improvements:
 Ingest batcher:
 
 - Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md)
-  and [docs/10-design.md](./docs/10-design.md) for more information.
+  and [docs/10-design.md](./docs/12-design.md) for more information.
 
 Bulk Import:
 
@@ -112,7 +165,7 @@ This contains the following improvements:
 
 Trino:
 
-- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/13-trino.md). This is an
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/09-trino.md). This is an
   experimental feature.
 
 Bulk Import:

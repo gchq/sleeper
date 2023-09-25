@@ -58,7 +58,7 @@ public class TableInitialiser {
     public void initialise(InstanceProperties instanceProperties,
                            TableProperties tableProperties,
                            String configBucket,
-                           Configuration configuration) throws IOException {
+                           Configuration configuration) {
         StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, configuration).getStateStore(tableProperties);
         List<Object> splitPoints = getSplitPoints(tableProperties, configBucket);
         try {

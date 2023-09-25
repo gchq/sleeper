@@ -83,7 +83,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
 
     public static void main(String[] args) {
         if (args.length != 3) {
-            throw new IllegalArgumentException("Usage: <instance id> <table name> <exported_partitions_file_location>");
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <exported-partitions-file-location>");
         }
         String instanceId = args[0];
         String tableName = args[1];

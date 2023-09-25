@@ -54,7 +54,7 @@ public class SetupInstanceIT {
     }
 
     @Test
-    void shouldIngestOneRecord() {
+    void shouldIngestOneRecord() throws InterruptedException {
         // Given
         Record record = new Record(Map.of(
                 "key", "some-id",
@@ -71,7 +71,7 @@ public class SetupInstanceIT {
 
     @Test
     @DisabledIf("systemTestClusterDisabled")
-    void shouldIngestSomeData() throws InterruptedException {
+    void shouldIngestWithSystemTestCluster() throws InterruptedException {
         // When
         sleeper.systemTestCluster().updateProperties(properties -> {
             properties.set(INGEST_MODE, IngestMode.QUEUE.toString());
@@ -82,7 +82,7 @@ public class SetupInstanceIT {
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .hasSize(246);
-        assertThat(sleeper.systemTestCluster().ingestJobIdsInSourceBucket())
+        assertThat(sleeper.systemTestCluster().findIngestJobIdsInSourceBucket())
                 .hasSize(2)
                 .containsExactlyInAnyOrderElementsOf(sleeper.reporting().ingestJobs().jobIds());
     }

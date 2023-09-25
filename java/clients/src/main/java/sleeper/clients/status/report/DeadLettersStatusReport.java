@@ -100,9 +100,9 @@ public class DeadLettersStatusReport {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);

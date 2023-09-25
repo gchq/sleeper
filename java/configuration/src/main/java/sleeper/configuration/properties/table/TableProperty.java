@@ -240,7 +240,7 @@ public interface TableProperty extends SleeperProperty {
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
-                    "in the EMR cluster. Must be either \"x86\" \"arm64\" or \"x86,arm64\". " +
+                    "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
@@ -481,6 +481,10 @@ public interface TableProperty extends SleeperProperty {
 
     static List<TableProperty> getSystemDefined() {
         return Index.INSTANCE.getSystemDefined();
+    }
+
+    static List<TableProperty> getUserDefined() {
+        return Index.INSTANCE.getUserDefined();
     }
 
     static boolean has(String propertyName) {

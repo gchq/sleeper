@@ -23,8 +23,6 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import sleeper.configuration.properties.SleeperScheduleRule;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Properties;
@@ -149,11 +147,7 @@ public class PopulateInstanceProperties {
 
         public Builder instanceProperties(Path propertiesPath) {
             this.properties = new InstanceProperties();
-            try {
-                this.properties.load(propertiesPath);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            this.properties.load(propertiesPath);
             return this;
         }
 

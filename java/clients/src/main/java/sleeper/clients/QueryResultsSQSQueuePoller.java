@@ -51,7 +51,7 @@ public class QueryResultsSQSQueuePoller {
         this.resultsSQSQueueUrl = resultsSQSQueueUrl;
     }
 
-    public void run() throws IOException {
+    public void run() {
         int numConsecutiveNoMessages = 0;
         while (numConsecutiveNoMessages < 15) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
@@ -82,7 +82,7 @@ public class QueryResultsSQSQueuePoller {
 
     public static void main(String[] args) throws IOException {
         if (1 != args.length) {
-            throw new IllegalArgumentException("Usage: <instance id>");
+            throw new IllegalArgumentException("Usage: <instance-id>");
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();

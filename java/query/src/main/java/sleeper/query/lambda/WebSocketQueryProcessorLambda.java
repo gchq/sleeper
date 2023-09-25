@@ -41,7 +41,6 @@ import sleeper.query.model.output.WebSocketResultsOutput;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -55,7 +54,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
     private final AmazonSQS sqsClient;
     private final String queryQueueUrl;
 
-    public WebSocketQueryProcessorLambda() throws IOException {
+    public WebSocketQueryProcessorLambda() {
         this(
                 AmazonS3ClientBuilder.defaultClient(),
                 AmazonSQSClientBuilder.defaultClient(),
@@ -63,7 +62,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         );
     }
 
-    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, String configBucket) throws IOException {
+    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);

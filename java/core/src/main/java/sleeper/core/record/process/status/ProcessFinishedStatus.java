@@ -20,7 +20,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.time.Instant;
 import java.util.Objects;
 
-public class ProcessFinishedStatus implements ProcessStatusUpdate {
+public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
     private final RecordsProcessedSummary summary;
@@ -40,11 +40,6 @@ public class ProcessFinishedStatus implements ProcessStatusUpdate {
 
     public RecordsProcessedSummary getSummary() {
         return summary;
-    }
-
-    @Override
-    public boolean isPartOfRun() {
-        return true;
     }
 
     @Override

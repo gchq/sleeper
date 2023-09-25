@@ -28,8 +28,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.ingest.task.IngestTaskStatusStore;
 
-import java.io.IOException;
-
 public class IngestTaskStatusReport {
     private final IngestTaskStatusStore statusStore;
 
@@ -49,7 +47,7 @@ public class IngestTaskStatusReport {
         reporter.report(query, query.run(statusStore));
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         IngestTaskStatusReportArguments arguments;
         try {
             arguments = IngestTaskStatusReportArguments.fromArgs(args);

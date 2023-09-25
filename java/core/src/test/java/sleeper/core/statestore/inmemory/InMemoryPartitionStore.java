@@ -19,7 +19,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,12 +39,12 @@ public class InMemoryPartitionStore implements PartitionStore {
     }
 
     @Override
-    public List<Partition> getAllPartitions() throws StateStoreException {
+    public List<Partition> getAllPartitions() {
         return partitions;
     }
 
     @Override
-    public List<Partition> getLeafPartitions() throws StateStoreException {
+    public List<Partition> getLeafPartitions() {
         return partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toUnmodifiableList());

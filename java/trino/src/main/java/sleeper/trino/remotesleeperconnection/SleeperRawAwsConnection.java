@@ -53,7 +53,6 @@ import sleeper.statestore.StateStoreProvider;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +115,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                             AmazonS3 s3Client,
                             S3AsyncClient s3AsyncClient,
                             AmazonDynamoDB dynamoDbClient,
-                            HadoopConfigurationProvider hadoopConfigurationProvider) throws IOException, ObjectFactoryException {
+                            HadoopConfigurationProvider hadoopConfigurationProvider) throws ObjectFactoryException {
         requireNonNull(sleeperConfig);
         this.sleeperConfig = sleeperConfig;
         this.s3Client = requireNonNull(s3Client);

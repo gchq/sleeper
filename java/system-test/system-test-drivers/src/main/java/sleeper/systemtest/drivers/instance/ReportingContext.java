@@ -37,16 +37,20 @@ import static java.nio.file.StandardOpenOption.CREATE;
 public class ReportingContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReportingContext.class);
 
-    private final SystemTestParameters parameters;
+    private final Path outputDirectory;
     private Instant recordingStartTime = Instant.now();
 
     public ReportingContext(SystemTestParameters parameters) {
-        this.parameters = parameters;
+        this(parameters.getOutputDirectory());
+    }
+
+    public ReportingContext(Path outputDirectory) {
+        this.outputDirectory = outputDirectory;
     }
 
     public void startRecording() {
         recordingStartTime = Instant.now();
-        LOGGER.info("Ingest recording window started at {}", recordingStartTime);
+        LOGGER.info("Reports recording window started at {}", recordingStartTime);
     }
 
     public Instant getRecordingStartTime() {
@@ -60,7 +64,6 @@ public class ReportingContext {
     }
 
     private ReportHandle openReport(TestContext testContext) {
-        Path outputDirectory = parameters.getOutputDirectory();
         if (outputDirectory != null) {
             return new FileWriter(outputDirectory.resolve(
                     testContext.getTestClassAndMethod() + ".report.log"));

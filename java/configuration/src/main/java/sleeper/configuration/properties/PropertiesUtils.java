@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,20 +35,25 @@ public class PropertiesUtils {
     private PropertiesUtils() {
     }
 
-
-    public static Properties loadProperties(Path file) throws IOException {
+    public static Properties loadProperties(Path file) {
         try (BufferedReader reader = Files.newBufferedReader(file)) {
             return loadProperties(reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    public static Properties loadProperties(String input) throws IOException {
+    public static Properties loadProperties(String input) {
         return loadProperties(new StringReader(input));
     }
 
-    public static Properties loadProperties(Reader reader) throws IOException {
+    public static Properties loadProperties(Reader reader) {
         Properties properties = new Properties();
-        properties.load(reader);
+        try {
+            properties.load(reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return properties;
     }
 

@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -65,7 +64,7 @@ public class SleeperPropertiesValidationTest {
         }
 
         @Test
-        void shouldThrowExceptionOnLoadIfInstancePropertiesValidationFails() throws Exception {
+        void shouldThrowExceptionOnLoadIfInstancePropertiesValidationFails() {
             // Given
             String serialised = invalidInstanceProperties().saveAsString();
 
@@ -76,7 +75,7 @@ public class SleeperPropertiesValidationTest {
         }
 
         @Test
-        void shouldThrowExceptionOnLoadIfTablePropertiesValidationFails() throws IOException {
+        void shouldThrowExceptionOnLoadIfTablePropertiesValidationFails() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             String serialised = invalidTableProperties(instanceProperties).saveAsString();
@@ -88,7 +87,7 @@ public class SleeperPropertiesValidationTest {
         }
 
         @Test
-        void shouldNotValidateWhenConstructingInstanceProperties() throws IOException {
+        void shouldNotValidateWhenConstructingInstanceProperties() {
             // Given
             Properties properties = loadProperties(invalidInstanceProperties().saveAsString());
 
@@ -98,7 +97,7 @@ public class SleeperPropertiesValidationTest {
         }
 
         @Test
-        void shouldNotValidateWhenConstructingTableProperties() throws IOException {
+        void shouldNotValidateWhenConstructingTableProperties() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             Properties properties = loadProperties(invalidTableProperties(instanceProperties).saveAsString());

@@ -23,24 +23,27 @@ import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 import java.util.List;
 import java.util.function.Predicate;
 
+import static sleeper.configuration.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
+
 public interface EMRServerlessProperty {
 
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
-            .description("The architecture for EMR Serverless to use. X86_64 or ARM (Coming soon)")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue(EmrInstanceArchitecture.X86_64.toString())
+            .description("The architecture for EMR Serverless to use. X86_64 or ARM64 (Coming soon)")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue("X86_64")
             .validationPredicate(Predicate.isEqual(EmrInstanceArchitecture.X86_64.toString()))
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_RELEASE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.release")
             .description("The version of EMR Serverless to use.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue("emr-6.10.0")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.repo")
             .description("The name of the repository for the EMR serverless container. "
-                            + "The Docker image from the bulk-import module "
-                            + "should have been uploaded to an ECR repository of this name in this account.")
+                    + "The Docker image from the bulk-import module "
+                    + "should have been uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index
@@ -99,7 +102,7 @@ public interface EMRServerlessProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.enabled")
             .description("Whether Spark should use dynamic allocation to scale resources up and down. "
-                            + "Used to set spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.")
+                    + "Used to set spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
@@ -138,7 +141,7 @@ public interface EMRServerlessProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
 
-            UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_NETWORK_TIMEOUT = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.network.timeout")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_NETWORK_TIMEOUT = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.network.timeout")
             .description("The default timeout for network interactions in Spark. Used to set spark.network.timeout.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("800s")

@@ -27,7 +27,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -50,7 +49,7 @@ public class WriteParquetFile implements FlatMapFunction<Iterator<Row>, Row>, Ma
     }
 
     @Override
-    public Iterator<Row> call(Iterator<Row> rowIter) throws IOException {
+    public Iterator<Row> call(Iterator<Row> rowIter) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromString(instancePropertiesStr);
 

@@ -25,8 +25,6 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
-
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
 public interface SystemTestProperty extends InstanceProperty {
@@ -84,15 +82,6 @@ public interface SystemTestProperty extends InstanceProperty {
                     "but the file is not ingested. The ingest will have to be performed manually in a seperate step.")
             .defaultValue(IngestMode.DIRECT.toString())
             .validationPredicate(s -> EnumUtils.isValidEnumIgnoreCase(IngestMode.class, s)).build();
-    SystemTestProperty NUMBER_OF_BULK_IMPORT_JOBS = Index.propertyBuilder("sleeper.systemtest.bulkimport.jobs")
-            .description("The number of jobs that should be sent to the bulk import queue. " +
-                    "Only applies when sending bulk import jobs with the SendBulkImportJobs class.\n" +
-                    "When using the ingest mode 'generate_only', this will take all generated data files, and send a " +
-                    "number of bulk import jobs that each import all of those files.")
-            .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();
-    SystemTestProperty BULK_IMPORT_QUEUE_PROPERTY = Index.propertyBuilder("sleeper.systemtest.bulkimport.queue.property")
-            .description("The property for the bulk import queue which jobs should be sent to in SendBulkImportJobs.")
-            .defaultValue(BULK_IMPORT_EMR_JOB_QUEUE_URL.getPropertyName()).build();
     SystemTestProperty NUMBER_OF_WRITERS = Index.propertyBuilder("sleeper.systemtest.writers")
             .description("The number of containers that write random data")
             .defaultValue("1").validationPredicate(Utils::isPositiveInteger).build();

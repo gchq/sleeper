@@ -35,6 +35,10 @@ public interface CdkCommand {
         return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).deployPaused(false).build();
     }
 
+    static CdkDeploy deployExistingPaused() {
+        return CdkDeploy.builder().ensureNewInstance(false).skipVersionCheck(true).deployPaused(true).build();
+    }
+
     static CdkDeploy deployNew() {
         return CdkDeploy.builder().ensureNewInstance(true).skipVersionCheck(false).deployPaused(false).build();
     }

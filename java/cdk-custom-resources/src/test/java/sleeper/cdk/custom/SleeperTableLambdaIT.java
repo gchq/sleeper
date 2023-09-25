@@ -37,7 +37,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +97,7 @@ public class SleeperTableLambdaIT {
     }
 
     @Test
-    public void shouldInitialiseTheStateStoreWithNoSplitPointsOnCreate() throws IOException {
+    public void shouldInitialiseTheStateStoreWithNoSplitPointsOnCreate() {
         // Given
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -121,7 +120,7 @@ public class SleeperTableLambdaIT {
     }
 
     @Test
-    public void shouldCreatePropertiesFileOnCreate() throws IOException {
+    public void shouldCreatePropertiesFileOnCreate() {
         // Given
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -145,7 +144,7 @@ public class SleeperTableLambdaIT {
     }
 
     @Test
-    public void shouldDeletePropertiesFileOnDelete() throws IOException {
+    public void shouldDeletePropertiesFileOnDelete() {
         // Given
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -170,7 +169,7 @@ public class SleeperTableLambdaIT {
     }
 
     @Test
-    public void shouldUpdatePropertiesOnUpdate() throws IOException {
+    public void shouldUpdatePropertiesOnUpdate() {
         // Given
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -239,13 +238,8 @@ public class SleeperTableLambdaIT {
 
     private Map<String, Object> createInput(InstanceProperties instanceProperties, TableProperties tableProperties) {
         Map<String, Object> input = new HashMap<>();
-        try {
-            input.put("instanceProperties", instanceProperties.saveAsString());
-            input.put("tableProperties", tableProperties.saveAsString());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to save tableProperties");
-        }
-
+        input.put("instanceProperties", instanceProperties.saveAsString());
+        input.put("tableProperties", tableProperties.saveAsString());
         return input;
     }
 }

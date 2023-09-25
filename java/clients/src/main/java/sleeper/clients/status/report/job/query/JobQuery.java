@@ -31,6 +31,8 @@ public interface JobQuery {
 
     List<IngestJobStatus> run(IngestJobStatusStore statusStore);
 
+    Type getType();
+
     static JobQuery from(String tableName, Type queryType, String queryParameters, Clock clock) {
         if (queryType.isParametersRequired() && queryParameters == null) {
             throw new IllegalArgumentException("No parameters provided for query type " + queryType);

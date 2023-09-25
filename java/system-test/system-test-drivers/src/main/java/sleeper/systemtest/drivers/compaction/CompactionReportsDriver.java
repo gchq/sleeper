@@ -23,14 +23,12 @@ import sleeper.clients.status.report.CompactionTaskStatusReport;
 import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusReporter;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestReport;
@@ -39,32 +37,37 @@ import java.time.Instant;
 import java.util.List;
 
 public class CompactionReportsDriver {
-    private final CompactionTaskStatusStore compactionTaskStatusStore;
-    private final CompactionJobStatusStore compactionJobStatusStore;
     private final SleeperInstanceContext instance;
+    private final AmazonDynamoDB dynamoDB;
 
-    public CompactionReportsDriver(AmazonDynamoDB dynamoDB, SleeperInstanceContext instance) {
-        InstanceProperties properties = instance.getInstanceProperties();
-        this.compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, properties);
-        this.compactionJobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, properties);
+    public CompactionReportsDriver(SleeperInstanceContext instance, AmazonDynamoDB dynamoDB) {
         this.instance = instance;
+        this.dynamoDB = dynamoDB;
     }
 
     public SystemTestReport tasksAndJobsReport() {
         return (out, startTime) -> {
-            new CompactionTaskStatusReport(compactionTaskStatusStore,
+            new CompactionTaskStatusReport(taskStore(),
                     new StandardCompactionTaskStatusReporter(out),
                     CompactionTaskQuery.forPeriod(startTime, Instant.MAX))
                     .run();
-            new CompactionJobStatusReport(compactionJobStatusStore,
+            new CompactionJobStatusReport(jobStore(),
                     new StandardCompactionJobStatusReporter(out),
-                    JobQuery.Type.RANGE, new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX))
+                    new RangeJobsQuery(instance.getTableName(), startTime, Instant.MAX))
                     .run();
         };
     }
 
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
         return new RangeJobsQuery(instance.getTableName(), reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(compactionJobStatusStore);
+                .run(jobStore());
+    }
+
+    private CompactionJobStatusStore jobStore() {
+        return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+    }
+
+    private CompactionTaskStatusStore taskStore() {
+        return CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
     }
 }

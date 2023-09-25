@@ -19,8 +19,6 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
@@ -40,9 +38,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
@@ -97,7 +93,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total jobs in progress: 1\n" +
                             "Total jobs finished: 0");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         @Test
@@ -121,7 +117,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total jobs in progress: 1\n" +
                             "-");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         @Test
@@ -142,7 +138,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "------------------------\n" +
                             "Details for job test-job");
 
-            verifyWithNumberOfInvocations(5);
+            verifyWithNumberOfPromptsBeforeExit(5);
         }
 
         @Test
@@ -167,7 +163,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total jobs waiting across all queues: 10\n" +
                             "Total jobs in defined range: 1\n");
 
-            verifyWithNumberOfInvocations(6);
+            verifyWithNumberOfPromptsBeforeExit(6);
         }
 
         @Test
@@ -190,7 +186,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total jobs waiting across all queues: 10\n" +
                             "Total jobs rejected: 1");
 
-            verifyWithNumberOfInvocations(4);
+            verifyWithNumberOfPromptsBeforeExit(4);
         }
 
         private RunAdminClient runIngestJobStatusReport() {
@@ -252,7 +248,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "Total tasks in progress: 1\n" +
                             "Total tasks finished: 0");
 
-            verifyWithNumberOfInvocations(3);
+            verifyWithNumberOfPromptsBeforeExit(3);
         }
 
         @Test
@@ -273,7 +269,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                             "-------------------------\n" +
                             "Total tasks in progress: 1\n");
 
-            verifyWithNumberOfInvocations(3);
+            verifyWithNumberOfPromptsBeforeExit(3);
         }
 
         private RunAdminClient runIngestTaskStatusReport() {
@@ -301,14 +297,6 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
                         INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
-        verifyWithNumberOfInvocations(1);
-    }
-
-    private void verifyWithNumberOfInvocations(int numberOfInvocations) {
-        InOrder order = Mockito.inOrder(in.mock);
-        order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
-        order.verify(in.mock).waitForLine();
-        order.verify(in.mock).promptLine(any());
-        order.verifyNoMoreInteractions();
+        verifyWithNumberOfPromptsBeforeExit(1);
     }
 }

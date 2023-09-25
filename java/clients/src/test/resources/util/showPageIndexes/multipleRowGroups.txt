@@ -1,0 +1,100 @@
+Row group 0
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0001                                  row-0100                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                         4               141                     0
+
+Row group 1
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0101                                  row-0200                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       145               140                     0
+
+Row group 2
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0201                                  row-0300                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       285               141                     0
+
+Row group 3
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0301                                  row-0400                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       426               141                     0
+
+Row group 4
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0401                                  row-0500                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       567               141                     0
+
+Row group 5
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0501                                  row-0600                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       708               141                     0
+
+Row group 6
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0601                                  row-0700                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       849               141                     0
+
+Row group 7
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0701                                  row-0800                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                       990               141                     0
+
+Row group 8
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0801                                  row-0900                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                      1131               141                     0
+
+Row group 9
+Column index for column test-key
+Boundary order: ASCENDING
+                      null count  min                                       max                                     
+page-0                         0  row-0901                                  row-1000                                
+
+Page index for column test-key
+                          offset   compressed size       first row index
+page-0                      1272               142                     0
+

@@ -19,50 +19,104 @@ import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.core.key.Key;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
-import sleeper.ingest.testutils.IngestTestHelper;
+import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
+import sleeper.ingest.testutils.ResultVerifier;
 
-import java.nio.file.Path;
-import java.util.AbstractMap;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.nio.file.Files.createTempDirectory;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
+import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 
-class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT {
-    @TempDir
-    public Path temporaryFolder;
+class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT extends DirectWriteBackedByArrowTestBase {
 
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 1),
-                        new AbstractMap.SimpleEntry<>(1, 1))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        test(recordListAndSchema, arrow -> arrow
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("leftFile", "rightFile"))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
+
+        // When
+        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(16 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+                .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L));
+
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        FileInfo leftFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
+                "/partition_left/leftFile.parquet", 10000, -10000L, -1L);
+        FileInfo rightFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
+                "/partition_right/rightFile.parquet", 10000, 0L, 9999L);
+
+        List<Record> leftFileRecords = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile, new Configuration());
+        List<Record> rightFileRecords = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile, new Configuration());
+        List<Record> actualRecords = Stream.of(leftFileRecords, rightFileRecords)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
+
+        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualRecords).extracting(record -> record.get("key0"))
+                .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
+                        .collect(Collectors.toList()));
+        assertThat(leftFileRecords).extracting(record -> record.get("key0"))
+                .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
+                        .collect(Collectors.toList()));
+        assertThat(rightFileRecords).extracting(record -> record.get("key0"))
+                .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
+                        .collect(Collectors.toList()));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                configuration
+        );
     }
 
     @Test
@@ -70,50 +124,105 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 2),
-                        new AbstractMap.SimpleEntry<>(1, 2))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        test(recordListAndSchema, arrow -> arrow
+        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildTree();
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
+
+        // When
+        ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
                 .workingBufferAllocatorBytes(16 * 1024 * 1024L)
                 .batchBufferAllocatorBytes(16 * 1024 * 1024L)
-                .maxNoOfBytesToWriteLocally(2 * 1024 * 1024L)
-        ).ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap);
+                .maxNoOfBytesToWriteLocally(2 * 1024 * 1024L));
+
+        // Then
+        List<FileInfo> actualFiles = stateStore.getActiveFiles();
+        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
+                .partitionTree(tree)
+                .lastStateStoreUpdate(stateStoreUpdateTime)
+                .schema(recordListAndSchema.sleeperSchema)
+                .build();
+        FileInfo leftFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
+                "/partition_left/leftFile1.parquet", 5950, -9999L, -1L);
+        FileInfo leftFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
+                "/partition_left/leftFile2.parquet", 4050, -10000L, -3L);
+        FileInfo rightFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
+                "/partition_right/rightFile1.parquet", 6050, 1L, 9998L);
+        FileInfo rightFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
+                "/partition_right/rightFile2.parquet", 3950, 0L, 9999L);
+
+        List<Record> leftFile1Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile1, configuration);
+        List<Record> leftFile2Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, leftFile2, configuration);
+        List<Record> rightFile1Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile1, configuration);
+        List<Record> rightFile2Records = readRecordsFromPartitionDataFile(
+                recordListAndSchema.sleeperSchema, rightFile2, configuration);
+        List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
+
+        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
+        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile1Records,
+                "key0", LongStream.range(-9999L, 0));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile2Records,
+                "key0", LongStream.range(-10000L, -2));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile1Records,
+                "key0", LongStream.range(1L, 9999));
+        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile2Records,
+                "key0", LongStream.range(0, 10000));
+
+        ResultVerifier.assertOnSketch(
+                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
+                recordListAndSchema,
+                actualFiles,
+                configuration
+        );
     }
 
     @Test
-    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws Exception {
+    void shouldErrorWhenBatchBufferAndWorkingBufferAreSmall() throws IOException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        Function<Key, Integer> keyToPartitionNoMappingFn = key -> (((Long) key.get(0)) < 0L) ? 0 : 1;
-        Map<Integer, Integer> partitionNoToExpectedNoOfFilesMap = Stream.of(
-                        new AbstractMap.SimpleEntry<>(0, 2),
-                        new AbstractMap.SimpleEntry<>(1, 2))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        IngestTestHelper<RecordList> test = test(recordListAndSchema, arrow -> arrow
+        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
+                new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                        .rootFirst("root")
+                        .splitToNewChildren("root", "left", "right", 0L)
+                        .buildList()
+        );
+        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
+                .fileNames(List.of("leftFile", "rightFile"))
+                .fileUpdatedTimes(() -> stateStoreUpdateTime)
+                .stateStore(stateStore)
+                .schema(recordListAndSchema.sleeperSchema)
+                .workingDir(ingestLocalWorkingDirectory)
+                .build();
+
+        // When
+        assertThatThrownBy(() -> ingestRecords(recordListAndSchema, parameters, arrowConfig -> arrowConfig
                 .workingBufferAllocatorBytes(32 * 1024L)
                 .batchBufferAllocatorBytes(32 * 1024L)
-                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L));
-        assertThatThrownBy(() ->
-                test.ingestAndVerify(keyToPartitionNoMappingFn, partitionNoToExpectedNoOfFilesMap))
+                .maxNoOfBytesToWriteLocally(64 * 1024 * 1024L)))
                 .isInstanceOf(OutOfMemoryException.class)
                 .hasNoSuppressedExceptions();
     }
 
-    private IngestTestHelper<RecordList> test(RecordGenerator.RecordListAndSchema recordListAndSchema,
-                                              Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) throws Exception {
-        return IngestTestHelper.from(temporaryFolder,
-                        new Configuration(),
-                        recordListAndSchema)
-                .stateStoreInMemory(partitions -> partitions.treeWithSingleSplitPoint(0L))
-                .directWrite()
-                .backedByArrowWithRecordWriter(new ArrowRecordWriterAcceptingRecordList(), arrowConfig)
-                .toWrite(buildScrambledRecordLists(recordListAndSchema));
-    }
-
-    private List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
+    private static List<RecordList> buildScrambledRecordLists(RecordGenerator.RecordListAndSchema recordListAndSchema) {
         RecordList[] recordLists = new RecordList[5];
         for (int i = 0; i < recordLists.length; i++) {
             recordLists[i] = new RecordList();
@@ -127,6 +236,22 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
             }
         }
         return List.of(recordLists);
+    }
+
+    private static void ingestRecords(RecordGenerator.RecordListAndSchema recordListAndSchema,
+                                      IngestCoordinatorTestParameters parameters,
+                                      Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) throws Exception {
+        try (IngestCoordinator<RecordList> ingestCoordinator = createIngestCoordinator(parameters, arrowConfig)) {
+            for (RecordList recordList : buildScrambledRecordLists(recordListAndSchema)) {
+                ingestCoordinator.write(recordList);
+            }
+        }
+    }
+
+    private static IngestCoordinator<RecordList> createIngestCoordinator(IngestCoordinatorTestParameters parameters,
+                                                                         Consumer<ArrowRecordBatchFactory.Builder<RecordList>> arrowConfig) {
+        return ingestCoordinatorDirectWriteBackedByArrow(parameters, parameters.getLocalFilePrefix(),
+                arrowConfig, new ArrowRecordWriterAcceptingRecordList());
     }
 
     static class RecordList {

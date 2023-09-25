@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.teardown.RemoveECRRepositories;
 import sleeper.clients.teardown.RemoveJarsBucket;
 import sleeper.clients.teardown.TearDownInstance;
@@ -43,7 +44,7 @@ public class TearDownMavenSystemTest {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 2) {
-            throw new IllegalArgumentException("Usage: <scripts directory> <short id> <instance ids>");
+            throw new IllegalArgumentException("Usage: <scripts-directory> <short-id> <instance-ids>");
         }
         Path scriptsDir = Path.of(args[0]);
         String shortId = args[1];
@@ -72,6 +73,8 @@ public class TearDownMavenSystemTest {
             RemoveJarsBucket.remove(s3, buildJarsBucketName(shortId));
         }
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
-        RemoveECRRepositories.deleteRepository(ecr, buildSystemTestECRRepoName(shortId));
+        RemoveECRRepositories.remove(ecr,
+                PopulateInstanceProperties.generateTearDownDefaultsFromInstanceId(shortId),
+                List.of(buildSystemTestECRRepoName(shortId)));
     }
 }

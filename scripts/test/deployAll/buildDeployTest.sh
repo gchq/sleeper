@@ -14,9 +14,10 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <uniqueId> <vpc> <subnet>"
+  echo "Usage: $0 <instance-id> <vpc> <subnet>"
   exit 1
 fi
 

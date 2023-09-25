@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +13,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
+unset CDPATH
 
 BASE_DIR=$(cd "$(dirname "$0")" && cd "../../" && pwd)
 MAVEN_DIR="$BASE_DIR/java"
@@ -23,7 +26,7 @@ DOCKER_DIR="$SCRIPTS_DIR/docker"
 VERSION_FILE="$SCRIPTS_DIR/templates/version.txt"
 
 if [ "$#" -lt 1 ]; then
-  MAVEN_PARAMS=(clean install -q -Pquick)
+  MAVEN_PARAMS=(clean install -q -Pquick -T 1C)
 else
   MAVEN_PARAMS=("$@")
 fi

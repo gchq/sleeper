@@ -26,8 +26,12 @@ import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.regions.providers.AwsRegionProvider;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
@@ -39,6 +43,8 @@ public class SystemTestClients {
     private final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
     private final S3Client s3V2 = S3Client.create();
     private final AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+    private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.defaultClient();
+    private final AwsRegionProvider regionProvider = DefaultAwsRegionProviderChain.builder().build();
     private final AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     private final LambdaClient lambda = createSystemTestLambdaClient();
     private final CloudFormationClient cloudFormation = CloudFormationClient.create();
@@ -57,6 +63,14 @@ public class SystemTestClients {
 
     public AmazonDynamoDB getDynamoDB() {
         return dynamoDB;
+    }
+
+    public AWSSecurityTokenService getSts() {
+        return sts;
+    }
+
+    public AwsRegionProvider getRegionProvider() {
+        return regionProvider;
     }
 
     public AmazonSQS getSqs() {

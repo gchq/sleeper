@@ -32,7 +32,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 @SuppressFBWarnings("URF_UNREAD_FIELD") // Fields are read by GSON
@@ -42,30 +44,30 @@ public class WaitForJobsStatus {
             .registerTypeAdapter(Duration.class, durationSerializer())
             .create();
 
-    private final int numUnstarted;
-    private final int numInProgress;
-    private final int numFinished;
+    private final Map<String, Integer> countByLastStatus;
+    private final Integer numUnstarted;
+    private final int numUnfinished;
     private final Instant firstInProgressStartTime;
     private final Duration longestInProgressDuration;
 
     private WaitForJobsStatus(Builder builder) {
+        countByLastStatus = builder.countByLastStatus;
         numUnstarted = builder.numUnstarted;
-        numInProgress = builder.numInProgress;
-        numFinished = builder.numFinished;
+        numUnfinished = builder.numUnfinished;
         firstInProgressStartTime = builder.firstInProgressStartTime;
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobStatusStore store, Collection<String> jobIds) {
-        return forGeneric(store::getJob, IngestJobStatus::getJobRuns, jobIds);
+    public static WaitForJobsStatus forIngest(IngestJobStatusStore store, Collection<String> jobIds, Instant now) {
+        return forGeneric(store::getJob, IngestJobStatus::getJobRuns, jobIds, now);
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobStatusStore store, Collection<String> jobIds) {
-        return forGeneric(store::getJob, CompactionJobStatus::getJobRuns, jobIds);
+    public static WaitForJobsStatus forCompaction(CompactionJobStatusStore store, Collection<String> jobIds, Instant now) {
+        return forGeneric(store::getJob, CompactionJobStatus::getJobRuns, jobIds, now);
     }
 
     public boolean isAllFinished() {
-        return numUnstarted == 0 && numInProgress == 0;
+        return numUnfinished == 0;
     }
 
     public String toString() {
@@ -73,8 +75,8 @@ public class WaitForJobsStatus {
     }
 
     private static <T> WaitForJobsStatus forGeneric(
-            JobStatusStore<T> store, Function<T, List<ProcessRun>> getRuns, Collection<String> jobIds) {
-        Builder builder = new Builder();
+            JobStatusStore<T> store, Function<T, List<ProcessRun>> getRuns, Collection<String> jobIds, Instant now) {
+        Builder builder = new Builder(now);
         for (String jobId : jobIds) {
             store.getJob(jobId).ifPresentOrElse(
                     status -> builder.addJob(getRuns.apply(status)),
@@ -92,24 +94,26 @@ public class WaitForJobsStatus {
     }
 
     public static final class Builder {
-        private int numUnstarted;
-        private int numInProgress;
-        private int numFinished;
+        private Map<String, Integer> countByLastStatus = new TreeMap<>();
+        private Integer numUnstarted;
+        private int numUnfinished;
         private Instant firstInProgressStartTime;
         private Duration longestInProgressDuration;
-        private final Instant now = Instant.now();
+        private final Instant now;
 
-        private Builder() {
+        private Builder(Instant now) {
+            this.now = now;
         }
 
-        public void addJob(List<ProcessRun> runs) {
-            if (runs.isEmpty()) {
-                numUnstarted++;
+        public void addJob(List<ProcessRun> runsLatestFirst) {
+            if (runsLatestFirst.isEmpty()) {
+                numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
+                numUnfinished++;
                 return;
             }
 
             boolean inProgress = false;
-            for (ProcessRun run : runs) {
+            for (ProcessRun run : runsLatestFirst) {
                 if (run.isFinished()) {
                     continue;
                 } else {
@@ -122,10 +126,14 @@ public class WaitForJobsStatus {
                 }
             }
             if (inProgress) {
-                numInProgress++;
-            } else {
-                numFinished++;
+                numUnfinished++;
             }
+            runsLatestFirst.stream()
+                    .map(ProcessRun::getLatestUpdate)
+                    .map(update -> update.getClass().getSimpleName())
+                    .findFirst().ifPresent(status ->
+                            countByLastStatus.compute(status,
+                                    (key, value) -> value == null ? 1 : value + 1));
         }
 
         public WaitForJobsStatus build() {

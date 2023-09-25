@@ -15,6 +15,9 @@
  */
 package sleeper.clients.admin.testutils;
 
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+
 import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -22,7 +25,9 @@ import sleeper.core.statestore.StateStore;
 
 import java.util.Arrays;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -67,5 +72,13 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
                 .thenReturn(tableProperties);
         when(store.loadStateStore(properties.get(ID), tableProperties))
                 .thenReturn(stateStore);
+    }
+
+    protected void verifyWithNumberOfPromptsBeforeExit(int numberOfInvocations) {
+        InOrder order = Mockito.inOrder(in.mock);
+        order.verify(in.mock, times(numberOfInvocations)).promptLine(any());
+        order.verify(in.mock).waitForLine();
+        order.verify(in.mock).promptLine(any());
+        order.verifyNoMoreInteractions();
     }
 }

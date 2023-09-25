@@ -45,7 +45,7 @@ public class IngestTaskStatusReportArguments {
     }
 
     public static void printUsage(PrintStream out) {
-        out.println("Usage: <instance id> <report_type_standard_or_json> <optional_query_type>\n" +
+        out.println("Usage: <instance-id> <report-type-standard-or-json> <optional-query-type>\n" +
                 "Query types are:\n" +
                 "-a (Return all tasks)\n" +
                 "-u (Unfinished tasks)");

@@ -121,7 +121,7 @@ public class RunWriteRandomDataTaskOnECS {
 
     public static void main(String[] args) throws IOException {
         if (args.length < 2 || args.length > 3) {
-            System.out.println("Usage: <instance id> <table name> <optional_output_file>");
+            System.out.println("Usage: <instance-id> <table-name> <optional-output-file>");
             return;
         }
 

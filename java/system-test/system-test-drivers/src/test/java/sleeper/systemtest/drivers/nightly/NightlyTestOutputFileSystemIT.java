@@ -40,7 +40,7 @@ class NightlyTestOutputFileSystemIT {
             Files.writeString(tempDir.resolve("bulkImportPerformance.log"), "test");
 
             // When / Then
-            assertThat(NightlyTestOutput.from(tempDir).streamLogFiles())
+            assertThat(NightlyTestOutput.from(tempDir).filesToUpload())
                     .containsExactly(tempDir.resolve("bulkImportPerformance.log"));
         }
 
@@ -50,7 +50,7 @@ class NightlyTestOutputFileSystemIT {
             Files.createDirectory(tempDir.resolve("testDir.log"));
 
             // When / Then
-            assertThat(NightlyTestOutput.from(tempDir).streamLogFiles())
+            assertThat(NightlyTestOutput.from(tempDir).filesToUpload())
                     .isEmpty();
         }
 
@@ -64,7 +64,7 @@ class NightlyTestOutputFileSystemIT {
             NightlyTestOutput output = NightlyTestOutput.from(tempDir);
 
             // Then
-            assertThat(output.streamLogFiles()).containsExactly(
+            assertThat(output.filesToUpload()).containsExactly(
                     tempDir.resolve("bulkImportPerformance.log"),
                     tempDir.resolve("bulkImportPerformance.tearDown.log"));
             assertThat(output.getTests())
@@ -88,7 +88,7 @@ class NightlyTestOutputFileSystemIT {
             NightlyTestOutput output = NightlyTestOutput.from(tempDir);
 
             // Then
-            assertThat(output.streamLogFiles()).containsExactly(
+            assertThat(output.filesToUpload()).containsExactly(
                     tempDir.resolve("maven.log"),
                     tempDir.resolve("maven/IngestBatcherIT.shouldCreateTwoJobs.report.log"));
             assertThat(output.getTests())
@@ -107,7 +107,7 @@ class NightlyTestOutputFileSystemIT {
             NightlyTestOutput output = NightlyTestOutput.from(tempDir);
 
             // Then
-            assertThat(output.streamLogFiles()).containsExactly(
+            assertThat(output.filesToUpload()).containsExactly(
                     tempDir.resolve("maven.log"));
             assertThat(output.getTests())
                     .extracting(TestResult::getTestName)

@@ -38,6 +38,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -120,8 +121,12 @@ public class TearDownInstance {
         RemoveJarsBucket.remove(s3v2, instanceProperties.get(JARS_BUCKET));
         RemoveECRRepositories.remove(ecr, instanceProperties, getExtraEcrRepositories.apply(instanceProperties));
 
-        LOGGER.info("Removing generated files");
-        ClientUtils.clearDirectory(generatedDir);
+        if (Files.isDirectory(generatedDir)) {
+            LOGGER.info("Removing generated files");
+            ClientUtils.clearDirectory(generatedDir);
+        } else {
+            LOGGER.info("Generated directory not found");
+        }
 
         LOGGER.info("Finished tear down");
     }
@@ -130,7 +135,7 @@ public class TearDownInstance {
         return new Builder();
     }
 
-    private InstanceProperties loadInstanceConfig() throws IOException {
+    private InstanceProperties loadInstanceConfig() {
         String instanceId;
         if (instanceIdArg == null) {
             InstanceProperties instanceProperties = LoadLocalProperties.loadInstancePropertiesFromDirectory(generatedDir);

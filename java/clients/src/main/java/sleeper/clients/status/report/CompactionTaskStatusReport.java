@@ -28,8 +28,6 @@ import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.task.CompactionTaskStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.io.IOException;
-
 public class CompactionTaskStatusReport {
 
     private final CompactionTaskStatusStore store;
@@ -49,7 +47,7 @@ public class CompactionTaskStatusReport {
         reporter.report(query, query.run(store));
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         CompactionTaskStatusReportArguments arguments;
         try {
             arguments = CompactionTaskStatusReportArguments.fromArgs(args);

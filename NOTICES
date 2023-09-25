@@ -103,6 +103,10 @@ Apache Commons Configuration (org.apache.commons:commons-configuration2:2.9.0):
 
 - Apache License, Version 2.0
 
+Apache Commons Compress (org.apache.commons:commons-compress:1.24.0):
+
+- Apache License, Version 2.0
+
 Apache Commons Text (org.apache.commons:commons-text:1.10.0):
 
 - Apache License, Version 2.0
@@ -115,7 +119,7 @@ Apache Commons Lang (org.apache.commons:commons-lang3:3.12.0):
 
 - Apache License, Version 2.0
 
-Codehaus Janino (org.codehaus.janino:*:3.0.16):
+Codehaus Janino (org.codehaus.janino:*:3.1.9):
 
 - The 3-Clause BSD License
 
@@ -131,15 +135,15 @@ Apache Parquet (org.apache.parquet:parquet-hadoop:1.13.1):
 
 - Apache License, Version 2.0
 
-Apache Spark (org.apache.spark:spark-sql_2.12:3.3.1):
+Apache Spark (org.apache.spark:spark-sql_2.12:3.4.1):
 
 - Apache License, Version 2.0
 
-Joom Spark Platform (com.joom.spark:spark-platform_2.12:0.3.0)
+Joom Spark Platform (com.joom.spark:spark-platform_2.12:0.3.8)
 
 - MIT License
 
-Apache Arrow (org.apache.arrow:*:10.0.1)
+Apache Arrow (org.apache.arrow:*:11.0.0)
 
 - Apache License, Version 2.0
 
@@ -175,7 +179,7 @@ Bouncy Castle (org.bouncycastle:bcpkix-jdk18on:1.75):
 
 - Bouncy Castle License
 
-Testcontainers (org.testcontainers:localstack:1.17.6, org.testcontainers:testcontainers:1.17.6, org.testcontainers:junit-jupiter:1.17.6):
+Testcontainers (org.testcontainers:localstack:1.19.0, org.testcontainers:testcontainers:1.19.0, org.testcontainers:junit-jupiter:1.19.0):
 
 - MIT License
 
@@ -207,7 +211,7 @@ Netty (io.netty:*:4.1.94.Final):
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.4.51.v20230217):
+Eclipse Jetty (org.eclipse.jetty:*:9.4.52.v20230823):
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0

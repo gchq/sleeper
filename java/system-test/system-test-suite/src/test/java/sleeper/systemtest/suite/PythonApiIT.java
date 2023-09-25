@@ -22,11 +22,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -34,7 +35,6 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.testutil.TestContextFactory.testContext;
 
 @Tag("SystemTest")
 public class PythonApiIT {
@@ -50,15 +50,10 @@ public class PythonApiIT {
     @Nested
     @DisplayName("Ingest files")
     class IngestFiles {
-        @BeforeEach
-        void setup() {
-            sleeper.reporting().startRecording();
-        }
 
-        @AfterEach
-        void tearDown(TestInfo testInfo) {
-            sleeper.reporting().printIngestTasksAndJobs(testContext(testInfo));
-        }
+        @RegisterExtension
+        public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+                sleeper.reportsForExtension().ingestTasksAndJobs());
 
         @Test
         void shouldBatchWriteOneFile() throws IOException, InterruptedException {
@@ -139,7 +134,7 @@ public class PythonApiIT {
     class RunSQSQuery {
         @AfterEach
         void tearDown() {
-            sleeper.queryResults().emptyBucket();
+            sleeper.query().emptyResultsBucket();
         }
 
         @Test

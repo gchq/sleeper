@@ -29,8 +29,6 @@ import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
-import java.io.IOException;
-
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -38,7 +36,7 @@ public class TearDownDockerInstance {
     private TearDownDockerInstance() {
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         if (args.length != 1) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
@@ -53,7 +51,7 @@ public class TearDownDockerInstance {
         tearDown(instanceId, s3Client, dynamoDB, sqsClient);
     }
 
-    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) throws IOException {
+    public static void tearDown(String instanceId, AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, getConfigBucketFromInstanceId(instanceId));
         TableProperties tableProperties = new TableProperties(instanceProperties);

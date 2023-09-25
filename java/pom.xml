@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.19.0-SNAPSHOT</version>
+    <version>0.20.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -62,10 +62,10 @@
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/emr-release-components.html
         For the EMR release used in Sleeper, check the property sleeper.default.bulk.import.emr.release.label.
         -->
-        <spark.version>3.3.1</spark.version>
+        <spark.version>3.4.1</spark.version>
         <hadoop.version>3.3.3</hadoop.version>
         <parquet-hadoop.version>1.13.1</parquet-hadoop.version>
-        <joom.spark.platform.version>0.3.0</joom.spark.platform.version>
+        <joom.spark.platform.version>0.3.8</joom.spark.platform.version>
         <!--
         Hadoop AWS uses an old version of wildfly-openssl.
         Review when Hadoop is upgraded from 3.3.3, as it might upgrade to v2.
@@ -117,8 +117,9 @@
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-configuration.version>2.9.0</commons-configuration.version>
+        <commons-compress.version>1.24.0</commons-compress.version>
         <commons-text.version>1.10.0</commons-text.version>
-        <janino.version>3.0.16</janino.version>
+        <janino.version>3.1.9</janino.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jackson.version>2.15.2</jackson.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
@@ -133,7 +134,7 @@
         <slf4j.version>2.0.6</slf4j.version>
         <reload4j.version>1.2.24</reload4j.version>
         <java-websocket.version>1.5.3</java-websocket.version>
-        <arrow.version>10.0.1</arrow.version>
+        <arrow.version>11.0.0</arrow.version>
         <bouncycastle.version>1.75</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
@@ -145,14 +146,14 @@
         <netty.version>4.1.94.Final</netty.version>
         <!-- Jetty and Jakarta versions are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
-        <jetty.version>9.4.51.v20230217</jetty.version>
+        <jetty.version>9.4.52.v20230823</jetty.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht.version>1.4</jungrapht.version>
         <!-- Testing -->
         <junit.version>5.9.1</junit.version>
         <mockito.version>4.11.0</mockito.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <wiremock.version>2.35.0</wiremock.version>
         <assertj.version>3.24.1</assertj.version>
         <jsonunit.version>2.38.0</jsonunit.version>
@@ -162,6 +163,8 @@
         <sleeper.system.test.subnet.ids/>
         <sleeper.system.test.output.dir/>
         <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
+        <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
+        <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -278,6 +281,55 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-buffer</artifactId>
                 <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-classes-kqueue</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-unix-common</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-x86_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-epoll</artifactId>
+                <version>${netty.version}</version>
+                <classifier>linux-aarch_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${netty.version}</version>
+                <classifier>osx-aarch_64</classifier>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport-native-kqueue</artifactId>
+                <version>${netty.version}</version>
+                <classifier>osx-x86_64</classifier>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -474,6 +526,36 @@
                 <artifactId>logback-core</artifactId>
                 <version>${logback.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-core</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-unsafe</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-netty</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-algorithm</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-format</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -494,6 +576,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
                 <version>${commons-configuration.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -946,6 +1033,14 @@
                             <property>
                                 <name>sleeper.system.test.cluster.enabled</name>
                                 <value>${sleeper.system.test.cluster.enabled}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.force.redeploy</name>
+                                <value>${sleeper.system.test.force.redeploy}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.instances.force.redeploy</name>
+                                <value>${sleeper.system.test.instances.force.redeploy}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>

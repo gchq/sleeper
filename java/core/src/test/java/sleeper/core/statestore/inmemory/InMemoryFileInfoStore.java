@@ -115,7 +115,7 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public void initialise() throws StateStoreException {
+    public void initialise() {
 
     }
 }

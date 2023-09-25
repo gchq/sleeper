@@ -16,28 +16,30 @@
 
 package sleeper.systemtest.suite.dsl;
 
+import software.amazon.awscdk.NestedStack;
+
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.systemtest.datageneration.GenerateNumberedRecords;
+import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.drivers.instance.SystemTestParameters;
-import sleeper.systemtest.drivers.query.DirectQueryDriver;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 import sleeper.systemtest.suite.dsl.python.SystemTestPythonApi;
+import sleeper.systemtest.suite.dsl.query.SystemTestQuery;
 import sleeper.systemtest.suite.dsl.reports.SystemTestReporting;
+import sleeper.systemtest.suite.dsl.reports.SystemTestReports;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestCluster;
 import sleeper.systemtest.suite.dsl.sourcedata.SystemTestSourceFiles;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import java.util.stream.LongStream;
@@ -69,7 +71,8 @@ public class SleeperSystemTest {
     private final SystemTestDeploymentContext systemTest = new SystemTestDeploymentContext(
             parameters, clients.getS3(), clients.getS3V2(), clients.getEcr(), clients.getCloudFormation());
     private final SleeperInstanceContext instance = new SleeperInstanceContext(
-            parameters, systemTest, clients.getCloudFormation(), clients.getS3(), clients.getDynamoDB());
+            parameters, systemTest, clients.getDynamoDB(), clients.getS3(), clients.getS3V2(),
+            clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
 
@@ -86,6 +89,7 @@ public class SleeperSystemTest {
             systemTest.resetProperties();
             sourceFiles.emptySourceBucket();
             instance.disconnect();
+            reportingContext.startRecording();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -109,11 +113,7 @@ public class SleeperSystemTest {
 
     public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
         tablePropertiesConsumer.accept(instance.getTableProperties());
-        try {
-            instance.getTableProperties().saveToS3(clients.getS3());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        instance.getTableProperties().saveToS3(clients.getS3());
     }
 
     public SystemTestSourceFiles sourceFiles() {
@@ -132,8 +132,12 @@ public class SleeperSystemTest {
         return new SystemTestIngest(instance, clients, sourceFiles);
     }
 
-    public SystemTestDirectQuery directQuery() {
-        return new SystemTestDirectQuery(new DirectQueryDriver(instance));
+    public SystemTestQuery query() {
+        return new SystemTestQuery(instance, clients);
+    }
+
+    public SystemTestQuery directQuery() {
+        return query().direct();
     }
 
     public SystemTestCompaction compaction() {
@@ -142,6 +146,10 @@ public class SleeperSystemTest {
 
     public SystemTestReporting reporting() {
         return new SystemTestReporting(instance, clients, reportingContext);
+    }
+
+    public SystemTestReports.SystemTestBuilder reportsForExtension() {
+        return SystemTestReports.builder(reportingContext, instance, clients);
     }
 
     public SystemTestCluster systemTestCluster() {
@@ -156,17 +164,28 @@ public class SleeperSystemTest {
         return new SystemTestLocalFiles(instance, tempDir);
     }
 
-    public SystemTestQueryResults queryResults() {
-        return new SystemTestQueryResults(instance, clients.getS3());
+    public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
+        instance.setGeneratorOverrides(overrides);
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return () -> GenerateNumberedRecords.from(
-                        instance.getTableProperties().getSchema(), numbers)
-                .iterator();
+        return () -> instance.generateNumberedRecords(numbers).iterator();
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {
         return RecordNumbers.scrambleNumberedRecords(longStream);
+    }
+
+    public Path getSplitPointsDirectory() {
+        return parameters.getScriptsDirectory()
+                .resolve("test/splitpoints");
+    }
+
+    public <T extends NestedStack> void enableOptionalStack(Class<T> stackClass) throws InterruptedException {
+        new OptionalStacksDriver(instance).addOptionalStack(stackClass);
+    }
+
+    public <T extends NestedStack> void disableOptionalStack(Class<T> stackClass) throws InterruptedException {
+        new OptionalStacksDriver(instance).removeOptionalStack(stackClass);
     }
 }

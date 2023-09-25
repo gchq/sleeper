@@ -26,7 +26,9 @@ import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.task.CompactionTaskStatus;
 import sleeper.compaction.task.CompactionTaskStatusStore;
+import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -72,13 +74,18 @@ public class CompactionDriver {
 
     public void invokeTasks(Type type, int expectedTasks, PollWithRetries poll) throws InterruptedException {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
-        int tasksFinishedBefore = store.getAllTasks().size() - store.getTasksInProgress().size();
+        long tasksFinishedBefore = tasks(store, type).filter(CompactionTaskStatus::isFinished).count();
         poll.pollUntil("tasks are started", () -> {
             InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(type.taskCreationProperty));
-            int tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;
+            long tasksStarted = tasks(store, type).count() - tasksFinishedBefore;
             LOGGER.info("Found {} running compaction tasks", tasksStarted);
             return tasksStarted >= expectedTasks;
         });
+    }
+
+    private Stream<CompactionTaskStatus> tasks(CompactionTaskStatusStore store, Type type) {
+        return store.getAllTasks().stream()
+                .filter(status -> status.getType() == type.taskType);
     }
 
     private Stream<String> allJobIds(CompactionJobStatusStore store) {
@@ -86,13 +93,15 @@ public class CompactionDriver {
     }
 
     public enum Type {
-        STANDARD(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION),
-        SPLITTING(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION);
+        STANDARD(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, CompactionTaskType.COMPACTION),
+        SPLITTING(SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, CompactionTaskType.SPLITTING);
 
         private final InstanceProperty taskCreationProperty;
+        private final CompactionTaskType taskType;
 
-        Type(InstanceProperty taskCreationProperty) {
+        Type(InstanceProperty taskCreationProperty, CompactionTaskType taskType) {
             this.taskCreationProperty = taskCreationProperty;
+            this.taskType = taskType;
         }
     }
 }

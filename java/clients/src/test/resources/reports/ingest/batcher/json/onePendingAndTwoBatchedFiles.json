@@ -1,0 +1,24 @@
+{
+  "fileList": [
+    {
+      "file": "file1.parquet",
+      "fileSizeBytes": 123,
+      "tableName": "test-table",
+      "receivedTime": "2023-09-12T13:28:00Z"
+    },
+    {
+      "file": "file2.parquet",
+      "fileSizeBytes": 456,
+      "tableName": "test-table",
+      "receivedTime": "2023-09-12T13:25:00Z",
+      "jobId": "test-job-1"
+    },
+    {
+      "file": "file3.parquet",
+      "fileSizeBytes": 789,
+      "tableName": "test-table",
+      "receivedTime": "2023-09-12T13:25:00Z",
+      "jobId": "test-job-1"
+    }
+  ]
+}

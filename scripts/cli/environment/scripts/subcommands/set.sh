@@ -14,6 +14,7 @@
 # limitations under the License.
 
 set -e
+unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 ENVIRONMENTS_DIR=$(cd "$HOME/.sleeper/environments" && pwd)
@@ -23,7 +24,7 @@ list_environments() {
 }
 
 if [ "$#" -lt 1 ]; then
-  echo "Usage: environment set <uniqueId>"
+  echo "Usage: environment set <unique-id>"
   list_environments
   exit 1
 fi

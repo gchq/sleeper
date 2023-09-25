@@ -40,7 +40,6 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.Locale;
@@ -70,18 +69,18 @@ public class IngestJobStatusReport {
             String tableName, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
-        this(ingestJobStatusStore, queryType, JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
+        this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(tableName, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
                 reporter, queueClient, properties, persistentEmrStepCount);
     }
 
     public IngestJobStatusReport(
-            IngestJobStatusStore ingestJobStatusStore, JobQuery.Type queryType, JobQuery query,
+            IngestJobStatusStore ingestJobStatusStore, JobQuery query,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this.statusStore = ingestJobStatusStore;
-        this.queryType = queryType;
         this.query = query;
+        this.queryType = query.getType();
         this.ingestJobStatusReporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;
@@ -98,7 +97,7 @@ public class IngestJobStatusReport {
                 persistentEmrStepCount);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         try {
             if (args.length < 2 || args.length > 5) {
                 throw new IllegalArgumentException("Wrong number of arguments");
@@ -128,7 +127,7 @@ public class IngestJobStatusReport {
 
     private static void printUsage() {
         System.out.println("" +
-                "Usage: <instance id> <table name> <report_type_standard_or_json> <optional_query_type> <optional_query_parameters> \n" +
+                "Usage: <instance-id> <table-name> <report-type-standard-or-json> <optional-query-type> <optional-query-parameters> \n" +
                 "Query types are:\n" +
                 "-a (Return all jobs)\n" +
                 "-d (Detailed, provide a jobId)\n" +

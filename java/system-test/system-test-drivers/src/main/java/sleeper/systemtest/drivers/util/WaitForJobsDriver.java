@@ -29,6 +29,7 @@ import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.function.Function;
 
@@ -54,16 +55,16 @@ public class WaitForJobsDriver {
 
     private static JobStatusStore ingestStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return jobId -> WaitForJobsStatus.forIngest(store, jobId);
+        return jobId -> WaitForJobsStatus.forIngest(store, jobId, Instant.now());
     }
 
     private static JobStatusStore compactionStore(AmazonDynamoDB dynamoDBClient, InstanceProperties properties) {
         CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties);
-        return jobId -> WaitForJobsStatus.forCompaction(store, jobId);
+        return jobId -> WaitForJobsStatus.forCompaction(store, jobId, Instant.now());
     }
 
     public void waitForJobs(Collection<String> jobIds) throws InterruptedException {
-        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
+        waitForJobs(jobIds, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(10)));
     }
 
     public void waitForJobs(Collection<String> jobIds, PollWithRetries pollUntilJobsFinished)
