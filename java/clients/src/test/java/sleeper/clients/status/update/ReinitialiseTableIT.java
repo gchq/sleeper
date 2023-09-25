@@ -46,7 +46,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -95,8 +94,6 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 @Testcontainers
 public class ReinitialiseTableIT {
-    private static final String INSTANCE_NAME = "test";
-    private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_NAME + "-config";
     private static final String DYNAMO_STATE_STORE_CLASS = "sleeper.statestore.dynamodb.DynamoDBStateStore";
     private static final String S3_STATE_STORE_CLASS = "sleeper.statestore.s3.S3StateStore";
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
@@ -142,7 +139,7 @@ public class ReinitialiseTableIT {
     public Path tempDir;
 
     @Test
-    public void shouldThrowExceptionIfBucketIsEmpty() {
+    public void shouldThrowExceptionIfInstanceIdIsEmpty() {
         // Given
         String tableName = UUID.randomUUID().toString();
 
@@ -152,8 +149,8 @@ public class ReinitialiseTableIT {
     }
 
     @Test
-    public void shouldThrowExceptionIfTableIsEmpty() {
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, INSTANCE_NAME, "", false))
+    public void shouldThrowExceptionIfTableNameIsEmpty() {
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, instanceProperties.get(ID), "", false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -610,12 +607,6 @@ public class ReinitialiseTableIT {
                 .maxRowKey(maxRowKey)
                 .lastStateStoreUpdateTime(100L)
                 .build();
-    }
-
-    private TableProperties createValidTablePropertiesWithStateStore(String stateStoreClassName) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, stateStoreClassName);
-        return tableProperties;
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {
