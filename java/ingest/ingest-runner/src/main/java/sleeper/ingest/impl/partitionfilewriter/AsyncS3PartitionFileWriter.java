@@ -68,7 +68,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final S3TransferManager s3TransferManager;
     private final Schema sleeperSchema;
     private final Partition partition;
-    private final String s3BucketPath;
+    private final String s3BucketName;
     private final Configuration hadoopConfiguration;
     private final String partitionParquetLocalFileName;
     private final String partitionParquetS3Key;
@@ -94,13 +94,15 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition file
      * @param s3TransferManager     The manager to use to perform the asynchronous upload
      * @param localWorkingDirectory The local directory to use to create temporary files
-     * @param s3BucketPath          The S3 bucket name and prefix to write to
+     * @param s3BucketName          The S3 bucket name and prefix to write to
+     * @param filePathPrefix        The prefix for S3 objects to write
      * @throws IOException -
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
-            String s3BucketPath,
+            String s3BucketName,
+            String filePathPrefix,
             S3TransferManager s3TransferManager,
             String localWorkingDirectory,
             String fileName,
@@ -108,12 +110,12 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.s3TransferManager = requireNonNull(s3TransferManager);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
-        this.s3BucketPath = requireNonNull(s3BucketPath);
+        this.s3BucketName = requireNonNull(s3BucketName);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
-        this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), fileName);
-        this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
-        this.partitionParquetS3Key = String.format("partition_%s/%s.parquet", partition.getId(), fileName);
-        this.quantileSketchesS3Key = String.format("partition_%s/%s.sketches", partition.getId(), fileName);
+        this.partitionParquetLocalFileName = String.format("%s/%spartition_%s_%s.parquet", localWorkingDirectory, filePathPrefix, partition.getId(), fileName);
+        this.quantileSketchesLocalFileName = String.format("%s/%spartition_%s_%s.sketches", localWorkingDirectory, filePathPrefix, partition.getId(), fileName);
+        this.partitionParquetS3Key = String.format("partition_%s/%s%s.parquet", partition.getId(), filePathPrefix, fileName);
+        this.quantileSketchesS3Key = String.format("partition_%s/%s%s.sketches", partition.getId(), filePathPrefix, fileName);
         this.timeSupplier = timeSupplier;
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
@@ -273,7 +275,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         LOGGER.debug("Wrote sketches to local file {}", quantileSketchesLocalFileName);
         FileInfo fileInfo = createFileInfo(
                 sleeperSchema,
-                String.format("s3a://%s/%s", s3BucketPath, partitionParquetS3Key),
+                String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
                 recordsWrittenToCurrentPartition,
                 currentPartitionMinKey,
@@ -283,13 +285,13 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         CompletableFuture<?> partitionFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
                 s3TransferManager,
                 partitionParquetLocalFileName,
-                s3BucketPath,
+                s3BucketName,
                 partitionParquetS3Key,
                 hadoopConfiguration);
         CompletableFuture<?> quantileFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
                 s3TransferManager,
                 quantileSketchesLocalFileName,
-                s3BucketPath,
+                s3BucketName,
                 quantileSketchesS3Key,
                 hadoopConfiguration);
         return CompletableFuture.allOf(partitionFileUploadFuture, quantileFileUploadFuture)
