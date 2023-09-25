@@ -112,8 +112,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.partition = requireNonNull(partition);
         this.s3BucketName = requireNonNull(s3BucketName);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
-        this.partitionParquetLocalFileName = String.format("%s/%spartition_%s_%s.parquet", localWorkingDirectory, filePathPrefix, partition.getId(), fileName);
-        this.quantileSketchesLocalFileName = String.format("%s/%spartition_%s_%s.sketches", localWorkingDirectory, filePathPrefix, partition.getId(), fileName);
+        this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), fileName);
+        this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
         this.partitionParquetS3Key = String.format("partition_%s/%s%s.parquet", partition.getId(), filePathPrefix, fileName);
         this.quantileSketchesS3Key = String.format("partition_%s/%s%s.sketches", partition.getId(), filePathPrefix, fileName);
         this.timeSupplier = timeSupplier;
