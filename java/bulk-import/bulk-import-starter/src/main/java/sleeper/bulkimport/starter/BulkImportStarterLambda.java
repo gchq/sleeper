@@ -36,6 +36,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.utils.HadoopConfigurationProvider;
 import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
@@ -69,10 +70,10 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
-        hadoopConfig = new Configuration();
+        hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
-                new StateStoreProvider(dynamo, instanceProperties),
+                new StateStoreProvider(dynamo, instanceProperties, hadoopConfig),
                 ingestJobStatusStore, s3, platformExecutor, Instant::now);
         invalidJobIdSupplier = () -> UUID.randomUUID().toString();
         timeSupplier = Instant::now;
