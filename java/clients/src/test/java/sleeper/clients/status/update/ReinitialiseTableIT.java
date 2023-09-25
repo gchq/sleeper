@@ -35,6 +35,8 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -44,7 +46,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -68,7 +69,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -77,22 +77,14 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
@@ -102,8 +94,6 @@ import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 @Testcontainers
 public class ReinitialiseTableIT {
-    private static final String INSTANCE_NAME = "test";
-    private static final String CONFIG_BUCKET_NAME = "sleeper-" + INSTANCE_NAME + "-config";
     private static final String DYNAMO_STATE_STORE_CLASS = "sleeper.statestore.dynamodb.DynamoDBStateStore";
     private static final String S3_STATE_STORE_CLASS = "sleeper.statestore.s3.S3StateStore";
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
@@ -125,10 +115,16 @@ public class ReinitialiseTableIT {
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
 
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private TableProperties tableProperties;
+
     @BeforeEach
     public void beforeEach() {
         dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
         s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
     }
 
     @AfterEach
@@ -143,7 +139,7 @@ public class ReinitialiseTableIT {
     public Path tempDir;
 
     @Test
-    public void shouldThrowExceptionIfBucketIsEmpty() {
+    public void shouldThrowExceptionIfInstanceIdIsEmpty() {
         // Given
         String tableName = UUID.randomUUID().toString();
 
@@ -153,370 +149,229 @@ public class ReinitialiseTableIT {
     }
 
     @Test
-    public void shouldThrowExceptionIfTableIsEmpty() {
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, INSTANCE_NAME, "", false))
+    public void shouldThrowExceptionIfTableNameIsEmpty() {
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, instanceProperties.get(ID), "", false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    @Test
-    public void shouldDeleteActiveAndGCFilesByDefaultForDynamoStateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, false);
+    @Nested
+    @DisplayName("Using DynamoDB state store")
+    class UsingDynamoDBStateStore {
 
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
+        @BeforeEach
+        public void setup() {
+            tableProperties.set(STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
+        }
 
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, false);
-        validTableProperties.saveToS3(s3Client);
+        @Test
+        public void shouldDeleteActiveAndGCFilesByDefault() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
 
-        DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(validInstanceProperties, validTableProperties);
+            // When
+            reinitialiseTable(tableProperties);
 
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, false);
-        reinitialiseTable.run();
+            // Then
+            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
+            assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
+            assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
+        }
 
-        // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
-        assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
-        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
+        @Test
+        public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
+
+            // When
+            reinitialiseTableAndDeletePartitions(tableProperties);
+
+            // Then
+            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
+            assertThat(partitionsList).hasSize(1);
+            assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        }
+
+        @Test
+        public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
+            String splitPointsFileName = createSplitPointsFile(false);
+
+            // When
+            reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
+
+            // Then
+            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
+            assertThat(partitionsList).hasSize(5);
+            assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
+            assertThat(partitionsList)
+                    .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                    .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        }
+
+        @Test
+        public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
+            String splitPointsFileName = createSplitPointsFile(true);
+
+            // When
+            reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
+
+            // Then
+            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
+            assertThat(partitionsList).hasSize(5);
+            assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
+            assertThat(partitionsList)
+                    .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                    .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        }
     }
 
-    @Test
-    public void shouldDeleteFilesInfoAndObjectsInPartitionsByDefaultForS3StateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, true);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, true);
-        validTableProperties.saveToS3(s3Client);
-
-        S3StateStore s3StateStore = setupS3StateStore(validInstanceProperties, validTableProperties);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, false);
-        reinitialiseTable.run();
-
-        // Then
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                validTableProperties, "1", "2");
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
-        assertThat(s3StateStore.getAllPartitions()).hasSize(3);
-        assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
-        assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldDeletePartitionsWhenOptionSelectedForDynamoStateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, false);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, false);
-        validTableProperties.saveToS3(s3Client);
-
-        DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(validInstanceProperties, validTableProperties);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true);
-        reinitialiseTable.run();
-
-        // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
-        List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(1);
-        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldDeletePartitionsWhenOptionSelectedForS3StateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, true);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, true);
-        validTableProperties.saveToS3(s3Client);
-
-        S3StateStore s3StateStore = setupS3StateStore(validInstanceProperties, validTableProperties);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true);
-        reinitialiseTable.run();
-
-        // Then
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                validTableProperties, "1", "1");
-
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
-        assertThat(s3StateStore.getAllPartitions()).hasSize(1);
-        assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
-
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldSetUpSplitPointsFromFileWhenOptionSelectedForDynamoStateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, false);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, false);
-        validTableProperties.saveToS3(s3Client);
-
-        DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(validInstanceProperties, validTableProperties);
-
-        String splitPointsFileName = createSplitPointsFile(false);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true,
-                splitPointsFileName, false);
-        reinitialiseTable.run();
-
-        // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
-        List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(5);
-        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
-        assertThat(partitionsList)
-                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
-
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldSetUpSplitPointsFromFileWhenOptionSelectedForS3StateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, true);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, true);
-        validTableProperties.saveToS3(s3Client);
-
-        S3StateStore s3StateStore = setupS3StateStore(validInstanceProperties, validTableProperties);
-
-        String splitPointsFileName = createSplitPointsFile(false);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true,
-                splitPointsFileName, false);
-        reinitialiseTable.run();
-
-        // Then
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                validTableProperties, "1", "1");
-
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
-
-        List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(5);
-        assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
-        assertThat(partitionsList)
-                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
-
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldHandleEncodedSplitPointsFileWhenOptionSelectedForDynamoStateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, false);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, false);
-        validTableProperties.saveToS3(s3Client);
-
-        DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(validInstanceProperties, validTableProperties);
-
-        String splitPointsFileName = createSplitPointsFile(true);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true,
-                splitPointsFileName, true);
-        reinitialiseTable.run();
-
-        // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
-        List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(5);
-        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
-        assertThat(partitionsList)
-                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
-
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldHandleEncodedSplitPointsFileWhenOptionSelectedForS3StateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, true);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, true);
-        validTableProperties.saveToS3(s3Client);
-
-        S3StateStore s3StateStore = setupS3StateStore(validInstanceProperties, validTableProperties);
-
-        String splitPointsFileName = createSplitPointsFile(true);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, true,
-                splitPointsFileName, true);
-        reinitialiseTable.run();
-
-        // Then
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                validTableProperties, "1", "1");
-
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
-
-        List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(5);
-        assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
-        assertThat(partitionsList)
-                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
-                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
-
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldIgnoreSplitFileAndEncodedOptionsIfDeletePartitionsFalseForDynamoStateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, false);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, false);
-        validTableProperties.saveToS3(s3Client);
-
-        DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(validInstanceProperties, validTableProperties);
-
-        String splitPointsFileName = createSplitPointsFile(false);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, false,
-                splitPointsFileName, true);
-        reinitialiseTable.run();
-
-        // Then
-        assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(validTableProperties, dynamoStateStore);
-        List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(3);
-        assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
-
-        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(tableBucketName);
-    }
-
-    @Test
-    public void shouldIgnoreSplitFileAndEncryptedOptionsIfDeletePartitionsFalseForS3StateStore() throws Exception {
-        // Given
-        String tableName = UUID.randomUUID().toString();
-        String tableBucketName = "sleeper" + "-" + INSTANCE_NAME + "-table-" + tableName;
-        setupS3buckets(tableBucketName, true);
-
-        InstanceProperties validInstanceProperties = createValidInstanceProperties();
-        validInstanceProperties.saveToS3(s3Client);
-
-        TableProperties validTableProperties =
-                createValidTableProperties(validInstanceProperties, tableName, true);
-        validTableProperties.saveToS3(s3Client);
-
-        S3StateStore s3StateStore = setupS3StateStore(validInstanceProperties, validTableProperties);
-
-        String splitPointsFileName = createSplitPointsFile(false);
-
-        // When
-        ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, INSTANCE_NAME, tableName, false,
-                splitPointsFileName, true);
-        reinitialiseTable.run();
-
-        // Then
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                validTableProperties, "1", "2");
-
-        List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
-                .stream()
-                .sorted(Comparator.comparing(FileInfo::getFilename))
-                .collect(Collectors.toList());
-        assertThat(activeFiles).isEmpty();
-
-        List<Partition> partitionsList = s3StateStore.getAllPartitions();
-        assertThat(partitionsList).hasSize(3);
-        assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
-
-        assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(tableBucketName);
+    @Nested
+    @DisplayName("Using S3 state store")
+    class UsingS3StateStore {
+        @BeforeEach
+        public void setup() {
+            tableProperties.set(STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
+        }
+
+        @Test
+        public void shouldDeleteFilesInfoAndObjectsInPartitionsByDefault() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
+
+            // When
+            reinitialiseTable(tableProperties);
+
+            // Then
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
+                    tableProperties, "1", "2");
+            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+                    .stream()
+                    .sorted(Comparator.comparing(FileInfo::getFilename))
+                    .collect(Collectors.toList());
+            assertThat(activeFiles).isEmpty();
+            assertThat(s3StateStore.getAllPartitions()).hasSize(3);
+            assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
+            assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
+        }
+
+        @Test
+        public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
+
+            // When
+            reinitialiseTableAndDeletePartitions(tableProperties);
+
+            // Then
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
+                    tableProperties, "1", "1");
+
+            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+                    .stream()
+                    .sorted(Comparator.comparing(FileInfo::getFilename))
+                    .collect(Collectors.toList());
+            assertThat(activeFiles).isEmpty();
+            assertThat(s3StateStore.getAllPartitions()).hasSize(1);
+            assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
+
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        }
+
+
+        @Test
+        public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
+            String splitPointsFileName = createSplitPointsFile(false);
+
+            // When
+            reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
+
+            // Then
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
+                    tableProperties, "1", "1");
+
+            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+                    .stream()
+                    .sorted(Comparator.comparing(FileInfo::getFilename))
+                    .collect(Collectors.toList());
+            assertThat(activeFiles).isEmpty();
+
+            List<Partition> partitionsList = s3StateStore.getAllPartitions();
+            assertThat(partitionsList).hasSize(5);
+            assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
+            assertThat(partitionsList)
+                    .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                    .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        }
+
+
+        @Test
+        public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
+            // Given
+            instanceProperties.saveToS3(s3Client);
+            tableProperties.saveToS3(s3Client);
+            setupS3buckets();
+            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
+            String splitPointsFileName = createSplitPointsFile(true);
+
+            // When
+            reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
+
+            // Then
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
+                    tableProperties, "1", "1");
+
+            List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
+                    .stream()
+                    .sorted(Comparator.comparing(FileInfo::getFilename))
+                    .collect(Collectors.toList());
+            assertThat(activeFiles).isEmpty();
+
+            List<Partition> partitionsList = s3StateStore.getAllPartitions();
+            assertThat(partitionsList).hasSize(5);
+            assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
+            assertThat(partitionsList)
+                    .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                    .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+        }
     }
 
     private void assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(
@@ -555,45 +410,98 @@ public class ReinitialiseTableIT {
         assertThat(partitionsVersion).isNotEmpty().contains(versionPrefix + expectedPartitionsVersion);
     }
 
-    private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted(String tableBucketName) {
-        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(tableBucketName).withMaxKeys(10);
+    private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
+        String tableName = tableProperties.get(TABLE_NAME);
+        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET))
+                .withPrefix(tableName + "/").withMaxKeys(10);
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
-        assertThat(result.getKeyCount()).isEqualTo(3);
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
+            assertThat(result.getKeyCount()).isEqualTo(5);
+            assertThat(result.getObjectSummaries().stream()
+                    .map(S3ObjectSummary::getKey)
+                    .filter(key -> key.startsWith(tableName + "/statestore"))
+                    .count()).isEqualTo(2);
+        } else {
+            assertThat(result.getKeyCount()).isEqualTo(3);
+        }
         assertThat(result.getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
-                .contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3);
+                .contains(
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
     }
 
-    private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted(
-            String tableBucketName) {
-        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(tableBucketName).withMaxKeys(10);
+    private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
+        String tableName = tableProperties.get(TABLE_NAME);
+        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET))
+                .withPrefix(tableName + "/").withMaxKeys(10);
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
-        assertThat(result.getKeyCount()).isEqualTo(4);
-        assertThat(result.getObjectSummaries())
-                .extracting(S3ObjectSummary::getKey)
-                .contains(FILE_SHOULD_NOT_BE_DELETED_1, FILE_SHOULD_NOT_BE_DELETED_2, FILE_SHOULD_NOT_BE_DELETED_3,
-                        S3_STATE_STORE_PARTITIONS_FILENAME)
-                .doesNotContain(S3_STATE_STORE_FILES_FILENAME);
-    }
-
-    private void setupS3buckets(String tableBucketName, boolean isS3StateStore) {
-        s3Client.createBucket(CONFIG_BUCKET_NAME);
-        s3Client.createBucket(tableBucketName);
-
-        s3Client.putObject(tableBucketName, FILE_SHOULD_NOT_BE_DELETED_1, "some-content");
-        s3Client.putObject(tableBucketName, FILE_SHOULD_NOT_BE_DELETED_2, "some-content");
-        s3Client.putObject(tableBucketName, FILE_SHOULD_NOT_BE_DELETED_3, "some-content");
-        s3Client.putObject(tableBucketName, "partition-root/file1.parquet", "some-content");
-        s3Client.putObject(tableBucketName, "partition-1/file2.parquet", "some-content");
-        s3Client.putObject(tableBucketName, "partition-2/file3.parquet", "some-content");
-
-        if (isS3StateStore) {
-            s3Client.putObject(tableBucketName, S3_STATE_STORE_FILES_FILENAME, "some-content");
-            s3Client.putObject(tableBucketName, S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
+            assertThat(result.getKeyCount()).isEqualTo(7);
+            assertThat(result.getObjectSummaries())
+                    .extracting(S3ObjectSummary::getKey)
+                    .contains(tableName + "/" + S3_STATE_STORE_PARTITIONS_FILENAME)
+                    .doesNotContain(tableName + "/" + S3_STATE_STORE_FILES_FILENAME);
+            assertThat(result.getObjectSummaries().stream()
+                    .map(S3ObjectSummary::getKey)
+                    .filter(key -> key.startsWith(tableName + "/statestore"))
+                    .count()).isEqualTo(4);
+        } else {
+            assertThat(result.getKeyCount()).isEqualTo(3);
+            assertThat(result.getObjectSummaries())
+                    .extracting(S3ObjectSummary::getKey)
+                    .contains(
+                            tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                            tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                            tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
         }
     }
 
-    private DynamoDBStateStore setupDynamoStateStore(InstanceProperties instanceProperties, TableProperties tableProperties)
+    private void reinitialiseTableAndDeletePartitions(TableProperties tableProperties) throws StateStoreException, IOException {
+        new ReinitialiseTable(s3Client,
+                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), true)
+                .run();
+    }
+
+    private void reinitialiseTable(TableProperties tableProperties) throws StateStoreException, IOException {
+        new ReinitialiseTable(s3Client,
+                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), false)
+                .run();
+    }
+
+    private void reinitialiseTableFromSplitPoints(TableProperties tableProperties, String splitPointsFile)
+            throws StateStoreException, IOException {
+        new ReinitialiseTableFromSplitPoints(s3Client,
+                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, false)
+                .run();
+    }
+
+    private void reinitialiseTableFromSplitPointsEncoded(TableProperties tableProperties, String splitPointsFile)
+            throws StateStoreException, IOException {
+        new ReinitialiseTableFromSplitPoints(s3Client,
+                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, true)
+                .run();
+    }
+
+    private void setupS3buckets() {
+        String dataBucket = instanceProperties.get(DATA_BUCKET);
+        String tableName = tableProperties.get(TABLE_NAME);
+
+        s3Client.putObject(dataBucket, tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1, "some-content");
+        s3Client.putObject(dataBucket, tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2, "some-content");
+        s3Client.putObject(dataBucket, tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3, "some-content");
+        s3Client.putObject(dataBucket, tableName + "/partition-root/file1.parquet", "some-content");
+        s3Client.putObject(dataBucket, tableName + "/partition-1/file2.parquet", "some-content");
+        s3Client.putObject(dataBucket, tableName + "/partition-2/file3.parquet", "some-content");
+
+        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
+            s3Client.putObject(dataBucket, tableName + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");
+            s3Client.putObject(dataBucket, tableName + "/" + S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
+        }
+    }
+
+    private DynamoDBStateStore setupDynamoStateStore(TableProperties tableProperties)
             throws IOException, StateStoreException {
         //  - Create DynamoDBStateStore
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator =
@@ -629,11 +537,17 @@ public class ReinitialiseTableIT {
         return dynamoDBStateStore;
     }
 
-    private S3StateStore setupS3StateStore(InstanceProperties instanceProperties, TableProperties tableProperties)
-            throws IOException, StateStoreException {
+    private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException, StateStoreException {
         //  - CreateS3StateStore
         createRevisionDynamoTable(tableProperties.get(REVISION_TABLENAME));
-        S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
+        Configuration configuration = new Configuration();
+        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+        configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
+        configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
+        configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
+        configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
+
+        S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
         s3StateStore.initialise();
 
         setupPartitionsAndAddFileInfo(s3StateStore);
@@ -674,7 +588,8 @@ public class ReinitialiseTableIT {
                 .splitToNewChildren("root", "0" + "---eee", "eee---zzz", "eee")
                 .buildTree();
 
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+                tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3));
@@ -692,45 +607,6 @@ public class ReinitialiseTableIT {
                 .maxRowKey(maxRowKey)
                 .lastStateStoreUpdateTime(100L)
                 .build();
-    }
-
-    private InstanceProperties createValidInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, INSTANCE_NAME);
-        instanceProperties.set(ACCOUNT, "1234567890");
-        instanceProperties.set(REGION, "eu-west-2");
-        instanceProperties.set(VERSION, "0.1");
-        instanceProperties.set(CONFIG_BUCKET, CONFIG_BUCKET_NAME);
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        instanceProperties.set(JARS_BUCKET, "bucket");
-        instanceProperties.set(SUBNETS, "subnet1");
-        Map<String, String> tags = new HashMap<>();
-        tags.put("name", "abc");
-        tags.put("project", "test");
-        instanceProperties.setTags(tags);
-        instanceProperties.set(VPC_ID, "aVPC");
-        instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
-        instanceProperties.set(FILE_SYSTEM, "file://");
-
-        return instanceProperties;
-    }
-
-    private TableProperties createValidTableProperties(InstanceProperties instanceProperties, String tableName,
-                                                       boolean isS3StateStore) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
-        tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "false");
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, "sleeper" + "-" + tableName + "-" + "active-files");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, "sleeper" + "-" + tableName + "-" + "gc-files");
-        tableProperties.set(PARTITION_TABLENAME, "sleeper" + "-" + tableName + "-" + "partitions");
-        tableProperties.set(REVISION_TABLENAME, "sleeper" + "-" + tableName + "-" + "revisions");
-        if (isS3StateStore) {
-            tableProperties.set(TableProperty.STATESTORE_CLASSNAME, S3_STATE_STORE_CLASS);
-        } else {
-            tableProperties.set(TableProperty.STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
-        }
-        return tableProperties;
     }
 
     private String createSplitPointsFile(boolean encoded) throws IOException {

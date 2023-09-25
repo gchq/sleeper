@@ -58,10 +58,9 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
             AmazonDynamoDB dynamoDBClient,
             String instanceId,
             String tableName,
-            boolean deletePartitions,
             String splitPointsFileLocation,
             boolean splitPointStringsBase64Encoded) {
-        super(s3Client, dynamoDBClient, instanceId, tableName, deletePartitions);
+        super(s3Client, dynamoDBClient, instanceId, tableName, true);
         this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.splitPointsFileLocation = splitPointsFileLocation;
     }
@@ -135,7 +134,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
 
         try {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(amazonS3, dynamoDBClient, instanceId, tableName,
-                    true, splitPointsFile, splitPointsFileBase64Encoded);
+                    splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {
