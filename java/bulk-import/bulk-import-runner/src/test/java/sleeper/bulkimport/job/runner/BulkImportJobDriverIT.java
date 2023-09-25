@@ -79,20 +79,11 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -169,19 +160,12 @@ class BulkImportJobDriverIT {
     }
 
     public InstanceProperties createInstanceProperties(AmazonS3 s3Client, String dir) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
+        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
-        instanceProperties.set(ACCOUNT, "test-account");
-        instanceProperties.set(REGION, "test-region");
-        instanceProperties.set(VERSION, "1.2.3");
-        instanceProperties.set(VPC_ID, "test-vpc");
-        instanceProperties.set(SUBNETS, "test-subnet");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         return instanceProperties;
     }
@@ -191,15 +175,9 @@ class BulkImportJobDriverIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
         tableProperties.saveToS3(s3Client);
 
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
-                dynamoDBClient);
-        dynamoDBStateStoreCreator.create(tableProperties);
         return tableProperties;
     }
 
