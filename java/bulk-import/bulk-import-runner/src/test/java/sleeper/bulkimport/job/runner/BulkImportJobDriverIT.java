@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
@@ -308,7 +309,7 @@ class BulkImportJobDriverIT {
         String jobRunId = "test-run";
         statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
-                s3Client, dynamoDBClient, statusStore,
+                s3Client, dynamoDBClient, new Configuration(), statusStore,
                 List.of(startTime, endTime).iterator()::next);
         driver.run(job, jobRunId, taskId);
     }
