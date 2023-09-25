@@ -76,7 +76,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
 
     private final AmazonDynamoDB dynamoDB;
-    private final Schema schema;
     private final String activeTableName;
     private final String readyForGCTableName;
     private final String sleeperTableName;
@@ -87,7 +86,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
-        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
+        Schema schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         activeTableName = Objects.requireNonNull(builder.activeTableName, "activeTableName must not be null");
         readyForGCTableName = Objects.requireNonNull(builder.readyForGCTableName, "readyForGCTableName must not be null");
         sleeperTableName = Objects.requireNonNull(builder.sleeperTableName, "sleeperTableName must not be null");
