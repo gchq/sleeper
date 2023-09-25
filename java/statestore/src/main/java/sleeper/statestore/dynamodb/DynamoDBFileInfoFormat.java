@@ -35,6 +35,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
 
+    static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
     static final String NAME = "Name";
     static final String STATUS = "Status";
     static final String PARTITION = "Partition";

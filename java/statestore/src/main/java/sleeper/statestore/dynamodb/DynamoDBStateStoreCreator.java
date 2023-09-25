@@ -30,18 +30,19 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
+import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_NAME;
 
 /**
  * Creates the tables necessary for a {@link DynamoDBStateStore}. Mainly used
@@ -72,30 +73,41 @@ public class DynamoDBStateStoreCreator {
     public DynamoDBStateStore create(TableProperties tableProperties) {
         createFileInfoTables(tableProperties);
         createPartitionInfoTable(tableProperties);
-        return new DynamoDBStateStore(tableProperties, dynamoDB);
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
     }
 
     public void createFileInfoTables() {
-    }
-
-    public void createFileInfoTables(TableProperties tableProperties) {
-        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(FILE_NAME, KeyType.HASH));
-        initialiseTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
-        initialiseTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
+        List<AttributeDefinition> attributeDefinitions = List.of(
+                new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
+        List<KeySchemaElement> keySchemaElements = List.of(
+                new KeySchemaElement(TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(FILE_NAME, KeyType.RANGE));
+        initialiseTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
+        initialiseTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
     }
 
     public void createPartitionInfoTable() {
+        List<AttributeDefinition> attributeDefinitions = List.of(
+                new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
+        List<KeySchemaElement> keySchemaElements = List.of(
+                new KeySchemaElement(TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(PARTITION_ID, KeyType.RANGE));
+        initialiseTable(instanceProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
+    }
+
+    public void createFileInfoTables(TableProperties tableProperties) {
+        List<AttributeDefinition> attributeDefinitions = List.of(new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
+        List<KeySchemaElement> keySchemaElements = List.of(new KeySchemaElement(FILE_NAME, KeyType.HASH));
+        initialiseTable(tableProperties.get(TableProperty.ACTIVE_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
+        initialiseTable(tableProperties.get(TableProperty.READY_FOR_GC_FILEINFO_TABLENAME), attributeDefinitions, keySchemaElements);
     }
 
     public void createPartitionInfoTable(TableProperties tableProperties) {
-        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(PARTITION_ID, KeyType.HASH));
-        initialiseTable(tableProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
+        List<AttributeDefinition> attributeDefinitions = List.of(new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
+        List<KeySchemaElement> keySchemaElements = List.of(new KeySchemaElement(PARTITION_ID, KeyType.HASH));
+        initialiseTable(tableProperties.get(TableProperty.PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
     }
 
     private void initialiseTable(

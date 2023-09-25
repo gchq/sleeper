@@ -33,6 +33,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBPartitionFormat {
 
+    static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
     static final String ID = "PartitionId";
     static final String IS_LEAF = "PartitionIsLeaf";
     private static final String PARENT_ID = "PartitionParentId";

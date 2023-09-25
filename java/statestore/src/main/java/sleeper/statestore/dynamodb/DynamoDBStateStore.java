@@ -17,6 +17,7 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
@@ -36,9 +37,9 @@ public class DynamoDBStateStore extends DelegatingStateStore {
 
     public static final String FILE_NAME = DynamoDBFileInfoFormat.NAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
+    public static final String TABLE_NAME = "TableName";
 
-
-    public DynamoDBStateStore(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
+    public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         this(tableProperties.get(ACTIVE_FILEINFO_TABLENAME),
                 tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME),
                 tableProperties.get(PARTITION_TABLENAME),

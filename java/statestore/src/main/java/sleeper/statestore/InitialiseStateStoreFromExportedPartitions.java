@@ -43,7 +43,7 @@ import java.util.List;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
- * Initialises a {@link StateStore} from a file of partitions created using {@link ExportPartitions}
+ * Initialises a {@link StateStore} from a file of partitions created using ExportPartitions
  * to export the partition information from an existing table.
  */
 public class InitialiseStateStoreFromExportedPartitions {
@@ -72,7 +72,7 @@ public class InitialiseStateStoreFromExportedPartitions {
             stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, conf);
         } else {
             System.out.println("Dynamo DB State Store detected");
-            stateStore = new DynamoDBStateStore(tableProperties, dynamoDBClient);
+            stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         }
 
         PartitionSerDe partitionSerDe = new PartitionSerDe(tableProperties.getSchema());
@@ -81,7 +81,7 @@ public class InitialiseStateStoreFromExportedPartitions {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(args[2]), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (!line.equals("")) {
+                if (!line.isEmpty()) {
                     partitions.add(partitionSerDe.fromJson(line));
                 }
             }
