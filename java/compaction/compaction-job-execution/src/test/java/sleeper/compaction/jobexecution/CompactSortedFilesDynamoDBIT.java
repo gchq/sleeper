@@ -31,6 +31,7 @@ import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelpe
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
@@ -56,6 +57,7 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -86,9 +88,9 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     }
 
     private StateStore createStateStore(Schema schema) {
-        return new DynamoDBStateStoreCreator(instanceProperties,
-                createTestTableProperties(instanceProperties, schema),
-                dynamoDBClient).create();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
+        return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
     }
 
     @Test
