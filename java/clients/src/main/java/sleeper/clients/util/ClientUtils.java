@@ -29,7 +29,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +38,7 @@ import java.util.stream.Stream;
 
 import static sleeper.clients.util.Command.command;
 import static sleeper.clients.util.CommandPipeline.pipeline;
+import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 
 public class ClientUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientUtils.class);
@@ -77,48 +77,6 @@ public class ClientUtils {
         } else {
             return countWithCommas(Math.round((double) records / T_COUNT)) + "T (" + countWithCommas(records) + ")";
         }
-    }
-
-    public static String formatBytes(long fileSize) {
-        if (fileSize < K_COUNT) {
-            return fileSize + "B";
-        } else if (fileSize < M_COUNT) {
-            return String.format("%.1fKB", fileSize / (double) K_COUNT);
-        } else if (fileSize < G_COUNT) {
-            return String.format("%.1fMB", fileSize / (double) M_COUNT);
-        } else if (fileSize < T_COUNT) {
-            return String.format("%.1fGB", (fileSize / (double) G_COUNT));
-        } else {
-            return countWithCommas(Math.round((double) fileSize / T_COUNT)) + "TB";
-        }
-    }
-
-    public static String countWithCommas(long count) {
-        return splitNonDecimalIntoParts("" + count);
-    }
-
-    public static String decimalWithCommas(String formatStr, double decimal) {
-        String str = String.format(formatStr, decimal);
-        int decimalIndex = str.indexOf('.');
-        if (decimalIndex > 0) {
-            return splitNonDecimalIntoParts(str.substring(0, decimalIndex)) + str.substring(decimalIndex);
-        } else {
-            return splitNonDecimalIntoParts(str);
-        }
-    }
-
-    private static String splitNonDecimalIntoParts(String str) {
-        int length = str.length();
-        int firstPartEnd = length % 3;
-
-        List<String> parts = new ArrayList<>();
-        if (firstPartEnd != 0) {
-            parts.add(str.substring(0, firstPartEnd));
-        }
-        for (int i = firstPartEnd; i < length; i += 3) {
-            parts.add(str.substring(i, i + 3));
-        }
-        return String.join(",", parts);
     }
 
     public static void clearDirectory(Path tempDir) throws IOException {

@@ -33,8 +33,8 @@ import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static sleeper.clients.util.ClientUtils.countWithCommas;
-import static sleeper.clients.util.ClientUtils.decimalWithCommas;
+import static sleeper.core.util.NumberFormatUtils.countWithCommas;
+import static sleeper.core.util.NumberFormatUtils.decimalWithCommas;
 
 public class StandardProcessRunReporter {
 
