@@ -40,7 +40,7 @@ public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
     protected DynamoDBStateStore getStateStore() throws StateStoreException {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient);
-        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
+        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create(tableProperties);
         stateStore.initialise();
         return stateStore;
     }

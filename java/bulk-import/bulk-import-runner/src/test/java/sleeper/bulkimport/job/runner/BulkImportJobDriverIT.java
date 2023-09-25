@@ -199,7 +199,7 @@ class BulkImportJobDriverIT {
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties,
                 tableProperties, dynamoDBClient);
-        dynamoDBStateStoreCreator.create();
+        dynamoDBStateStoreCreator.create(tableProperties);
         return tableProperties;
     }
 

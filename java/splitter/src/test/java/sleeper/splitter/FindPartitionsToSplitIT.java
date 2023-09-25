@@ -93,7 +93,7 @@ public class FindPartitionsToSplitIT {
     }
 
     private StateStore createStateStore(AmazonDynamoDB dynamoDB, List<Partition> partitions) throws StateStoreException {
-        StateStore dynamoStateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
+        StateStore dynamoStateStore = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create(tableProperties);
         dynamoStateStore.initialise(partitions);
         return dynamoStateStore;
     }

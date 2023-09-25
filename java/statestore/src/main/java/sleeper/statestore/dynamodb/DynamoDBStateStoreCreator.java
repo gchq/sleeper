@@ -103,10 +103,10 @@ public class DynamoDBStateStoreCreator {
                 dynamoDB, Collections.emptyMap());
     }
 
-    public DynamoDBStateStore create() {
+    public DynamoDBStateStore create(TableProperties tableProperties) {
         createFileInfoTables();
         createPartitionInfoTable();
-        return new DynamoDBStateStore(activeFileInfoTablename, readyForGCFileInfoTablename, partitionTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, stronglyConsistentReads, dynamoDB);
+        return new DynamoDBStateStore(tableProperties, dynamoDB);
     }
 
     public void createFileInfoTables() {

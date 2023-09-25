@@ -92,7 +92,7 @@ public class DynamoDBStateStoreIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, String.valueOf(garbageCollectorDelayBeforeDeletionInMinutes));
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient);
-        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
+        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create(tableProperties);
         stateStore.initialise(partitions);
         return stateStore;
     }

@@ -178,7 +178,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 instanceProperties,
                 tableProperties,
                 this.dynamoDBClient);
-        dynamoDBStateStoreCreator.create();
+        dynamoDBStateStoreCreator.create(tableProperties);
         return tableProperties;
     }
 

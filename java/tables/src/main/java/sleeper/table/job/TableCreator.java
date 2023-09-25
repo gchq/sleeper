@@ -64,7 +64,7 @@ public class TableCreator {
                 "table", tableName, "partitions").toLowerCase(Locale.ROOT));
 
         // Create Dynamo tables
-        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
+        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create(tableProperties);
         tableProperties.saveToS3(s3Client);
     }
 

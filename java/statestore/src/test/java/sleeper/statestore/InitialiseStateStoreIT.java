@@ -78,7 +78,7 @@ public class InitialiseStateStoreIT {
 
     private StateStore getStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
+        return new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create(tableProperties);
     }
 
     private final Field field = new Field("key", new IntType());
