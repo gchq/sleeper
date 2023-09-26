@@ -18,6 +18,7 @@ package sleeper.statestore.s3;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
@@ -45,6 +46,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,6 +58,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
+import static sleeper.statestore.s3.S3StateStore.CURRENT_PARTITIONS_REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
@@ -63,7 +66,6 @@ import static sleeper.statestore.s3.S3StateStore.getZeroPaddedLong;
 
 public class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
-    public static final String CURRENT_PARTITIONS_REVISION_ID_KEY = "CURRENT_PARTITIONS_REVISION_ID_KEY";
 
     private final List<PrimitiveType> rowKeyTypes;
     private final AmazonDynamoDB dynamoDB;
@@ -235,6 +237,18 @@ public class S3PartitionStore implements PartitionStore {
                 .build();
     }
 
+    @Override
+    public void clearTable() {
+        Path path = new Path(fs + s3Path + "/statestore/partitions");
+        try {
+            path.getFileSystem(conf).delete(path, true);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        dynamoDB.deleteItem(new DeleteItemRequest()
+                .withTableName(dynamoRevisionIdTable)
+                .withKey(Map.of(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY))));
+    }
 
     private String getPartitionsPath(RevisionId revisionId) {
         return fs + s3Path + "/statestore/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
@@ -251,10 +265,6 @@ public class S3PartitionStore implements PartitionStore {
             throw new StateStoreException("At least one partition must be provided");
         }
         setPartitions(partitions);
-    }
-
-    @Override
-    public void clearTable() {
     }
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
