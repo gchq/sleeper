@@ -36,6 +36,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestBatcherSubmitterLambda.class);
@@ -95,7 +96,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             return;
         }
         requests.forEach(request -> {
-            LOGGER.info("Adding {} to store", request.getFile());
+            LOGGER.info("Storing ingest request for file {} with size {} to table {}",
+                    request.getFile(), formatBytes(request.getFileSizeBytes()), request.getTableName());
             store.addFile(request);
         });
     }
