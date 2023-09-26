@@ -54,9 +54,7 @@ public class DynamoDBStateStoreMultipleTablesIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
-    private final FileInfoFactory fileInfoFactory = FileInfoFactory.builder().schema(schema)
-            .partitionTree(new PartitionsBuilder(schema).singlePartition("root").buildTree())
-            .build();
+    private final FileInfoFactory fileInfoFactory = fileInfoFactory(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     @BeforeAll
     public static void initDynamoClient() {
@@ -90,7 +88,7 @@ public class DynamoDBStateStoreMultipleTablesIT {
         StateStore stateStore1 = initialiseTableStateStore();
         StateStore stateStore2 = initialiseTableStateStore();
         FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
-        FileInfo file2 = fileInfoFactory.leafFile("file1.parquet", 34, 10L, 20L);
+        FileInfo file2 = fileInfoFactory.leafFile("file2.parquet", 34, 10L, 20L);
 
         // When
         stateStore1.addFile(file1);
@@ -116,5 +114,51 @@ public class DynamoDBStateStoreMultipleTablesIT {
         // Then
         assertThat(stateStore1.getAllPartitions()).containsExactly(tree1.getRootPartition());
         assertThat(stateStore2.getAllPartitions()).containsExactly(tree2.getRootPartition());
+    }
+
+    @Test
+    void shouldClearFilesForOneTableWhenTwoTablesArePresent() throws Exception {
+        // Given
+        StateStore stateStore1 = initialiseTableStateStore();
+        StateStore stateStore2 = initialiseTableStateStore();
+        FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
+        FileInfo file2 = fileInfoFactory.leafFile("file2.parquet", 34, 10L, 20L);
+        stateStore1.addFile(file1);
+        stateStore2.addFile(file2);
+
+        // When
+        stateStore1.clearFiles();
+
+        // Then
+        assertThat(stateStore1.getActiveFiles()).isEmpty();
+        assertThat(stateStore2.getActiveFiles()).containsExactly(file2);
+    }
+
+    @Test
+    void shouldClearPartitionsAndFilesForOneTableWhenTwoTablesArePresent() throws Exception {
+        // Given
+        StateStore stateStore1 = getTableStateStore();
+        StateStore stateStore2 = getTableStateStore();
+        PartitionTree tree1 = new PartitionsBuilder(schema).singlePartition("partition1").buildTree();
+        PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
+        stateStore1.initialise(tree1.getAllPartitions());
+        stateStore2.initialise(tree2.getAllPartitions());
+        FileInfo file1 = fileInfoFactory(tree1).leafFile("file1.parquet", 12, 1L, 12L);
+        FileInfo file2 = fileInfoFactory(tree2).leafFile("file2.parquet", 34, 10L, 20L);
+        stateStore1.addFile(file1);
+        stateStore2.addFile(file2);
+
+        // When
+        stateStore1.clearTable();
+
+        // Then
+        assertThat(stateStore1.getAllPartitions()).isEmpty();
+        assertThat(stateStore2.getAllPartitions()).containsExactly(tree2.getRootPartition());
+        assertThat(stateStore1.getActiveFiles()).isEmpty();
+        assertThat(stateStore2.getActiveFiles()).containsExactly(file2);
+    }
+
+    private FileInfoFactory fileInfoFactory(PartitionTree tree) {
+        return FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
     }
 }
