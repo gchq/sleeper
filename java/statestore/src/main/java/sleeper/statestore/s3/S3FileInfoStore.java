@@ -42,6 +42,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -275,7 +276,7 @@ public class S3FileInfoStore implements FileInfoStore {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         try {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(revisionId));
@@ -359,7 +360,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
             // Check condition
             String conditionCheck = condition.apply(files);
-            if (!conditionCheck.equals("")) {
+            if (!conditionCheck.isEmpty()) {
                 throw new StateStoreException("Conditional check failed: " + conditionCheck);
             }
 
@@ -434,7 +435,7 @@ public class S3FileInfoStore implements FileInfoStore {
         RevisionId firstRevisionId = new RevisionId(S3StateStore.getZeroPaddedLong(1L), UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
-            writeFileInfosToParquet(Collections.EMPTY_LIST, path);
+            writeFileInfosToParquet(Collections.emptyList(), path);
             LOGGER.debug("Written initial empty file to {}", path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
@@ -448,6 +449,16 @@ public class S3FileInfoStore implements FileInfoStore {
                 .withItem(item);
         dynamoDB.putItem(putItemRequest);
         LOGGER.debug("Put item to DynamoDB (item = {}, table = {})", item, dynamoRevisionIdTable);
+    }
+
+    @Override
+    public void clearTable() {
+        Path path = new Path(fs + s3Path + "/statestore/files");
+        try {
+            path.getFileSystem(conf).delete(path, true);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private String getFilesPath(RevisionId revisionId) {

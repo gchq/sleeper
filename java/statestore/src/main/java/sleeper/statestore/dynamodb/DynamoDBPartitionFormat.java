@@ -74,6 +74,13 @@ class DynamoDBPartitionFormat {
         return map;
     }
 
+    Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> map = new HashMap<>();
+        map.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        map.put(ID, item.get(ID));
+        return map;
+    }
+
     Partition getPartitionFromAttributeValues(Map<String, AttributeValue> item) {
         Partition.Builder partitionBuilder = Partition.builder()
                 .rowKeyTypes(rowKeyTypes)

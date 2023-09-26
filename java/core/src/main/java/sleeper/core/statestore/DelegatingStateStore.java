@@ -106,4 +106,15 @@ public class DelegatingStateStore implements StateStore {
     public List<Partition> getLeafPartitions() throws StateStoreException {
         return partitionStore.getLeafPartitions();
     }
+
+    @Override
+    public void clearTable() {
+        fileInfoStore.clearTable();
+        partitionStore.clearTable();
+    }
+
+    @Override
+    public void clearFiles() {
+        fileInfoStore.clearTable();
+    }
 }

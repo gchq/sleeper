@@ -59,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.TABLE_NAME;
@@ -200,6 +201,17 @@ public class DynamoDBPartitionStore implements PartitionStore {
             addPartition(partition);
             LOGGER.debug("Added partition {}", partition);
         }
+    }
+
+    @Override
+    public void clearTable() {
+        deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
+                        .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                        .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                                .string(":table_name", sleeperTableName)
+                                .build())
+                        .withKeyConditionExpression("#TableName = :table_name"),
+                partitionFormat::getKey);
     }
 
     private void addPartition(Partition partition) throws StateStoreException {

@@ -166,7 +166,7 @@ public class S3PartitionStore implements PartitionStore {
     public List<Partition> getAllPartitions() throws StateStoreException {
         RevisionId revisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
         try {
@@ -251,6 +251,10 @@ public class S3PartitionStore implements PartitionStore {
             throw new StateStoreException("At least one partition must be provided");
         }
         setPartitions(partitions);
+    }
+
+    @Override
+    public void clearTable() {
     }
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {

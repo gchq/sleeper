@@ -61,6 +61,11 @@ public class InMemoryPartitionStore implements PartitionStore {
     }
 
     @Override
+    public void clearTable() {
+        partitions = List.of();
+    }
+
+    @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(
             Partition splitPartition, Partition newPartition1, Partition newPartition2) {
         partitions = Stream.concat(

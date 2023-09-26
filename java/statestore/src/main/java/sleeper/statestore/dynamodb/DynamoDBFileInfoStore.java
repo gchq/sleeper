@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
+import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
@@ -387,6 +388,22 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void initialise() {
+    }
+
+    @Override
+    public void clearTable() {
+        clearDynamoTable(activeTableName);
+        clearDynamoTable(readyForGCTableName);
+    }
+
+    private void clearDynamoTable(String dynamoTableName) {
+        deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
+                        .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                        .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                                .string(":table_name", sleeperTableName)
+                                .build())
+                        .withKeyConditionExpression("#TableName = :table_name"),
+                fileInfoFormat::getKey);
     }
 
     /**

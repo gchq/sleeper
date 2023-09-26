@@ -119,6 +119,13 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
+    Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(NAME, item.get(NAME));
+        return itemValues;
+    }
+
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)

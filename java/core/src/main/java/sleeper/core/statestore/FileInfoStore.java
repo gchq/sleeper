@@ -124,4 +124,5 @@ public interface FileInfoStore {
 
     void initialise() throws StateStoreException;
 
+    void clearTable();
 }
