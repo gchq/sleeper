@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
-import com.google.common.collect.ImmutableList;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -50,7 +49,6 @@ import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -231,12 +229,12 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
         public TableDefinition(String tableName,
                                Schema schema,
-                               Optional<List<Object>> splitPointsOpt,
-                               Optional<Stream<Record>> recordStreamOpt) {
+                               List<Object> splitPoints,
+                               Stream<Record> recordStream) {
             this.tableName = tableName;
             this.schema = schema;
-            this.splitPoints = splitPointsOpt.orElse(ImmutableList.of());
-            this.recordStream = recordStreamOpt.orElse(Stream.empty());
+            this.splitPoints = splitPoints;
+            this.recordStream = recordStream;
         }
     }
 }

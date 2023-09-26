@@ -33,8 +33,8 @@ import sleeper.trino.testutils.PopulatedSleeperExternalResource;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,13 +51,13 @@ public class TpchSchemaPartitionedInsertPartitioningEnabledIT {
                     new PopulatedSleeperExternalResource.TableDefinition(
                             "customer_unpartitioned",
                             generateCustomerSchemaForPartitioning(),
-                            Optional.empty(),
-                            Optional.empty()),
+                            List.of(),
+                            Stream.empty()),
                     new PopulatedSleeperExternalResource.TableDefinition(
                             "customer_partitioned",
                             generateCustomerSchemaForPartitioning(),
-                            Optional.of(generateCustomerPartitionBoundaries()),
-                            Optional.empty()));
+                            generateCustomerPartitionBoundaries(),
+                            Stream.empty()));
 
     private static final Map<String, String> EXTRA_PROPERTIES_FOR_QUERY_RUNNER = ImmutableMap.of("task.writer-count", "4");
     private static final SleeperConfig SLEEPER_CONFIG = (new SleeperConfig()).setEnableTrinoPartitioning(true);
