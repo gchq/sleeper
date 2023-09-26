@@ -17,8 +17,6 @@ package sleeper.clients.status.partitions;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -35,12 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.statestore.InitialiseStateStore.createInitialiseStateStoreFromSplitPoints;
 
 public class ExportSplitPointsTest {
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private StateStore getStateStore() {
         return StateStoreTestHelper.inMemoryStateStoreWithNoPartitions();
@@ -52,10 +47,6 @@ public class ExportSplitPointsTest {
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new ByteArrayType()))
                 .build();
-    }
-
-    private TableProperties createTableProperties(Schema schema) {
-        return createTestTableProperties(instanceProperties, schema);
     }
 
     @Test
