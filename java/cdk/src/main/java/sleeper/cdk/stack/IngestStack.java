@@ -109,8 +109,8 @@ public class IngestStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            List<StateStoreStack> stateStoreStacks,
-            List<IBucket> dataBuckets,
+            TableStack tableStack,
+            TableDataStack dataStack,
             Topic topic,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
@@ -136,7 +136,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(topic);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(configBucket, jarsBucket, dataBuckets, stateStoreStacks, ingestJobQueue);
+        ecsClusterForIngestTasks(configBucket, jarsBucket, tableStack, dataStack, ingestJobQueue);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(configBucket, ingestJobQueue, taskCreatorJar);
@@ -234,8 +234,8 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket configBucket,
             IBucket jarsBucket,
-            List<IBucket> dataBuckets,
-            List<StateStoreStack> stateStoreStacks,
+            TableStack tableStack,
+            TableDataStack dataStack,
             Queue ingestJobQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -273,9 +273,9 @@ public class IngestStack extends NestedStack {
 
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
-        dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
+        dataStack.getDataBucket().grantReadWrite(taskDefinition.getTaskRole());
+        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
+        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());

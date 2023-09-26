@@ -428,7 +428,7 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 sleeper.bulk.import.emr.serverless.architecture=X86_64
 
 # The version of EMR Serverless to use.
-sleeper.bulk.import.emr.serverless.release=emr-6.10.0
+sleeper.bulk.import.emr.serverless.release=emr-6.13.0
 
 # The number of cores used by a Serverless executor. Used to set spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
@@ -503,7 +503,7 @@ sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
-sleeper.default.bulk.import.emr.release.label=emr-6.10.0
+sleeper.default.bulk.import.emr.release.label=emr-6.13.0
 
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
@@ -556,7 +556,7 @@ sleeper.default.bulk.import.emr.executor.initial.instances=2
 sleeper.default.bulk.import.emr.executor.max.instances=10
 
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
-sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
+sleeper.bulk.import.persistent.emr.release.label=emr-6.13.0
 
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
@@ -923,7 +923,8 @@ sleeper.default.ingest.batcher.job.max.files=100
 sleeper.default.ingest.batcher.file.max.age.seconds=300
 
 # Specifies the target ingest queue where batched jobs are sent.
-# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks]
+# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
+# bulk_import_emr_serverless]
 sleeper.default.ingest.batcher.ingest.mode=standard_ingest
 
 # The time in minutes that the tracking information is retained for a file before the records of its

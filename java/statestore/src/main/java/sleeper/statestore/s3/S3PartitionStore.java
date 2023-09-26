@@ -74,7 +74,7 @@ public class S3PartitionStore implements PartitionStore {
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
     private final String fs;
-    private final String s3Bucket;
+    private final String s3Path;
 
 
     private S3PartitionStore(Builder builder) {
@@ -85,7 +85,7 @@ public class S3PartitionStore implements PartitionStore {
         regionSerDe = new RegionSerDe(tableSchema);
         rowKeyTypes = tableSchema.getRowKeyTypes();
         fs = builder.fs;
-        s3Bucket = builder.s3Bucket;
+        s3Path = builder.s3Path;
         s3RevisionUtils = new S3RevisionUtils(dynamoDB, dynamoRevisionIdTable);
         partitionSchema = initialisePartitionSchema();
     }
@@ -237,7 +237,7 @@ public class S3PartitionStore implements PartitionStore {
 
 
     private String getPartitionsPath(RevisionId revisionId) {
-        return fs + s3Bucket + "/statestore/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
+        return fs + s3Path + "/statestore/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
     }
 
     @Override
@@ -360,7 +360,7 @@ public class S3PartitionStore implements PartitionStore {
         private Configuration conf;
         private Schema tableSchema;
         private String fs;
-        private String s3Bucket;
+        private String s3Path;
 
         public Builder() {
         }
@@ -391,8 +391,8 @@ public class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-        public Builder s3Bucket(String s3Bucket) {
-            this.s3Bucket = s3Bucket;
+        public Builder s3Path(String s3Path) {
+            this.s3Path = s3Path;
             return this;
         }
 

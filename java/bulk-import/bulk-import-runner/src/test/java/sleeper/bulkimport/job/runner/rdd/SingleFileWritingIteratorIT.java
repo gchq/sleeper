@@ -28,7 +28,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -48,19 +47,22 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class SingleFileWritingIteratorIT {
 
     @TempDir
     public java.nio.file.Path tempFolder;
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private InstanceProperties instanceProperties;
     private final Schema schema = createSchema();
     private TableProperties tableProperties;
 
     @BeforeEach
     void setUp() {
-        tableProperties = createTableProperties(instanceProperties, schema, tempFolder);
+        instanceProperties = createInstanceProperties();
+        tableProperties = createTableProperties(instanceProperties, schema);
     }
 
     @Nested
@@ -105,7 +107,7 @@ class SingleFileWritingIteratorIT {
             assertThat(fileWritingIterator).toIterable()
                     .containsExactly(RowFactory.create(
                             "test-partition",
-                            "file://" + tempFolder + "/partition_test-partition/test-file.parquet",
+                            "file://" + tempFolder + "/test-table/partition_test-partition/test-file.parquet",
                             4));
         }
     }
@@ -201,9 +203,10 @@ class SingleFileWritingIteratorIT {
                 new Configuration(), partitionTree, filename);
     }
 
-    private static InstanceProperties createInstanceProperties() {
+    private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, tempFolder.toString());
         return instanceProperties;
     }
 
@@ -216,11 +219,10 @@ class SingleFileWritingIteratorIT {
     }
 
     private static TableProperties createTableProperties(
-            InstanceProperties instanceProperties, Schema schema, java.nio.file.Path tempFolder) {
+            InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        tableProperties.set(TableProperty.DATA_BUCKET, tempFolder.toString());
-
+        tableProperties.set(TABLE_NAME, "test-table");
         return tableProperties;
     }
 

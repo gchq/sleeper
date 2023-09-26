@@ -41,7 +41,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -52,8 +51,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class WriteParquetFilesIT {
@@ -61,7 +60,7 @@ class WriteParquetFilesIT {
     @TempDir
     public java.nio.file.Path folder;
 
-    public InstanceProperties createInstanceProperties(String fs) {
+    public InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
@@ -71,21 +70,19 @@ class WriteParquetFilesIT {
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(FILE_SYSTEM, fs);
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, folder.toString());
         return instanceProperties;
     }
 
     @Test
-    void shouldWriteParquetFiles() throws IOException {
+    void shouldWriteParquetFiles() {
         // Given
-        String dir = createTempDirectory(folder, null).toString();
-        String dataBucket = "dataBucket";
         Schema schema = getSchema();
-        InstanceProperties instanceProperties = createInstanceProperties(dir);
+        InstanceProperties instanceProperties = createInstanceProperties();
         String instancePropertiesString = instanceProperties.saveAsString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
-        tableProperties.set(DATA_BUCKET, dataBucket);
         tableProperties.setSchema(schema);
         String tablePropertiesString = tableProperties.saveAsString();
         WriteParquetFiles writeParquetFiles = new WriteParquetFiles(instancePropertiesString, tablePropertiesString, new Configuration());
@@ -114,16 +111,13 @@ class WriteParquetFilesIT {
     }
 
     @Test
-    void shouldWriteToMultipleParquetFilesWhenDataContainsMoreThanOnePartition() throws IOException {
+    void shouldWriteToMultipleParquetFilesWhenDataContainsMoreThanOnePartition() {
         // Given
-        String dir = createTempDirectory(folder, null).toString();
-        String dataBucket = "dataBucket";
         Schema schema = getSchema();
-        InstanceProperties instanceProperties = createInstanceProperties(dir);
+        InstanceProperties instanceProperties = createInstanceProperties();
         String instancePropertiesString = instanceProperties.saveAsString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
-        tableProperties.set(DATA_BUCKET, dataBucket);
         tableProperties.setSchema(schema);
         String tablePropertiesString = tableProperties.saveAsString();
         WriteParquetFiles writeParquetFiles = new WriteParquetFiles(instancePropertiesString, tablePropertiesString, new Configuration());
