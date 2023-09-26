@@ -35,7 +35,7 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = getStateStore();
+        DynamoDBStateStore stateStore = initialiseStateStore();
 
         // When
         long numWritten = ingestRecords(stateStore, getRecords()).getRecordsWritten();
@@ -71,7 +71,7 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
     @Test
     public void shouldWriteNoRecordsSuccessfully() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = getStateStore();
+        DynamoDBStateStore stateStore = initialiseStateStore();
 
         // When
         long numWritten = ingestRecords(stateStore, Collections.emptyList()).getRecordsWritten();

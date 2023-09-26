@@ -34,7 +34,7 @@ public class IngestRecordsFromIteratorDynamoDBIT extends IngestRecordsDynamoDBIT
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = getStateStore();
+        DynamoDBStateStore stateStore = initialiseStateStore();
 
         // When
         long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
