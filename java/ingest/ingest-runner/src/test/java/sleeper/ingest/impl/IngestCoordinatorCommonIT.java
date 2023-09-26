@@ -54,6 +54,7 @@ import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
 import sleeper.ingest.testutils.TestIngestType;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
@@ -117,11 +118,12 @@ public class IngestCoordinatorCommonIT {
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create(tableProperties);
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
     }
 
     @ParameterizedTest
