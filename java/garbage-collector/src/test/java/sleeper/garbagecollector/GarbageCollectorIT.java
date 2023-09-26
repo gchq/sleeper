@@ -17,8 +17,6 @@ package sleeper.garbagecollector;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -46,7 +44,9 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -55,21 +55,17 @@ import sleeper.table.job.TableLister;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -96,6 +92,12 @@ public class GarbageCollectorIT {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
+    @AfterEach
+    void tearDown() {
+        s3Client.shutdown();
+        dynamoDBClient.shutdown();
+    }
+
     @Nested
     @DisplayName("Collecting from single table")
     class SingleTable {
@@ -104,20 +106,11 @@ public class GarbageCollectorIT {
         private StateStoreProvider stateStoreProvider;
 
         void setupStateStoreWithFixedTime(Instant fixedTime) throws Exception {
-            createDynamoDBStateStore(instanceProperties, tableProperties);
+            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
             stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
             DynamoDBStateStore stateStore = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties);
             stateStore.initialise();
             stateStore.fixTime(fixedTime);
-        }
-
-        @AfterEach
-        void tearDown() {
-            dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-af");
-            dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-rfgcf");
-            dynamoDBClient.deleteTable(TEST_TABLE_NAME + "-p");
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
         }
 
         @Test
@@ -136,7 +129,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(filePath)).isFalse();
-            assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties)).isEmpty();
         }
 
         @Test
@@ -154,7 +147,7 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
-            assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties)).isEmpty();
         }
 
         @Test
@@ -172,7 +165,8 @@ public class GarbageCollectorIT {
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
-            assertThat(getFilesInReadyForGCTable(tableProperties))
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties))
+                    .extracting(FileInfo::getFilename)
                     .containsExactly(filePath.toString());
         }
 
@@ -195,7 +189,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
             assertThat(Files.exists(filePath2)).isFalse();
-            assertThat(getFilesInReadyForGCTable(tableProperties)).isEmpty();
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties)).isEmpty();
         }
 
         @Test
@@ -219,7 +213,7 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Stream.of(filePath1, filePath2, filePath3).filter(Files::exists))
                     .hasSize(1);
-            assertThat(getFilesInReadyForGCTable(tableProperties))
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties))
                     .hasSize(1);
         }
     }
@@ -232,20 +226,8 @@ public class GarbageCollectorIT {
         private TableProperties tableProperties2;
         private StateStoreProvider stateStoreProvider;
 
-        @AfterEach
-        void tearDown() {
-            List.of(TEST_TABLE_NAME_1, TEST_TABLE_NAME_2).forEach(table -> {
-                dynamoDBClient.deleteTable(table + "-af");
-                dynamoDBClient.deleteTable(table + "-rfgcf");
-                dynamoDBClient.deleteTable(table + "-p");
-            });
-            s3Client.shutdown();
-            dynamoDBClient.shutdown();
-        }
-
         void setupStateStoreWithFixedTime(Instant fixedTime) throws Exception {
-            createDynamoDBStateStore(instanceProperties, tableProperties1);
-            createDynamoDBStateStore(instanceProperties, tableProperties2);
+            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
             stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
             DynamoDBStateStore stateStore1 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties1);
             stateStore1.initialise();
@@ -275,17 +257,22 @@ public class GarbageCollectorIT {
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
             assertThat(Files.exists(filePath2)).isFalse();
-            assertThat(getFilesInReadyForGCTable(tableProperties1)).isEmpty();
-            assertThat(getFilesInReadyForGCTable(tableProperties2)).isEmpty();
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties1)).isEmpty();
+            assertThat(getFilesInReadyForGCTable(instanceProperties, tableProperties2)).isEmpty();
         }
     }
 
-    private Stream<String> getFilesInReadyForGCTable(TableProperties tableProperties) {
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
-                .withConsistentRead(true);
-        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        return scanResult.getItems().stream().map(item -> item.get(DynamoDBStateStore.FILE_NAME).getS());
+    private Iterable<FileInfo> getFilesInReadyForGCTable(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration())
+                .getStateStore(tableProperties);
+        return () -> {
+            try {
+                return stateStore.getReadyForGCFiles();
+            } catch (StateStoreException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     private void createActiveFile(String filename, StateStore stateStore, Instant lastUpdateTime) throws Exception {
@@ -319,10 +306,6 @@ public class GarbageCollectorIT {
         stateStore.addFile(fileInfo);
     }
 
-    private void createDynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create(tableProperties);
-    }
-
     private InstanceProperties createInstancePropertiesWithGCBatchSize(int gcBatchSize) {
         return createInstanceProperties(properties ->
                 properties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, gcBatchSize));
@@ -334,9 +317,7 @@ public class GarbageCollectorIT {
     }
 
     private InstanceProperties createInstanceProperties(Consumer<InstanceProperties> extraProperties) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
+        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "");
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
 
@@ -358,12 +339,8 @@ public class GarbageCollectorIT {
 
     private TableProperties createTable(
             String tableName, InstanceProperties instanceProperties, Consumer<TableProperties> extraProperties) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(TEST_SCHEMA);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         extraProperties.accept(tableProperties);
         tableProperties.saveToS3(s3Client);
         return tableProperties;
