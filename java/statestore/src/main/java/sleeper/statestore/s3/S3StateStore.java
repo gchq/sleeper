@@ -28,9 +28,10 @@ import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * An implementation of StateStore that stores the information in Parquet files in S3. A DynamoDB table is
@@ -51,7 +52,7 @@ public class S3StateStore extends DelegatingStateStore {
                         Configuration conf) {
         this(instanceProperties.get(FILE_SYSTEM),
                 instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3),
-                tableProperties.get(DATA_BUCKET),
+                instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME),
                 tableProperties.get(REVISION_TABLENAME),
                 tableProperties.getSchema(),
                 tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
@@ -61,7 +62,7 @@ public class S3StateStore extends DelegatingStateStore {
 
     public S3StateStore(String fs,
                         int maxConnectionsToS3,
-                        String s3Bucket,
+                        String s3Path,
                         String dynamoRevisionIdTable,
                         Schema tableSchema,
                         int garbageCollectorDelayBeforeDeletionInMinutes,
@@ -69,7 +70,7 @@ public class S3StateStore extends DelegatingStateStore {
                         Configuration conf) {
         super(S3FileInfoStore.builder()
                 .fs(fs)
-                .s3Bucket(s3Bucket)
+                .s3Path(s3Path)
                 .dynamoRevisionIdTable(dynamoRevisionIdTable)
                 .rowKeyTypes(tableSchema.getRowKeyTypes())
                 .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
@@ -77,7 +78,7 @@ public class S3StateStore extends DelegatingStateStore {
                 .conf(conf)
                 .build(), S3PartitionStore.builder()
                 .fs(fs)
-                .s3Bucket(s3Bucket)
+                .s3Path(s3Path)
                 .dynamoRevisionIdTable(dynamoRevisionIdTable)
                 .tableSchema(tableSchema)
                 .dynamoDB(dynamoDB)

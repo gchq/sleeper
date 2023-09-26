@@ -16,6 +16,7 @@
 package sleeper.athena.metadata;
 
 import com.amazonaws.athena.connector.lambda.data.Block;
+import com.amazonaws.athena.connector.lambda.data.BlockAllocator;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.data.BlockUtils;
 import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
@@ -74,7 +75,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     @Test
     public void shouldAddMinAndMaxRowKeysToTheRowsForEachLeafPartition() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -125,7 +126,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     @Test
     public void shouldPassOnTheListofFilesAndRowKeysWhenCallingGetSplits() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
 
@@ -135,21 +136,24 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
                 "spillBucket", "spillPrefix");
 
-        Block partitions = new BlockAllocatorImpl().createBlock(SchemaBuilder.newBuilder()
-                .addIntField("_MinRowKey-year")
-                .addStringField("_MinRowKey-month")
-                .addIntField("_MaxRowKey-year")
-                .addStringField("_MaxRowKey-month")
-                .addStringField(RELEVANT_FILES_FIELD)
-                .build());
+        GetSplitsResponse getSplitsResponse;
+        try (BlockAllocator blockAllocator = new BlockAllocatorImpl()) {
+            Block partitions = blockAllocator.createBlock(SchemaBuilder.newBuilder()
+                    .addIntField("_MinRowKey-year")
+                    .addStringField("_MinRowKey-month")
+                    .addIntField("_MaxRowKey-year")
+                    .addStringField("_MaxRowKey-month")
+                    .addStringField(RELEVANT_FILES_FIELD)
+                    .build());
 
-        addPartition(partitions, 0, 25);
-        addPartition(partitions, 1, 26);
-        addPartition(partitions, 2, 27);
+            addPartition(partitions, 0, 25);
+            addPartition(partitions, 1, 26);
+            addPartition(partitions, 2, 27);
 
-        GetSplitsResponse getSplitsResponse = sleeperMetadataHandler.doGetSplits(new BlockAllocatorImpl(),
-                new GetSplitsRequest(TestUtils.createIdentity(), "abc", "def", new TableName("myDB", "myTable"),
-                        partitions, new ArrayList<>(), new Constraints(new HashMap<>()), "unused"));
+            getSplitsResponse = sleeperMetadataHandler.doGetSplits(blockAllocator,
+                    new GetSplitsRequest(TestUtils.createIdentity(), "abc", "def", new TableName("myDB", "myTable"),
+                            partitions, new ArrayList<>(), new Constraints(new HashMap<>()), "unused"));
+        }
 
         // Then
         Set<Split> splits = getSplitsResponse.getSplits();
@@ -163,7 +167,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     @Test
     public void shouldIncludePartitionsWhenItHasBeenSplitBySystem() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -209,7 +213,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     @Test
     public void shouldReturnLeftPartitionWhenItHasBeenSplitBySystemAndRangeMaxIsEqualToThePartitionMax() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -268,7 +272,7 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     @Test
     public void shouldAddRightPartitionWhenItHasBeenSplitBySystemAndRequestedValueEqualsToThePartitionMax() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();

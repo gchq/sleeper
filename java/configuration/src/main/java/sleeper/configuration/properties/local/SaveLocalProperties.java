@@ -30,9 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SaveLocalProperties {
@@ -52,8 +49,6 @@ public class SaveLocalProperties {
                                        Stream<TableProperties> tablePropertiesStream) throws IOException {
         writeInstanceProperties(instanceProperties, directory.resolve("instance.properties"));
         Files.writeString(directory.resolve("tags.properties"), instanceProperties.getTagsPropertiesAsString());
-        writeStringIfSet(directory.resolve("configBucket.txt"), instanceProperties.get(CONFIG_BUCKET));
-        writeStringIfSet(directory.resolve("queryResultsBucket.txt"), instanceProperties.get(QUERY_RESULTS_BUCKET));
         saveTablesToDirectory(directory, tablePropertiesStream);
     }
 
@@ -74,15 +69,8 @@ public class SaveLocalProperties {
         Files.createDirectories(tableDir);
         writeTableProperties(tableProperties, tableDir.resolve("table.properties"));
 
-        // Unpack properties for schema & table bucket
+        // Write schema
         tableProperties.getSchema().save(tableDir.resolve("schema.json"));
-        writeStringIfSet(tableDir.resolve("tableBucket.txt"), tableProperties.get(DATA_BUCKET));
-    }
-
-    private static void writeStringIfSet(Path file, String value) throws IOException {
-        if (value != null) {
-            Files.writeString(file, value);
-        }
     }
 
     private static void writeInstanceProperties(InstanceProperties instanceProperties, Path file) throws IOException {

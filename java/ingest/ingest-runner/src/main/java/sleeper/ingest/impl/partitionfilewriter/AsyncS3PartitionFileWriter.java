@@ -94,13 +94,15 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param parquetConfiguration  Hadoop, schema and Parquet configuration for writing the local Parquet partition file
      * @param s3TransferManager     The manager to use to perform the asynchronous upload
      * @param localWorkingDirectory The local directory to use to create temporary files
-     * @param s3BucketName          The S3 bucket to write to
+     * @param s3BucketName          The S3 bucket name and prefix to write to
+     * @param filePathPrefix        The prefix for S3 objects to write
      * @throws IOException -
      */
     public AsyncS3PartitionFileWriter(
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String s3BucketName,
+            String filePathPrefix,
             S3TransferManager s3TransferManager,
             String localWorkingDirectory,
             String fileName,
@@ -112,8 +114,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), fileName);
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
-        this.partitionParquetS3Key = String.format("partition_%s/%s.parquet", partition.getId(), fileName);
-        this.quantileSketchesS3Key = String.format("partition_%s/%s.sketches", partition.getId(), fileName);
+        this.partitionParquetS3Key = String.format("partition_%s/%s%s.parquet", partition.getId(), filePathPrefix, fileName);
+        this.quantileSketchesS3Key = String.format("partition_%s/%s%s.sketches", partition.getId(), filePathPrefix, fileName);
         this.timeSupplier = timeSupplier;
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());

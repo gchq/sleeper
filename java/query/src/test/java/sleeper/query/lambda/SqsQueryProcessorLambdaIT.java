@@ -122,12 +122,12 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
@@ -737,17 +737,9 @@ public class SqsQueryProcessorLambdaIT {
         tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
         tableProperties.setSchema(SCHEMA);
 
-        try {
-            String dataDir = createTempDirectory(tempDir, null).toString();
-            tableProperties.set(DATA_BUCKET, dataDir);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
         new TableCreator(s3Client, dynamoClient, instanceProperties).createTable(tableProperties);
-
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties).getStateStore(tableProperties);
         try {
@@ -772,7 +764,8 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(SUBNETS, "unused");
         instanceProperties.set(JARS_BUCKET, "unused");
         instanceProperties.set(VERSION, "unused");
-        instanceProperties.set(FILE_SYSTEM, dir);
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -800,10 +793,7 @@ public class SqsQueryProcessorLambdaIT {
         s3Client.createBucket(configBucket);
         instanceProperties.set(CONFIG_BUCKET, configBucket);
 
-        String queryResultsBucket = UUID.randomUUID().toString();
-        s3Client.createBucket(queryResultsBucket);
-        instanceProperties.set(QUERY_RESULTS_BUCKET, queryResultsBucket);
-
+        instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
         try {
             instanceProperties.saveToS3(s3Client);

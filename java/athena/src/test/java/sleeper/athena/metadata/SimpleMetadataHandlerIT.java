@@ -16,6 +16,7 @@
 package sleeper.athena.metadata;
 
 import com.amazonaws.athena.connector.lambda.data.Block;
+import com.amazonaws.athena.connector.lambda.data.BlockAllocator;
 import com.amazonaws.athena.connector.lambda.data.BlockAllocatorImpl;
 import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
 import com.amazonaws.athena.connector.lambda.domain.TableName;
@@ -43,16 +44,19 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldCreateSplitForEachFileInAPartition() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(createS3Client(), createDynamoClient(),
                 instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
 
         // When
-        Block partitionsBlock = createPartitionsBlock("[ \"a/b/c.parquet\", \"d/e/f.parquet\"]");
-        GetSplitsResponse getSplitsResponse = simpleMetadataHandler.doGetSplits(new BlockAllocatorImpl(), new GetSplitsRequest(TestUtils.createIdentity(),
-                "abc", "def", new TableName("mydb", "myTable"), partitionsBlock, new ArrayList<>(),
-                new Constraints(new HashMap<>()), "continue"));
+        GetSplitsResponse getSplitsResponse;
+        try (BlockAllocator blockAllocator = new BlockAllocatorImpl()) {
+            Block partitionsBlock = createPartitionsBlock(blockAllocator, "[ \"a/b/c.parquet\", \"d/e/f.parquet\"]");
+            getSplitsResponse = simpleMetadataHandler.doGetSplits(blockAllocator, new GetSplitsRequest(TestUtils.createIdentity(),
+                    "abc", "def", new TableName("mydb", "myTable"), partitionsBlock, new ArrayList<>(),
+                    new Constraints(new HashMap<>()), "continue"));
+        }
 
         // Then
         assertThat(getSplitsResponse.getSplits())
@@ -63,17 +67,20 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldOnlyCreateOneSplitForEachFileAcrossMultiplePartitions() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(createS3Client(), createDynamoClient(),
                 instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
 
         // When
-        Block partitionsBlock = createPartitionsBlock("[ \"a/b/c.parquet\", \"d/e/f.parquet\"]",
-                "[ \"g/h/i.parquet\", \"d/e/f.parquet\"]");
-        GetSplitsResponse getSplitsResponse = simpleMetadataHandler.doGetSplits(new BlockAllocatorImpl(), new GetSplitsRequest(TestUtils.createIdentity(),
-                "abc", "def", new TableName("mydb", "myTable"), partitionsBlock, new ArrayList<>(),
-                new Constraints(new HashMap<>()), "continue"));
+        GetSplitsResponse getSplitsResponse;
+        try (BlockAllocator blockAllocator = new BlockAllocatorImpl()) {
+            Block partitionsBlock = createPartitionsBlock(blockAllocator, "[ \"a/b/c.parquet\", \"d/e/f.parquet\"]",
+                    "[ \"g/h/i.parquet\", \"d/e/f.parquet\"]");
+            getSplitsResponse = simpleMetadataHandler.doGetSplits(blockAllocator, new GetSplitsRequest(TestUtils.createIdentity(),
+                    "abc", "def", new TableName("mydb", "myTable"), partitionsBlock, new ArrayList<>(),
+                    new Constraints(new HashMap<>()), "continue"));
+        }
 
         // Then
         assertThat(getSplitsResponse.getSplits())
@@ -81,8 +88,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
                 .containsExactlyInAnyOrder("a/b/c.parquet", "d/e/f.parquet", "g/h/i.parquet");
     }
 
-    private Block createPartitionsBlock(String... jsonSerialisedLists) {
-        BlockAllocatorImpl blockAllocator = new BlockAllocatorImpl();
+    private Block createPartitionsBlock(BlockAllocator blockAllocator, String... jsonSerialisedLists) {
         Block block = blockAllocator.createBlock(new SchemaBuilder().addStringField(RELEVANT_FILES_FIELD).build());
         block.setRowCount(jsonSerialisedLists.length);
         for (int i = 0; i < jsonSerialisedLists.length; i++) {

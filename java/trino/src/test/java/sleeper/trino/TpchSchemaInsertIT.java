@@ -16,7 +16,6 @@
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.trino.sql.query.QueryAssertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -57,7 +56,7 @@ public class TpchSchemaInsertIT {
 
     @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(ImmutableMap.of(), TABLE_DEFINITIONS, Optional.empty());
+            new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
     private static QueryAssertions assertions;
 
     @BeforeAll
@@ -85,13 +84,13 @@ public class TpchSchemaInsertIT {
         return Schema.builder()
                 .rowKeyFields(new Field("name", new StringType()))
                 .valueFields(
-                    new Field("custkey", new LongType()),
-                    new Field("address", new StringType()),
-                    new Field("nationkey", new LongType()),
-                    new Field("phone", new StringType()),
-                    new Field("acctbal", new StringType()),
-                    new Field("mktsegment", new StringType()),
-                    new Field("comment", new StringType()))
+                        new Field("custkey", new LongType()),
+                        new Field("address", new StringType()),
+                        new Field("nationkey", new LongType()),
+                        new Field("phone", new StringType()),
+                        new Field("acctbal", new StringType()),
+                        new Field("mktsegment", new StringType()),
+                        new Field("comment", new StringType()))
                 .build();
     }
 
@@ -99,14 +98,14 @@ public class TpchSchemaInsertIT {
         return Schema.builder()
                 .rowKeyFields(new Field("custkey", new LongType()))
                 .valueFields(
-                    new Field("orderkey", new LongType()),
-                    new Field("orderstatus", new StringType()),
-                    new Field("totalprice", new StringType()),
-                    new Field("orderdate", new StringType()),
-                    new Field("orderpriority", new StringType()),
-                    new Field("clerk", new StringType()),
-                    new Field("shippriority", new IntType()),
-                    new Field("comment", new StringType()))
+                        new Field("orderkey", new LongType()),
+                        new Field("orderstatus", new StringType()),
+                        new Field("totalprice", new StringType()),
+                        new Field("orderdate", new StringType()),
+                        new Field("orderpriority", new StringType()),
+                        new Field("clerk", new StringType()),
+                        new Field("shippriority", new IntType()),
+                        new Field("comment", new StringType()))
                 .build();
     }
 
@@ -114,21 +113,21 @@ public class TpchSchemaInsertIT {
         return Schema.builder()
                 .rowKeyFields(new Field("orderkey", new LongType()))
                 .valueFields(
-                    new Field("partkey", new LongType()),
-                    new Field("suppkey", new LongType()),
-                    new Field("linenumber", new IntType()),
-                    new Field("quantity", new IntType()),
-                    new Field("extendedprice", new StringType()),
-                    new Field("discount", new StringType()),
-                    new Field("tax", new StringType()),
-                    new Field("returnflag", new StringType()),
-                    new Field("linestatus", new StringType()),
-                    new Field("shipdate", new StringType()),
-                    new Field("commitdate", new StringType()),
-                    new Field("receiptdate", new StringType()),
-                    new Field("shipinstruct", new StringType()),
-                    new Field("shipmode", new StringType()),
-                    new Field("comment", new StringType()))
+                        new Field("partkey", new LongType()),
+                        new Field("suppkey", new LongType()),
+                        new Field("linenumber", new IntType()),
+                        new Field("quantity", new IntType()),
+                        new Field("extendedprice", new StringType()),
+                        new Field("discount", new StringType()),
+                        new Field("tax", new StringType()),
+                        new Field("returnflag", new StringType()),
+                        new Field("linestatus", new StringType()),
+                        new Field("shipdate", new StringType()),
+                        new Field("commitdate", new StringType()),
+                        new Field("receiptdate", new StringType()),
+                        new Field("shipinstruct", new StringType()),
+                        new Field("shipmode", new StringType()),
+                        new Field("comment", new StringType()))
                 .build();
     }
 

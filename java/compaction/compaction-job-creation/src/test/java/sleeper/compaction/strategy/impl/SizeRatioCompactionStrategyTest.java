@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -47,9 +47,9 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
@@ -76,12 +76,12 @@ public class SizeRatioCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(1);
 
-        checkJob(compactionJobs.get(0), fileInfos.stream().map(FileInfo::getFilename).collect(Collectors.toList()), partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
+        checkJob(compactionJobs.get(0), fileInfos.stream().map(FileInfo::getFilename).collect(Collectors.toList()), partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }
 
     @Test
@@ -89,9 +89,9 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
@@ -118,7 +118,7 @@ public class SizeRatioCompactionStrategyTest {
         }
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, fileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), fileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).isEmpty();
@@ -129,9 +129,9 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
@@ -166,7 +166,7 @@ public class SizeRatioCompactionStrategyTest {
         Collections.shuffle(shuffledFileInfos);
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, shuffledFileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), shuffledFileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(2);
@@ -175,13 +175,13 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 5; i++) {
             filesForJob1.add(fileInfos.get(i).getFilename());
         }
-        checkJob(compactionJobs.get(0), filesForJob1, partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
+        checkJob(compactionJobs.get(0), filesForJob1, partition.getId(), instanceProperties.get(FILE_SYSTEM));
 
         List<String> filesForJob2 = new ArrayList<>();
         for (int i = 5; i < 10; i++) {
             filesForJob2.add(fileInfos.get(i).getFilename());
         }
-        checkJob(compactionJobs.get(1), filesForJob2, partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
+        checkJob(compactionJobs.get(1), filesForJob2, partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }
 
     @Test
@@ -189,9 +189,9 @@ public class SizeRatioCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tableProperties.set(SIZE_RATIO_COMPACTION_STRATEGY_RATIO, "2");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
@@ -229,7 +229,7 @@ public class SizeRatioCompactionStrategyTest {
         Collections.shuffle(shuffledFileInfos);
 
         // When
-        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.EMPTY_LIST, shuffledFileInfos, partitions);
+        List<CompactionJob> compactionJobs = sizeRatioCompactionStrategy.createCompactionJobs(Collections.emptyList(), shuffledFileInfos, partitions);
 
         // Then
         assertThat(compactionJobs).hasSize(3);
@@ -238,33 +238,29 @@ public class SizeRatioCompactionStrategyTest {
         for (int i = 0; i < 5; i++) {
             filesForJob1.add(fileInfos.get(i).getFilename());
         }
-        checkJob(compactionJobs.get(0), filesForJob1, partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
+        checkJob(compactionJobs.get(0), filesForJob1, partition.getId(), instanceProperties.get(FILE_SYSTEM));
 
         List<String> filesForJob2 = new ArrayList<>();
         for (int i = 5; i < 10; i++) {
             filesForJob2.add(fileInfos.get(i).getFilename());
         }
-        checkJob(compactionJobs.get(1), filesForJob2, partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
+        checkJob(compactionJobs.get(1), filesForJob2, partition.getId(), instanceProperties.get(FILE_SYSTEM));
 
         List<String> filesForJob3 = new ArrayList<>();
         for (int i = 10; i < 13; i++) {
             filesForJob3.add(fileInfos.get(i).getFilename());
         }
-        checkJob(compactionJobs.get(2), filesForJob3, partition.getId(), instanceProperties.get(FILE_SYSTEM), tableProperties.get(DATA_BUCKET));
+        checkJob(compactionJobs.get(2), filesForJob3, partition.getId(), instanceProperties.get(FILE_SYSTEM));
     }
 
-    private void checkJob(CompactionJob job, List<String> files, String partitionId, String fs, String bucket) {
-        List<String> filesForJob = new ArrayList<>();
-        for (String file : files) {
-            filesForJob.add(file);
-        }
+    private void checkJob(CompactionJob job, List<String> files, String partitionId, String fileSystem) {
         CompactionJob expectedCompactionJob = CompactionJob.builder()
                 .tableName("table")
                 .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId(partitionId)
-                .inputFiles(filesForJob)
+                .inputFiles(new ArrayList<>(files))
                 .isSplittingJob(false)
-                .outputFile(fs + bucket + "/partition_" + partitionId + "/" + job.getId() + ".parquet")
+                .outputFile(fileSystem + "databucket/table/partition_" + partitionId + "/" + job.getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)

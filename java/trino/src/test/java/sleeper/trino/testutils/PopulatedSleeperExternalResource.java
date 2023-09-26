@@ -64,9 +64,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -84,6 +84,7 @@ import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Cli
  */
 public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
     private static final String TEST_CONFIG_BUCKET_NAME = "test-config-bucket";
+    private static final String TEST_DATA_BUCKET_NAME = "test-table-data-bucket";
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
@@ -99,12 +100,16 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private AmazonDynamoDB dynamoDBClient;
     private QueryAssertions queryAssertions;
 
+    public PopulatedSleeperExternalResource(List<TableDefinition> tableDefinitions) {
+        this(Map.of(), tableDefinitions, new SleeperConfig());
+    }
+
     public PopulatedSleeperExternalResource(Map<String, String> extraPropertiesForQueryRunner,
                                             List<TableDefinition> tableDefinitions,
-                                            Optional<SleeperConfig> sleeperConfigOpt) {
+                                            SleeperConfig sleeperConfig) {
         this.extraPropertiesForQueryRunner = requireNonNull(extraPropertiesForQueryRunner);
         this.tableDefinitions = requireNonNull(tableDefinitions);
-        this.sleeperConfig = requireNonNull(sleeperConfigOpt).orElse(new SleeperConfig());
+        this.sleeperConfig = requireNonNull(sleeperConfig);
     }
 
     private AmazonDynamoDB createDynamoClient() {
@@ -139,6 +144,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, TEST_CONFIG_BUCKET_NAME);
+        instanceProperties.set(DATA_BUCKET, TEST_DATA_BUCKET_NAME);
         instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(REGION, "test-region");
@@ -147,7 +153,8 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         instanceProperties.set(SUBNETS, "test-subnet");
         instanceProperties.set(FILE_SYSTEM, "s3a://");
 
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(TEST_DATA_BUCKET_NAME);
+        s3Client.createBucket(TEST_CONFIG_BUCKET_NAME);
         instanceProperties.saveToS3(s3Client);
 
         return instanceProperties;
@@ -155,10 +162,6 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     private TableProperties createTable(InstanceProperties instanceProperties,
                                         TableDefinition tableDefinition) {
-        // Use the table name to generate the data bucket name, abiding by the bucket-naming rules
-        String dataBucket = tableDefinition.tableName
-                .toLowerCase()
-                .replaceAll("[^-a-z0-9.]", "---");
 
         String activeTable = tableDefinition.tableName + "-af";
         String readyForGCTable = tableDefinition.tableName + "-rfgcf";
@@ -166,13 +169,10 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
         tableProperties.setSchema(tableDefinition.schema);
-        tableProperties.set(DATA_BUCKET, dataBucket);
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, activeTable);
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, readyForGCTable);
         tableProperties.set(PARTITION_TABLENAME, partitionTable);
         tableProperties.saveToS3(this.s3Client);
-
-        s3Client.createBucket(dataBucket);
 
         DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(
                 instanceProperties,

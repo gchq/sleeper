@@ -65,8 +65,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -338,6 +338,7 @@ public class GarbageCollectorIT {
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, "");
+        instanceProperties.set(DATA_BUCKET, tempDir.toString());
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
@@ -360,7 +361,6 @@ public class GarbageCollectorIT {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(TEST_SCHEMA);
-        tableProperties.set(DATA_BUCKET, tempDir.toString());
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");

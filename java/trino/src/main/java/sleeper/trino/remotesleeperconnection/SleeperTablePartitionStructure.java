@@ -15,8 +15,6 @@
  */
 package sleeper.trino.remotesleeperconnection;
 
-import io.airlift.log.Logger;
-
 import sleeper.core.partition.Partition;
 
 import java.time.Instant;
@@ -24,8 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-class SleeperTablePartitionStructure {
-    private static final Logger LOG = Logger.get(SleeperTablePartitionStructure.class);
+public class SleeperTablePartitionStructure {
 
     private final Instant asOfInstant;
     private final List<Partition> allPartitions;

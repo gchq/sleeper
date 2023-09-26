@@ -88,8 +88,12 @@ public abstract class AbstractMetadataHandlerIT {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
-    protected TableProperties createEmptyTable(InstanceProperties instanceProperties) throws IOException {
-        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA, createTempDirectory(tempDir, null).toString(),
+    protected InstanceProperties createInstance() throws IOException {
+        return TestUtils.createInstance(createS3Client(), createTempDirectory(tempDir, null).toString());
+    }
+
+    protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
+        return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
                 createDynamoClient(), createS3Client(), 2018, 2019, 2020);
     }
 

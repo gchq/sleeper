@@ -16,53 +16,41 @@
 
 package sleeper.configuration.properties.local;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Properties;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
-import static sleeper.configuration.properties.local.SaveLocalProperties.saveFromS3;
+import static sleeper.configuration.properties.local.SaveLocalProperties.saveToDirectory;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-@Testcontainers
 class SaveLocalPropertiesIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
-
-    private final AmazonS3 s3Client = createS3Client();
     @TempDir
     private Path tempDir;
 
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
     @Test
-    void shouldLoadInstancePropertiesFromS3() throws IOException {
+    void shouldSaveInstanceProperties() throws IOException {
         // Given
-        InstanceProperties properties = createTestInstanceProperties(s3Client);
+        InstanceProperties properties = createTestInstanceProperties();
 
         // When
-        saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
         assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
@@ -70,41 +58,62 @@ class SaveLocalPropertiesIT {
     }
 
     @Test
-    void shouldLoadTablePropertiesFromS3() throws IOException {
+    void shouldSaveTableProperties() throws IOException {
         // Given
-        InstanceProperties properties = createTestInstanceProperties(s3Client);
-        TableProperties table1 = createTestTableProperties(properties, schemaWithKey("key1"), s3Client);
-        TableProperties table2 = createTestTableProperties(properties, schemaWithKey("key2"), s3Client);
+        InstanceProperties properties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(properties, schemaWithKey("key"));
 
         // When
-        saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
 
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
-                .containsExactlyInAnyOrder(table1, table2);
+                .containsExactly(tableProperties);
     }
 
     @Test
-    void shouldLoadNoTablePropertiesFromS3WhenNoneAreSaved() throws IOException {
+    void shouldLoadNoTablePropertiesWhenNoneSaved() throws IOException {
         // Given
-        InstanceProperties properties = createTestInstanceProperties(s3Client);
+        InstanceProperties properties = createTestInstanceProperties();
 
         // When
-        saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
-        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties"))).isEmpty();
+        assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
+                .isEmpty();
     }
 
     @Test
-    void shouldLoadAndReturnInstancePropertiesFromS3() throws IOException {
+    void shouldSaveTagsFile() throws IOException {
         // Given
-        InstanceProperties properties = createTestInstanceProperties(s3Client);
+        Properties tags = new Properties();
+        tags.setProperty("tag-1", "value-1");
+        tags.setProperty("tag-2", "value-2");
+        InstanceProperties properties = createTestInstanceProperties();
+        properties.loadTags(tags);
 
         // When
-        InstanceProperties saved = saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveToDirectory(tempDir, properties, Stream.empty());
 
         // Then
-        assertThat(properties).isEqualTo(saved);
+        assertThat(loadProperties(tempDir.resolve("tags.properties")))
+                .isEqualTo(tags);
+    }
+
+    @Test
+    void shouldSaveSchemaFile() throws IOException {
+        // Given
+        InstanceProperties properties = createTestInstanceProperties();
+        Schema schema = Schema.builder().rowKeyFields(new Field("test-key", new LongType())).build();
+        TableProperties tableProperties = createTestTableProperties(properties, schema);
+        tableProperties.set(TABLE_NAME, "test-table");
+
+        // When
+        saveToDirectory(tempDir, properties, Stream.of(tableProperties));
+
+        // Then
+        assertThat(Schema.load(tempDir.resolve("tables/test-table/schema.json")))
+                .isEqualTo(schema);
     }
 }
