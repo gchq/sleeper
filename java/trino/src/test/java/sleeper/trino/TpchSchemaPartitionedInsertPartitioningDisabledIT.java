@@ -133,17 +133,15 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     @Test
     public void testMoreThanOneParquetFileInRootPartitionInUnpartitionedTable() throws StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
-        assertThat(stateStore.getAllPartitions().stream()
-                .filter(p -> p.getId().equals("root"))
-                .allMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
+        assertThat(stateStore.getPartitionToActiveFilesMap())
+                .containsOnlyKeys("root")
+                .extractingByKey("root").satisfies(files -> assertThat(files).hasSizeGreaterThan(1));
     }
 
     @Test
     public void testMoreThanOneParquetFileInAnyPartitionInPartitionedTable() throws StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
-        assertThat(stateStore.getLeafPartitions().stream()
-                .anyMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
+        assertThat(stateStore.getPartitionToActiveFilesMap())
+                .anySatisfy((partitionId, files) -> assertThat(files).hasSizeGreaterThan(1));
     }
 }
