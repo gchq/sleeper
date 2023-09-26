@@ -24,7 +24,7 @@ import sleeper.ingest.batcher.FileIngestRequest;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.clients.util.ClientUtils.formatBytes;
+import static sleeper.core.util.NumberFormatUtils.formatBytesAsHumanReadableString;
 
 public class StandardIngestBatcherReporter implements IngestBatcherReporter {
     private final TableField fileNameField;
@@ -76,7 +76,7 @@ public class StandardIngestBatcherReporter implements IngestBatcherReporter {
         builder
                 .value(stateField, fileIngestRequest.isAssignedToJob() ? "BATCHED" : "PENDING")
                 .value(fileNameField, fileIngestRequest.getFile())
-                .value(fileSizeBytesField, formatBytes(fileIngestRequest.getFileSizeBytes()))
+                .value(fileSizeBytesField, formatBytesAsHumanReadableString(fileIngestRequest.getFileSizeBytes()))
                 .value(tableNameField, fileIngestRequest.getTableName())
                 .value(receivedTimeField, fileIngestRequest.getReceivedTime())
                 .value(jobIdField, fileIngestRequest.getJobId());
