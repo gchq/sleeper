@@ -749,7 +749,7 @@ public class SqsQueryProcessorLambdaIT {
         new TableCreator(s3Client, dynamoClient, instanceProperties).createTable(tableProperties);
 
 
-        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
         try {
             InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, splitPoints).run();
         } catch (StateStoreException e) {

@@ -194,7 +194,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, this.getInstanceProperties());
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, this.getInstanceProperties(), null);
         return stateStoreProvider.getStateStore(this.getTableProperties(tableName));
     }
 
@@ -217,7 +217,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, instanceProperties);
+                StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, instanceProperties, null);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 InitialiseStateStore initialiseStateStore = InitialiseStateStore
                         .createInitialiseStateStoreFromSplitPoints(tableDefinition.schema, stateStore, tableDefinition.splitPoints);

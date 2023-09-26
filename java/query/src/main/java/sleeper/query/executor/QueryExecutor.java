@@ -15,18 +15,12 @@
  */
 package sleeper.query.executor;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.partition.Partition;
@@ -40,7 +34,6 @@ import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
-import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -93,19 +86,6 @@ public class QueryExecutor {
                          ExecutorService executorService) {
         this(objectFactory, stateStore, tableProperties.getSchema(), tableProperties.get(ITERATOR_CLASS_NAME),
                 tableProperties.get(ITERATOR_CONFIG), tableProperties, configuration, executorService);
-    }
-
-    public QueryExecutor(AmazonS3 s3Client,
-                         AmazonDynamoDB dynamoDBClient,
-                         InstanceProperties instanceProperties,
-                         TablePropertiesProvider tablePropertiesProvider,
-                         String tableName,
-                         ExecutorService executorService) throws ObjectFactoryException {
-        this(new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                tablePropertiesProvider.getTableProperties(tableName),
-                new StateStoreProvider(AmazonDynamoDBClientBuilder.defaultClient(), instanceProperties).getStateStore(tablePropertiesProvider.getTableProperties(tableName)),
-                new Configuration(),
-                executorService);
     }
 
     /**

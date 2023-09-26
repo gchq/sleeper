@@ -105,7 +105,7 @@ public class GarbageCollectorIT {
 
         void setupStateStoreWithFixedTime(Instant fixedTime) throws Exception {
             createDynamoDBStateStore(instanceProperties, tableProperties);
-            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
             DynamoDBStateStore stateStore = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties);
             stateStore.initialise();
             stateStore.fixTime(fixedTime);
@@ -246,7 +246,7 @@ public class GarbageCollectorIT {
         void setupStateStoreWithFixedTime(Instant fixedTime) throws Exception {
             createDynamoDBStateStore(instanceProperties, tableProperties1);
             createDynamoDBStateStore(instanceProperties, tableProperties2);
-            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+            stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
             DynamoDBStateStore stateStore1 = (DynamoDBStateStore) stateStoreProvider.getStateStore(tableProperties1);
             stateStore1.initialise();
             stateStore1.fixTime(fixedTime);
