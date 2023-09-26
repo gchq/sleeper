@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -86,13 +87,17 @@ public class DynamoDBStateStoreIT {
         dynamoDBClient.shutdown();
     }
 
+    @BeforeEach
+    void setUp() {
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+    }
+
     private DynamoDBStateStore getStateStore(Schema schema,
                                              List<Partition> partitions,
                                              int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, String.valueOf(garbageCollectorDelayBeforeDeletionInMinutes));
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient);
-        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create(tableProperties);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.initialise(partitions);
         return stateStore;
     }

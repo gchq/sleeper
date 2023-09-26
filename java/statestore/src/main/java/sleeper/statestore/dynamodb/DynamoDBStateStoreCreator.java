@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 
 import java.util.Collection;
 import java.util.List;
@@ -67,11 +66,6 @@ public class DynamoDBStateStoreCreator {
     public void create() {
         createFileInfoTables();
         createPartitionInfoTable();
-    }
-
-    public DynamoDBStateStore create(TableProperties tableProperties) {
-        create();
-        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
     }
 
     public void createFileInfoTables() {
