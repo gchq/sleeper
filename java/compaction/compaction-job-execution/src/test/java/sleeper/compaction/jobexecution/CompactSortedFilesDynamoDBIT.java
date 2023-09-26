@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -39,12 +40,12 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
@@ -55,7 +56,6 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUt
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
@@ -69,16 +69,12 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
             .withExposedPorts(DYNAMO_PORT);
 
     private static AmazonDynamoDB dynamoDBClient;
-    private static CompactionJobStatusStore jobStatusStore;
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeAll
     public static void beforeAll() {
         dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
     @AfterAll
@@ -87,10 +83,16 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         dynamoDBClient = null;
     }
 
+    @BeforeEach
+    void setUp() {
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+    }
+
     private StateStore createStateStore(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        return new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create(tableProperties);
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
     }
 
     @Test
