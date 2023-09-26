@@ -55,6 +55,7 @@ import java.util.List;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -103,6 +104,7 @@ public abstract class IngestJobQueueConsumerTestBase {
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
