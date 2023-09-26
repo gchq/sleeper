@@ -160,6 +160,7 @@ public class ReinitialiseTableIT {
         @BeforeEach
         public void setup() {
             tableProperties.set(STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
+            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         }
 
         @Test
@@ -497,12 +498,8 @@ public class ReinitialiseTableIT {
             throws IOException, StateStoreException {
         //  - Create DynamoDBStateStore
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator =
-                new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient);
-        DynamoDBStateStore dynamoDBStateStore = dynamoDBStateStoreCreator.create(tableProperties);
-
+        DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         dynamoDBStateStore.initialise();
-
         setupPartitionsAndAddFileInfo(dynamoDBStateStore);
 
         // - Check DynamoDBStateStore is set up correctly
