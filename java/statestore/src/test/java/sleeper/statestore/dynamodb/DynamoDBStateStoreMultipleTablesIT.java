@@ -73,7 +73,7 @@ public class DynamoDBStateStoreMultipleTablesIT {
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
-    private StateStore createTableStateStore() throws Exception {
+    private StateStore initialiseTableStateStore() throws Exception {
         StateStore stateStore = getTableStateStore();
         stateStore.initialise();
         return stateStore;
@@ -87,8 +87,8 @@ public class DynamoDBStateStoreMultipleTablesIT {
     @Test
     void shouldCreateFilesForTwoTables() throws Exception {
         // Given
-        StateStore stateStore1 = createTableStateStore();
-        StateStore stateStore2 = createTableStateStore();
+        StateStore stateStore1 = initialiseTableStateStore();
+        StateStore stateStore2 = initialiseTableStateStore();
         FileInfo file1 = fileInfoFactory.leafFile("file1.parquet", 12, 1L, 12L);
         FileInfo file2 = fileInfoFactory.leafFile("file1.parquet", 34, 10L, 20L);
 
