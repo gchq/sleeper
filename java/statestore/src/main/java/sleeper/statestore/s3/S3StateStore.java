@@ -20,18 +20,16 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.schema.Schema;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
  * An implementation of StateStore that stores the information in Parquet files in S3. A DynamoDB table is
@@ -40,6 +38,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * fails then the update is retried.
  */
 public class S3StateStore extends DelegatingStateStore {
+    public static final String TABLE_NAME = "TABLE_NAME";
     public static final String REVISION_ID_KEY = "REVISION_ID_KEY";
     public static final String CURRENT_PARTITIONS_REVISION_ID_KEY = "CURRENT_PARTITIONS_REVISION_ID_KEY";
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
@@ -50,40 +49,27 @@ public class S3StateStore extends DelegatingStateStore {
                         TableProperties tableProperties,
                         AmazonDynamoDB dynamoDB,
                         Configuration conf) {
-        this(instanceProperties.get(FILE_SYSTEM),
-                instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3),
-                instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME),
-                instanceProperties.get(REVISION_TABLENAME),
-                tableProperties.getSchema(),
-                tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
-                dynamoDB,
-                conf);
+        super(S3FileInfoStore.builder()
+                        .fs(instanceProperties.get(FILE_SYSTEM))
+                        .s3Path(s3Path(instanceProperties, tableProperties))
+                        .dynamoRevisionIdTable(instanceProperties.get(REVISION_TABLENAME))
+                        .rowKeyTypes(tableProperties.getSchema().getRowKeyTypes())
+                        .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
+                        .dynamoDB(dynamoDB)
+                        .conf(conf)
+                        .build(),
+                S3PartitionStore.builder()
+                        .fs(instanceProperties.get(FILE_SYSTEM))
+                        .s3Path(s3Path(instanceProperties, tableProperties))
+                        .dynamoRevisionIdTable(instanceProperties.get(REVISION_TABLENAME))
+                        .tableSchema(tableProperties.getSchema())
+                        .dynamoDB(dynamoDB)
+                        .conf(conf)
+                        .build());
     }
 
-    public S3StateStore(String fs,
-                        int maxConnectionsToS3,
-                        String s3Path,
-                        String dynamoRevisionIdTable,
-                        Schema tableSchema,
-                        int garbageCollectorDelayBeforeDeletionInMinutes,
-                        AmazonDynamoDB dynamoDB,
-                        Configuration conf) {
-        super(S3FileInfoStore.builder()
-                .fs(fs)
-                .s3Path(s3Path)
-                .dynamoRevisionIdTable(dynamoRevisionIdTable)
-                .rowKeyTypes(tableSchema.getRowKeyTypes())
-                .garbageCollectorDelayBeforeDeletionInMinutes(garbageCollectorDelayBeforeDeletionInMinutes)
-                .dynamoDB(dynamoDB)
-                .conf(conf)
-                .build(), S3PartitionStore.builder()
-                .fs(fs)
-                .s3Path(s3Path)
-                .dynamoRevisionIdTable(dynamoRevisionIdTable)
-                .tableSchema(tableSchema)
-                .dynamoDB(dynamoDB)
-                .conf(conf)
-                .build());
+    private static String s3Path(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TableProperty.TABLE_NAME);
     }
 
     public void setInitialFileInfos() throws StateStoreException {
