@@ -22,16 +22,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
+import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
@@ -39,30 +37,37 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.StateStoreFactory;
+
+import java.nio.file.Path;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Disabled("TODO")
 @Testcontainers
 public class S3StateStoreMultipleTablesIT {
-    private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
     private final FileInfoFactory fileInfoFactory = fileInfoFactory(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
+    @TempDir
+    public Path tempDir;
+
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
@@ -72,6 +77,9 @@ public class S3StateStoreMultipleTablesIT {
 
     @BeforeEach
     void setUp() {
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
+        instanceProperties.set(DATA_BUCKET, tempDir.toString());
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
@@ -164,6 +172,6 @@ public class S3StateStoreMultipleTablesIT {
     }
 
     private FileInfoFactory fileInfoFactory(PartitionTree tree) {
-        return FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        return FileInfoFactory.builder().schema(schema).partitionTree(tree).lastStateStoreUpdate(Instant.now()).build();
     }
 }

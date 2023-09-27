@@ -17,25 +17,17 @@ package sleeper.statestore.s3;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -55,6 +47,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -78,27 +71,24 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class S3StateStoreIT {
-    private static final int DYNAMO_PORT = 8000;
-    private static AmazonDynamoDB dynamoDBClient;
-    private InstanceProperties instanceProperties;
-
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
+    private static AmazonDynamoDB dynamoDBClient;
+
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @TempDir
-    public Path folder;
+    public Path tempDir;
 
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
@@ -108,24 +98,10 @@ public class S3StateStoreIT {
 
     @BeforeEach
     void setUp() {
-        instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
-        instanceProperties.set(DATA_BUCKET, folder.toString());
-        createDynamoTable();
-    }
-
-    private void createDynamoTable() {
-        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.HASH));
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(instanceProperties.get(REVISION_TABLENAME))
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
-        dynamoDBClient.createTable(request);
+        instanceProperties.set(DATA_BUCKET, tempDir.toString());
+        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
     private S3StateStore getStateStore(Schema schema,
@@ -152,7 +128,7 @@ public class S3StateStoreIT {
     }
 
     private S3StateStore getStateStore(Schema schema) throws StateStoreException {
-        return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
+        return getStateStoreFromSplitPoints(schema, Collections.emptyList());
     }
 
     private Schema schemaWithSingleRowKeyType(PrimitiveType type) {
@@ -415,7 +391,7 @@ public class S3StateStoreIT {
                     try {
                         stateStore.addFile(file);
                     } catch (StateStoreException e) {
-                        e.printStackTrace();
+                        throw new RuntimeException(e);
                     }
                 })
                 .map(runnable -> CompletableFuture.runAsync(runnable, executorService))

@@ -23,18 +23,14 @@ import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
 public class S3StateStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(S3StateStoreCreator.class);
     private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
 
@@ -45,12 +41,12 @@ public class S3StateStoreCreator {
 
     public void create() {
         String tableName = instanceProperties.get(REVISION_TABLENAME);
-        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
-        attributeDefinitions.add(new AttributeDefinition(S3StateStore.TABLE_NAME, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(S3StateStore.TABLE_NAME, KeyType.HASH));
-        keySchemaElements.add(new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.RANGE));
+        List<AttributeDefinition> attributeDefinitions = List.of(
+                new AttributeDefinition(S3StateStore.TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
+        List<KeySchemaElement> keySchemaElements = List.of(
+                new KeySchemaElement(S3StateStore.TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.RANGE));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)
