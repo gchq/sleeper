@@ -1304,4 +1304,23 @@ public class S3StateStoreIT {
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
     }
+
+    @Test
+    void shouldStoreFileWhenMinAndMaxKeyAreNotSet() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        StateStore stateStore = getStateStore(schema);
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitions(stateStore.getAllPartitions())
+                .lastStateStoreUpdate(Instant.now())
+                .build();
+        FileInfo fileInfo = factory.leafFile(100L, null, null);
+
+        // When
+        stateStore.addFile(fileInfo);
+
+        // Then
+        assertThat(stateStore.getActiveFiles())
+                .containsExactly(fileInfo);
+    }
 }
