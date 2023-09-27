@@ -26,12 +26,15 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
@@ -53,7 +56,6 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -70,15 +72,22 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class S3StateStoreIT {
     private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
+    private InstanceProperties instanceProperties;
 
     @Container
     public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
@@ -97,45 +106,52 @@ public class S3StateStoreIT {
         dynamoDBClient.shutdown();
     }
 
-    private String createDynamoTable() {
-        String tableName = UUID.randomUUID().toString();
+    @BeforeEach
+    void setUp() {
+        instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
+        instanceProperties.set(DATA_BUCKET, folder.toString());
+        createDynamoTable();
+    }
+
+    private void createDynamoTable() {
         List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
         attributeDefinitions.add(new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = new ArrayList<>();
         keySchemaElements.add(new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.HASH));
         CreateTableRequest request = new CreateTableRequest()
-                .withTableName(tableName)
+                .withTableName(instanceProperties.get(REVISION_TABLENAME))
                 .withAttributeDefinitions(attributeDefinitions)
                 .withKeySchema(keySchemaElements)
                 .withBillingMode(BillingMode.PAY_PER_REQUEST);
         dynamoDBClient.createTable(request);
-        return tableName;
     }
 
     private S3StateStore getStateStore(Schema schema,
                                        List<Partition> partitions,
-                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
-        String bucket = createTempDirectory(folder, null).toString();
-        String dynamoTableName = createDynamoTable();
-        S3StateStore stateStore = new S3StateStore("", 5, bucket, dynamoTableName, schema, garbageCollectorDelayBeforeDeletionInMinutes, dynamoDBClient, new Configuration());
+                                       int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
+        S3StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         stateStore.initialise(partitions);
         return stateStore;
     }
 
     private S3StateStore getStateStore(Schema schema,
-                                       List<Partition> partitions) throws IOException, StateStoreException {
+                                       List<Partition> partitions) throws StateStoreException {
         return getStateStore(schema, partitions, 0);
     }
 
-    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws IOException, StateStoreException {
+    private S3StateStore getStateStoreFromSplitPoints(Schema schema, List<Object> splitPoints) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, splitPoints).construct(), 0);
     }
 
-    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema, int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         return getStateStore(schema, new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct(), garbageCollectorDelayBeforeDeletionInMinutes);
     }
 
-    private S3StateStore getStateStore(Schema schema) throws IOException, StateStoreException {
+    private S3StateStore getStateStore(Schema schema) throws StateStoreException {
         return getStateStoreFromSplitPoints(schema, Collections.EMPTY_LIST);
     }
 
@@ -155,7 +171,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoForLongRowKey() throws IOException, StateStoreException {
+    public void shouldReturnCorrectFileInfoForLongRowKey() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -186,7 +202,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoForByteArrayKey() throws IOException, StateStoreException {
+    public void shouldReturnCorrectFileInfoForByteArrayKey() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
@@ -219,7 +235,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws IOException, StateStoreException {
+    public void shouldReturnCorrectFileInfoFor2DimensionalByteArrayKey() throws Exception {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
         StateStore stateStore = getStateStore(schema);
@@ -254,7 +270,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws IOException, StateStoreException {
+    public void shouldReturnCorrectFileInfoForMultidimensionalRowKey() throws Exception {
         // Given
         Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
         StateStore stateStore = getStateStore(schema);
@@ -285,7 +301,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnAllFileInfos() throws IOException, StateStoreException {
+    public void shouldReturnAllFileInfos() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -313,7 +329,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws IOException, StateStoreException {
+    public void testExceptionThrownWhenAddingFileInfoWithMissingFilename() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -333,7 +349,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws IOException, StateStoreException {
+    public void testExceptionThrownWhenAddingFileInfoWithMissingStatus() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -353,7 +369,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws IOException, StateStoreException {
+    public void testExceptionThrownWhenAddingFileInfoWithMissingPartition() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -373,7 +389,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldAddFilesUnderContention() throws IOException, StateStoreException {
+    public void shouldAddFilesUnderContention() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -414,7 +430,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void testGetFilesThatAreReadyForGC() throws IOException, StateStoreException {
+    public void testGetFilesThatAreReadyForGC() throws Exception {
         // Given
         Instant file1Time = Instant.parse("2023-06-06T15:00:00Z");
         Instant file2Time = Instant.parse("2023-06-06T15:01:00Z");
@@ -478,7 +494,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnOnlyActiveFilesWithNoJobId() throws IOException, StateStoreException {
+    public void shouldReturnOnlyActiveFilesWithNoJobId() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -525,7 +541,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldDeleteReadyForGCFile() throws IOException, StateStoreException {
+    public void shouldDeleteReadyForGCFile() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -560,7 +576,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldNotDeleteReadyForGCFileIfNotMarkedAsReadyForGC() throws IOException, StateStoreException {
+    public void shouldNotDeleteReadyForGCFileIfNotMarkedAsReadyForGC() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -592,7 +608,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws IOException, StateStoreException {
+    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFile() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -631,7 +647,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws IOException, StateStoreException {
+    public void shouldAtomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesForSplittingJob() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -680,7 +696,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws IOException, StateStoreException {
+    public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFileShouldFailIfFilesNotActive() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -722,7 +738,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesShouldFailIfFilesNotActive() throws IOException, StateStoreException {
+    public void atomicallyUpdateStatusToReadyForGCAndCreateNewActiveFilesShouldFailIfFilesNotActive() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -775,7 +791,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldAtomicallyUpdateJobStatusOfFiles() throws IOException, StateStoreException {
+    public void shouldAtomicallyUpdateJobStatusOfFiles() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -808,7 +824,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws IOException, StateStoreException {
+    public void shouldNotAtomicallyCreateJobAndUpdateJobStatusOfFilesWhenJobIdAlreadySet() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore stateStore = getStateStore(schema);
@@ -837,7 +853,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws IOException, StateStoreException {
+    public void shouldCorrectlyInitialisePartitionsWithLongKeyType() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList(100L))
@@ -849,7 +865,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldCorrectlyInitialisePartitionsWithStringKeyType() throws IOException, StateStoreException {
+    public void shouldCorrectlyInitialisePartitionsWithStringKeyType() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new StringType());
         List<Partition> partitions = new PartitionsFromSplitPoints(schema, Collections.singletonList("A"))
@@ -861,7 +877,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldCorrectlyInitialisePartitionsWithByteArrayKeyType() throws IOException, StateStoreException {
+    public void shouldCorrectlyInitialisePartitionsWithByteArrayKeyType() throws Exception {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
         byte[] min = new byte[]{1, 2, 3, 4};
@@ -874,7 +890,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldCorrectlyStorePartitionWithMultidimensionalKeyType() throws IOException, StateStoreException {
+    public void shouldCorrectlyStorePartitionWithMultidimensionalKeyType() throws Exception {
         // Given
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
@@ -912,7 +928,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldCorrectlyStoreNonLeafPartitionWithByteArrayKeyType() throws IOException, StateStoreException {
+    public void shouldCorrectlyStoreNonLeafPartitionWithByteArrayKeyType() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -944,7 +960,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnCorrectPartitionToFileMapping() throws IOException, StateStoreException {
+    public void shouldReturnCorrectPartitionToFileMapping() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -980,7 +996,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnAllPartitions() throws IOException, StateStoreException {
+    public void shouldReturnAllPartitions() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -997,7 +1013,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws IOException, StateStoreException {
+    public void shouldReturnLeafPartitionsAfterPartitionUpdate() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1027,7 +1043,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldUpdatePartitions() throws IOException, StateStoreException {
+    public void shouldUpdatePartitions() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1049,7 +1065,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws IOException, StateStoreException {
+    public void shouldNotUpdatePartitionsIfLeafStatusChanges() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1070,7 +1086,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws IOException, StateStoreException {
+    public void shouldThrowExceptionWithPartitionSplitRequestWhereChildrenWrong() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1107,7 +1123,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws IOException, StateStoreException {
+    public void shouldThrowExceptionWithPartitionSplitRequestWhereParentWrong() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1144,7 +1160,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws IOException, StateStoreException {
+    public void shouldThrowExceptionWithPartitionSplitRequestWhereNewPartitionIsNotLeaf() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1181,7 +1197,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws StateStoreException, IOException {
+    public void shouldInitialiseRootPartitionCorrectlyForIntKey() throws Exception {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1200,7 +1216,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldInitialiseRootPartitionCorrectlyForLongKey() throws StateStoreException, IOException {
+    public void shouldInitialiseRootPartitionCorrectlyForLongKey() throws Exception {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1219,7 +1235,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldInitialiseRootPartitionCorrectlyForStringKey() throws StateStoreException, IOException {
+    public void shouldInitialiseRootPartitionCorrectlyForStringKey() throws Exception {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -1238,7 +1254,7 @@ public class S3StateStoreIT {
     }
 
     @Test
-    public void shouldInitialiseRootPartitionCorrectlyForByteArrayKey() throws StateStoreException, IOException {
+    public void shouldInitialiseRootPartitionCorrectlyForByteArrayKey() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
