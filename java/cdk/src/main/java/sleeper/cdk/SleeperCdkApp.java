@@ -32,6 +32,7 @@ import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.NewDynamoDBStateStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
@@ -76,6 +77,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
+    private NewDynamoDBStateStoreStack dynamoDBStateStoreStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -118,9 +120,11 @@ public class SleeperCdkApp extends Stack {
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
+        dynamoDBStateStoreStack = new NewDynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties);
+
         // Stack for tables
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack);
+        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, dynamoDBStateStoreStack);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
