@@ -60,6 +60,12 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    // S3StateStore
+    SystemDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.metadata.s3.dynamo.revision.table")
+            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // Table metrics
     SystemDefinedInstanceProperty TABLE_METRICS_RULES = Index.propertyBuilder("sleeper.table.metrics.rulenames")
             .description("The names of the CloudWatch rules that trigger generation of metrics for tables.")

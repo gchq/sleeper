@@ -81,9 +81,9 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -272,8 +272,7 @@ public class ReinitialiseTableIT {
             reinitialiseTable(tableProperties);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "2");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "2");
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
                     .sorted(Comparator.comparing(FileInfo::getFilename))
@@ -296,8 +295,7 @@ public class ReinitialiseTableIT {
             reinitialiseTableAndDeletePartitions(tableProperties);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "1");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
@@ -324,8 +322,7 @@ public class ReinitialiseTableIT {
             reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "1");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
@@ -357,8 +354,7 @@ public class ReinitialiseTableIT {
             reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "1");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
@@ -377,13 +373,12 @@ public class ReinitialiseTableIT {
         }
     }
 
-    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(TableProperties tableProperties,
-                                                                             String expectedFilesVersion,
+    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(String expectedFilesVersion,
                                                                              String expectedPartitionsVersion) {
         // - The revisions file should have two entries one for partitions and one for files and both should now be
         //   set to version 00000000000001
         ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(REVISION_TABLENAME))
+                .withTableName(instanceProperties.get(REVISION_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
         assertThat(scanResult.getItems()).hasSize(2);
@@ -523,7 +518,7 @@ public class ReinitialiseTableIT {
 
     private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException, StateStoreException {
         //  - CreateS3StateStore
-        createRevisionDynamoTable(tableProperties.get(REVISION_TABLENAME));
+        createRevisionDynamoTable(instanceProperties.get(REVISION_TABLENAME));
         Configuration configuration = new Configuration();
         configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
@@ -539,7 +534,7 @@ public class ReinitialiseTableIT {
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files and both should now be
         //   set to version 2
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(tableProperties, "2", "2");
+        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("2", "2");
 
         // - Check S3StateStore has correct active files
         assertThat(s3StateStore.getActiveFiles()).hasSize(2);

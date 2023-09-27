@@ -29,8 +29,8 @@ import java.time.Instant;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -53,7 +53,7 @@ public class S3StateStore extends DelegatingStateStore {
         this(instanceProperties.get(FILE_SYSTEM),
                 instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3),
                 instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME),
-                tableProperties.get(REVISION_TABLENAME),
+                instanceProperties.get(REVISION_TABLENAME),
                 tableProperties.getSchema(),
                 tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION),
                 dynamoDB,
