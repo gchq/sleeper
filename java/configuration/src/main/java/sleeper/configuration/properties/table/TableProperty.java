@@ -204,12 +204,6 @@ public interface TableProperty extends SleeperProperty {
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
-                    "the DynamoDBStateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true).build();
     TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
             .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
             .description("This specifies whether point in time recovery is enabled for the revision table if " +
@@ -348,20 +342,6 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .systemDefined(true).build();
-    // DynamoDBStateStore properties
-    TableProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.active.table")
-            .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.gc.table")
-            .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
-                    "in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.partition.table")
-            .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA)
             .systemDefined(true).build();
     // S3StateStore properties
     TableProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.revision.table")
