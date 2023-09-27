@@ -42,6 +42,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -450,6 +451,20 @@ public class S3FileInfoStore implements FileInfoStore {
         LOGGER.debug("Put item to DynamoDB (item = {}, table = {})", item, dynamoRevisionIdTable);
     }
 
+    @Override
+    public boolean isHasNoFiles() {
+        RevisionId revisionId = getCurrentFilesRevisionId();
+        if (revisionId == null) {
+            return true;
+        }
+        String path = getFilesPath(revisionId);
+        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+            return reader.read() == null;
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed loading files", e);
+        }
+    }
+
     private String getFilesPath(RevisionId revisionId) {
         return fs + s3Path + "/statestore/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
@@ -498,15 +513,19 @@ public class S3FileInfoStore implements FileInfoStore {
 
     private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
         List<FileInfo> fileInfos = new ArrayList<>();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), fileSchema)
+        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            while (recordReader.hasNext()) {
+                fileInfos.add(getFileInfoFromRecord(recordReader.next()));
+            }
+        }
+        return fileInfos;
+    }
+
+    private ParquetReader<Record> fileInfosReader(String path) throws IOException {
+        return new ParquetRecordReader.Builder(new Path(path), fileSchema)
                 .withConf(conf)
                 .build();
-        ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-        while (recordReader.hasNext()) {
-            fileInfos.add(getFileInfoFromRecord(recordReader.next()));
-        }
-        recordReader.close();
-        return fileInfos;
     }
 
     public void fixTime(Instant now) {

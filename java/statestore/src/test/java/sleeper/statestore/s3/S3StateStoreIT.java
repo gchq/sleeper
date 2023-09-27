@@ -50,6 +50,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -1254,5 +1256,52 @@ public class S3StateStoreIT {
                 .buildTree()
                 .getPartition(partitions.get(0).getId());
         assertThat(partitions).containsExactly(expectedPartition);
+    }
+
+    @Test
+    void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+        stateStore.addFile(FileInfoFactory.builder()
+                .schema(schema).partitionTree(treeBefore)
+                .lastStateStoreUpdate(Instant.now())
+                .build().leafFile(100L, 1L, 100L));
+
+        // When / Then
+        assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))
+                .isInstanceOf(StateStoreException.class);
+        assertThat(stateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeBefore.getAllPartitions());
+    }
+
+    @Test
+    void shouldReinitialisePartitionsWhenNoFilesArePresent() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+
+        // When
+        stateStore.initialise(treeAfter.getAllPartitions());
+
+        // Then
+        assertThat(stateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
     }
 }

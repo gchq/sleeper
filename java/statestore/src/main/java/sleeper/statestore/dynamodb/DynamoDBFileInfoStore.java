@@ -33,6 +33,7 @@ import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -384,6 +385,21 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void initialise() {
+    }
+
+    @Override
+    public boolean isHasNoFiles() {
+        return isTableEmpty(activeTablename) && isTableEmpty(readyForGCTablename);
+    }
+
+    private boolean isTableEmpty(String tableName) {
+        ScanResult result = dynamoDB.scan(new ScanRequest()
+                .withTableName(tableName)
+                .withConsistentRead(stronglyConsistentReads)
+                .withLimit(1)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        LOGGER.debug("Scanned for any file in table {}, capacity consumed = {}", tableName, result.getConsumedCapacity().getCapacityUnits());
+        return result.getItems().isEmpty();
     }
 
     /**
