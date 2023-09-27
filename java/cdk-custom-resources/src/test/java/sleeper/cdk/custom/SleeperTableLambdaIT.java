@@ -229,7 +229,7 @@ public class SleeperTableLambdaIT {
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "rfgcf");
+        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         return tableProperties;
     }
