@@ -51,18 +51,12 @@ public class BulkImportArguments {
         return constructArgs(bulkImportJob, taskId, jarLocation);
     }
 
-    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, boolean isServerlessJob) {
+    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
 
         String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
-        List<String> args = new ArrayList<>();
-
-        if (!isServerlessJob) {
-            args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster");
-        }
-        args.add("--class");
-        args.add(className);
+        List<String> args = Lists.newArrayList("--class", className);
 
         if (null != userConfig) {
             for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
@@ -75,7 +69,9 @@ public class BulkImportArguments {
     }
 
     public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
-        List<String> args = constructArgs(bulkImportJob, taskId, false);
+        List<String> args = constructArgs(bulkImportJob, taskId);
+
+        args.addAll(0, Lists.newArrayList("spark-submit", "--deploy-mode", "cluster"));
         args.add(jarLocation);
         args.add(instanceProperties.get(CONFIG_BUCKET));
         args.add(bulkImportJob.getId());

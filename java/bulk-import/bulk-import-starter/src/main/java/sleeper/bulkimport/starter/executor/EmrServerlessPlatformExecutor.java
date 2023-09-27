@@ -17,6 +17,7 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
+import software.amazon.awssdk.services.emrserverless.model.Configuration;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
 import software.amazon.awssdk.services.emrserverless.model.MonitoringConfiguration;
@@ -25,11 +26,15 @@ import software.amazon.awssdk.services.emrserverless.model.SparkSubmit;
 import software.amazon.awssdk.services.emrserverless.model.StartJobRunRequest;
 
 import sleeper.bulkimport.configuration.BulkImportPlatformSpec;
+import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -102,7 +107,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                         .entryPointArguments(instanceProperties.get(CONFIG_BUCKET),
                                 bulkImportJob.getId(), taskId, arguments.getJobRunId())
                         .sparkSubmitParameters(
-                                constructSparkArgs(taskId, arguments, bulkImportJob, platformSpec))
+                               constructSparkArgs(taskId, arguments, bulkImportJob, platformSpec))
                         .build()).build())
                 .configurationOverrides(
                         ConfigurationOverrides.builder()
@@ -143,9 +148,10 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                 platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY));
         sparkArgs.replace("spark.dynamicAllocation.enabled",
                 platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION));
+                  
 
         bulkImportJob.setSparkConf(sparkArgs);
-        List<String> args = arguments.constructArgs(bulkImportJob, taskId, true);
+        List<String> args = arguments.constructArgs(bulkImportJob, taskId);
 
         StringBuilder argsAsString = new StringBuilder();
         args.forEach(arg -> {
