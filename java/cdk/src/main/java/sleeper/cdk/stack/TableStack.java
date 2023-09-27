@@ -73,7 +73,7 @@ public class TableStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             TableDataStack dataStack,
-            NewDynamoDBStateStoreStack dynamoDBStateStoreStack) {
+            DynamoDBStateStoreStack dynamoDBStateStoreStack) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
@@ -124,7 +124,7 @@ public class TableStack extends NestedStack {
                               InstanceProperties instanceProperties,
                               Provider tablesProvider,
                               TableDataStack dataStack,
-                              NewDynamoDBStateStoreStack dynamoDBStateStoreStack,
+                              DynamoDBStateStoreStack dynamoDBStateStoreStack,
                               IBucket configBucket,
                               LambdaCode metricsJar) {
         Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
@@ -136,7 +136,7 @@ public class TableStack extends NestedStack {
                              TableProperties tableProperties,
                              Provider sleeperTablesProvider,
                              TableDataStack dataStack,
-                             NewDynamoDBStateStoreStack dynamoDBStateStoreStack,
+                             DynamoDBStateStoreStack dynamoDBStateStoreStack,
                              IBucket configBucket,
                              LambdaCode metricsJar) {
         String tableName = tableProperties.get(TABLE_NAME);

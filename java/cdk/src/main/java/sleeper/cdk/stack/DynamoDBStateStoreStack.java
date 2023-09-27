@@ -35,12 +35,12 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
-public class NewDynamoDBStateStoreStack extends NestedStack implements StateStoreStack {
+public class DynamoDBStateStoreStack extends NestedStack implements StateStoreStack {
     private final Table activeFileInfoTable;
     private final Table readyForGCFileInfoTable;
     private final Table partitionTable;
 
-    public NewDynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public DynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
