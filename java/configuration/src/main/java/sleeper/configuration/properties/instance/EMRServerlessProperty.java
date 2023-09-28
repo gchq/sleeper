@@ -166,14 +166,14 @@ public interface EMRServerlessProperty {
             .defaultValue("0.30")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation")
             .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION_QUANTILE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation.quantile")
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION_QUANTILE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation.quantile")
             .description("Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used to set spark.speculation.quantile.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("0.75")
