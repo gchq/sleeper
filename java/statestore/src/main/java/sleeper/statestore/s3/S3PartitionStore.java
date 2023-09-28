@@ -268,17 +268,6 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
-        // Validate that there is no current revision id
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
-        GetItemRequest getItemRequest = new GetItemRequest()
-                .withTableName(dynamoRevisionIdTable)
-                .withKey(item);
-        GetItemResult getItemResult = dynamoDB.getItem(getItemRequest);
-        if (null != getItemResult.getItem()) {
-            throw new StateStoreException("Dynamo should not contain current revision id; found " + item);
-        }
-
         // Write partitions to file
         long version = 1L;
         String versionString = getZeroPaddedLong(version);
@@ -292,6 +281,8 @@ public class S3PartitionStore implements PartitionStore {
         }
 
         // Update Dynamo
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
         item.put(CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()));
         item.put(CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
         PutItemRequest putItemRequest = new PutItemRequest()

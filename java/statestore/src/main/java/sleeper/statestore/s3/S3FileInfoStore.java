@@ -453,6 +453,20 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
+    public boolean isHasNoFiles() {
+        RevisionId revisionId = getCurrentFilesRevisionId();
+        if (revisionId == null) {
+            return true;
+        }
+        String path = getFilesPath(revisionId);
+        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+            return reader.read() == null;
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed loading files", e);
+        }
+    }
+
+    @Override
     public void clearTable() {
         Path path = new Path(fs + s3Path + "/statestore/files");
         try {
@@ -513,15 +527,19 @@ public class S3FileInfoStore implements FileInfoStore {
 
     private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
         List<FileInfo> fileInfos = new ArrayList<>();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), fileSchema)
+        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            while (recordReader.hasNext()) {
+                fileInfos.add(getFileInfoFromRecord(recordReader.next()));
+            }
+        }
+        return fileInfos;
+    }
+
+    private ParquetReader<Record> fileInfosReader(String path) throws IOException {
+        return new ParquetRecordReader.Builder(new Path(path), fileSchema)
                 .withConf(conf)
                 .build();
-        ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-        while (recordReader.hasNext()) {
-            fileInfos.add(getFileInfoFromRecord(recordReader.next()));
-        }
-        recordReader.close();
-        return fileInfos;
     }
 
     public void fixTime(Instant now) {

@@ -47,6 +47,7 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import org.apache.arrow.vector.types.Types;
 import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +106,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 
     public SleeperMetadataHandler(AmazonS3 s3Client,
@@ -121,7 +122,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 
     /**

@@ -45,6 +45,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -61,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -1079,26 +1081,49 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void shouldReinitialisePartitions() throws StateStoreException {
+    void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
         // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Schema schema = schemaWithKey("key", new LongType());
         PartitionTree treeBefore = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "before1", "before2", 0L)
                 .buildTree();
-        StateStore dynamoDBStateStore = getStateStore(schema, treeBefore.getAllPartitions());
-
-        // When
         PartitionTree treeAfter = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "after1", "after2", 10L)
                 .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+        stateStore.addFile(FileInfoFactory.builder()
+                .schema(schema).partitionTree(treeBefore)
+                .lastStateStoreUpdate(Instant.now())
+                .build().leafFile(100L, 1L, 100L));
 
-        dynamoDBStateStore.initialise(treeAfter.getAllPartitions());
+        // When / Then
+        assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))
+                .isInstanceOf(StateStoreException.class);
+        assertThat(stateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeBefore.getAllPartitions());
+    }
+
+    @Test
+    public void shouldReinitialisePartitionsWhenNoFilesArePresent() throws StateStoreException {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+
+        // When
+        stateStore.initialise(treeAfter.getAllPartitions());
 
         // Then
-        assertThat(dynamoDBStateStore.getAllPartitions())
+        assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
     }
 }

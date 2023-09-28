@@ -82,12 +82,18 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public void initialise() throws StateStoreException {
+        if (!isHasNoFiles()) {
+            throw new StateStoreException("Cannot initialise state store when files are present");
+        }
         partitionStore.initialise();
         fileInfoStore.initialise();
     }
 
     @Override
     public void initialise(List<Partition> partitions) throws StateStoreException {
+        if (!isHasNoFiles()) {
+            throw new StateStoreException("Cannot initialise state store when files are present");
+        }
         partitionStore.initialise(partitions);
         fileInfoStore.initialise();
     }
@@ -105,6 +111,11 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
         return partitionStore.getLeafPartitions();
+    }
+
+    @Override
+    public boolean isHasNoFiles() {
+        return fileInfoStore.isHasNoFiles();
     }
 
     @Override

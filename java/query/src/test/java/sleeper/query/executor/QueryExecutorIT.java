@@ -747,11 +747,12 @@ public class QueryExecutorIT {
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
         // Split the root partition into 2:
-        stateStore.initialise(new PartitionsBuilder(schema)
+        PartitionTree partialTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
-                .buildList()
-        );
+                .buildTree();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
+                partialTree.getPartition("left"), partialTree.getPartition("right"));
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
@@ -761,7 +762,10 @@ public class QueryExecutorIT {
                 .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
                 .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
+                tree.getPartition("P1"), tree.getPartition("P3"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
+                tree.getPartition("P2"), tree.getPartition("P4"));
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
