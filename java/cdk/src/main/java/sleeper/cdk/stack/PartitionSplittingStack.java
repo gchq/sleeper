@@ -76,7 +76,7 @@ public class PartitionSplittingStack extends NestedStack {
                                    String id,
                                    InstanceProperties instanceProperties,
                                    BuiltJars jars,
-                                   TableStack tableStack, TableDataStack dataStack,
+                                   StateStoreStacks stateStoreStacks, TableDataStack dataStack,
                                    Topic topic) {
         super(scope, id);
 
@@ -157,8 +157,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(findPartitionsToSplitLambda);
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(findPartitionsToSplitLambda));
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(findPartitionsToSplitLambda));
+        stateStoreStacks.grantReadActiveFilesReadWritePartitions(findPartitionsToSplitLambda);
 
         // Grant this function permission to write to the SQS queue
         partitionSplittingQueue.grantSendMessages(findPartitionsToSplitLambda);
@@ -203,7 +202,7 @@ public class PartitionSplittingStack extends NestedStack {
         // from / write to the DynamoDB table
         configBucket.grantRead(splitPartitionLambda);
         dataStack.getDataBucket().grantRead(splitPartitionLambda);
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWritePartitionMetadata(splitPartitionLambda));
+        stateStoreStacks.grantReadWritePartitions(splitPartitionLambda);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

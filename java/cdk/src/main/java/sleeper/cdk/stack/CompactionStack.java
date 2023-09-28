@@ -368,7 +368,7 @@ public class CompactionStack extends NestedStack {
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
         jarsBucket.grantRead(handler);
-        stateStoreStacks.grantReadPartitionsWriteActiveFiles(handler);
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(handler);
         eventStore.grantWriteJobEvent(handler);
 
         // Grant this function permission to put messages on the compaction

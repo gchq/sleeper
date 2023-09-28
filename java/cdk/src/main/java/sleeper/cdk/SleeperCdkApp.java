@@ -143,7 +143,7 @@ public class SleeperCdkApp extends Stack {
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, bulkImportBucketStack, tableStack, dataStack, ingestStatusStoreStack);
+                    instanceProperties, bulkImportBucketStack, stateStoreStacks, dataStack, ingestStatusStoreStack);
         }
 
         // Stack to run bulk import jobs via EMR Serverless
@@ -152,7 +152,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     topicStack,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -188,7 +188,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties,
                     jars,
                     bulkImportBucketStack,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     topicStack,
                     ingestStatusStoreStack
             );
@@ -199,7 +199,7 @@ public class SleeperCdkApp extends Stack {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
                     instanceProperties, jars,
-                    tableStack, dataStack);
+                    stateStoreStacks, dataStack);
         }
 
         // Stack for containers for compactions and splitting compactions
@@ -216,7 +216,7 @@ public class SleeperCdkApp extends Stack {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     topicStack.getTopic());
         }
 
@@ -225,7 +225,7 @@ public class SleeperCdkApp extends Stack {
             new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
-                    tableStack, dataStack);
+                    stateStoreStacks, dataStack);
         }
 
         // Stack for ingest jobs
@@ -233,7 +233,7 @@ public class SleeperCdkApp extends Stack {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     topicStack.getTopic(),
                     ingestStatusStoreStack);
         }

@@ -43,7 +43,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -59,8 +58,6 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableStack extends NestedStack {
-
-    private final List<StateStoreStack> stateStoreStacks;
 
     public TableStack(
             Construct scope,
@@ -100,8 +97,7 @@ public class TableStack extends NestedStack {
 
         createTables(scope, instanceProperties, sleeperTableProvider, stateStoreStacks, configBucket, metricsJar);
         addIngestSourceRoleReferences(this, "TableWriterForIngest", instanceProperties)
-                .forEach(stateStoreStacks::grantReadPartitionsWriteActiveFiles);
-        this.stateStoreStacks = stateStoreStacks.getStateStoreStacks();
+                .forEach(stateStoreStacks::grantReadPartitionsReadWriteActiveFiles);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -185,9 +181,5 @@ public class TableStack extends NestedStack {
             String rulesList = instanceProperties.get(TABLE_METRICS_RULES);
             instanceProperties.set(TABLE_METRICS_RULES, rulesList + "," + rule.getRuleName());
         }
-    }
-
-    public List<StateStoreStack> getStateStoreStacks() {
-        return stateStoreStacks;
     }
 }
