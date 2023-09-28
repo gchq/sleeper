@@ -50,9 +50,9 @@ x Empty Sleeper table w/1 partition
 x Multiple partitions
 x Single file
 x Files with different record counts in one partition
-Partitions with different file counts
-Multiple tables
+x Partitions with different file counts
 One partition has no files and calculate average
+Multiple tables
  */
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -173,6 +173,30 @@ public class TableMetricsTest {
                     .fileCount(3).recordCount(30)
                     .partitionCount(3).leafPartitionCount(2)
                     .averageActiveFilesPerPartition(1.5)
+                    .build());
+        }
+
+        @Test
+        void shouldReportMetricsForMultiplePartitionsWhenOneLeafPartitionHasNoFiles() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 10L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("left", "file1.parquet", 10L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(1).recordCount(10)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(1)
                     .build());
         }
     }
