@@ -34,8 +34,9 @@ public class StateStoreStacks {
         s3.grantRead(grantee);
     }
 
-    public void grantReadWriteActiveFilesAndPartitions(IGrantable grantee) {
+    public void grantReadWriteAllFilesAndPartitions(IGrantable grantee) {
         dynamo.grantReadWriteActiveFileMetadata(grantee);
+        dynamo.grantReadWriteReadyForGCFileMetadata(grantee);
         dynamo.grantReadWritePartitionMetadata(grantee);
         s3.grantReadWrite(grantee);
     }
