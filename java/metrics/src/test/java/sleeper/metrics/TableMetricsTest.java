@@ -20,6 +20,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -36,6 +38,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 /* Tests:
@@ -69,11 +72,39 @@ public class TableMetricsTest {
                 .build());
     }
 
+    @Test
+    void shouldReportMetricsForOneTableWithMultiplePartitions() {
+        // Given
+        instanceProperties.set(ID, "test-instance");
+        Schema schema = schemaWithKey("key");
+        List<Partition> partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 10L)
+                .buildList();
+        createTable("test-table", schema, inMemoryStateStoreWithFixedPartitions(partitions));
+
+        // When
+        List<TableMetrics> metrics = tableMetrics();
+
+        // Then
+        assertThat(metrics).containsExactly(TableMetrics.builder()
+                .instanceId("test-instance")
+                .tableName("test-table")
+                .fileCount(0).recordCount(0)
+                .partitionCount(3).leafPartitionCount(2)
+                .averageActiveFilesPerPartition(0)
+                .build());
+    }
+
     private void createTable(String tableName, Schema schema) {
+        createTable(tableName, schema, inMemoryStateStoreWithSinglePartition(schema));
+    }
+
+    private void createTable(String tableName, Schema schema, StateStore stateStore) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
         tables.add(tableProperties);
-        stateStoreByTableName.put(tableName, inMemoryStateStoreWithSinglePartition(schema));
+        stateStoreByTableName.put(tableName, stateStore);
     }
 
     private List<TableMetrics> tableMetrics() {
