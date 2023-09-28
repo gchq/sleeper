@@ -60,6 +60,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -518,7 +519,7 @@ public class ReinitialiseTableIT {
 
     private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException, StateStoreException {
         //  - CreateS3StateStore
-        createRevisionDynamoTable(instanceProperties.get(REVISION_TABLENAME));
+        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
         Configuration configuration = new Configuration();
         configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
