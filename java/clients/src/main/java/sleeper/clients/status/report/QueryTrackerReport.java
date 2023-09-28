@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.query.tracker;
+package sleeper.clients.status.report;
 
-import sleeper.query.tracker.exception.QueryTrackerException;
-
-import java.util.List;
-
-public interface QueryTrackerStore {
-    TrackedQuery getStatus(String queryId) throws QueryTrackerException;
-
-    TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException;
-
-    List<TrackedQuery> getAllQueries();
+public class QueryTrackerReport {
 }
