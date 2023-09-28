@@ -50,7 +50,11 @@ public class StateStoreTestBuilder {
     }
 
     public static StateStoreTestBuilder withSinglePartition(Schema schema) {
-        return from(new PartitionsBuilder(schema).singlePartition("root"));
+        return withSinglePartition(schema, "root");
+    }
+
+    public static StateStoreTestBuilder withSinglePartition(Schema schema, String partitionId) {
+        return from(new PartitionsBuilder(schema).singlePartition(partitionId));
     }
 
     public StateStoreTestBuilder singleFileInEachLeafPartitionWithRecords(long records) {

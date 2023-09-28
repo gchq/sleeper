@@ -45,15 +45,6 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
-/* Tests:
-x Empty Sleeper table w/1 partition
-x Multiple partitions
-x Single file
-x Files with different record counts in one partition
-x Partitions with different file counts
-One partition has no files and calculate average
-Multiple tables
- */
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -198,6 +189,43 @@ public class TableMetricsTest {
                     .partitionCount(3).leafPartitionCount(2)
                     .averageActiveFilesPerPartition(1)
                     .build());
+        }
+    }
+
+    @Nested
+    @DisplayName("Multiple tables")
+    class MultipleTables {
+
+        @Test
+        void shouldReportMetricsForMultipleTablesWithOnePartitionAndOneFileEach() {
+            // Given
+            instanceProperties.set(ID, "multiple-tables-instance");
+            createTable("table-1", StateStoreTestBuilder.withSinglePartition(schema)
+                    .singleFileInEachLeafPartitionWithRecords(10L)
+                    .buildStateStore());
+            createTable("table-2", StateStoreTestBuilder.withSinglePartition(schema)
+                    .singleFileInEachLeafPartitionWithRecords(10L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(
+                    TableMetrics.builder()
+                            .instanceId("multiple-tables-instance")
+                            .tableName("table-1")
+                            .fileCount(1).recordCount(10)
+                            .partitionCount(1).leafPartitionCount(1)
+                            .averageActiveFilesPerPartition(1)
+                            .build(),
+                    TableMetrics.builder()
+                            .instanceId("multiple-tables-instance")
+                            .tableName("table-2")
+                            .fileCount(1).recordCount(10)
+                            .partitionCount(1).leafPartitionCount(1)
+                            .averageActiveFilesPerPartition(1)
+                            .build());
         }
     }
 
