@@ -18,7 +18,7 @@ package sleeper.ingest.testutils;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
-public class AwsExternalResource {
+public class HadoopConfigurationLocalStackUtil {
 
     /**
      * Only use one Hadoop configuration from here at once if your code uses the Hadoop file system, for example if you
@@ -28,7 +28,7 @@ public class AwsExternalResource {
      */
     public static Configuration getHadoopConfiguration(LocalStackContainer container) {
         Configuration configuration = new Configuration();
-        configuration.setClassLoader(AwsExternalResource.class.getClassLoader());
+        configuration.setClassLoader(HadoopConfigurationLocalStackUtil.class.getClassLoader());
         configuration.set("fs.s3a.endpoint", container.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", container.getAccessKey());
