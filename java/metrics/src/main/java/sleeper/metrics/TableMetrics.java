@@ -22,13 +22,16 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LongSummaryStatistics;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -71,16 +74,35 @@ public class TableMetrics {
                                     StateStore stateStore) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
 
+        LOGGER.info("Querying state store for table {} for active files", tableName);
+        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
+        int fileCount = activeFiles.size();
+        long recordCount = activeFiles.stream().mapToLong(activeFile -> activeFile.getNumberOfRecords()).sum();
+        LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
+
+        LongSummaryStatistics filesPerPartitionStats = activeFiles.stream().collect(
+                Collectors.groupingBy(
+                        activeFile -> activeFile.getPartitionId(),
+                        Collectors.counting()
+                )
+        ).values().stream().mapToLong(value -> value).summaryStatistics();
+        LOGGER.info("{}", filesPerPartitionStats);
+
         LOGGER.info("Querying state store for table {} for partitions", tableName);
         List<Partition> partitions = stateStore.getAllPartitions();
         int partitionCount = partitions.size();
         int leafPartitionCount = (int) partitions.stream().filter(Partition::isLeafPartition).count();
         LOGGER.info("Found {} partitions and {} leaf partitions for table {}", partitionCount, leafPartitionCount, tableName);
+
         return TableMetrics.builder()
                 .instanceId(instanceProperties.get(ID))
                 .tableName(tableName)
                 .partitionCount(partitionCount)
                 .leafPartitionCount(leafPartitionCount)
+                .fileCount(fileCount)
+                .recordCount(recordCount)
+                .averageActiveFilesPerPartition(filesPerPartitionStats.getAverage())
                 .build();
     }
 

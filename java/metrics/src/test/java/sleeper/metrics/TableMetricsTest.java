@@ -25,12 +25,14 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -50,6 +52,7 @@ Multiple tables
  */
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final Schema schema = schemaWithKey("key");
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
 
@@ -57,7 +60,7 @@ public class TableMetricsTest {
     void shouldReportMetricsWithEmptyTable() {
         // Given
         instanceProperties.set(ID, "test-instance");
-        createTable("test-table", schemaWithKey("key"));
+        createTable("test-table");
 
         // When
         List<TableMetrics> metrics = tableMetrics();
@@ -76,12 +79,11 @@ public class TableMetricsTest {
     void shouldReportMetricsForOneTableWithMultiplePartitions() {
         // Given
         instanceProperties.set(ID, "test-instance");
-        Schema schema = schemaWithKey("key");
         List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 10L)
                 .buildList();
-        createTable("test-table", schema, inMemoryStateStoreWithFixedPartitions(partitions));
+        createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
 
         // When
         List<TableMetrics> metrics = tableMetrics();
@@ -96,15 +98,43 @@ public class TableMetricsTest {
                 .build());
     }
 
-    private void createTable(String tableName, Schema schema) {
-        createTable(tableName, schema, inMemoryStateStoreWithSinglePartition(schema));
+    @Test
+    void shouldReportMetricsForOneTableWithOneFileInOnePartition() {
+        // Given
+        instanceProperties.set(ID, "test-instance");
+        createTable("test-table");
+        setupStateStore("test-table", stateStoreTestBuilder ->
+                stateStoreTestBuilder.singleFileInEachLeafPartitionWithRecords(100L));
+
+        // When
+        List<TableMetrics> metrics = tableMetrics();
+
+        // Then
+        assertThat(metrics).containsExactly(TableMetrics.builder()
+                .instanceId("test-instance")
+                .tableName("test-table")
+                .fileCount(1).recordCount(100)
+                .partitionCount(1).leafPartitionCount(1)
+                .averageActiveFilesPerPartition(1)
+                .build());
     }
 
-    private void createTable(String tableName, Schema schema, StateStore stateStore) {
+    private void createTable(String tableName) {
+        createTable(tableName, inMemoryStateStoreWithSinglePartition(schema));
+    }
+
+    private void createTable(String tableName, StateStore stateStore) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
         tables.add(tableProperties);
         stateStoreByTableName.put(tableName, stateStore);
+    }
+
+    private void setupStateStore(String tableName, Consumer<StateStoreTestBuilder> consumer) {
+        StateStore stateStore = stateStoreByTableName.get(tableName);
+        StateStoreTestBuilder stateStoreTestBuilder = StateStoreTestBuilder.from(schema, stateStore);
+        consumer.accept(stateStoreTestBuilder);
+        stateStoreTestBuilder.setupStateStore(stateStore);
     }
 
     private List<TableMetrics> tableMetrics() {
