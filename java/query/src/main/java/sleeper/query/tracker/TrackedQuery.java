@@ -120,7 +120,7 @@ public class TrackedQuery {
         private Long lastUpdateTime;
         private Long expiryDate;
         private QueryState lastKnownState;
-        private Long recordCount;
+        private Long recordCount = 0L;
 
         private Builder() {
         }

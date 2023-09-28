@@ -41,7 +41,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         state = tableFactoryBuilder.addField("STATE");
         queryId = tableFactoryBuilder.addField("QUERY_ID");
         subQueryId = tableFactoryBuilder.addField("SUB_QUERY_ID");
-        lastUpdateTime = tableFactoryBuilder.addNumericField("LAST_UPDATE_TIME");
+        lastUpdateTime = tableFactoryBuilder.addField("LAST_UPDATE_TIME");
         recordCount = tableFactoryBuilder.addField("RECORD_COUNT");
         tableFactory = tableFactoryBuilder.build();
     }

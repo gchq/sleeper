@@ -27,6 +27,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.getStandardReport;
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.mixedQueries;
+import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
 public class StandardQueryTrackerReporterTest {
@@ -48,6 +49,13 @@ public class StandardQueryTrackerReporterTest {
             // When/Then
             assertThat(getStandardReport(TrackerQuery.ALL, mixedQueries()))
                     .isEqualTo(example("reports/query/standard/all/mixedQueries.txt"));
+        }
+
+        @Test
+        void shouldRunReportWithSubQueries() throws Exception {
+            // When/Then
+            assertThat(getStandardReport(TrackerQuery.ALL, queryWithSubqueries()))
+                    .isEqualTo(example("reports/query/standard/all/queryWithSubqueries.txt"));
         }
     }
 }

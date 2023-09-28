@@ -1,0 +1,17 @@
+
+Query Tracker Report
+--------------------
+Total queries: 3
+
+Total queries queued: 0
+Total queries in progress: 3
+Total queries completed: 0
+
+Total queries partially failed: 0
+Total queries failed: 0
+-------------------------------------------------------------------------------------
+| STATE       | QUERY_ID       | SUB_QUERY_ID | LAST_UPDATE_TIME     | RECORD_COUNT |
+| IN_PROGRESS | parent-query-1 |              | 2023-09-28T19:15:00Z | 0            |
+| IN_PROGRESS | parent-query-1 | sub-query-1  | 2023-09-28T19:16:00Z | 0            |
+| IN_PROGRESS | parent-query-1 | sub-query-2  | 2023-09-28T19:17:00Z | 0            |
+-------------------------------------------------------------------------------------
