@@ -106,16 +106,6 @@ public interface TableProperty extends SleeperProperty {
             .description("Partitions in this table with more than the following number of records in will be split.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .build();
-    TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
-            .defaultValue("true")
-            .validationPredicate(s -> s.equals("true") || s.equals("false"))
-            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
-                    "When this is changed, existing files will retain their encryption status. Further compactions may " +
-                    "apply the new encryption status for that data.\n" +
-                    "See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html")
-            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
-            .runCDKDeployWhenChanged(true)
-            .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The size of the row group in the Parquet files - defaults to the value in the instance properties.")
@@ -358,10 +348,6 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .systemDefined(true).build();
-    TableProperty DATA_BUCKET = Index.propertyBuilder("sleeper.table.data.bucket")
-            .description("The S3 bucket name where table data is stored.")
-            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .systemDefined(true).build();
     // DynamoDBStateStore properties
     TableProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.active.table")

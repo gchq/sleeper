@@ -500,6 +500,15 @@ sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
 
+# If true then speculative execution of tasks will be performed. Used to set spark.speculation.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.speculation=false
+
+# Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used
+# to set spark.speculation.quantile.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.speculation.quantile=0.75
+
 # (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk

@@ -57,14 +57,14 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
+import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 @Testcontainers
@@ -87,7 +87,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     private final String ingestQueueName = instanceId + "-ingestqueue";
     private final String configBucketName = instanceId + "-configbucket";
     private final String ingestDataBucketName = tableName + "-ingestdata";
-    private final String tableDataBucketName = tableName + "-tabledata";
+    private final String dataBucketName = instanceId + "-tabledata";
     private final String fileSystemPrefix = "s3a://";
     @TempDir
     public java.nio.file.Path temporaryFolder;
@@ -96,13 +96,14 @@ public abstract class IngestJobQueueConsumerTestBase {
     @BeforeEach
     public void before() {
         s3.createBucket(configBucketName);
-        s3.createBucket(tableDataBucketName);
+        s3.createBucket(dataBucketName);
         s3.createBucket(ingestDataBucketName);
         sqs.createQueue(ingestQueueName);
         instanceProperties.set(ID, instanceId);
         instanceProperties.set(CONFIG_BUCKET, configBucketName);
         instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
+        instanceProperties.set(DATA_BUCKET, dataBucketName);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
     }
@@ -119,16 +120,11 @@ public abstract class IngestJobQueueConsumerTestBase {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
-        tableProperties.set(DATA_BUCKET, getTableDataBucket());
         tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
         tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
         tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
         tableProperties.saveToS3(s3);
         return tableProperties;
-    }
-
-    protected String getTableDataBucket() {
-        return tableDataBucketName;
     }
 
     protected String getIngestBucket() {

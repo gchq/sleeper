@@ -16,7 +16,6 @@
 package sleeper.trino;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import io.trino.sql.query.QueryAssertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -51,7 +50,7 @@ public class SimpleKeyValueSchemaIT {
 
     @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(ImmutableMap.of(), TABLE_DEFINITIONS, Optional.empty());
+            new PopulatedSleeperExternalResource(TABLE_DEFINITIONS);
     private static QueryAssertions assertions;
 
     private static Schema generateSimpleSchema() {

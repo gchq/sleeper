@@ -49,12 +49,12 @@ public class IngestRecordsTestBase {
     protected final Field field = new Field("key", new LongType());
     protected final Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
-    protected String sketchFolderName;
+    protected String dataFolderName;
 
     @BeforeEach
     public void setUpBase() throws Exception {
         inputFolderName = createTempDirectory(folder, null).toString();
-        sketchFolderName = createTempDirectory(folder, null).toString();
+        dataFolderName = createTempDirectory(folder, null).toString();
     }
 
     protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {
@@ -82,7 +82,7 @@ public class IngestRecordsTestBase {
             Consumer<InstanceProperties> instancePropertiesConfig,
             Consumer<TableProperties> tablePropertiesConfig) throws Exception {
 
-        InstanceProperties instanceProperties = defaultInstanceProperties();
+        InstanceProperties instanceProperties = defaultInstanceProperties(dataFolderName);
         instancePropertiesConfig.accept(instanceProperties);
         TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
         tablePropertiesConfig.accept(tableProperties);
@@ -98,14 +98,14 @@ public class IngestRecordsTestBase {
 
     protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator)
             throws StateStoreException, IteratorException, IOException {
-        InstanceProperties instanceProperties = defaultInstanceProperties();
+        InstanceProperties instanceProperties = defaultInstanceProperties(dataFolderName);
         TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
         IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
     private TableProperties defaultTableProperties(Schema schema, InstanceProperties instanceProperties) {
-        return IngestRecordsTestDataHelper.defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+        return IngestRecordsTestDataHelper.defaultTableProperties(schema, TEST_TABLE_NAME, instanceProperties);
     }
 
     private IngestFactory createIngestFactory(StateStore stateStore, TableProperties tableProperties, InstanceProperties instanceProperties) {

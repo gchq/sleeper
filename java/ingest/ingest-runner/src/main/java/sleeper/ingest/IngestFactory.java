@@ -70,10 +70,8 @@ public class IngestFactory {
 
     public IngestResult ingestFromRecordIteratorAndClose(TableProperties tableProperties, CloseableIterator<Record> recordIterator)
             throws StateStoreException, IteratorException, IOException {
-        try {
+        try (recordIterator) {
             return ingestFromRecordIterator(tableProperties, recordIterator);
-        } finally {
-            recordIterator.close();
         }
     }
 
@@ -124,7 +122,7 @@ public class IngestFactory {
             if (!instanceProperties.get(FILE_SYSTEM).toLowerCase(Locale.ROOT).equals("s3a://")) {
                 throw new UnsupportedOperationException("Attempting an asynchronous write to a file system that is not s3a://");
             }
-            return AsyncS3PartitionFileWriterFactory.builderWith(tableProperties)
+            return AsyncS3PartitionFileWriterFactory.builderWith(instanceProperties, tableProperties)
                     .parquetConfiguration(parquetConfiguration)
                     .localWorkingDirectory(localDir)
                     .s3AsyncClientOrDefaultFromProperties(s3AsyncClient, instanceProperties)

@@ -22,7 +22,6 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,13 +29,9 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.core.CommonTestConstants;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -66,9 +61,6 @@ public class PopulatePropertiesIT {
                     localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
             .build();
 
-    @TempDir
-    private Path tempDir;
-
     @Test
     void shouldPopulateInstancePropertiesCorrectly() {
         // Given/When
@@ -93,21 +85,6 @@ public class PopulatePropertiesIT {
         expected.set(REGION, localStackContainer.getRegion());
 
         assertThat(properties).isEqualTo(expected);
-    }
-
-    @Test
-    void shouldSaveBucketNamesToLocalDirectoryWhenInstancePropertiesGenerated() throws IOException {
-        // Given
-        InstanceProperties properties = populateInstancePropertiesBuilder()
-                .sts(sts).regionProvider(() -> Region.of(localStackContainer.getRegion()))
-                .build().populate();
-
-        // When
-        SaveLocalProperties.saveToDirectory(tempDir, properties, Stream.empty());
-
-        // Then
-        assertThat(tempDir.resolve("configBucket.txt")).exists();
-        assertThat(tempDir.resolve("queryResultsBucket.txt")).exists();
     }
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright 2022-2023 Crown Copyright
 #
@@ -19,13 +19,11 @@ set -e
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
+SCRIPTS_DIR=$(cd "$THIS_DIR" && cd .. && pwd)
+PYTHON_DIR=$(cd "$SCRIPTS_DIR" && cd ../python && pwd)
 
-pushd "${PROJECT_ROOT}/java"
-echo "Compiling..."
-mvn install -Pquick -q -pl configuration -am
-echo "Regenerating templates..."
-mvn exec:java -q -pl configuration \
-  -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
-  -Dexec.args="$PROJECT_ROOT"
-popd
+echo "Setting up virtual environment for Python API"
+python3 -m venv "$PYTHON_DIR/env"
+source "$PYTHON_DIR/env/bin/activate"
+pip3 install "$PYTHON_DIR"
+deactivate

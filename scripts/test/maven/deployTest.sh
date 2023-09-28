@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -24,7 +26,6 @@ fi
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
 SCRIPTS_DIR=$(cd "$THIS_DIR" && cd ../.. && pwd)
 MAVEN_DIR=$(cd "$SCRIPTS_DIR" && cd ../java && pwd)
-PYTHON_DIR=$(cd "$SCRIPTS_DIR" && cd ../python && pwd)
 
 SHORT_ID="$1"
 VPC="$2"
@@ -34,11 +35,7 @@ shift 3
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 START_TIME=$(record_time)
 
-echo "Setting up virtual environment for Python API"
-python3 -m venv "$PYTHON_DIR/env"
-source "$PYTHON_DIR/env/bin/activate"
-pip3 install "$PYTHON_DIR"
-deactivate
+"$SCRIPTS_DIR/build/buildPython.sh"
 
 pushd "$MAVEN_DIR"
 

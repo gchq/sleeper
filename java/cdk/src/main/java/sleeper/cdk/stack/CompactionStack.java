@@ -175,8 +175,7 @@ public class CompactionStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            List<StateStoreStack> stateStoreStacks,
-            List<IBucket> dataBuckets) {
+            TableStack tableStack, TableDataStack dataStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         eventStore = CompactionStatusStoreStack.from(this, instanceProperties);
@@ -213,13 +212,13 @@ public class CompactionStack extends NestedStack {
 
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToFindCompactionJobsThatShouldBeCreated(configBucket, jarsBucket, jobCreatorJar,
-                stateStoreStacks, compactionJobsQueue, splittingCompactionJobsQueue);
+                tableStack.getStateStoreStacks(), compactionJobsQueue, splittingCompactionJobsQueue);
 
         // ECS cluster for compaction tasks
-        ecsClusterForCompactionTasks(configBucket, jarsBucket, taskCreatorJar, stateStoreStacks, dataBuckets, compactionJobsQueue);
+        ecsClusterForCompactionTasks(configBucket, jarsBucket, taskCreatorJar, tableStack, dataStack, compactionJobsQueue);
 
         // ECS cluster for splitting compaction tasks
-        ecsClusterForSplittingCompactionTasks(configBucket, jarsBucket, taskCreatorJar, stateStoreStacks, dataBuckets,
+        ecsClusterForSplittingCompactionTasks(configBucket, jarsBucket, taskCreatorJar, tableStack, dataStack,
                 splittingCompactionJobsQueue);
 
         // Lambda to create compaction tasks
@@ -394,8 +393,7 @@ public class CompactionStack extends NestedStack {
     private Cluster ecsClusterForCompactionTasks(IBucket configBucket,
                                                  IBucket jarsBucket,
                                                  LambdaCode taskCreatorJar,
-                                                 List<StateStoreStack> stateStoreStacks,
-                                                 List<IBucket> dataBuckets,
+                                                 TableStack tableStack, TableDataStack dataStack,
                                                  Queue compactionMergeJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -421,10 +419,10 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
-            stateStoreStacks.forEach(
+            dataStack.getDataBucket().grantReadWrite(taskDef.getTaskRole());
+            tableStack.getStateStoreStacks().forEach(
                     stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
-            stateStoreStacks.forEach(
+            tableStack.getStateStoreStacks().forEach(
                     stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
@@ -470,8 +468,7 @@ public class CompactionStack extends NestedStack {
     private Cluster ecsClusterForSplittingCompactionTasks(IBucket configBucket,
                                                           IBucket jarsBucket,
                                                           LambdaCode taskCreatorJar,
-                                                          List<StateStoreStack> stateStoreStacks,
-                                                          List<IBucket> dataBuckets,
+                                                          TableStack tableStack, TableDataStack dataStack,
                                                           Queue compactionSplittingMergeJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -497,10 +494,10 @@ public class CompactionStack extends NestedStack {
         Consumer<ITaskDefinition> grantPermissions = taskDef -> {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
-            dataBuckets.forEach(bucket -> bucket.grantReadWrite(taskDef.getTaskRole()));
-            stateStoreStacks.forEach(
+            dataStack.getDataBucket().grantReadWrite(taskDef.getTaskRole());
+            tableStack.getStateStoreStacks().forEach(
                     stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
-            stateStoreStacks.forEach(
+            tableStack.getStateStoreStacks().forEach(
                     stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());

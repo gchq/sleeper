@@ -36,7 +36,6 @@ import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
@@ -94,7 +93,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     public static final int MAX_NO_OF_RECORDS_TO_WRITE_TO_ARROW_FILE_AT_ONCE = 16 * 1024;
     public static final long WORKING_ARROW_BUFFER_ALLOCATOR_BYTES = 64 * 1024 * 1024L;
     public static final long BATCH_ARROW_BUFFER_ALLOCATOR_BYTES_MIN = 64 * 1024 * 1024L;
-    public static final String INGEST_COMPRESSION_CODEC = "snappy";
     private static final int INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = 120;
     private final BufferAllocator rootBufferAllocator;
     private final SleeperConfig sleeperConfig;
@@ -109,7 +107,6 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final ObjectFactory objectFactory;
     private final ExecutorService executorService;
     private final LoadingCache<Pair<String, Instant>, SleeperTablePartitionStructure> sleeperTablePartitionStructureCache;
-    private final String localWorkingDirectory;
 
     SleeperRawAwsConnection(SleeperConfig sleeperConfig,
                             AmazonS3 s3Client,
@@ -124,14 +121,11 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         this.hadoopConfigurationProvider = requireNonNull(hadoopConfigurationProvider);
         this.rootBufferAllocator = new RootAllocator(sleeperConfig.getMaxArrowRootAllocatorBytes());
 
-        String configBucket = sleeperConfig.getConfigBucket();
-        this.localWorkingDirectory = sleeperConfig.getLocalWorkingDirectory();
-
         // Member variables related to the Sleeper service
         // Note that the state-store provider is NOT thread-safe and so occasionally the state-store factory
         // will be used to create a new state store for each thread.
         this.instanceProperties = new InstanceProperties();
-        this.instanceProperties.loadFromS3(this.s3Client, configBucket);
+        this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
         this.stateStoreProvider = new StateStoreProvider(this.dynamoDbClient, this.instanceProperties,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
         this.stateStoreFactory = new StateStoreFactory(this.dynamoDbClient, this.instanceProperties,
@@ -151,7 +145,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                         LOGGER.debug("Table %s with schema %s", tableName, tableProperties.getSchema()));
 
         // Member variables related to queries via direct statestore/S3
-        this.objectFactory = new ObjectFactory(this.instanceProperties, this.s3Client, this.localWorkingDirectory);
+        this.objectFactory = new ObjectFactory(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory());
         this.executorService = Executors.newFixedThreadPool(NO_OF_EXECUTOR_THREADS);
 
         // We store a time-limited cache for the table partition structure, to support transactions.
@@ -271,7 +265,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
             try {
                 resultRecordIterator.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.error(e);
             }
         });
     }
@@ -353,13 +347,13 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         return BespokeIngestCoordinator.asyncFromPage(
                 objectFactory,
                 stateStore,
+                instanceProperties,
                 tableProperties,
                 sleeperConfig,
                 hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties),
                 null,
                 null,
                 INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS,
-                tableProperties.get(TableProperty.DATA_BUCKET),
                 s3AsyncClient,
                 rootBufferAllocator);
     }

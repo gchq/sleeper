@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.IngestCoordinator;
@@ -39,13 +40,13 @@ public class BespokeIngestCoordinator {
 
     public static IngestCoordinator<Page> asyncFromPage(ObjectFactory objectFactory,
                                                         StateStore sleeperStateStore,
+                                                        InstanceProperties instanceProperties,
                                                         TableProperties tableProperties,
                                                         SleeperConfig sleeperConfig,
                                                         Configuration hadoopConfiguration,
                                                         String sleeperIteratorClassName,
                                                         String sleeperIteratorConfig,
                                                         int ingestPartitionRefreshFrequencyInSeconds,
-                                                        String s3BucketName,
                                                         S3AsyncClient s3AsyncClient,
                                                         BufferAllocator arrowBufferAllocator) {
         String localWorkingDirectory = sleeperConfig.getLocalWorkingDirectory();
@@ -67,10 +68,10 @@ public class BespokeIngestCoordinator {
                 .tableProperties(tableProperties)
                 .hadoopConfiguration(hadoopConfiguration)
                 .build();
-        PartitionFileWriterFactory partitionFileWriterFactory = AsyncS3PartitionFileWriterFactory.builder()
+        PartitionFileWriterFactory partitionFileWriterFactory = AsyncS3PartitionFileWriterFactory
+                .builderWith(instanceProperties, tableProperties)
                 .parquetConfiguration(parquetConfiguration)
                 .s3AsyncClient(s3AsyncClient)
-                .s3BucketName(s3BucketName)
                 .localWorkingDirectory(localWorkingDirectory)
                 .build();
         return IngestCoordinator.builder()

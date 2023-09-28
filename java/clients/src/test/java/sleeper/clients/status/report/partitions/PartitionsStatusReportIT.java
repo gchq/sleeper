@@ -35,16 +35,20 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.statestore.dynamodb.DynamoDBStateStoreTestHelper.createTestTable;
 
 @Testcontainers
 public class PartitionsStatusReportIT {
@@ -59,7 +63,6 @@ public class PartitionsStatusReportIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties(s3);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
-            instanceProperties, schema, s3, dynamoDB,
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
 
     @Test
@@ -90,5 +93,17 @@ public class PartitionsStatusReportIT {
 
     private StateStore stateStore() {
         return new StateStoreProvider(dynamoDB, instanceProperties, new Configuration()).getStateStore(tableProperties);
+    }
+
+    private TableProperties createTestTable(Consumer<TableProperties> tableConfig) {
+
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema, s3, tableConfig);
+        s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        try {
+            new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDB).create();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create state store", e);
+        }
+        return tableProperties;
     }
 }

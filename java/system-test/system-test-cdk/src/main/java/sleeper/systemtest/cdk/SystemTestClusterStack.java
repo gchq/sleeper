@@ -35,6 +35,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
 import sleeper.cdk.stack.IngestStack;
+import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -87,6 +88,7 @@ public class SystemTestClusterStack extends NestedStack {
                                   String id,
                                   SystemTestProperties properties,
                                   TableStack tableStack,
+                                  TableDataStack dataStack,
                                   IngestStack ingestStack,
                                   EmrBulkImportStack emrBulkImportStack) {
         super(scope, id);
@@ -96,7 +98,7 @@ public class SystemTestClusterStack extends NestedStack {
                 .forEach(bucket -> bucket.grantReadWrite(taskRole));
         Bucket.fromBucketName(this, "ConfigBucket", properties.get(CONFIG_BUCKET)).grantRead(taskRole);
 
-        tableStack.getDataBuckets().forEach(bucket -> bucket.grantReadWrite(taskRole));
+        dataStack.getDataBucket().grantReadWrite(taskRole);
         tableStack.getStateStoreStacks().forEach(stateStoreStack -> {
             stateStoreStack.grantReadWriteActiveFileMetadata(taskRole);
             stateStoreStack.grantReadPartitionMetadata(taskRole);

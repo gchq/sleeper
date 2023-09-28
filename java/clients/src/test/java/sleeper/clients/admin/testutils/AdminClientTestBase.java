@@ -40,7 +40,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
+import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
@@ -95,7 +95,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
-        tableProperties.set(ENCRYPTED, "false");
+        tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "false");
         return tableProperties;
     }
 
