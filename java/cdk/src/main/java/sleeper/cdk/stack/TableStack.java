@@ -73,7 +73,8 @@ public class TableStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             TableDataStack dataStack,
-            DynamoDBStateStoreStack dynamoDBStateStoreStack) {
+            DynamoDBStateStoreStack dynamoDBStateStoreStack,
+            NewS3StateStoreStack s3StateStoreStack) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
@@ -102,10 +103,12 @@ public class TableStack extends NestedStack {
 
         dynamoDBStateStoreStack.grantReadWriteActiveFileMetadata(sleeperTableProvider.getOnEventHandler());
         dynamoDBStateStoreStack.grantReadWritePartitionMetadata(sleeperTableProvider.getOnEventHandler());
+        s3StateStoreStack.grantReadWriteActiveFileMetadata(sleeperTableProvider.getOnEventHandler());
+        s3StateStoreStack.grantReadWritePartitionMetadata(sleeperTableProvider.getOnEventHandler());
         stateStoreStacks.add(dynamoDBStateStoreStack);
 
         createTables(scope, instanceProperties, sleeperTableProvider, dataStack, dynamoDBStateStoreStack,
-                configBucket, metricsJar);
+                s3StateStoreStack, configBucket, metricsJar);
         addIngestSourceRoleReferences(this, "TableWriterForIngest", instanceProperties)
                 .forEach(role -> grantIngestSourceRole(role, stateStoreStacks));
 
@@ -125,11 +128,12 @@ public class TableStack extends NestedStack {
                               Provider tablesProvider,
                               TableDataStack dataStack,
                               DynamoDBStateStoreStack dynamoDBStateStoreStack,
+                              NewS3StateStoreStack s3StateStoreStack,
                               IBucket configBucket,
                               LambdaCode metricsJar) {
         Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
                 createTable(instanceProperties, tableProperties, tablesProvider, dataStack,
-                        dynamoDBStateStoreStack, configBucket, metricsJar));
+                        dynamoDBStateStoreStack, s3StateStoreStack, configBucket, metricsJar));
     }
 
     private void createTable(InstanceProperties instanceProperties,
@@ -137,6 +141,7 @@ public class TableStack extends NestedStack {
                              Provider sleeperTablesProvider,
                              TableDataStack dataStack,
                              DynamoDBStateStoreStack dynamoDBStateStoreStack,
+                             NewS3StateStoreStack s3StateStoreStack,
                              IBucket configBucket,
                              LambdaCode metricsJar) {
         String tableName = tableProperties.get(TABLE_NAME);
@@ -146,8 +151,7 @@ public class TableStack extends NestedStack {
         if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {
             stateStoreStack = dynamoDBStateStoreStack;
         } else if (stateStoreClassName.equals(S3StateStore.class.getName())) {
-            stateStoreStack = createS3StateStore(instanceProperties, tableProperties, dataStack, sleeperTablesProvider);
-            stateStoreStacks.add(stateStoreStack);
+            stateStoreStack = s3StateStoreStack;
         } else {
             throw new RuntimeException("Unknown statestore class name");
         }
@@ -214,13 +218,6 @@ public class TableStack extends NestedStack {
             String rulesList = instanceProperties.get(TABLE_METRICS_RULES);
             instanceProperties.set(TABLE_METRICS_RULES, rulesList + "," + rule.getRuleName());
         }
-    }
-
-    private StateStoreStack createS3StateStore(InstanceProperties instanceProperties,
-                                               TableProperties tableProperties,
-                                               TableDataStack dataStack,
-                                               Provider sleeperTablesProvider) {
-        return new S3StateStoreStack(this, dataStack, instanceProperties, tableProperties, sleeperTablesProvider);
     }
 
     public List<StateStoreStack> getStateStoreStacks() {

@@ -166,6 +166,13 @@ public interface CommonProperty {
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.metadata.s3.dynamo.pointintimerecovery")
+            .description("This specifies whether point in time recovery is enabled for the S3 state store. " +
+                    "This is set on the revision DynamoDB table.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCDKDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

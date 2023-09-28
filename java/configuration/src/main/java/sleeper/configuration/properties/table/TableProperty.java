@@ -37,7 +37,6 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
@@ -204,12 +203,6 @@ public interface TableProperty extends SleeperProperty {
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for the revision table if " +
-                    "the S3StateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +

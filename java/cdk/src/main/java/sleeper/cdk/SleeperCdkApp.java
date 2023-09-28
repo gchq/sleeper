@@ -33,6 +33,7 @@ import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.NewS3StateStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
@@ -78,6 +79,7 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
     private DynamoDBStateStoreStack dynamoDBStateStoreStack;
+    private NewS3StateStoreStack s3StateStoreStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -120,11 +122,13 @@ public class SleeperCdkApp extends Stack {
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
-        dynamoDBStateStoreStack = new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties);
 
         // Stack for tables
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, dynamoDBStateStoreStack);
+        dynamoDBStateStoreStack = new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties);
+        s3StateStoreStack = new NewS3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack);
+        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack,
+                dynamoDBStateStoreStack, s3StateStoreStack);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {

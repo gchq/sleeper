@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.cdk.stack;
 
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -25,48 +26,47 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
-public class S3StateStoreStack implements StateStoreStack {
+public class NewS3StateStoreStack extends NestedStack implements StateStoreStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
-    public S3StateStoreStack(Construct scope,
-                             TableDataStack dataStack,
-                             InstanceProperties instanceProperties,
-                             TableProperties tableProperties,
-                             Provider tablesProvider) {
+    public NewS3StateStoreStack(Construct scope,
+                                String id,
+                                InstanceProperties instanceProperties,
+                                TableDataStack dataStack) {
+        super(scope, id);
         this.dataStack = dataStack;
-
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // Dynamo table to store latest revision version
         Attribute partitionKeyRevisionTable = Attribute.builder()
+                .name(S3StateStore.TABLE_NAME)
+                .type(AttributeType.STRING)
+                .build();
+        Attribute sortKeyRevisionTable = Attribute.builder()
                 .name(S3StateStore.REVISION_ID_KEY)
                 .type(AttributeType.STRING)
                 .build();
 
         this.revisionTable = Table.Builder
                 .create(scope, "DynamoDBRevisionTable")
-                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table",
-                        tableProperties.get(TABLE_NAME), "revisions").toLowerCase(Locale.ROOT))
+                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table", "revisions").toLowerCase(Locale.ROOT))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyRevisionTable)
-                .pointInTimeRecovery(tableProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .sortKey(sortKeyRevisionTable)
+                .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
-        tableProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-
-        this.revisionTable.grantReadWriteData(tablesProvider.getOnEventHandler());
+        instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
     }
 
     @Override
