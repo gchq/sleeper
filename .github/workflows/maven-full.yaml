@@ -28,3 +28,16 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode verify -Pquick -T 1C -Dmaven.repo.local=.m2/repository
         working-directory: ./java
+      - name: Validate properties templates are up to date
+        working-directory: ./java/configuration
+        run: |
+          PROJECT_ROOT=$(cd ../.. && pwd)
+          mvn exec:java -q -e -Dmaven.repo.local=../.m2/repository \
+            -Dexec.mainClass=sleeper.configuration.properties.format.GeneratePropertiesTemplates \
+            -Dexec.args="$PROJECT_ROOT"
+          CHANGED_FILES=$(git status --porcelain)
+          if [ ${#CHANGED_FILES} -gt 0 ]; then
+            echo "Found files changed by properties template generation"
+            echo "$CHANGED_FILES"
+            exit 1
+          fi
