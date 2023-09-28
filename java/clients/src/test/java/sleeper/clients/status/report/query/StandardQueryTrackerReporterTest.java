@@ -40,14 +40,14 @@ public class StandardQueryTrackerReporterTest {
 
             // Then
             assertThat(getStandardReport(TrackerQuery.ALL, noQueries))
-                    .isEqualTo(example("reports/query/noQueries.txt"));
+                    .isEqualTo(example("reports/query/standard/all/noQueries.txt"));
         }
 
         @Test
         void shouldRunReportWithMixedQueries() throws Exception {
             // When/Then
             assertThat(getStandardReport(TrackerQuery.ALL, mixedQueries()))
-                    .isEqualTo(example("reports/query/mixedQueries.txt"));
+                    .isEqualTo(example("reports/query/standard/all/mixedQueries.txt"));
         }
     }
 }
