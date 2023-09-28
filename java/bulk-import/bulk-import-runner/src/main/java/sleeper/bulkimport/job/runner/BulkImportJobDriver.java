@@ -24,6 +24,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.google.gson.JsonSyntaxException;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -78,17 +80,17 @@ public class BulkImportJobDriver {
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        return from(jobRunner, instanceProperties, s3Client, dynamoClient,
+                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf) {
+        return from(jobRunner, instanceProperties, s3Client, dynamoClient, conf,
                 IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties), Instant::now);
     }
 
     public static BulkImportJobDriver from(BulkImportJobRunner jobRunner, InstanceProperties instanceProperties,
-                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient,
+                                           AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf,
                                            IngestJobStatusStore statusStore,
                                            Supplier<Instant> getTime) {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
         return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                 tablePropertiesProvider, stateStoreProvider, statusStore, getTime);
@@ -195,7 +197,8 @@ public class BulkImportJobDriver {
         }
 
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, instanceProperties,
-                amazonS3, AmazonDynamoDBClientBuilder.defaultClient());
+                amazonS3, AmazonDynamoDBClientBuilder.defaultClient(),
+                HadoopConfigurationProvider.getConfigurationForEMR(instanceProperties));
         driver.run(bulkImportJob, jobRunId, taskId);
     }
 }

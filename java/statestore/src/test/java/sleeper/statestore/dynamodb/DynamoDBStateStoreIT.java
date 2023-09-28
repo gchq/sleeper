@@ -21,13 +21,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -45,8 +43,10 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -64,22 +64,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class DynamoDBStateStoreIT {
-    private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
 
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
@@ -96,7 +95,7 @@ public class DynamoDBStateStoreIT {
                                              List<Partition> partitions,
                                              int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, String.valueOf(garbageCollectorDelayBeforeDeletionInMinutes));
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.initialise(partitions);
         return stateStore;
@@ -1079,26 +1078,49 @@ public class DynamoDBStateStoreIT {
     }
 
     @Test
-    public void shouldReinitialisePartitions() throws StateStoreException {
+    void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
         // Given
-        Field field = new Field("key", new LongType());
-        Schema schema = Schema.builder().rowKeyFields(field).build();
+        Schema schema = schemaWithKey("key", new LongType());
         PartitionTree treeBefore = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "before1", "before2", 0L)
                 .buildTree();
-        StateStore dynamoDBStateStore = getStateStore(schema, treeBefore.getAllPartitions());
-
-        // When
         PartitionTree treeAfter = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "after1", "after2", 10L)
                 .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+        stateStore.addFile(FileInfoFactory.builder()
+                .schema(schema).partitionTree(treeBefore)
+                .lastStateStoreUpdate(Instant.now())
+                .build().leafFile(100L, 1L, 100L));
 
-        dynamoDBStateStore.initialise(treeAfter.getAllPartitions());
+        // When / Then
+        assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))
+                .isInstanceOf(StateStoreException.class);
+        assertThat(stateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeBefore.getAllPartitions());
+    }
+
+    @Test
+    public void shouldReinitialisePartitionsWhenNoFilesArePresent() throws StateStoreException {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+
+        // When
+        stateStore.initialise(treeAfter.getAllPartitions());
 
         // Then
-        assertThat(dynamoDBStateStore.getAllPartitions())
+        assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
     }
 }

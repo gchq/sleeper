@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -32,11 +34,11 @@ VPC=$1
 SUBNETS=$2
 RESULTS_BUCKET=$3
 if [ "$4" == "performance" ]; then
-  EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
-  TEST_NAME="performance"
+  TEST_SUITE_PARAMS="-Dsleeper.system.test.cluster.enabled=true"
+  TEST_SUITE_NAME="performance"
 elif [ "$4" == "functional" ]; then
-  EXTRA_MAVEN_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
-  TEST_NAME="functional"
+  TEST_SUITE_PARAMS="-Dsleeper.system.test.cluster.enabled=false"
+  TEST_SUITE_NAME="functional"
 else
   echo "Invalid test type: $4"
   echo "Valid test types are: performance, functional"
@@ -46,7 +48,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
-OUTPUT_DIR="/tmp/sleeper/${TEST_NAME}Tests/$START_TIME"
+OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
 ../build/buildForTest.sh
@@ -56,6 +58,8 @@ set +e
 
 runMavenSystemTests() {
     SHORT_ID=$1
+    TEST_NAME=$2
+    EXTRA_MAVEN_PARAMS=$3
     mkdir "$OUTPUT_DIR/$TEST_NAME"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
       -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
@@ -77,7 +81,8 @@ runMavenSystemTests() {
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
-runMavenSystemTests "mvn-$START_TIME"
+runMavenSystemTests "mvn-$START_TIME" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
+runMavenSystemTests "s3-$START_TIME" s3-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.s3.S3StateStore
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \

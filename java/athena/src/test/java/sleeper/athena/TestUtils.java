@@ -99,7 +99,7 @@ public class TestUtils {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties))
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, new Configuration()))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();
