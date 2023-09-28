@@ -48,9 +48,10 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 x Empty Sleeper table w/1 partition
 x Multiple partitions
 x Single file
-Files with different record counts in one partition
+x Files with different record counts in one partition
 Partitions with different file counts
 Multiple tables
+One partition has no files and calculate average
  */
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -129,11 +130,10 @@ public class TableMetricsTest {
             // Given
             instanceProperties.set(ID, "test-instance");
             PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", 10L);
+                    .singlePartition("root");
             createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("left", "file1.parquet", 100L)
-                    .partitionFileWithRecords("left", "file2.parquet", 200L)
+                    .partitionFileWithRecords("root", "file1.parquet", 100L)
+                    .partitionFileWithRecords("root", "file2.parquet", 200L)
                     .buildStateStore());
 
             // When
@@ -144,7 +144,7 @@ public class TableMetricsTest {
                     .instanceId("test-instance")
                     .tableName("test-table")
                     .fileCount(2).recordCount(300)
-                    .partitionCount(3).leafPartitionCount(2)
+                    .partitionCount(1).leafPartitionCount(1)
                     .averageActiveFilesPerPartition(2)
                     .build());
         }
