@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -49,7 +48,7 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 x Empty Sleeper table w/1 partition
 x Multiple partitions
 x Single file
-Files with different record counts
+Files with different record counts in one partition
 Partitions with different file counts
 Multiple tables
  */
@@ -108,9 +107,9 @@ public class TableMetricsTest {
         void shouldReportMetricsWithOneFileInOnePartition() {
             // Given
             instanceProperties.set(ID, "test-instance");
-            createTable("test-table");
-            setupStateStore("test-table", stateStoreTestBuilder ->
-                    stateStoreTestBuilder.singleFileInEachLeafPartitionWithRecords(100L));
+            createTable("test-table", StateStoreTestBuilder.withSinglePartition(schema)
+                    .singleFileInEachLeafPartitionWithRecords(100L)
+                    .buildStateStore());
 
             // When
             List<TableMetrics> metrics = tableMetrics();
@@ -124,6 +123,31 @@ public class TableMetricsTest {
                     .averageActiveFilesPerPartition(1)
                     .build());
         }
+
+        @Test
+        void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 10L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("left", "file1.parquet", 100L)
+                    .partitionFileWithRecords("left", "file2.parquet", 200L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(2).recordCount(300)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(2)
+                    .build());
+        }
     }
 
     private void createTable(String tableName) {
@@ -135,13 +159,6 @@ public class TableMetricsTest {
         tableProperties.set(TABLE_NAME, tableName);
         tables.add(tableProperties);
         stateStoreByTableName.put(tableName, stateStore);
-    }
-
-    private void setupStateStore(String tableName, Consumer<StateStoreTestBuilder> consumer) {
-        StateStore stateStore = stateStoreByTableName.get(tableName);
-        StateStoreTestBuilder stateStoreTestBuilder = StateStoreTestBuilder.from(schema, stateStore);
-        consumer.accept(stateStoreTestBuilder);
-        stateStoreTestBuilder.setupStateStore(stateStore);
     }
 
     private List<TableMetrics> tableMetrics() {

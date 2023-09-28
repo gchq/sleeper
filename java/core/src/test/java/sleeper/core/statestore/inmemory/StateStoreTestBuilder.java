@@ -23,7 +23,6 @@ import sleeper.core.range.Range;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,12 +49,8 @@ public class StateStoreTestBuilder {
         return new StateStoreTestBuilder(partitionsBuilder);
     }
 
-    public static StateStoreTestBuilder from(Schema schema, StateStore stateStore) {
-        try {
-            return new StateStoreTestBuilder(new PartitionTree(schema, stateStore.getAllPartitions()));
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+    public static StateStoreTestBuilder withSinglePartition(Schema schema) {
+        return from(new PartitionsBuilder(schema).singlePartition("root"));
     }
 
     public StateStoreTestBuilder singleFileInEachLeafPartitionWithRecords(long records) {
