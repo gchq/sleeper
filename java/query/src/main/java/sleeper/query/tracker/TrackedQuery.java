@@ -20,6 +20,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.time.Instant;
+
 /**
  * A TrackedQuery contains information about a query including its id and current status.
  */
@@ -131,6 +133,10 @@ public class TrackedQuery {
         public Builder subQueryId(String subQueryId) {
             this.subQueryId = subQueryId;
             return this;
+        }
+
+        public Builder lastUpdateTime(Instant lastUpdateTime) {
+            return lastUpdateTime(lastUpdateTime.toEpochMilli());
         }
 
         public Builder lastUpdateTime(Long lastUpdateTime) {

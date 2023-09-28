@@ -23,6 +23,7 @@ import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.TrackedQuery;
 
 import java.io.PrintStream;
+import java.time.Instant;
 import java.util.List;
 
 public class StandardQueryTrackerReporter implements QueryTrackerReporter {
@@ -58,9 +59,9 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private void printSummary(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
         out.printf("Total queries: %d%n", trackedQueries.size());
         out.println();
-        out.printf("Total queries pending: %d%n", countQueriesWithState(trackedQueries, QueryState.QUEUED));
+        out.printf("Total queries queued: %d%n", countQueriesWithState(trackedQueries, QueryState.QUEUED));
         out.printf("Total queries in progress: %d%n", countQueriesWithState(trackedQueries, QueryState.IN_PROGRESS));
-        out.printf("Total queries finished: %d%n", countQueriesWithState(trackedQueries, QueryState.COMPLETED));
+        out.printf("Total queries completed: %d%n", countQueriesWithState(trackedQueries, QueryState.COMPLETED));
         out.println();
         out.printf("Total queries partially failed: %d%n", countQueriesWithState(trackedQueries, QueryState.PARTIALLY_FAILED));
         out.printf("Total queries failed: %d%n", countQueriesWithState(trackedQueries, QueryState.FAILED));
@@ -69,8 +70,8 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private void writeQueryFields(TrackedQuery trackedQuery, TableRow.Builder builder) {
         builder.value(state, trackedQuery.getLastKnownState())
                 .value(queryId, trackedQuery.getQueryId())
-                .value(subQueryId, trackedQuery.getSubQueryId())
-                .value(lastUpdateTime, trackedQuery.getLastUpdateTime())
+                .value(subQueryId, "-".equals(trackedQuery.getSubQueryId()) ? "" : trackedQuery.getSubQueryId())
+                .value(lastUpdateTime, Instant.ofEpochMilli(trackedQuery.getLastUpdateTime()))
                 .value(recordCount, trackedQuery.getRecordCount());
     }
 

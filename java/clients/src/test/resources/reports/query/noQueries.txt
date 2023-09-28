@@ -3,9 +3,9 @@ Query Tracker Report
 --------------------
 Total queries: 0
 
-Total queries pending: 0
+Total queries queued: 0
 Total queries in progress: 0
-Total queries finished: 0
+Total queries completed: 0
 
 Total queries partially failed: 0
 Total queries failed: 0
