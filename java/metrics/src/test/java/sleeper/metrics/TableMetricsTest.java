@@ -43,7 +43,7 @@ import static sleeper.configuration.properties.table.TablePropertiesTestHelper.c
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -58,7 +58,7 @@ public class TableMetricsTest {
         void shouldReportMetricsWithEmptyTable() {
             // Given
             instanceProperties.set(ID, "test-instance");
-            createTable("test-table");
+            createTable("test-table", inMemoryStateStoreWithFixedSinglePartition(schema));
 
             // When
             List<TableMetrics> metrics = tableMetrics();
@@ -227,10 +227,6 @@ public class TableMetricsTest {
                             .averageActiveFilesPerPartition(1)
                             .build());
         }
-    }
-
-    private void createTable(String tableName) {
-        createTable(tableName, inMemoryStateStoreWithSinglePartition(schema));
     }
 
     private void createTable(String tableName, StateStore stateStore) {
