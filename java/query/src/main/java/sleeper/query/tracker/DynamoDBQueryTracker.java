@@ -24,6 +24,8 @@ import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * The query tracker updates and keeps track of the status of queries so that clients
  * can see how complete it is or if part or all of the query failed.
  */
-public class DynamoDBQueryTracker implements QueryStatusReportListener {
+public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTrackerStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBQueryTracker.class);
 
     public static final String DESTINATION = "DYNAMODB";
@@ -75,10 +77,12 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener {
         this.dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
     }
 
+    @Override
     public TrackedQuery getStatus(String queryId) throws QueryTrackerException {
         return getStatus(queryId, NON_NESTED_QUERY_PLACEHOLDER);
     }
 
+    @Override
     public TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(trackerTableName)
@@ -101,6 +105,14 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener {
         }
 
         return toTrackedQuery(result.getItems().get(0));
+    }
+
+    @Override
+    public List<TrackedQuery> getAllQueries() {
+        ScanResult result = dynamoDB.scan(new ScanRequest().withTableName(trackerTableName));
+        return result.getItems().stream()
+                .map(this::toTrackedQuery)
+                .collect(Collectors.toList());
     }
 
     private void updateState(String queryId, String subQueryId, QueryState state, long recordCount) {
@@ -207,7 +219,13 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener {
         QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).getS());
         String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).getS();
 
-        return new TrackedQuery(id, subQueryId, updateTime, expiryDate, state, recordCount);
+        return TrackedQuery.builder()
+                .queryId(id).subQueryId(subQueryId)
+                .lastUpdateTime(updateTime)
+                .expiryDate(expiryDate)
+                .lastKnownState(state)
+                .recordCount(recordCount)
+                .build();
     }
 
     @Override

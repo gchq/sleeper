@@ -233,6 +233,33 @@ public class DynamoDBQueryTrackerIT {
         assertThat(queryTracker.getStatus("parent", "my-other-id").getRecordCount()).isEqualTo(Long.valueOf(25));
     }
 
+    @Test
+    void shouldGetAllQueries() {
+        // Given
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        Query query1 = createQueryWithId("query1");
+        Query query2 = createQueryWithId("query2");
+
+        // When
+        queryTracker.queryInProgress(query1);
+        queryTracker.queryCompleted(query2, new ResultsOutputInfo(123L, List.of()));
+
+        // Then
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
+                .containsExactlyInAnyOrder(
+                        TrackedQuery.builder()
+                                .queryId("query1")
+                                .recordCount(0L)
+                                .lastKnownState(IN_PROGRESS)
+                                .build(),
+                        TrackedQuery.builder()
+                                .queryId("query2")
+                                .recordCount(123L)
+                                .lastKnownState(COMPLETED)
+                                .build());
+    }
+
     private Collection<AttributeDefinition> createAttributeDefinitions() {
         return Lists.newArrayList(
                 new AttributeDefinition(DynamoDBQueryTracker.QUERY_ID, ScalarAttributeType.S),

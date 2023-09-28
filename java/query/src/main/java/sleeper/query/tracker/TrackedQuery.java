@@ -31,13 +31,17 @@ public class TrackedQuery {
     private final QueryState lastKnownState;
     private final Long recordCount;
 
-    public TrackedQuery(String queryId, String subQueryId, Long lastUpdateTime, Long expiryDate, QueryState lastKnownState, Long recordCount) {
-        this.queryId = queryId;
-        this.subQueryId = subQueryId;
-        this.lastUpdateTime = lastUpdateTime;
-        this.lastKnownState = lastKnownState;
-        this.expiryDate = expiryDate;
-        this.recordCount = recordCount;
+    private TrackedQuery(Builder builder) {
+        queryId = builder.queryId;
+        subQueryId = builder.subQueryId;
+        lastUpdateTime = builder.lastUpdateTime;
+        expiryDate = builder.expiryDate;
+        lastKnownState = builder.lastKnownState;
+        recordCount = builder.recordCount;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public String getQueryId() {
@@ -106,5 +110,51 @@ public class TrackedQuery {
                 .append("lastKnownState", lastKnownState)
                 .append("recordCount", recordCount)
                 .toString();
+    }
+
+    public static final class Builder {
+        private String queryId;
+        private String subQueryId = "-";
+        private Long lastUpdateTime;
+        private Long expiryDate;
+        private QueryState lastKnownState;
+        private Long recordCount;
+
+        private Builder() {
+        }
+
+        public Builder queryId(String queryId) {
+            this.queryId = queryId;
+            return this;
+        }
+
+        public Builder subQueryId(String subQueryId) {
+            this.subQueryId = subQueryId;
+            return this;
+        }
+
+        public Builder lastUpdateTime(Long lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
+            return this;
+        }
+
+        public Builder expiryDate(Long expiryDate) {
+            this.expiryDate = expiryDate;
+            return this;
+        }
+
+        public Builder lastKnownState(QueryState lastKnownState) {
+            this.lastKnownState = lastKnownState;
+            return this;
+        }
+
+        public Builder recordCount(Long recordCount) {
+            this.recordCount = recordCount;
+            return this;
+        }
+
+        public TrackedQuery build() {
+            return new TrackedQuery(this);
+        }
     }
 }
