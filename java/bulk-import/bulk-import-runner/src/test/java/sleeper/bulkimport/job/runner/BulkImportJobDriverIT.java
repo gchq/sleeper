@@ -170,6 +170,7 @@ class BulkImportJobDriverIT {
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         return instanceProperties;
     }
@@ -290,7 +291,6 @@ class BulkImportJobDriverIT {
     }
 
     private static StateStore initialiseS3StateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
-        new S3StateStoreCreator(tableProperties, dynamoDBClient).create();
         StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         stateStore.initialise();
         return stateStore;
