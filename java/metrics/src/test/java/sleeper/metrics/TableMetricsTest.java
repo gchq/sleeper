@@ -23,6 +23,12 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.FixedStateStoreProvider;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -30,23 +36,31 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
+/* Tests:
+x Empty Sleeper table w/1 partition
+Multiple partitions
+Single file
+Multiple files (with different record counts)
+Multiple tables
+ */
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final List<TableProperties> tables = new ArrayList<>();
+    private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
 
     @Test
     void shouldReportMetricsWithEmptyTable() {
         // Given
         instanceProperties.set(ID, "test-instance");
-        Schema schema = schemaWithKey("key");
-        TableProperties tableProperties = namedTable("test-table", schema);
+        createTable("test-table", schemaWithKey("key"));
 
         // When
-        TableMetrics metrics = tableMetrics(tableProperties, inMemoryStateStoreWithFixedSinglePartition(schema));
+        List<TableMetrics> metrics = tableMetrics();
 
         // Then
-        assertThat(metrics).isEqualTo(TableMetrics.builder()
+        assertThat(metrics).containsExactly(TableMetrics.builder()
                 .instanceId("test-instance")
                 .tableName("test-table")
                 .fileCount(0).recordCount(0)
@@ -55,15 +69,16 @@ public class TableMetricsTest {
                 .build());
     }
 
-    private TableProperties namedTable(String tableName, Schema schema) {
+    private void createTable(String tableName, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
-        return tableProperties;
+        tables.add(tableProperties);
+        stateStoreByTableName.put(tableName, inMemoryStateStoreWithSinglePartition(schema));
     }
 
-    private TableMetrics tableMetrics(TableProperties table, StateStore stateStore) {
+    private List<TableMetrics> tableMetrics() {
         try {
-            return TableMetrics.from(instanceProperties, table, stateStore);
+            return TableMetrics.from(instanceProperties, tables, new FixedStateStoreProvider(stateStoreByTableName));
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         }

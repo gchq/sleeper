@@ -24,7 +24,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.StateStoreProvider;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -54,6 +56,15 @@ public class TableMetrics {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static List<TableMetrics> from(InstanceProperties instanceProperties, List<TableProperties> tables,
+                                          StateStoreProvider stateStoreProvider) throws StateStoreException {
+        List<TableMetrics> metrics = new ArrayList<>(tables.size());
+        for (TableProperties table : tables) {
+            metrics.add(from(instanceProperties, table, stateStoreProvider.getStateStore(table)));
+        }
+        return metrics;
     }
 
     public static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,
