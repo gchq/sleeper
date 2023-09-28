@@ -53,7 +53,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
-import static sleeper.statestore.s3.S3StateStore.getZeroPaddedLong;
+import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 public class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
@@ -254,13 +254,12 @@ public class S3PartitionStore implements PartitionStore {
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
         // Validate that there is no current revision id
         RevisionId oldRevisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
-        if (null != oldRevisionId) {
+        if (null != oldRevisionId && !oldRevisionId.getRevision().equals(FIRST_REVISION)) {
             throw new StateStoreException("Dynamo should not contain current revision id; found " + oldRevisionId);
         }
 
         // Write partitions to file
-        long version = 1L;
-        String versionString = getZeroPaddedLong(version);
+        String versionString = FIRST_REVISION;
         RevisionId revisionId = new RevisionId(versionString, UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
         try {

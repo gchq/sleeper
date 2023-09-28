@@ -44,6 +44,7 @@ public class S3StateStore extends DelegatingStateStore {
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
     public static final String CURRENT_REVISION = "CURRENT_REVISION";
     public static final String CURRENT_UUID = "CURRENT_UUID";
+    public static final String FIRST_REVISION = S3StateStore.getZeroPaddedLong(1L);
 
     public S3StateStore(InstanceProperties instanceProperties,
                         TableProperties tableProperties,
