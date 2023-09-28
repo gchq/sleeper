@@ -17,13 +17,10 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +28,6 @@ import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class BulkImportArguments {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportArguments.class);
 
     private final InstanceProperties instanceProperties;
     private final BulkImportJob bulkImportJob;
@@ -64,7 +60,6 @@ public class BulkImportArguments {
                 args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
             }
         }
-        LOGGER.info("Using args {}", args.toString());
         return args;
     }
 

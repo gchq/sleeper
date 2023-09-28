@@ -17,7 +17,6 @@ package sleeper.bulkimport.starter.executor;
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
-import software.amazon.awssdk.services.emrserverless.model.Configuration;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
 import software.amazon.awssdk.services.emrserverless.model.MonitoringConfiguration;
@@ -33,27 +32,19 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES;
-import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY;
 
 /**
  * A {@link PlatformExecutor} which runs a bulk import job on EMR Serverless.
@@ -65,8 +56,8 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
     public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
             InstanceProperties instanceProperties) {
-        this(emrClient, instanceProperties,
-            new TablePropertiesProvider(AmazonS3ClientBuilder.defaultClient(), instanceProperties));
+        this(emrClient, instanceProperties, new TablePropertiesProvider(
+                AmazonS3ClientBuilder.defaultClient(), instanceProperties));
     }
 
     public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
@@ -107,7 +98,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                         .entryPointArguments(instanceProperties.get(CONFIG_BUCKET),
                                 bulkImportJob.getId(), taskId, arguments.getJobRunId())
                         .sparkSubmitParameters(
-                               constructSparkArgs(taskId, arguments, bulkImportJob, platformSpec))
+                                constructSparkArgs(taskId, arguments, bulkImportJob, platformSpec))
                         .build()).build())
                 .configurationOverrides(
                         ConfigurationOverrides.builder()
@@ -122,40 +113,35 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
     private String constructSparkArgs(String taskId, BulkImportArguments arguments,
             BulkImportJob bulkImportJob, BulkImportPlatformSpec platformSpec) {
-        Map<String, String> sparkArgs = instanceProperties.getProperties().entrySet()
-            .stream().filter(prop -> prop.getKey().toString().contains("sleeper.bulk.import.emr.serverless.spark"))
-            .map(i -> {
-                 return Map.entry(i.getKey().toString().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
-                 i.getValue().toString());
-            })
-            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        Map<String, String> instancePropertiesSparkConf = ConfigurationUtils
+                .getSparkServerlessConfigurationFromInstanceProperties(instanceProperties,
+                        EmrInstanceArchitecture.X86_64);
 
-        sparkArgs.put("spark.emr-serverless.driverEnv.JAVA_HOME",
-            sparkArgs.get("spark.executorEnv.JAVA_HOME"));
-        sparkArgs.put("spark.emr-serverless.executor.disk",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK));
-        sparkArgs.replace("spark.executor.cores",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
-        sparkArgs.replace("spark.executor.memory",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY));
-        sparkArgs.replace("spark.executor.instances",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES));
-        sparkArgs.replace("spark.executor.heartbeat.interval", instanceProperties
-                .get(BULK_IMPORT_EMR_SERVERLESS_SPARK_EXECUTOR_HEARTBEAT_INTERVAL));
-        sparkArgs.replace("spark.driver.cores",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES));
-        sparkArgs.replace("spark.driver.memory",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY));
-        sparkArgs.replace("spark.dynamicAllocation.enabled",
-                platformSpec.get(BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION));
-                  
+        Map<String, String> jobSparkArgs =  arguments.getBulkImportJob().getSparkConf();
+        if (jobSparkArgs != null) {
+            jobSparkArgs = arguments.getBulkImportJob().getSparkConf().entrySet()
+                .stream().filter(prop -> prop.getKey().toString().contains("sleeper.bulk.import.emr.serverless.spark"))
+                .map(i -> {
+                    return Map.entry(i.getKey().toString().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
+                    i.getValue().toString());
+                })
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
-        bulkImportJob.setSparkConf(sparkArgs);
+            Map<String, String> sparkConf = Stream
+                    .of(instancePropertiesSparkConf, jobSparkArgs)
+                    .flatMap(map -> map.entrySet().stream())
+                    .collect(Collectors.toMap(Map.Entry::getKey,
+                            Map.Entry::getValue, (m1, m2) -> m2, HashMap::new));
+            bulkImportJob.setSparkConf(sparkConf);
+        } else {
+            bulkImportJob.setSparkConf(instancePropertiesSparkConf);
+        }
+
         List<String> args = arguments.constructArgs(bulkImportJob, taskId);
 
         StringBuilder argsAsString = new StringBuilder();
         args.forEach(arg -> {
-           argsAsString.append(arg).append(" ");
+            argsAsString.append(arg).append(" ");
         });
         return argsAsString.toString();
     }

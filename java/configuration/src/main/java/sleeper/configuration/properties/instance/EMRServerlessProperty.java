@@ -27,26 +27,26 @@ import static sleeper.configuration.properties.instance.NonPersistentEMRProperty
 
 public interface EMRServerlessProperty {
 
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.architecture")
             .description("The architecture for EMR Serverless to use. X86_64 or ARM64 (Coming soon)")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).defaultValue("X86_64")
             .validationPredicate(Predicate.isEqual(EmrInstanceArchitecture.X86_64.toString()))
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_RELEASE = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_RELEASE = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.release")
             .description("The version of EMR Serverless to use.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .defaultValue(DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL.getDefaultValue())
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.repo")
             .description("The name of the repository for the EMR serverless container. "
                     + "The Docker image from the bulk-import module "
                     + "should have been uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executor.cores")
             .description(
                     "The number of cores used by a Serverless executor. Used to set spark.executor.cores.\n"
@@ -54,7 +54,7 @@ public interface EMRServerlessProperty {
             .defaultValue("4")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executor.memory")
             .description(
                     "The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.\n"
@@ -62,14 +62,14 @@ public interface EMRServerlessProperty {
             .defaultValue("16G")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.emr-serverless.executor.disk")
             .description("The amount of storage allocated to a Serverless executor.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("200G")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_INSTANCES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executor.instances")
             .description(
                     "The number of executors to be used with Serverless. Used to set spark.executor.instances.\n"
@@ -77,29 +77,29 @@ public interface EMRServerlessProperty {
             .defaultValue("36")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DRIVER_CORES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.driver.cores")
             .description(
                     "The number of cores used by the Serverless Spark driver. Used to set spark.driver.cores.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES.getDefaultValue())
+            .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.driver.memory")
             .description(
                     "The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.\n"
                             + "See https://spark.apache.org/docs/latest/configuration.html.")
-            .defaultValue(DEFAULT_BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY.getDefaultValue())
+            .defaultValue(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_MEMORY.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JAVA_HOME = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executorEnv.JAVA_HOME")
             .description("The path to JAVA_HOME to be used by the custom image for bulk import.")
             .defaultValue("/usr/lib/jvm/jre-11")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
-    UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.enabled")
             .description("Whether Spark should use dynamic allocation to scale resources up and down. "
                     + "Used to set spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.")
@@ -164,6 +164,19 @@ public interface EMRServerlessProperty {
                     "Used to set spark.memory.storageFraction.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("0.30")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(false).build();
+    UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation")
+            .description("If true then speculative execution of tasks will be performed. Used to set spark.speculation.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(false).build();
+    UserDefinedInstanceProperty BULK_IMPORT_SPARK_SPECULATION_QUANTILE = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.speculation.quantile")
+            .description("Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used to set spark.speculation.quantile.\n" +
+                    "See https://spark.apache.org/docs/latest/configuration.html.")
+            .defaultValue("0.75")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
 
