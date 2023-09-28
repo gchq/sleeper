@@ -18,22 +18,22 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          path: java/.m2/repository
+          path: ../.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Resolve dependencies
-        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=.m2/repository
+        run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -Dmaven.repo.local=../../.m2/repository
         working-directory: ./java
       - name: Build with Maven
-        run: mvn --batch-mode verify -Pquick -T 1C -Dmaven.repo.local=.m2/repository
+        run: mvn --batch-mode verify -Pquick -T 1C -Dmaven.repo.local=../../.m2/repository
         working-directory: ./java
       - name: Validate properties templates are up to date
         working-directory: ./java
         run: |
           PROJECT_ROOT=$(cd .. && pwd)
-          mvn install -Pquick -q -e -pl configuration -am -Dmaven.repo.local=.m2/repository
-          mvn exec:java -q -e -Dmaven.repo.local=.m2/repository -pl configuration \
+          mvn install -Pquick -q -e -pl configuration -am -Dmaven.repo.local=../../.m2/repository
+          mvn exec:java -q -e -Dmaven.repo.local=../../.m2/repository -pl configuration \
             -Dexec.mainClass=sleeper.configuration.properties.format.GeneratePropertiesTemplates \
             -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
