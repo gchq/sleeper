@@ -18,8 +18,6 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 
-import java.util.List;
-
 public class StateStoreStacks {
 
     private final DynamoDBStateStoreStack dynamo;
@@ -73,9 +71,5 @@ public class StateStoreStacks {
     public void grantReadWritePartitions(IGrantable grantee) {
         dynamo.grantReadWritePartitionMetadata(grantee);
         s3.grantReadWrite(grantee);
-    }
-
-    public List<StateStoreStack> getStateStoreStacks() {
-        return List.of(dynamo, s3);
     }
 }

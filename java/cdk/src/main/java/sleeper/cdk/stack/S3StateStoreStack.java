@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
-public class S3StateStoreStack extends NestedStack implements StateStoreStack {
+public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
@@ -67,36 +67,6 @@ public class S3StateStoreStack extends NestedStack implements StateStoreStack {
                 .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-    }
-
-    @Override
-    public void grantReadActiveFileMetadata(IGrantable grantee) {
-        grantRead(grantee);
-    }
-
-    @Override
-    public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    @Override
-    public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    @Override
-    public void grantWriteReadyForGCFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    @Override
-    public void grantReadPartitionMetadata(IGrantable grantee) {
-        grantRead(grantee);
-    }
-
-    @Override
-    public void grantReadWritePartitionMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
     }
 
     public void grantReadWrite(IGrantable grantee) {
