@@ -89,6 +89,10 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         // DynamoDB table for partition information
         Attribute partitionKeyPartitionTable = Attribute.builder()
+                .name(DynamoDBStateStore.TABLE_NAME)
+                .type(AttributeType.STRING)
+                .build();
+        Attribute sortKeyPartitionTable = Attribute.builder()
                 .name(DynamoDBStateStore.PARTITION_ID)
                 .type(AttributeType.STRING)
                 .build();
@@ -98,6 +102,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyPartitionTable)
+                .sortKey(sortKeyPartitionTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
 

@@ -57,8 +57,7 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class TableStack extends NestedStack {
-
+public class TableStack extends NestedStack { 
     public TableStack(
             Construct scope,
             String id,
