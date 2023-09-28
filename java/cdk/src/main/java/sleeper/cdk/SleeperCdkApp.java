@@ -37,6 +37,7 @@ import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
 import sleeper.cdk.stack.S3StateStoreStack;
+import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
@@ -78,8 +79,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
-    private DynamoDBStateStoreStack dynamoDBStateStoreStack;
-    private S3StateStoreStack s3StateStoreStack;
+    private StateStoreStacks stateStoreStacks;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -125,10 +125,10 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for tables
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        dynamoDBStateStoreStack = new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties);
-        s3StateStoreStack = new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack);
-        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack,
-                dynamoDBStateStoreStack, s3StateStoreStack);
+        stateStoreStacks = new StateStoreStacks(
+                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
+                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
+        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, stateStoreStacks);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
@@ -270,6 +270,10 @@ public class SleeperCdkApp extends Stack {
 
     public TableStack getTableStack() {
         return tableStack;
+    }
+
+    public StateStoreStacks getStateStoreStacks() {
+        return stateStoreStacks;
     }
 
     public TableDataStack getDataStack() {

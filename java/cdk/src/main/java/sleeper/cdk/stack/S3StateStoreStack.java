@@ -99,12 +99,12 @@ public class S3StateStoreStack extends NestedStack implements StateStoreStack {
         grantReadWrite(grantee);
     }
 
-    private void grantReadWrite(IGrantable grantee) {
+    public void grantReadWrite(IGrantable grantee) {
         revisionTable.grantReadWriteData(grantee);
         dataStack.getDataBucket().grantReadWrite(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
     }
 
-    private void grantRead(IGrantable grantee) {
+    public void grantRead(IGrantable grantee) {
         revisionTable.grantReadData(grantee);
         dataStack.getDataBucket().grantRead(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
     }
