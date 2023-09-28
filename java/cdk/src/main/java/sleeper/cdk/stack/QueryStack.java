@@ -102,7 +102,7 @@ public class QueryStack extends NestedStack {
                       String id,
                       InstanceProperties instanceProperties,
                       BuiltJars jars,
-                      TableStack tableStack, TableDataStack dataStack) {
+                      StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         super(scope, id);
 
         // Config bucket
@@ -236,8 +236,7 @@ public class QueryStack extends NestedStack {
         // the S3 bucket, write back to the query queue and write to the results
         // queue and S3 bucket
         dataStack.getDataBucket().grantRead(queryExecutorLambda);
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(queryExecutorLambda));
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(queryExecutorLambda));
+        stateStoreStacks.grantReadActiveFilesAndPartitions(queryExecutorLambda);
         configBucket.grantRead(queryExecutorLambda);
         jarsBucket.grantRead(queryExecutorLambda);
         queriesQueue.grantSendMessages(queryExecutorLambda);

@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
+import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 public class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
@@ -422,7 +423,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     public void initialise() throws StateStoreException {
-        RevisionId firstRevisionId = new RevisionId(S3StateStore.getZeroPaddedLong(1L), UUID.randomUUID().toString());
+        RevisionId firstRevisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
             writeFileInfosToParquet(Collections.emptyList(), path);

@@ -109,7 +109,7 @@ public class IngestStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            TableStack tableStack,
+            StateStoreStacks stateStoreStacks,
             TableDataStack dataStack,
             Topic topic,
             IngestStatusStoreStack statusStoreStack) {
@@ -136,7 +136,7 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(topic);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(configBucket, jarsBucket, tableStack, dataStack, ingestJobQueue);
+        ecsClusterForIngestTasks(configBucket, jarsBucket, stateStoreStacks, dataStack, ingestJobQueue);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(configBucket, ingestJobQueue, taskCreatorJar);
@@ -234,7 +234,7 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket configBucket,
             IBucket jarsBucket,
-            TableStack tableStack,
+            StateStoreStacks stateStoreStacks,
             TableDataStack dataStack,
             Queue ingestJobQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
@@ -274,8 +274,7 @@ public class IngestStack extends NestedStack {
         configBucket.grantRead(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
         dataStack.getDataBucket().grantReadWrite(taskDefinition.getTaskRole());
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDefinition.getTaskRole()));
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(taskDefinition.getTaskRole()));
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(taskDefinition.getTaskRole());
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());

@@ -42,8 +42,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
-import sleeper.cdk.stack.TableStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
@@ -72,12 +72,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
                                     String id,
                                     InstanceProperties instanceProperties,
                                     BulkImportBucketStack importBucketStack,
-                                    TableStack tableStack,
+                                    StateStoreStacks stateStoreStacks,
                                     TableDataStack dataStack,
                                     IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
-                importBucketStack.getImportBucket(), tableStack, dataStack);
+                importBucketStack.getImportBucket(), stateStoreStacks, dataStack);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
         IngestStatusStoreResources statusStore = statusStoreStack.getResources();
@@ -87,7 +87,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            TableStack tableStack,
+            StateStoreStacks stateStoreStacks,
             TableDataStack dataStack) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
@@ -98,10 +98,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
         dataStack.getDataBucket().grantReadWrite(role);
-        tableStack.getStateStoreStacks().forEach(sss -> {
-            sss.grantReadWriteActiveFileMetadata(role);
-            sss.grantReadPartitionMetadata(role);
-        });
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(role);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));

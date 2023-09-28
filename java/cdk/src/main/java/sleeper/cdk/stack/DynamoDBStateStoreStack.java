@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
-public class DynamoDBStateStoreStack extends NestedStack implements StateStoreStack {
+public class DynamoDBStateStoreStack extends NestedStack {
     private final Table activeFileInfoTable;
     private final Table readyForGCFileInfoTable;
     private final Table partitionTable;
@@ -104,32 +104,22 @@ public class DynamoDBStateStoreStack extends NestedStack implements StateStoreSt
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
     }
 
-    @Override
     public void grantReadActiveFileMetadata(IGrantable grantee) {
         activeFileInfoTable.grantReadData(grantee);
     }
 
-    @Override
     public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
         activeFileInfoTable.grantReadWriteData(grantee);
     }
 
-    @Override
     public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
         readyForGCFileInfoTable.grantReadWriteData(grantee);
     }
 
-    @Override
-    public void grantWriteReadyForGCFileMetadata(IGrantable grantee) {
-        readyForGCFileInfoTable.grantWriteData(grantee);
-    }
-
-    @Override
     public void grantReadPartitionMetadata(IGrantable grantee) {
         partitionTable.grantReadData(grantee);
     }
 
-    @Override
     public void grantReadWritePartitionMetadata(IGrantable grantee) {
         partitionTable.grantReadWriteData(grantee);
     }
