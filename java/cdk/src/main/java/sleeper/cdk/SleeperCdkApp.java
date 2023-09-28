@@ -33,10 +33,10 @@ import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.NewS3StateStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
+import sleeper.cdk.stack.S3StateStoreStack;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
@@ -79,7 +79,7 @@ public class SleeperCdkApp extends Stack {
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
     private DynamoDBStateStoreStack dynamoDBStateStoreStack;
-    private NewS3StateStoreStack s3StateStoreStack;
+    private S3StateStoreStack s3StateStoreStack;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -126,7 +126,7 @@ public class SleeperCdkApp extends Stack {
         // Stack for tables
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
         dynamoDBStateStoreStack = new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties);
-        s3StateStoreStack = new NewS3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack);
+        s3StateStoreStack = new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack);
         tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack,
                 dynamoDBStateStoreStack, s3StateStoreStack);
 

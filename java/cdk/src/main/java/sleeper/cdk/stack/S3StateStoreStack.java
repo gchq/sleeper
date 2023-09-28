@@ -35,14 +35,14 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
-public class NewS3StateStoreStack extends NestedStack implements StateStoreStack {
+public class S3StateStoreStack extends NestedStack implements StateStoreStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
-    public NewS3StateStoreStack(Construct scope,
-                                String id,
-                                InstanceProperties instanceProperties,
-                                TableDataStack dataStack) {
+    public S3StateStoreStack(Construct scope,
+                             String id,
+                             InstanceProperties instanceProperties,
+                             TableDataStack dataStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
