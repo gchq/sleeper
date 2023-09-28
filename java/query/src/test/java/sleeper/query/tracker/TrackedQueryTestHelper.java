@@ -19,6 +19,9 @@ package sleeper.query.tracker;
 import java.time.Instant;
 
 public class TrackedQueryTestHelper {
+    private TrackedQueryTestHelper() {
+    }
+
     public static TrackedQuery queryQueued(String queryId, Instant lastUpdateTime) {
         return queryWithState(queryId, lastUpdateTime, QueryState.QUEUED).build();
     }
