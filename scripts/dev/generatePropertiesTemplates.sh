@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # Copyright 2022-2023 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 set -e
 unset CDPATH
@@ -21,13 +23,9 @@ PROJECT_ROOT=$(dirname "$(dirname "${THIS_DIR}")")
 
 pushd "${PROJECT_ROOT}/java"
 echo "Compiling..."
-mvn compile -Pquick -q -pl configuration -am
-
-pushd configuration
+mvn install -Pquick -q -pl configuration -am
 echo "Regenerating templates..."
-mvn exec:java -q \
+mvn exec:java -q -pl configuration \
   -Dexec.mainClass="sleeper.configuration.properties.format.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
-
-popd
 popd
