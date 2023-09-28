@@ -30,6 +30,7 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
@@ -388,6 +389,26 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public void initialise() {
+    }
+
+    @Override
+    public boolean isHasNoFiles() {
+        return isTableEmpty(activeTableName) && isTableEmpty(readyForGCTableName);
+    }
+
+    private boolean isTableEmpty(String tableName) {
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(tableName)
+                .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_name", sleeperTableName)
+                        .build())
+                .withKeyConditionExpression("#TableName = :table_name")
+                .withConsistentRead(stronglyConsistentReads)
+                .withLimit(1)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        LOGGER.debug("Scanned for any file in table {}, capacity consumed = {}", tableName, result.getConsumedCapacity().getCapacityUnits());
+        return result.getItems().isEmpty();
     }
 
     @Override

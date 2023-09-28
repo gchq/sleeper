@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.Lists;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.AfterAll;
@@ -59,8 +60,10 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -84,6 +87,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
@@ -171,6 +175,12 @@ class BulkImportJobDriverIT {
     }
 
     public TableProperties createTable(InstanceProperties instanceProperties) {
+        TableProperties tableProperties = createTableProperties(instanceProperties);
+        tableProperties.saveToS3(s3Client);
+        return tableProperties;
+    }
+
+    public TableProperties createTableProperties(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
@@ -270,8 +280,7 @@ class BulkImportJobDriverIT {
     }
 
     private static StateStore initialiseStateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;
     }
@@ -280,11 +289,18 @@ class BulkImportJobDriverIT {
         return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
     }
 
+    private static StateStore initialiseS3StateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
+        new S3StateStoreCreator(tableProperties, dynamoDBClient).create();
+        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
+        stateStore.initialise();
+        return stateStore;
+    }
+
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job) throws IOException {
         String jobRunId = "test-run";
         statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
         BulkImportJobDriver driver = BulkImportJobDriver.from(runner, properties,
-                s3Client, dynamoDBClient, statusStore,
+                s3Client, dynamoDBClient, new Configuration(), statusStore,
                 List.of(startTime, endTime).iterator()::next);
         driver.run(job, jobRunId, taskId);
     }
@@ -526,6 +542,56 @@ class BulkImportJobDriverIT {
                 .extracting(FileInfo::getNumberOfRecords, FileInfo::getPartitionId,
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
+                finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
+                        summary(startTime, endTime, records.size(), records.size())));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getParameters")
+    void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException, StateStoreException {
+        // Given
+        //  - Instance and table properties
+        String dataDir = folder.toString();
+        InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
+        TableProperties tableProperties = createTableProperties(instanceProperties);
+        tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
+        tableProperties.saveToS3(s3Client);
+        //  - Write some data to be imported
+        List<Record> records = getRecords();
+        writeRecordsToFile(records, dataDir + "/import/a.parquet");
+        List<String> inputFiles = new ArrayList<>();
+        inputFiles.add(dataDir + "/import/a.parquet");
+        //  - State store
+        StateStore stateStore = initialiseS3StateStore(dynamoDBClient, instanceProperties, tableProperties);
+
+        // When
+        BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+        runJob(runner, instanceProperties, job);
+
+        // Then
+        List<FileInfo> activeFiles = stateStore.getActiveFiles();
+        List<Record> readRecords = new ArrayList<>();
+        for (FileInfo fileInfo : activeFiles) {
+            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileInfo.getFilename()), schema)) {
+                List<Record> recordsInThisFile = new ArrayList<>();
+                Record record = reader.read();
+                while (null != record) {
+                    Record clonedRecord = new Record(record);
+                    readRecords.add(clonedRecord);
+                    recordsInThisFile.add(clonedRecord);
+                    record = reader.read();
+                }
+                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
+            }
+        }
+        assertThat(readRecords).hasSameSizeAs(records);
+
+        List<Record> expectedRecords = new ArrayList<>(records);
+        sortRecords(expectedRecords);
+        sortRecords(readRecords);
+        assertThat(readRecords).isEqualTo(expectedRecords);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_NAME))).containsExactly(
                 finishedIngestJobWithValidation(job.toIngestJob(), taskId, validationTime,
                         summary(startTime, endTime, records.size(), records.size())));

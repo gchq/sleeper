@@ -180,4 +180,19 @@ public class KeySerDeTest {
         assertThat(deserialisedKey4.size()).isOne();
         assertThat(deserialisedKey4.get(0)).isEqualTo(1);
     }
+
+    @Test
+    public void shouldSerialiseAndDeserialiseNullCorrectly() throws IOException {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("rowkey1", new StringType())).build();
+        KeySerDe keySerDe = new KeySerDe(schema);
+        Key key = null;
+
+        // When
+        byte[] serialised = keySerDe.serialise(key);
+        Key deserialisedKeys = keySerDe.deserialise(serialised);
+
+        // Then
+        assertThat(deserialisedKeys).isNull();
+    }
 }

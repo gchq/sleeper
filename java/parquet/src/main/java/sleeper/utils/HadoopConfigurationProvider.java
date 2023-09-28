@@ -48,6 +48,10 @@ public class HadoopConfigurationProvider {
         return conf;
     }
 
+    public static Configuration getConfigurationForEMR(InstanceProperties instanceProperties) {
+        return getConfigurationForECS(instanceProperties);
+    }
+
     public static Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));

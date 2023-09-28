@@ -23,12 +23,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
@@ -36,6 +34,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.StateStoreFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,11 +45,9 @@ import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV
 
 @Testcontainers
 public class DynamoDBStateStoreMultipleTablesIT {
-    private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new LongType());
     private final StateStoreFactory stateStoreFactory = new StateStoreFactory(dynamoDBClient, instanceProperties, new Configuration());
@@ -58,7 +55,7 @@ public class DynamoDBStateStoreMultipleTablesIT {
 
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll

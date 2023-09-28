@@ -45,6 +45,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
+import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBContainer;
@@ -73,6 +74,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_C
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -1246,5 +1248,71 @@ public class S3StateStoreIT {
                 .buildTree()
                 .getPartition(partitions.get(0).getId());
         assertThat(partitions).containsExactly(expectedPartition);
+    }
+
+    @Test
+    void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+        stateStore.addFile(FileInfoFactory.builder()
+                .schema(schema).partitionTree(treeBefore)
+                .lastStateStoreUpdate(Instant.now())
+                .build().leafFile(100L, 1L, 100L));
+
+        // When / Then
+        assertThatThrownBy(() -> stateStore.initialise(treeAfter.getAllPartitions()))
+                .isInstanceOf(StateStoreException.class);
+        assertThat(stateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeBefore.getAllPartitions());
+    }
+
+    @Test
+    void shouldReinitialisePartitionsWhenNoFilesArePresent() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        PartitionTree treeBefore = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "before1", "before2", 0L)
+                .buildTree();
+        PartitionTree treeAfter = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "after1", "after2", 10L)
+                .buildTree();
+        StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
+
+        // When
+        stateStore.initialise(treeAfter.getAllPartitions());
+
+        // Then
+        assertThat(stateStore.getAllPartitions())
+                .containsExactlyInAnyOrderElementsOf(treeAfter.getAllPartitions());
+    }
+
+    @Test
+    void shouldStoreFileWhenMinAndMaxKeyAreNotSet() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        StateStore stateStore = getStateStore(schema);
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitions(stateStore.getAllPartitions())
+                .lastStateStoreUpdate(Instant.now())
+                .build();
+        FileInfo fileInfo = factory.leafFile(100L, null, null);
+
+        // When
+        stateStore.addFile(fileInfo);
+
+        // Then
+        assertThat(stateStore.getActiveFiles())
+                .containsExactly(fileInfo);
     }
 }
