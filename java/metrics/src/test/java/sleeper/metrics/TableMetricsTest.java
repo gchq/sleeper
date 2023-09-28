@@ -16,6 +16,8 @@
 
 package sleeper.metrics;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -45,9 +47,10 @@ import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStat
 
 /* Tests:
 x Empty Sleeper table w/1 partition
-Multiple partitions
-Single file
-Multiple files (with different record counts)
+x Multiple partitions
+x Single file
+Files with different record counts
+Partitions with different file counts
 Multiple tables
  */
 public class TableMetricsTest {
@@ -56,67 +59,71 @@ public class TableMetricsTest {
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
 
-    @Test
-    void shouldReportMetricsWithEmptyTable() {
-        // Given
-        instanceProperties.set(ID, "test-instance");
-        createTable("test-table");
+    @Nested
+    @DisplayName("Single table")
+    class SingleTable {
+        @Test
+        void shouldReportMetricsWithEmptyTable() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            createTable("test-table");
 
-        // When
-        List<TableMetrics> metrics = tableMetrics();
+            // When
+            List<TableMetrics> metrics = tableMetrics();
 
-        // Then
-        assertThat(metrics).containsExactly(TableMetrics.builder()
-                .instanceId("test-instance")
-                .tableName("test-table")
-                .fileCount(0).recordCount(0)
-                .partitionCount(1).leafPartitionCount(1)
-                .averageActiveFilesPerPartition(0)
-                .build());
-    }
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(0).recordCount(0)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .averageActiveFilesPerPartition(0)
+                    .build());
+        }
 
-    @Test
-    void shouldReportMetricsForOneTableWithMultiplePartitions() {
-        // Given
-        instanceProperties.set(ID, "test-instance");
-        List<Partition> partitions = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", 10L)
-                .buildList();
-        createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
+        @Test
+        void shouldReportMetricsWithMultiplePartitions() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            List<Partition> partitions = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 10L)
+                    .buildList();
+            createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
 
-        // When
-        List<TableMetrics> metrics = tableMetrics();
+            // When
+            List<TableMetrics> metrics = tableMetrics();
 
-        // Then
-        assertThat(metrics).containsExactly(TableMetrics.builder()
-                .instanceId("test-instance")
-                .tableName("test-table")
-                .fileCount(0).recordCount(0)
-                .partitionCount(3).leafPartitionCount(2)
-                .averageActiveFilesPerPartition(0)
-                .build());
-    }
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(0).recordCount(0)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(0)
+                    .build());
+        }
 
-    @Test
-    void shouldReportMetricsForOneTableWithOneFileInOnePartition() {
-        // Given
-        instanceProperties.set(ID, "test-instance");
-        createTable("test-table");
-        setupStateStore("test-table", stateStoreTestBuilder ->
-                stateStoreTestBuilder.singleFileInEachLeafPartitionWithRecords(100L));
+        @Test
+        void shouldReportMetricsWithOneFileInOnePartition() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            createTable("test-table");
+            setupStateStore("test-table", stateStoreTestBuilder ->
+                    stateStoreTestBuilder.singleFileInEachLeafPartitionWithRecords(100L));
 
-        // When
-        List<TableMetrics> metrics = tableMetrics();
+            // When
+            List<TableMetrics> metrics = tableMetrics();
 
-        // Then
-        assertThat(metrics).containsExactly(TableMetrics.builder()
-                .instanceId("test-instance")
-                .tableName("test-table")
-                .fileCount(1).recordCount(100)
-                .partitionCount(1).leafPartitionCount(1)
-                .averageActiveFilesPerPartition(1)
-                .build());
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(1).recordCount(100)
+                    .partitionCount(1).leafPartitionCount(1)
+                    .averageActiveFilesPerPartition(1)
+                    .build());
+        }
     }
 
     private void createTable(String tableName) {
