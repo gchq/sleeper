@@ -25,6 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestBuilder;
@@ -55,7 +56,7 @@ One partition has no files and calculate average
  */
 public class TableMetricsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final Schema schema = schemaWithKey("key");
+    private final Schema schema = schemaWithKey("key", new LongType());
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
 
@@ -146,6 +147,32 @@ public class TableMetricsTest {
                     .fileCount(2).recordCount(300)
                     .partitionCount(1).leafPartitionCount(1)
                     .averageActiveFilesPerPartition(2)
+                    .build());
+        }
+
+        @Test
+        void shouldReportMetricsForMultiplePartitionsWithDifferentFileCounts() {
+            // Given
+            instanceProperties.set(ID, "test-instance");
+            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "left", "right", 10L);
+            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
+                    .partitionFileWithRecords("left", "file1.parquet", 10L)
+                    .partitionFileWithRecords("left", "file2.parquet", 10L)
+                    .partitionFileWithRecords("right", "file3.parquet", 10L)
+                    .buildStateStore());
+
+            // When
+            List<TableMetrics> metrics = tableMetrics();
+
+            // Then
+            assertThat(metrics).containsExactly(TableMetrics.builder()
+                    .instanceId("test-instance")
+                    .tableName("test-table")
+                    .fileCount(3).recordCount(30)
+                    .partitionCount(3).leafPartitionCount(2)
+                    .averageActiveFilesPerPartition(1.5)
                     .build());
         }
     }
