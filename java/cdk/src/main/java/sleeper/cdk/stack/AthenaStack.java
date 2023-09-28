@@ -58,7 +58,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-                       TableStack tableStack, TableDataStack dataStack) {
+                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -125,10 +125,7 @@ public class AthenaStack extends NestedStack {
 
             jarsBucket.grantRead(handler);
 
-            tableStack.getStateStoreStacks().forEach(sss -> {
-                sss.grantReadActiveFileMetadata(handler);
-                sss.grantReadPartitionMetadata(handler);
-            });
+            stateStoreStacks.grantReadActiveFilesAndPartitions(handler);
             dataStack.getDataBucket().grantRead(handler);
             configBucket.grantRead(handler);
             spillBucket.grantReadWrite(handler);

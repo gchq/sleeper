@@ -132,7 +132,7 @@ public class SleeperCdkApp extends Stack {
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, tableStack, dataStack);
+            new AthenaStack(this, "Athena", instanceProperties, jars, stateStoreStacks, dataStack);
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
@@ -164,7 +164,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    tableStack.getStateStoreStacks(),
+                    stateStoreStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -177,7 +177,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    tableStack.getStateStoreStacks(),
+                    stateStoreStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -208,7 +208,7 @@ public class SleeperCdkApp extends Stack {
                     "Compaction",
                     instanceProperties, jars,
                     topicStack.getTopic(),
-                    tableStack, dataStack);
+                    stateStoreStacks, dataStack);
         }
 
         // Stack to split partitions
