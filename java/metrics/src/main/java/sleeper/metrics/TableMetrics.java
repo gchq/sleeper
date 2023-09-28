@@ -30,6 +30,7 @@ import sleeper.statestore.StateStoreProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LongSummaryStatistics;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -70,24 +71,22 @@ public class TableMetrics {
         return metrics;
     }
 
-    public static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,
-                                    StateStore stateStore) throws StateStoreException {
+    private static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,
+                                     StateStore stateStore) throws StateStoreException {
         String tableName = tableProperties.get(TABLE_NAME);
 
         LOGGER.info("Querying state store for table {} for active files", tableName);
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
         int fileCount = activeFiles.size();
-        long recordCount = activeFiles.stream().mapToLong(activeFile -> activeFile.getNumberOfRecords()).sum();
+        long recordCount = activeFiles.stream().mapToLong(FileInfo::getNumberOfRecords).sum();
         LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
 
-        LongSummaryStatistics filesPerPartitionStats = activeFiles.stream().collect(
-                Collectors.groupingBy(
-                        activeFile -> activeFile.getPartitionId(),
-                        Collectors.counting()
-                )
-        ).values().stream().mapToLong(value -> value).summaryStatistics();
-        LOGGER.info("{}", filesPerPartitionStats);
+        Map<String, Long> fileCountByPartitionId = activeFiles.stream()
+                .collect(Collectors.groupingBy(FileInfo::getPartitionId, Collectors.counting()));
+        LongSummaryStatistics filesPerPartitionStats = fileCountByPartitionId.values().stream()
+                .mapToLong(value -> value).summaryStatistics();
+        LOGGER.info("Files per partition for table {}: {}", tableName, filesPerPartitionStats);
 
         LOGGER.info("Querying state store for table {} for partitions", tableName);
         List<Partition> partitions = stateStore.getAllPartitions();
@@ -104,6 +103,34 @@ public class TableMetrics {
                 .recordCount(recordCount)
                 .averageActiveFilesPerPartition(filesPerPartitionStats.getAverage())
                 .build();
+    }
+
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public int getFileCount() {
+        return fileCount;
+    }
+
+    public long getRecordCount() {
+        return recordCount;
+    }
+
+    public int getPartitionCount() {
+        return partitionCount;
+    }
+
+    public int getLeafPartitionCount() {
+        return leafPartitionCount;
+    }
+
+    public double getAverageActiveFilesPerPartition() {
+        return averageActiveFilesPerPartition;
     }
 
     @Override
