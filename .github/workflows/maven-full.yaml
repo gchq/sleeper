@@ -29,10 +29,10 @@ jobs:
         run: mvn --batch-mode verify -Pquick -T 1C -Dmaven.repo.local=.m2/repository
         working-directory: ./java
       - name: Validate properties templates are up to date
-        working-directory: ./java/configuration
+        working-directory: ./java
         run: |
-          PROJECT_ROOT=$(cd ../.. && pwd)
-          mvn exec:java -q -e -Dmaven.repo.local=../.m2/repository \
+          PROJECT_ROOT=$(cd .. && pwd)
+          mvn exec:java -q -e -Dmaven.repo.local=.m2/repository -pl configuration \
             -Dexec.mainClass=sleeper.configuration.properties.format.GeneratePropertiesTemplates \
             -Dexec.args="$PROJECT_ROOT"
           CHANGED_FILES=$(git status --porcelain)
