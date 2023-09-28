@@ -95,7 +95,7 @@ public class DynamoDBStateStoreIT {
                                              List<Partition> partitions,
                                              int garbageCollectorDelayBeforeDeletionInMinutes) throws StateStoreException {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, String.valueOf(garbageCollectorDelayBeforeDeletionInMinutes));
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, garbageCollectorDelayBeforeDeletionInMinutes);
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.initialise(partitions);
         return stateStore;
