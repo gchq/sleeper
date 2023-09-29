@@ -86,7 +86,7 @@ public class CreateJobsIT {
         AmazonDynamoDB dynamoDB = createDynamoClient();
         TableProperties tableProperties = createTable(s3, dynamoDB, instanceProperties, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);

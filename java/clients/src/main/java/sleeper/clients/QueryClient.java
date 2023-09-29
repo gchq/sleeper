@@ -57,10 +57,10 @@ public class QueryClient extends QueryCommandLineClient {
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoClient) throws ObjectFactoryException {
+    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoClient, Configuration conf) throws ObjectFactoryException {
         super(s3Client, instanceProperties);
         this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
         this.executorService = Executors.newFixedThreadPool(30);
     }
 
@@ -121,7 +121,7 @@ public class QueryClient extends QueryCommandLineClient {
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB);
+        QueryClient queryClient = new QueryClient(amazonS3, instanceProperties, dynamoDB, new Configuration());
         queryClient.run();
     }
 }

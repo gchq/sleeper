@@ -29,6 +29,7 @@ import java.util.Map;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
@@ -60,9 +61,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() {
-        return Collections.unmodifiableList(activeFiles.values().stream()
+        return activeFiles.values().stream()
                 .filter(file -> file.getJobId() == null)
-                .collect(toList()));
+                .collect(toUnmodifiableList());
     }
 
     @Override
@@ -117,5 +118,10 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void initialise() {
 
+    }
+
+    @Override
+    public boolean hasNoFiles() {
+        return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
     }
 }

@@ -33,6 +33,7 @@ import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -70,12 +71,11 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 
-public class DynamoDBFileInfoStore implements FileInfoStore {
+class DynamoDBFileInfoStore implements FileInfoStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
 
     private final AmazonDynamoDB dynamoDB;
-    private final Schema schema;
     private final String activeTablename;
     private final String readyForGCTablename;
     private final boolean stronglyConsistentReads;
@@ -85,7 +85,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
-        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
+        Schema schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         activeTablename = Objects.requireNonNull(builder.activeTablename, "activeTablename must not be null");
         readyForGCTablename = Objects.requireNonNull(builder.readyForGCTablename, "readyForGCTablename must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
@@ -386,6 +386,21 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     public void initialise() {
     }
 
+    @Override
+    public boolean hasNoFiles() {
+        return isTableEmpty(activeTablename);
+    }
+
+    private boolean isTableEmpty(String tableName) {
+        ScanResult result = dynamoDB.scan(new ScanRequest()
+                .withTableName(tableName)
+                .withConsistentRead(stronglyConsistentReads)
+                .withLimit(1)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL));
+        LOGGER.debug("Scanned for any file in table {}, capacity consumed = {}", tableName, result.getConsumedCapacity().getCapacityUnits());
+        return result.getItems().isEmpty();
+    }
+
     /**
      * Used to set the current time. Should only be called during tests.
      *
@@ -395,7 +410,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private Schema schema;
         private String activeTablename;
@@ -406,37 +421,37 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder schema(Schema schema) {
+        Builder schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
-        public Builder activeTablename(String activeTablename) {
+        Builder activeTablename(String activeTablename) {
             this.activeTablename = activeTablename;
             return this;
         }
 
-        public Builder readyForGCTablename(String readyForGCTablename) {
+        Builder readyForGCTablename(String readyForGCTablename) {
             this.readyForGCTablename = readyForGCTablename;
             return this;
         }
 
-        public Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
+        Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
             this.stronglyConsistentReads = stronglyConsistentReads;
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 
-        public DynamoDBFileInfoStore build() {
+        DynamoDBFileInfoStore build() {
             return new DynamoDBFileInfoStore(this);
         }
     }
