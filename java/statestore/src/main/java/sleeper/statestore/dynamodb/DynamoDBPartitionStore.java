@@ -64,7 +64,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.TABLE_NAME;
 
-public class DynamoDBPartitionStore implements PartitionStore {
+class DynamoDBPartitionStore implements PartitionStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBPartitionStore.class);
 
@@ -231,7 +231,7 @@ public class DynamoDBPartitionStore implements PartitionStore {
         }
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoTableName;
         private String sleeperTableName;
@@ -241,32 +241,32 @@ public class DynamoDBPartitionStore implements PartitionStore {
         private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoTableName(String dynamoTableName) {
+        Builder dynamoTableName(String dynamoTableName) {
             this.dynamoTableName = dynamoTableName;
             return this;
         }
 
-        public Builder sleeperTableName(String sleeperTableName) {
+        Builder sleeperTableName(String sleeperTableName) {
             this.sleeperTableName = sleeperTableName;
             return this;
         }
 
-        public Builder schema(Schema schema) {
+        Builder schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
-        public Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
+        Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
             this.stronglyConsistentReads = stronglyConsistentReads;
             return this;
         }
 
-        public DynamoDBPartitionStore build() {
+        DynamoDBPartitionStore build() {
             return new DynamoDBPartitionStore(this);
         }
     }
