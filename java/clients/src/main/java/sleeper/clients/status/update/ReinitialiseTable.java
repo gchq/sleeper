@@ -34,13 +34,11 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -108,7 +106,7 @@ public class ReinitialiseTable {
     }
 
     protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
-        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
+        stateStore.initialise();
     }
 
     private void deleteObjectsInTableBucket(InstanceProperties instanceProperties) {

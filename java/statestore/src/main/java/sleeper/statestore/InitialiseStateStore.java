@@ -34,7 +34,6 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -51,11 +50,6 @@ public class InitialiseStateStore {
                                 List<Partition> initialPartitions) {
         this.stateStore = stateStore;
         this.initialPartitions = initialPartitions;
-    }
-
-    public static InitialiseStateStore createInitialiseStateStoreFromSplitPoints(TableProperties tableProperties,
-                                                                                 StateStore stateStore, List<Object> splitPoints) {
-        return createInitialiseStateStoreFromSplitPoints(tableProperties.getSchema(), stateStore, splitPoints);
     }
 
     public static InitialiseStateStore createInitialiseStateStoreFromSplitPoints(Schema schema, StateStore stateStore,
@@ -101,7 +95,7 @@ public class InitialiseStateStore {
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
         StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
 
-        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
+        stateStore.initialise();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();

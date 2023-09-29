@@ -60,6 +60,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -88,7 +89,6 @@ import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.exception.QueryTrackerException;
-import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableCreator;
 
@@ -610,7 +610,7 @@ public class SqsQueryProcessorLambdaIT {
                     Query subQuery = querySerDe.fromJson(message.getBody());
                     this.processQuery(subQuery, instanceProperties);
                 }
-            } while (response != null && response.getMessages().size() > 0);
+            } while (!response.getMessages().isEmpty());
 
             // Then
             wireMockServer.verify(1, postRequestedFor(url).withRequestBody(
@@ -743,7 +743,7 @@ public class SqsQueryProcessorLambdaIT {
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
         try {
-            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, splitPoints).run();
+            stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } finally {

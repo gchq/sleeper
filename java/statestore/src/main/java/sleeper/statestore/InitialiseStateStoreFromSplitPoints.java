@@ -27,6 +27,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -123,7 +124,7 @@ public class InitialiseStateStoreFromSplitPoints {
             System.out.println("Read " + splitPoints.size() + " split points from file");
         }
 
-        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, splitPoints).run();
+        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
