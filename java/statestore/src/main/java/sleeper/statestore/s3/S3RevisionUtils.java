@@ -34,18 +34,18 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
-public class S3RevisionUtils {
+class S3RevisionUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionUtils.class);
 
     private final String dynamoRevisionIdTable;
     private final AmazonDynamoDB dynamoDB;
 
-    public S3RevisionUtils(AmazonDynamoDB dynamoDB, String dynamoRevisionIdTable) {
+    S3RevisionUtils(AmazonDynamoDB dynamoDB, String dynamoRevisionIdTable) {
         this.dynamoDB = dynamoDB;
         this.dynamoRevisionIdTable = dynamoRevisionIdTable;
     }
 
-    public RevisionId getCurrentPartitionsRevisionId() {
+    RevisionId getCurrentPartitionsRevisionId() {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
         GetItemRequest getItemRequest = new GetItemRequest()
@@ -61,7 +61,7 @@ public class S3RevisionUtils {
         return new RevisionId(revision, uuid);
     }
 
-    public RevisionId getCurrentFilesRevisionId() {
+    RevisionId getCurrentFilesRevisionId() {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_FILES_REVISION_ID_KEY));
         GetItemRequest getItemRequest = new GetItemRequest()
@@ -77,12 +77,12 @@ public class S3RevisionUtils {
         return new RevisionId(revision, uuid);
     }
 
-    public void conditionalUpdateOfPartitionRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
+    void conditionalUpdateOfPartitionRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
         LOGGER.debug("Attempting conditional update of partition information from revision id {} to {}", currentRevisionId, newRevisionId);
         conditionalUpdateOfRevisionId(CURRENT_PARTITIONS_REVISION_ID_KEY, currentRevisionId, newRevisionId);
     }
 
-    public void conditionalUpdateOfFileInfoRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
+    void conditionalUpdateOfFileInfoRevisionId(RevisionId currentRevisionId, RevisionId newRevisionId) {
         LOGGER.debug("Attempting conditional update of file information from revision id {} to {}", currentRevisionId, newRevisionId);
         conditionalUpdateOfRevisionId(CURRENT_FILES_REVISION_ID_KEY, currentRevisionId, newRevisionId);
     }
@@ -104,7 +104,7 @@ public class S3RevisionUtils {
         dynamoDB.putItem(putItemRequest);
     }
 
-    public RevisionId getNextRevisionId(RevisionId currentRevisionId) {
+    RevisionId getNextRevisionId(RevisionId currentRevisionId) {
         String revision = currentRevisionId.getRevision();
         while (revision.startsWith("0")) {
             revision = revision.substring(1);
@@ -118,7 +118,7 @@ public class S3RevisionUtils {
         return new RevisionId(nextRevision.toString(), UUID.randomUUID().toString());
     }
 
-    public static class RevisionId {
+    static class RevisionId {
         private final String revision;
         private final String uuid;
 
@@ -127,11 +127,11 @@ public class S3RevisionUtils {
             this.uuid = uuid;
         }
 
-        public String getRevision() {
+        String getRevision() {
             return revision;
         }
 
-        public String getUuid() {
+        String getUuid() {
             return uuid;
         }
 

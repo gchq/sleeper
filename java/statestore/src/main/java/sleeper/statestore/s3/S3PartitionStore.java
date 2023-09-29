@@ -62,7 +62,7 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.getZeroPaddedLong;
 
-public class S3PartitionStore implements PartitionStore {
+class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
 
     private final List<PrimitiveType> rowKeyTypes;
@@ -357,7 +357,7 @@ public class S3PartitionStore implements PartitionStore {
         return partitionBuilder.build();
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;
         private Configuration conf;
@@ -365,41 +365,41 @@ public class S3PartitionStore implements PartitionStore {
         private String fs;
         private String s3Path;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
+        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
             this.dynamoRevisionIdTable = dynamoRevisionIdTable;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
         }
 
-        public Builder tableSchema(Schema tableSchema) {
+        Builder tableSchema(Schema tableSchema) {
             this.tableSchema = tableSchema;
             return this;
         }
 
 
-        public Builder fs(String fs) {
+        Builder fs(String fs) {
             this.fs = fs;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
+        Builder s3Path(String s3Path) {
             this.s3Path = s3Path;
             return this;
         }
 
-        public S3PartitionStore build() {
+        S3PartitionStore build() {
             return new S3PartitionStore(this);
         }
     }
