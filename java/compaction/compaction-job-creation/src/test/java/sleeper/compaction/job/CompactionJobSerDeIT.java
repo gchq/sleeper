@@ -61,6 +61,7 @@ public class CompactionJobSerDeIT {
 
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createInstanceProperties();
 
     @AfterEach
     void tearDown() {
@@ -79,7 +80,12 @@ public class CompactionJobSerDeIT {
         return instanceProperties;
     }
 
-    private void createTable(InstanceProperties instanceProperties, String tableName, Schema schema) {
+    private CompactionJobSerDe compactionJobSerDe() {
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        return new CompactionJobSerDe(tablePropertiesProvider);
+    }
+
+    private void createTable(String tableName, Schema schema) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
@@ -113,10 +119,8 @@ public class CompactionJobSerDeIT {
                 .partitionId("partition1")
                 .isSplittingJob(false).build();
         Schema schema = schemaWithStringKey();
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -140,10 +144,8 @@ public class CompactionJobSerDeIT {
                 .iteratorConfig("config1")
                 .build();
         Schema schema = schemaWithStringKey();
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -168,10 +170,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -196,10 +196,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -224,10 +222,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -252,10 +248,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
@@ -282,10 +276,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
-        InstanceProperties instanceProperties = createInstanceProperties();
-        createTable(instanceProperties, tableName, schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
+        createTable(tableName, schema);
+        CompactionJobSerDe compactionJobSerDe = compactionJobSerDe();
 
         // When
         CompactionJob deserialisedCompactionJob = compactionJobSerDe.deserialiseFromString(compactionJobSerDe.serialiseToString(compactionJob));
