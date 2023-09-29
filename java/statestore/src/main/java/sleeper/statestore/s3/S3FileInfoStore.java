@@ -76,7 +76,7 @@ class S3FileInfoStore implements FileInfoStore {
         this.rowKeyTypes = builder.rowKeyTypes;
         this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         this.keySerDe = new KeySerDe(rowKeyTypes);
-        this.conf = builder.conf;
+        this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
     }
 
