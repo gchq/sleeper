@@ -387,7 +387,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public boolean isHasNoFiles() {
+    public boolean hasNoFiles() {
         return isTableEmpty(activeTablename);
     }
 

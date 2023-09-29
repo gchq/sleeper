@@ -276,7 +276,7 @@ public class S3FileInfoStore implements FileInfoStore {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         try {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(revisionId));
@@ -360,7 +360,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
             // Check condition
             String conditionCheck = condition.apply(files);
-            if (!conditionCheck.equals("")) {
+            if (!conditionCheck.isEmpty()) {
                 throw new StateStoreException("Conditional check failed: " + conditionCheck);
             }
 
@@ -435,7 +435,7 @@ public class S3FileInfoStore implements FileInfoStore {
         RevisionId firstRevisionId = new RevisionId(S3StateStore.getZeroPaddedLong(1L), UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
-            writeFileInfosToParquet(Collections.EMPTY_LIST, path);
+            writeFileInfosToParquet(Collections.emptyList(), path);
             LOGGER.debug("Written initial empty file to {}", path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
@@ -452,7 +452,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public boolean isHasNoFiles() {
+    public boolean hasNoFiles() {
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (revisionId == null) {
             return true;
