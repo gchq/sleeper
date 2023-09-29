@@ -43,8 +43,8 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 
 /**
- * The TableInitialiser is a class which can initialise a StateStore using TableProperties
- * unlike the {@link TableCreator}, this class may be used as part of main code.
+ * The TableInitialiser is a class which can initialise a StateStore using TableProperties.
+ * This class may be used as part of main code.
  */
 public class TableInitialiser {
     private final AmazonS3 s3;

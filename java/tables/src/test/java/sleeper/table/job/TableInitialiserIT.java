@@ -44,6 +44,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -80,6 +81,8 @@ public class TableInitialiserIT {
     @BeforeEach
     void setUp() {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        instanceProperties.saveToS3(s3);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     private void saveSplitPoints(String splitPoints) {
@@ -89,7 +92,7 @@ public class TableInitialiserIT {
     }
 
     private void createTable() {
-        new TableCreator(s3, dynamoDB, instanceProperties).createTable(tableProperties);
+        tableProperties.saveToS3(s3);
     }
 
     private void initialiseTable() {
