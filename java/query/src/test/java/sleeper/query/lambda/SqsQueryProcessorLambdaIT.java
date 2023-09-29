@@ -114,13 +114,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
@@ -128,7 +123,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
@@ -745,15 +739,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private InstanceProperties createInstance(String dir) {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(JARS_BUCKET, "unused");
-        instanceProperties.set(ACCOUNT, "unused");
-        instanceProperties.set(REGION, "unused");
-        instanceProperties.set(VPC_ID, "unused");
-        instanceProperties.set(SUBNETS, "unused");
-        instanceProperties.set(JARS_BUCKET, "unused");
-        instanceProperties.set(VERSION, "unused");
+        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
@@ -772,12 +758,9 @@ public class SqsQueryProcessorLambdaIT {
         String resultsQueue = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(resultsQueue).getQueueUrl());
 
-        String configBucket = UUID.randomUUID().toString();
-        s3Client.createBucket(configBucket);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
 
         return instanceProperties;
