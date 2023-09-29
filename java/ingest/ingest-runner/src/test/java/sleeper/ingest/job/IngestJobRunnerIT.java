@@ -79,7 +79,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
+import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 
