@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
 
-public class DynamoDBPartitionStore implements PartitionStore {
+class DynamoDBPartitionStore implements PartitionStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBPartitionStore.class);
 
@@ -212,7 +212,7 @@ public class DynamoDBPartitionStore implements PartitionStore {
         }
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String tableName;
         private Schema schema;

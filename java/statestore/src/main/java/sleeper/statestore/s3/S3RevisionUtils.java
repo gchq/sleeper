@@ -34,7 +34,7 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
 import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
-public class S3RevisionUtils {
+class S3RevisionUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3RevisionUtils.class);
 
     private final String dynamoRevisionIdTable;

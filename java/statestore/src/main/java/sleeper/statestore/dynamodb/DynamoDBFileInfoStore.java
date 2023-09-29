@@ -71,7 +71,7 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 
-public class DynamoDBFileInfoStore implements FileInfoStore {
+class DynamoDBFileInfoStore implements FileInfoStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
 
@@ -410,7 +410,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private Schema schema;
         private String activeTablename;

@@ -59,7 +59,7 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.getZeroPaddedLong;
 
-public class S3PartitionStore implements PartitionStore {
+class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
     public static final String CURRENT_PARTITIONS_REVISION_ID_KEY = "CURRENT_PARTITIONS_REVISION_ID_KEY";
 
@@ -164,7 +164,7 @@ public class S3PartitionStore implements PartitionStore {
     public List<Partition> getAllPartitions() throws StateStoreException {
         RevisionId revisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
         try {
@@ -343,7 +343,7 @@ public class S3PartitionStore implements PartitionStore {
         return partitionBuilder.build();
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;
         private Configuration conf;
