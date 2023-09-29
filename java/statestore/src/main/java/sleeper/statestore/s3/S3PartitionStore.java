@@ -55,7 +55,7 @@ import java.util.stream.Collectors;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
-public class S3PartitionStore implements PartitionStore {
+class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
 
     private final List<PrimitiveType> rowKeyTypes;
@@ -252,12 +252,6 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
-        // Validate that there is no current revision id
-        RevisionId oldRevisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
-        if (null != oldRevisionId && !oldRevisionId.getRevision().equals(FIRST_REVISION)) {
-            throw new StateStoreException("Dynamo should not contain current revision id; found " + oldRevisionId);
-        }
-
         // Write partitions to file
         String versionString = FIRST_REVISION;
         RevisionId revisionId = new RevisionId(versionString, UUID.randomUUID().toString());
@@ -340,7 +334,7 @@ public class S3PartitionStore implements PartitionStore {
         return partitionBuilder.build();
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;
         private String sleeperTable;
@@ -349,46 +343,46 @@ public class S3PartitionStore implements PartitionStore {
         private String fs;
         private String s3Path;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
+        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
             this.dynamoRevisionIdTable = dynamoRevisionIdTable;
             return this;
         }
 
-        public Builder sleeperTable(String sleeperTable) {
+        Builder sleeperTable(String sleeperTable) {
             this.sleeperTable = sleeperTable;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
         }
 
-        public Builder tableSchema(Schema tableSchema) {
+        Builder tableSchema(Schema tableSchema) {
             this.tableSchema = tableSchema;
             return this;
         }
 
 
-        public Builder fs(String fs) {
+        Builder fs(String fs) {
             this.fs = fs;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
+        Builder s3Path(String s3Path) {
             this.s3Path = s3Path;
             return this;
         }
 
-        public S3PartitionStore build() {
+        S3PartitionStore build() {
             return new S3PartitionStore(this);
         }
     }

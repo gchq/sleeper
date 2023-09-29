@@ -56,7 +56,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         this.activeFileInfoTable = Table.Builder
-                .create(scope, "DynamoDBActiveFileInfoTable")
+                .create(this, "DynamoDBActiveFileInfoTable")
                 .tableName(String.join("-", "sleeper", instanceId, "active-files"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -76,7 +76,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .type(AttributeType.STRING)
                 .build();
         this.readyForGCFileInfoTable = Table.Builder
-                .create(scope, "DynamoDBReadyForGCFileInfoTable")
+                .create(this, "DynamoDBReadyForGCFileInfoTable")
                 .tableName(String.join("-", "sleeper", instanceId, "gc-files"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -89,15 +89,20 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         // DynamoDB table for partition information
         Attribute partitionKeyPartitionTable = Attribute.builder()
+                .name(DynamoDBStateStore.TABLE_NAME)
+                .type(AttributeType.STRING)
+                .build();
+        Attribute sortKeyPartitionTable = Attribute.builder()
                 .name(DynamoDBStateStore.PARTITION_ID)
                 .type(AttributeType.STRING)
                 .build();
         this.partitionTable = Table.Builder
-                .create(scope, "DynamoDBPartitionInfoTable")
+                .create(this, "DynamoDBPartitionInfoTable")
                 .tableName(String.join("-", "sleeper", instanceId, "partitions"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyPartitionTable)
+                .sortKey(sortKeyPartitionTable)
                 .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
 

@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
 import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
-public class S3FileInfoStore implements FileInfoStore {
+class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
     private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
@@ -83,7 +83,7 @@ public class S3FileInfoStore implements FileInfoStore {
         this.s3RevisionUtils = new S3RevisionUtils(builder.dynamoDB, builder.dynamoRevisionIdTable, builder.sleeperTable);
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -435,7 +435,7 @@ public class S3FileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public boolean isHasNoFiles() {
+    public boolean hasNoFiles() {
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (revisionId == null) {
             return true;
@@ -526,7 +526,7 @@ public class S3FileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;
         private String sleeperTable;
@@ -536,50 +536,50 @@ public class S3FileInfoStore implements FileInfoStore {
         private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
+        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
             this.dynamoRevisionIdTable = dynamoRevisionIdTable;
             return this;
         }
 
-        public Builder sleeperTable(String sleeperTable) {
+        Builder sleeperTable(String sleeperTable) {
             this.sleeperTable = sleeperTable;
             return this;
         }
 
-        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
+        Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
             this.rowKeyTypes = rowKeyTypes;
             return this;
         }
 
-        public Builder fs(String fs) {
+        Builder fs(String fs) {
             this.fs = fs;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
+        Builder s3Path(String s3Path) {
             this.s3Path = s3Path;
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
         }
 
-        public S3FileInfoStore build() {
+        S3FileInfoStore build() {
             return new S3FileInfoStore(this);
         }
     }

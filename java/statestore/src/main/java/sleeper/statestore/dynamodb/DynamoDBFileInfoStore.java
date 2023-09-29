@@ -73,7 +73,7 @@ import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 
-public class DynamoDBFileInfoStore implements FileInfoStore {
+class DynamoDBFileInfoStore implements FileInfoStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
 
@@ -392,8 +392,8 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     }
 
     @Override
-    public boolean isHasNoFiles() {
-        return isTableEmpty(activeTableName) && isTableEmpty(readyForGCTableName);
+    public boolean hasNoFiles() {
+        return isTableEmpty(activeTableName);
     }
 
     private boolean isTableEmpty(String tableName) {
@@ -436,7 +436,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private Schema schema;
         private String activeTableName;
@@ -448,42 +448,42 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
         private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder schema(Schema schema) {
+        Builder schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
-        public Builder activeTableName(String activeTableName) {
+        Builder activeTableName(String activeTableName) {
             this.activeTableName = activeTableName;
             return this;
         }
 
-        public Builder readyForGCTableName(String readyForGCTableName) {
+        Builder readyForGCTableName(String readyForGCTableName) {
             this.readyForGCTableName = readyForGCTableName;
             return this;
         }
 
-        public Builder sleeperTableName(String sleeperTableName) {
+        Builder sleeperTableName(String sleeperTableName) {
             this.sleeperTableName = sleeperTableName;
             return this;
         }
 
-        public Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
+        Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
             this.stronglyConsistentReads = stronglyConsistentReads;
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 
-        public DynamoDBFileInfoStore build() {
+        DynamoDBFileInfoStore build() {
             return new DynamoDBFileInfoStore(this);
         }
     }

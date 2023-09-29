@@ -58,7 +58,6 @@ import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableStack extends NestedStack {
-
     public TableStack(
             Construct scope,
             String id,
@@ -93,7 +92,7 @@ public class TableStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
 
-        stateStoreStacks.grantReadWriteActiveFilesAndPartitions(sleeperTableProvider.getOnEventHandler());
+        stateStoreStacks.grantReadWriteAllFilesAndPartitions(sleeperTableProvider.getOnEventHandler());
 
         createTables(scope, instanceProperties, sleeperTableProvider, stateStoreStacks, configBucket, metricsJar);
         addIngestSourceRoleReferences(this, "TableWriterForIngest", instanceProperties)
