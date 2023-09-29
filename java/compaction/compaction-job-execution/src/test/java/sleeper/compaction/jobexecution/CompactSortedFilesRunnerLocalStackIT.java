@@ -26,6 +26,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -125,6 +126,13 @@ public class CompactSortedFilesRunnerLocalStackIT {
 
     private StateStore stateStore() {
         return stateStoreProvider.getStateStore(tableProperties);
+    }
+
+    @AfterEach
+    void tearDown() {
+        s3.shutdown();
+        dynamoDB.shutdown();
+        sqs.shutdown();
     }
 
     @TempDir
