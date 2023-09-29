@@ -54,6 +54,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 @WireMockTest
@@ -94,6 +95,38 @@ public class EmrServerlessPlatformExecutorIT {
                         exampleString("example/emr-serverless/jobrun-request.json"), false, true))
                 .withRequestBody(matchingJsonPath("$.jobDriver.sparkSubmit.sparkSubmitParameters",
                         containing("--class BulkImportClass"))));
+    }
+
+    @Test
+    void shouldRunAServerlessJobWithJobSparkConfSet(WireMockRuntimeInfo runtimeInfo) {
+        properties.set(ID, "instance");
+        properties.set(CONFIG_BUCKET, "config-bucket");
+        properties.set(BULK_IMPORT_BUCKET, "import-bucket");
+        properties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME, "cluster-name");
+        properties.set(BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID, "application-id");
+        properties.set(BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN, "cluster-role");
+        properties.set(BULK_IMPORT_CLASS_NAME, "BulkImportClass");
+        BulkImportJob job = BulkImportJob.builder()
+                .id("my-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .sparkConf(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_DISK.getPropertyName(), "100G")
+                .build();
+        BulkImportArguments arguments = BulkImportArguments.builder()
+                .instanceProperties(properties)
+                .bulkImportJob(job).jobRunId("run-id")
+                .build();
+        stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
+        when(tableProperties.getTableProperties(anyString())).thenReturn(createTestTableProperties(properties, null));
+
+        new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties, tableProperties)
+                .runJobOnPlatform(arguments);
+
+        verify(postRequestedFor(urlEqualTo("/applications/application-id/jobruns"))
+                .withRequestBody(equalToJson(
+                        exampleString("example/emr-serverless/jobrun-request.json"), false, true))
+                .withRequestBody(matchingJsonPath("$.jobDriver.sparkSubmit.sparkSubmitParameters",
+                        containing("spark.emr-serverless.executor.disk=100G"))));
     }
 
     private static EmrServerlessClient wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
