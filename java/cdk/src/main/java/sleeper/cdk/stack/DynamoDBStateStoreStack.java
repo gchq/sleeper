@@ -29,6 +29,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
@@ -107,6 +108,11 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
+        addIngestSourceRoleReferences(this, "DynamoDBTableWriterForIngest", instanceProperties)
+                .forEach(role -> {
+                    grantReadPartitionMetadata(role);
+                    grantReadWriteActiveFileMetadata(role);
+                });
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {
