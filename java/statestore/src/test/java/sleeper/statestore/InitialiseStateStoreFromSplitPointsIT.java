@@ -66,7 +66,7 @@ public class InitialiseStateStoreFromSplitPointsIT {
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         // When
-        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties, List.of(123L), false).run();
+        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties, List.of(123L)).run();
 
         // Then
         StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
@@ -85,7 +85,7 @@ public class InitialiseStateStoreFromSplitPointsIT {
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         // When
-        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties, null, false).run();
+        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties, null).run();
 
         // Then
         StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);

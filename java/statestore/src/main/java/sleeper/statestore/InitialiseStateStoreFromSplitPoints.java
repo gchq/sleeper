@@ -58,16 +58,14 @@ public class InitialiseStateStoreFromSplitPoints {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final List<Object> splitPoints;
-    private final boolean stringsBase64Encoded;
 
     public InitialiseStateStoreFromSplitPoints(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-            TableProperties tableProperties, List<Object> splitPoints, boolean stringsBase64Encoded) {
+            TableProperties tableProperties, List<Object> splitPoints) {
         this.dynamoDB = dynamoDB;
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.splitPoints = splitPoints;
-        this.stringsBase64Encoded = stringsBase64Encoded;
     }
 
     public void run() {
@@ -104,7 +102,7 @@ public class InitialiseStateStoreFromSplitPoints {
         }
 
         new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties,
-                splitPoints, stringsBase64Encoded).run();
+                splitPoints).run();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
