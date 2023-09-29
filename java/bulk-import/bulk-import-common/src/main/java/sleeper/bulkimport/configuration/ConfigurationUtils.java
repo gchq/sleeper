@@ -59,6 +59,7 @@ import static sleeper.configuration.properties.instance.EMRServerlessProperty.BU
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_NETWORK_TIMEOUT;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_RDD_COMPRESS;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_COMPRESS;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_SPILL_COMPRESS;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION_QUANTILE;
@@ -146,7 +147,6 @@ public class ConfigurationUtils {
         Map<String, String> sparkConf = new HashMap<>();
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));
-        sparkConf.put("spark.driver.extraJavaOptions", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS));
         sparkConf.put("spark.driver.memory", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY));
 
         // spark.executor properties
@@ -169,9 +169,6 @@ public class ConfigurationUtils {
         sparkConf.put("spark.memory.fraction", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_FRACTION));
         sparkConf.put("spark.memory.storageFraction", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_MEMORY_STORAGE_FRACTION));
 
-        // spark.storage properties
-        sparkConf.put("spark.storage.level", instanceProperties.get(BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL));
-
         // spark.rdd properties
         sparkConf.put("spark.rdd.compress", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_RDD_COMPRESS));
 
@@ -181,7 +178,7 @@ public class ConfigurationUtils {
         // The following value is not mentioned in the blog linked above, but setting this explicitly
         // was found necessary to stop "Decompression error: Version not supported" errors -
         // only a value of "lz4" has been tested.
-        sparkConf.put("spark.shuffle.mapStatus.compression.codec", instanceProperties.get(BULK_IMPORT_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC));
+        sparkConf.put("spark.shuffle.mapStatus.compression.codec", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC));
 
         // spark.speculation properties (not referenced in the blog linked above)
         sparkConf.put("spark.speculation", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_SPECULATION));
@@ -191,7 +188,7 @@ public class ConfigurationUtils {
         sparkConf.put("spark.sql.shuffle.partitions", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_SPARK_SQL_SHUFFLE_PARTITIONS));
 
         // Set JAVA_HOME explicitly
-        sparkConf.put("spark.executorEnv.JAVA_HOME", getJavaHome(arch)); 
+        sparkConf.put("spark.executorEnv.JAVA_HOME", getJavaHome(arch));
         sparkConf.put("spark.emr-serverless.driverEnv.JAVA_HOME", getJavaHome(arch));
 
         return sparkConf;

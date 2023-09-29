@@ -179,6 +179,12 @@ public interface EMRServerlessProperty {
             .defaultValue("0.75")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(false).build();
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_SPARK_SHUFFLE_MAPSTATUS_COMPRESSION_CODEC = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec")
+            .description("The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.\n" +
+                    "Stops \"Decompression error: Version not supported\" errors - only a value of \"lz4\" has been tested.")
+            .defaultValue("lz4")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(false).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
