@@ -46,6 +46,7 @@ import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.parquet.hadoop.ParquetReader;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -139,6 +140,10 @@ public class SqsQueryProcessorLambdaIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+
     @TempDir
     public java.nio.file.Path tempDir;
 
@@ -156,13 +161,19 @@ public class SqsQueryProcessorLambdaIT {
                     new Field("list", new ListType(new StringType())))
             .build();
 
+    @AfterEach
+    void tearDown() {
+        s3Client.shutdown();
+        dynamoClient.shutdown();
+        sqsClient.shutdown();
+    }
+
     @Test
     public void shouldSetStatusOfQueryToCompletedIfLeadingToNoSubQueries() throws ObjectFactoryException, IOException {
         // Given
         String dataDir = createTempDirectory(tempDir, null).toString();
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -193,7 +204,6 @@ public class SqsQueryProcessorLambdaIT {
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
         loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -224,9 +234,6 @@ public class SqsQueryProcessorLambdaIT {
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
         loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
-        AmazonSQS sqsClient = createSqsClient();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -287,7 +294,6 @@ public class SqsQueryProcessorLambdaIT {
         InstanceProperties instanceProperties = createInstance(dataDir);
         TableProperties timeSeriesTable = createTimeSeriesTable(instanceProperties, 2000, 2020);
         loadData(instanceProperties, timeSeriesTable, createTempDirectory(tempDir, null).toString(), 2005, 2008);
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
 
         // When
@@ -323,7 +329,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, this.createDynamoClient());
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -352,7 +358,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, this.createDynamoClient());
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -386,7 +392,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, this.createDynamoClient());
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         Range range11 = rangeFactory.createRange(SCHEMA.getRowKeyFields().get(0), 2006, true, 2006, true);
@@ -421,7 +427,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, this.createDynamoClient());
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -472,7 +478,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, this.createDynamoClient());
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -564,13 +570,12 @@ public class SqsQueryProcessorLambdaIT {
     @Test
     public void shouldPublishMultipleStatusReportsToWebSocketForSubQueries() throws IOException, ObjectFactoryException {
         // Given
-        AmazonSQS sqsClient = this.createSqsClient();
         String dataDir = createTempDirectory(tempDir, null).toString();
         InstanceProperties instanceProperties = this.createInstance(dataDir);
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(this.createS3Client(), instanceProperties));
+        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -633,7 +638,6 @@ public class SqsQueryProcessorLambdaIT {
 
     private long getNumberOfRecordsInSqsOutput(InstanceProperties instanceProperties) {
         long recordCount = 0;
-        AmazonSQS sqsClient = this.createSqsClient();
         ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_RESULTS_QUEUE_URL))
                 .withMaxNumberOfMessages(1);
         int lastReceiveCount = -1;
@@ -666,10 +670,6 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
-        AmazonS3 s3Client = this.createS3Client();
-        AmazonDynamoDB dynamoClient = this.createDynamoClient();
-        AmazonSQS sqsClient = this.createSqsClient();
-
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
         String jsonQuery = querySerDe.toJson(query);
         SQSEvent event = new SQSEvent();
@@ -681,8 +681,6 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private void loadData(InstanceProperties instanceProperties, TableProperties tableProperties, String dataDir, Integer minYear, Integer maxYear) {
-        AmazonDynamoDB dynamoClient = createDynamoClient();
-        AmazonS3 s3Client = createS3Client();
         try {
             Configuration hadoopConfiguration = new Configuration();
             IngestFactory factory = IngestFactory.builder()
@@ -695,9 +693,6 @@ public class SqsQueryProcessorLambdaIT {
             factory.ingestFromRecordIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
         } catch (IOException | StateStoreException | IteratorException e) {
             throw new RuntimeException("Failed to Ingest data", e);
-        } finally {
-            dynamoClient.shutdown();
-            s3Client.shutdown();
         }
     }
 
@@ -737,8 +732,6 @@ public class SqsQueryProcessorLambdaIT {
         tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
         tableProperties.setSchema(SCHEMA);
 
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         new TableCreator(s3Client, dynamoClient, instanceProperties).createTable(tableProperties);
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
@@ -746,9 +739,6 @@ public class SqsQueryProcessorLambdaIT {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
-        } finally {
-            s3Client.shutdown();
-            dynamoClient.shutdown();
         }
 
         return tableProperties;
@@ -768,7 +758,6 @@ public class SqsQueryProcessorLambdaIT {
         instanceProperties.set(DATA_BUCKET, dir);
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
 
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         String trackedQueryTable = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, trackedQueryTable);
 
@@ -776,9 +765,6 @@ public class SqsQueryProcessorLambdaIT {
                 .withAttributeDefinitions(createAttributeDefinitions())
                 .withBillingMode(BillingMode.PAY_PER_REQUEST)
         );
-        dynamoClient.shutdown();
-
-        AmazonSQS sqsClient = createSqsClient();
 
         String queryQueue = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_QUEUE_URL, sqsClient.createQueue(queryQueue).getQueueUrl());
@@ -786,20 +772,13 @@ public class SqsQueryProcessorLambdaIT {
         String resultsQueue = UUID.randomUUID().toString();
         instanceProperties.set(QUERY_RESULTS_QUEUE_URL, sqsClient.createQueue(resultsQueue).getQueueUrl());
 
-        sqsClient.shutdown();
-
-        AmazonS3 s3Client = createS3Client();
         String configBucket = UUID.randomUUID().toString();
         s3Client.createBucket(configBucket);
         instanceProperties.set(CONFIG_BUCKET, configBucket);
 
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
-        try {
-            instanceProperties.saveToS3(s3Client);
-        } finally {
-            s3Client.shutdown();
-        }
+        instanceProperties.saveToS3(s3Client);
 
         return instanceProperties;
     }
@@ -820,17 +799,5 @@ public class SqsQueryProcessorLambdaIT {
                         .withAttributeName(DynamoDBQueryTracker.SUB_QUERY_ID)
                         .withKeyType(KeyType.RANGE)
         );
-    }
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    private AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    private AmazonSQS createSqsClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     }
 }
