@@ -84,29 +84,27 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
                 .collect(Collectors.toUnmodifiableList());
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, new Configuration());
 
-        List<TableMetrics> metrics = TableMetrics.from(instanceProperties, tablePropertiesList, stateStoreProvider);
-
         String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
 
-        for (TableMetrics tableMetrics : metrics) {
+        TableMetrics.streamFrom(instanceProperties, tablePropertiesList, stateStoreProvider).forEach(metrics -> {
             metricsLogger.setDimensions(DimensionSet.of(
-                    "instanceId", tableMetrics.getInstanceId(),
-                    "tableName", tableMetrics.getTableName()
+                    "instanceId", metrics.getInstanceId(),
+                    "tableName", metrics.getTableName()
             ));
 
-            metricsLogger.putMetric("ActiveFileCount", tableMetrics.getFileCount(), Unit.COUNT);
-            metricsLogger.putMetric("RecordCount", tableMetrics.getRecordCount(), Unit.COUNT);
-            metricsLogger.putMetric("PartitionCount", tableMetrics.getPartitionCount(), Unit.COUNT);
-            metricsLogger.putMetric("LeafPartitionCount", tableMetrics.getLeafPartitionCount(), Unit.COUNT);
+            metricsLogger.putMetric("ActiveFileCount", metrics.getFileCount(), Unit.COUNT);
+            metricsLogger.putMetric("RecordCount", metrics.getRecordCount(), Unit.COUNT);
+            metricsLogger.putMetric("PartitionCount", metrics.getPartitionCount(), Unit.COUNT);
+            metricsLogger.putMetric("LeafPartitionCount", metrics.getLeafPartitionCount(), Unit.COUNT);
             // TODO: Work out how to publish min and max active files per partition too
             // This is possible via the CloudMetrics API by publishing a statistic set (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html#publishingDataPoints1)
             // Is it possible when publishing via the embedded metric format though?
-            metricsLogger.putMetric("AverageActiveFilesPerPartition", tableMetrics.getAverageActiveFilesPerPartition(), Unit.COUNT);
+            metricsLogger.putMetric("AverageActiveFilesPerPartition", metrics.getAverageActiveFilesPerPartition(), Unit.COUNT);
             metricsLogger.flush();
-        }
+        });
     }
 
     public static void main(String[] args) {

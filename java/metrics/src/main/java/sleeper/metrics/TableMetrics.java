@@ -62,11 +62,6 @@ public class TableMetrics {
         return new Builder();
     }
 
-    public static List<TableMetrics> from(InstanceProperties instanceProperties, List<TableProperties> tables,
-                                          StateStoreProvider stateStoreProvider) {
-        return streamFrom(instanceProperties, tables, stateStoreProvider).collect(Collectors.toUnmodifiableList());
-    }
-
     public static Stream<TableMetrics> streamFrom(InstanceProperties instanceProperties, List<TableProperties> tables,
                                                   StateStoreProvider stateStoreProvider) {
         return tables.stream()

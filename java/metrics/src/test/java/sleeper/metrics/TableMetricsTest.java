@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -236,6 +237,7 @@ public class TableMetricsTest {
     }
 
     private List<TableMetrics> tableMetrics() {
-        return TableMetrics.from(instanceProperties, tables, new FixedStateStoreProvider(stateStoreByTableName));
+        return TableMetrics.streamFrom(instanceProperties, tables, new FixedStateStoreProvider(stateStoreByTableName))
+                .collect(Collectors.toUnmodifiableList());
     }
 }
