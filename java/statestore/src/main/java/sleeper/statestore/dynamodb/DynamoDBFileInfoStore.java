@@ -76,7 +76,6 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBFileInfoStore.class);
 
     private final AmazonDynamoDB dynamoDB;
-    private final Schema schema;
     private final String activeTablename;
     private final String readyForGCTablename;
     private final boolean stronglyConsistentReads;
@@ -86,7 +85,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
-        schema = Objects.requireNonNull(builder.schema, "schema must not be null");
+        Schema schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         activeTablename = Objects.requireNonNull(builder.activeTablename, "activeTablename must not be null");
         readyForGCTablename = Objects.requireNonNull(builder.readyForGCTablename, "readyForGCTablename must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
@@ -389,7 +388,7 @@ public class DynamoDBFileInfoStore implements FileInfoStore {
 
     @Override
     public boolean isHasNoFiles() {
-        return isTableEmpty(activeTablename) && isTableEmpty(readyForGCTablename);
+        return isTableEmpty(activeTablename);
     }
 
     private boolean isTableEmpty(String tableName) {
