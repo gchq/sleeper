@@ -91,7 +91,7 @@ import sleeper.query.tracker.TrackedQuery;
 import sleeper.query.tracker.WebSocketQueryStatusReportDestination;
 import sleeper.query.tracker.exception.QueryTrackerException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableCreator;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -123,6 +123,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
@@ -722,11 +723,8 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, List<Object> splitPoints) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, UUID.randomUUID().toString());
-        tableProperties.setSchema(SCHEMA);
-
-        new TableCreator(s3Client, dynamoClient, instanceProperties).createTable(tableProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
+        tableProperties.saveToS3(s3Client);
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
         try {
@@ -762,6 +760,8 @@ public class SqsQueryProcessorLambdaIT {
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
+
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;
     }
