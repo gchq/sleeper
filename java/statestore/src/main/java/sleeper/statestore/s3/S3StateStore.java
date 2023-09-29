@@ -51,28 +51,31 @@ public class S3StateStore extends DelegatingStateStore {
                         AmazonDynamoDB dynamoDB,
                         Configuration conf) {
         super(S3FileInfoStore.builder()
-                        .fs(instanceProperties.get(FILE_SYSTEM))
-                        .s3Path(s3Path(instanceProperties, tableProperties))
-                        .sleeperTable(tableProperties.get(TableProperty.TABLE_NAME))
-                        .dynamoRevisionIdTable(instanceProperties.get(REVISION_TABLENAME))
+                        .stateStorePath(stateStorePath(instanceProperties, tableProperties))
+                        .s3RevisionUtils(s3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
                         .rowKeyTypes(tableProperties.getSchema().getRowKeyTypes())
                         .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
-                        .dynamoDB(dynamoDB)
                         .conf(conf)
                         .build(),
                 S3PartitionStore.builder()
-                        .fs(instanceProperties.get(FILE_SYSTEM))
-                        .s3Path(s3Path(instanceProperties, tableProperties))
-                        .sleeperTable(tableProperties.get(TableProperty.TABLE_NAME))
-                        .dynamoRevisionIdTable(instanceProperties.get(REVISION_TABLENAME))
+                        .stateStorePath(stateStorePath(instanceProperties, tableProperties))
+                        .s3RevisionUtils(s3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
                         .tableSchema(tableProperties.getSchema())
-                        .dynamoDB(dynamoDB)
                         .conf(conf)
                         .build());
     }
 
-    private static String s3Path(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TableProperty.TABLE_NAME);
+    private static S3RevisionUtils s3RevisionUtils(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new S3RevisionUtils(dynamoDB,
+                instanceProperties.get(REVISION_TABLENAME), tableProperties.get(TableProperty.TABLE_NAME));
+    }
+
+    private static String stateStorePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return instanceProperties.get(FILE_SYSTEM)
+                + instanceProperties.get(DATA_BUCKET) + "/"
+                + tableProperties.get(TableProperty.TABLE_NAME) + "/"
+                + "statestore";
     }
 
     public void setInitialFileInfos() throws StateStoreException {

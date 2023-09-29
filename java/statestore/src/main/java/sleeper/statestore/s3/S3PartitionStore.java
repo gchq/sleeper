@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -48,6 +47,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -57,25 +57,22 @@ import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
+    private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
     private final List<PrimitiveType> rowKeyTypes;
     private final S3RevisionUtils s3RevisionUtils;
-    private final Schema partitionSchema;
     private final Configuration conf;
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
-    private final String fs;
-    private final String s3Path;
+    private final String stateStorePath;
 
     private S3PartitionStore(Builder builder) {
-        conf = builder.conf;
-        tableSchema = builder.tableSchema;
+        conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
+        tableSchema = Objects.requireNonNull(builder.tableSchema, "tableSchema must not be null");
         regionSerDe = new RegionSerDe(tableSchema);
         rowKeyTypes = tableSchema.getRowKeyTypes();
-        fs = builder.fs;
-        s3Path = builder.s3Path;
-        s3RevisionUtils = new S3RevisionUtils(builder.dynamoDB, builder.dynamoRevisionIdTable, builder.sleeperTable);
-        partitionSchema = initialisePartitionSchema();
+        stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
+        s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
     }
 
     public static Builder builder() {
@@ -211,7 +208,7 @@ class S3PartitionStore implements PartitionStore {
         }
     }
 
-    private Schema initialisePartitionSchema() {
+    private static Schema initialisePartitionSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("partitionId", new StringType()))
                 .valueFields(
@@ -225,7 +222,7 @@ class S3PartitionStore implements PartitionStore {
 
     @Override
     public void clearTable() {
-        Path path = new Path(fs + s3Path + "/statestore/partitions");
+        Path path = new Path(stateStorePath + "/partitions");
         try {
             path.getFileSystem(conf).delete(path, true);
         } catch (IOException e) {
@@ -235,7 +232,7 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private String getPartitionsPath(RevisionId revisionId) {
-        return fs + s3Path + "/statestore/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
+        return stateStorePath + "/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
     }
 
     @Override
@@ -280,7 +277,7 @@ class S3PartitionStore implements PartitionStore {
     }
 
     private void writePartitionsToParquet(List<Partition> partitions, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), partitionSchema, conf);
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), PARTITION_SCHEMA, conf);
 
         for (Partition partition : partitions) {
             recordWriter.write(getRecordFromPartition(partition));
@@ -291,7 +288,7 @@ class S3PartitionStore implements PartitionStore {
 
     private List<Partition> readPartitionsFromParquet(String path) throws IOException {
         List<Partition> partitions = new ArrayList<>();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), partitionSchema)
+        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
                 .withConf(conf)
                 .build();
         ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
@@ -335,30 +332,12 @@ class S3PartitionStore implements PartitionStore {
     }
 
     static final class Builder {
-        private AmazonDynamoDB dynamoDB;
-        private String dynamoRevisionIdTable;
-        private String sleeperTable;
         private Configuration conf;
         private Schema tableSchema;
-        private String fs;
-        private String s3Path;
+        private String stateStorePath;
+        private S3RevisionUtils s3RevisionUtils;
 
         private Builder() {
-        }
-
-        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
-            return this;
-        }
-
-        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
-            this.dynamoRevisionIdTable = dynamoRevisionIdTable;
-            return this;
-        }
-
-        Builder sleeperTable(String sleeperTable) {
-            this.sleeperTable = sleeperTable;
-            return this;
         }
 
         Builder conf(Configuration conf) {
@@ -371,14 +350,13 @@ class S3PartitionStore implements PartitionStore {
             return this;
         }
 
-
-        Builder fs(String fs) {
-            this.fs = fs;
+        Builder stateStorePath(String stateStorePath) {
+            this.stateStorePath = stateStorePath;
             return this;
         }
 
-        Builder s3Path(String s3Path) {
-            this.s3Path = s3Path;
+        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
+            this.s3RevisionUtils = s3RevisionUtils;
             return this;
         }
 

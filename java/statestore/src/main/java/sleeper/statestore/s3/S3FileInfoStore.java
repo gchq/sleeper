@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -62,25 +61,23 @@ import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
 class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
+    private static final Schema FILE_SCHEMA = initialiseFileInfoSchema();
+
     private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final KeySerDe keySerDe;
-    private final String fs;
-    private final String s3Path;
-    private final Schema fileSchema;
+    private final String stateStorePath;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
     private Clock clock = Clock.systemUTC();
 
     private S3FileInfoStore(Builder builder) {
-        this.fs = Objects.requireNonNull(builder.fs, "fs must not be null");
-        this.s3Path = Objects.requireNonNull(builder.s3Path, "s3Path must not be null");
+        this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.rowKeyTypes = builder.rowKeyTypes;
         this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         this.keySerDe = new KeySerDe(rowKeyTypes);
-        this.fileSchema = initialiseFileInfoSchema();
         this.conf = builder.conf;
-        this.s3RevisionUtils = new S3RevisionUtils(builder.dynamoDB, builder.dynamoRevisionIdTable, builder.sleeperTable);
+        this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
     }
 
     static Builder builder() {
@@ -408,7 +405,7 @@ class S3FileInfoStore implements FileInfoStore {
         s3RevisionUtils.conditionalUpdateOfFileInfoRevisionId(currentRevisionId, newRevisionId);
     }
 
-    private Schema initialiseFileInfoSchema() {
+    private static Schema initialiseFileInfoSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("fileName", new StringType()))
                 .valueFields(
@@ -450,7 +447,7 @@ class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void clearTable() {
-        Path path = new Path(fs + s3Path + "/statestore/files");
+        Path path = new Path(stateStorePath + "/files");
         try {
             path.getFileSystem(conf).delete(path, true);
         } catch (IOException e) {
@@ -460,7 +457,7 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     private String getFilesPath(RevisionId revisionId) {
-        return fs + s3Path + "/statestore/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
+        return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
     private Record getRecordFromFileInfo(FileInfo fileInfo) throws IOException {
@@ -496,7 +493,7 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileSchema, conf);
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
 
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
@@ -517,7 +514,7 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     private ParquetReader<Record> fileInfosReader(String path) throws IOException {
-        return new ParquetRecordReader.Builder(new Path(path), fileSchema)
+        return new ParquetRecordReader.Builder(new Path(path), FILE_SCHEMA)
                 .withConf(conf)
                 .build();
     }
@@ -527,31 +524,13 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     static final class Builder {
-        private AmazonDynamoDB dynamoDB;
-        private String dynamoRevisionIdTable;
-        private String sleeperTable;
         private List<PrimitiveType> rowKeyTypes;
-        private String fs;
-        private String s3Path;
+        private String stateStorePath;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
+        private S3RevisionUtils s3RevisionUtils;
 
         private Builder() {
-        }
-
-        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
-            return this;
-        }
-
-        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
-            this.dynamoRevisionIdTable = dynamoRevisionIdTable;
-            return this;
-        }
-
-        Builder sleeperTable(String sleeperTable) {
-            this.sleeperTable = sleeperTable;
-            return this;
         }
 
         Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
@@ -559,13 +538,8 @@ class S3FileInfoStore implements FileInfoStore {
             return this;
         }
 
-        Builder fs(String fs) {
-            this.fs = fs;
-            return this;
-        }
-
-        Builder s3Path(String s3Path) {
-            this.s3Path = s3Path;
+        Builder stateStorePath(String stateStorePath) {
+            this.stateStorePath = stateStorePath;
             return this;
         }
 
@@ -576,6 +550,11 @@ class S3FileInfoStore implements FileInfoStore {
 
         Builder conf(Configuration conf) {
             this.conf = conf;
+            return this;
+        }
+
+        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
+            this.s3RevisionUtils = s3RevisionUtils;
             return this;
         }
 
