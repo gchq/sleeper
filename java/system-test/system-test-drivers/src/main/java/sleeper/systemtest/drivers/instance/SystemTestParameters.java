@@ -40,6 +40,7 @@ public class SystemTestParameters {
     private final boolean systemTestClusterEnabled;
     private final boolean forceRedeploySystemTest;
     private final boolean forceRedeployInstances;
+    private final String forceStateStoreClassname;
 
     private SystemTestParameters(Builder builder) {
         shortTestId = builder.shortTestId;
@@ -53,6 +54,11 @@ public class SystemTestParameters {
         systemTestClusterEnabled = builder.systemTestClusterEnabled;
         forceRedeploySystemTest = builder.forceRedeploySystemTest;
         forceRedeployInstances = builder.forceRedeployInstances;
+        forceStateStoreClassname = builder.forceStateStoreClassname;
+    }
+
+    private static Builder builder() {
+        return new Builder();
     }
 
     public static SystemTestParameters loadFromSystemProperties() {
@@ -65,20 +71,25 @@ public class SystemTestParameters {
                 .subnetIds(System.getProperty("sleeper.system.test.subnet.ids"))
                 .scriptsDirectory(findScriptsDir())
                 .pythonDirectory(findPythonDir())
-                .outputDirectory(Optional.ofNullable(System.getProperty("sleeper.system.test.output.dir"))
-                        .filter(not(String::isEmpty))
+                .outputDirectory(getOptionalProperty("sleeper.system.test.output.dir")
                         .map(Path::of)
                         .orElse(null))
                 .systemTestClusterEnabled(getBooleanProperty("sleeper.system.test.cluster.enabled", false))
                 .forceRedeploySystemTest(getBooleanProperty("sleeper.system.test.force.redeploy", false))
                 .forceRedeployInstances(getBooleanProperty("sleeper.system.test.instances.force.redeploy", false))
+                .forceStateStoreClassname(getOptionalProperty("sleeper.system.test.force.statestore.classname").orElse(null))
                 .build();
     }
 
     private static boolean getBooleanProperty(String property, boolean defaultValue) {
-        return Optional.ofNullable(System.getProperty(property))
+        return getOptionalProperty(property)
                 .map(Boolean::valueOf)
                 .orElse(defaultValue);
+    }
+
+    private static Optional<String> getOptionalProperty(String property) {
+        return Optional.ofNullable(System.getProperty(property))
+                .filter(not(String::isEmpty));
     }
 
     public String getSystemTestShortId() {
@@ -161,8 +172,8 @@ public class SystemTestParameters {
         return forceRedeployInstances;
     }
 
-    private static Builder builder() {
-        return new Builder();
+    public String getForceStateStoreClassname() {
+        return forceStateStoreClassname;
     }
 
     private static Path findScriptsDir() {
@@ -206,6 +217,7 @@ public class SystemTestParameters {
         private boolean systemTestClusterEnabled;
         private boolean forceRedeploySystemTest;
         private boolean forceRedeployInstances;
+        private String forceStateStoreClassname;
 
         private Builder() {
         }
@@ -262,6 +274,11 @@ public class SystemTestParameters {
 
         public Builder forceRedeployInstances(boolean forceRedeployInstances) {
             this.forceRedeployInstances = forceRedeployInstances;
+            return this;
+        }
+
+        public Builder forceStateStoreClassname(String forceStateStoreClassname) {
+            this.forceStateStoreClassname = forceStateStoreClassname;
             return this;
         }
 

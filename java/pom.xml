@@ -165,6 +165,7 @@
         <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
+        <sleeper.system.test.force.statestore.classname/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -1041,6 +1042,10 @@
                             <property>
                                 <name>sleeper.system.test.instances.force.redeploy</name>
                                 <value>${sleeper.system.test.instances.force.redeploy}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.force.statestore.classname</name>
+                                <value>${sleeper.system.test.force.statestore.classname}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>

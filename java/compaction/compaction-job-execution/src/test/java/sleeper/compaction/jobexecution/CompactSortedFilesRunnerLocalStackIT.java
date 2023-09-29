@@ -144,7 +144,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String tableName = UUID.randomUUID().toString();
         InstanceProperties instanceProperties = createProperties(s3);
         TableProperties tableProperties = createTable(s3, dynamoDB, instanceProperties, tableName, schema);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();

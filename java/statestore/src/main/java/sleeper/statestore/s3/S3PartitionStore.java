@@ -18,8 +18,6 @@ package sleeper.statestore.s3;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -61,7 +59,7 @@ import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
 import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 import static sleeper.statestore.s3.S3StateStore.getZeroPaddedLong;
 
-public class S3PartitionStore implements PartitionStore {
+class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
     public static final String CURRENT_PARTITIONS_REVISION_ID_KEY = "CURRENT_PARTITIONS_REVISION_ID_KEY";
 
@@ -166,7 +164,7 @@ public class S3PartitionStore implements PartitionStore {
     public List<Partition> getAllPartitions() throws StateStoreException {
         RevisionId revisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
         try {
@@ -254,17 +252,6 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
-        // Validate that there is no current revision id
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
-        GetItemRequest getItemRequest = new GetItemRequest()
-                .withTableName(dynamoRevisionIdTable)
-                .withKey(item);
-        GetItemResult getItemResult = dynamoDB.getItem(getItemRequest);
-        if (null != getItemResult.getItem()) {
-            throw new StateStoreException("Dynamo should not contain current revision id; found " + item);
-        }
-
         // Write partitions to file
         long version = 1L;
         String versionString = getZeroPaddedLong(version);
@@ -278,6 +265,8 @@ public class S3PartitionStore implements PartitionStore {
         }
 
         // Update Dynamo
+        Map<String, AttributeValue> item = new HashMap<>();
+        item.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
         item.put(CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()));
         item.put(CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
         PutItemRequest putItemRequest = new PutItemRequest()
@@ -354,7 +343,7 @@ public class S3PartitionStore implements PartitionStore {
         return partitionBuilder.build();
     }
 
-    public static final class Builder {
+    static final class Builder {
         private AmazonDynamoDB dynamoDB;
         private String dynamoRevisionIdTable;
         private Configuration conf;
@@ -362,41 +351,41 @@ public class S3PartitionStore implements PartitionStore {
         private String fs;
         private String s3Path;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
+        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
             this.dynamoRevisionIdTable = dynamoRevisionIdTable;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
         }
 
-        public Builder tableSchema(Schema tableSchema) {
+        Builder tableSchema(Schema tableSchema) {
             this.tableSchema = tableSchema;
             return this;
         }
 
 
-        public Builder fs(String fs) {
+        Builder fs(String fs) {
             this.fs = fs;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
+        Builder s3Path(String s3Path) {
             this.s3Path = s3Path;
             return this;
         }
 
-        public S3PartitionStore build() {
+        S3PartitionStore build() {
             return new S3PartitionStore(this);
         }
     }

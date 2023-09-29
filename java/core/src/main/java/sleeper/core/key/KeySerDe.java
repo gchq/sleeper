@@ -59,7 +59,7 @@ public class KeySerDe {
     public byte[] serialise(Key key) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        int numKeys = key.size();
+        int numKeys = key != null ? key.size() : 0;
         int numKeysToSerialise = Math.min(numKeys, numRowKeysInSchema);
         dos.writeInt(numKeysToSerialise);
         for (int i = 0; i < numKeysToSerialise; i++) {
@@ -148,6 +148,9 @@ public class KeySerDe {
             }
         }
         dis.close();
+        if (key.isEmpty()) {
+            return null;
+        }
         return Key.create(key);
     }
 }

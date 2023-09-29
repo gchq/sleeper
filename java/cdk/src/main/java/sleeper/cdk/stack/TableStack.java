@@ -93,6 +93,7 @@ public class TableStack extends NestedStack {
                 .runtime(Runtime.JAVA_11));
 
         configBucket.grantReadWrite(sleeperTableLambda);
+        dataStack.getDataBucket().grantReadWrite(sleeperTableLambda); // S3 state store stores its state in data bucket
 
         Provider sleeperTableProvider = Provider.Builder.create(this, "SleeperTableProvider")
                 .onEventHandler(sleeperTableLambda)
