@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -58,31 +59,32 @@ public class CompactionJobSerDeIT {
             LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB
     );
 
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+
+    @AfterEach
+    void tearDown() {
+        s3Client.shutdown();
+        dynamoDBClient.shutdown();
     }
 
-    private AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    private InstanceProperties createInstanceProperties(AmazonS3 s3) {
+    private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, UUID.randomUUID().toString());
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, "");
 
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
 
         return instanceProperties;
     }
 
-    private void createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, String tableName, Schema schema) {
+    private void createTable(InstanceProperties instanceProperties, String tableName, Schema schema) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-        TableCreator tableCreator = new TableCreator(s3, dynamoDB, instanceProperties);
+        TableCreator tableCreator = new TableCreator(s3Client, dynamoDBClient, instanceProperties);
         tableCreator.createTable(tableProperties);
     }
 
@@ -102,8 +104,6 @@ public class CompactionJobSerDeIT {
     @Test
     public void shouldSerDeCorrectlyForNonSplittingJobWithNoIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableName(tableName)
@@ -113,8 +113,8 @@ public class CompactionJobSerDeIT {
                 .partitionId("partition1")
                 .isSplittingJob(false).build();
         Schema schema = schemaWithStringKey();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -123,16 +123,11 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     @Test
     public void shouldSerDeCorrectlyForNonSplittingJobWithIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableName(tableName)
@@ -145,8 +140,8 @@ public class CompactionJobSerDeIT {
                 .iteratorConfig("config1")
                 .build();
         Schema schema = schemaWithStringKey();
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -155,16 +150,11 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     @Test
     public void shouldSerDeCorrectlyForSplittingJobStringKeyWithNoIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableName(tableName)
@@ -178,8 +168,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -188,16 +178,11 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     @Test
     public void shouldSerDeCorrectlyForSplittingJobIntKeyWithIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
@@ -211,8 +196,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new IntType());
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -221,16 +206,11 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     @Test
     public void shouldSerDeCorrectlyForSplittingJobLongKeyWithIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
@@ -244,8 +224,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new LongType());
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -254,16 +234,11 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     @Test
     public void shouldSerDeCorrectlyForSplittingJobStringKeyWithIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder().tableName(tableName).jobId("compactionJob-1")
                 .inputFiles(Arrays.asList("file1", "file2"))
@@ -277,8 +252,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new StringType());
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -287,16 +262,11 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 
     @Test
     public void shouldSerDeCorrectlyForSplittingJobByteArrayKeyWithIterator() throws IOException {
         // Given
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoDBClient = createDynamoClient();
         String tableName = UUID.randomUUID().toString();
         CompactionJob compactionJob = CompactionJob.builder()
                 .tableName(tableName)
@@ -312,8 +282,8 @@ public class CompactionJobSerDeIT {
                 .childPartitions(Arrays.asList("childPartition1", "childPartition2"))
                 .build();
         Schema schema = schemaWith2StringKeysAndOneOfType(new ByteArrayType());
-        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
-        createTable(s3Client, dynamoDBClient, instanceProperties, tableName, schema);
+        InstanceProperties instanceProperties = createInstanceProperties();
+        createTable(instanceProperties, tableName, schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
 
@@ -322,8 +292,5 @@ public class CompactionJobSerDeIT {
 
         // Then
         assertThat(deserialisedCompactionJob).isEqualTo(compactionJob);
-
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
     }
 }
