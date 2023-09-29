@@ -32,8 +32,26 @@ import sleeper.core.statestore.StateStoreException;
  * Initialises a {@link StateStore} with a single root partition.
  */
 public class InitialiseStateStore {
+    private final AmazonDynamoDB dynamoDB;
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
 
-    private InitialiseStateStore() {
+    public InitialiseStateStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this.dynamoDB = dynamoDB;
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+    }
+
+    public void run() {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, conf).getStateStore(tableProperties);
+
+        try {
+            stateStore.initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException("Failed to initialise State Store", e);
+        }
     }
 
     public static void main(String[] args) throws StateStoreException {
@@ -50,11 +68,7 @@ public class InitialiseStateStore {
 
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
 
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
-
-        stateStore.initialise();
+        new InitialiseStateStore(dynamoDBClient, instanceProperties, tableProperties).run();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();

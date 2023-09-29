@@ -54,8 +54,31 @@ import java.util.List;
  * is created.
  */
 public class InitialiseStateStoreFromSplitPoints {
+    private final AmazonDynamoDB dynamoDB;
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
+    private final List<Object> splitPoints;
+    private final boolean stringsBase64Encoded;
 
-    private InitialiseStateStoreFromSplitPoints() {
+    public InitialiseStateStoreFromSplitPoints(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
+            TableProperties tableProperties, List<Object> splitPoints, boolean stringsBase64Encoded) {
+        this.dynamoDB = dynamoDB;
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        this.splitPoints = splitPoints;
+        this.stringsBase64Encoded = stringsBase64Encoded;
+    }
+
+    public void run() {
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, conf).getStateStore(tableProperties);
+        try {
+            stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
+        } catch (StateStoreException e) {
+            throw new RuntimeException("Failed to initialise State Store", e);
+        }
     }
 
     public static void main(String[] args) throws StateStoreException, IOException {
@@ -72,50 +95,52 @@ public class InitialiseStateStoreFromSplitPoints {
 
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
 
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
-
         List<Object> splitPoints = null;
+        boolean stringsBase64Encoded = false;
         if (args.length > 2) {
-            splitPoints = new ArrayList<>();
             String splitPointsFile = args[2];
-            boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
-
-            PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            List<String> lines = new ArrayList<>();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8))) {
-                String lineFromFile = reader.readLine();
-                while (null != lineFromFile) {
-                    lines.add(lineFromFile);
-                    lineFromFile = reader.readLine();
-                }
-            }
-            for (String line : lines) {
-                if (rowKey1Type instanceof IntType) {
-                    splitPoints.add(Integer.parseInt(line));
-                } else if (rowKey1Type instanceof LongType) {
-                    splitPoints.add(Long.parseLong(line));
-                } else if (rowKey1Type instanceof StringType) {
-                    if (stringsBase64Encoded) {
-                        byte[] encodedString = Base64.decodeBase64(line);
-                        splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                    } else {
-                        splitPoints.add(line);
-                    }
-                } else if (rowKey1Type instanceof ByteArrayType) {
-                    splitPoints.add(Base64.decodeBase64(line));
-                } else {
-                    throw new RuntimeException("Unknown key type " + rowKey1Type);
-                }
-            }
-            System.out.println("Read " + splitPoints.size() + " split points from file");
+            stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
+            splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
         }
 
-        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
+        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties,
+                splitPoints, stringsBase64Encoded).run();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
+    }
+
+    private static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
+        List<Object> splitPoints = new ArrayList<>();
+        PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
+        List<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8))) {
+            String lineFromFile = reader.readLine();
+            while (null != lineFromFile) {
+                lines.add(lineFromFile);
+                lineFromFile = reader.readLine();
+            }
+        }
+        for (String line : lines) {
+            if (rowKey1Type instanceof IntType) {
+                splitPoints.add(Integer.parseInt(line));
+            } else if (rowKey1Type instanceof LongType) {
+                splitPoints.add(Long.parseLong(line));
+            } else if (rowKey1Type instanceof StringType) {
+                if (stringsBase64Encoded) {
+                    byte[] encodedString = Base64.decodeBase64(line);
+                    splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
+                } else {
+                    splitPoints.add(line);
+                }
+            } else if (rowKey1Type instanceof ByteArrayType) {
+                splitPoints.add(Base64.decodeBase64(line));
+            } else {
+                throw new RuntimeException("Unknown key type " + rowKey1Type);
+            }
+        }
+        System.out.println("Read " + splitPoints.size() + " split points from file");
+        return splitPoints;
     }
 }
