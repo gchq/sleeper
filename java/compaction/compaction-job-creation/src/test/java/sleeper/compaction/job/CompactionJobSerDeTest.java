@@ -15,22 +15,12 @@
  */
 package sleeper.compaction.job;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -38,60 +28,31 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
-import sleeper.table.job.TableCreator;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class CompactionJobSerDeIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB
-    );
+public class CompactionJobSerDeTest {
 
-    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final InstanceProperties instanceProperties = createInstanceProperties();
-
-    @AfterEach
-    void tearDown() {
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
-    }
-
-    private InstanceProperties createInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(FILE_SYSTEM, "");
-
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-
-        return instanceProperties;
-    }
+    private final List<TableProperties> tables = new ArrayList<>();
 
     private CompactionJobSerDe compactionJobSerDe() {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        return new CompactionJobSerDe(tablePropertiesProvider);
+        return new CompactionJobSerDe(new FixedTablePropertiesProvider(tables));
     }
 
     private void createTable(String tableName, Schema schema) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoDBClient, instanceProperties);
-        tableCreator.createTable(tableProperties);
+        tables.add(tableProperties);
     }
 
     private Schema schemaWithStringKey() {
