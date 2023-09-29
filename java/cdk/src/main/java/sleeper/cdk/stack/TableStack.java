@@ -102,7 +102,6 @@ public class TableStack extends NestedStack {
                 .build();
 
         dynamoDBStateStoreStack.grantReadWriteActiveFileMetadata(sleeperTableProvider.getOnEventHandler());
-        dynamoDBStateStoreStack.grantReadWriteReadyForGCFileMetadata(sleeperTableProvider.getOnEventHandler());
         dynamoDBStateStoreStack.grantReadWritePartitionMetadata(sleeperTableProvider.getOnEventHandler());
         stateStoreStacks.add(dynamoDBStateStoreStack);
 
