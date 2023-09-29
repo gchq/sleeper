@@ -336,11 +336,6 @@ public interface TableProperty extends SleeperProperty {
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
             .systemDefined(true).build();
-    // S3StateStore properties
-    TableProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.revision.table")
-            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
 
     static List<TableProperty> getAll() {
         return Index.INSTANCE.getAll();
