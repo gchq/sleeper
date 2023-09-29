@@ -27,12 +27,12 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -63,12 +63,20 @@ public class TableMetrics {
     }
 
     public static List<TableMetrics> from(InstanceProperties instanceProperties, List<TableProperties> tables,
-                                          StateStoreProvider stateStoreProvider) throws StateStoreException {
-        List<TableMetrics> metrics = new ArrayList<>(tables.size());
-        for (TableProperties table : tables) {
-            metrics.add(from(instanceProperties, table, stateStoreProvider.getStateStore(table)));
-        }
-        return metrics;
+                                          StateStoreProvider stateStoreProvider) {
+        return streamFrom(instanceProperties, tables, stateStoreProvider).collect(Collectors.toUnmodifiableList());
+    }
+
+    public static Stream<TableMetrics> streamFrom(InstanceProperties instanceProperties, List<TableProperties> tables,
+                                                  StateStoreProvider stateStoreProvider) {
+        return tables.stream()
+                .map(table -> {
+                    try {
+                        return from(instanceProperties, table, stateStoreProvider.getStateStore(table));
+                    } catch (StateStoreException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     private static TableMetrics from(InstanceProperties instanceProperties, TableProperties tableProperties,

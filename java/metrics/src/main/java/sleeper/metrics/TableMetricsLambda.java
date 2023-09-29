@@ -33,7 +33,6 @@ import software.amazon.lambda.powertools.metrics.MetricsUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
 
@@ -74,7 +73,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         return null;
     }
 
-    public void publishStateStoreMetrics(String configBucketName) throws StateStoreException {
+    public void publishStateStoreMetrics(String configBucketName) {
         LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucketName);
@@ -110,7 +109,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         }
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) {
         if (args.length != 1) {
             throw new RuntimeException("Syntax: " + TableMetricsLambda.class.getSimpleName() + " <configBucketName>");
         }
