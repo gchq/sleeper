@@ -187,8 +187,24 @@ configuration. Once the job starts (around 2 minutes), you will be able to follo
 This will allow you to monitor your job and view logs from the Spark executors and driver. You can also access previous job Spark UI's from EMR Studio. 
 After your job finishes the application will auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
 
-The following can be edited in the Sleeper Admin console. With the
-current stack implementation it is not possible to configure these on a job basis. 
+The following can be edited in the Sleeper Admin console. It it also possible to set these on a per job basis by setting `sparkConf`
+
+An example for overriding at the job level is:
+
+```JSON
+{
+  "tableName": "my-table",
+  "files": [
+    "my-bucket/my-files/"
+  "sparkConf": {
+    "sleeper.bulk.import.emr.serverless.spark.emr-serverless.executor.disk": "120G",
+    "sleeper.bulk.import.emr.serverless.spark.executor.instances": "25",
+    "sleeper.bulk.import.emr.serverless.spark.driver.cores": "4",
+    "sleeper.bulk.import.emr.serverless.spark.driver.memory": "8G"
+  }
+}
+```
+All Available Properties 
 
 ```properties
 # The following properties are used to define the custom Spark image used that has Java 11 installed
@@ -214,6 +230,9 @@ sleeper.bulk.import.emr.serverless.spark.network.timeout=800s
 sleeper.bulk.import.emr.serverless.spark.executor.heartbeat.interval=60s
 sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
 sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
+sleeper.bulk.import.emr.serverless.spark.speculation=false
+sleeper.bulk.import.emr.serverless.spark.speculation.quantile=0.75
+sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec=lz4
 ```
 
 More information about EMR Serverless can be found [here](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/emr-serverless.html).
