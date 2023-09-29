@@ -351,41 +351,41 @@ class S3PartitionStore implements PartitionStore {
         private String fs;
         private String s3Path;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
+        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
             this.dynamoRevisionIdTable = dynamoRevisionIdTable;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
         }
 
-        public Builder tableSchema(Schema tableSchema) {
+        Builder tableSchema(Schema tableSchema) {
             this.tableSchema = tableSchema;
             return this;
         }
 
 
-        public Builder fs(String fs) {
+        Builder fs(String fs) {
             this.fs = fs;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
+        Builder s3Path(String s3Path) {
             this.s3Path = s3Path;
             return this;
         }
 
-        public S3PartitionStore build() {
+        S3PartitionStore build() {
             return new S3PartitionStore(this);
         }
     }

@@ -92,7 +92,7 @@ class S3FileInfoStore implements FileInfoStore {
         this.s3RevisionUtils = new S3RevisionUtils(dynamoDB, dynamoRevisionIdTable);
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -541,46 +541,46 @@ class S3FileInfoStore implements FileInfoStore {
         private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
+        Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
             this.dynamoRevisionIdTable = dynamoRevisionIdTable;
             return this;
         }
 
-        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
+        Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
             this.rowKeyTypes = rowKeyTypes;
             return this;
         }
 
-        public Builder fs(String fs) {
+        Builder fs(String fs) {
             this.fs = fs;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
+        Builder s3Path(String s3Path) {
             this.s3Path = s3Path;
             return this;
         }
 
-        public S3FileInfoStore build() {
-            return new S3FileInfoStore(this);
-        }
-
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
+        }
+
+        S3FileInfoStore build() {
+            return new S3FileInfoStore(this);
         }
     }
 }

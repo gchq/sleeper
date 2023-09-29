@@ -221,27 +221,27 @@ class DynamoDBPartitionStore implements PartitionStore {
         private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder tableName(String tableName) {
+        Builder tableName(String tableName) {
             this.tableName = tableName;
             return this;
         }
 
-        public Builder schema(Schema schema) {
+        Builder schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
-        public Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
+        Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
             this.stronglyConsistentReads = stronglyConsistentReads;
             return this;
         }
 
-        public DynamoDBPartitionStore build() {
+        DynamoDBPartitionStore build() {
             return new DynamoDBPartitionStore(this);
         }
     }

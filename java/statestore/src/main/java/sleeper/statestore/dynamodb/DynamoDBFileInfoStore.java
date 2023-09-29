@@ -421,37 +421,37 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+        Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
             return this;
         }
 
-        public Builder schema(Schema schema) {
+        Builder schema(Schema schema) {
             this.schema = schema;
             return this;
         }
 
-        public Builder activeTablename(String activeTablename) {
+        Builder activeTablename(String activeTablename) {
             this.activeTablename = activeTablename;
             return this;
         }
 
-        public Builder readyForGCTablename(String readyForGCTablename) {
+        Builder readyForGCTablename(String readyForGCTablename) {
             this.readyForGCTablename = readyForGCTablename;
             return this;
         }
 
-        public Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
+        Builder stronglyConsistentReads(boolean stronglyConsistentReads) {
             this.stronglyConsistentReads = stronglyConsistentReads;
             return this;
         }
 
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 
-        public DynamoDBFileInfoStore build() {
+        DynamoDBFileInfoStore build() {
             return new DynamoDBFileInfoStore(this);
         }
     }
