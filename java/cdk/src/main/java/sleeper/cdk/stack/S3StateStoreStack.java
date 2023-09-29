@@ -58,7 +58,7 @@ public class S3StateStoreStack extends NestedStack {
                 .build();
 
         this.revisionTable = Table.Builder
-                .create(scope, "DynamoDBRevisionTable")
+                .create(this, "DynamoDBRevisionTable")
                 .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table", "revisions").toLowerCase(Locale.ROOT))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
