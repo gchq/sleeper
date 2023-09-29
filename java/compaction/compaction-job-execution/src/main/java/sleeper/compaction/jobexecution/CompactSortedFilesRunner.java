@@ -195,7 +195,7 @@ public class CompactSortedFilesRunner {
             }
         }
         LOGGER.info("Returning from run() method in CompactSortedFilesRunner as no messages received in {} seconds",
-                (numConsecutiveTimesNoMessages * 30));
+                (numConsecutiveTimesNoMessages * waitTimeSeconds));
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
 
         Instant finishTime = Instant.now();
