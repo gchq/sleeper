@@ -33,13 +33,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.util.Collections;
 import java.util.List;
-
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
  * Initialises a {@link StateStore} from the given list of {@link Partition}s. Utility methods
@@ -101,16 +97,9 @@ public class InitialiseStateStore {
 
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
 
-        StateStore stateStore;
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals("sleeper.statestore.s3.S3StateStore")) {
-            System.out.println("S3 State Store detected");
-            Configuration conf = new Configuration();
-            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-            stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, conf);
-        } else {
-            System.out.println("Dynamo DB State Store detected");
-            stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        }
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
 
         InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
 
