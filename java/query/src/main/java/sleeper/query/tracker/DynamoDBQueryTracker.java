@@ -115,6 +115,30 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TrackedQuery> getQueriesWithState(QueryState queryState) {
+        ScanResult result = dynamoDB.scan(new ScanRequest()
+                .withTableName(trackerTableName)
+                .withExpressionAttributeValues(Map.of(":state", new AttributeValue().withS(queryState.toString())))
+                .withFilterExpression(LAST_KNOWN_STATE + " = :state"));
+        return result.getItems().stream()
+                .map(this::toTrackedQuery)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TrackedQuery> getFailedQueries() {
+        ScanResult result = dynamoDB.scan(new ScanRequest()
+                .withTableName(trackerTableName)
+                .withExpressionAttributeValues(Map.of(
+                        ":failed", new AttributeValue().withS(QueryState.FAILED.toString()),
+                        ":partiallyFailed", new AttributeValue().withS(QueryState.PARTIALLY_FAILED.toString())))
+                .withFilterExpression(LAST_KNOWN_STATE + " = :failed or " + LAST_KNOWN_STATE + " = :partiallyFailed"));
+        return result.getItems().stream()
+                .map(this::toTrackedQuery)
+                .collect(Collectors.toList());
+    }
+
     private void updateState(String queryId, String subQueryId, QueryState state, long recordCount) {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(QUERY_ID, new AttributeValue(queryId));

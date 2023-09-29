@@ -26,4 +26,8 @@ public interface QueryTrackerStore {
     TrackedQuery getStatus(String queryId, String subQueryId) throws QueryTrackerException;
 
     List<TrackedQuery> getAllQueries();
+
+    List<TrackedQuery> getQueriesWithState(QueryState state);
+
+    List<TrackedQuery> getFailedQueries();
 }
