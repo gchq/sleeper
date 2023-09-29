@@ -20,10 +20,6 @@ import software.amazon.awscdk.CustomResource;
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.customresources.Provider;
-import software.amazon.awscdk.services.events.Rule;
-import software.amazon.awscdk.services.events.RuleTargetInput;
-import software.amazon.awscdk.services.events.Schedule;
-import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -41,18 +37,15 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -69,7 +62,6 @@ public class TableStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         LambdaCode jar = jars.lambdaCode(BuiltJar.CUSTOM_RESOURCES, jarsBucket);
-        LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
 
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "sleeper-table"));
@@ -94,7 +86,7 @@ public class TableStack extends NestedStack {
 
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(sleeperTableProvider.getOnEventHandler());
 
-        createTables(scope, instanceProperties, sleeperTableProvider, stateStoreStacks, configBucket, metricsJar);
+        createTables(scope, instanceProperties, sleeperTableProvider, configBucket);
         addIngestSourceRoleReferences(this, "TableWriterForIngest", instanceProperties)
                 .forEach(stateStoreStacks::grantReadPartitionsReadWriteActiveFiles);
 
@@ -104,19 +96,15 @@ public class TableStack extends NestedStack {
     private void createTables(Construct scope,
                               InstanceProperties instanceProperties,
                               Provider tablesProvider,
-                              StateStoreStacks stateStoreStacks,
-                              IBucket configBucket,
-                              LambdaCode metricsJar) {
+                              IBucket configBucket) {
         Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
-                createTable(instanceProperties, tableProperties, tablesProvider, stateStoreStacks, configBucket, metricsJar));
+                createTable(instanceProperties, tableProperties, tablesProvider, configBucket));
     }
 
     private void createTable(InstanceProperties instanceProperties,
                              TableProperties tableProperties,
                              Provider sleeperTablesProvider,
-                             StateStoreStacks stateStoreStacks,
-                             IBucket configBucket,
-                             LambdaCode metricsJar) {
+                             IBucket configBucket) {
         String tableName = tableProperties.get(TABLE_NAME);
 
         BucketDeployment splitPoints = null;
@@ -151,34 +139,6 @@ public class TableStack extends NestedStack {
 
         if (splitPoints != null) {
             tableInitialisation.getNode().addDependency(splitPoints);
-        }
-
-        // Metrics generation and publishing
-        IFunction tableMetricsPublisher = metricsJar.buildFunction(this, tableName + "MetricsPublisher", builder -> builder
-                .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
-                .runtime(Runtime.JAVA_11)
-                .handler("sleeper.metrics.TableMetricsLambda::handleRequest")
-                .memorySize(256)
-                .timeout(Duration.seconds(60))
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
-
-        configBucket.grantRead(tableMetricsPublisher);
-        stateStoreStacks.grantReadActiveFilesAndPartitions(tableMetricsPublisher);
-
-        Rule rule = Rule.Builder.create(this, tableName + "MetricsPublishSchedule")
-                .schedule(Schedule.rate(Duration.minutes(1)))
-                .targets(Collections.singletonList(
-                        LambdaFunction.Builder.create(tableMetricsPublisher)
-                                .event(RuleTargetInput.fromText(configBucket.getBucketName() + "|" + tableName))
-                                .build()
-                ))
-                .enabled(!shouldDeployPaused(this))
-                .build();
-        if (null == instanceProperties.get(TABLE_METRICS_RULES) || instanceProperties.get(TABLE_METRICS_RULES).isEmpty()) {
-            instanceProperties.set(TABLE_METRICS_RULES, rule.getRuleName());
-        } else {
-            String rulesList = instanceProperties.get(TABLE_METRICS_RULES);
-            instanceProperties.set(TABLE_METRICS_RULES, rulesList + "," + rule.getRuleName());
         }
     }
 }
