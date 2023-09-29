@@ -86,10 +86,6 @@ public class TableDockerStack implements DockerStack {
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));
     }
 
-    public TableProperties getTableProperties() {
-        return tableProperties;
-    }
-
     public static final class Builder {
         private InstanceProperties instanceProperties;
         private TableProperties tableProperties;
