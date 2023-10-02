@@ -92,14 +92,13 @@ public interface TableProperty extends SleeperProperty {
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
                     "table will be created with a single root partition.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true)
             .build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
+            .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
             .description("Partitions in this table with more than the following number of records in will be split.")
