@@ -59,7 +59,6 @@ import static sleeper.configuration.properties.local.LoadLocalProperties.loadTab
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AdminClientPropertiesStoreIT extends AdminClientITBase {
@@ -271,89 +270,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
     }
 
-    @DisplayName("Deploy table property change with CDK")
-    @Nested
-    class DeployTableWithCdk {
-
-        @Test
-        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedTablePropertyUpdated() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(SPLIT_POINTS_BASE64_ENCODED, "true"));
-
-            AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
-            List<TableProperties> localTablesWhenCdkDeployed = new ArrayList<>();
-            rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
-
-            // When
-            updateTableProperty(INSTANCE_ID, "test-table", SPLIT_POINTS_BASE64_ENCODED, "false");
-
-            // Then
-            verifyPropertiesDeployedWithCdk();
-            assertThat(localPropertiesWhenCdkDeployed).hasValue(instanceProperties);
-            assertThat(localTablesWhenCdkDeployed)
-                    .extracting(table -> table.getBoolean(SPLIT_POINTS_BASE64_ENCODED))
-                    .containsExactly(false);
-        }
-
-        @Test
-        void shouldNotRunCdkDeployWhenUnflaggedTablePropertyUpdated() {
-            // Given
-            createTableInS3("test-table");
-
-            // When
-            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
-
-            // Then
-            verifyNoInteractions(cdk);
-        }
-
-        @Test
-        void shouldLeaveCdkToUpdateS3WhenApplyingChangeWithCdk() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(SPLIT_POINTS_BASE64_ENCODED, "true"));
-
-            // When
-            updateTableProperty(INSTANCE_ID, "test-table", SPLIT_POINTS_BASE64_ENCODED, "false");
-
-            // Then
-            verifyPropertiesDeployedWithCdk();
-            assertThat(store().loadTableProperties(instanceProperties, "test-table")
-                    .getBoolean(SPLIT_POINTS_BASE64_ENCODED))
-                    .isTrue();
-        }
-
-        @Test
-        void shouldFailWhenCdkDeployFails() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(SPLIT_POINTS_BASE64_ENCODED, "true"));
-            IOException thrown = new IOException("CDK failed");
-            doThrowWhenPropertiesDeployedWithCdk(thrown);
-
-            // When / Then
-            assertThatThrownBy(() -> updateTableProperty(
-                    INSTANCE_ID, "test-table", SPLIT_POINTS_BASE64_ENCODED, "false"))
-                    .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveTableProperties.class)
-                    .hasCauseReference(thrown);
-        }
-
-        @Test
-        void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(SPLIT_POINTS_BASE64_ENCODED, "true"));
-            doThrowWhenPropertiesDeployedWithCdk(new IOException("CDK failed"));
-
-            // When / Then
-            try {
-                updateTableProperty(INSTANCE_ID, "test-table", SPLIT_POINTS_BASE64_ENCODED, "false");
-                fail("CDK failure did not cause an exception");
-            } catch (Exception e) {
-                assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
-                        .extracting(table -> table.getBoolean(SPLIT_POINTS_BASE64_ENCODED))
-                        .containsExactly(true);
-            }
-        }
-    }
-
     @DisplayName("Load invalid properties")
     @Nested
     class LoadInvalidProperties {
@@ -418,7 +334,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     @DisplayName("Upload docker images")
     class UploadDockerImages {
         @BeforeEach
-        void setup() throws IOException {
+        void setup() {
             instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
             instanceProperties.saveToS3(s3);
         }
