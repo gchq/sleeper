@@ -25,6 +25,7 @@ import sleeper.query.tracker.TrackedQuery;
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private PrintStream out;
@@ -51,20 +52,28 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         out.println();
         out.println("Query Tracker Report");
         out.println("--------------------");
-        printSummary(queryType, trackedQueries);
+        if (TrackerQuery.ALL == queryType) {
+            printAllSummary(queryType, trackedQueries);
+        } else if (TrackerQuery.QUEUED == queryType) {
+            printQueuedSummary(trackedQueries.stream());
+        }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
                 .build().write(out);
     }
 
-    private void printSummary(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
+    private void printAllSummary(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
         out.printf("Total queries: %d%n", trackedQueries.size());
         out.println();
-        out.printf("Total queries queued: %d%n", countQueriesWithState(trackedQueries, QueryState.QUEUED));
+        printQueuedSummary(trackedQueries.stream().filter(query -> query.getLastKnownState() == QueryState.QUEUED));
         out.printf("Total queries in progress: %d%n", countQueriesWithState(trackedQueries, QueryState.IN_PROGRESS));
         out.printf("Total queries completed: %d%n", countQueriesWithState(trackedQueries, QueryState.COMPLETED));
         out.println();
         out.printf("Total queries partially failed: %d%n", countQueriesWithState(trackedQueries, QueryState.PARTIALLY_FAILED));
         out.printf("Total queries failed: %d%n", countQueriesWithState(trackedQueries, QueryState.FAILED));
+    }
+
+    private void printQueuedSummary(Stream<TrackedQuery> queuedQueries) {
+        out.printf("Total queries queued: %d%n", queuedQueries.count());
     }
 
     private void writeQueryFields(TrackedQuery trackedQuery, TableRow.Builder builder) {

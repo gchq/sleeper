@@ -16,6 +16,7 @@
 
 package sleeper.clients.status.report.query;
 
+import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.QueryTrackerStore;
 import sleeper.query.tracker.TrackedQuery;
 
@@ -24,6 +25,7 @@ import java.util.List;
 @FunctionalInterface
 public interface TrackerQuery {
     TrackerQuery ALL = QueryTrackerStore::getAllQueries;
+    TrackerQuery QUEUED = store -> store.getQueriesWithState(QueryState.QUEUED);
 
     List<TrackedQuery> run(QueryTrackerStore store);
 }
