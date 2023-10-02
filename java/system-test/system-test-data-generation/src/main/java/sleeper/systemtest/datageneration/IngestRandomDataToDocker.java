@@ -94,8 +94,8 @@ public class IngestRandomDataToDocker {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 1 || args.length > 3) {
-            throw new IllegalArgumentException("Usage: <instance-id> <optional-table-name> <optional-number-of-records>");
+        if (args.length < 2 || args.length > 3) {
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-number-of-records>");
         }
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());

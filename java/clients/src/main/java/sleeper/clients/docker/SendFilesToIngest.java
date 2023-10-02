@@ -42,7 +42,7 @@ public class SendFilesToIngest {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
+        if (args.length < 3) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <files>");
         }
         String instanceId = args[0];
