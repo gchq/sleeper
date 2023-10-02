@@ -31,16 +31,12 @@ GENERATED_DIR=${SCRIPTS_DIR}/generated
 JAR_DIR=${SCRIPTS_DIR}/jars
 TABLE_DIR=${GENERATED_DIR}/tables/${TABLE_NAME}
 TABLE_PROPERTIES=${TABLE_DIR}/table.properties
-SCHEMA=${TABLE_DIR}/schema.json
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
 
 echo "Generating properties"
 
 mkdir -p "${TABLE_DIR}"
-
-# Schema
-cp "${TEMPLATE_DIR}/schema.template" "${SCHEMA}"
 
 # Table Properties
 sed \
