@@ -39,6 +39,7 @@ import sleeper.cdk.stack.QueryStack;
 import sleeper.cdk.stack.S3StateStoreStack;
 import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
+import sleeper.cdk.stack.TableMetricsStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.VpcStack;
@@ -128,6 +129,7 @@ public class SleeperCdkApp extends Stack {
         stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
+        new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, stateStoreStacks);
         tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, stateStoreStacks);
 
         // Stack for Athena analytics
