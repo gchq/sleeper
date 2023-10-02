@@ -38,6 +38,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 public class InstancePropertiesTestHelper {
@@ -78,6 +79,7 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, id + "-af");
         instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, id + "-rfgcf");
         instanceProperties.set(PARTITION_TABLENAME, id + "-p");
+        instanceProperties.set(REVISION_TABLENAME, id + "-rv");
         return instanceProperties;
     }
 

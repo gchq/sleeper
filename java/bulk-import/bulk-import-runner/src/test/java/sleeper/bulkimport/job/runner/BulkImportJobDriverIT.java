@@ -76,7 +76,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,8 +85,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -171,6 +169,7 @@ class BulkImportJobDriverIT {
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         return instanceProperties;
     }
@@ -182,14 +181,7 @@ class BulkImportJobDriverIT {
     }
 
     public TableProperties createTableProperties(InstanceProperties instanceProperties) {
-        String tableName = UUID.randomUUID().toString();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "10");
-        tableProperties.set(REVISION_TABLENAME, tableName + "-r");
-        tableProperties.saveToS3(s3Client);
-        return tableProperties;
+        return createTestTableProperties(instanceProperties, schema);
     }
 
     private static Schema getSchema() {
@@ -291,7 +283,6 @@ class BulkImportJobDriverIT {
     }
 
     private static StateStore initialiseS3StateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
-        new S3StateStoreCreator(tableProperties, dynamoDBClient).create();
         StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         stateStore.initialise();
         return stateStore;

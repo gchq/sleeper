@@ -24,27 +24,29 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
-import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
 public class S3StateStoreCreator {
     private final AmazonDynamoDB dynamoDB;
-    private final TableProperties tableProperties;
+    private final InstanceProperties instanceProperties;
 
-    public S3StateStoreCreator(TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
+    public S3StateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
-        this.tableProperties = tableProperties;
+        this.instanceProperties = instanceProperties;
     }
 
     public void create() {
-        String tableName = tableProperties.get(REVISION_TABLENAME);
+        String tableName = instanceProperties.get(REVISION_TABLENAME);
         List<AttributeDefinition> attributeDefinitions = List.of(
+                new AttributeDefinition(S3StateStore.TABLE_NAME, ScalarAttributeType.S),
                 new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.HASH));
+                new KeySchemaElement(S3StateStore.TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.RANGE));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)

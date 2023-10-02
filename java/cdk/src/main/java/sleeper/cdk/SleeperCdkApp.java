@@ -36,6 +36,8 @@ import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
+import sleeper.cdk.stack.S3StateStoreStack;
+import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
@@ -77,7 +79,7 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
-    private DynamoDBStateStoreStack dynamoDBStateStoreStack;
+    private StateStoreStacks stateStoreStacks;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -120,15 +122,17 @@ public class SleeperCdkApp extends Stack {
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
-        dynamoDBStateStoreStack = new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties);
 
         // Stack for tables
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, dynamoDBStateStoreStack);
+        stateStoreStacks = new StateStoreStacks(
+                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
+                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
+        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, stateStoreStacks);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, tableStack, dataStack);
+            new AthenaStack(this, "Athena", instanceProperties, jars, stateStoreStacks, dataStack);
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
@@ -139,7 +143,7 @@ public class SleeperCdkApp extends Stack {
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, bulkImportBucketStack, tableStack, dataStack, ingestStatusStoreStack);
+                    instanceProperties, bulkImportBucketStack, stateStoreStacks, dataStack, ingestStatusStoreStack);
         }
 
         // Stack to run bulk import jobs via EMR Serverless
@@ -148,7 +152,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     topicStack,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -160,7 +164,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    tableStack.getStateStoreStacks(),
+                    stateStoreStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -173,7 +177,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    tableStack.getStateStoreStacks(),
+                    stateStoreStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -184,7 +188,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties,
                     jars,
                     bulkImportBucketStack,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     topicStack,
                     ingestStatusStoreStack
             );
@@ -195,7 +199,7 @@ public class SleeperCdkApp extends Stack {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
                     instanceProperties, jars,
-                    tableStack, dataStack);
+                    stateStoreStacks, dataStack);
         }
 
         // Stack for containers for compactions and splitting compactions
@@ -204,7 +208,7 @@ public class SleeperCdkApp extends Stack {
                     "Compaction",
                     instanceProperties, jars,
                     topicStack.getTopic(),
-                    tableStack, dataStack);
+                    stateStoreStacks, dataStack);
         }
 
         // Stack to split partitions
@@ -212,7 +216,7 @@ public class SleeperCdkApp extends Stack {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     topicStack.getTopic());
         }
 
@@ -221,7 +225,7 @@ public class SleeperCdkApp extends Stack {
             new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
-                    tableStack, dataStack);
+                    stateStoreStacks, dataStack);
         }
 
         // Stack for ingest jobs
@@ -229,7 +233,7 @@ public class SleeperCdkApp extends Stack {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
-                    tableStack, dataStack,
+                    stateStoreStacks, dataStack,
                     topicStack.getTopic(),
                     ingestStatusStoreStack);
         }
@@ -266,6 +270,10 @@ public class SleeperCdkApp extends Stack {
 
     public TableStack getTableStack() {
         return tableStack;
+    }
+
+    public StateStoreStacks getStateStoreStacks() {
+        return stateStoreStacks;
     }
 
     public TableDataStack getDataStack() {

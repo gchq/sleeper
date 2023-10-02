@@ -29,13 +29,14 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
-public class DynamoDBStateStoreStack extends NestedStack implements StateStoreStack {
+public class DynamoDBStateStoreStack extends NestedStack {
     private final Table activeFileInfoTable;
     private final Table readyForGCFileInfoTable;
     private final Table partitionTable;
@@ -107,34 +108,29 @@ public class DynamoDBStateStoreStack extends NestedStack implements StateStoreSt
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
+        addIngestSourceRoleReferences(this, "DynamoDBTableWriterForIngest", instanceProperties)
+                .forEach(role -> {
+                    grantReadPartitionMetadata(role);
+                    grantReadWriteActiveFileMetadata(role);
+                });
     }
 
-    @Override
     public void grantReadActiveFileMetadata(IGrantable grantee) {
         activeFileInfoTable.grantReadData(grantee);
     }
 
-    @Override
     public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
         activeFileInfoTable.grantReadWriteData(grantee);
     }
 
-    @Override
     public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
         readyForGCFileInfoTable.grantReadWriteData(grantee);
     }
 
-    @Override
-    public void grantWriteReadyForGCFileMetadata(IGrantable grantee) {
-        readyForGCFileInfoTable.grantWriteData(grantee);
-    }
-
-    @Override
     public void grantReadPartitionMetadata(IGrantable grantee) {
         partitionTable.grantReadData(grantee);
     }
 
-    @Override
     public void grantReadWritePartitionMetadata(IGrantable grantee) {
         partitionTable.grantReadWriteData(grantee);
     }

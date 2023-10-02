@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.cdk.stack;
 
+import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
-import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
@@ -25,86 +26,58 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
-public class S3StateStoreStack implements StateStoreStack {
+public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
     public S3StateStoreStack(Construct scope,
-                             TableDataStack dataStack,
+                             String id,
                              InstanceProperties instanceProperties,
-                             TableProperties tableProperties,
-                             Provider tablesProvider) {
+                             TableDataStack dataStack) {
+        super(scope, id);
         this.dataStack = dataStack;
-
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         // Dynamo table to store latest revision version
         Attribute partitionKeyRevisionTable = Attribute.builder()
+                .name(S3StateStore.TABLE_NAME)
+                .type(AttributeType.STRING)
+                .build();
+        Attribute sortKeyRevisionTable = Attribute.builder()
                 .name(S3StateStore.REVISION_ID_KEY)
                 .type(AttributeType.STRING)
                 .build();
 
         this.revisionTable = Table.Builder
-                .create(scope, "DynamoDBRevisionTable")
-                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table",
-                        tableProperties.get(TABLE_NAME), "revisions").toLowerCase(Locale.ROOT))
+                .create(this, "DynamoDBRevisionTable")
+                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), "table", "revisions").toLowerCase(Locale.ROOT))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyRevisionTable)
-                .pointInTimeRecovery(tableProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .sortKey(sortKeyRevisionTable)
+                .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
-        tableProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-
-        this.revisionTable.grantReadWriteData(tablesProvider.getOnEventHandler());
+        instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
+        addIngestSourceRoleReferences(this, "S3TableWriterForIngest", instanceProperties)
+                .forEach(revisionTable::grantReadWriteData);
     }
 
-    @Override
-    public void grantReadActiveFileMetadata(IGrantable grantee) {
-        grantRead(grantee);
-    }
-
-    @Override
-    public void grantReadWriteActiveFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    @Override
-    public void grantReadWriteReadyForGCFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    @Override
-    public void grantWriteReadyForGCFileMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    @Override
-    public void grantReadPartitionMetadata(IGrantable grantee) {
-        grantRead(grantee);
-    }
-
-    @Override
-    public void grantReadWritePartitionMetadata(IGrantable grantee) {
-        grantReadWrite(grantee);
-    }
-
-    private void grantReadWrite(IGrantable grantee) {
+    public void grantReadWrite(IGrantable grantee) {
         revisionTable.grantReadWriteData(grantee);
         dataStack.getDataBucket().grantReadWrite(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
     }
 
-    private void grantRead(IGrantable grantee) {
+    public void grantRead(IGrantable grantee) {
         revisionTable.grantReadData(grantee);
         dataStack.getDataBucket().grantRead(grantee); // TODO Only needs access to keys starting with 'table-name/statestore'
     }

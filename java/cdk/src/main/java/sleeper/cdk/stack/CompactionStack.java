@@ -175,7 +175,7 @@ public class CompactionStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             Topic topic,
-            TableStack tableStack, TableDataStack dataStack) {
+            StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
         eventStore = CompactionStatusStoreStack.from(this, instanceProperties);
@@ -212,13 +212,13 @@ public class CompactionStack extends NestedStack {
 
         // Lambda to periodically check for compaction jobs that should be created
         lambdaToFindCompactionJobsThatShouldBeCreated(configBucket, jarsBucket, jobCreatorJar,
-                tableStack.getStateStoreStacks(), compactionJobsQueue, splittingCompactionJobsQueue);
+                stateStoreStacks, compactionJobsQueue, splittingCompactionJobsQueue);
 
         // ECS cluster for compaction tasks
-        ecsClusterForCompactionTasks(configBucket, jarsBucket, taskCreatorJar, tableStack, dataStack, compactionJobsQueue);
+        ecsClusterForCompactionTasks(configBucket, jarsBucket, taskCreatorJar, stateStoreStacks, dataStack, compactionJobsQueue);
 
         // ECS cluster for splitting compaction tasks
-        ecsClusterForSplittingCompactionTasks(configBucket, jarsBucket, taskCreatorJar, tableStack, dataStack,
+        ecsClusterForSplittingCompactionTasks(configBucket, jarsBucket, taskCreatorJar, stateStoreStacks, dataStack,
                 splittingCompactionJobsQueue);
 
         // Lambda to create compaction tasks
@@ -344,7 +344,7 @@ public class CompactionStack extends NestedStack {
     private void lambdaToFindCompactionJobsThatShouldBeCreated(IBucket configBucket,
                                                                IBucket jarsBucket,
                                                                LambdaCode jobCreatorJar,
-                                                               List<StateStoreStack> stateStoreStacks,
+                                                               StateStoreStacks stateStoreStacks,
                                                                Queue compactionMergeJobsQueue,
                                                                Queue compactionSplittingMergeJobsQueue) {
 
@@ -368,8 +368,7 @@ public class CompactionStack extends NestedStack {
         // Grant this function permission to read from / write to the DynamoDB table
         configBucket.grantRead(handler);
         jarsBucket.grantRead(handler);
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(handler));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(handler));
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(handler);
         eventStore.grantWriteJobEvent(handler);
 
         // Grant this function permission to put messages on the compaction
@@ -393,7 +392,7 @@ public class CompactionStack extends NestedStack {
     private Cluster ecsClusterForCompactionTasks(IBucket configBucket,
                                                  IBucket jarsBucket,
                                                  LambdaCode taskCreatorJar,
-                                                 TableStack tableStack, TableDataStack dataStack,
+                                                 StateStoreStacks stateStoreStacks, TableDataStack dataStack,
                                                  Queue compactionMergeJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -420,10 +419,7 @@ public class CompactionStack extends NestedStack {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
             dataStack.getDataBucket().grantReadWrite(taskDef.getTaskRole());
-            tableStack.getStateStoreStacks().forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
-            tableStack.getStateStoreStacks().forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
+            stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(taskDef.getTaskRole());
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
 
@@ -468,7 +464,7 @@ public class CompactionStack extends NestedStack {
     private Cluster ecsClusterForSplittingCompactionTasks(IBucket configBucket,
                                                           IBucket jarsBucket,
                                                           LambdaCode taskCreatorJar,
-                                                          TableStack tableStack, TableDataStack dataStack,
+                                                          StateStoreStacks stateStoreStacks, TableDataStack dataStack,
                                                           Queue compactionSplittingMergeJobsQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -495,10 +491,7 @@ public class CompactionStack extends NestedStack {
             configBucket.grantRead(taskDef.getTaskRole());
             jarsBucket.grantRead(taskDef.getTaskRole());
             dataStack.getDataBucket().grantReadWrite(taskDef.getTaskRole());
-            tableStack.getStateStoreStacks().forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteActiveFileMetadata(taskDef.getTaskRole()));
-            tableStack.getStateStoreStacks().forEach(
-                    stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(taskDef.getTaskRole()));
+            stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(taskDef.getTaskRole());
             eventStore.grantWriteJobEvent(taskDef.getTaskRole());
             eventStore.grantWriteTaskEvent(taskDef.getTaskRole());
 

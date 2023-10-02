@@ -56,7 +56,7 @@ public class GarbageCollectorStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            TableStack tableStack, TableDataStack dataStack) {
+            StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         super(scope, id);
 
         // Config bucket
@@ -91,7 +91,7 @@ public class GarbageCollectorStack extends NestedStack {
         configBucket.grantRead(handler);
         dataStack.getDataBucket().grantRead(handler);
         dataStack.getDataBucket().grantDelete(handler);
-        tableStack.getStateStoreStacks().forEach(stateStoreStack -> stateStoreStack.grantReadWriteReadyForGCFileMetadata(handler));
+        stateStoreStacks.grantReadWriteReadyForGCFiles(handler);
 
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder

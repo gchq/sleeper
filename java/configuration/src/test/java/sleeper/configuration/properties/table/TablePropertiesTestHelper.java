@@ -23,7 +23,6 @@ import sleeper.core.schema.Schema;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesTestHelper {
@@ -63,7 +62,6 @@ public class TablePropertiesTestHelper {
         String tableName = UUID.randomUUID().toString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(REVISION_TABLENAME, tableName + "-rv");
         return tableProperties;
     }
 }

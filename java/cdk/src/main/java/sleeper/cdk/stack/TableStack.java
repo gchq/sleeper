@@ -24,7 +24,6 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.RuleTargetInput;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
-import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.s3.Bucket;
@@ -40,19 +39,14 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -60,20 +54,16 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_FILE;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableStack extends NestedStack {
-
-    private final List<StateStoreStack> stateStoreStacks = new ArrayList<>();
-
     public TableStack(
             Construct scope,
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
             TableDataStack dataStack,
-            DynamoDBStateStoreStack dynamoDBStateStoreStack) {
+            StateStoreStacks stateStoreStacks) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
@@ -101,57 +91,29 @@ public class TableStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build();
 
-        dynamoDBStateStoreStack.grantReadWriteActiveFileMetadata(sleeperTableProvider.getOnEventHandler());
-        dynamoDBStateStoreStack.grantReadWritePartitionMetadata(sleeperTableProvider.getOnEventHandler());
-        stateStoreStacks.add(dynamoDBStateStoreStack);
+        stateStoreStacks.grantReadWriteAllFilesAndPartitions(sleeperTableProvider.getOnEventHandler());
 
-        createTables(scope, instanceProperties, sleeperTableProvider, dataStack, dynamoDBStateStoreStack,
-                configBucket, metricsJar);
-        addIngestSourceRoleReferences(this, "TableWriterForIngest", instanceProperties)
-                .forEach(role -> grantIngestSourceRole(role, stateStoreStacks));
-
+        createTables(scope, instanceProperties, sleeperTableProvider, stateStoreStacks, configBucket, metricsJar);
         Utils.addStackTagIfSet(this, instanceProperties);
-    }
-
-    private static void grantIngestSourceRole(
-            IRole role, List<StateStoreStack> stateStoreStacks) {
-        stateStoreStacks.forEach(stateStoreStack -> {
-            stateStoreStack.grantReadPartitionMetadata(role);
-            stateStoreStack.grantReadWriteActiveFileMetadata(role);
-        });
     }
 
     private void createTables(Construct scope,
                               InstanceProperties instanceProperties,
                               Provider tablesProvider,
-                              TableDataStack dataStack,
-                              DynamoDBStateStoreStack dynamoDBStateStoreStack,
+                              StateStoreStacks stateStoreStacks,
                               IBucket configBucket,
                               LambdaCode metricsJar) {
         Utils.getAllTableProperties(instanceProperties, scope).forEach(tableProperties ->
-                createTable(instanceProperties, tableProperties, tablesProvider, dataStack,
-                        dynamoDBStateStoreStack, configBucket, metricsJar));
+                createTable(instanceProperties, tableProperties, tablesProvider, stateStoreStacks, configBucket, metricsJar));
     }
 
     private void createTable(InstanceProperties instanceProperties,
                              TableProperties tableProperties,
                              Provider sleeperTablesProvider,
-                             TableDataStack dataStack,
-                             DynamoDBStateStoreStack dynamoDBStateStoreStack,
+                             StateStoreStacks stateStoreStacks,
                              IBucket configBucket,
                              LambdaCode metricsJar) {
         String tableName = tableProperties.get(TABLE_NAME);
-
-        StateStoreStack stateStoreStack;
-        String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
-        if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {
-            stateStoreStack = dynamoDBStateStoreStack;
-        } else if (stateStoreClassName.equals(S3StateStore.class.getName())) {
-            stateStoreStack = createS3StateStore(instanceProperties, tableProperties, dataStack, sleeperTablesProvider);
-            stateStoreStacks.add(stateStoreStack);
-        } else {
-            throw new RuntimeException("Unknown statestore class name");
-        }
 
         BucketDeployment splitPoints = null;
         if (tableProperties.get(SPLIT_POINTS_FILE) != null) {
@@ -197,8 +159,7 @@ public class TableStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         configBucket.grantRead(tableMetricsPublisher);
-        stateStoreStack.grantReadActiveFileMetadata(tableMetricsPublisher);
-        stateStoreStack.grantReadPartitionMetadata(tableMetricsPublisher);
+        stateStoreStacks.grantReadActiveFilesAndPartitions(tableMetricsPublisher);
 
         Rule rule = Rule.Builder.create(this, tableName + "MetricsPublishSchedule")
                 .schedule(Schedule.rate(Duration.minutes(1)))
@@ -215,16 +176,5 @@ public class TableStack extends NestedStack {
             String rulesList = instanceProperties.get(TABLE_METRICS_RULES);
             instanceProperties.set(TABLE_METRICS_RULES, rulesList + "," + rule.getRuleName());
         }
-    }
-
-    private StateStoreStack createS3StateStore(InstanceProperties instanceProperties,
-                                               TableProperties tableProperties,
-                                               TableDataStack dataStack,
-                                               Provider sleeperTablesProvider) {
-        return new S3StateStoreStack(this, dataStack, instanceProperties, tableProperties, sleeperTablesProvider);
-    }
-
-    public List<StateStoreStack> getStateStoreStacks() {
-        return stateStoreStacks;
     }
 }
