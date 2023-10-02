@@ -83,7 +83,7 @@ public class InitialiseStateStoreFromSplitPoints {
             stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, conf);
         } else {
             System.out.println("Dynamo DB State Store detected");
-            stateStore = new DynamoDBStateStore(tableProperties, dynamoDBClient);
+            stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         }
 
         List<Object> splitPoints = null;

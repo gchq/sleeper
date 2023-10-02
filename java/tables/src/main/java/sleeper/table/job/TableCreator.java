@@ -25,11 +25,11 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.util.Locale;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 /**
@@ -56,15 +56,16 @@ public class TableCreator {
         ensureTableDoesNotExist(tableName, instanceProperties.get(CONFIG_BUCKET));
         String instanceId = instanceProperties.get(ID);
 
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "active-files").toLowerCase(Locale.ROOT));
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "gc-files").toLowerCase(Locale.ROOT));
-        tableProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId,
-                "table", tableName, "partitions").toLowerCase(Locale.ROOT));
+        instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-",
+                "sleeper", instanceId, "active-files").toLowerCase(Locale.ROOT));
+        instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-",
+                "sleeper", instanceId, "gc-files").toLowerCase(Locale.ROOT));
+        instanceProperties.set(PARTITION_TABLENAME, String.join("-",
+                "sleeper", instanceId, "partitions").toLowerCase(Locale.ROOT));
 
         // Create Dynamo tables
-        new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient).create();
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        instanceProperties.saveToS3(s3Client);
         tableProperties.saveToS3(s3Client);
     }
 

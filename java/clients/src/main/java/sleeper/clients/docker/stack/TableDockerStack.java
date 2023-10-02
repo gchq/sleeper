@@ -31,10 +31,10 @@ import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
 public class TableDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
@@ -76,9 +76,9 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
-        dynamoDB.deleteTable(tableProperties.get(ACTIVE_FILEINFO_TABLENAME));
-        dynamoDB.deleteTable(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
-        dynamoDB.deleteTable(tableProperties.get(PARTITION_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME));
+        dynamoDB.deleteTable(instanceProperties.get(PARTITION_TABLENAME));
         tearDownBucket(s3Client, instanceProperties.get(DATA_BUCKET));
     }
 

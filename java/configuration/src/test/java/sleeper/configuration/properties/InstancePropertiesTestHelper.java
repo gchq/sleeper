@@ -33,8 +33,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.InstanceProperties.getConfigBucketFromInstanceId;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 public class InstancePropertiesTestHelper {
@@ -61,17 +64,20 @@ public class InstancePropertiesTestHelper {
     }
 
     public static InstanceProperties createTestInstanceProperties() {
-        String id = UUID.randomUUID().toString();
+        String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(id));
-        instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + id.toLowerCase(Locale.ROOT));
+        instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");
         instanceProperties.set(ACCOUNT, "test-account");
         instanceProperties.set(REGION, "test-region");
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
+        instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, id + "-af");
+        instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, id + "-rfgcf");
+        instanceProperties.set(PARTITION_TABLENAME, id + "-p");
         return instanceProperties;
     }
 

@@ -28,7 +28,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.trino.testutils.PopulatedSleeperExternalResource;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -44,8 +43,8 @@ public class SimpleKeyValueSchemaInsertIT {
                     new PopulatedSleeperExternalResource.TableDefinition(
                             TEST_TABLE_NAME,
                             generateSimpleSchema(),
-                            Optional.empty(),
-                            Optional.empty()));
+                            List.of(),
+                            Stream.empty()));
 
     @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =

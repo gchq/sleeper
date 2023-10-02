@@ -27,10 +27,10 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputExceededExce
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.RequestLimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -45,6 +45,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,15 +59,18 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.IS_LEAF;
+import static sleeper.statestore.dynamodb.DynamoDBPartitionFormat.TABLE_NAME;
 
 class DynamoDBPartitionStore implements PartitionStore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBPartitionStore.class);
 
     private final AmazonDynamoDB dynamoDB;
-    private final String tableName;
+    private final String dynamoTableName;
+    private final String sleeperTableName;
     private final Schema schema;
     private final boolean stronglyConsistentReads;
     private final DynamoDBPartitionFormat partitionFormat;
@@ -74,9 +78,10 @@ class DynamoDBPartitionStore implements PartitionStore {
     private DynamoDBPartitionStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
-        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        dynamoTableName = Objects.requireNonNull(builder.dynamoTableName, "dynamoTableName must not be null");
+        sleeperTableName = Objects.requireNonNull(builder.sleeperTableName, "sleeperTableName must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
-        partitionFormat = new DynamoDBPartitionFormat(schema);
+        partitionFormat = new DynamoDBPartitionFormat(sleeperTableName, schema);
     }
 
     public static Builder builder() {
@@ -108,21 +113,19 @@ class DynamoDBPartitionStore implements PartitionStore {
             throw new StateStoreException("newPartition1 and newPartition2 should be leaf partitions");
         }
         List<TransactWriteItem> writes = new ArrayList<>();
-        Map<String, AttributeValue> item;
-        item = partitionFormat.getItemFromPartition(splitPartition);
+        Map<String, AttributeValue> item = partitionFormat.getItemFromPartition(splitPartition);
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":true", new AttributeValue("true"));
         Put put = new Put()
-                .withTableName(tableName)
+                .withTableName(dynamoTableName)
                 .withItem(item)
                 .withExpressionAttributeValues(expressionAttributeValues)
                 .withConditionExpression(IS_LEAF + " = :true");
         writes.add(new TransactWriteItem().withPut(put));
         for (Partition partition : Arrays.asList(newPartition1, newPartition2)) {
-            Map<String, AttributeValue> item2;
-            item2 = partitionFormat.getItemFromPartition(partition);
+            Map<String, AttributeValue> item2 = partitionFormat.getItemFromPartition(partition);
             Put put2 = new Put()
-                    .withTableName(tableName)
+                    .withTableName(dynamoTableName)
                     .withItem(item2);
             writes.add(new TransactWriteItem().withPut(put2));
         }
@@ -145,17 +148,22 @@ class DynamoDBPartitionStore implements PartitionStore {
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         try {
-            ScanRequest scanRequest = new ScanRequest()
-                    .withTableName(tableName)
+            QueryRequest queryRequest = new QueryRequest()
+                    .withTableName(dynamoTableName)
                     .withConsistentRead(stronglyConsistentReads)
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                    .withKeyConditionExpression("#TableName = :table_name")
+                    .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_name", sleeperTableName)
+                            .build());
             AtomicReference<Double> totalCapacity = new AtomicReference<>(0.0D);
-            List<Map<String, AttributeValue>> results = streamPagedResults(dynamoDB, scanRequest)
+            List<Map<String, AttributeValue>> results = streamPagedResults(dynamoDB, queryRequest)
                     .flatMap(result -> {
                         totalCapacity.updateAndGet(old -> old + result.getConsumedCapacity().getCapacityUnits());
                         return result.getItems().stream();
                     }).collect(Collectors.toList());
-            LOGGER.debug("Scanned for all partitions, capacity consumed = {}", totalCapacity);
+            LOGGER.debug("Queried for all partitions, capacity consumed = {}", totalCapacity);
             List<Partition> partitionResults = new ArrayList<>();
             for (Map<String, AttributeValue> map : results) {
                 partitionResults.add(partitionFormat.getPartitionFromAttributeValues(map));
@@ -187,7 +195,7 @@ class DynamoDBPartitionStore implements PartitionStore {
         }
         getAllPartitions().forEach(partition ->
                 dynamoDB.deleteItem(new DeleteItemRequest()
-                        .withTableName(tableName)
+                        .withTableName(dynamoTableName)
                         .withKey(partitionFormat.getKeyFromPartition(partition))));
         for (Partition partition : partitions) {
             addPartition(partition);
@@ -195,11 +203,22 @@ class DynamoDBPartitionStore implements PartitionStore {
         }
     }
 
+    @Override
+    public void clearTable() {
+        deleteAllDynamoTableItems(dynamoDB, new QueryRequest().withTableName(dynamoTableName)
+                        .withExpressionAttributeNames(Map.of("#TableName", TABLE_NAME))
+                        .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                                .string(":table_name", sleeperTableName)
+                                .build())
+                        .withKeyConditionExpression("#TableName = :table_name"),
+                partitionFormat::getKey);
+    }
+
     private void addPartition(Partition partition) throws StateStoreException {
         try {
             Map<String, AttributeValue> map = partitionFormat.getItemFromPartition(partition);
             PutItemRequest putItemRequest = new PutItemRequest()
-                    .withTableName(tableName)
+                    .withTableName(dynamoTableName)
                     .withItem(map)
                     .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
             PutItemResult putItemResult = dynamoDB.putItem(putItemRequest);
@@ -214,7 +233,8 @@ class DynamoDBPartitionStore implements PartitionStore {
 
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
-        private String tableName;
+        private String dynamoTableName;
+        private String sleeperTableName;
         private Schema schema;
         private boolean stronglyConsistentReads;
 
@@ -226,8 +246,13 @@ class DynamoDBPartitionStore implements PartitionStore {
             return this;
         }
 
-        Builder tableName(String tableName) {
-            this.tableName = tableName;
+        Builder dynamoTableName(String dynamoTableName) {
+            this.dynamoTableName = dynamoTableName;
+            return this;
+        }
+
+        Builder sleeperTableName(String sleeperTableName) {
+            this.sleeperTableName = sleeperTableName;
             return this;
         }
 

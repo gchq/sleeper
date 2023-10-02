@@ -126,4 +126,5 @@ public interface FileInfoStore {
 
     boolean hasNoFiles();
 
+    void clearTable();
 }

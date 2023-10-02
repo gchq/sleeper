@@ -165,6 +165,13 @@ public class Utils {
                 .allMatch(architecture -> EnumUtils.isValidEnumIgnoreCase(EmrInstanceArchitecture.class, architecture));
     }
 
+    public static boolean isNonNegativeIntLtEqValue(String string, int maxValue) {
+        if (!isNonNullNonEmptyString(string)) {
+            return false;
+        }
+        return parseAndCheckInteger(string, num -> num >= 0 && num <= maxValue);
+    }
+
     private static boolean parseAndCheckInteger(String string, IntPredicate check) {
         try {
             return check.test(Integer.parseInt(string));

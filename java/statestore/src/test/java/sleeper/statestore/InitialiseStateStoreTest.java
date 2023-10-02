@@ -15,17 +15,9 @@
  */
 package sleeper.statestore;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.facebook.collections.ByteArray;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -38,45 +30,20 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class InitialiseStateStoreIT {
-    private static final int DYNAMO_PORT = 8000;
-    private static AmazonDynamoDB dynamoDBClient;
-
-    @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
-
-    private static StateStore getStateStore(Schema schema) {
-        String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
-        return dynamoDBStateStoreCreator.create();
-    }
-
+public class InitialiseStateStoreTest {
+    private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithNoPartitions();
     private final Field field = new Field("key", new IntType());
     private final Schema schema = schemaWithRowKeys(field);
 
@@ -91,8 +58,7 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndNoSplitPoints() throws StateStoreException {
         // Given
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, Collections.emptyList());
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
@@ -108,22 +74,21 @@ public class InitialiseStateStoreIT {
                 .childPartitionIds(Collections.emptyList())
                 .dimension(-1)
                 .build();
-        assertThat(dynamoDBStateStore.getAllPartitions()).containsExactly(expectedPartition);
+        assertThat(stateStore.getAllPartitions()).containsExactly(expectedPartition);
     }
 
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndOneSplitPoint() throws StateStoreException {
         // Given
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -168,18 +133,17 @@ public class InitialiseStateStoreIT {
     @Test
     public void shouldInitialiseStateStoreCorrectlyWithIntKeyAndMultipleSplitPoints() throws StateStoreException {
         // Given
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
         splitPoints.add(0);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -276,18 +240,17 @@ public class InitialiseStateStoreIT {
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
         splitPoints.add(0);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -392,14 +355,13 @@ public class InitialiseStateStoreIT {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, Collections.emptyList());
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(1);
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, "", null));
         Partition expectedPartition = Partition.builder()
@@ -419,16 +381,15 @@ public class InitialiseStateStoreIT {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -475,18 +436,17 @@ public class InitialiseStateStoreIT {
         // Given
         Field field = new Field("key", new StringType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
         splitPoints.add("P");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -583,18 +543,17 @@ public class InitialiseStateStoreIT {
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("E");
         splitPoints.add("P");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -699,14 +658,13 @@ public class InitialiseStateStoreIT {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore dynamoDBStateStore = getStateStore(schema);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, Collections.emptyList());
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Collections.emptyList());
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(1);
 
         Region expectedRegion = new Region(new RangeFactory(schema).createRange(field, new byte[]{}, null));
@@ -727,16 +685,15 @@ public class InitialiseStateStoreIT {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(3);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -783,18 +740,17 @@ public class InitialiseStateStoreIT {
         // Given
         Field field = new Field("key", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{50});
         splitPoints.add(new byte[]{99});
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -897,18 +853,17 @@ public class InitialiseStateStoreIT {
         Field field2 = new Field("key2", new StringType());
         Field field3 = new Field("key3", new ByteArrayType());
         Schema schema = schemaWithRowKeys(field0, field1, field2, field3);
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{50});
         splitPoints.add(new byte[]{99});
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints);
+        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
 
         // When
         initialiseStateStore.run();
 
         // Then
-        List<Partition> partitions = dynamoDBStateStore.getAllPartitions();
+        List<Partition> partitions = stateStore.getAllPartitions();
         assertThat(partitions).hasSize(7);
 
         Partition rootPartition = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList()).get(0);
@@ -1009,43 +964,40 @@ public class InitialiseStateStoreIT {
     }
 
     @Test
-    public void shouldThrowExceptionIfSplitPointIsOfWrongType() throws StateStoreException {
+    public void shouldThrowExceptionIfSplitPointIsOfWrongType() {
         // Given
         Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(Long.MIN_VALUE);
 
         // When / Then
-        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints))
+        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void shouldThrowExceptionIfDuplicateSplitPoints() throws StateStoreException {
+    public void shouldThrowExceptionIfDuplicateSplitPoints() {
         // Given
         Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(0);
         splitPoints.add(0);
 
         // When / Then
-        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints))
+        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
-    public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() throws StateStoreException {
+    public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() {
         // Given
         Schema schema = schemaWithRowKeys(new Field("key", new IntType()));
-        StateStore dynamoDBStateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(1);
         splitPoints.add(0);
 
         // When / Then
-        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, dynamoDBStateStore, splitPoints))
+        assertThatThrownBy(() -> InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
