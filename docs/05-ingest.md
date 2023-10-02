@@ -196,6 +196,7 @@ An example for overriding at the job level is:
   "tableName": "my-table",
   "files": [
     "my-bucket/my-files/"
+  ],
   "sparkConf": {
     "sleeper.bulk.import.emr.serverless.spark.emr-serverless.executor.disk": "120G",
     "sleeper.bulk.import.emr.serverless.spark.executor.instances": "25",
