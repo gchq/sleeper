@@ -13,13 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore;
 
-/**
- * Stores information about the data files and their status (i.e. {@link FileInfo}s,
- * and the {@link sleeper.core.partition.Partition}s).
- */
-public interface StateStore extends FileInfoStore, PartitionStore {
+package sleeper.dynamodb.tools;
 
-    void clearFiles();
+import org.testcontainers.containers.GenericContainer;
+
+import sleeper.core.CommonTestConstants;
+
+import java.util.List;
+
+public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
+
+    private static final int DYNAMO_PORT = 8000;
+
+    public DynamoDBContainer() {
+        super(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER);
+        setExposedPorts(List.of(DYNAMO_PORT));
+    }
+
+    public int getDynamoPort() {
+        return DYNAMO_PORT;
+    }
 }

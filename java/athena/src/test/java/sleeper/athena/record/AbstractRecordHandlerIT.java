@@ -87,7 +87,8 @@ public abstract class AbstractRecordHandlerIT {
 
     @BeforeEach
     public void createInstance() throws IOException {
-        this.instanceProperties = TestUtils.createInstance(createS3Client(), createTempDirectory(tempDir, null).toString());
+        this.instanceProperties = TestUtils.createInstance(createS3Client(), createDynamoClient(),
+                createTempDirectory(tempDir, null).toString());
     }
 
     protected InstanceProperties getInstanceProperties() {

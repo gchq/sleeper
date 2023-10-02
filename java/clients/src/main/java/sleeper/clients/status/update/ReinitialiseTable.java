@@ -18,9 +18,6 @@ package sleeper.clients.status.update;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
@@ -45,20 +42,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_FILES_REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -100,31 +86,24 @@ public class ReinitialiseTable {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
 
-        boolean isS3StateStore = false;
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals("sleeper.statestore.s3.S3StateStore")) {
-            LOGGER.info("S3 State Store detected");
-            isS3StateStore = true;
-        } else {
-            LOGGER.info("Dynamo DB State Store detected");
-        }
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf)
+                .getStateStore(tableProperties);
+
+        LOGGER.info("State store type: {}", stateStore.getClass().getName());
 
         if (deletePartitions) {
-            deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
-            deleteObjectsInTableBucket(instanceProperties, isS3StateStore);
-
-            LOGGER.info("Fully reinitialising table");
-            StateStore statestore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf)
-                    .getStateStore(tableProperties);
-            initialiseStateStore(tableProperties, statestore);
+            stateStore.clearTable();
         } else {
-            deleteContentsOfDynamoDbTables(tableProperties, isS3StateStore);
-            deleteObjectsInTableBucket(instanceProperties, isS3StateStore);
-            if (isS3StateStore) {
-                LOGGER.info("Recreating files information file and adding it into the revisions table");
-                S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties,
-                        dynamoDBClient, conf);
-                s3StateStore.setInitialFileInfos();
-            }
+            stateStore.clearFiles();
+        }
+        deleteObjectsInTableBucket(instanceProperties);
+        if (deletePartitions) {
+            LOGGER.info("Fully reinitialising table");
+            initialiseStateStore(tableProperties, stateStore);
+        } else if (stateStore instanceof S3StateStore) {
+            LOGGER.info("Recreating files information file and adding it into the revisions table");
+            S3StateStore s3StateStore = (S3StateStore) stateStore;
+            s3StateStore.setInitialFileInfos();
         }
     }
 
@@ -132,7 +111,7 @@ public class ReinitialiseTable {
         InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();
     }
 
-    private void deleteObjectsInTableBucket(InstanceProperties instanceProperties, boolean isS3StateStore) {
+    private void deleteObjectsInTableBucket(InstanceProperties instanceProperties) {
         List<String> objectKeysForDeletion = new ArrayList<>();
         String dataBucketName = instanceProperties.get(DATA_BUCKET);
         ListObjectsV2Request req = new ListObjectsV2Request()
@@ -151,13 +130,6 @@ public class ReinitialiseTable {
                 String objectKey = objectSummary.getKey();
                 if (objectKey.matches(tableName + "/partition.*/.*")) {
                     objectKeysForDeletion.add(objectSummary.getKey());
-                }
-                if (isS3StateStore) {
-                    if (deletePartitions && objectKey.matches(tableName + "/statestore/.*")) {
-                        objectKeysForDeletion.add(objectSummary.getKey());
-                    } else if (objectKey.matches(tableName + "/statestore/files/.*")) {
-                        objectKeysForDeletion.add(objectSummary.getKey());
-                    }
                 }
             }
             String token = result.getNextContinuationToken();
@@ -178,55 +150,6 @@ public class ReinitialiseTable {
             LOGGER.info("{} objects successfully deleted from S3 bucket: {}", successfulDeletes, bucketName);
         }
         return successfulDeletes;
-    }
-
-    private void deleteContentsOfDynamoDbTables(TableProperties tableProperties, boolean isS3StateStore) {
-        if (isS3StateStore) {
-            deleteRelevantS3StateStoreRevisionInfo(tableProperties.get(REVISION_TABLENAME));
-        } else {
-            deleteAllDynamoTableItems(tableProperties.get(ACTIVE_FILEINFO_TABLENAME), tableProperties);
-            deleteAllDynamoTableItems(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME), tableProperties);
-            if (deletePartitions) {
-                deleteAllDynamoTableItems(tableProperties.get(PARTITION_TABLENAME), tableProperties);
-            }
-        }
-    }
-
-    private void deleteAllDynamoTableItems(String dynamoTableName, TableProperties tableProperties) {
-        LOGGER.info("Deleting all items from {} Dynamo DB Table", dynamoTableName);
-        long countOfDeletedItems = streamPagedItems(dynamoDBClient,
-                new ScanRequest()
-                        .withTableName(dynamoTableName)
-                        .withLimit(50))
-                .map(item -> {
-                    Map<String, AttributeValue> deleteKey;
-                    if (dynamoTableName.contains(tableProperties.get(PARTITION_TABLENAME))) {
-                        deleteKey = Collections.singletonMap(PARTITION_ID, item.get(PARTITION_ID));
-                    } else {
-                        deleteKey = Collections.singletonMap(FILE_NAME, item.get(FILE_NAME));
-                    }
-                    return dynamoDBClient.deleteItem(
-                            new DeleteItemRequest(dynamoTableName, deleteKey));
-                }).count();
-
-        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, dynamoTableName);
-    }
-
-    private void deleteRelevantS3StateStoreRevisionInfo(String dynamoTableName) {
-        LOGGER.info("Deleting files info items from {} Dynamo DB Table", dynamoTableName);
-        long countOfDeletedItems = streamPagedItems(dynamoDBClient,
-                new ScanRequest()
-                        .withTableName(dynamoTableName)
-                        .withLimit(50))
-                .filter(item -> deletePartitions
-                        || item.get(REVISION_ID_KEY).toString().contains(CURRENT_FILES_REVISION_ID_KEY))
-                .map(item -> dynamoDBClient.deleteItem(
-                        new DeleteItemRequest(
-                                dynamoTableName,
-                                Collections.singletonMap(REVISION_ID_KEY, item.get(REVISION_ID_KEY)))))
-                .count();
-
-        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, dynamoTableName);
     }
 
     public static void main(String[] args) {

@@ -17,11 +17,11 @@ package sleeper.table.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -41,18 +41,19 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -64,13 +65,10 @@ public class TableInitialiserIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    private AmazonS3 getS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    private AmazonDynamoDB getDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
+    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     private Schema schemaWithKeyValueTypes(PrimitiveType rowKeyType, Type valueType) {
         return Schema.builder()
@@ -79,226 +77,134 @@ public class TableInitialiserIT {
                 .build();
     }
 
+    @BeforeEach
+    void setUp() {
+        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+    }
+
+    private void saveSplitPoints(String splitPoints) {
+        String key = "splits/" + tableProperties.get(TABLE_NAME);
+        s3.putObject(instanceProperties.get(CONFIG_BUCKET), key, splitPoints);
+        tableProperties.set(SPLIT_POINTS_KEY, key);
+    }
+
+    private void createTable() {
+        new TableCreator(s3, dynamoDB, instanceProperties).createTable(tableProperties);
+    }
+
+    private void initialiseTable() {
+        new TableInitialiser(s3, dynamoDB).initialise(
+                instanceProperties, tableProperties, instanceProperties.get(CONFIG_BUCKET), new Configuration());
+    }
+
+    private StateStore stateStore() {
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+    }
+
     @Test
-    public void shouldInitialiseStateStoreWithNoSplitPoints() {
+    public void shouldInitialiseStateStoreWithNoSplitPoints() throws Exception {
         // Given
-        AmazonS3 s3Client = getS3Client();
-        AmazonDynamoDB dynamoClient = getDynamoClient();
-
-        String instanceId = UUID.randomUUID().toString();
-        String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
-        s3Client.createBucket(configBucket);
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
-        tableProperties.set(TABLE_NAME, "MyTable");
-
-        tableCreator.createTable(tableProperties);
+        createTable();
 
         // When
-        new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
+        initialiseTable();
 
         // Then
-        assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(Integer.valueOf(1));
+        assertThat(stateStore().getAllPartitions()).hasSize(1);
     }
 
     @Test
     public void shouldInitialiseTableWithStringSplitPoints() throws StateStoreException {
         // Given
-        AmazonS3 s3Client = getS3Client();
-        AmazonDynamoDB dynamoClient = getDynamoClient();
-
-        String instanceId = UUID.randomUUID().toString();
-        String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
-        String tableName = "MyTable";
-        s3Client.createBucket(configBucket);
-        s3Client.putObject(configBucket, "splits/" + tableName, "a\nb\nc");
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        saveSplitPoints("a\nb\nc");
         tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
-
-        tableCreator.createTable(tableProperties);
+        createTable();
 
         // When
-        new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
+        initialiseTable();
 
         // Then
-        assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(Integer.valueOf(7));
-        validateSplits(tableProperties, "key", "", dynamoClient, "a", "b", "c");
+        assertThat(stateStore().getAllPartitions()).hasSize(7);
+        validateSplits("key", "", "a", "b", "c");
     }
 
     @Test
     public void shouldInitialiseWithBase64EncodedStringSplitPoints() throws StateStoreException {
         // Given
-        AmazonS3 s3Client = getS3Client();
-        AmazonDynamoDB dynamoClient = getDynamoClient();
-
-        String instanceId = UUID.randomUUID().toString();
-        String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
-        String tableName = "MyTable";
-        s3Client.createBucket(configBucket);
         String content = String.join("\n", new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
                 new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8),
                 new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8));
-        s3Client.putObject(configBucket, "splits/" + tableName, content);
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
-        tableProperties.set(TABLE_NAME, tableName);
+        saveSplitPoints(content);
         tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
-        tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
-
-        tableCreator.createTable(tableProperties);
+        tableProperties.setSchema(schemaWithKeyValueTypes(new StringType(), new StringType()));
+        createTable();
 
         // When
-        new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
+        initialiseTable();
 
         // Then
-        assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(Integer.valueOf(7));
-        validateSplits(tableProperties, "key", "", dynamoClient, "a", "b", "c");
+        assertThat(stateStore().getAllPartitions()).hasSize(7);
+        validateSplits("key", "", "a", "b", "c");
     }
 
     @Test
     public void shouldInitialiseTableWithLongSplitPoints() throws StateStoreException {
         // Given
-        AmazonS3 s3Client = getS3Client();
-        AmazonDynamoDB dynamoClient = getDynamoClient();
-
-        String instanceId = UUID.randomUUID().toString();
-        String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
-        String tableName = "MyTable";
-        s3Client.createBucket(configBucket);
-        s3Client.putObject(configBucket, "splits/" + tableName, "1000\n1000000\n1000000000");
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        Schema schema = schemaWithKeyValueTypes(new LongType(), new StringType());
-        tableProperties.setSchema(schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
-
-        tableCreator.createTable(tableProperties);
+        saveSplitPoints("1000\n1000000\n1000000000");
+        tableProperties.setSchema(schemaWithKeyValueTypes(new LongType(), new StringType()));
+        createTable();
 
         // When
-        new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
+        initialiseTable();
 
         // Then
-        assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(Integer.valueOf(7));
-        validateSplits(tableProperties, "key", Long.MIN_VALUE, dynamoClient, 1000L, 1_000_000L, 1_000_000_000L);
+        assertThat(stateStore().getAllPartitions()).hasSize(7);
+        validateSplits("key", Long.MIN_VALUE, 1000L, 1_000_000L, 1_000_000_000L);
     }
 
     @Test
     public void shouldInitialiseTableWithIntegerSplitPoints() throws StateStoreException {
         // Given
-        AmazonS3 s3Client = getS3Client();
-        AmazonDynamoDB dynamoClient = getDynamoClient();
-
-        String instanceId = UUID.randomUUID().toString();
-        String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
-        String tableName = "MyTable";
-        s3Client.createBucket(configBucket);
-        s3Client.putObject(configBucket, "splits/" + tableName, "100\n1000\n10000");
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        Schema schema = schemaWithKeyValueTypes(new IntType(), new StringType());
-        tableProperties.setSchema(schema);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
-
-        tableCreator.createTable(tableProperties);
+        saveSplitPoints("100\n1000\n10000");
+        tableProperties.setSchema(schemaWithKeyValueTypes(new IntType(), new StringType()));
+        createTable();
 
         // When
-        new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
+        initialiseTable();
 
         // Then
-        assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(Integer.valueOf(7));
-        validateSplits(tableProperties, "key", Integer.MIN_VALUE, dynamoClient, 100, 1000, 10000);
+        assertThat(stateStore().getAllPartitions()).hasSize(7);
+        validateSplits("key", Integer.MIN_VALUE, 100, 1000, 10000);
     }
 
     @Test
     public void shouldInitialiseWithBase64EncodedByteArraySplitPoints() throws StateStoreException {
         // Given
-        AmazonS3 s3Client = getS3Client();
-        AmazonDynamoDB dynamoClient = getDynamoClient();
-
-        String instanceId = UUID.randomUUID().toString();
-        String configBucket = ("sleeper-" + instanceId + "-config").toLowerCase();
-        String tableName = "MyTable";
-        s3Client.createBucket(configBucket);
         String content = String.join("\n",
                 new String(Base64.encodeBase64("a".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8),
                 new String(Base64.encodeBase64("b".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8),
                 new String(Base64.encodeBase64("c".getBytes(StandardCharsets.UTF_16)), StandardCharsets.UTF_8));
-        s3Client.putObject(configBucket, "splits/" + tableName, content);
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
-
-        TableCreator tableCreator = new TableCreator(s3Client, dynamoClient, instanceProperties);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        Schema schema = schemaWithKeyValueTypes(new ByteArrayType(), new StringType());
-        tableProperties.setSchema(schema);
-        tableProperties.set(TABLE_NAME, tableName);
+        saveSplitPoints(content);
+        tableProperties.setSchema(schemaWithKeyValueTypes(new ByteArrayType(), new StringType()));
         tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "true");
-        tableProperties.set(SPLIT_POINTS_KEY, "splits/" + tableName);
-
-        tableCreator.createTable(tableProperties);
+        createTable();
 
         // When
-        new TableInitialiser(s3Client, dynamoClient).initialise(instanceProperties, tableProperties, configBucket, new Configuration());
+        initialiseTable();
 
         // Then
-        assertThat(dynamoClient.scan(
-                new ScanRequest().withTableName("sleeper-" + instanceId + "-table-mytable-partitions")).getCount())
-                .isEqualTo(Integer.valueOf(7));
-        validateSplits(tableProperties, "key", new byte[0], dynamoClient,
+        assertThat(stateStore().getAllPartitions()).hasSize(7);
+        validateSplits("key", new byte[0],
                 "a".getBytes(StandardCharsets.UTF_16),
                 "b".getBytes(StandardCharsets.UTF_16),
                 "c".getBytes(StandardCharsets.UTF_16));
     }
 
-    private void validateSplits(TableProperties tableProperties, String fieldName, Object minValue, AmazonDynamoDB dynamoClient, Object... splits) throws StateStoreException {
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, dynamoClient);
-        assertThat(stateStore.getLeafPartitions()).hasSize(4);
+    private void validateSplits(String fieldName, Object minValue, Object... splits) throws StateStoreException {
+        List<Partition> leafPartitions = stateStore().getLeafPartitions();
+        assertThat(leafPartitions).hasSize(4);
 
-        List<Partition> leafPartitions = stateStore.getLeafPartitions();
         ensurePartitionExists(leafPartitions, fieldName, minValue, splits[0]);
         for (int i = 1; i < splits.length; i++) {
             ensurePartitionExists(leafPartitions, fieldName, splits[i - 1], splits[i]);

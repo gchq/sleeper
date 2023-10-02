@@ -117,4 +117,15 @@ public class DelegatingStateStore implements StateStore {
     public boolean hasNoFiles() {
         return fileInfoStore.hasNoFiles();
     }
+
+    @Override
+    public void clearTable() {
+        fileInfoStore.clearTable();
+        partitionStore.clearTable();
+    }
+
+    @Override
+    public void clearFiles() {
+        fileInfoStore.clearTable();
+    }
 }

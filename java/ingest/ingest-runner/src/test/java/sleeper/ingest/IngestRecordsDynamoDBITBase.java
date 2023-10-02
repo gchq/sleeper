@@ -18,34 +18,32 @@ package sleeper.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.testcontainers.containers.GenericContainer;
+import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.core.CommonTestConstants;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-
-import java.util.UUID;
 
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class IngestRecordsDynamoDBITBase extends IngestRecordsTestBase {
-    private static final int DYNAMO_PORT = 8000;
 
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
 
-    protected DynamoDBStateStore getStateStore(Schema schema)
-            throws StateStoreException {
-        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
-        String tableNameStub = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(tableNameStub, schema, dynamoDBClient);
-        DynamoDBStateStore stateStore = dynamoDBStateStoreCreator.create();
+    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
+
+    @BeforeEach
+    void setUp() {
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+    }
+
+    protected DynamoDBStateStore initialiseStateStore() throws StateStoreException {
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.initialise();
         return stateStore;
     }

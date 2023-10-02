@@ -124,4 +124,10 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     public boolean hasNoFiles() {
         return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
     }
+
+    @Override
+    public void clearTable() {
+        activeFiles.clear();
+        readyForGCFiles.clear();
+    }
 }

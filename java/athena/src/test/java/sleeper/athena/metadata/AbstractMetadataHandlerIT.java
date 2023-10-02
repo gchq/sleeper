@@ -89,7 +89,8 @@ public abstract class AbstractMetadataHandlerIT {
     }
 
     protected InstanceProperties createInstance() throws IOException {
-        return TestUtils.createInstance(createS3Client(), createTempDirectory(tempDir, null).toString());
+        return TestUtils.createInstance(createS3Client(), createDynamoClient(),
+                createTempDirectory(tempDir, null).toString());
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {

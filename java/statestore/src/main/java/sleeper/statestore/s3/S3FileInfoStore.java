@@ -18,6 +18,7 @@ package sleeper.statestore.s3;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -463,6 +464,19 @@ class S3FileInfoStore implements FileInfoStore {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed loading files", e);
         }
+    }
+
+    @Override
+    public void clearTable() {
+        Path path = new Path(fs + s3Path + "/statestore/files");
+        try {
+            path.getFileSystem(conf).delete(path, true);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        dynamoDB.deleteItem(new DeleteItemRequest()
+                .withTableName(dynamoRevisionIdTable)
+                .withKey(Map.of(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_FILES_REVISION_ID_KEY))));
     }
 
     private String getFilesPath(RevisionId revisionId) {

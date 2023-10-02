@@ -109,7 +109,7 @@ public class InitialiseStateStore {
             stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, conf);
         } else {
             System.out.println("Dynamo DB State Store detected");
-            stateStore = new DynamoDBStateStore(tableProperties, dynamoDBClient);
+            stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         }
 
         InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, Collections.emptyList()).run();

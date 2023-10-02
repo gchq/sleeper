@@ -21,6 +21,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BillingMode;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 public class DynamoDBUtils {
@@ -114,5 +116,18 @@ public class DynamoDBUtils {
                 result -> Optional.ofNullable(getLastKey.apply(result))
                         .map(lastKey -> query.apply(withStartKey.apply(lastKey)))
                         .orElse(null));
+    }
+
+    public static void deleteAllDynamoTableItems(AmazonDynamoDB dynamoDB, QueryRequest queryRequest,
+                                                 UnaryOperator<Map<String, AttributeValue>> getItemKeyForDelete) {
+        LOGGER.info("Deleting all items from {} Dynamo DB Table", queryRequest.getTableName());
+        long countOfDeletedItems = streamPagedItems(dynamoDB, queryRequest.withLimit(50))
+                .map(item -> {
+                    Map<String, AttributeValue> deleteKey = getItemKeyForDelete.apply(item);
+                    return dynamoDB.deleteItem(
+                            new DeleteItemRequest(queryRequest.getTableName(), deleteKey));
+                }).count();
+
+        LOGGER.info("{} items successfully deleted from {} Dynamo DB Table", countOfDeletedItems, queryRequest.getTableName());
     }
 }

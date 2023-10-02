@@ -82,7 +82,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
@@ -134,7 +134,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
@@ -188,7 +188,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -243,7 +243,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -295,7 +295,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -373,7 +373,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
@@ -512,8 +512,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)

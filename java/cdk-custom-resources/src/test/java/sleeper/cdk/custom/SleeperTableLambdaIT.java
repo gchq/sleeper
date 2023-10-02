@@ -17,7 +17,6 @@ package sleeper.cdk.custom;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -35,27 +34,19 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -79,27 +70,8 @@ public class SleeperTableLambdaIT {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     }
 
-    private InstanceProperties initialiseInstance() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, "id");
-        instanceProperties.set(JARS_BUCKET, "myJars");
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(DATA_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(REGION, "region");
-        instanceProperties.set(VERSION, "1.2.3");
-        instanceProperties.set(SUBNETS, "subnet-12345");
-        instanceProperties.set(VPC_ID, "vpc-12345");
-        instanceProperties.set(ACCOUNT, "myaccount");
-
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        s3Client.shutdown();
-        return instanceProperties;
-    }
-
     @Test
-    public void shouldInitialiseTheStateStoreWithNoSplitPointsOnCreate() {
+    public void shouldInitialiseTheStateStoreWithNoSplitPointsOnCreate() throws Exception {
         // Given
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -114,9 +86,8 @@ public class SleeperTableLambdaIT {
                 .build(), null);
 
         // Then
-        Integer count = dynamoClient.scan(new ScanRequest().withTableName(tableProperties.get(PARTITION_TABLENAME)))
-                .getCount();
-        assertThat(count).isEqualTo(Integer.valueOf(1));
+        assertThat(new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient)
+                .getAllPartitions()).hasSize(1);
         s3Client.shutdown();
         dynamoClient.shutdown();
     }
@@ -218,20 +189,21 @@ public class SleeperTableLambdaIT {
         dynamoClient.shutdown();
     }
 
-    private TableProperties createTableProperties(InstanceProperties instanceProperties) {
-        String tableName = UUID.randomUUID().toString();
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        AmazonDynamoDB dynamoClient = createDynamoClient();
-        new DynamoDBStateStoreCreator(tableName, KEY_VALUE_SCHEMA, dynamoClient)
-                .create();
-        dynamoClient.shutdown();
+    private InstanceProperties initialiseInstance() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
 
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rgcf");
-        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        return tableProperties;
+        AmazonS3 s3Client = createS3Client();
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        s3Client.shutdown();
+        AmazonDynamoDB dynamoClient = createDynamoClient();
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
+        dynamoClient.shutdown();
+        return instanceProperties;
+    }
+
+    private TableProperties createTableProperties(InstanceProperties instanceProperties) {
+        return createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
     }
 
     private Map<String, Object> createInput(InstanceProperties instanceProperties, TableProperties tableProperties) {
