@@ -105,7 +105,7 @@ public class IngestRandomDataToDocker {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, args[1]);
         long numberOfRecords = 100000;
-        if (args.length > 1) {
+        if (args.length > 2) {
             numberOfRecords = Long.parseLong(args[2]);
         }
 
