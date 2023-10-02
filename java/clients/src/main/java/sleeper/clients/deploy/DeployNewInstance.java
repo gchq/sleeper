@@ -172,7 +172,6 @@ public class DeployNewInstance {
                 .build().invoke(instanceType, cdkCommand, runCommand);
         LOGGER.info("Adding table " + tableName);
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        tableProperties.loadFromS3(s3, tableName);
         new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
         LOGGER.info("Finished deployment of new instance");
     }
