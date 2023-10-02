@@ -34,7 +34,6 @@ TABLE_PROPERTIES=${TABLE_DIR}/table.properties
 SCHEMA=${TABLE_DIR}/schema.json
 
 VERSION=$(cat "${TEMPLATE_DIR}/version.txt")
-echo "VERSION: ${VERSION}"
 
 echo "Generating properties"
 
@@ -52,4 +51,4 @@ sed \
 echo "-------------------------------------------------------"
 echo "Adding table"
 echo "-------------------------------------------------------"
-java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.AddTable "${INSTANCE_ID}" "${TABLE_PROPERTIES}" "${SCHEMA}"
+java -cp "${JAR_DIR}/clients-${VERSION}-utility.jar" sleeper.clients.status.update.AddTable "${INSTANCE_ID}" "${TABLE_PROPERTIES}"

@@ -24,15 +24,23 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class AddTable {
+    private static final Schema DEFAULT_SCHEMA = Schema.builder()
+            .rowKeyFields(new Field("key", new StringType()))
+            .sortKeyFields(new Field("timestamp", new LongType()))
+            .valueFields(new Field("value", new StringType())).build();
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
@@ -58,8 +66,8 @@ public class AddTable {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 3) {
-            System.out.println("Usage: <instance-id> <table-properties-file> <schema-file>");
+        if (args.length != 2) {
+            System.out.println("Usage: <instance-id> <table-properties-file>");
             return;
         }
 
@@ -70,8 +78,10 @@ public class AddTable {
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(Schema.load(Path.of(args[1])));
-        tableProperties.load(Path.of(args[2]));
+        if (!tableProperties.isSet(SCHEMA)) {
+            tableProperties.setSchema(DEFAULT_SCHEMA);
+        }
+        tableProperties.load(Path.of(args[1]));
 
         new AddTable(s3Client, dynamoDBClient, instanceProperties, tableProperties).run();
         dynamoDBClient.shutdown();
