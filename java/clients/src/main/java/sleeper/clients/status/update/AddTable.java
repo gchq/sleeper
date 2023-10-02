@@ -66,7 +66,7 @@ public class AddTable {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(s3Client, args[0]);
+        instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.load(Path.of(args[1]));
