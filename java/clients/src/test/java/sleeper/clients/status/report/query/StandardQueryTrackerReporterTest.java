@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.query.tracker.TrackedQuery;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +30,7 @@ import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.mixedQueries;
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
+import static sleeper.query.tracker.TrackedQueryTestHelper.queryQueued;
 
 public class StandardQueryTrackerReporterTest {
     @Nested
@@ -56,6 +58,20 @@ public class StandardQueryTrackerReporterTest {
             // When/Then
             assertThat(getStandardReport(TrackerQuery.ALL, queryWithSubqueries()))
                     .isEqualTo(example("reports/query/standard/all/queryWithSubqueries.txt"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Tracked queries by state")
+    class TrackedQueriesByState {
+        @Test
+        void shouldRunReportWithQueuedQueries() throws Exception {
+            // Given
+            List<TrackedQuery> queuedQueries = List.of(queryQueued("test-query-1", Instant.parse("2023-09-28T18:50:00Z")));
+
+            // When/Then
+            assertThat(getStandardReport(TrackerQuery.QUEUED, queuedQueries))
+                    .isEqualTo(example("reports/query/standard/state/mixedQueries.txt"));
         }
     }
 }
