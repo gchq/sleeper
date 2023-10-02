@@ -24,6 +24,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.schema.Schema;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 
 import java.io.IOException;
@@ -57,8 +58,8 @@ public class AddTable {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <table-properties-file>");
+        if (args.length != 3) {
+            System.out.println("Usage: <instance-id> <table-properties-file> <schema-file>");
             return;
         }
 
@@ -69,7 +70,8 @@ public class AddTable {
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
 
         TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.load(Path.of(args[1]));
+        tableProperties.setSchema(Schema.load(Path.of(args[1])));
+        tableProperties.load(Path.of(args[2]));
 
         new AddTable(s3Client, dynamoDBClient, instanceProperties, tableProperties).run();
         dynamoDBClient.shutdown();
