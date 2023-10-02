@@ -26,6 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.type.ByteArrayType;
@@ -58,6 +59,19 @@ public class InitialiseStateStoreFromSplitPoints {
     private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final List<Object> splitPoints;
+
+    public InitialiseStateStoreFromSplitPoints(
+            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
+            TableProperties tableProperties) throws IOException {
+        this.dynamoDB = dynamoDB;
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
+        if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
+            this.splitPoints = readSplitPoints(tableProperties);
+        } else {
+            this.splitPoints = List.of();
+        }
+    }
 
     public InitialiseStateStoreFromSplitPoints(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
@@ -106,6 +120,12 @@ public class InitialiseStateStoreFromSplitPoints {
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
+    }
+
+    private static List<Object> readSplitPoints(TableProperties tableProperties) throws IOException {
+        return readSplitPoints(tableProperties,
+                tableProperties.get(TableProperty.SPLIT_POINTS_FILE),
+                tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
     }
 
     private static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
