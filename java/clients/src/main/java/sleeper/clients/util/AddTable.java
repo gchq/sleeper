@@ -57,7 +57,7 @@ public class AddTable {
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length < 2 || args.length > 3) {
+        if (args.length != 2) {
             System.out.println("Usage: <instance-id> <table-properties-file>");
             return;
         }
@@ -68,7 +68,6 @@ public class AddTable {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, args[0]);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.load(Path.of(args[1]));
 
