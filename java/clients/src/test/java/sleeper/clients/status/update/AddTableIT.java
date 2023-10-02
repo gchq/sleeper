@@ -88,11 +88,9 @@ public class AddTableIT {
     void shouldFailToAddTableIfTableAlreadyExists() throws Exception {
         // Given
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-
-        // When
         new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
 
-        // Then
+        // When / Then
         assertThatThrownBy(() -> new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run())
                 .isInstanceOf(UnsupportedOperationException.class);
     }
