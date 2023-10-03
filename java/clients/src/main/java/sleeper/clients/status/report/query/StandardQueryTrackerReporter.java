@@ -35,6 +35,10 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private final TableField recordCount;
     private final TableWriterFactory tableFactory;
 
+    public StandardQueryTrackerReporter() {
+        this(System.out);
+    }
+
     public StandardQueryTrackerReporter(PrintStream out) {
         this.out = out;
         TableWriterFactory.Builder tableFactoryBuilder = TableWriterFactory.builder();

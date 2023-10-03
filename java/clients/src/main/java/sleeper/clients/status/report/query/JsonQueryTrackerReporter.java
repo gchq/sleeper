@@ -35,6 +35,10 @@ public class JsonQueryTrackerReporter implements QueryTrackerReporter {
             .create();
     private final PrintStream out;
 
+    public JsonQueryTrackerReporter() {
+        this(System.out);
+    }
+
     public JsonQueryTrackerReporter(PrintStream out) {
         this.out = out;
     }

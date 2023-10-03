@@ -16,5 +16,109 @@
 
 package sleeper.clients.status.report;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+import sleeper.clients.status.report.query.JsonQueryTrackerReporter;
+import sleeper.clients.status.report.query.QueryTrackerReporter;
+import sleeper.clients.status.report.query.StandardQueryTrackerReporter;
+import sleeper.clients.status.report.query.TrackerQuery;
+import sleeper.clients.status.report.query.TrackerQueryPrompt;
+import sleeper.clients.util.ClientUtils;
+import sleeper.clients.util.console.ConsoleInput;
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.tracker.QueryTrackerStore;
+
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import static sleeper.clients.util.ClientUtils.optionalArgument;
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+
 public class QueryTrackerReport {
+    private static final String DEFAULT_REPORTER = "STANDARD";
+    private static final Map<String, QueryTrackerReporter> REPORTERS = new HashMap<>();
+    private static final Map<String, TrackerQuery> QUERY_TYPES = new HashMap<>();
+
+    static {
+        REPORTERS.put(DEFAULT_REPORTER, new StandardQueryTrackerReporter());
+        REPORTERS.put("JSON", new JsonQueryTrackerReporter());
+        QUERY_TYPES.put("-a", TrackerQuery.ALL);
+        QUERY_TYPES.put("-q", TrackerQuery.QUEUED);
+        QUERY_TYPES.put("-i", TrackerQuery.IN_PROGRESS);
+        QUERY_TYPES.put("-c", TrackerQuery.COMPLETED);
+        QUERY_TYPES.put("-f", TrackerQuery.FAILED);
+    }
+
+    private final QueryTrackerReporter reporter;
+    private final QueryTrackerStore queryTrackerStore;
+    private final TrackerQuery queryType;
+
+    public QueryTrackerReport(QueryTrackerStore queryTrackerStore, TrackerQuery queryType, QueryTrackerReporter reporter) {
+        this.queryTrackerStore = queryTrackerStore;
+        this.queryType = queryType;
+        this.reporter = reporter;
+    }
+
+    public void run() {
+        reporter.report(queryType, queryType.run(queryTrackerStore));
+    }
+
+    public static void main(String[] args) {
+        AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        try {
+            if (args.length < 1 || args.length > 3) {
+                throw new IllegalArgumentException("Wrong number of arguments");
+            }
+            String instanceId = args[0];
+            QueryTrackerReporter reporter = getReporter(args, 1);
+            TrackerQuery queryType = optionalArgument(args, 2)
+                    .map(QueryTrackerReport::readTypeArgument)
+                    .orElse(promptForQueryType());
+            InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
+            QueryTrackerStore queryTrackerStore = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+            new QueryTrackerReport(queryTrackerStore, queryType, reporter).run();
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            printUsage();
+            System.exit(1);
+        } finally {
+            amazonS3.shutdown();
+            dynamoDBClient.shutdown();
+        }
+    }
+
+    private static QueryTrackerReporter getReporter(String[] args, int index) {
+        String reporterType = optionalArgument(args, index)
+                .map(str -> str.toUpperCase(Locale.ROOT))
+                .orElse(DEFAULT_REPORTER);
+        if (!REPORTERS.containsKey(reporterType)) {
+            throw new IllegalArgumentException("Output type not supported: " + reporterType);
+        }
+        return REPORTERS.get(reporterType);
+    }
+
+    private static TrackerQuery readTypeArgument(String type) {
+        return QUERY_TYPES.getOrDefault(type, promptForQueryType());
+    }
+
+    private static TrackerQuery promptForQueryType() {
+        return TrackerQueryPrompt.from(new ConsoleInput(System.console()));
+    }
+
+    private static void printUsage() {
+        System.out.println(
+                "Usage: <instance-id> <report-type-standard-or-json> <optional-query-type> \n" +
+                        "Query types are:\n" +
+                        "-a (Return all queries)\n" +
+                        "-q (Queued queries)\n" +
+                        "-i (In progress queries)\n" +
+                        "-c (Completed queries)\n" +
+                        "-f (Failed queries)");
+    }
 }
