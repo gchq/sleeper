@@ -77,7 +77,6 @@ public class CompactSortedFiles {
     private final TableProperties tableProperties;
     private final Schema schema;
     private final ObjectFactory objectFactory;
-    private final String rowKeyName0;
     private final CompactionJob compactionJob;
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
@@ -96,7 +95,6 @@ public class CompactSortedFiles {
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
         this.objectFactory = objectFactory;
-        this.rowKeyName0 = this.schema.getRowKeyFieldNames().get(0);
         this.compactionJob = compactionJob;
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
@@ -146,17 +144,8 @@ public class CompactSortedFiles {
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
         long recordsWritten = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
-        // the last).
-        Object minKey = null;
-        Object maxKey = null;
-
         while (mergingIterator.hasNext()) {
             Record record = mergingIterator.next();
-            if (null == minKey) {
-                minKey = record.get(rowKeyName0);
-            }
-            maxKey = record.get(rowKeyName0);
             updateQuantilesSketch(record, keyFieldToSketch);
             // Write out
             writer.write(record);
@@ -193,8 +182,6 @@ public class CompactSortedFiles {
                 compactionJob.getOutputFile(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
-                minKey,
-                maxKey,
                 finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
@@ -226,12 +213,6 @@ public class CompactSortedFiles {
 
         long recordsWrittenToLeftFile = 0L;
         long recordsWrittenToRightFile = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first record, the max is from
-        // the last) from both files.
-        Object minKeyLeftFile = null;
-        Object minKeyRightFile = null;
-        Object maxKeyLeftFile = null;
-        Object maxKeyRightFile = null;
         int dimension = compactionJob.getDimension();
         // Compare using the key of dimension compactionJob.getDimension(), i.e. of that position in the list
         SingleKeyComparator keyComparator = new SingleKeyComparator(schema.getRowKeyTypes().get(dimension));
@@ -248,18 +229,10 @@ public class CompactSortedFiles {
             if (keyComparator.compare(record.get(comparisonKeyFieldName), splitPoint) < 0) {
                 leftWriter.write(record);
                 recordsWrittenToLeftFile++;
-                if (null == minKeyLeftFile) {
-                    minKeyLeftFile = record.get(rowKeyName0);
-                }
-                maxKeyLeftFile = record.get(rowKeyName0);
                 updateQuantilesSketch(record, leftKeyFieldToSketch);
             } else {
                 rightWriter.write(record);
                 recordsWrittenToRightFile++;
-                if (null == minKeyRightFile) {
-                    minKeyRightFile = record.get(rowKeyName0);
-                }
-                maxKeyRightFile = record.get(rowKeyName0);
                 updateQuantilesSketch(record, rightKeyFieldToSketch);
             }
 
@@ -308,8 +281,6 @@ public class CompactSortedFiles {
                 compactionJob.getPartitionId(),
                 compactionJob.getChildPartitions(),
                 new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
-                new ImmutablePair<>(minKeyLeftFile, minKeyRightFile),
-                new ImmutablePair<>(maxKeyLeftFile, maxKeyRightFile),
                 finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
@@ -355,8 +326,6 @@ public class CompactSortedFiles {
                                                    String outputFile,
                                                    String partitionId,
                                                    long recordsWritten,
-                                                   Object minRowKey0,
-                                                   Object maxRowKey0,
                                                    long finishTime,
                                                    StateStore stateStore,
                                                    List<PrimitiveType> rowKeyTypes) {
@@ -394,8 +363,6 @@ public class CompactSortedFiles {
                                                    String partition,
                                                    List<String> childPartitions,
                                                    Pair<Long, Long> recordsWritten,
-                                                   Pair<Object, Object> minKeys,
-                                                   Pair<Object, Object> maxKeys,
                                                    long finishTime,
                                                    StateStore stateStore,
                                                    List<PrimitiveType> rowKeyTypes) {
