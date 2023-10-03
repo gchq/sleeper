@@ -79,6 +79,14 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        The version of Hadoop we're using uses an old version of OkHttp, with old Maven artifacts that don't have a
+        fixed version.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp/okhttp@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-0833</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         The version of Athena we're using uses an old version of Bouncy Castle Provider, with an old Maven artifact that
         doesn't have a fixed version.
         ]]></notes>
