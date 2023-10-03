@@ -19,6 +19,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.StateStoreException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -129,5 +130,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     public void clearTable() {
         activeFiles.clear();
         readyForGCFiles.clear();
+    }
+
+    @Override
+    public void fixTime(Instant now) {
     }
 }

@@ -23,7 +23,6 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.key.KeySerDe;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -64,7 +63,6 @@ class S3FileInfoStore implements FileInfoStore {
 
     private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
-    private final KeySerDe keySerDe;
     private final String stateStorePath;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
@@ -74,7 +72,6 @@ class S3FileInfoStore implements FileInfoStore {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.rowKeyTypes = builder.rowKeyTypes;
         this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
-        this.keySerDe = new KeySerDe(rowKeyTypes);
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
     }
@@ -472,7 +469,7 @@ class S3FileInfoStore implements FileInfoStore {
         return record;
     }
 
-    private FileInfo getFileInfoFromRecord(Record record) throws IOException {
+    private FileInfo getFileInfoFromRecord(Record record) {
         String jobId = (String) record.get("jobId");
         return FileInfo.builder()
                 .filename((String) record.get("fileName"))

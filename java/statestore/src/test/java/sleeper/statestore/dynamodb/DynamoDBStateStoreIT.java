@@ -138,8 +138,8 @@ public class DynamoDBStateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -164,8 +164,8 @@ public class DynamoDBStateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -190,8 +190,8 @@ public class DynamoDBStateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -216,8 +216,8 @@ public class DynamoDBStateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
 
         // When
         dynamoDBStateStore.addFile(fileInfo);
@@ -237,6 +237,7 @@ public class DynamoDBStateStoreIT {
         // Given
         Schema schema = schemaWithSingleRowKeyType(new LongType());
         StateStore dynamoDBStateStore = getStateStore(schema);
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         Set<FileInfo> expected = new HashSet<>();
         for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
             FileInfo fileInfo = FileInfo.builder()
@@ -266,7 +267,6 @@ public class DynamoDBStateStoreIT {
                 .rowKeyTypes(new LongType())
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
 
         // When / Then
@@ -283,7 +283,6 @@ public class DynamoDBStateStoreIT {
                 .rowKeyTypes(new LongType())
                 .filename("abc")
                 .partitionId("1")
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
 
         // When / Then
@@ -300,7 +299,6 @@ public class DynamoDBStateStoreIT {
                 .rowKeyTypes(new LongType())
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .lastStateStoreUpdateTime(1_000_000L)
                 .build();
 
         // When / Then
@@ -328,6 +326,7 @@ public class DynamoDBStateStoreIT {
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(file1Time)
                 .build();
+        stateStore.fixTime(file1Time);
         stateStore.addFile(fileInfo1);
         //  - An active file which should not be garbage collected
         FileInfo fileInfo2 = FileInfo.builder()
@@ -338,6 +337,7 @@ public class DynamoDBStateStoreIT {
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(file2Time)
                 .build();
+        stateStore.fixTime(file2Time);
         stateStore.addFile(fileInfo2);
         //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
         //      just been marked as ready for GC
@@ -349,6 +349,7 @@ public class DynamoDBStateStoreIT {
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(file3Time)
                 .build();
+        stateStore.fixTime(file3Time);
         stateStore.addFile(fileInfo3);
 
         // When / Then 1
@@ -364,7 +365,7 @@ public class DynamoDBStateStoreIT {
     public void shouldReturnOnlyActiveFilesWithNoJobId() throws StateStoreException {
         // Given
         Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
-        StateStore dynamoDBStateStore = getStateStore(schema);
+        DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
         FileInfo fileInfo1 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename("file1")
@@ -372,6 +373,7 @@ public class DynamoDBStateStoreIT {
                 .partitionId("1")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         dynamoDBStateStore.addFile(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -380,6 +382,7 @@ public class DynamoDBStateStoreIT {
                 .partitionId("2")
                 .lastStateStoreUpdateTime(2_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(2_000_000L));
         dynamoDBStateStore.addFile(fileInfo2);
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -389,6 +392,7 @@ public class DynamoDBStateStoreIT {
                 .jobId("job1")
                 .lastStateStoreUpdateTime(3_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(3_000_000L));
         dynamoDBStateStore.addFile(fileInfo3);
 
         // When
@@ -412,6 +416,7 @@ public class DynamoDBStateStoreIT {
                     .partitionId("" + i)
                     .lastStateStoreUpdateTime((long) i * 1_000)
                     .build();
+            dynamoDBStateStore.fixTime(Instant.ofEpochMilli((long) i * 1_000));
             dynamoDBStateStore.addFile(fileInfo);
             expected.add(fileInfo);
         }
@@ -435,6 +440,7 @@ public class DynamoDBStateStoreIT {
                 .partitionId("4")
                 .lastStateStoreUpdateTime(1_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(1_000_000L));
         dynamoDBStateStore.addFile(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -443,6 +449,7 @@ public class DynamoDBStateStoreIT {
                 .partitionId("5")
                 .lastStateStoreUpdateTime(2_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(2_000_000L));
         dynamoDBStateStore.addFile(fileInfo2);
 
         // When
@@ -465,7 +472,6 @@ public class DynamoDBStateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
-                    .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
             filesToMoveToReadyForGC.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
@@ -475,14 +481,15 @@ public class DynamoDBStateStoreIT {
                 .filename("file-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .lastStateStoreUpdateTime(10_000_000L)
                 .build();
 
         // When
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToMoveToReadyForGC, newFileInfo);
 
         // Then
-        assertThat(dynamoDBStateStore.getActiveFiles()).containsExactly(newFileInfo);
+        assertThat(dynamoDBStateStore.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(newFileInfo);
         assertThat(dynamoDBStateStore.getReadyForGCFiles()).toIterable().hasSize(4);
     }
 
@@ -501,6 +508,7 @@ public class DynamoDBStateStoreIT {
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
             filesToMoveToReadyForGC.add(fileInfo);
+            dynamoDBStateStore.fixTime(Instant.ofEpochMilli(i * 1_000_000L));
             dynamoDBStateStore.addFile(fileInfo);
         }
         FileInfo newLeftFileInfo = FileInfo.builder()
@@ -517,6 +525,7 @@ public class DynamoDBStateStoreIT {
                 .partitionId("7")
                 .lastStateStoreUpdateTime(10_000_000L)
                 .build();
+        dynamoDBStateStore.fixTime(Instant.ofEpochMilli(10_000_000L));
 
         // When
         dynamoDBStateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToMoveToReadyForGC, newLeftFileInfo, newRightFileInfo);
@@ -572,7 +581,6 @@ public class DynamoDBStateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
-                    .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
             files.add(fileInfo);
             dynamoDBStateStore.addFile(fileInfo);
@@ -584,7 +592,7 @@ public class DynamoDBStateStoreIT {
 
         // Then
         assertThat(dynamoDBStateStore.getActiveFiles())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId")
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files)
                 .extracting(FileInfo::getJobId).containsOnly(jobId);
         assertThat(dynamoDBStateStore.getReadyForGCFiles()).isExhausted();
@@ -606,6 +614,7 @@ public class DynamoDBStateStoreIT {
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
             files.add(fileInfo);
+            dynamoDBStateStore.fixTime(Instant.ofEpochMilli(i * 1_000_000L));
             dynamoDBStateStore.addFile(fileInfo);
         }
         String jobId = UUID.randomUUID().toString();
@@ -631,6 +640,7 @@ public class DynamoDBStateStoreIT {
                     .numberOfRecords(1000L)
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .build();
+            dynamoDBStateStore.fixTime(Instant.ofEpochMilli(i * 1_000_000L));
             files.add(fileInfo);
         }
         String jobId = UUID.randomUUID().toString();
@@ -1029,7 +1039,6 @@ public class DynamoDBStateStoreIT {
         StateStore stateStore = getStateStore(schema, treeBefore.getAllPartitions());
         stateStore.addFile(FileInfoFactory.builder()
                 .schema(schema).partitionTree(treeBefore)
-                .lastStateStoreUpdate(Instant.now())
                 .build().leafFile(100L, 1L, 100L));
 
         // When / Then

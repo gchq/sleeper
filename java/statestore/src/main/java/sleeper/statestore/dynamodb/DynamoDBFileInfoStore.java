@@ -185,7 +185,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
         // Delete record for file for current status
         List<TransactWriteItem> writes = new ArrayList<>();
-        setLastUpdateTimes(filesToBeMarkedReadyForGC).forEach(fileInfo -> {
+        for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileInfoFormat.createKey(fileInfo))
@@ -196,7 +196,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(readyForGCTableName)
                     .withItem(fileInfoFormat.createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION));
             writes.add(new TransactWriteItem().withPut(put));
-        });
+        }
         // Add record for file for new status
         Put put = new Put()
                 .withTableName(activeTableName)
@@ -437,12 +437,12 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private static FileInfo setLastUpdateTime(FileInfo fileInfo) {
-        return fileInfo.toBuilder().lastStateStoreUpdateTime(System.currentTimeMillis()).build();
+    private FileInfo setLastUpdateTime(FileInfo fileInfo) {
+        return fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build();
     }
 
-    private static Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos) {
-        return fileInfos.stream().map(DynamoDBFileInfoStore::setLastUpdateTime);
+    private Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos) {
+        return fileInfos.stream().map(this::setLastUpdateTime);
     }
 
     static final class Builder {
