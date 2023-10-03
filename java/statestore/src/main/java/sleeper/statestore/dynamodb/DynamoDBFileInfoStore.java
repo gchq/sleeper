@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
@@ -108,7 +109,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 || null == fileInfo.getPartitionId()) {
             throw new IllegalArgumentException("FileInfo needs non-null filename, status and partition: got " + fileInfo);
         }
-        Map<String, AttributeValue> itemValues = fileInfoFormat.createRecord(fileInfo);
+        Map<String, AttributeValue> itemValues = fileInfoFormat.createRecord(setLastUpdateTime(fileInfo));
         try {
             String tableName = tableName(fileInfo);
             PutItemRequest putItemRequest = new PutItemRequest()
@@ -146,7 +147,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             FileInfo newActiveFile) throws StateStoreException {
         // Delete record for file for current status
         List<TransactWriteItem> writes = new ArrayList<>();
-        for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
+        setLastUpdateTimes(filesToBeMarkedReadyForGC).forEach(fileInfo -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileInfoFormat.createKey(fileInfo))
@@ -157,11 +158,11 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(readyForGCTableName)
                     .withItem(fileInfoFormat.createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION));
             writes.add(new TransactWriteItem().withPut(put));
-        }
+        });
         // Add record for file for new status
         Put put = new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecordWithStatus(newActiveFile, ACTIVE));
+                .withItem(fileInfoFormat.createRecordWithStatus(setLastUpdateTime(newActiveFile), ACTIVE));
         writes.add(new TransactWriteItem().withPut(put));
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -184,7 +185,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
         // Delete record for file for current status
         List<TransactWriteItem> writes = new ArrayList<>();
-        for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
+        setLastUpdateTimes(filesToBeMarkedReadyForGC).forEach(fileInfo -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileInfoFormat.createKey(fileInfo))
@@ -195,15 +196,15 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(readyForGCTableName)
                     .withItem(fileInfoFormat.createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION));
             writes.add(new TransactWriteItem().withPut(put));
-        }
+        });
         // Add record for file for new status
         Put put = new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecordWithStatus(leftFileInfo, ACTIVE));
+                .withItem(fileInfoFormat.createRecordWithStatus(setLastUpdateTime(leftFileInfo), ACTIVE));
         writes.add(new TransactWriteItem().withPut(put));
         Put put2 = new Put()
                 .withTableName(activeTableName)
-                .withItem(fileInfoFormat.createRecordWithStatus(rightFileInfo, ACTIVE));
+                .withItem(fileInfoFormat.createRecordWithStatus(setLastUpdateTime(rightFileInfo), ACTIVE));
         writes.add(new TransactWriteItem().withPut(put2));
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
@@ -231,7 +232,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         List<TransactWriteItem> writes = new ArrayList<>();
         // TODO This should only be done for active files
         // Create Puts for each of the files, conditional on the compactionJob field being not present
-        for (FileInfo fileInfo : files) {
+        setLastUpdateTimes(files).forEach(fileInfo -> {
             Put put = new Put()
                     .withTableName(activeTableName)
                     .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
@@ -244,7 +245,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                             ":partitionid", new AttributeValue().withS(fileInfo.getPartitionId())))
                     .withConditionExpression("#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)");
             writes.add(new TransactWriteItem().withPut(put));
-        }
+        });
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
                 .withTransactItems(writes)
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
@@ -434,6 +435,14 @@ class DynamoDBFileInfoStore implements FileInfoStore {
      */
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
+    private static FileInfo setLastUpdateTime(FileInfo fileInfo) {
+        return fileInfo.toBuilder().lastStateStoreUpdateTime(System.currentTimeMillis()).build();
+    }
+
+    private static Stream<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos) {
+        return fileInfos.stream().map(DynamoDBFileInfoStore::setLastUpdateTime);
     }
 
     static final class Builder {
