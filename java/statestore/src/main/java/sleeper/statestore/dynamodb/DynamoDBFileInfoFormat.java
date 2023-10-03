@@ -17,8 +17,6 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.core.key.Key;
-import sleeper.core.key.KeySerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
@@ -28,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.dynamodb.tools.DynamoDBAttributes.createBinaryAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
@@ -39,19 +36,15 @@ class DynamoDBFileInfoFormat {
     static final String STATUS = "Status";
     static final String PARTITION = "Partition";
     private static final String NUMBER_LINES = "NumLines";
-    private static final String MIN_KEY = "MinKey";
-    private static final String MAX_KEY = "MaxKey";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String JOB_ID = "Job_name";
 
     private final String sleeperTableName;
     private final List<PrimitiveType> rowKeyTypes;
-    private final KeySerDe keySerDe;
 
     DynamoDBFileInfoFormat(String sleeperTableName, Schema schema) {
         this.sleeperTableName = sleeperTableName;
         this.rowKeyTypes = schema.getRowKeyTypes();
-        this.keySerDe = new KeySerDe(rowKeyTypes);
     }
 
     /**
@@ -128,9 +121,5 @@ class DynamoDBFileInfoFormat {
             fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }
         return fileInfoBuilder.build();
-    }
-
-    private AttributeValue getAttributeValueFromRowKeys(Key rowKey) throws IOException {
-        return createBinaryAttribute(keySerDe.serialise(rowKey));
     }
 }
