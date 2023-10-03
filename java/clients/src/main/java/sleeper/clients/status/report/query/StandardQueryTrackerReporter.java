@@ -25,7 +25,6 @@ import sleeper.query.tracker.TrackedQuery;
 import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private PrintStream out;
@@ -55,9 +54,13 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         if (TrackerQuery.ALL == queryType) {
             printAllSummary(queryType, trackedQueries);
         } else if (TrackerQuery.QUEUED == queryType) {
-            printQueuedSummary(trackedQueries.stream());
+            printQueuedSummary(trackedQueries.size());
         } else if (TrackerQuery.IN_PROGRESS == queryType) {
-            printInProgressSummary(trackedQueries.stream());
+            printInProgressSummary(trackedQueries.size());
+        } else if (TrackerQuery.COMPLETED == queryType) {
+            printCompletedSummary(trackedQueries.size());
+        } else if (TrackerQuery.FAILED == queryType) {
+            printFailedSummary(trackedQueries);
         }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
                 .build().write(out);
@@ -66,20 +69,28 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private void printAllSummary(TrackerQuery queryType, List<TrackedQuery> trackedQueries) {
         out.printf("Total queries: %d%n", trackedQueries.size());
         out.println();
-        printQueuedSummary(trackedQueries.stream().filter(query -> query.getLastKnownState() == QueryState.QUEUED));
-        printInProgressSummary(trackedQueries.stream().filter(query -> query.getLastKnownState() == QueryState.IN_PROGRESS));
-        out.printf("Total queries completed: %d%n", countQueriesWithState(trackedQueries, QueryState.COMPLETED));
+        printQueuedSummary(countQueriesWithState(trackedQueries, QueryState.QUEUED));
+        printInProgressSummary(countQueriesWithState(trackedQueries, QueryState.IN_PROGRESS));
+        printCompletedSummary(countQueriesWithState(trackedQueries, QueryState.COMPLETED));
         out.println();
-        out.printf("Total queries partially failed: %d%n", countQueriesWithState(trackedQueries, QueryState.PARTIALLY_FAILED));
-        out.printf("Total queries failed: %d%n", countQueriesWithState(trackedQueries, QueryState.FAILED));
+        printFailedSummary(trackedQueries);
     }
 
-    private void printQueuedSummary(Stream<TrackedQuery> queuedQueries) {
-        out.printf("Total queries queued: %d%n", queuedQueries.count());
+    private void printQueuedSummary(long queryCount) {
+        out.printf("Total queries queued: %d%n", queryCount);
     }
 
-    private void printInProgressSummary(Stream<TrackedQuery> inProgressQueries) {
-        out.printf("Total queries in progress: %d%n", inProgressQueries.count());
+    private void printInProgressSummary(long queryCount) {
+        out.printf("Total queries in progress: %d%n", queryCount);
+    }
+
+    private void printCompletedSummary(long queryCount) {
+        out.printf("Total queries completed: %d%n", queryCount);
+    }
+
+    private void printFailedSummary(List<TrackedQuery> failedQueries) {
+        out.printf("Total queries partially failed: %d%n", countQueriesWithState(failedQueries, QueryState.PARTIALLY_FAILED));
+        out.printf("Total queries failed: %d%n", countQueriesWithState(failedQueries, QueryState.FAILED));
     }
 
     private void writeQueryFields(TrackedQuery trackedQuery, TableRow.Builder builder) {

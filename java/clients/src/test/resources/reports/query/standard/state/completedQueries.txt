@@ -1,0 +1,8 @@
+
+Query Tracker Report
+--------------------
+Total queries completed: 1
+---------------------------------------------------------------------------------
+| STATE     | QUERY_ID     | SUB_QUERY_ID | LAST_UPDATE_TIME     | RECORD_COUNT |
+| COMPLETED | test-query-1 |              | 2023-09-28T18:50:00Z | 456          |
+---------------------------------------------------------------------------------

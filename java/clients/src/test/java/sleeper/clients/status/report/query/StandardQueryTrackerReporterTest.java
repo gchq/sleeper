@@ -30,7 +30,10 @@ import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.mixedQueries;
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
+import static sleeper.query.tracker.TrackedQueryTestHelper.queryCompleted;
+import static sleeper.query.tracker.TrackedQueryTestHelper.queryFailed;
 import static sleeper.query.tracker.TrackedQueryTestHelper.queryInProgress;
+import static sleeper.query.tracker.TrackedQueryTestHelper.queryPartiallyFailed;
 import static sleeper.query.tracker.TrackedQueryTestHelper.queryQueued;
 
 public class StandardQueryTrackerReporterTest {
@@ -85,6 +88,29 @@ public class StandardQueryTrackerReporterTest {
             // When/Then
             assertThat(getStandardReport(TrackerQuery.IN_PROGRESS, inProgressQueries))
                     .isEqualTo(example("reports/query/standard/state/inProgressQueries.txt"));
+        }
+
+        @Test
+        void shouldRunReportWithCompletedQueries() throws Exception {
+            // Given
+            List<TrackedQuery> completedQueries = List.of(
+                    queryCompleted("test-query-1", Instant.parse("2023-09-28T18:50:00Z"), 456L));
+
+            // When/Then
+            assertThat(getStandardReport(TrackerQuery.COMPLETED, completedQueries))
+                    .isEqualTo(example("reports/query/standard/state/completedQueries.txt"));
+        }
+
+        @Test
+        void shouldRunReportWithFailedQueries() throws Exception {
+            // Given
+            List<TrackedQuery> failedQueries = List.of(
+                    queryPartiallyFailed("test-query-1", Instant.parse("2023-09-28T18:50:00Z"), 123L),
+                    queryFailed("test-query-2", Instant.parse("2023-09-28T18:52:00Z")));
+
+            // When/Then
+            assertThat(getStandardReport(TrackerQuery.FAILED, failedQueries))
+                    .isEqualTo(example("reports/query/standard/state/failedQueries.txt"));
         }
     }
 }
