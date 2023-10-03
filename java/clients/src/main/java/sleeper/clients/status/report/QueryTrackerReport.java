@@ -72,7 +72,7 @@ public class QueryTrackerReport {
         AmazonS3 amazonS3 = buildAwsV1Client(AmazonS3ClientBuilder.standard());
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
-            if (args.length < 1 || args.length > 3) {
+            if (args.length < 2 || args.length > 3) {
                 throw new IllegalArgumentException("Wrong number of arguments");
             }
             String instanceId = args[0];

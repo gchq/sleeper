@@ -24,12 +24,12 @@ public class TrackerQueryPrompt {
 
     public static TrackerQuery from(ConsoleInput in) {
         String type = in.promptLine("Query types are:\n" +
-                "-a (All queries)\n" +
-                "-q (Queued queries)\n" +
-                "-i (In progress queries)\n" +
-                "-c (Completed queries)\n" +
-                "-f (Failed queries)\n\n" +
-                "Enter query type:");
+                "a (All queries)\n" +
+                "q (Queued queries)\n" +
+                "i (In progress queries)\n" +
+                "c (Completed queries)\n" +
+                "f (Failed queries)\n\n" +
+                "Enter query type: ");
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
