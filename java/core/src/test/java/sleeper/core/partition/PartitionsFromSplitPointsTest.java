@@ -260,8 +260,8 @@ public class PartitionsFromSplitPointsTest {
     }
 
     @Nested
-    @DisplayName("Schema with string key type")
-    class SchemaWithStringKeyType {
+    @DisplayName("Schema with string row key")
+    class SchemaWithStringRowKey {
         @Test
         void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
             // Given
@@ -333,6 +333,84 @@ public class PartitionsFromSplitPointsTest {
                             .splitToNewChildrenOnDimension("root", "L", "R", 0, "P")
                             .splitToNewChildrenOnDimension("L", "LL", "LR", 0, "E")
                             .splitToNewChildrenOnDimension("R", "RL", "RR", 0, "T")
+                            .buildList());
+        }
+    }
+
+    @Nested
+    @DisplayName("Schema with byte array row key")
+    class SchemaWithByteArrayKey {
+        @Test
+        void shouldCreateTreeWithOneRootNodeIfNoSplitPoints() {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("id", new ByteArrayType())).build();
+            RangeFactory rangeFactory = new RangeFactory(schema);
+            List<Object> splitPoints = List.of();
+            PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
+
+            // When / Then
+            assertThat(partitionsFromSplitPoints.construct())
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_IDS)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("root")
+                            .buildList());
+        }
+
+        @Test
+        void shouldCreateTreeWithOneSplitPoint() {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("id", new ByteArrayType())).build();
+            List<Object> splitPoints = List.of(new byte[]{10});
+            PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
+
+            // When / Then
+            assertThat(partitionsFromSplitPoints.construct())
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_IDS)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "L", "R", new byte[]{10})
+                            .buildList());
+        }
+
+        @Test
+        void shouldCreateTreeWithMultipleSplitPoints() {
+            // Given
+            Schema schema = Schema.builder().rowKeyFields(new Field("id", new ByteArrayType())).build();
+            List<Object> splitPoints = List.of(new byte[]{10}, new byte[]{50}, new byte[]{99});
+            PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
+
+            // When / Then
+            assertThat(partitionsFromSplitPoints.construct())
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_IDS)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "L", "R", new byte[]{50})
+                            .splitToNewChildren("L", "LL", "LR", new byte[]{10})
+                            .splitToNewChildren("R", "RL", "RR", new byte[]{99})
+                            .buildList());
+        }
+
+        @Test
+        void shouldCreateTreeWithMultipleSplitPointAndMultiDimRowKey() {
+            // Given
+            Schema schema = Schema.builder()
+                    .rowKeyFields(
+                            new Field("key0", new ByteArrayType()),
+                            new Field("key1", new LongType()),
+                            new Field("key2", new StringType()),
+                            new Field("key3", new ByteArrayType()))
+                    .build();
+            List<Object> splitPoints = List.of(new byte[]{10}, new byte[]{50}, new byte[]{99});
+            PartitionsFromSplitPoints partitionsFromSplitPoints = new PartitionsFromSplitPoints(schema, splitPoints);
+
+            // When / Then
+            assertThat(partitionsFromSplitPoints.construct())
+                    .usingRecursiveFieldByFieldElementComparator(IGNORE_IDS)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                            .rootFirst("root")
+                            .splitToNewChildrenOnDimension("root", "L", "R", 0, new byte[]{50})
+                            .splitToNewChildrenOnDimension("L", "LL", "LR", 0, new byte[]{10})
+                            .splitToNewChildrenOnDimension("R", "RL", "RR", 0, new byte[]{99})
                             .buildList());
         }
     }
