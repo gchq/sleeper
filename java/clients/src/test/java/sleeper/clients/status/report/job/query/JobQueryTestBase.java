@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.query;
+package sleeper.clients.status.report.job.query;
 
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
