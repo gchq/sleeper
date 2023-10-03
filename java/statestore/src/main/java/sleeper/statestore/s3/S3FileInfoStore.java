@@ -27,7 +27,6 @@ import sleeper.core.key.KeySerDe;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
@@ -413,9 +412,7 @@ class S3FileInfoStore implements FileInfoStore {
                         new Field("partitionId", new StringType()),
                         new Field("lastStateStoreUpdateTime", new LongType()),
                         new Field("numberOfRecords", new LongType()),
-                        new Field("jobId", new StringType()),
-                        new Field("minRowKeys", new ByteArrayType()),
-                        new Field("maxRowKeys", new ByteArrayType()))
+                        new Field("jobId", new StringType()))
                 .build();
     }
 
@@ -460,7 +457,7 @@ class S3FileInfoStore implements FileInfoStore {
         return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
-    private Record getRecordFromFileInfo(FileInfo fileInfo) throws IOException {
+    private Record getRecordFromFileInfo(FileInfo fileInfo) {
         Record record = new Record();
         record.put("fileName", fileInfo.getFilename());
         record.put("fileStatus", "" + fileInfo.getFileStatus());
@@ -472,8 +469,6 @@ class S3FileInfoStore implements FileInfoStore {
         } else {
             record.put("jobId", fileInfo.getJobId());
         }
-        record.put("minRowKeys", keySerDe.serialise(fileInfo.getMinRowKey()));
-        record.put("maxRowKeys", keySerDe.serialise(fileInfo.getMaxRowKey()));
         return record;
     }
 
@@ -486,8 +481,6 @@ class S3FileInfoStore implements FileInfoStore {
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
-                .minRowKey(keySerDe.deserialise((byte[]) record.get("minRowKeys")))
-                .maxRowKey(keySerDe.deserialise((byte[]) record.get("maxRowKeys")))
                 .rowKeyTypes(rowKeyTypes)
                 .build();
     }

@@ -42,7 +42,6 @@ public class FileInfoTestData {
     public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(DEFAULT_SCHEMA.getRowKeyTypes())
-                .minRowKey(Key.create("")).maxRowKey(null)
                 .filename(filename).partitionId("root")
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
@@ -52,7 +51,6 @@ public class FileInfoTestData {
     public static FileInfo defaultPartitionSingleFileWithRecords(Partition partition, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
-                .minRowKey(minRowKey(partition)).maxRowKey(maxRowKey(partition))
                 .filename(partition.getId() + ".parquet").partitionId(partition.getId())
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))

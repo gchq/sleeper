@@ -23,16 +23,6 @@
   },
   "activeFiles": [
     {
-      "minRowKey": {
-        "key": [
-          "abc"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "def"
-        ]
-      },
       "filename": "A.parquet",
       "partitionId": "A",
       "numberOfRecords": 50000001,
@@ -40,16 +30,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "cde"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "lmn"
-        ]
-      },
       "filename": "D.parquet",
       "partitionId": "D",
       "numberOfRecords": 50000002,

@@ -114,8 +114,6 @@ public class FileInfoFactory {
     private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
-                .minRowKey(rowKey(min))
-                .maxRowKey(rowKey(max))
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)

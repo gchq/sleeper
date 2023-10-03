@@ -28,7 +28,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -158,8 +157,6 @@ public class S3StateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -173,8 +170,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
-            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -189,8 +184,6 @@ public class S3StateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .minRowKey(Key.create(new byte[]{1}))
-                .maxRowKey(Key.create(new byte[]{10}))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -204,10 +197,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey().size()).isOne();
-            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
-            assertThat(found.getMaxRowKey().size()).isOne();
-            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -222,8 +211,6 @@ public class S3StateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .minRowKey(Key.create(Arrays.asList(new byte[]{1}, new byte[]{2})))
-                .maxRowKey(Key.create(Arrays.asList(new byte[]{10}, new byte[]{11})))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -237,12 +224,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey().size()).isEqualTo(2);
-            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
-            assertThat((byte[]) found.getMinRowKey().get(1)).containsExactly(new byte[]{2});
-            assertThat(found.getMaxRowKey().size()).isEqualTo(2);
-            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-            assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -257,8 +238,6 @@ public class S3StateStoreIT {
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .minRowKey(Key.create(Arrays.asList(1L, "Z")))
-                .maxRowKey(Key.create(Arrays.asList(10L, "A")))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -272,8 +251,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
-            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -290,8 +267,6 @@ public class S3StateStoreIT {
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + i)
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(1_000_000L)
                     .numberOfRecords(1L)
                     .build();
@@ -315,8 +290,6 @@ public class S3StateStoreIT {
                 .rowKeyTypes(new LongType())
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -335,8 +308,6 @@ public class S3StateStoreIT {
                 .rowKeyTypes(new LongType())
                 .filename("abc")
                 .partitionId("1")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -355,8 +326,6 @@ public class S3StateStoreIT {
                 .rowKeyTypes(new LongType())
                 .filename("abc")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -379,8 +348,6 @@ public class S3StateStoreIT {
                     .filename("file-" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("root")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(1_000_000L)
                     .numberOfRecords(1L)
                     .build();
@@ -424,8 +391,6 @@ public class S3StateStoreIT {
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId(partition.getId())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(file1Time)
                 .build();
@@ -436,8 +401,6 @@ public class S3StateStoreIT {
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(file2Time)
                 .build();
@@ -449,8 +412,6 @@ public class S3StateStoreIT {
                 .filename("file3")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId(partition.getId())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(file3Time)
                 .build();
@@ -481,8 +442,6 @@ public class S3StateStoreIT {
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -492,8 +451,6 @@ public class S3StateStoreIT {
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("2")
-                .minRowKey(Key.create(20L))
-                .maxRowKey(Key.create(29L))
                 .lastStateStoreUpdateTime(2_000_000L)
                 .numberOfRecords(2L)
                 .build();
@@ -504,8 +461,6 @@ public class S3StateStoreIT {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("3")
                 .jobId("job1")
-                .minRowKey(Key.create(100L))
-                .maxRowKey(Key.create(10000L))
                 .lastStateStoreUpdateTime(3_000_000L)
                 .numberOfRecords(3L)
                 .build();
@@ -528,8 +483,6 @@ public class S3StateStoreIT {
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -538,8 +491,6 @@ public class S3StateStoreIT {
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId("5")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(2_000_000L)
                 .numberOfRecords(2L)
                 .build();
@@ -563,8 +514,6 @@ public class S3StateStoreIT {
                 .filename("file1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("4")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -573,8 +522,6 @@ public class S3StateStoreIT {
                 .filename("file2")
                 .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                 .partitionId("5")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(2_000_000L)
                 .numberOfRecords(2L)
                 .build();
@@ -597,8 +544,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords(1L)
                     .build();
@@ -610,8 +555,6 @@ public class S3StateStoreIT {
                 .filename("file-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(4L)
                 .build();
@@ -636,8 +579,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords((long) i)
                     .build();
@@ -649,8 +590,6 @@ public class S3StateStoreIT {
                 .filename("file-left-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(5L))
                 .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(5L)
                 .build();
@@ -659,8 +598,6 @@ public class S3StateStoreIT {
                 .filename("file-right-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .minRowKey(Key.create(5L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(5L)
                 .build();
@@ -685,8 +622,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(1_000_000L)
                     .numberOfRecords(1L)
                     .build();
@@ -703,8 +638,6 @@ public class S3StateStoreIT {
                 .filename("file-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(1_000_000L)
                 .numberOfRecords(1L)
                 .build();
@@ -727,8 +660,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords((long) i)
                     .build();
@@ -740,8 +671,6 @@ public class S3StateStoreIT {
                 .filename("file-left-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(5L))
                 .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(5L)
                 .build();
@@ -750,8 +679,6 @@ public class S3StateStoreIT {
                 .filename("file-right-new")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("7")
-                .minRowKey(Key.create(5L))
-                .maxRowKey(Key.create(10L))
                 .lastStateStoreUpdateTime(10_000_000L)
                 .numberOfRecords(5L)
                 .build();
@@ -780,8 +707,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("8")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords(1L)
                     .build();
@@ -814,8 +739,6 @@ public class S3StateStoreIT {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("9")
                     .jobId("compactionJob")
-                    .minRowKey(Key.create(1L))
-                    .maxRowKey(Key.create(10L))
                     .lastStateStoreUpdateTime(i * 1_000_000L)
                     .numberOfRecords(1L)
                     .build();
@@ -950,8 +873,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + (i % 5))
-                    .minRowKey(Key.create((long) i % 5))
-                    .maxRowKey(Key.create((long) i % 5))
                     .lastStateStoreUpdateTime(1_000_000L)
                     .numberOfRecords((long) i)
                     .build();

@@ -36,7 +36,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -289,8 +288,6 @@ public class GarbageCollectorIT {
                 .rowKeyTypes(new IntType())
                 .filename(filename)
                 .partitionId(partitionId)
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .numberOfRecords(100L)
                 .lastStateStoreUpdateTime(lastUpdateTime)
                 .fileStatus(status)
