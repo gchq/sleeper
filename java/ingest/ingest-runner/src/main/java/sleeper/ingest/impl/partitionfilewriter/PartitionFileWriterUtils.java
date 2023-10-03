@@ -22,7 +22,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -72,8 +71,6 @@ public class PartitionFileWriterUtils {
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
-                .minRowKey(Key.create(minKey))
-                .maxRowKey(Key.create(maxKey))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }

@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileInfo;
@@ -69,8 +68,6 @@ public class SizeRatioCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .numberOfRecords(i == 7 ? 100L : 50L)
                     .rowKeyTypes(new IntType())
-                    .minRowKey(Key.create(1))
-                    .maxRowKey(Key.create(100))
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -111,8 +108,6 @@ public class SizeRatioCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .numberOfRecords((long) Math.pow(2, i + 1))
                     .rowKeyTypes(new IntType())
-                    .minRowKey(Key.create(1))
-                    .maxRowKey(Key.create(100))
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -157,8 +152,6 @@ public class SizeRatioCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .rowKeyTypes(new IntType())
-                    .minRowKey(Key.create(1))
-                    .maxRowKey(Key.create(100))
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -220,8 +213,6 @@ public class SizeRatioCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
                     .rowKeyTypes(new IntType())
-                    .minRowKey(Key.create(1))
-                    .maxRowKey(Key.create(100))
                     .build();
             fileInfos.add(fileInfo);
         }

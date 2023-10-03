@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.time.Instant;
@@ -152,14 +151,6 @@ public class FileInfo {
 
         public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
             this.rowKeyTypes = Arrays.asList(rowKeyTypes);
-            return this;
-        }
-
-        public Builder minRowKey(Key minRowKey) {
-            return this;
-        }
-
-        public Builder maxRowKey(Key maxRowKey) {
             return this;
         }
 

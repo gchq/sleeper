@@ -26,7 +26,6 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -152,8 +151,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
-                .minRowKey(Key.create(minKey))
-                .maxRowKey(Key.create(maxKey))
                 .lastStateStoreUpdateTime(updateTime)
                 .build();
     }

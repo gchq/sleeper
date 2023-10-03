@@ -49,7 +49,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -157,8 +156,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -166,8 +163,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
                 .build();
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -175,8 +170,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(100L)
-                .minRowKey(Key.create(0L))
-                .maxRowKey(Key.create(198L))
                 .build();
         FileInfo fileInfo4 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
@@ -184,8 +177,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("1")
                 .numberOfRecords(100L)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(199L))
                 .build();
         ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);
         for (int i = 0; i < 100; i++) {

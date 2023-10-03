@@ -583,8 +583,6 @@ public class ReinitialiseTableIT {
                 .fileStatus(fileStatus)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
-                .minRowKey(minRowKey)
-                .maxRowKey(maxRowKey)
                 .lastStateStoreUpdateTime(100L)
                 .build();
     }

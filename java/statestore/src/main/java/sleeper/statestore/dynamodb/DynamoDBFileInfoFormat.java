@@ -22,7 +22,6 @@ import sleeper.core.key.KeySerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -61,15 +60,14 @@ class DynamoDBFileInfoFormat {
      * @param fileInfo  the File
      * @param newStatus the new status of that file
      * @return A Dynamo record
-     * @throws StateStoreException if the Dynamo record fails to be created
      */
-    Map<String, AttributeValue> createRecordWithStatus(FileInfo fileInfo, FileInfo.FileStatus newStatus) throws StateStoreException {
+    Map<String, AttributeValue> createRecordWithStatus(FileInfo fileInfo, FileInfo.FileStatus newStatus) {
         Map<String, AttributeValue> record = createRecord(fileInfo);
         record.put(STATUS, createStringAttribute(newStatus.toString()));
         return record;
     }
 
-    Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) throws StateStoreException {
+    Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) {
         Map<String, AttributeValue> record = createRecord(fileInfo);
         record.put(JOB_ID, createStringAttribute(jobId));
         return record;
@@ -80,9 +78,8 @@ class DynamoDBFileInfoFormat {
      *
      * @param fileInfo the File which the record is about
      * @return A record in DynamoDB
-     * @throws StateStoreException if the record fails to create
      */
-    Map<String, AttributeValue> createRecord(FileInfo fileInfo) throws StateStoreException {
+    Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
 
         itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
@@ -98,7 +95,6 @@ class DynamoDBFileInfoFormat {
         if (null != fileInfo.getLastStateStoreUpdateTime()) {
             itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
         }
-
         return itemValues;
     }
 
@@ -124,12 +120,6 @@ class DynamoDBFileInfoFormat {
                 .filename(item.get(NAME).getS());
         if (null != item.get(NUMBER_LINES)) {
             fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
-        }
-        if (null != item.get(MIN_KEY)) {
-            fileInfoBuilder.minRowKey(keySerDe.deserialise(item.get(MIN_KEY).getB().array()));
-        }
-        if (null != item.get(MAX_KEY)) {
-            fileInfoBuilder.maxRowKey(keySerDe.deserialise(item.get(MAX_KEY).getB().array()));
         }
         if (null != item.get(JOB_ID)) {
             fileInfoBuilder.jobId(item.get(JOB_ID).getS());

@@ -37,7 +37,6 @@ import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.key.Key;
 import sleeper.core.record.Record;
 import sleeper.core.record.SingleKeyComparator;
 import sleeper.core.record.process.RecordsProcessed;
@@ -378,8 +377,6 @@ public class CompactSortedFiles {
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten)
-                .minRowKey(recordsWritten > 0 ? Key.create(minRowKey0) : null)
-                .maxRowKey(recordsWritten > 0 ? Key.create(maxRowKey0) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
@@ -419,8 +416,6 @@ public class CompactSortedFiles {
                 .partitionId(childPartitions.get(0))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
-                .minRowKey(recordsWritten.getLeft() > 0 ? Key.create(minKeys.getLeft()) : null)
-                .maxRowKey(recordsWritten.getLeft() > 0 ? Key.create(maxKeys.getLeft()) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         FileInfo rightFileInfo = FileInfo.builder()
@@ -429,8 +424,6 @@ public class CompactSortedFiles {
                 .partitionId(childPartitions.get(1))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getRight())
-                .minRowKey(recordsWritten.getRight() > 0 ? Key.create(minKeys.getRight()) : null)
-                .maxRowKey(recordsWritten.getRight() > 0 ? Key.create(maxKeys.getRight()) : null)
                 .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {

@@ -17,14 +17,12 @@ package sleeper.core.statestore;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,8 +38,6 @@ public class FileInfoSerDeTest {
                 .numberOfRecords(100L)
                 .partitionId("id")
                 .jobId("JOB")
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(10))
                 .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
@@ -63,8 +59,6 @@ public class FileInfoSerDeTest {
                 .numberOfRecords(100L)
                 .partitionId("id")
                 .jobId("JOB")
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
@@ -86,8 +80,6 @@ public class FileInfoSerDeTest {
                 .numberOfRecords(100L)
                 .partitionId("id")
                 .jobId("JOB")
-                .minRowKey(Key.create("1"))
-                .maxRowKey(Key.create("10"))
                 .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
@@ -109,8 +101,6 @@ public class FileInfoSerDeTest {
                 .numberOfRecords(100L)
                 .partitionId("id")
                 .jobId("JOB")
-                .minRowKey(Key.create(new byte[]{}))
-                .maxRowKey(Key.create(new byte[]{64, 64}))
                 .build();
         FileInfoSerDe fileInfoSerDe = new FileInfoSerDe();
 
@@ -128,8 +118,6 @@ public class FileInfoSerDeTest {
         FileInfo fileInfo = FileInfo.builder()
                 .filename("abc")
                 .rowKeyTypes(new ByteArrayType(), new StringType())
-                .minRowKey(Key.create(Arrays.asList(new byte[]{}, "A")))
-                .maxRowKey(Key.create(Arrays.asList(new byte[]{64, 64}, "Z")))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("id")
