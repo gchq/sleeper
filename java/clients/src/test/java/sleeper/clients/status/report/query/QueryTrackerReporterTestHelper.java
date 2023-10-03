@@ -60,6 +60,13 @@ public class QueryTrackerReporterTestHelper {
         return output.toString();
     }
 
+    public static String getJsonReport(TrackerQuery query, List<TrackedQuery> trackedQueries) {
+        ToStringPrintStream output = new ToStringPrintStream();
+        new JsonQueryTrackerReporter(output.getPrintStream())
+                .report(query, trackedQueries);
+        return output.toString();
+    }
+
     public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
                                       JobQuery.Type queryType) {
         ToStringPrintStream out = new ToStringPrintStream();
