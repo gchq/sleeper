@@ -100,7 +100,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
     private void writeQueryFields(TrackedQuery trackedQuery, TableRow.Builder builder) {
         builder.value(state, trackedQuery.getLastKnownState())
                 .value(queryId, trackedQuery.getQueryId())
-                .value(subQueryId, "-".equals(trackedQuery.getSubQueryId()) ? "" : trackedQuery.getSubQueryId())
+                .value(subQueryId, trackedQuery.getSubQueryId())
                 .value(lastUpdateTime, Instant.ofEpochMilli(trackedQuery.getLastUpdateTime()))
                 .value(recordCount, trackedQuery.getRecordCount());
     }
