@@ -53,10 +53,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final Supplier<Instant> timeSupplier;
     private final ParquetWriter<Record> parquetWriter;
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
-    private final String rowKeyName;
     private long recordsWrittenToCurrentPartition;
-    private Object currentPartitionMinKey;
-    private Object currentPartitionMaxKey;
 
     /**
      * Construct a {@link DirectPartitionFileWriter}.
@@ -93,10 +90,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
-        this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
         this.recordsWrittenToCurrentPartition = 0L;
-        this.currentPartitionMinKey = null;
-        this.currentPartitionMaxKey = null;
     }
 
 
@@ -113,10 +107,6 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 sleeperSchema,
                 keyFieldToSketchMap,
                 record);
-        if (currentPartitionMinKey == null) {
-            currentPartitionMinKey = record.get(rowKeyName);
-        }
-        currentPartitionMaxKey = record.get(rowKeyName);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
@@ -145,8 +135,6 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 partitionParquetFileName,
                 partition.getId(),
                 recordsWrittenToCurrentPartition,
-                currentPartitionMinKey,
-                currentPartitionMaxKey,
                 timeSupplier.get().toEpochMilli());
         return CompletableFuture.completedFuture(fileInfo);
     }

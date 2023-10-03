@@ -76,10 +76,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final Supplier<Instant> timeSupplier;
     private final ParquetWriter<Record> parquetWriter;
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
-    private final String rowKeyName;
     private long recordsWrittenToCurrentPartition;
-    private Object currentPartitionMinKey;
-    private Object currentPartitionMaxKey;
 
     /**
      * Warning: this constructor allows a bespoke Hadoop configuration to be specified, but it will not always be used
@@ -119,10 +116,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createKeyFieldToSketchMap(sleeperSchema);
-        this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
         this.recordsWrittenToCurrentPartition = 0L;
-        this.currentPartitionMinKey = null;
-        this.currentPartitionMaxKey = null;
     }
 
     /**
@@ -132,8 +126,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
-     * @param minKey          -
-     * @param maxKey          -
      * @param updateTime      -
      * @return The {@link FileInfo} object
      */
@@ -142,8 +134,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             String filename,
             String partitionId,
             long numberOfRecords,
-            Object minKey,
-            Object maxKey,
             long updateTime) {
         return FileInfo.builder()
                 .rowKeyTypes(sleeperSchema.getRowKeyTypes())
@@ -239,10 +229,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     public void append(Record record) throws IOException {
         parquetWriter.write(record);
         updateKeyFieldToSketchMap(keyFieldToSketchMap, sleeperSchema, record);
-        if (currentPartitionMinKey == null) {
-            currentPartitionMinKey = record.get(rowKeyName);
-        }
-        currentPartitionMaxKey = record.get(rowKeyName);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
@@ -275,8 +261,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
                 recordsWrittenToCurrentPartition,
-                currentPartitionMinKey,
-                currentPartitionMaxKey,
                 timeSupplier.get().toEpochMilli());
         // Start the asynchronous upload of the files to S3
         CompletableFuture<?> partitionFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
