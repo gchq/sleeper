@@ -67,4 +67,9 @@ public class FixedPartitionStore implements PartitionStore {
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) {
         throw new UnsupportedOperationException("Cannot split partitions with FixedPartitionStore");
     }
+
+    @Override
+    public void clearTable() {
+        throw new UnsupportedOperationException("Cannot clear partitions with FixedPartitionStore");
+    }
 }

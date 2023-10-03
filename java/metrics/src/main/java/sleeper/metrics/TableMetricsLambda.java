@@ -31,25 +31,21 @@ import software.amazon.lambda.powertools.metrics.Metrics;
 import software.amazon.lambda.powertools.metrics.MetricsUtils;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.partition.Partition;
-import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.table.job.TableLister;
 
 import java.util.List;
-import java.util.LongSummaryStatistics;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<String, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
 
-    private AmazonS3 s3Client;
-    private AmazonDynamoDB dynamoClient;
+    private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoClient;
 
     public TableMetricsLambda() {
         this(
@@ -65,82 +61,61 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
 
     @Override
     @Metrics
-    public Void handleRequest(String input, Context context) {
-        LOGGER.info("Received event: {}", input);
-
-        String[] config = input.split("\\|");
-        String configBucketName = config[0];
-        String tableName = config[1];
-        LOGGER.info("Config bucket is {}, table name is {}", configBucketName, tableName);
+    public Void handleRequest(String configBucketName, Context context) {
+        LOGGER.info("Received event for config bucket: {}", configBucketName);
 
         try {
-            publishStateStoreMetrics(configBucketName, tableName);
+            publishStateStoreMetrics(configBucketName);
         } catch (Exception e) {
-            LOGGER.error("{}", e);
+            LOGGER.error("Failed publishing metrics", e);
         }
 
         return null;
     }
 
-    public void publishStateStoreMetrics(String configBucketName, String tableName) throws StateStoreException {
+    public void publishStateStoreMetrics(String configBucketName) {
         LOGGER.info("Loading instance properties from config bucket {}", configBucketName);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucketName);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        List<TableProperties> tablePropertiesList = new TableLister(s3Client, instanceProperties).listTables().stream()
+                .map(tablePropertiesProvider::getTableProperties)
+                .collect(Collectors.toUnmodifiableList());
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, new Configuration());
-        StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
-
-        LOGGER.info("Querying state store for table {} for active files", tableName);
-        List<FileInfo> activeFiles = stateStore.getActiveFiles();
-        LOGGER.info("Found {} active files for table {}", activeFiles.size(), tableName);
-        int fileCount = activeFiles.size();
-        long recordCount = activeFiles.stream().mapToLong(activeFile -> activeFile.getNumberOfRecords()).sum();
-        LOGGER.info("Total number of records in table {} is {}", tableName, recordCount);
-
-        LongSummaryStatistics filesPerPartitionStats = activeFiles.stream().collect(
-                Collectors.groupingBy(
-                        activeFile -> activeFile.getPartitionId(),
-                        Collectors.counting()
-                )
-        ).values().stream().mapToLong(value -> value).summaryStatistics();
-        LOGGER.info("{}", filesPerPartitionStats);
-
-        LOGGER.info("Querying state store for table {} for partitions", tableName);
-        List<Partition> partitions = stateStore.getAllPartitions();
-        int partitionCount = partitions.size();
-        long leafPartitionCount = partitions.stream().filter(Partition::isLeafPartition).count();
-        LOGGER.info("Found {} partitions and {} leaf partitions for table {}", partitionCount, leafPartitionCount, tableName);
 
         String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);
-        metricsLogger.setDimensions(DimensionSet.of(
-                "instanceId", instanceProperties.get(ID),
-                "tableName", tableName
-        ));
 
-        metricsLogger.putMetric("ActiveFileCount", fileCount, Unit.COUNT);
-        metricsLogger.putMetric("RecordCount", recordCount, Unit.COUNT);
-        metricsLogger.putMetric("PartitionCount", partitionCount, Unit.COUNT);
-        metricsLogger.putMetric("LeafPartitionCount", leafPartitionCount, Unit.COUNT);
-        // TODO: Work out how to publish min and max active files per partition too
-        // This is possible via the CloudMetrics API by publishing a statistic set (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html#publishingDataPoints1)
-        // Is it possible when publishing via the embedded metric format though?
-        metricsLogger.putMetric("AverageActiveFilesPerPartition", filesPerPartitionStats.getAverage(), Unit.COUNT);
-        metricsLogger.flush();
+        TableMetrics.streamFrom(instanceProperties, tablePropertiesList, stateStoreProvider).forEach(metrics -> {
+            metricsLogger.setDimensions(DimensionSet.of(
+                    "instanceId", metrics.getInstanceId(),
+                    "tableName", metrics.getTableName()
+            ));
+
+            metricsLogger.putMetric("ActiveFileCount", metrics.getFileCount(), Unit.COUNT);
+            metricsLogger.putMetric("RecordCount", metrics.getRecordCount(), Unit.COUNT);
+            metricsLogger.putMetric("PartitionCount", metrics.getPartitionCount(), Unit.COUNT);
+            metricsLogger.putMetric("LeafPartitionCount", metrics.getLeafPartitionCount(), Unit.COUNT);
+            // TODO: Work out how to publish min and max active files per partition too
+            // This is possible via the CloudMetrics API by publishing a statistic set (https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html#publishingDataPoints1)
+            // Is it possible when publishing via the embedded metric format though?
+            metricsLogger.putMetric("AverageActiveFilesPerPartition", metrics.getAverageActiveFilesPerPartition(), Unit.COUNT);
+            metricsLogger.flush();
+        });
     }
 
-    public static void main(String[] args) throws StateStoreException {
-        if (args.length != 2) {
-            throw new RuntimeException("Syntax: " + TableMetricsLambda.class.getSimpleName() + " <configBucketName> <tableName>");
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            throw new RuntimeException("Syntax: " + TableMetricsLambda.class.getSimpleName() + " <configBucketName>");
         }
 
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
 
         TableMetricsLambda lambda = new TableMetricsLambda(s3Client, dynamoClient);
-        lambda.publishStateStoreMetrics(args[0], args[1]);
+        lambda.publishStateStoreMetrics(args[0]);
     }
 }

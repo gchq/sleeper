@@ -60,6 +60,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
+import sleeper.statestore.s3.S3StateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -81,9 +82,9 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -116,7 +117,7 @@ public class ReinitialiseTableIT {
     private static AmazonS3 s3Client;
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private TableProperties tableProperties;
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
 
     @BeforeEach
     public void beforeEach() {
@@ -124,7 +125,6 @@ public class ReinitialiseTableIT {
         s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
     }
 
     @AfterEach
@@ -161,6 +161,7 @@ public class ReinitialiseTableIT {
         @BeforeEach
         public void setup() {
             tableProperties.set(STATESTORE_CLASSNAME, DYNAMO_STATE_STORE_CLASS);
+            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         }
 
         @Test
@@ -175,7 +176,8 @@ public class ReinitialiseTableIT {
             reinitialiseTable(tableProperties);
 
             // Then
-            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
+            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
             assertThat(dynamoStateStore.getAllPartitions()).hasSize(3);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(2);
             assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
@@ -193,9 +195,9 @@ public class ReinitialiseTableIT {
             reinitialiseTableAndDeletePartitions(tableProperties);
 
             // Then
-            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
-            List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
-            assertThat(partitionsList).hasSize(1);
+            assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
+            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
+            assertThat(dynamoStateStore.getAllPartitions()).hasSize(1);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(1);
             assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
         }
@@ -213,7 +215,8 @@ public class ReinitialiseTableIT {
             reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
 
             // Then
-            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
+            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
             List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -237,7 +240,8 @@ public class ReinitialiseTableIT {
             reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
 
             // Then
-            assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(tableProperties, dynamoStateStore);
+            assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
+            assertThat(dynamoStateStore.getReadyForGCFiles()).isExhausted();
             List<Partition> partitionsList = dynamoStateStore.getAllPartitions();
             assertThat(partitionsList).hasSize(5);
             assertThat(dynamoStateStore.getLeafPartitions()).hasSize(3);
@@ -269,8 +273,7 @@ public class ReinitialiseTableIT {
             reinitialiseTable(tableProperties);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "2");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "2");
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
                     .sorted(Comparator.comparing(FileInfo::getFilename))
@@ -293,8 +296,7 @@ public class ReinitialiseTableIT {
             reinitialiseTableAndDeletePartitions(tableProperties);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "1");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
@@ -321,8 +323,7 @@ public class ReinitialiseTableIT {
             reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "1");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
@@ -354,8 +355,7 @@ public class ReinitialiseTableIT {
             reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
 
             // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-                    tableProperties, "1", "1");
+            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
 
             List<FileInfo> activeFiles = s3StateStore.getActiveFiles()
                     .stream()
@@ -374,23 +374,12 @@ public class ReinitialiseTableIT {
         }
     }
 
-    private void assertDynamoStateStoreActiveFilesAndGCFilesDynamoTablesAreNowEmpty(
-            TableProperties tableProperties, DynamoDBStateStore dynamoStateStore) throws StateStoreException {
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
-                .withConsistentRead(true);
-        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems()).isEmpty();
-        assertThat(dynamoStateStore.getActiveFiles()).isEmpty();
-    }
-
-    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(TableProperties tableProperties,
-                                                                             String expectedFilesVersion,
+    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(String expectedFilesVersion,
                                                                              String expectedPartitionsVersion) {
         // - The revisions file should have two entries one for partitions and one for files and both should now be
         //   set to version 00000000000001
         ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(REVISION_TABLENAME))
+                .withTableName(instanceProperties.get(REVISION_TABLENAME))
                 .withConsistentRead(true);
         ScanResult scanResult = dynamoDBClient.scan(scanRequest);
         assertThat(scanResult.getItems()).hasSize(2);
@@ -504,24 +493,15 @@ public class ReinitialiseTableIT {
     private DynamoDBStateStore setupDynamoStateStore(TableProperties tableProperties)
             throws IOException, StateStoreException {
         //  - Create DynamoDBStateStore
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator =
-                new DynamoDBStateStoreCreator(instanceProperties, tableProperties, dynamoDBClient);
-        DynamoDBStateStore dynamoDBStateStore = dynamoDBStateStoreCreator.create();
-
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
+        DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         dynamoDBStateStore.initialise();
-
         setupPartitionsAndAddFileInfo(dynamoDBStateStore);
 
         // - Check DynamoDBStateStore is set up correctly
-        // - The ready for GC table should have 1 item in (but it's not returned by getReadyForGCFiles()
-        //   because it is less than 10 seconds since it was marked as ready for GC). As the StateStore API
-        //   does not have a method to return all values in the ready for gc table, we query the table
-        //   directly.
-        ScanRequest scanRequest = new ScanRequest()
-                .withTableName(tableProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
-                .withConsistentRead(true);
-        ScanResult scanResult = dynamoDBClient.scan(scanRequest);
-        assertThat(scanResult.getItems()).hasSize(1);
+        // - The ready for GC table should have 1 item in, and we set the GC delay to 0 to return all items.
+        assertThat(dynamoDBStateStore.getReadyForGCFiles())
+                .toIterable().hasSize(1);
 
         // - Check DynamoDBStateStore has correct active files
         List<FileInfo> activeFiles = dynamoDBStateStore.getActiveFiles()
@@ -539,7 +519,7 @@ public class ReinitialiseTableIT {
 
     private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException, StateStoreException {
         //  - CreateS3StateStore
-        createRevisionDynamoTable(tableProperties.get(REVISION_TABLENAME));
+        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
         Configuration configuration = new Configuration();
         configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
@@ -555,7 +535,7 @@ public class ReinitialiseTableIT {
         // - Check S3StateStore is set up correctly
         // - The revisions file should have two entries one for partitions and one for files and both should now be
         //   set to version 2
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(tableProperties, "2", "2");
+        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("2", "2");
 
         // - Check S3StateStore has correct active files
         assertThat(s3StateStore.getActiveFiles()).hasSize(2);

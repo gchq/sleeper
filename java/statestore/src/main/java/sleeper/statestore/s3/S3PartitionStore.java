@@ -15,12 +15,7 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -45,49 +40,39 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
-import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
-import static sleeper.statestore.s3.S3StateStore.getZeroPaddedLong;
+import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
-public class S3PartitionStore implements PartitionStore {
+class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
-    public static final String CURRENT_PARTITIONS_REVISION_ID_KEY = "CURRENT_PARTITIONS_REVISION_ID_KEY";
+    private static final Schema PARTITION_SCHEMA = initialisePartitionSchema();
 
     private final List<PrimitiveType> rowKeyTypes;
-    private final AmazonDynamoDB dynamoDB;
-    private final String dynamoRevisionIdTable;
     private final S3RevisionUtils s3RevisionUtils;
-    private final Schema partitionSchema;
     private final Configuration conf;
     private final RegionSerDe regionSerDe;
     private final Schema tableSchema;
-    private final String fs;
-    private final String s3Path;
-
+    private final String stateStorePath;
 
     private S3PartitionStore(Builder builder) {
-        dynamoDB = builder.dynamoDB;
-        dynamoRevisionIdTable = builder.dynamoRevisionIdTable;
-        conf = builder.conf;
-        tableSchema = builder.tableSchema;
+        conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
+        tableSchema = Objects.requireNonNull(builder.tableSchema, "tableSchema must not be null");
         regionSerDe = new RegionSerDe(tableSchema);
         rowKeyTypes = tableSchema.getRowKeyTypes();
-        fs = builder.fs;
-        s3Path = builder.s3Path;
-        s3RevisionUtils = new S3RevisionUtils(dynamoDB, dynamoRevisionIdTable);
-        partitionSchema = initialisePartitionSchema();
+        stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
+        s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
     }
 
     public static Builder builder() {
@@ -166,7 +151,7 @@ public class S3PartitionStore implements PartitionStore {
     public List<Partition> getAllPartitions() throws StateStoreException {
         RevisionId revisionId = s3RevisionUtils.getCurrentPartitionsRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         String path = getPartitionsPath(revisionId);
         try {
@@ -223,7 +208,7 @@ public class S3PartitionStore implements PartitionStore {
         }
     }
 
-    private Schema initialisePartitionSchema() {
+    private static Schema initialisePartitionSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("partitionId", new StringType()))
                 .valueFields(
@@ -235,9 +220,19 @@ public class S3PartitionStore implements PartitionStore {
                 .build();
     }
 
+    @Override
+    public void clearTable() {
+        Path path = new Path(stateStorePath + "/partitions");
+        try {
+            path.getFileSystem(conf).delete(path, true);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        s3RevisionUtils.deletePartitionsRevision();
+    }
 
     private String getPartitionsPath(RevisionId revisionId) {
-        return fs + s3Path + "/statestore/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
+        return stateStorePath + "/partitions/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-partitions.parquet";
     }
 
     @Override
@@ -254,20 +249,8 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     private void setPartitions(List<Partition> partitions) throws StateStoreException {
-        // Validate that there is no current revision id
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_PARTITIONS_REVISION_ID_KEY));
-        GetItemRequest getItemRequest = new GetItemRequest()
-                .withTableName(dynamoRevisionIdTable)
-                .withKey(item);
-        GetItemResult getItemResult = dynamoDB.getItem(getItemRequest);
-        if (null != getItemResult.getItem()) {
-            throw new StateStoreException("Dynamo should not contain current revision id; found " + item);
-        }
-
         // Write partitions to file
-        long version = 1L;
-        String versionString = getZeroPaddedLong(version);
+        String versionString = FIRST_REVISION;
         RevisionId revisionId = new RevisionId(versionString, UUID.randomUUID().toString());
         String path = getPartitionsPath(revisionId);
         try {
@@ -278,13 +261,7 @@ public class S3PartitionStore implements PartitionStore {
         }
 
         // Update Dynamo
-        item.put(CURRENT_REVISION, new AttributeValue().withS(revisionId.getRevision()));
-        item.put(CURRENT_UUID, new AttributeValue().withS(revisionId.getUuid()));
-        PutItemRequest putItemRequest = new PutItemRequest()
-                .withTableName(dynamoRevisionIdTable)
-                .withItem(item);
-        dynamoDB.putItem(putItemRequest);
-        LOGGER.debug("Put item to DynamoDB (item = {}, table = {})", item, dynamoRevisionIdTable);
+        s3RevisionUtils.saveFirstPartitionRevision(revisionId);
     }
 
     private Map<String, Partition> getMapFromPartitionIdToPartition(List<Partition> partitions) throws StateStoreException {
@@ -300,7 +277,7 @@ public class S3PartitionStore implements PartitionStore {
     }
 
     private void writePartitionsToParquet(List<Partition> partitions, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), partitionSchema, conf);
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), PARTITION_SCHEMA, conf);
 
         for (Partition partition : partitions) {
             recordWriter.write(getRecordFromPartition(partition));
@@ -311,7 +288,7 @@ public class S3PartitionStore implements PartitionStore {
 
     private List<Partition> readPartitionsFromParquet(String path) throws IOException {
         List<Partition> partitions = new ArrayList<>();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), partitionSchema)
+        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), PARTITION_SCHEMA)
                 .withConf(conf)
                 .build();
         ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
@@ -354,49 +331,36 @@ public class S3PartitionStore implements PartitionStore {
         return partitionBuilder.build();
     }
 
-    public static final class Builder {
-        private AmazonDynamoDB dynamoDB;
-        private String dynamoRevisionIdTable;
+    static final class Builder {
         private Configuration conf;
         private Schema tableSchema;
-        private String fs;
-        private String s3Path;
+        private String stateStorePath;
+        private S3RevisionUtils s3RevisionUtils;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
-            return this;
-        }
-
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
-            this.dynamoRevisionIdTable = dynamoRevisionIdTable;
-            return this;
-        }
-
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
         }
 
-        public Builder tableSchema(Schema tableSchema) {
+        Builder tableSchema(Schema tableSchema) {
             this.tableSchema = tableSchema;
             return this;
         }
 
-
-        public Builder fs(String fs) {
-            this.fs = fs;
+        Builder stateStorePath(String stateStorePath) {
+            this.stateStorePath = stateStorePath;
             return this;
         }
 
-        public Builder s3Path(String s3Path) {
-            this.s3Path = s3Path;
+        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
+            this.s3RevisionUtils = s3RevisionUtils;
             return this;
         }
 
-        public S3PartitionStore build() {
+        S3PartitionStore build() {
             return new S3PartitionStore(this);
         }
     }

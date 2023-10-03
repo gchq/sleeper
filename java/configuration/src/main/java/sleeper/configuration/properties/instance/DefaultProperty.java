@@ -77,13 +77,6 @@ public interface DefaultProperty {
             .defaultValue("2147483647")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED = Index.propertyBuilder("sleeper.default.table.dynamo.pointintimerecovery")
-            .description("This specifies whether point in time recovery is turned on for DynamoDB tables. This default can " +
-                    "be overridden by a table property.")
-            .defaultValue("false")
-            .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.DEFAULT)
-            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS = Index.propertyBuilder("sleeper.default.table.dynamo.strongly.consistent.reads")
             .description("This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store " +
                     "are strongly consistent. This default can be overridden by a table property.")

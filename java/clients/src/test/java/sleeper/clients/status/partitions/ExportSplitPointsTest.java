@@ -17,6 +17,7 @@ package sleeper.clients.status.partitions;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -26,22 +27,17 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.dynamodb.tools.DynamoDBTestBase;
-import sleeper.statestore.InitialiseStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.core.statestore.inmemory.StateStoreTestHelper;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ExportSplitPointsIT extends DynamoDBTestBase {
+public class ExportSplitPointsTest {
 
-    private StateStore getStateStore(Schema schema) {
-        String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, schema, dynamoDBClient);
-        return dynamoDBStateStoreCreator.create();
+    private StateStore getStateStore() {
+        return StateStoreTestHelper.inMemoryStateStoreWithNoPartitions();
     }
 
     private Schema schemaWithKeyType(PrimitiveType type) {
@@ -56,12 +52,11 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
     public void shouldExportCorrectSplitPointsIntType() throws StateStoreException {
         // Given
         Schema schema = schemaWithKeyType(new IntType());
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = getStateStore();
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When
@@ -75,12 +70,11 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
     public void shouldExportCorrectSplitPointsLongType() throws StateStoreException {
         // Given
         Schema schema = schemaWithKeyType(new LongType());
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = getStateStore();
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10L);
         splitPoints.add(1000L);
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When
@@ -94,12 +88,11 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
     public void shouldExportCorrectSplitPointsStringType() throws StateStoreException {
         // Given
         Schema schema = schemaWithKeyType(new StringType());
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = getStateStore();
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("A");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When
@@ -113,12 +106,11 @@ public class ExportSplitPointsIT extends DynamoDBTestBase {
     public void shouldExportCorrectSplitPointsByteArrayType() throws StateStoreException {
         // Given
         Schema schema = schemaWithKeyType(new ByteArrayType());
-        StateStore stateStore = getStateStore(schema);
+        StateStore stateStore = getStateStore();
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{100});
-        InitialiseStateStore initialiseStateStore = InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When

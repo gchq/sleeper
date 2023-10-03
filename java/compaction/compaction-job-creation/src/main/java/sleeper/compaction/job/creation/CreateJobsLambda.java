@@ -107,7 +107,8 @@ public class CreateJobsLambda {
                 .build();
         this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
+                HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
         this.tableLister = new TableLister(s3Client, instanceProperties);
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }

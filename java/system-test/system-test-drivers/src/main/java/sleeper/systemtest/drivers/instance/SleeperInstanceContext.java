@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
@@ -67,6 +68,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -214,6 +216,10 @@ public class SleeperInstanceContext {
             properties.set(INGEST_SOURCE_BUCKET, systemTest.getSystemTestBucketName());
             properties.set(INGEST_SOURCE_ROLE, systemTest.getSystemTestWriterRoleName());
             properties.set(ECR_REPOSITORY_PREFIX, parameters.getSystemTestShortId());
+            if (parameters.getForceStateStoreClassname() != null) {
+                deployInstanceConfiguration.getTableProperties()
+                        .set(STATESTORE_CLASSNAME, parameters.getForceStateStoreClassname());
+            }
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployInstanceConfiguration)
                     .instanceId(instanceId)
@@ -225,7 +231,7 @@ public class SleeperInstanceContext {
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .extraInstanceProperties(instanceProperties ->
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                    .deployWithClients(sts, regionProvider, s3v2, ecr);
+                    .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
             return loadInstance(identifier, instanceId, tableName);
         }
     }
@@ -235,7 +241,7 @@ public class SleeperInstanceContext {
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties);
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return new Instance(identifier,
                 instanceProperties, tableProperties,
                 tablePropertiesProvider, stateStoreProvider);

@@ -17,8 +17,6 @@
 package sleeper.bulkimport.starter.executor;
 
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -30,7 +28,6 @@ import static sleeper.configuration.properties.instance.BulkImportProperty.BULK_
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class BulkImportArguments {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportArguments.class);
 
     private final InstanceProperties instanceProperties;
     private final BulkImportJob bulkImportJob;
@@ -50,13 +47,12 @@ public class BulkImportArguments {
         return constructArgs(bulkImportJob, taskId, jarLocation);
     }
 
-    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
+    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId) {
         Map<String, String> userConfig = bulkImportJob.getSparkConf();
-        LOGGER.info("Using Spark config {}", userConfig);
 
         String className = bulkImportJob.getClassName() != null ? bulkImportJob.getClassName() : instanceProperties.get(BULK_IMPORT_CLASS_NAME);
 
-        List<String> args = Lists.newArrayList("spark-submit", "--deploy-mode", "cluster", "--class", className);
+        List<String> args = Lists.newArrayList("--class", className);
 
         if (null != userConfig) {
             for (Map.Entry<String, String> configurationItem : userConfig.entrySet()) {
@@ -64,7 +60,13 @@ public class BulkImportArguments {
                 args.add(configurationItem.getKey() + "=" + configurationItem.getValue());
             }
         }
+        return args;
+    }
 
+    public List<String> constructArgs(BulkImportJob bulkImportJob, String taskId, String jarLocation) {
+        List<String> args = constructArgs(bulkImportJob, taskId);
+
+        args.addAll(0, Lists.newArrayList("spark-submit", "--deploy-mode", "cluster"));
         args.add(jarLocation);
         args.add(instanceProperties.get(CONFIG_BUCKET));
         args.add(bulkImportJob.getId());

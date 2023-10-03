@@ -25,11 +25,11 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -41,71 +41,47 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 public class TestUtils {
 
     private TestUtils() {
     }
 
-    public static InstanceProperties createInstance(AmazonS3 s3Client, String dataDir) {
-        String configBucket = s3Client.createBucket(UUID.randomUUID().toString()).getName();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(VERSION, "1");
-        instanceProperties.set(CONFIG_BUCKET, configBucket);
+    public static InstanceProperties createInstance(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String dataDir) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(DATA_BUCKET, dataDir);
         instanceProperties.set(FILE_SYSTEM, "file://"); // Overwrite S3 because we're going to use the standard fs.
-        instanceProperties.set(JARS_BUCKET, "unused");
-        instanceProperties.set(ACCOUNT, "unused");
-        instanceProperties.set(REGION, "unused");
-        instanceProperties.set(VPC_ID, "unused");
-        instanceProperties.set(SUBNETS, "unused");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
         instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 1024L);
         instanceProperties.setNumber(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, 10);
 
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
 
         s3Client.shutdown();
+        dynamoDB.shutdown();
 
         return instanceProperties;
     }
 
     public static TableProperties createTable(InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
-        TableProperties tableProperties = new TableProperties(instance);
-        tableProperties.setSchema(schema);
-        String tableName = UUID.randomUUID().toString();
-        tableProperties.set(TABLE_NAME, tableName);
-
-        // Create a state store
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
+        TableProperties tableProperties = createTestTableProperties(instance, schema);
 
         try {
-            DynamoDBStateStore stateStore = new DynamoDBStateStoreCreator(tableName, schema, dynamoDB).create();
-            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Lists.newArrayList(splitPoints)).run();
+            DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, tableProperties, dynamoDB);
+            stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } finally {
@@ -123,7 +99,7 @@ public class TestUtils {
             IngestFactory factory = IngestFactory.builder()
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(dataDir)
-                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties))
+                    .stateStoreProvider(new StateStoreProvider(dynamoClient, instanceProperties, new Configuration()))
                     .hadoopConfiguration(new Configuration())
                     .instanceProperties(instanceProperties)
                     .build();

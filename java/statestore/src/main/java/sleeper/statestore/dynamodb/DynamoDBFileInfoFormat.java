@@ -35,6 +35,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
 
+    static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
     static final String NAME = "Name";
     static final String STATUS = "Status";
     static final String PARTITION = "Partition";
@@ -44,12 +45,14 @@ class DynamoDBFileInfoFormat {
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String JOB_ID = "Job_name";
 
+    private final String sleeperTableName;
     private final List<PrimitiveType> rowKeyTypes;
     private final KeySerDe keySerDe;
 
-    DynamoDBFileInfoFormat(Schema schema) {
-        rowKeyTypes = schema.getRowKeyTypes();
-        keySerDe = new KeySerDe(rowKeyTypes);
+    DynamoDBFileInfoFormat(String sleeperTableName, Schema schema) {
+        this.sleeperTableName = sleeperTableName;
+        this.rowKeyTypes = schema.getRowKeyTypes();
+        this.keySerDe = new KeySerDe(rowKeyTypes);
     }
 
     /**
@@ -82,6 +85,7 @@ class DynamoDBFileInfoFormat {
     Map<String, AttributeValue> createRecord(FileInfo fileInfo) throws StateStoreException {
         Map<String, AttributeValue> itemValues = new HashMap<>();
 
+        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
         itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
         itemValues.put(PARTITION, createStringAttribute(fileInfo.getPartitionId()));
         itemValues.put(STATUS, createStringAttribute(fileInfo.getFileStatus().toString()));
@@ -105,6 +109,20 @@ class DynamoDBFileInfoFormat {
             itemValues.put(LAST_UPDATE_TIME, createNumberAttribute(fileInfo.getLastStateStoreUpdateTime()));
         }
 
+        return itemValues;
+    }
+
+    Map<String, AttributeValue> createKey(FileInfo fileInfo) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
+        return itemValues;
+    }
+
+    Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(NAME, item.get(NAME));
         return itemValues;
     }
 

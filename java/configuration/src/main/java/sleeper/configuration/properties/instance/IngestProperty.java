@@ -115,6 +115,13 @@ public interface IngestProperty {
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+    UserDefinedInstanceProperty INGEST_JOB_QUEUE_WAIT_TIME = IngestProperty.Index.propertyBuilder("sleeper.ingest.job.queue.wait.time")
+            .description("The time in seconds to wait for ingest jobs to appear on the queue before an ingest task terminates.\n" +
+                    "Must be >= 0 and <= 20.\n" +
+                    "See also https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html")
+            .defaultValue("20")
+            .validationPredicate(val -> Utils.isNonNegativeIntLtEqValue(val, 20))
+            .propertyGroup(InstancePropertyGroup.INGEST).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

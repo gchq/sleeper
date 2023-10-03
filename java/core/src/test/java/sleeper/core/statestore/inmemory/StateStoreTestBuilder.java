@@ -20,6 +20,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.range.Range;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 
@@ -35,13 +36,25 @@ public class StateStoreTestBuilder {
     private final List<Partition> partitions;
     private final List<FileInfo> files = new ArrayList<>();
 
+    private StateStoreTestBuilder(PartitionTree tree) {
+        this.tree = tree;
+        this.partitions = tree.getAllPartitions();
+    }
+
     private StateStoreTestBuilder(PartitionsBuilder partitionsBuilder) {
-        tree = partitionsBuilder.buildTree();
-        partitions = partitionsBuilder.buildList();
+        this(partitionsBuilder.buildTree());
     }
 
     public static StateStoreTestBuilder from(PartitionsBuilder partitionsBuilder) {
         return new StateStoreTestBuilder(partitionsBuilder);
+    }
+
+    public static StateStoreTestBuilder withSinglePartition(Schema schema) {
+        return withSinglePartition(schema, "root");
+    }
+
+    public static StateStoreTestBuilder withSinglePartition(Schema schema, String partitionId) {
+        return from(new PartitionsBuilder(schema).singlePartition(partitionId));
     }
 
     public StateStoreTestBuilder singleFileInEachLeafPartitionWithRecords(long records) {

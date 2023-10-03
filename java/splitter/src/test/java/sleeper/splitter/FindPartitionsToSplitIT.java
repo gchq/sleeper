@@ -15,8 +15,6 @@
  */
 package sleeper.splitter;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
@@ -33,8 +31,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -47,13 +43,11 @@ import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,6 +56,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
@@ -69,31 +64,19 @@ import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardInges
 public class FindPartitionsToSplitIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
+            .withServices(LocalStackContainer.Service.SQS);
 
     @TempDir
     public Path tempDir;
 
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
 
-    private AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
     private AmazonSQS createSQSClient() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     }
 
-    private StateStore createStateStore(AmazonDynamoDB dynamoDB) throws StateStoreException {
-        return createStateStore(dynamoDB, new PartitionsFromSplitPoints(SCHEMA, Collections.emptyList()).construct());
-    }
-
-    private StateStore createStateStore(AmazonDynamoDB dynamoDB, List<Partition> partitions) throws StateStoreException {
-        String id = UUID.randomUUID().toString();
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(id, SCHEMA, dynamoDB);
-        StateStore dynamoStateStore = dynamoDBStateStoreCreator.create();
-        dynamoStateStore.initialise(partitions);
-        return dynamoStateStore;
+    private StateStore createStateStore() {
+        return inMemoryStateStoreWithSinglePartition(SCHEMA);
     }
 
     private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
@@ -155,11 +138,10 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldPutMessagesOnAQueueIfAPartitionSizeGoesBeyondThreshold() throws StateStoreException, IOException {
         // Given
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
-        StateStore stateStore = createStateStore(dynamoClient);
+        StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
@@ -183,11 +165,10 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws StateStoreException, IOException {
         // Given
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 1001);
-        StateStore stateStore = createStateStore(dynamoClient);
+        StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
@@ -204,11 +185,10 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws IOException, StateStoreException {
         // Given
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
-        StateStore stateStore = createStateStore(dynamoClient);
+        StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
@@ -232,11 +212,10 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws StateStoreException, IOException {
         // Given
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
-        StateStore stateStore = createStateStore(dynamoClient);
+        StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createAscendingRecordList(100, 10));
 
         // When
@@ -262,7 +241,7 @@ public class FindPartitionsToSplitIT {
                 .map(FileInfo::getNumberOfRecords)).reduce(Long::sum);
 
         // 109 + 108 + 107 + 106 + 105 = 535
-        assertThat(numberOfRecords).contains(Long.valueOf(535L));
+        assertThat(numberOfRecords).contains(535L);
     }
 
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {

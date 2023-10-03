@@ -29,7 +29,6 @@ import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.InitialiseStateStore;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -61,7 +60,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
 
     @Override
     protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
-        new InitialiseStateStore(stateStore, readPartitions(tableProperties.getSchema())).run();
+        stateStore.initialise(readPartitions(tableProperties.getSchema()));
     }
 
     private List<Partition> readPartitions(Schema schema) throws IOException {
@@ -71,7 +70,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(partitionsFile), StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (!line.equals("")) {
+                if (!line.isEmpty()) {
                     partitions.add(partitionSerDe.fromJson(line));
                 }
             }

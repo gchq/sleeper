@@ -49,7 +49,7 @@ Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.31):
 
 - Apache License, Version 2.0
 
-Apache Avro (org.apache.avro:*:1.11.1):
+Apache Avro (org.apache.avro:*:1.11.3):
 
 - Apache License, Version 2.0
 

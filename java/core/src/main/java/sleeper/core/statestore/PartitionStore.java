@@ -68,4 +68,6 @@ public interface PartitionStore {
      * @throws StateStoreException if partitions not provided or update fails
      */
     void initialise(List<Partition> partitions) throws StateStoreException;
+
+    void clearTable();
 }

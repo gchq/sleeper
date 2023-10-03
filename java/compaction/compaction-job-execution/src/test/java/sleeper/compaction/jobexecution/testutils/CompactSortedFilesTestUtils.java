@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.jobexecution.testutils;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import org.assertj.core.groups.Tuple;
 
 import sleeper.compaction.job.CompactionJob;
@@ -32,13 +31,11 @@ import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.tuple;
 
 public class CompactSortedFilesTestUtils {
@@ -68,16 +65,6 @@ public class CompactSortedFilesTestUtils {
                 .build();
     }
 
-    public static StateStore createInitStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) throws StateStoreException {
-        StateStore dynamoStateStore = createStateStore(tablenameStub, schema, dynamoDBClient);
-        dynamoStateStore.initialise();
-        return dynamoStateStore;
-    }
-
-    public static StateStore createStateStore(String tablenameStub, Schema schema, AmazonDynamoDB dynamoDBClient) {
-        return new DynamoDBStateStoreCreator(tablenameStub, schema, dynamoDBClient).create();
-    }
-
     public static CompactSortedFiles createCompactSortedFiles(
             Schema schema, CompactionJob compactionJob, StateStore stateStore, String taskId) {
         return createCompactSortedFiles(schema, compactionJob, stateStore, CompactionJobStatusStore.NONE, taskId);
@@ -92,24 +79,20 @@ public class CompactSortedFilesTestUtils {
                 compactionJob, stateStore, jobStatusStore, taskId);
     }
 
-    public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) {
+    public static void assertReadyForGC(StateStore dynamoStateStore, FileInfo... files) throws StateStoreException {
         assertReadyForGC(dynamoStateStore, Arrays.asList(files));
     }
 
-    public static void assertReadyForGC(StateStore dynamoStateStore, List<FileInfo> files) {
-        try {
-            assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
-                    .extracting(
-                            FileInfo::getFilename,
-                            FileInfo::getRowKeyTypes,
-                            FileInfo::getPartitionId,
-                            FileInfo::getFileStatus)
-                    .containsExactlyInAnyOrder(files.stream()
-                            .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
-                                    FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
-                            .toArray(Tuple[]::new));
-        } catch (StateStoreException e) {
-            fail("StateStoreException generated: " + e.getMessage());
-        }
+    public static void assertReadyForGC(StateStore dynamoStateStore, List<FileInfo> files) throws StateStoreException {
+        assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
+                .extracting(
+                        FileInfo::getFilename,
+                        FileInfo::getRowKeyTypes,
+                        FileInfo::getPartitionId,
+                        FileInfo::getFileStatus)
+                .containsExactlyInAnyOrder(files.stream()
+                        .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
+                                FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
+                        .toArray(Tuple[]::new));
     }
 }

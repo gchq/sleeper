@@ -19,8 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -31,18 +31,20 @@ import sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDataHelpe
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.CommonTestConstants;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
+import sleeper.dynamodb.tools.DynamoDBContainer;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.combineSortedBySingleKey;
@@ -51,30 +53,25 @@ import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestDa
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestData.readDataFile;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.assertReadyForGC;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createCompactSortedFiles;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createInitStateStore;
 import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.compaction.jobexecution.testutils.CompactSortedFilesTestUtils.createStateStore;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
-    private static final int DYNAMO_PORT = 8000;
 
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
 
     private static AmazonDynamoDB dynamoDBClient;
-    private static CompactionJobStatusStore jobStatusStore;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeAll
     public static void beforeAll() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     @AfterAll
@@ -83,11 +80,24 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
         dynamoDBClient = null;
     }
 
+    @BeforeEach
+    void setUp() {
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+    }
+
+    private StateStore createStateStore(Schema schema) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+    }
+
     @Test
     public void filesShouldMergeCorrectlyAndDynamoUpdatedLongKey() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createInitStateStore("fsmcadulk", schema, dynamoDBClient);
+        StateStore stateStore = createStateStore(schema);
+        stateStore.initialise();
         CompactSortedFilesTestDataHelper dataHelper = new CompactSortedFilesTestDataHelper(schema, stateStore);
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
@@ -123,7 +133,7 @@ public class CompactSortedFilesDynamoDBIT extends CompactSortedFilesTestBase {
     public void filesShouldMergeAndSplitCorrectlyAndDynamoUpdated() throws Exception {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
-        StateStore stateStore = createStateStore("fsmascadu", schema, dynamoDBClient);
+        StateStore stateStore = createStateStore(schema);
         stateStore.initialise(new PartitionsBuilder(schema)
                 .leavesWithSplits(Arrays.asList("A", "B"), Collections.singletonList(100L))
                 .parentJoining("C", "A", "B")

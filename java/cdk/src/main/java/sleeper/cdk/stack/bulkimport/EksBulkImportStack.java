@@ -70,8 +70,8 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
-import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
@@ -114,7 +114,7 @@ public final class EksBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             BulkImportBucketStack importBucketStack,
-            TableStack tableStack, TableDataStack dataStack,
+            StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             TopicStack errorsTopicStack,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
@@ -183,7 +183,7 @@ public final class EksBulkImportStack extends NestedStack {
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
-        tableStack.getStateStoreStacks().forEach(sss -> sss.grantReadPartitionMetadata(bulkImportJobStarter));
+        stateStoreStacks.grantReadPartitions(bulkImportJobStarter);
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -230,7 +230,7 @@ public final class EksBulkImportStack extends NestedStack {
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        grantAccesses(tableStack, dataStack, configBucket);
+        grantAccesses(stateStoreStacks, dataStack, configBucket);
 
         this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
         instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
@@ -307,12 +307,9 @@ public final class EksBulkImportStack extends NestedStack {
                 ).build();
     }
 
-    private void grantAccesses(TableStack tableStack, TableDataStack dataStack, IBucket configBucket) {
+    private void grantAccesses(StateStoreStacks stateStoreStacks, TableDataStack dataStack, IBucket configBucket) {
         dataStack.getDataBucket().grantReadWrite(sparkServiceAccount);
-        tableStack.getStateStoreStacks().forEach(sss -> {
-            sss.grantReadWriteActiveFileMetadata(sparkServiceAccount);
-            sss.grantReadPartitionMetadata(sparkServiceAccount);
-        });
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(sparkServiceAccount);
         configBucket.grantRead(sparkServiceAccount);
     }
 

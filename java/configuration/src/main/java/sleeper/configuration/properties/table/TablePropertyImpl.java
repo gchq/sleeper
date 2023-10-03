@@ -33,7 +33,6 @@ class TablePropertyImpl implements TableProperty {
     private final SleeperProperty defaultProperty;
     private final String description;
     private final PropertyGroup propertyGroup;
-    private final boolean runCDKDeployWhenChanged;
     private final boolean systemDefined;
     private final boolean editable;
     private final boolean includedInTemplate;
@@ -45,7 +44,6 @@ class TablePropertyImpl implements TableProperty {
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
-        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
         systemDefined = builder.systemDefined;
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
@@ -91,7 +89,7 @@ class TablePropertyImpl implements TableProperty {
 
     @Override
     public boolean isRunCDKDeployWhenChanged() {
-        return runCDKDeployWhenChanged;
+        return false;
     }
 
     @Override
@@ -119,7 +117,6 @@ class TablePropertyImpl implements TableProperty {
         private Predicate<String> validationPredicate = s -> true;
         private SleeperProperty defaultProperty;
         private String description;
-        private boolean runCDKDeployWhenChanged;
         private PropertyGroup propertyGroup;
         private Consumer<TableProperty> addToIndex;
         private boolean systemDefined;
@@ -152,11 +149,6 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder description(String description) {
             this.description = description;
-            return this;
-        }
-
-        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
-            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
             return this;
         }
 

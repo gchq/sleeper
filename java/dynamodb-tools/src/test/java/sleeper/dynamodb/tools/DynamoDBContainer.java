@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
 
-import software.amazon.awscdk.services.iam.IGrantable;
+package sleeper.dynamodb.tools;
 
-public interface StateStoreStack {
+import org.testcontainers.containers.GenericContainer;
 
-    void grantReadActiveFileMetadata(IGrantable grantee);
+import sleeper.core.CommonTestConstants;
 
-    void grantReadWriteActiveFileMetadata(IGrantable grantee);
+import java.util.List;
 
-    void grantReadWriteReadyForGCFileMetadata(IGrantable grantee);
+public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
 
-    void grantWriteReadyForGCFileMetadata(IGrantable grantee);
+    private static final int DYNAMO_PORT = 8000;
 
-    void grantReadPartitionMetadata(IGrantable grantee);
+    public DynamoDBContainer() {
+        super(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER);
+        setExposedPorts(List.of(DYNAMO_PORT));
+    }
 
-    void grantReadWritePartitionMetadata(IGrantable grantee);
+    public int getDynamoPort() {
+        return DYNAMO_PORT;
+    }
 }

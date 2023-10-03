@@ -88,7 +88,7 @@
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
         <nimbus-jose-jwt.version>9.31</nimbus-jose-jwt.version>
         <!-- Hadoop declares an old version of Avro with vulnerabilities. Managed from 1.7.7. -->
-        <avro.version>1.11.2</avro.version>
+        <avro.version>1.11.3</avro.version>
         <!-- Hadoop declares an old version of json-smart with vulnerabilities. Managed from 2.4.7. -->
         <json-smart.version>2.4.11</json-smart.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
@@ -165,6 +165,7 @@
         <sleeper.system.test.cluster.enabled>false</sleeper.system.test.cluster.enabled>
         <sleeper.system.test.force.redeploy>false</sleeper.system.test.force.redeploy>
         <sleeper.system.test.instances.force.redeploy>false</sleeper.system.test.instances.force.redeploy>
+        <sleeper.system.test.force.statestore.classname/>
         <!-- Maven plugins -->
         <checkstyle.plugin.version>3.2.0</checkstyle.plugin.version>
         <release.plugin.version>3.0.0-M7</release.plugin.version>
@@ -1041,6 +1042,10 @@
                             <property>
                                 <name>sleeper.system.test.instances.force.redeploy</name>
                                 <value>${sleeper.system.test.instances.force.redeploy}</value>
+                            </property>
+                            <property>
+                                <name>sleeper.system.test.force.statestore.classname</name>
+                                <value>${sleeper.system.test.force.statestore.classname}</value>
                             </property>
                         </systemProperties>
                         <excludedGroups>SystemTest</excludedGroups>

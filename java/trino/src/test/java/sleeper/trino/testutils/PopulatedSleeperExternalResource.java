@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
-import com.google.common.collect.ImmutableList;
 import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.DistributedQueryRunner;
 import org.apache.hadoop.conf.Configuration;
@@ -37,11 +36,11 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.trino.SleeperConfig;
@@ -50,25 +49,16 @@ import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -83,8 +73,6 @@ import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Cli
  * different recreations of the localstack container. It would be good to fix this in future.
  */
 public class PopulatedSleeperExternalResource implements BeforeAllCallback, AfterAllCallback {
-    private static final String TEST_CONFIG_BUCKET_NAME = "test-config-bucket";
-    private static final String TEST_DATA_BUCKET_NAME = "test-table-data-bucket";
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
@@ -94,6 +82,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                     .withLogConsumer(outputFrame -> System.out.print("LocalStack log: " + outputFrame.getUtf8String()))
                     .withEnv("DEBUG", "1");
     private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack(localStackContainer);
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private AmazonS3 s3Client;
     private S3AsyncClient s3AsyncClient;
@@ -140,88 +129,51 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                 .build().ingestFromRecordIterator(tableProperties, recordIterator);
     }
 
-    private InstanceProperties createInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, TEST_CONFIG_BUCKET_NAME);
-        instanceProperties.set(DATA_BUCKET, TEST_DATA_BUCKET_NAME);
-        instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
-        instanceProperties.set(ACCOUNT, "test-account");
-        instanceProperties.set(REGION, "test-region");
-        instanceProperties.set(VERSION, "1.2.3");
-        instanceProperties.set(VPC_ID, "test-vpc");
-        instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(FILE_SYSTEM, "s3a://");
-
-        s3Client.createBucket(TEST_DATA_BUCKET_NAME);
-        s3Client.createBucket(TEST_CONFIG_BUCKET_NAME);
-        instanceProperties.saveToS3(s3Client);
-
-        return instanceProperties;
-    }
-
     private TableProperties createTable(InstanceProperties instanceProperties,
                                         TableDefinition tableDefinition) {
 
-        String activeTable = tableDefinition.tableName + "-af";
-        String readyForGCTable = tableDefinition.tableName + "-rfgcf";
-        String partitionTable = tableDefinition.tableName + "-p";
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
-        tableProperties.setSchema(tableDefinition.schema);
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, activeTable);
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, readyForGCTable);
-        tableProperties.set(PARTITION_TABLENAME, partitionTable);
         tableProperties.saveToS3(this.s3Client);
-
-        DynamoDBStateStoreCreator dynamoDBStateStoreCreator = new DynamoDBStateStoreCreator(
-                instanceProperties,
-                tableProperties,
-                this.dynamoDBClient);
-        dynamoDBStateStoreCreator.create();
         return tableProperties;
     }
 
-    private InstanceProperties getInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.loadFromS3(this.s3Client, TEST_CONFIG_BUCKET_NAME);
-        return instanceProperties;
-    }
-
     private TableProperties getTableProperties(String tableName) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(this.s3Client, this.getInstanceProperties());
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         return tablePropertiesProvider.getTableProperties(tableName);
     }
 
     public StateStore getStateStore(String tableName) {
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, this.getInstanceProperties());
-        return stateStoreProvider.getStateStore(this.getTableProperties(tableName));
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
+        return stateStoreProvider.getStateStore(getTableProperties(tableName));
     }
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        this.localStackContainer.start();
-        this.s3Client = createS3Client();
-        this.s3AsyncClient = createS3AsyncClient();
-        this.dynamoDBClient = createDynamoClient();
+        localStackContainer.start();
+        s3Client = createS3Client();
+        s3AsyncClient = createS3AsyncClient();
+        dynamoDBClient = createDynamoClient();
 
         System.out.println("S3 endpoint:       " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
 
         sleeperConfig.setLocalWorkingDirectory(createTempDirectory(UUID.randomUUID().toString()).toString());
 
-        InstanceProperties instanceProperties = createInstanceProperties();
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.set(FILE_SYSTEM, "s3a://");
+        instanceProperties.saveToS3(s3Client);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         this.tableDefinitions.forEach(tableDefinition -> {
             try {
                 TableProperties tableProperties = createTable(
                         instanceProperties,
                         tableDefinition);
-                StateStoreProvider stateStoreProvider = new StateStoreProvider(this.dynamoDBClient, instanceProperties);
+                StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                InitialiseStateStore initialiseStateStore = InitialiseStateStore
-                        .createInitialiseStateStoreFromSplitPoints(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
-                initialiseStateStore.run();
+                stateStore.initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -236,15 +188,15 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
             s3Client.listObjectsV2(bucket.getName()).getObjectSummaries().forEach(System.out::println);
         });
 
-        this.sleeperConfig.setConfigBucket(TEST_CONFIG_BUCKET_NAME);
+        sleeperConfig.setConfigBucket(instanceProperties.get(CONFIG_BUCKET));
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
-                this.extraPropertiesForQueryRunner,
-                this.sleeperConfig,
-                this.s3Client,
-                this.s3AsyncClient,
-                this.dynamoDBClient,
-                this.hadoopConfigurationProvider);
-        this.queryAssertions = new QueryAssertions(distributedQueryRunner);
+                extraPropertiesForQueryRunner,
+                sleeperConfig,
+                s3Client,
+                s3AsyncClient,
+                dynamoDBClient,
+                hadoopConfigurationProvider);
+        queryAssertions = new QueryAssertions(distributedQueryRunner);
     }
 
     @Override
@@ -275,12 +227,12 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
         public TableDefinition(String tableName,
                                Schema schema,
-                               Optional<List<Object>> splitPointsOpt,
-                               Optional<Stream<Record>> recordStreamOpt) {
+                               List<Object> splitPoints,
+                               Stream<Record> recordStream) {
             this.tableName = tableName;
             this.schema = schema;
-            this.splitPoints = splitPointsOpt.orElse(ImmutableList.of());
-            this.recordStream = recordStreamOpt.orElse(Stream.empty());
+            this.splitPoints = splitPoints;
+            this.recordStream = recordStream;
         }
     }
 }
