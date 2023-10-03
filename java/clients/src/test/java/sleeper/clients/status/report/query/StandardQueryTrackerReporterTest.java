@@ -71,7 +71,7 @@ public class StandardQueryTrackerReporterTest {
 
             // When/Then
             assertThat(getStandardReport(TrackerQuery.QUEUED, queuedQueries))
-                    .isEqualTo(example("reports/query/standard/state/mixedQueries.txt"));
+                    .isEqualTo(example("reports/query/standard/state/queuedQueries.txt"));
         }
     }
 }
