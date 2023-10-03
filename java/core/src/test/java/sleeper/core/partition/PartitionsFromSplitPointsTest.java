@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PartitionsFromSplitPointsTest {
     private static final RecursiveComparisonConfiguration IGNORE_IDS = RecursiveComparisonConfiguration.builder()
@@ -413,5 +414,46 @@ public class PartitionsFromSplitPointsTest {
                             .splitToNewChildrenOnDimension("R", "RL", "RR", 0, new byte[]{99})
                             .buildList());
         }
+    }
+
+    @Test
+    public void shouldThrowExceptionIfSplitPointIsOfWrongType() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new IntType())).build();
+        List<Object> splitPoints = new ArrayList<>();
+        splitPoints.add("test-split-point");
+
+        // When / Then
+        assertThatThrownBy(() -> new PartitionsFromSplitPoints(schema, splitPoints).construct())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid split point: test-split-point should be of type Integer");
+    }
+
+    @Test
+    public void shouldThrowExceptionIfDuplicateSplitPoints() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new IntType())).build();
+        List<Object> splitPoints = new ArrayList<>();
+        splitPoints.add(0);
+        splitPoints.add(0);
+
+        // When / Then
+        assertThatThrownBy(() -> new PartitionsFromSplitPoints(schema, splitPoints).construct())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid split point: 0 - duplicate found");
+    }
+
+    @Test
+    public void shouldThrowExceptionIfSplitPointsAreInWrongOrder() {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("id", new IntType())).build();
+        List<Object> splitPoints = new ArrayList<>();
+        splitPoints.add(1);
+        splitPoints.add(0);
+
+        // When / Then
+        assertThatThrownBy(() -> new PartitionsFromSplitPoints(schema, splitPoints).construct())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid split point: 1 - should be less than 0");
     }
 }
