@@ -26,6 +26,7 @@ import java.util.List;
 public interface TrackerQuery {
     TrackerQuery ALL = QueryTrackerStore::getAllQueries;
     TrackerQuery QUEUED = store -> store.getQueriesWithState(QueryState.QUEUED);
+    TrackerQuery IN_PROGRESS = store -> store.getQueriesWithState(QueryState.IN_PROGRESS);
 
     List<TrackedQuery> run(QueryTrackerStore store);
 }

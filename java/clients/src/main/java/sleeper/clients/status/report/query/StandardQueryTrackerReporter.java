@@ -56,6 +56,8 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
             printAllSummary(queryType, trackedQueries);
         } else if (TrackerQuery.QUEUED == queryType) {
             printQueuedSummary(trackedQueries.stream());
+        } else if (TrackerQuery.IN_PROGRESS == queryType) {
+            printInProgressSummary(trackedQueries.stream());
         }
         tableFactory.tableBuilder().itemsAndWriter(trackedQueries, this::writeQueryFields)
                 .build().write(out);
@@ -65,7 +67,7 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
         out.printf("Total queries: %d%n", trackedQueries.size());
         out.println();
         printQueuedSummary(trackedQueries.stream().filter(query -> query.getLastKnownState() == QueryState.QUEUED));
-        out.printf("Total queries in progress: %d%n", countQueriesWithState(trackedQueries, QueryState.IN_PROGRESS));
+        printInProgressSummary(trackedQueries.stream().filter(query -> query.getLastKnownState() == QueryState.IN_PROGRESS));
         out.printf("Total queries completed: %d%n", countQueriesWithState(trackedQueries, QueryState.COMPLETED));
         out.println();
         out.printf("Total queries partially failed: %d%n", countQueriesWithState(trackedQueries, QueryState.PARTIALLY_FAILED));
@@ -74,6 +76,10 @@ public class StandardQueryTrackerReporter implements QueryTrackerReporter {
 
     private void printQueuedSummary(Stream<TrackedQuery> queuedQueries) {
         out.printf("Total queries queued: %d%n", queuedQueries.count());
+    }
+
+    private void printInProgressSummary(Stream<TrackedQuery> inProgressQueries) {
+        out.printf("Total queries in progress: %d%n", inProgressQueries.count());
     }
 
     private void writeQueryFields(TrackedQuery trackedQuery, TableRow.Builder builder) {

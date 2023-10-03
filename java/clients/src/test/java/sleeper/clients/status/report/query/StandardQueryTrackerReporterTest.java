@@ -30,6 +30,7 @@ import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.mixedQueries;
 import static sleeper.clients.status.report.query.QueryTrackerReporterTestHelper.queryWithSubqueries;
 import static sleeper.clients.testutil.ClientTestUtils.example;
+import static sleeper.query.tracker.TrackedQueryTestHelper.queryInProgress;
 import static sleeper.query.tracker.TrackedQueryTestHelper.queryQueued;
 
 public class StandardQueryTrackerReporterTest {
@@ -67,11 +68,23 @@ public class StandardQueryTrackerReporterTest {
         @Test
         void shouldRunReportWithQueuedQueries() throws Exception {
             // Given
-            List<TrackedQuery> queuedQueries = List.of(queryQueued("test-query-1", Instant.parse("2023-09-28T18:50:00Z")));
+            List<TrackedQuery> queuedQueries = List.of(
+                    queryQueued("test-query-1", Instant.parse("2023-09-28T18:50:00Z")));
 
             // When/Then
             assertThat(getStandardReport(TrackerQuery.QUEUED, queuedQueries))
                     .isEqualTo(example("reports/query/standard/state/queuedQueries.txt"));
+        }
+
+        @Test
+        void shouldRunReportWithInProgressQueries() throws Exception {
+            // Given
+            List<TrackedQuery> inProgressQueries = List.of(
+                    queryInProgress("test-query-1", Instant.parse("2023-09-28T18:50:00Z")));
+
+            // When/Then
+            assertThat(getStandardReport(TrackerQuery.IN_PROGRESS, inProgressQueries))
+                    .isEqualTo(example("reports/query/standard/state/inProgressQueries.txt"));
         }
     }
 }
