@@ -26,6 +26,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -55,9 +56,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableCreator;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,10 +67,11 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -80,16 +83,26 @@ public class CompactSortedFilesRunnerLocalStackIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
             LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
-    private static AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
+    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createInstance();
+    private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
+    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+    private final Schema schema = createSchema();
+    private final TableProperties tableProperties = createTable();
+    private final String tableName = tableProperties.get(TABLE_NAME);
 
-    private static AmazonSQS createSQSClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    }
+    private InstanceProperties createInstance() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(FILE_SYSTEM, "");
 
-    private static AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        instanceProperties.saveToS3(s3);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+
+        return instanceProperties;
     }
 
     private Schema createSchema() {
@@ -99,33 +112,27 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .build();
     }
 
-    private InstanceProperties createProperties(AmazonS3 s3) {
-        AmazonSQS sqs = createSQSClient();
-        String queue = UUID.randomUUID().toString();
-        String queueUrl = sqs.createQueue(queue).getQueueUrl();
-        sqs.shutdown();
-
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
-        instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
-        instanceProperties.set(FILE_SYSTEM, "");
-
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-
-        return instanceProperties;
+    private TableProperties createTable() {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
+        tableProperties.saveToS3(s3);
+        try {
+            stateStoreProvider.getStateStore(tableProperties).initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
+        return tableProperties;
     }
 
-    private TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, String tableName, Schema schema) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        TableCreator tableCreator = new TableCreator(s3, dynamoDB, instanceProperties);
-        tableCreator.createTable(tableProperties);
+    private StateStore stateStore() {
+        return stateStoreProvider.getStateStore(tableProperties);
+    }
 
-        tableProperties.loadFromS3(s3, tableName);
-        return tableProperties;
+    @AfterEach
+    void tearDown() {
+        s3.shutdown();
+        dynamoDB.shutdown();
+        sqs.shutdown();
     }
 
     @TempDir
@@ -134,20 +141,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
     @Test
     void shouldDeleteMessages() throws Exception {
         // Given
-        // - Clients
-        AmazonS3 s3 = createS3Client();
-        AmazonDynamoDB dynamoDB = createDynamoClient();
-        AmazonSQS sqsClient = createSQSClient();
-        // - Schema
-        Schema schema = createSchema();
-        // - Create table and state store
-        String tableName = UUID.randomUUID().toString();
-        InstanceProperties instanceProperties = createProperties(s3);
-        TableProperties tableProperties = createTable(s3, dynamoDB, instanceProperties, tableName, schema);
-        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
@@ -231,7 +224,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         }
         writer4.close();
         // - Update Dynamo state store with details of files
-        stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
+        stateStore().addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         // - Create two compaction jobs and put on queue
         CompactionJob compactionJob1 = CompactionJob.builder()
                 .tableName(tableName)
@@ -255,18 +248,18 @@ public class CompactSortedFilesRunnerLocalStackIT {
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(job1Json);
-        sqsClient.sendMessage(sendMessageRequest);
+        sqs.sendMessage(sendMessageRequest);
         sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(job2Json);
-        sqsClient.sendMessage(sendMessageRequest);
+        sqs.sendMessage(sendMessageRequest);
 
         // When
         CompactSortedFilesRunner runner = new CompactSortedFilesRunner(
                 instanceProperties, ObjectFactory.noUserJars(),
                 tablePropertiesProvider, PropertiesReloader.neverReload(), stateStoreProvider, jobStatusStore, taskStatusStore,
-                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqsClient, null, CompactionTaskType.COMPACTION,
-                1, 5);
+                "task-id", instanceProperties.get(COMPACTION_JOB_QUEUE_URL), sqs, null, CompactionTaskType.COMPACTION,
+                1, 0);
         runner.run();
 
         // Then
@@ -274,10 +267,10 @@ public class CompactSortedFilesRunnerLocalStackIT {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withWaitTimeSeconds(2);
-        ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
+        ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
         // - Check DynamoDBStateStore has correct active files
-        List<FileInfo> activeFiles = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider).getActiveFiles();
+        List<FileInfo> activeFiles = stateStore().getActiveFiles();
         assertThat(activeFiles)
                 .extracting(FileInfo::getFilename)
                 .containsExactlyInAnyOrder(compactionJob1.getOutputFile(), compactionJob2.getOutputFile());

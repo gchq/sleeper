@@ -73,7 +73,7 @@ instance, as well as running partition and file status reports.
 You can generate some random data for your instance by running the following command:
 
 ```shell
-./deploy/localstack/generateRandomData.sh <instance-id> <optional-number-of-records>
+./deploy/localstack/generateRandomData.sh <instance-id> <table-name> <optional-number-of-records>
 ```
 
 This will place randomly generated parquet files in the `./deploy/localstack/output` directory. The number of files
@@ -83,7 +83,7 @@ You can then use these files to ingest some data into the `system-test` table in
 following command:
 
 ```shell
-./deploy/localstack/ingestFiles.sh <instance-id> <file1.parquet> <file2.parquet> <file3.parquet> ....
+./deploy/localstack/ingestFiles.sh <instance-id> <table-name> <file1.parquet> <file2.parquet> <file3.parquet> ....
 ```
 
 This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
@@ -97,7 +97,7 @@ You can skip the step of having to run `ingestFiles.sh` after generating some pa
 following command:
 
 ```shell
-./deploy/localstack/ingestRandomData.sh <instance-id> <optional-number-of-records>
+./deploy/localstack/ingestRandomData.sh <instance-id> <table-name> <optional-number-of-records>
 ```
 
 Note: If you do not provide a number of records in the data generation scripts, then a default of 100000 is used.

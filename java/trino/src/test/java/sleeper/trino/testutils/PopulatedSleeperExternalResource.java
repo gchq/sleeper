@@ -36,11 +36,11 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.trino.SleeperConfig;
@@ -173,9 +173,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
                         tableDefinition);
                 StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, null);
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-                InitialiseStateStore initialiseStateStore = InitialiseStateStore
-                        .createInitialiseStateStoreFromSplitPoints(tableDefinition.schema, stateStore, tableDefinition.splitPoints);
-                initialiseStateStore.run();
+                stateStore.initialise(new PartitionsFromSplitPoints(tableDefinition.schema, tableDefinition.splitPoints).construct());
                 ingestData(instanceProperties, stateStoreProvider, tableProperties, tableDefinition.recordStream.iterator());
             } catch (Exception e) {
                 throw new RuntimeException(e);

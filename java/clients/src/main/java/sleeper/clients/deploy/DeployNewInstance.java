@@ -15,8 +15,12 @@
  */
 package sleeper.clients.deploy;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.slf4j.Logger;
@@ -25,6 +29,7 @@ import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import sleeper.clients.status.update.AddTable;
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandPipelineRunner;
 import sleeper.clients.util.EcrRepositoryCreator;
@@ -50,8 +55,10 @@ public class DeployNewInstance {
 
     private final AWSSecurityTokenService sts;
     private final AwsRegionProvider regionProvider;
-    private final S3Client s3;
+    private final AmazonS3 s3;
+    private final S3Client s3v2;
     private final AmazonECR ecr;
+    private final AmazonDynamoDB dynamoDB;
     private final Path scriptsDirectory;
     private final String instanceId;
     private final String vpcId;
@@ -68,7 +75,9 @@ public class DeployNewInstance {
         sts = builder.sts;
         regionProvider = builder.regionProvider;
         s3 = builder.s3;
+        s3v2 = builder.s3v2;
         ecr = builder.ecr;
+        dynamoDB = builder.dynamoDB;
         scriptsDirectory = builder.scriptsDirectory;
         instanceId = builder.instanceId;
         vpcId = builder.vpcId;
@@ -141,7 +150,7 @@ public class DeployNewInstance {
                 .tableProperties(deployInstanceConfiguration.getTableProperties())
                 .tableName(tableName).build().populate();
         tableProperties.set(SPLIT_POINTS_FILE, Objects.toString(splitPointsFile, null));
-        SyncJars.builder().s3(s3)
+        SyncJars.builder().s3(s3v2)
                 .jarsDirectory(jarsDirectory).instanceProperties(instanceProperties)
                 .deleteOldJars(false).build().sync();
         UploadDockerImages.builder()
@@ -161,14 +170,19 @@ public class DeployNewInstance {
                 .propertiesFile(generatedDirectory.resolve("instance.properties"))
                 .jarsDirectory(jarsDirectory).version(sleeperVersion)
                 .build().invoke(instanceType, cdkCommand, runCommand);
+        LOGGER.info("Adding table " + tableName);
+        instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
+        new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
         LOGGER.info("Finished deployment of new instance");
     }
 
     public static final class Builder {
         private AWSSecurityTokenService sts;
         private AwsRegionProvider regionProvider;
-        private S3Client s3;
+        private AmazonS3 s3;
+        private S3Client s3v2;
         private AmazonECR ecr;
+        private AmazonDynamoDB dynamoDB;
         private Path scriptsDirectory;
         private String instanceId;
         private String vpcId;
@@ -195,13 +209,23 @@ public class DeployNewInstance {
             return this;
         }
 
-        public Builder s3(S3Client s3) {
+        public Builder s3(AmazonS3 s3) {
             this.s3 = s3;
+            return this;
+        }
+
+        public Builder s3v2(S3Client s3v2) {
+            this.s3v2 = s3v2;
             return this;
         }
 
         public Builder ecr(AmazonECR ecr) {
             this.ecr = ecr;
+            return this;
+        }
+
+        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
+            this.dynamoDB = dynamoDB;
             return this;
         }
 
@@ -265,20 +289,21 @@ public class DeployNewInstance {
         }
 
         public void deployWithDefaultClients() throws IOException, InterruptedException {
-
-            try (S3Client s3Client = S3Client.create()) {
+            try (S3Client s3v2 = S3Client.create()) {
                 deployWithClients(
                         AWSSecurityTokenServiceClientBuilder.defaultClient(),
                         DefaultAwsRegionProviderChain.builder().build(),
-                        s3Client,
-                        AmazonECRClientBuilder.defaultClient());
+                        AmazonS3ClientBuilder.defaultClient(), s3v2,
+                        AmazonECRClientBuilder.defaultClient(),
+                        AmazonDynamoDBClientBuilder.defaultClient());
             }
         }
 
         public void deployWithClients(AWSSecurityTokenService sts, AwsRegionProvider regionProvider,
-                                      S3Client s3, AmazonECR ecr) throws IOException, InterruptedException {
+                                      AmazonS3 s3, S3Client s3v2, AmazonECR ecr, AmazonDynamoDB dynamoDB) throws IOException, InterruptedException {
             sts(sts).regionProvider(regionProvider)
-                    .s3(s3).ecr(ecr)
+                    .s3(s3).s3v2(s3v2).ecr(ecr)
+                    .dynamoDB(dynamoDB)
                     .build().deploy();
         }
     }

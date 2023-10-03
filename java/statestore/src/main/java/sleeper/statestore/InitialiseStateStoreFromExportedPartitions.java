@@ -29,8 +29,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -39,8 +37,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
-import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 
 /**
  * Initialises a {@link StateStore} from a file of partitions created using ExportPartitions
@@ -64,16 +60,9 @@ public class InitialiseStateStoreFromExportedPartitions {
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
 
-        StateStore stateStore;
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals("sleeper.statestore.s3.S3StateStore")) {
-            System.out.println("S3 State Store detected");
-            Configuration conf = new Configuration();
-            conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-            stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, conf);
-        } else {
-            System.out.println("Dynamo DB State Store detected");
-            stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
-        }
+        Configuration conf = new Configuration();
+        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
+        StateStore stateStore = new StateStoreFactory(dynamoDBClient, instanceProperties, conf).getStateStore(tableProperties);
 
         PartitionSerDe partitionSerDe = new PartitionSerDe(tableProperties.getSchema());
         List<Partition> partitions = new ArrayList<>();
@@ -88,7 +77,7 @@ public class InitialiseStateStoreFromExportedPartitions {
         }
         System.out.println("Read " + partitions.size() + " partitions from file");
 
-        new InitialiseStateStore(stateStore, partitions).run();
+        stateStore.initialise(partitions);
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();

@@ -40,7 +40,6 @@ import sleeper.cdk.stack.S3StateStoreStack;
 import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableMetricsStack;
-import sleeper.cdk.stack.TableStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.VpcStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -69,7 +68,6 @@ public class SleeperCdkApp extends Stack {
     private final BuiltJars jars;
     private final App app;
     private IngestStack ingestStack;
-    private TableStack tableStack;
     private TableDataStack dataStack;
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
@@ -130,7 +128,6 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
         new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, stateStoreStacks);
-        tableStack = new TableStack(this, "Table", instanceProperties, jars, dataStack, stateStoreStacks);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
@@ -268,10 +265,6 @@ public class SleeperCdkApp extends Stack {
 
     public IngestStack getIngestStack() {
         return ingestStack;
-    }
-
-    public TableStack getTableStack() {
-        return tableStack;
     }
 
     public StateStoreStacks getStateStoreStacks() {
