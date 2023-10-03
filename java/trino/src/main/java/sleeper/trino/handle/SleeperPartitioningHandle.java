@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * This class describes the partitioning scheme which is to be used for a table. It is passed to methods in {@link
@@ -80,6 +81,23 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
                 SleeperPartitioningHandle.decodeKeyListFromString(partitionMinKeysAsString));
     }
 
+    private static String encodeKeyListToString(List<Key> keyListToEncode) {
+        return keyListToEncode.stream()
+                .map(SleeperPartitioningHandle::encodeKeyToString)
+                .collect(Collectors.joining(":"));
+    }
+
+    private static String encodeKeyToString(Key keyToEncode) {
+        List<Object> keyObjects = keyToEncode.getKeys();
+        List<String> keyObjectTypesAsStrings = keyObjects.stream().map(obj -> obj.getClass().getCanonicalName()).collect(ImmutableList.toImmutableList());
+        return Stream.of(keyObjectTypesAsStrings.stream(), keyObjects.stream())
+                .flatMap(Function.identity())
+                .map(obj -> (obj == null) ?
+                        ENCODED_NULL :
+                        Base64.getEncoder().encodeToString(obj.toString().getBytes(StandardCharsets.UTF_8)))
+                .collect(Collectors.joining(","));
+    }
+
     private static Key decodeKeyFromString(String keyAsString) {
         List<String> allStrings = Arrays.stream(keyAsString.split(",", -1))
                 .map(str -> (str.equals(ENCODED_NULL)) ?
@@ -110,6 +128,15 @@ public class SleeperPartitioningHandle implements ConnectorPartitioningHandle {
     @JsonProperty
     public List<SleeperColumnHandle> getSleeperColumnHandlesInOrder() {
         return sleeperColumnHandlesInOrder;
+    }
+
+    public List<Key> getPartitionMinKeysInOrder() {
+        return this.partitionMinKeyToPartitionNoSortedMap.keySet().asList();
+    }
+
+    @JsonProperty
+    public String getPartitionMinKeysAsString() {
+        return encodeKeyListToString(getPartitionMinKeysInOrder());
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
