@@ -86,17 +86,13 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
+                .sorted((f1, f2) -> f1.getPartitionId().compareTo(f2.getPartitionId()))
                 .collect(Collectors.toList());
         assertThat(activeFiles).hasSize(2);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         fileInfo = activeFiles.get(1);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(3L);
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition2");
         //  - Read files and check they have the correct records
@@ -148,13 +144,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .sorted((f1, f2) -> (int) (f1.getNumberOfRecords() - f2.getNumberOfRecords()))
                 .collect(Collectors.toList());
         FileInfo fileInfo = activeFilesSortedByNumberOfRecords.get(1);
-        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
-        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{2, 2});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         fileInfo = activeFilesSortedByNumberOfRecords.get(0);
-        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{64, 65});
-        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition2");
         //  - Read files and check they have the correct records
@@ -208,13 +200,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .sorted((f1, f2) -> (int) (f1.getNumberOfRecords() - f2.getNumberOfRecords()))
                 .collect(Collectors.toList());
         FileInfo fileInfo = activeFilesSortedByNumberOfRecords.get(0);
-        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
-        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{5});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         fileInfo = activeFilesSortedByNumberOfRecords.get(1);
-        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{11, 2});
-        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{64, 65});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(3L);
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition2");
         //  - Read files and check they have the correct records
@@ -309,13 +297,9 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         assertThat(activeFiles).hasSize(2);
         // Find file that corresponds to partition 1
         FileInfo fileInfo1 = activeFiles.stream().filter(f -> f.getPartitionId().equals("partition1")).findFirst().orElseThrow();
-        assertThat(fileInfo1.getMinRowKey().get(0)).isEqualTo(0);
-        assertThat(fileInfo1.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo1.getNumberOfRecords().longValue()).isEqualTo(2L);
         // Find file that corresponds to partition 2
         FileInfo fileInfo2 = activeFiles.stream().filter(f -> f.getPartitionId().equals("partition2")).findFirst().orElseThrow();
-        assertThat(fileInfo2.getMinRowKey().get(0)).isEqualTo(0);
-        assertThat(fileInfo2.getMaxRowKey().get(0)).isEqualTo(100);
         assertThat(fileInfo2.getNumberOfRecords().longValue()).isEqualTo(2L);
         //  - Read files and check they have the correct records
         List<Record> readRecords1 = readRecordsFromParquetFile(fileInfo1.getFilename(), schema);
@@ -377,8 +361,6 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isZero();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         //  - Read files and check they have the correct records
@@ -413,8 +395,6 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(4L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
@@ -455,33 +435,23 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //  - Check the correct number of records were written
         assertThat(numWritten).isEqualTo(records.size());
         //  - Check StateStore has correct information
-        List<FileInfo> activeFiles = new ArrayList<>(stateStore.getActiveFiles());
+        List<FileInfo> activeFiles = stateStore.getActiveFiles()
+                .stream()
+                .sorted((f1, f2) -> f1.getPartitionId().compareTo(f2.getPartitionId()))
+                .collect(Collectors.toList());
         assertThat(activeFiles).hasSize(2);
-
-        //  - Make sure the first file in the list is the one that belongs to the
-        //      smallest partition
-        if ((long) activeFiles.get(0).getMinRowKey().get(0) > (long) activeFiles.get(1).getMinRowKey().get(0)) {
-            FileInfo leftFileInfo = activeFiles.get(1);
-            FileInfo rightFileInfo = activeFiles.get(0);
-            activeFiles.clear();
-            activeFiles.add(leftFileInfo);
-            activeFiles.add(rightFileInfo);
-        }
-
         FileInfo fileInfo = activeFiles.get(0);
         long minLeftFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .min(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .orElseThrow()
                 .get("key");
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(minLeftFile);
 
         long maxLeftFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
                 .max(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .orElseThrow()
                 .get("key");
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(maxLeftFile);
 
         long recordsInLeftFile = records.stream()
                 .filter(r -> ((long) r.get("key")) < 2L)
@@ -497,14 +467,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                 .min(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .orElseThrow()
                 .get("key");
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(minRightFile);
 
         long maxRightFile = (long) records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
                 .max(Comparator.comparing(r -> ((Long) r.get("key"))))
                 .orElseThrow()
                 .get("key");
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(maxRightFile);
 
         long recordsInRightFile = records.stream()
                 .filter(r -> ((long) r.get("key")) >= 2L)
@@ -651,8 +619,6 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(10L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(20L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
@@ -697,8 +663,6 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((byte[]) fileInfo.getMinRowKey().get(0)).containsExactly(new byte[]{1, 1});
-        assertThat((byte[]) fileInfo.getMaxRowKey().get(0)).containsExactly(new byte[]{11, 2});
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records

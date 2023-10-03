@@ -20,16 +20,6 @@
   },
   "activeFiles": [
     {
-      "minRowKey": {
-        "key": [
-          "123"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "456"
-        ]
-      },
       "filename": "A.parquet",
       "partitionId": "A",
       "numberOfRecords": 50000001,
@@ -37,16 +27,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "abc"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "az"
-        ]
-      },
       "filename": "B.parquet",
       "partitionId": "B",
       "numberOfRecords": 50000002,
@@ -54,16 +34,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "bcd"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "bz"
-        ]
-      },
       "filename": "C.parquet",
       "partitionId": "C",
       "numberOfRecords": 50000003,
@@ -71,16 +41,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "cde"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "cz"
-        ]
-      },
       "filename": "D.parquet",
       "partitionId": "D",
       "numberOfRecords": 50000004,
@@ -88,16 +48,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "def"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "dz"
-        ]
-      },
       "filename": "E.parquet",
       "partitionId": "E",
       "numberOfRecords": 50000005,
@@ -105,16 +55,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "efg"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "ez"
-        ]
-      },
       "filename": "F.parquet",
       "partitionId": "F",
       "numberOfRecords": 50000006,
@@ -122,16 +62,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "fgh"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "fz"
-        ]
-      },
       "filename": "G.parquet",
       "partitionId": "G",
       "numberOfRecords": 50000007,
@@ -139,16 +69,6 @@
       "lastStateStoreUpdateTime": 1661178000001
     },
     {
-      "minRowKey": {
-        "key": [
-          "ghi"
-        ]
-      },
-      "maxRowKey": {
-        "key": [
-          "gz"
-        ]
-      },
       "filename": "H.parquet",
       "partitionId": "H",
       "numberOfRecords": 50000008,

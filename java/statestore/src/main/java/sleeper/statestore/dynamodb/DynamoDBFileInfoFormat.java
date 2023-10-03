@@ -92,16 +92,6 @@ class DynamoDBFileInfoFormat {
         if (null != fileInfo.getNumberOfRecords()) {
             itemValues.put(NUMBER_LINES, createNumberAttribute(fileInfo.getNumberOfRecords()));
         }
-        try {
-            if (null != fileInfo.getMinRowKey()) {
-                itemValues.put(MIN_KEY, getAttributeValueFromRowKeys(fileInfo.getMinRowKey()));
-            }
-            if (null != fileInfo.getMaxRowKey()) {
-                itemValues.put(MAX_KEY, getAttributeValueFromRowKeys(fileInfo.getMaxRowKey()));
-            }
-        } catch (IOException e) {
-            throw new StateStoreException("IOException serialising row keys", e);
-        }
         if (null != fileInfo.getJobId()) {
             itemValues.put(JOB_ID, createStringAttribute(fileInfo.getJobId()));
         }

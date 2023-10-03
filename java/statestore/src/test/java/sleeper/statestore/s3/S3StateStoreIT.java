@@ -173,8 +173,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey()).isEqualTo(Key.create(1L));
-            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(10L));
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -204,10 +202,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey().size()).isOne();
-            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
-            assertThat(found.getMaxRowKey().size()).isOne();
-            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -237,12 +231,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey().size()).isEqualTo(2);
-            assertThat((byte[]) found.getMinRowKey().get(0)).containsExactly(new byte[]{1});
-            assertThat((byte[]) found.getMinRowKey().get(1)).containsExactly(new byte[]{2});
-            assertThat(found.getMaxRowKey().size()).isEqualTo(2);
-            assertThat((byte[]) found.getMaxRowKey().get(0)).containsExactly(new byte[]{10});
-            assertThat((byte[]) found.getMaxRowKey().get(1)).containsExactly(new byte[]{11});
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
@@ -272,8 +260,6 @@ public class S3StateStoreIT {
             assertThat(found.getFilename()).isEqualTo("abc");
             assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
             assertThat(found.getPartitionId()).isEqualTo("1");
-            assertThat(found.getMinRowKey()).isEqualTo(Key.create(Arrays.asList(1L, "Z")));
-            assertThat(found.getMaxRowKey()).isEqualTo(Key.create(Arrays.asList(10L, "A")));
             assertThat(found.getLastStateStoreUpdateTime().longValue()).isEqualTo(1_000_000L);
         });
     }
