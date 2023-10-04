@@ -15,11 +15,9 @@
  */
 package sleeper.core.statestore.inmemory;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.range.Range;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
@@ -27,7 +25,6 @@ import sleeper.core.statestore.StateStore;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StateStoreTestBuilder {
@@ -103,15 +100,4 @@ public class StateStoreTestBuilder {
                 .build();
     }
 
-    private static Key minRowKey(Partition partition) {
-        return Key.create(partition.getRegion().getRanges().stream()
-                .map(Range::getMin)
-                .collect(Collectors.toList()));
-    }
-
-    private static Key maxRowKey(Partition partition) {
-        return Key.create(partition.getRegion().getRanges().stream()
-                .map(Range::getMax)
-                .collect(Collectors.toList()));
-    }
 }
