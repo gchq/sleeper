@@ -31,15 +31,18 @@ import java.util.List;
 
 import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(BasicLeafStrategy.class);
 
     private CompactionJobFactory factory;
+    private String tableName;
     private int compactionFilesBatchSize;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+        tableName = tableProperties.get(TABLE_NAME);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
     }
@@ -47,7 +50,7 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
     @Override
     public List<CompactionJob> createJobsForLeafPartition(Partition partition, List<FileInfo> fileInfos) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
+        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
 
         // Iterate through files, creating jobs for batches of maximumNumberOfFilesToCompact files
         List<FileInfo> filesForJob = new ArrayList<>();
@@ -55,8 +58,8 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
             filesForJob.add(fileInfo);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
-                LOGGER.info("Creating a job to compact {} files in partition {}",
-                        filesForJob.size(), partition);
+                LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
+                        filesForJob.size(), partition, tableName);
                 compactionJobs.add(factory.createCompactionJob(filesForJob, partition.getId()));
                 filesForJob.clear();
             }
