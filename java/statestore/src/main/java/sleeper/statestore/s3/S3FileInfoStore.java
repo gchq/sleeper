@@ -87,6 +87,7 @@ class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
+        long updateTime = clock.millis();
         for (FileInfo fileInfo : fileInfos) {
             if (null == fileInfo.getFilename()
                     || null == fileInfo.getFileStatus()
@@ -96,7 +97,7 @@ class S3FileInfoStore implements FileInfoStore {
             }
         }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            list.addAll(setLastUpdateTimes(fileInfos));
+            list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;
         };
         try {
@@ -109,6 +110,7 @@ class S3FileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile)
             throws StateStoreException {
+        long updateTime = clock.millis();
         Set<String> namesOfFilesToBeMarkedReadyForGC = filesToBeMarkedReadyForGC.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toSet());
@@ -131,12 +133,12 @@ class S3FileInfoStore implements FileInfoStore {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(clock.millis())
+                            .lastStateStoreUpdateTime(updateTime)
                             .build();
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(setLastUpdateTime(newActiveFile));
+            filteredFiles.add(setLastUpdateTime(newActiveFile, updateTime));
             return filteredFiles;
         };
 
@@ -151,6 +153,7 @@ class S3FileInfoStore implements FileInfoStore {
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
                                                                          FileInfo leftFileInfo,
                                                                          FileInfo rightFileInfo) throws StateStoreException {
+        long updateTime = clock.millis();
         Set<String> namesOfFilesToBeMarkedReadyForGC = new HashSet<>();
         filesToBeMarkedReadyForGC.stream().map(FileInfo::getFilename).forEach(namesOfFilesToBeMarkedReadyForGC::add);
 
@@ -172,13 +175,13 @@ class S3FileInfoStore implements FileInfoStore {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(clock.millis())
+                            .lastStateStoreUpdateTime(updateTime)
                             .build();
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(setLastUpdateTime(leftFileInfo));
-            filteredFiles.add(setLastUpdateTime(rightFileInfo));
+            filteredFiles.add(setLastUpdateTime(leftFileInfo, updateTime));
+            filteredFiles.add(setLastUpdateTime(rightFileInfo, updateTime));
             return filteredFiles;
         };
         try {
@@ -190,6 +193,7 @@ class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
+        long updateTime = clock.millis();
         Set<String> namesOfFiles = new HashSet<>();
         fileInfos.stream().map(FileInfo::getFilename).forEach(namesOfFiles::add);
 
@@ -210,7 +214,7 @@ class S3FileInfoStore implements FileInfoStore {
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder().jobId(jobId)
-                            .lastStateStoreUpdateTime(clock.millis())
+                            .lastStateStoreUpdateTime(updateTime)
                             .build();
                 }
                 filteredFiles.add(fileInfo);
@@ -229,6 +233,7 @@ class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void deleteReadyForGCFile(FileInfo readyForGCFileInfo) throws StateStoreException {
+        long updateTime = clock.millis();
         Function<List<FileInfo>, String> condition = list -> {
             Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
             list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
@@ -244,7 +249,7 @@ class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (!readyForGCFileInfo.getFilename().equals(fileInfo.getFilename())) {
-                    filteredFiles.add(setLastUpdateTime(fileInfo));
+                    filteredFiles.add(setLastUpdateTime(fileInfo, updateTime));
                 }
             }
             return filteredFiles;
@@ -515,12 +520,12 @@ class S3FileInfoStore implements FileInfoStore {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    private FileInfo setLastUpdateTime(FileInfo fileInfo) {
-        return fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build();
+    private static FileInfo setLastUpdateTime(FileInfo fileInfo, long updateTime) {
+        return fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build();
     }
 
-    private List<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos) {
-        return fileInfos.stream().map(this::setLastUpdateTime).collect(Collectors.toList());
+    private static List<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos, long updateTime) {
+        return fileInfos.stream().map(file -> setLastUpdateTime(file, updateTime)).collect(Collectors.toList());
     }
 
     static final class Builder {
