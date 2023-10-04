@@ -22,6 +22,7 @@ import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
@@ -48,6 +49,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
     protected final ShouldCreateJobsStrategy shouldCreateJobsStrategy;
     protected CompactionJobFactory factory;
     protected Schema schema;
+    protected String tableName;
     protected int compactionFilesBatchSize;
 
     public DelegatingCompactionStrategy(LeafPartitionCompactionStrategy leafStrategy) {
@@ -67,6 +69,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         leafStrategy.init(instanceProperties, tableProperties, factory);
         shouldCreateJobsStrategy.init(instanceProperties, tableProperties);
         schema = tableProperties.getSchema();
+        tableName = tableProperties.get(TableProperty.TABLE_NAME);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
     }
 
@@ -88,7 +91,8 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         for (String partitionId : partitionIds) {
             Partition partition = partitionIdToPartition.get(partitionId);
             if (null == partition) {
-                throw new RuntimeException("Cannot find partition for partition id " + partitionId);
+                throw new RuntimeException("Cannot find partition for partition id "
+                    + partitionId + " in table " + tableName);
             }
 
             if (partition.isLeafPartition()) {
@@ -111,18 +115,18 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         }
         LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
         List<CompactionJob> jobs = leafStrategy.createJobsForLeafPartition(partition, activeFilesWithNoJobId);
-        LOGGER.info("Defined {} compaction job{} for partition {}", jobs.size(), 1 == jobs.size() ? "s" : "", partition.getId());
+        LOGGER.info("Defined {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "s" : "", partition.getId(), tableName);
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.info("Created {} compaction job{} for partition {}", jobs.size(), 1 == jobs.size() ? "s" : "", partition.getId());
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}", jobs.size(), 1 == jobs.size() ? "s" : "", partition.getId(), tableName);
         return jobs;
     }
 
     private List<CompactionJob> createJobsForNonLeafPartition(
             Partition partition, List<FileInfo> fileInfos, Map<String, Partition> partitionIdToPartition) {
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
+        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
 
         // Iterate through files, creating jobs for batches of maximumNumberOfFilesToCompact files
         List<FileInfo> filesForJob = new ArrayList<>();
@@ -130,8 +134,8 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
             filesForJob.add(fileInfo);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
-                LOGGER.info("Creating a job to compact {} files and split into 2 partitions (parent partition is {})",
-                        filesForJob.size(), partition);
+                LOGGER.info("Creating a job to compact {} files and split into 2 partitions (parent partition is {}, table {})",
+                        filesForJob.size(), partition, tableName);
                 compactionJobs.add(createSplittingCompactionJob(partition, partitionIdToPartition, filesForJob));
                 filesForJob.clear();
             }
@@ -140,8 +144,8 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         // If there are any files left (even just 1), create a job for them
         if (!filesForJob.isEmpty()) {
             // Create job for these files
-            LOGGER.info("Creating a job to compact {} files in partition {}",
-                    filesForJob.size(), partition);
+            LOGGER.info("Creating a job to compact {} files in partition {}, table {}",
+                    filesForJob.size(), partition, tableName);
             compactionJobs.add(createSplittingCompactionJob(partition, partitionIdToPartition, filesForJob));
         }
         return compactionJobs;
@@ -154,7 +158,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         Object splitPoint = leftPartition.getRegion()
                 .getRange(schema.getRowKeyFieldNames().get(partition.getDimension()))
                 .getMax();
-        LOGGER.info("Split point is {}", splitPoint);
+        LOGGER.info("Split point is {} (partition {}, table {})", splitPoint, partition.getId(), tableName);
 
         return factory.createSplittingCompactionJob(filesForJob,
                 partition.getId(),
@@ -163,5 +167,4 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
                 splitPoint,
                 partition.getDimension());
     }
-
 }

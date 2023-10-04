@@ -26,6 +26,8 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -44,6 +46,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,6 +61,7 @@ import static sleeper.query.tracker.QueryState.COMPLETED;
 import static sleeper.query.tracker.QueryState.FAILED;
 import static sleeper.query.tracker.QueryState.IN_PROGRESS;
 import static sleeper.query.tracker.QueryState.PARTIALLY_FAILED;
+import static sleeper.query.tracker.QueryState.QUEUED;
 
 @Testcontainers
 public class DynamoDBQueryTrackerIT {
@@ -231,6 +235,94 @@ public class DynamoDBQueryTrackerIT {
         assertThat(queryTracker.getStatus("parent").getRecordCount()).isEqualTo(Long.valueOf(35));
         assertThat(queryTracker.getStatus("parent", "my-id").getRecordCount()).isEqualTo(Long.valueOf(10));
         assertThat(queryTracker.getStatus("parent", "my-other-id").getRecordCount()).isEqualTo(Long.valueOf(25));
+    }
+
+    @Nested
+    @DisplayName("Get tracked queries")
+    class GetTrackedQueries {
+        DynamoDBQueryTracker queryTracker;
+        Query query1 = createQueryWithId("test-query-1");
+        Query query2 = createQueryWithId("test-query-2");
+        Query query3 = createQueryWithId("test-query-3");
+        Query query4 = createQueryWithId("test-query-4");
+        Query query5 = createQueryWithId("test-query-5");
+
+        @BeforeEach
+        void setUp() {
+            queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+            queryTracker.queryQueued(query1);
+            queryTracker.queryInProgress(query2);
+            queryTracker.queryCompleted(query3, new ResultsOutputInfo(456L, List.of()));
+            queryTracker.queryFailed(query4, new Exception("Failed"));
+            queryTracker.queryCompleted(query5, new ResultsOutputInfo(123L, List.of(), new Exception("Partially failed")));
+        }
+
+        @Test
+        void shouldGetAllQueries() {
+            // When / Then
+            assertThat(queryTracker.getAllQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
+                    .containsExactlyInAnyOrder(
+                            queryQueued(query1),
+                            queryInProgress(query2),
+                            queryCompleted(query3, 456L),
+                            queryFailed(query4),
+                            queryPartiallyFailed(query5, 123L));
+        }
+
+        @Test
+        void shouldGetPendingQueries() {
+            // When / Then
+            assertThat(queryTracker.getQueriesWithState(QUEUED))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
+                    .containsExactly(queryQueued(query1));
+        }
+
+        @Test
+        void shouldGetInProgressQueries() {
+            // When / Then
+            assertThat(queryTracker.getQueriesWithState(IN_PROGRESS))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
+                    .containsExactlyInAnyOrder(queryInProgress(query2));
+        }
+
+        @Test
+        void shouldGetCompletedQueries() {
+            // When / Then
+            assertThat(queryTracker.getQueriesWithState(COMPLETED))
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
+                    .containsExactlyInAnyOrder(queryCompleted(query3, 456L));
+        }
+
+        @Test
+        void shouldGetFailedQueries() {
+            // When / Then
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
+                    .containsExactlyInAnyOrder(
+                            queryFailed(query4),
+                            queryPartiallyFailed(query5, 123L));
+        }
+    }
+
+    private TrackedQuery queryQueued(Query query) {
+        return TrackedQueryTestHelper.queryQueued(query.getQueryId(), Instant.now());
+    }
+
+    private TrackedQuery queryInProgress(Query query) {
+        return TrackedQueryTestHelper.queryInProgress(query.getQueryId(), Instant.now());
+    }
+
+    private TrackedQuery queryCompleted(Query query, long records) {
+        return TrackedQueryTestHelper.queryCompleted(query.getQueryId(), Instant.now(), records);
+    }
+
+    private TrackedQuery queryFailed(Query query) {
+        return TrackedQueryTestHelper.queryFailed(query.getQueryId(), Instant.now());
+    }
+
+    private TrackedQuery queryPartiallyFailed(Query query, long records) {
+        return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), records);
     }
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {

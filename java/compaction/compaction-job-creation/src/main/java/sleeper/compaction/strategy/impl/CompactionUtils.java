@@ -34,14 +34,13 @@ public class CompactionUtils {
     private CompactionUtils() {
     }
 
-    public static List<FileInfo> getFilesInAscendingOrder(Partition partition, List<FileInfo> fileInfos) {
+    public static List<FileInfo> getFilesInAscendingOrder(String tableName, Partition partition, List<FileInfo> fileInfos) {
         // Get files in this partition
         List<FileInfo> files = fileInfos
                 .stream()
                 .filter(f -> f.getPartitionId().equals(partition.getId()))
                 .collect(Collectors.toList());
-        LOGGER.info("Creating jobs for leaf partition {}", partition);
-        LOGGER.info("There are {} files for this partition", files.size());
+        LOGGER.info("Creating jobs for leaf partition {} in table {} (there are {} files for this partition)", partition.getId(), tableName, files.size());
 
         // Create map of number of records in file to files, sorted by number of records in file
         SortedMap<Long, List<FileInfo>> recordsToFiles = new TreeMap<>();
