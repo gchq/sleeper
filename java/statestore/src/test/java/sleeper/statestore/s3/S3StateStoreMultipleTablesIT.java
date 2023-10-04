@@ -108,8 +108,12 @@ public class S3StateStoreMultipleTablesIT {
         stateStore2.addFile(file2);
 
         // Then
-        assertThat(stateStore1.getActiveFiles()).containsExactly(file1);
-        assertThat(stateStore2.getActiveFiles()).containsExactly(file2);
+        assertThat(stateStore1.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(file1);
+        assertThat(stateStore2.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(file2);
     }
 
     @Test
@@ -144,7 +148,9 @@ public class S3StateStoreMultipleTablesIT {
 
         // Then
         assertThat(stateStore1.getActiveFiles()).isEmpty();
-        assertThat(stateStore2.getActiveFiles()).containsExactly(file2);
+        assertThat(stateStore2.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(file2);
     }
 
     @Test
@@ -168,7 +174,9 @@ public class S3StateStoreMultipleTablesIT {
         assertThat(stateStore1.getAllPartitions()).isEmpty();
         assertThat(stateStore2.getAllPartitions()).containsExactly(tree2.getRootPartition());
         assertThat(stateStore1.getActiveFiles()).isEmpty();
-        assertThat(stateStore2.getActiveFiles()).containsExactly(file2);
+        assertThat(stateStore2.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(file2);
     }
 
     private FileInfoFactory fileInfoFactory(PartitionTree tree) {
