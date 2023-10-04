@@ -117,8 +117,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 5,
                 1000L,
                 ingestLocalWorkingDirectory,
-                Stream.of("leftFile", "rightFile"),
-                stateStoreUpdateTime);
+                Stream.of("leftFile", "rightFile")
+        );
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -171,8 +171,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 5,
                 10L,
                 ingestLocalWorkingDirectory,
-                fileNames,
-                stateStoreUpdateTime);
+                fileNames
+        );
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -209,8 +209,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
-            Stream<String> fileNames,
-            Instant stateStoreUpdateTime) throws StateStoreException, IteratorException, IOException {
+            Stream<String> fileNames) throws StateStoreException, IteratorException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
         try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
@@ -224,8 +223,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
-                        fileNames.iterator()::next,
-                        () -> stateStoreUpdateTime))) {
+                        fileNames.iterator()::next
+                ))) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }

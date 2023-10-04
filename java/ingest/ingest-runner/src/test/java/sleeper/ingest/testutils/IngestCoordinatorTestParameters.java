@@ -25,7 +25,6 @@ import sleeper.core.statestore.StateStore;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -42,7 +41,6 @@ public class IngestCoordinatorTestParameters {
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
-    private final Supplier<Instant> fileUpdatedTimes;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -54,7 +52,6 @@ public class IngestCoordinatorTestParameters {
         hadoopConfiguration = builder.hadoopConfiguration;
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
-        fileUpdatedTimes = builder.fileUpdatedTimes;
     }
 
     public static Builder builder() {
@@ -101,10 +98,6 @@ public class IngestCoordinatorTestParameters {
         return fileNames.iterator()::next;
     }
 
-    public Supplier<Instant> getFileUpdatedTimeSupplier() {
-        return fileUpdatedTimes;
-    }
-
     public static final class Builder {
         private StateStore stateStore;
         private Schema schema;
@@ -115,7 +108,6 @@ public class IngestCoordinatorTestParameters {
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
-        private Supplier<Instant> fileUpdatedTimes;
 
         private Builder() {
         }
@@ -170,15 +162,6 @@ public class IngestCoordinatorTestParameters {
 
         public Builder fileNames(List<String> fileNames) {
             this.fileNames = fileNames;
-            return this;
-        }
-
-        public Builder fileUpdatedTimes(List<Instant> fileUpdatedTimes) {
-            return fileUpdatedTimes(fileUpdatedTimes.iterator()::next);
-        }
-
-        public Builder fileUpdatedTimes(Supplier<Instant> fileUpdatedTimes) {
-            this.fileUpdatedTimes = fileUpdatedTimes;
             return this;
         }
 

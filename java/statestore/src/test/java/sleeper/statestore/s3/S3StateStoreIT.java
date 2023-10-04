@@ -867,7 +867,6 @@ public class S3StateStoreIT {
                     .filename("file" + i)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("" + (i % 5))
-                    .lastStateStoreUpdateTime(1_000_000L)
                     .numberOfRecords((long) i)
                     .build();
             files.add(fileInfo);
