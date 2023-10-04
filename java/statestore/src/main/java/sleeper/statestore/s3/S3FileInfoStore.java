@@ -96,7 +96,7 @@ class S3FileInfoStore implements FileInfoStore {
             }
         }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            list.addAll(fileInfos);
+            list.addAll(setLastUpdateTimes(fileInfos));
             return list;
         };
         try {
@@ -131,12 +131,12 @@ class S3FileInfoStore implements FileInfoStore {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .lastStateStoreUpdateTime(clock.millis())
                             .build();
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(newActiveFile);
+            filteredFiles.add(setLastUpdateTime(newActiveFile));
             return filteredFiles;
         };
 
@@ -172,13 +172,13 @@ class S3FileInfoStore implements FileInfoStore {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .lastStateStoreUpdateTime(clock.millis())
                             .build();
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(leftFileInfo);
-            filteredFiles.add(rightFileInfo);
+            filteredFiles.add(setLastUpdateTime(leftFileInfo));
+            filteredFiles.add(setLastUpdateTime(rightFileInfo));
             return filteredFiles;
         };
         try {
@@ -209,7 +209,9 @@ class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder().jobId(jobId).build();
+                    fileInfo = fileInfo.toBuilder().jobId(jobId)
+                            .lastStateStoreUpdateTime(clock.millis())
+                            .build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -242,7 +244,7 @@ class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (!readyForGCFileInfo.getFilename().equals(fileInfo.getFilename())) {
-                    filteredFiles.add(fileInfo);
+                    filteredFiles.add(setLastUpdateTime(fileInfo));
                 }
             }
             return filteredFiles;
@@ -511,6 +513,14 @@ class S3FileInfoStore implements FileInfoStore {
 
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
+    }
+
+    private FileInfo setLastUpdateTime(FileInfo fileInfo) {
+        return fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build();
+    }
+
+    private List<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos) {
+        return fileInfos.stream().map(this::setLastUpdateTime).collect(Collectors.toList());
     }
 
     static final class Builder {
