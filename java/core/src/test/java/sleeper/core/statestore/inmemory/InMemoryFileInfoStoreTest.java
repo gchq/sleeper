@@ -27,6 +27,7 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.StateStoreException;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -43,13 +44,17 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file1 = factory.rootFile("file1", 100L);
         FileInfo file2 = factory.rootFile("file2", 100L);
         FileInfo file3 = factory.rootFile("file3", 100L);
 
         // When
         FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
         store.addFile(file1);
         store.addFiles(Arrays.asList(file2, file3));
 
@@ -70,10 +75,14 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo oldFile = factory.rootFile("oldFile", 100L);
         FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
         store.addFile(oldFile);
 
         // When
@@ -97,19 +106,25 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo oldFile = factory.rootFile("oldFile", 100L);
         FileInfo newLeftFile = factory.rootFile("newLeftFile", 100L);
         FileInfo newRightFile = factory.rootFile("newRightFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
         store.addFile(oldFile);
 
         // When
         store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(Collections.singletonList(oldFile), newLeftFile, newRightFile);
 
         // Then
-        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(newLeftFile, newRightFile);
-        assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(newLeftFile, newRightFile);
+        assertThat(store.getActiveFiles())
+                .containsExactlyInAnyOrder(newLeftFile, newRightFile);
+        assertThat(store.getActiveFilesWithNoJobId())
+                .containsExactlyInAnyOrder(newLeftFile, newRightFile);
         assertThat(store.getReadyForGCFiles()).toIterable().containsExactly(
                 oldFile.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
         assertThat(store.getPartitionToActiveFilesMap())
@@ -146,9 +161,13 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file = factory.rootFile("file", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
         store.addFile(file);
 
         // When
@@ -166,9 +185,13 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file = factory.rootFile("file", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
         store.addFile(file);
         store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
 
@@ -186,11 +209,15 @@ public class InMemoryFileInfoStoreTest {
         PartitionTree tree = new PartitionsBuilder(schema)
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
-        FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
+        Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(fixedUpdateTime).build();
         FileInfo file1 = factory.rootFile("file1", 100L);
         FileInfo file2 = factory.rootFile("file2", 100L);
         FileInfo file3 = factory.rootFile("file3", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(fixedUpdateTime);
         store.addFiles(Arrays.asList(file1, file2, file3));
         store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
 
@@ -200,5 +227,27 @@ public class InMemoryFileInfoStoreTest {
         assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(
                 file1, file2.toBuilder().jobId("job1").build(), file3);
         assertThat(store.getActiveFilesWithNoJobId()).containsExactlyInAnyOrder(file1, file3);
+    }
+
+    @Test
+    void shouldSetLastUpdateTimeForFileWhenFixingTimeCorrectly() throws Exception {
+        // Given
+        Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+        PartitionTree tree = new PartitionsBuilder(schema)
+                .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
+                .buildTree();
+        Instant file1Time = Instant.parse("2023-10-04T14:08:00Z");
+        FileInfoFactory factory = FileInfoFactory.builder()
+                .schema(schema).partitionTree(tree)
+                .lastStateStoreUpdate(file1Time).build();
+        FileInfo file1 = factory.rootFile("file1", 100L);
+
+        // When
+        FileInfoStore store = new InMemoryFileInfoStore();
+        store.fixTime(file1Time);
+        store.addFile(file1);
+
+        // Then
+        assertThat(store.getActiveFiles()).containsExactlyInAnyOrder(file1);
     }
 }
