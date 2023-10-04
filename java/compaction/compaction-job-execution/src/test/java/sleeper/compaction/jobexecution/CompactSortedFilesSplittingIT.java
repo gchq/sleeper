@@ -60,8 +60,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
@@ -86,8 +86,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L, 100L, 199L));
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
     }
 
     @Test
@@ -110,8 +110,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             record.put(field1.getName(), (long) odd);
             record.put(field2.getName(), "A");
         });
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 100L, 0);
@@ -136,8 +136,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 99L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L, 100L, 199L));
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
     }
 
     @Test
@@ -160,8 +160,8 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
             record.put(field1.getName(), (long) odd);
             record.put(field2.getName(), "B");
         });
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", "A2", 1);
@@ -185,7 +185,7 @@ class CompactSortedFilesSplittingIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L, 0L, 198L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L, 1L, 199L));
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 100L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 100L));
     }
 }

@@ -48,27 +48,27 @@ public class FileInfoFactory {
     }
 
     public FileInfo leafFile(long records, Object min, Object max) {
-        return fileForPartition(leafPartition(min, max), records, min, max);
+        return fileForPartition(leafPartition(min, max), records);
     }
 
     public FileInfo middleFile(long records, Object min, Object max) {
-        return fileForPartition(middlePartition(min, max), records, min, max);
+        return fileForPartition(middlePartition(min, max), records);
     }
 
-    public FileInfo rootFile(long records, Object min, Object max) {
-        return fileForPartition(partitionTree.getRootPartition(), records, min, max);
+    public FileInfo rootFile(long records) {
+        return fileForPartition(partitionTree.getRootPartition(), records);
     }
 
     public FileInfo leafFile(String filename, long records, Object min, Object max) {
-        return fileForPartition(leafPartition(min, max), filename, records, min, max);
+        return fileForPartition(leafPartition(min, max), filename, records);
     }
 
-    public FileInfo rootFile(String filename, long records, Object min, Object max) {
-        return fileForPartition(partitionTree.getRootPartition(), filename, records, min, max);
+    public FileInfo rootFile(String filename, long records) {
+        return fileForPartition(partitionTree.getRootPartition(), filename, records);
     }
 
-    public FileInfo partitionFile(String partitionId, String filename, long records, Object min, Object max) {
-        return fileForPartition(partitionTree.getPartition(partitionId), filename, records, min, max);
+    public FileInfo partitionFile(String partitionId, String filename, long records) {
+        return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
     }
 
     public FileInfo partitionFile(Partition partition, long records, Object min, Object max) {
@@ -78,7 +78,7 @@ public class FileInfoFactory {
         if (!partition.isRowKeyInPartition(schema, rowKey(max))) {
             throw new IllegalArgumentException("Max value not in partition: " + min + ", region: " + partition.getRegion());
         }
-        return fileForPartition(partition, records, min, max);
+        return fileForPartition(partition, records);
     }
 
     private Partition leafPartition(Object min, Object max) {
@@ -107,11 +107,11 @@ public class FileInfoFactory {
         return partition;
     }
 
-    private FileInfo fileForPartition(Partition partition, long records, Object min, Object max) {
-        return fileForPartition(partition, partition.getId() + ".parquet", records, min, max);
+    private FileInfo fileForPartition(Partition partition, long records) {
+        return fileForPartition(partition, partition.getId() + ".parquet", records);
     }
 
-    private FileInfo fileForPartition(Partition partition, String filename, long records, Object min, Object max) {
+    private FileInfo fileForPartition(Partition partition, String filename, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
                 .filename(filename)

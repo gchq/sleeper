@@ -44,9 +44,9 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-        FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
-        FileInfo file3 = factory.rootFile("file3", 100L, "e", "f");
+        FileInfo file1 = factory.rootFile("file1", 100L);
+        FileInfo file2 = factory.rootFile("file2", 100L);
+        FileInfo file3 = factory.rootFile("file3", 100L);
 
         // When
         FileInfoStore store = new InMemoryFileInfoStore();
@@ -71,8 +71,8 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo oldFile = factory.rootFile("oldFile", 100L, "a", "b");
-        FileInfo newFile = factory.rootFile("newFile", 100L, "a", "b");
+        FileInfo oldFile = factory.rootFile("oldFile", 100L);
+        FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(oldFile);
 
@@ -98,9 +98,9 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo oldFile = factory.rootFile("oldFile", 100L, "a", "c");
-        FileInfo newLeftFile = factory.rootFile("newLeftFile", 100L, "a", "b");
-        FileInfo newRightFile = factory.rootFile("newRightFile", 100L, "b", "c");
+        FileInfo oldFile = factory.rootFile("oldFile", 100L);
+        FileInfo newLeftFile = factory.rootFile("newLeftFile", 100L);
+        FileInfo newRightFile = factory.rootFile("newRightFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(oldFile);
 
@@ -126,8 +126,8 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo oldFile = factory.rootFile("oldFile", 100L, "a", "b");
-        FileInfo newFile = factory.rootFile("newFile", 100L, "a", "b");
+        FileInfo oldFile = factory.rootFile("oldFile", 100L);
+        FileInfo newFile = factory.rootFile("newFile", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(oldFile);
         store.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(Collections.singletonList(oldFile), newFile);
@@ -147,7 +147,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo file = factory.rootFile("file", 100L, "a", "b");
+        FileInfo file = factory.rootFile("file", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(file);
 
@@ -167,7 +167,7 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo file = factory.rootFile("file", 100L, "a", "b");
+        FileInfo file = factory.rootFile("file", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFile(file);
         store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file));
@@ -187,9 +187,9 @@ public class InMemoryFileInfoStoreTest {
                 .leavesWithSplits(Collections.singletonList("root"), Collections.emptyList())
                 .buildTree();
         FileInfoFactory factory = FileInfoFactory.builder().schema(schema).partitionTree(tree).build();
-        FileInfo file1 = factory.rootFile("file1", 100L, "a", "b");
-        FileInfo file2 = factory.rootFile("file2", 100L, "c", "d");
-        FileInfo file3 = factory.rootFile("file3", 100L, "e", "f");
+        FileInfo file1 = factory.rootFile("file1", 100L);
+        FileInfo file2 = factory.rootFile("file2", 100L);
+        FileInfo file3 = factory.rootFile("file3", 100L);
         FileInfoStore store = new InMemoryFileInfoStore();
         store.addFiles(Arrays.asList(file1, file2, file3));
         store.atomicallyUpdateJobStatusOfFiles("job1", Collections.singletonList(file2));
