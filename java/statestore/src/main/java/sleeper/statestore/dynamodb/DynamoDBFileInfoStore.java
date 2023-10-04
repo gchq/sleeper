@@ -185,7 +185,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             List<FileInfo> filesToBeMarkedReadyForGC, FileInfo leftFileInfo, FileInfo rightFileInfo) throws StateStoreException {
         // Delete record for file for current status
         List<TransactWriteItem> writes = new ArrayList<>();
-        for (FileInfo fileInfo : filesToBeMarkedReadyForGC) {
+        setLastUpdateTimes(filesToBeMarkedReadyForGC).forEach(fileInfo -> {
             Delete delete = new Delete()
                     .withTableName(activeTableName)
                     .withKey(fileInfoFormat.createKey(fileInfo))
@@ -196,7 +196,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withTableName(readyForGCTableName)
                     .withItem(fileInfoFormat.createRecordWithStatus(fileInfo, READY_FOR_GARBAGE_COLLECTION));
             writes.add(new TransactWriteItem().withPut(put));
-        }
+        });
         // Add record for file for new status
         Put put = new Put()
                 .withTableName(activeTableName)
