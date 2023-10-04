@@ -106,10 +106,11 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
 
         ingestRecords(
                 recordListAndSchema,
@@ -134,9 +135,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
-                .containsExactlyInAnyOrder(leftFile, rightFile);
+        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
         assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(leftRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
                 .containsExactly(LongStream.range(-100, 0).boxed().toArray());
@@ -163,6 +162,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
 
@@ -191,7 +191,6 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).hasSize(40)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .contains(firstLeftFile, firstRightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
