@@ -22,6 +22,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -80,8 +81,8 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
-        this.partitionParquetFileName = PartitionFileWriterUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
-        this.quantileSketchesFileName = PartitionFileWriterUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
+        this.partitionParquetFileName = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
+        this.quantileSketchesFileName = TableUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);

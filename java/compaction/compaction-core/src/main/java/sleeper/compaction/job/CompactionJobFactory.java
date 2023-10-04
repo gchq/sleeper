@@ -19,6 +19,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileInfo;
@@ -128,7 +129,7 @@ public class CompactionJobFactory {
     }
 
     private String outputFileForPartitionAndJob(String partitionId, String jobId) {
-        return outputFilePrefix + "/partition_" + partitionId + "/" + jobId + ".parquet";
+        return TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
     }
 
     public static final class Builder {
