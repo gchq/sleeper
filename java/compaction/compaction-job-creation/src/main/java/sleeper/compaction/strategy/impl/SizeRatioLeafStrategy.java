@@ -34,16 +34,19 @@ import java.util.stream.Collectors;
 import static sleeper.compaction.strategy.impl.CompactionUtils.getFilesInAscendingOrder;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(SizeRatioLeafStrategy.class);
 
+    private String tableName;
     private int ratio;
     private int compactionFilesBatchSize;
     private CompactionJobFactory factory;
 
     @Override
     public void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory) {
+        tableName = tableProperties.get(TABLE_NAME);
         ratio = tableProperties.getInt(SIZE_RATIO_COMPACTION_STRATEGY_RATIO);
         compactionFilesBatchSize = tableProperties.getInt(COMPACTION_FILES_BATCH_SIZE);
         this.factory = factory;
@@ -92,7 +95,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
     }
 
     private List<FileInfo> getListOfFilesThatMeetsCriteria(Partition partition, List<FileInfo> fileInfos) {
-        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(partition, fileInfos);
+        List<FileInfo> filesInAscendingOrder = getFilesInAscendingOrder(tableName, partition, fileInfos);
 
         while (filesInAscendingOrder.size() > 1) {
             List<Long> fileSizes = filesInAscendingOrder.stream().map(FileInfo::getNumberOfRecords).collect(Collectors.toList());

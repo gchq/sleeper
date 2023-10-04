@@ -92,7 +92,7 @@ public class CreateJobs {
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
         List<String> tables = tableLister.listTables();
-        LOGGER.debug("Found {} tables", tables.size());
+        LOGGER.info("Found {} tables", tables.size());
         for (String table : tables) {
             createJobsForTable(table);
         }
@@ -111,8 +111,8 @@ public class CreateJobs {
         // of efficiency and to ensure consistency.
         List<FileInfo> activeFileInfosWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
         List<FileInfo> activeFileInfosWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} active files with no job id", activeFileInfosWithNoJobId.size());
-        LOGGER.debug("Found {} active files with a job id", activeFileInfosWithJobId.size());
+        LOGGER.debug("Found {} active files with no job id in table {}", activeFileInfosWithNoJobId.size(), tableName);
+        LOGGER.debug("Found {} active files with a job id in table {}", activeFileInfosWithJobId.size(), tableName);
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
@@ -120,7 +120,7 @@ public class CreateJobs {
         compactionStrategy.init(instanceProperties, tableProperties);
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
-        LOGGER.info("Used {} to create {} compaction jobs", compactionStrategy.getClass().getSimpleName(), compactionJobs.size());
+        LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableName);
 
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
