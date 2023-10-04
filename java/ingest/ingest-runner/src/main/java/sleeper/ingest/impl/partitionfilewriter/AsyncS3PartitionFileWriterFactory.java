@@ -30,7 +30,6 @@ import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -49,7 +48,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
     private final String filePathPrefix;
     private final String localWorkingDirectory;
     private final Supplier<String> fileNameGenerator;
-    private final Supplier<Instant> timeSupplier;
     private final S3TransferManager s3TransferManager;
     private final S3AsyncClient s3AsyncClient;
     private final boolean closeS3AsyncClient;
@@ -60,7 +58,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         filePathPrefix = Objects.requireNonNull(builder.filePathPrefix, "filePathPrefix must not be null");
         localWorkingDirectory = Objects.requireNonNull(builder.localWorkingDirectory, "localWorkingDirectory must not be null");
         fileNameGenerator = Objects.requireNonNull(builder.fileNameGenerator, "fileNameGenerator must not be null");
-        timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
         s3AsyncClient = builder.s3AsyncClient;
         closeS3AsyncClient = builder.closeS3AsyncClient;
         if (s3AsyncClient != null) {
@@ -137,8 +134,8 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
                     s3BucketName, filePathPrefix,
                     s3TransferManager,
                     localWorkingDirectory,
-                    fileNameGenerator.get(),
-                    timeSupplier);
+                    fileNameGenerator.get()
+            );
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -160,7 +157,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
         private String localWorkingDirectory;
         private boolean closeS3AsyncClient;
         private Supplier<String> fileNameGenerator = () -> UUID.randomUUID().toString();
-        private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
         }
@@ -203,11 +199,6 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
         public Builder fileNameGenerator(Supplier<String> fileNameGenerator) {
             this.fileNameGenerator = fileNameGenerator;
-            return this;
-        }
-
-        public Builder timeSupplier(Supplier<Instant> timeSupplier) {
-            this.timeSupplier = timeSupplier;
             return this;
         }
 

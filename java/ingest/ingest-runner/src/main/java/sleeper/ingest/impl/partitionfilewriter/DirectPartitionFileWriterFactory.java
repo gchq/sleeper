@@ -21,7 +21,6 @@ import sleeper.core.partition.Partition;
 import sleeper.ingest.impl.ParquetConfiguration;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -35,25 +34,23 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
     private final ParquetConfiguration parquetConfiguration;
     private final String filePathPrefix;
     private final Supplier<String> fileNameGenerator;
-    private final Supplier<Instant> timeSupplier;
 
     private DirectPartitionFileWriterFactory(
             ParquetConfiguration parquetConfiguration, String filePathPrefix,
-            Supplier<String> fileNameGenerator, Supplier<Instant> timeSupplier) {
+            Supplier<String> fileNameGenerator) {
         this.parquetConfiguration = Objects.requireNonNull(parquetConfiguration, "parquetWriterConfiguration must not be null");
         this.filePathPrefix = Objects.requireNonNull(filePathPrefix, "filePathPrefix must not be null");
         this.fileNameGenerator = Objects.requireNonNull(fileNameGenerator, "fileNameGenerator must not be null");
-        this.timeSupplier = Objects.requireNonNull(timeSupplier, "timeSupplier must not be null");
     }
 
     public static DirectPartitionFileWriterFactory from(ParquetConfiguration configuration, String filePathPrefix) {
-        return from(configuration, filePathPrefix, () -> UUID.randomUUID().toString(), Instant::now);
+        return from(configuration, filePathPrefix, () -> UUID.randomUUID().toString());
     }
 
     public static DirectPartitionFileWriterFactory from(
             ParquetConfiguration configuration, String filePathPrefix,
-            Supplier<String> fileNameGenerator, Supplier<Instant> timeSupplier) {
-        return new DirectPartitionFileWriterFactory(configuration, filePathPrefix, fileNameGenerator, timeSupplier);
+            Supplier<String> fileNameGenerator) {
+        return new DirectPartitionFileWriterFactory(configuration, filePathPrefix, fileNameGenerator);
     }
 
     public static DirectPartitionFileWriterFactory from(
@@ -72,8 +69,8 @@ public class DirectPartitionFileWriterFactory implements PartitionFileWriterFact
                     partition,
                     parquetConfiguration,
                     filePathPrefix,
-                    fileNameGenerator.get(),
-                    timeSupplier);
+                    fileNameGenerator.get()
+            );
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

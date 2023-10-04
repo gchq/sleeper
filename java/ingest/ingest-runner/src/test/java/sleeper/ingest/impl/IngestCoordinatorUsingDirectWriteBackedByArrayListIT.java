@@ -106,10 +106,11 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
 
         ingestRecords(
                 recordListAndSchema,
@@ -117,8 +118,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 5,
                 1000L,
                 ingestLocalWorkingDirectory,
-                Stream.of("leftFile", "rightFile"),
-                stateStoreUpdateTime);
+                Stream.of("leftFile", "rightFile")
+        );
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -127,8 +128,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100, -100L, -1L);
-        FileInfo rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100, 0L, 99L);
+        FileInfo leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
+        FileInfo rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
@@ -161,6 +162,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
 
@@ -171,8 +173,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 5,
                 10L,
                 ingestLocalWorkingDirectory,
-                fileNames,
-                stateStoreUpdateTime);
+                fileNames
+        );
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -181,15 +183,14 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5, -90L, -2L);
-        FileInfo firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5, 12L, 83L);
+        FileInfo firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
+        FileInfo firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
         List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles)
-                .hasSize(40)
+        assertThat(actualFiles).hasSize(40)
                 .contains(firstLeftFile, firstRightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
@@ -209,8 +210,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
-            Stream<String> fileNames,
-            Instant stateStoreUpdateTime) throws StateStoreException, IteratorException, IOException {
+            Stream<String> fileNames) throws StateStoreException, IteratorException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
         try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
@@ -224,8 +224,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
-                        fileNames.iterator()::next,
-                        () -> stateStoreUpdateTime))) {
+                        fileNames.iterator()::next
+                ))) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }

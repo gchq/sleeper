@@ -47,21 +47,18 @@ public class PartitionFileWriterUtils {
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
-     * @param updateTime      -
      * @return The {@link FileInfo} object
      */
     public static FileInfo createFileInfo(Schema sleeperSchema,
                                           String filename,
                                           String partitionId,
-                                          long numberOfRecords,
-                                          long updateTime) {
+                                          long numberOfRecords) {
         return FileInfo.builder()
                 .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
-                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 

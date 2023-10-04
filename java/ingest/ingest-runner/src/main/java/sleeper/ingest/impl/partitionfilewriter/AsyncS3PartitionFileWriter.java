@@ -38,11 +38,9 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -73,7 +71,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     private final String partitionParquetS3Key;
     private final String quantileSketchesLocalFileName;
     private final String quantileSketchesS3Key;
-    private final Supplier<Instant> timeSupplier;
     private final ParquetWriter<Record> parquetWriter;
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private long recordsWrittenToCurrentPartition;
@@ -101,8 +98,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
             String filePathPrefix,
             S3TransferManager s3TransferManager,
             String localWorkingDirectory,
-            String fileName,
-            Supplier<Instant> timeSupplier) throws IOException {
+            String fileName) throws IOException {
         this.s3TransferManager = requireNonNull(s3TransferManager);
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
@@ -112,7 +108,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
         this.partitionParquetS3Key = String.format("partition_%s/%s%s.parquet", partition.getId(), filePathPrefix, fileName);
         this.quantileSketchesS3Key = String.format("partition_%s/%s%s.sketches", partition.getId(), filePathPrefix, fileName);
-        this.timeSupplier = timeSupplier;
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createKeyFieldToSketchMap(sleeperSchema);
@@ -126,22 +121,19 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
-     * @param updateTime      -
      * @return The {@link FileInfo} object
      */
     private static FileInfo createFileInfo(
             Schema sleeperSchema,
             String filename,
             String partitionId,
-            long numberOfRecords,
-            long updateTime) {
+            long numberOfRecords) {
         return FileInfo.builder()
                 .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
-                .lastStateStoreUpdateTime(updateTime)
                 .build();
     }
 
@@ -260,8 +252,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 sleeperSchema,
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
-                recordsWrittenToCurrentPartition,
-                timeSupplier.get().toEpochMilli());
+                recordsWrittenToCurrentPartition);
         // Start the asynchronous upload of the files to S3
         CompletableFuture<?> partitionFileUploadFuture = asyncUploadLocalFileToS3ThenDeleteLocalCopy(
                 s3TransferManager,

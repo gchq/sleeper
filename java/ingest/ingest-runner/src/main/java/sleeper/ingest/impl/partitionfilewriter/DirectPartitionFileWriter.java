@@ -31,10 +31,8 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,7 +48,6 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final Configuration hadoopConfiguration;
     private final String partitionParquetFileName;
     private final String quantileSketchesFileName;
-    private final Supplier<Instant> timeSupplier;
     private final ParquetWriter<Record> parquetWriter;
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
     private long recordsWrittenToCurrentPartition;
@@ -79,14 +76,12 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String filePathPrefix,
-            String fileName,
-            Supplier<Instant> timeSupplier) throws IOException {
+            String fileName) throws IOException {
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.partitionParquetFileName = PartitionFileWriterUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
         this.quantileSketchesFileName = PartitionFileWriterUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
-        this.timeSupplier = timeSupplier;
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
@@ -134,8 +129,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 sleeperSchema,
                 partitionParquetFileName,
                 partition.getId(),
-                recordsWrittenToCurrentPartition,
-                timeSupplier.get().toEpochMilli());
+                recordsWrittenToCurrentPartition);
         return CompletableFuture.completedFuture(fileInfo);
     }
 

@@ -58,9 +58,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -122,9 +122,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -195,9 +195,9 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         .splitToNewChildren("root", "left", "right", 0L).buildList());
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)

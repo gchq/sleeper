@@ -17,6 +17,7 @@ package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
 
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -127,5 +128,10 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public void clearFiles() {
         fileInfoStore.clearTable();
+    }
+
+    @Override
+    public void fixTime(Instant now) {
+        fileInfoStore.fixTime(now);
     }
 }

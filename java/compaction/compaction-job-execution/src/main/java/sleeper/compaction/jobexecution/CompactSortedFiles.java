@@ -170,7 +170,6 @@ public class CompactSortedFiles {
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
-        long finishTime = System.currentTimeMillis();
         long totalNumberOfRecordsRead = 0L;
         for (CloseableIterator<Record> iterator : inputIterators) {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
@@ -182,7 +181,6 @@ public class CompactSortedFiles {
                 compactionJob.getOutputFile(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
-                finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
@@ -267,7 +265,6 @@ public class CompactSortedFiles {
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
-        long finishTime = System.currentTimeMillis();
         long totalNumberOfRecordsRead = 0L;
         for (CloseableIterator<Record> iterator : inputIterators) {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
@@ -281,7 +278,6 @@ public class CompactSortedFiles {
                 compactionJob.getPartitionId(),
                 compactionJob.getChildPartitions(),
                 new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
-                finishTime,
                 stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
@@ -326,7 +322,6 @@ public class CompactSortedFiles {
                                                    String outputFile,
                                                    String partitionId,
                                                    long recordsWritten,
-                                                   long finishTime,
                                                    StateStore stateStore,
                                                    List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
@@ -335,7 +330,6 @@ public class CompactSortedFiles {
                     .rowKeyTypes(rowKeyTypes)
                     .filename(file)
                     .partitionId(partitionId)
-                    .lastStateStoreUpdateTime(finishTime)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
@@ -346,7 +340,6 @@ public class CompactSortedFiles {
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten)
-                .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
@@ -363,7 +356,6 @@ public class CompactSortedFiles {
                                                    String partition,
                                                    List<String> childPartitions,
                                                    Pair<Long, Long> recordsWritten,
-                                                   long finishTime,
                                                    StateStore stateStore,
                                                    List<PrimitiveType> rowKeyTypes) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
@@ -372,7 +364,6 @@ public class CompactSortedFiles {
                     .rowKeyTypes(rowKeyTypes)
                     .filename(file)
                     .partitionId(partition)
-                    .lastStateStoreUpdateTime(finishTime)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .build();
             filesToBeMarkedReadyForGC.add(fileInfo);
@@ -383,7 +374,6 @@ public class CompactSortedFiles {
                 .partitionId(childPartitions.get(0))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
-                .lastStateStoreUpdateTime(finishTime)
                 .build();
         FileInfo rightFileInfo = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
@@ -391,7 +381,6 @@ public class CompactSortedFiles {
                 .partitionId(childPartitions.get(1))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getRight())
-                .lastStateStoreUpdateTime(finishTime)
                 .build();
         try {
             stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);

@@ -108,8 +108,8 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
             record.put("timestamp", 0L);
             record.put("value", 123456789L);
         });
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactoryBuilder()
                 .iteratorClassName(AgeOffIterator.class.getName())
@@ -135,7 +135,7 @@ class CompactSortedFilesIteratorIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 50L, 0L, 98L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 50L, 100L, 198L));
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 50L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 50L));
     }
 }

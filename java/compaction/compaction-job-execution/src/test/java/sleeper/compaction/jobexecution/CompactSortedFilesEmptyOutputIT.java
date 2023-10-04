@@ -123,8 +123,8 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
 
         List<Record> data1 = keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = keyAndTwoValuesSortedOddLongs();
-        dataHelper.writeRootFile(folderName + "/file1.parquet", data1, 0L, 198L);
-        dataHelper.writeRootFile(folderName + "/file2.parquet", data2, 1L, 199L);
+        dataHelper.writeRootFile(folderName + "/file1.parquet", data1);
+        dataHelper.writeRootFile(folderName + "/file2.parquet", data2);
 
         CompactionJob compactionJob = compactionFactory().createSplittingCompactionJob(
                 dataHelper.allFileInfos(), "C", "A", "B", 200L, 0);
@@ -149,7 +149,7 @@ class CompactSortedFilesEmptyOutputIT extends CompactSortedFilesTestBase {
         assertThat(stateStore.getActiveFiles())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrder(
-                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L, 0L, 199L),
-                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L, null, null));
+                        dataHelper.expectedPartitionFile("A", compactionJob.getOutputFiles().getLeft(), 200L),
+                        dataHelper.expectedPartitionFile("B", compactionJob.getOutputFiles().getRight(), 0L));
     }
 }

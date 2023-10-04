@@ -140,10 +140,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime))
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -160,7 +160,7 @@ public class IngestCoordinatorCommonIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build()
-                .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200, -100L, 99L);
+                .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 200);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(fileInfo);
@@ -192,10 +192,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime))
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -212,7 +212,7 @@ public class IngestCoordinatorCommonIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build()
-                .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 20000, -10000L, 9999L);
+                .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 20000);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(fileInfo);
@@ -244,10 +244,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -300,10 +300,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -359,10 +359,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -419,10 +419,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -485,10 +485,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(List.of(stateStoreUpdateTime, stateStoreUpdateTime, stateStoreUpdateTime))
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -546,10 +546,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -566,9 +566,9 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                "/partition_left/leftFile.parquet", 2, new byte[]{1, 1}, new byte[]{5});
+                "/partition_left/leftFile.parquet", 2);
         FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                "/partition_right/rightFile.parquet", 2, new byte[]{11, 2}, new byte[]{64, 65});
+                "/partition_right/rightFile.parquet", 2);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -620,10 +620,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -640,9 +640,9 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                "/partition_right/rightFile.parquet", 2, 0, 100);
+                "/partition_right/rightFile.parquet", 2);
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                "/partition_left/leftFile.parquet", 2, 0, 100);
+                "/partition_left/leftFile.parquet", 2);
         List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -688,10 +688,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -708,9 +708,9 @@ public class IngestCoordinatorCommonIT {
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
         FileInfo leftFile = fileInfoFactory.partitionFile("left", ingestType.getFilePrefix(parameters) +
-                "/partition_left/leftFile.parquet", 112, -100L, 19L);
+                "/partition_left/leftFile.parquet", 112);
         FileInfo rightFile = fileInfoFactory.partitionFile("right", ingestType.getFilePrefix(parameters) +
-                "/partition_right/rightFile.parquet", 88, 2L, 99L);
+                "/partition_right/rightFile.parquet", 88);
         List<Record> leftRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = ResultVerifier.readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords)
@@ -763,10 +763,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -817,10 +817,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(duplicatedRecordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -869,7 +869,6 @@ public class IngestCoordinatorCommonIT {
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of())
-                .fileUpdatedTimes(List.of())
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
@@ -910,10 +909,10 @@ public class IngestCoordinatorCommonIT {
                 .buildTree();
         stateStore.initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("rootFile"))
-                .fileUpdatedTimes(() -> stateStoreUpdateTime)
                 .stateStore(stateStore)
                 .schema(recordListAndSchema.sleeperSchema)
                 .workingDir(ingestLocalWorkingDirectory)
