@@ -84,6 +84,7 @@ public class IngestCoordinatorFactory {
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .s3BucketName(parameters.getDataBucketName())
                             .fileNameGenerator(parameters.getFileNameGenerator())
+                            .filePathPrefix(parameters.getTableName())
                             .build())
                     .build();
         } catch (Exception e) {

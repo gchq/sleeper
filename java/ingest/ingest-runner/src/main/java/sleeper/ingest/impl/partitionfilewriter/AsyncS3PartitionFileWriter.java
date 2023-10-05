@@ -26,6 +26,7 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager;
 import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
 
+import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -106,8 +107,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
         this.partitionParquetLocalFileName = String.format("%s/partition_%s_%s.parquet", localWorkingDirectory, partition.getId(), fileName);
         this.quantileSketchesLocalFileName = String.format("%s/partition_%s_%s.sketches", localWorkingDirectory, partition.getId(), fileName);
-        this.partitionParquetS3Key = String.format("partition_%s/%s%s.parquet", partition.getId(), filePathPrefix, fileName);
-        this.quantileSketchesS3Key = String.format("partition_%s/%s%s.sketches", partition.getId(), filePathPrefix, fileName);
+        this.partitionParquetS3Key = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
+        this.quantileSketchesS3Key = TableUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
         this.keyFieldToSketchMap = createKeyFieldToSketchMap(sleeperSchema);

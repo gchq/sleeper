@@ -77,6 +77,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -973,6 +974,7 @@ public class IngestCoordinatorCommonIT {
                 .temporaryFolder(temporaryFolder)
                 .hadoopConfiguration(hadoopConfiguration)
                 .s3AsyncClient(s3Async)
-                .dataBucketName(dataBucketName);
+                .dataBucketName(dataBucketName)
+                .tableName(tableProperties.get(TABLE_NAME));
     }
 }
