@@ -379,6 +379,43 @@ public class DynamoDBStateStoreIT {
                             .map(fileInfo -> tuple(fileInfo.getFilename(), fileInfo.getPartitionId(), fileInfo.getJobId()))
                             .collect(Collectors.toList()));
         }
+
+        @Test
+        void shouldReturnActiveFilesOrderedByPartitionIdThenFilename() throws Exception {
+            // Given
+            Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
+            DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
+            FileInfo file1 = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file1")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("P1")
+                    .build();
+            FileInfo file2 = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file2")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("P2")
+                    .build();
+            FileInfo file3 = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file3")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("P1")
+                    .build();
+            FileInfo file4 = FileInfo.builder()
+                    .rowKeyTypes(new LongType())
+                    .filename("file4")
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .partitionId("P2")
+                    .build();
+            dynamoDBStateStore.addFiles(List.of(file1, file2, file3, file4));
+
+            // When/Then
+            assertThat(dynamoDBStateStore.getActiveFiles())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                    .containsExactly(file1, file3, file2, file4);
+        }
     }
 
     @Nested
