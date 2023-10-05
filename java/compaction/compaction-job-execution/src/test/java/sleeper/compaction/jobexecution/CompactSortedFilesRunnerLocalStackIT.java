@@ -154,28 +154,28 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .rowKeyTypes(new LongType())
                 .filename(file1)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file2)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo3 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file3)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo4 = FileInfo.builder()
                 .rowKeyTypes(new LongType())
                 .filename(file4)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);
