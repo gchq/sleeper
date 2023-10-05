@@ -21,10 +21,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
@@ -65,7 +65,6 @@ class DynamoDBFileInfoFormat {
 
     Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
-        itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
         itemValues.put(STATUS, createStringAttribute(ACTIVE.toString()));
         return createRecord(itemValues, fileInfo);
     }
@@ -124,12 +123,16 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
-    FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
+    FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()))
-                .partitionId(item.get(PARTITION).getS())
-                .filename(item.get(NAME).getS());
+                .partitionId(item.get(PARTITION).getS());
+        if (null != item.get(NAME)) {
+            fileInfoBuilder.filename(item.get(NAME).getS());
+        } else {
+            fileInfoBuilder.filename(getFilenameFromSortKey(item));
+        }
         if (null != item.get(NUMBER_LINES)) {
             fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
         }
@@ -144,5 +147,9 @@ class DynamoDBFileInfoFormat {
 
     private static String createActiveFileSortKey(FileInfo fileInfo) {
         return fileInfo.getPartitionId() + DELIMETER + fileInfo.getFilename();
+    }
+
+    private static String getFilenameFromSortKey(Map<String, AttributeValue> item) {
+        return item.get(PARTITION_AND_FILENAME).getS().split(Pattern.quote(DELIMETER))[1];
     }
 }

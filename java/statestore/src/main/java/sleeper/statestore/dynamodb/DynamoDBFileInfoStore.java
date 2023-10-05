@@ -49,7 +49,6 @@ import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -305,7 +304,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                 | InternalServerErrorException | IOException e) {
+                 | InternalServerErrorException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
     }
@@ -336,11 +335,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                             readyForGCTableName, newConsumed);
                     return result.getItems().stream();
                 }).map(item -> {
-                    try {
-                        return fileInfoFormat.getFileInfoFromAttributeValues(item);
-                    } catch (IOException e) {
-                        throw new RuntimeException("IOException creating FileInfo from attribute values");
-                    }
+                    return fileInfoFormat.getFileInfoFromAttributeValues(item);
                 }).iterator();
     }
 
@@ -368,7 +363,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
             }
             return fileInfoResults;
         } catch (ProvisionedThroughputExceededException | ResourceNotFoundException | RequestLimitExceededException
-                 | InternalServerErrorException | IOException e) {
+                 | InternalServerErrorException e) {
             throw new StateStoreException("Exception querying DynamoDB", e);
         }
     }

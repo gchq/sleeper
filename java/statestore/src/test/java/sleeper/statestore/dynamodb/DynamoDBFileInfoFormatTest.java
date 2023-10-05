@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 
 import java.util.Map;
@@ -41,7 +42,6 @@ public class DynamoDBFileInfoFormatTest {
         assertThat(fileInfoFormat.createActiveFileRecord(fileInfo))
                 .isEqualTo(Map.of(
                         "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                        "Name", new AttributeValue().withS("file1.parquet"),
                         "Partition", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("ACTIVE"),
                         "TableName", new AttributeValue().withS("test-table")
@@ -73,7 +73,6 @@ public class DynamoDBFileInfoFormatTest {
         assertThat(fileInfoFormat.createRecord(activeFile))
                 .isEqualTo(Map.of(
                         "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                        "Name", new AttributeValue().withS("file1.parquet"),
                         "Partition", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("ACTIVE"),
                         "TableName", new AttributeValue().withS("test-table")
@@ -111,6 +110,26 @@ public class DynamoDBFileInfoFormatTest {
                         "TableName", new AttributeValue().withS("test-table"),
                         "Name", new AttributeValue().withS("file1.parquet")
                 ));
+    }
+
+    @Test
+    void shouldCreateFileInfoFromActiveFileRecord() {
+        //Given
+        Map<String, AttributeValue> item = Map.of(
+                "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
+                "Partition", new AttributeValue().withS("partition1"),
+                "Status", new AttributeValue().withS("ACTIVE"),
+                "TableName", new AttributeValue().withS("test-table")
+        );
+
+        // When/Then
+        assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
+                .isEqualTo(FileInfo.builder()
+                        .rowKeyTypes(new LongType())
+                        .filename("file1.parquet")
+                        .partitionId("partition1")
+                        .fileStatus(FileInfo.FileStatus.ACTIVE)
+                        .build());
     }
 
     private FileInfo createActiveFile(String fileName, String partitionId) {
