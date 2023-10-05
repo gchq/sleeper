@@ -18,7 +18,6 @@ package sleeper.ingest.impl.partitionfilewriter;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -97,35 +96,5 @@ public class PartitionFileWriterUtils {
                 keyFieldToSketchMap.get(rowKeyField.getName()).update(value);
             }
         }
-    }
-
-    /**
-     * Construct the full path for the Parquet partition file, to maintain consistency across different file writer
-     * implementations.
-     *
-     * @param filePathPrefix -
-     * @param partition      -
-     * @param fileName       -
-     * @return The file path
-     */
-    public static String constructPartitionParquetFilePath(String filePathPrefix,
-                                                           Partition partition,
-                                                           String fileName) {
-        return String.format("%s/partition_%s/%s.parquet", filePathPrefix, partition.getId(), fileName);
-    }
-
-    /**
-     * Construct the full path for the quantile sketches file, to maintain consistency across different file writer
-     * implementations.
-     *
-     * @param filePathPrefix -
-     * @param partition      -
-     * @param fileName       -
-     * @return The file path
-     */
-    public static String constructQuantileSketchesFilePath(String filePathPrefix,
-                                                           Partition partition,
-                                                           String fileName) {
-        return String.format("%s/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
     }
 }

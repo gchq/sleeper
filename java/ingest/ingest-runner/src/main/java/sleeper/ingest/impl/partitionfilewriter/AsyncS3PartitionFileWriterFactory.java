@@ -73,7 +73,7 @@ public class AsyncS3PartitionFileWriterFactory implements PartitionFileWriterFac
 
     public static Builder builderWith(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return builder().s3BucketName(instanceProperties.get(DATA_BUCKET))
-                .filePathPrefix(tableProperties.get(TABLE_NAME) + "/");
+                .filePathPrefix(tableProperties.get(TABLE_NAME));
     }
 
     public static S3AsyncClient s3AsyncClientFromProperties(InstanceProperties properties) {
