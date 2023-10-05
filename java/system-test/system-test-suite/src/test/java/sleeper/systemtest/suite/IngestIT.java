@@ -27,6 +27,7 @@ import sleeper.systemtest.suite.testutil.ReportingExtension;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -40,6 +41,7 @@ public class IngestIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
+        sleeper.ingest().purgeQueue(INGEST_JOB_QUEUE_URL);
     }
 
     @Test

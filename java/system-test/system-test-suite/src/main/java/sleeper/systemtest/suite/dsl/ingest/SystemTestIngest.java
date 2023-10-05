@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
+import com.amazonaws.services.sqs.model.PurgeQueueRequest;
+
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
@@ -67,5 +70,10 @@ public class SystemTestIngest {
                 new DirectEmrServerlessDriver(instance,
                         clients.getS3(), clients.getDynamoDB(), clients.getEmrServerless()),
                 waitForIngestJobsDriver());
+    }
+
+    public void purgeQueue(InstanceProperty queueProperty) {
+        clients.getSqs().purgeQueue(new PurgeQueueRequest(
+                instance.getInstanceProperties().get(queueProperty)));
     }
 }

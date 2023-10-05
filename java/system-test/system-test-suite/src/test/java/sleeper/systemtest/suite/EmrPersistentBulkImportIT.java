@@ -49,6 +49,7 @@ public class EmrPersistentBulkImportIT {
     void setUp() throws InterruptedException {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
+        sleeper.ingest().purgeQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
     }
 
     @AfterEach

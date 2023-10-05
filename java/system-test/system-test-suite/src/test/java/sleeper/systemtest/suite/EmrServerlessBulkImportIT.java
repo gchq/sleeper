@@ -40,6 +40,7 @@ public class EmrServerlessBulkImportIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
+        sleeper.ingest().purgeQueue(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
     }
 
     @Test
