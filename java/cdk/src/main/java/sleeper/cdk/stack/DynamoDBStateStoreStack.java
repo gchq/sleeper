@@ -52,7 +52,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .type(AttributeType.STRING)
                 .build();
         Attribute sortKeyActiveFileInfoTable = Attribute.builder()
-                .name(DynamoDBStateStore.PARTITION_AND_FILENAME)
+                .name(DynamoDBStateStore.PARTITION_ID_AND_FILENAME)
                 .type(AttributeType.STRING)
                 .build();
 

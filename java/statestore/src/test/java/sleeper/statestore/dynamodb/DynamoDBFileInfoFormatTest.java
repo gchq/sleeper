@@ -41,8 +41,8 @@ public class DynamoDBFileInfoFormatTest {
         // When / Then
         assertThat(fileInfoFormat.createActiveFileRecord(fileInfo))
                 .isEqualTo(Map.of(
-                        "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                        "Partition", new AttributeValue().withS("partition1"),
+                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
+                        "PartitionId", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("ACTIVE"),
                         "TableName", new AttributeValue().withS("test-table")
                 ));
@@ -56,8 +56,8 @@ public class DynamoDBFileInfoFormatTest {
         // When / Then
         assertThat(fileInfoFormat.createReadyForGCRecord(fileInfo))
                 .isEqualTo(Map.of(
-                        "Name", new AttributeValue().withS("file1.parquet"),
-                        "Partition", new AttributeValue().withS("partition1"),
+                        "FileName", new AttributeValue().withS("file1.parquet"),
+                        "PartitionId", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
                         "TableName", new AttributeValue().withS("test-table")
                 ));
@@ -72,15 +72,15 @@ public class DynamoDBFileInfoFormatTest {
         // When / Then
         assertThat(fileInfoFormat.createRecord(activeFile))
                 .isEqualTo(Map.of(
-                        "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                        "Partition", new AttributeValue().withS("partition1"),
+                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
+                        "PartitionId", new AttributeValue().withS("partition1"),
                         "Status", new AttributeValue().withS("ACTIVE"),
                         "TableName", new AttributeValue().withS("test-table")
                 ));
         assertThat(fileInfoFormat.createRecord(readyForGCFile))
                 .isEqualTo(Map.of(
-                        "Name", new AttributeValue().withS("file2.parquet"),
-                        "Partition", new AttributeValue().withS("partition2"),
+                        "FileName", new AttributeValue().withS("file2.parquet"),
+                        "PartitionId", new AttributeValue().withS("partition2"),
                         "Status", new AttributeValue().withS("READY_FOR_GARBAGE_COLLECTION"),
                         "TableName", new AttributeValue().withS("test-table")
                 ));
@@ -91,11 +91,11 @@ public class DynamoDBFileInfoFormatTest {
         // Given
         FileInfo fileInfo = createActiveFile("file1.parquet", "partition1");
 
-        // When/Then
+        // When / Then
         assertThat(fileInfoFormat.createActiveFileKey(fileInfo))
                 .isEqualTo(Map.of(
                         "TableName", new AttributeValue().withS("test-table"),
-                        "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet")
+                        "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet")
                 ));
     }
 
@@ -104,25 +104,25 @@ public class DynamoDBFileInfoFormatTest {
         // Given
         FileInfo fileInfo = createReadyForGCFile("file1.parquet", "partition1");
 
-        // When/Then
+        // When / Then
         assertThat(fileInfoFormat.createReadyForGCKey(fileInfo))
                 .isEqualTo(Map.of(
                         "TableName", new AttributeValue().withS("test-table"),
-                        "Name", new AttributeValue().withS("file1.parquet")
+                        "FileName", new AttributeValue().withS("file1.parquet")
                 ));
     }
 
     @Test
     void shouldCreateFileInfoFromActiveFileRecord() {
-        //Given
+        // Given
         Map<String, AttributeValue> item = Map.of(
-                "PartitionAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
-                "Partition", new AttributeValue().withS("partition1"),
+                "PartitionIdAndFileName", new AttributeValue().withS("partition1|file1.parquet"),
+                "PartitionId", new AttributeValue().withS("partition1"),
                 "Status", new AttributeValue().withS("ACTIVE"),
                 "TableName", new AttributeValue().withS("test-table")
         );
 
-        // When/Then
+        // When / Then
         assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
                 .isEqualTo(FileInfo.builder()
                         .rowKeyTypes(new LongType())

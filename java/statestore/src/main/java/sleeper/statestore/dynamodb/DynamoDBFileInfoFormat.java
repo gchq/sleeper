@@ -33,14 +33,14 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
     static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
-    static final String PARTITION_AND_FILENAME = "PartitionAndFileName";
-    static final String NAME = "Name";
+    static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
+    static final String NAME = "FileName";
     static final String STATUS = "Status";
-    static final String PARTITION = "Partition";
+    static final String PARTITION_ID = "PartitionId";
     private static final String NUMBER_LINES = "NumLines";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String JOB_ID = "Job_name";
-    private static final String DELIMETER = "|";
+    private static final String DELIMITER = "|";
     private final String sleeperTableName;
     private final List<PrimitiveType> rowKeyTypes;
 
@@ -82,7 +82,7 @@ class DynamoDBFileInfoFormat {
      * @return A record in DynamoDB
      */
     Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileInfo fileInfo) {
-        itemValues.put(PARTITION, createStringAttribute(fileInfo.getPartitionId()));
+        itemValues.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
         if (null != fileInfo.getNumberOfRecords()) {
             itemValues.put(NUMBER_LINES, createNumberAttribute(fileInfo.getNumberOfRecords()));
         }
@@ -98,7 +98,7 @@ class DynamoDBFileInfoFormat {
     Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
-        itemValues.put(PARTITION_AND_FILENAME, createStringAttribute(createActiveFileSortKey(fileInfo)));
+        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(createActiveFileSortKey(fileInfo)));
         return itemValues;
     }
 
@@ -112,7 +112,7 @@ class DynamoDBFileInfoFormat {
     Map<String, AttributeValue> getActiveFileKey(Map<String, AttributeValue> item) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
-        itemValues.put(PARTITION_AND_FILENAME, item.get(PARTITION_AND_FILENAME));
+        itemValues.put(PARTITION_ID_AND_FILENAME, item.get(PARTITION_ID_AND_FILENAME));
         return itemValues;
     }
 
@@ -127,7 +127,7 @@ class DynamoDBFileInfoFormat {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
                 .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()))
-                .partitionId(item.get(PARTITION).getS());
+                .partitionId(item.get(PARTITION_ID).getS());
         if (null != item.get(NAME)) {
             fileInfoBuilder.filename(item.get(NAME).getS());
         } else {
@@ -146,10 +146,10 @@ class DynamoDBFileInfoFormat {
     }
 
     private static String createActiveFileSortKey(FileInfo fileInfo) {
-        return fileInfo.getPartitionId() + DELIMETER + fileInfo.getFilename();
+        return fileInfo.getPartitionId() + DELIMITER + fileInfo.getFilename();
     }
 
     private static String getFilenameFromSortKey(Map<String, AttributeValue> item) {
-        return item.get(PARTITION_AND_FILENAME).getS().split(Pattern.quote(DELIMETER))[1];
+        return item.get(PARTITION_ID_AND_FILENAME).getS().split(Pattern.quote(DELIMITER))[1];
     }
 }

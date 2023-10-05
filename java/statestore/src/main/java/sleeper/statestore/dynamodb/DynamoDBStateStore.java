@@ -37,7 +37,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
 
     public static final String FILE_NAME = DynamoDBFileInfoFormat.NAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
-    public static final String PARTITION_AND_FILENAME = DynamoDBFileInfoFormat.PARTITION_AND_FILENAME;
+    public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
     public static final String TABLE_NAME = "TableName";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {

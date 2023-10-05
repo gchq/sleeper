@@ -68,7 +68,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
-import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
@@ -245,7 +245,7 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                     .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
                     .withExpressionAttributeNames(Map.of(
                             "#filename", FILE_NAME,
-                            "#partitionid", PARTITION,
+                            "#partitionid", PARTITION_ID,
                             "#jobid", JOB_ID))
                     .withExpressionAttributeValues(Map.of(
                             ":filename", new AttributeValue().withS(fileInfo.getFilename()),
