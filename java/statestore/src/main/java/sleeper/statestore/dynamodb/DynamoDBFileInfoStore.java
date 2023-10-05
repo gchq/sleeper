@@ -66,12 +66,14 @@ import java.util.stream.Stream;
 import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.deleteAllDynamoTableItems;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.JOB_ID;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.LAST_UPDATE_TIME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.STATUS;
 import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.TABLE_NAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
+import static sleeper.statestore.dynamodb.DynamoDBFileInfoFormat.getActiveFileSortKey;
 
 class DynamoDBFileInfoStore implements FileInfoStore {
 
@@ -240,15 +242,17 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         // Create Puts for each of the files, conditional on the compactionJob field being not present
         long updateTime = clock.millis();
         setLastUpdateTimes(files, updateTime).forEach(fileInfo -> {
+            String fileNameKey = fileInfo.getFileStatus() == ACTIVE ? PARTITION_ID_AND_FILENAME : FILENAME;
+            String fileNameValue = fileInfo.getFileStatus() == ACTIVE ? getActiveFileSortKey(fileInfo) : fileInfo.getFilename();
             Put put = new Put()
                     .withTableName(activeTableName)
                     .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
                     .withExpressionAttributeNames(Map.of(
-                            "#filename", FILE_NAME,
+                            "#filename", fileNameKey,
                             "#partitionid", PARTITION_ID,
                             "#jobid", JOB_ID))
                     .withExpressionAttributeValues(Map.of(
-                            ":filename", new AttributeValue().withS(fileInfo.getFilename()),
+                            ":filename", new AttributeValue().withS(fileNameValue),
                             ":partitionid", new AttributeValue().withS(fileInfo.getPartitionId())))
                     .withConditionExpression("#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)");
             writes.add(new TransactWriteItem().withPut(put));
