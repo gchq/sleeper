@@ -390,7 +390,7 @@ public class CompactionStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.minutes(instanceProperties.getInt(TABLE_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .handler("sleeper.compaction.job.creation.batcher.TableBatcherLambda::eventHandler")
+                .handler("sleeper.compaction.job.batcher.TableBatcherLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
@@ -422,7 +422,6 @@ public class CompactionStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(List.of(new SqsEventSource(tableBatcherQueue))));
 
