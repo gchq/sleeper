@@ -34,12 +34,14 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobSerDe;
+import sleeper.compaction.job.batcher.TableBatch;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -48,7 +50,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -92,7 +93,7 @@ public class CreateJobsIT {
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
-                new TableLister(s3, instanceProperties),
+                TableBatch.batchWithTables(tableProperties.get(TableProperty.TABLE_NAME)),
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
     }
 

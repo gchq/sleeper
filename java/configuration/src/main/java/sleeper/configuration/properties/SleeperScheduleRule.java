@@ -24,21 +24,20 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_CLOUDWATCH_RULE;
 
 public class SleeperScheduleRule {
 
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();
-    // Rule that creates compaction jobs
+    // Rule that creates table batches
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
-            COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule");
+            TABLE_BATCHER_CLOUDWATCH_RULE, "%s-TableBatcherRule");
     // Rules that create compaction and splitting compaction tasks
     public static final SleeperScheduleRule COMPACTION_TASK_CREATION = add(
             COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule");
@@ -56,7 +55,6 @@ public class SleeperScheduleRule {
     // Rule that batches up ingest jobs from file ingest requests
     public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(
             INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule");
-    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULES, null);
 
     private final InstanceProperty property;
     private final String nameFormat;

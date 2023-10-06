@@ -37,7 +37,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.ECR_C
 import static sleeper.configuration.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
@@ -46,6 +45,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -146,7 +146,7 @@ class PopulatePropertiesTest {
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
+        expected.set(TABLE_BATCHER_CLOUDWATCH_RULE, "test-instance-TableBatcherRule");
         expected.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionTasksCreationRule");
         expected.set(SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-SplittingCompactionTasksCreationRule");
         expected.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-instance-FindPartitionsToSplitPeriodicTrigger");

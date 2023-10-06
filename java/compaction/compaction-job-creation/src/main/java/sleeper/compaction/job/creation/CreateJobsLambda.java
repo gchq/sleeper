@@ -19,16 +19,20 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.batcher.TableBatch;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -42,6 +46,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
@@ -50,7 +55,7 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  * A lambda function for executing {@link CreateJobs}.
  */
 @SuppressWarnings("unused")
-public class CreateJobsLambda {
+public class CreateJobsLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonDynamoDB dynamoDBClient;
     private AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
@@ -113,12 +118,20 @@ public class CreateJobsLambda {
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
-    public void eventHandler(ScheduledEvent event, Context context) {
+    @Override
+    public Void handleRequest(SQSEvent event, Context context) {
         LocalDateTime start = LocalDateTime.now();
-        LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
+        LOGGER.info("CreateJobsLambda received batch at {}", Instant.now());
         propertiesReloader.reloadIfNeeded();
 
-        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, tableLister, jobStatusStore);
+        Gson gson = new GsonBuilder().create();
+        TableBatch batch = event.getRecords().stream().limit(1)
+                .map(SQSEvent.SQSMessage::getBody)
+                .map(message -> gson.fromJson(message, TableBatch.class))
+                .findFirst().orElseThrow();
+
+        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, sqsClient, batch, jobStatusStore);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ObjectFactoryException e) {
@@ -128,5 +141,6 @@ public class CreateJobsLambda {
         LocalDateTime now = LocalDateTime.now();
         int durationInSeconds = (int) (Duration.between(start, now).toMillis() / 1000.0);
         LOGGER.info("CreateJobsLambda lambda finished at {} (ran for {} seconds)", LocalDateTime.now(), durationInSeconds);
+        return null;
     }
 }

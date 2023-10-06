@@ -135,10 +135,6 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The function name of the compaction job creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.job.creation.rule")
-            .description("The name of the CloudWatch rule that periodically triggers the compaction job creation lambda.")
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .build();
     SystemDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")
             .description("The URL of the queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -159,12 +155,28 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The function name of the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
+    SystemDefinedInstanceProperty TABLE_BATCHER_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.table.batcher.lambda.function")
+            .description("The function name of the table batcher lambda.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty TABLE_BATCHER_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.table.batcher.rule")
+            .description("The name of the CloudWatch rule that periodically triggers the table batcher lambda.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
     SystemDefinedInstanceProperty TABLE_BATCHER_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.table.batcher.queue.url")
             .description("The URL of the queue for the table batcher.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty TABLE_BATCHER_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.table.batcher.queue.arn")
             .description("The ARN of the queue for table batcher.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty TABLE_BATCHER_DLQ_URL = Index.propertyBuilder("sleeper.compaction.table.batcher.dlq.url")
+            .description("The URL of the dead letter queue for the table batcher.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty TABLE_BATCHER_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.table.batcher.dlq.arn")
+            .description("The ARN of the dead letter queue for table batcher.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
     SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.task.creation.rule")

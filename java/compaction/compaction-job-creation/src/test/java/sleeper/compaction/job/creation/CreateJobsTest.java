@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.batcher.TableBatch;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
@@ -35,7 +36,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -169,13 +169,12 @@ public class CreateJobsTest {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
 
-        TableLister tableLister = mock(TableLister.class);
-        when(tableLister.listTables()).thenReturn(Collections.singletonList(tableProperties.get(TABLE_NAME)));
+        TableBatch tableBatch = TableBatch.batchWithTables(Collections.singletonList(tableProperties.get(TABLE_NAME)));
 
         List<CompactionJob> compactionJobs = new ArrayList<>();
         CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, compactionJobs::add,
-                tableLister, jobStatusStore);
+                tableBatch, jobStatusStore);
         createJobs.createJobs();
         return compactionJobs;
     }

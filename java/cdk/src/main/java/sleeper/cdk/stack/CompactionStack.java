@@ -67,6 +67,7 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.Permission;
+import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -96,6 +97,7 @@ import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
+import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -107,15 +109,16 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
+import static sleeper.configuration.properties.instance.CompactionProperty.TABLE_BATCHER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.configuration.properties.instance.CompactionProperty.TABLE_BATCHER_LAMBDA_PERIOD_IN_MINUTES;
+import static sleeper.configuration.properties.instance.CompactionProperty.TABLE_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_ARN;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -136,6 +139,12 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_DLQ_ARN;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_DLQ_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_QUEUE_ARN;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 /**
@@ -348,13 +357,64 @@ public class CompactionStack extends NestedStack {
                                                                Queue compactionMergeJobsQueue,
                                                                Queue compactionSplittingMergeJobsQueue) {
 
-        // Function to create compaction jobs
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
+        String dlqName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-TableBatcherDLQ");
+        Queue tableBatcherDLQ = Queue.Builder
+                .create(this, "TableBatcherDLQ")
+                .queueName(dlqName)
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .build();
+        DeadLetterQueue tableBatcherDeadLetterQueue = DeadLetterQueue.builder()
+                .maxReceiveCount(1)
+                .queue(tableBatcherDLQ)
+                .build();
+        String queueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-TableBatcherQ");
+        Queue tableBatcherQueue = Queue.Builder
+                .create(this, "TableBatcherQueue")
+                .queueName(queueName)
+                .deadLetterQueue(tableBatcherDeadLetterQueue)
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .build();
+
+        instanceProperties.set(TABLE_BATCHER_QUEUE_ARN, tableBatcherQueue.getQueueArn());
+        instanceProperties.set(TABLE_BATCHER_QUEUE_URL, tableBatcherQueue.getQueueUrl());
+        instanceProperties.set(TABLE_BATCHER_DLQ_ARN, tableBatcherDLQ.getQueueArn());
+        instanceProperties.set(TABLE_BATCHER_DLQ_URL, tableBatcherDLQ.getQueueUrl());
+
+        String tableBatcherFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
+                instanceProperties.get(ID).toLowerCase(Locale.ROOT), "table-batcher"));
+        IFunction tableBatcherHandler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
+                .functionName(tableBatcherFunctionName)
+                .description("Batch tables to parallelise creation of compaction jobs")
+                .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
+                .memorySize(instanceProperties.getInt(TABLE_BATCHER_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.minutes(instanceProperties.getInt(TABLE_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .handler("sleeper.compaction.job.creation.batcher.TableBatcherLambda::eventHandler")
+                .environment(environmentVariables)
+                .reservedConcurrentExecutions(1)
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+
+        tableBatcherQueue.grantSendMessages(tableBatcherHandler);
+        configBucket.grantRead(tableBatcherHandler);
+
+        // Cloudwatch rule to trigger the table batcher lambda
+        Rule rule = Rule.Builder
+                .create(this, "TableBatcherPeriodicTrigger")
+                .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
+                .description("A rule to periodically trigger the table batcher lambda")
+                .enabled(!shouldDeployPaused(this))
+                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(TABLE_BATCHER_LAMBDA_PERIOD_IN_MINUTES))))
+                .targets(Collections.singletonList(new LambdaFunction(tableBatcherHandler)))
+                .build();
+        instanceProperties.set(TABLE_BATCHER_LAMBDA_FUNCTION, tableBatcherHandler.getFunctionName());
+        instanceProperties.set(TABLE_BATCHER_CLOUDWATCH_RULE, rule.getRuleName());
+
+        // Function to create compaction jobs
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "job-creator"));
 
-        IFunction handler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
+        IFunction createJobsHandler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan DynamoDB looking for files that need merging and create appropriate job specs in DynamoDB")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
@@ -363,30 +423,22 @@ public class CompactionStack extends NestedStack {
                 .handler("sleeper.compaction.job.creation.CreateJobsLambda::eventHandler")
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
+                .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
+                .events(List.of(new SqsEventSource(tableBatcherQueue))));
 
         // Grant this function permission to read from / write to the DynamoDB table
-        configBucket.grantRead(handler);
-        jarsBucket.grantRead(handler);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(handler);
-        eventStore.grantWriteJobEvent(handler);
+        configBucket.grantRead(createJobsHandler);
+        jarsBucket.grantRead(createJobsHandler);
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(createJobsHandler);
+        eventStore.grantWriteJobEvent(createJobsHandler);
+        tableBatcherQueue.grantConsumeMessages(createJobsHandler);
 
         // Grant this function permission to put messages on the compaction
         // queue and the compaction splitting queue
-        compactionMergeJobsQueue.grantSendMessages(handler);
-        compactionSplittingMergeJobsQueue.grantSendMessages(handler);
+        compactionMergeJobsQueue.grantSendMessages(createJobsHandler);
+        compactionSplittingMergeJobsQueue.grantSendMessages(createJobsHandler);
 
-        // Cloudwatch rule to trigger this lambda
-        Rule rule = Rule.Builder
-                .create(this, "CompactionJobCreationPeriodicTrigger")
-                .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the job creation lambda")
-                .enabled(!shouldDeployPaused(this))
-                .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
-                .targets(Collections.singletonList(new LambdaFunction(handler)))
-                .build();
-        instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
-        instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+        instanceProperties.set(COMPACTION_JOB_CREATION_LAMBDA_FUNCTION, createJobsHandler.getFunctionName());
     }
 
     private Cluster ecsClusterForCompactionTasks(IBucket configBucket,

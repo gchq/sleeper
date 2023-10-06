@@ -151,7 +151,18 @@ public interface CompactionProperty {
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty TABLE_BATCHER_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.table.batcher.period.minutes")
+    UserDefinedInstanceProperty TABLE_BATCHER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.table.batcher.creation.memory")
+            .description("The amount of memory for the lambda that creates table batches and sends them to the compaction job creator lambda.")
+            .defaultValue("1024")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TABLE_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.table.batcher.timeout.seconds")
+            .description("The timeout for the lambda that creates table batches in seconds.")
+            .defaultValue("300")
+            .validationPredicate(Utils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCDKDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TABLE_BATCHER_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.table.batcher.period.minutes")
             .description("The frequency in minutes with which the table batcher lambda is run.")
             .defaultValue("5")
             .validationPredicate(Utils::isPositiveInteger)

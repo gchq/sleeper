@@ -34,6 +34,10 @@ public class TableBatch {
         return batchWithTables(List.of(tableNames));
     }
 
+    public List<String> getTableNames() {
+        return tableNames;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

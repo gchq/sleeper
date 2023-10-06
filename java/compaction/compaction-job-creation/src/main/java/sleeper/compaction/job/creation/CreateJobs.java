@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.job.CompactionJobStatusStore;
+import sleeper.compaction.job.batcher.TableBatch;
 import sleeper.compaction.strategy.CompactionStrategy;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
@@ -32,7 +33,6 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class CreateJobs {
     private final JobSender jobSender;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final TableLister tableLister;
+    private final TableBatch tableBatch;
     private final CompactionJobStatusStore jobStatusStore;
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -67,11 +67,11 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       AmazonSQS sqsClient,
-                      TableLister tableLister,
+                      TableBatch tableBatch,
                       CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
-                tableLister, jobStatusStore);
+                tableBatch, jobStatusStore);
     }
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -79,20 +79,20 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       JobSender jobSender,
-                      TableLister tableLister,
+                      TableBatch tableBatch,
                       CompactionJobStatusStore jobStatusStore) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.tableLister = tableLister;
+        this.tableBatch = tableBatch;
         this.jobStatusStore = jobStatusStore;
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<String> tables = tableLister.listTables();
-        LOGGER.info("Found {} tables", tables.size());
+        List<String> tables = tableBatch.getTableNames();
+        LOGGER.info("Found {} tables in batch", tables.size());
         for (String table : tables) {
             createJobsForTable(table);
         }
