@@ -24,30 +24,30 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.compaction.job.creation.TableBatch.batchWithTables;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TABLE_BATCHER_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TABLE_BATCHER_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CompactionProperty.TABLE_BATCHER_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_QUEUE_URL;
 
 public class TableBatcher {
-    private final InstanceProperties instanceProperties;
+    private final int batchSize;
+    private final String queueUrl;
     private final List<TableProperties> tablePropertiesList;
-    private final TableBatcherQueueClient tableBatcherQueueClient;
+    private final TableBatcherQueueClient queueClient;
 
     public TableBatcher(
             InstanceProperties instanceProperties, List<TableProperties> tablePropertiesList,
-            TableBatcherQueueClient tableBatcherQueueClient) {
-        this.instanceProperties = instanceProperties;
+            TableBatcherQueueClient queueClient) {
+        this.batchSize = instanceProperties.getInt(TABLE_BATCHER_BATCH_SIZE);
+        this.queueUrl = instanceProperties.get(TABLE_BATCHER_QUEUE_URL);
         this.tablePropertiesList = tablePropertiesList;
-        this.tableBatcherQueueClient = tableBatcherQueueClient;
+        this.queueClient = queueClient;
     }
 
     public void batchTables() {
-        int batchSize = instanceProperties.getInt(COMPACTION_TABLE_BATCHER_BATCH_SIZE);
-        String queueUrl = instanceProperties.get(COMPACTION_TABLE_BATCHER_QUEUE_URL);
         for (int i = 0; i < tablePropertiesList.size(); i += batchSize) {
             List<String> tables = tablePropertiesList.subList(i, Math.min(i + batchSize, tablePropertiesList.size()))
                     .stream().map(tableProperties -> tableProperties.get(TableProperty.TABLE_NAME))
                     .collect(Collectors.toList());
-            tableBatcherQueueClient.send(queueUrl, batchWithTables(tables));
+            queueClient.send(queueUrl, batchWithTables(tables));
         }
     }
 }

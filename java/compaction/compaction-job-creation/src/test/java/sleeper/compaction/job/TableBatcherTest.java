@@ -28,8 +28,8 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.creation.TableBatch.batchWithTables;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TABLE_BATCHER_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_TABLE_BATCHER_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CompactionProperty.TABLE_BATCHER_BATCH_SIZE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_QUEUE_URL;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TableBatcherTest {
@@ -39,7 +39,7 @@ public class TableBatcherTest {
     @Test
     void shouldCreateOneBatchOfThreeTables() {
         // Given
-        instanceProperties.setNumber(COMPACTION_TABLE_BATCHER_BATCH_SIZE, 3);
+        instanceProperties.setNumber(TABLE_BATCHER_BATCH_SIZE, 3);
         TableProperties table1 = createTable("test-table-1");
         TableProperties table2 = createTable("test-table-2");
         TableProperties table3 = createTable("test-table-3");
@@ -49,14 +49,15 @@ public class TableBatcherTest {
 
         // Then
         assertThat(queueClient.getMessagesByQueueUrl()).isEqualTo(Map.of(
-                "table-batcher-queue", List.of(batchWithTables("test-table-1", "test-table-2", "test-table-3"))
+                "table-batcher-queue", List.of(
+                        batchWithTables("test-table-1", "test-table-2", "test-table-3"))
         ));
     }
 
     @Test
     void shouldCreateTwoBatchesOfTwoTables() {
         // Given
-        instanceProperties.setNumber(COMPACTION_TABLE_BATCHER_BATCH_SIZE, 2);
+        instanceProperties.setNumber(TABLE_BATCHER_BATCH_SIZE, 2);
         TableProperties table1 = createTable("test-table-1");
         TableProperties table2 = createTable("test-table-2");
         TableProperties table3 = createTable("test-table-3");
@@ -73,9 +74,25 @@ public class TableBatcherTest {
         ));
     }
 
+    @Test
+    void shouldCreateOneBatchWhenTableCountDoesNotMeetBatchSize() {
+        // Given
+        instanceProperties.setNumber(TABLE_BATCHER_BATCH_SIZE, 2);
+        TableProperties table1 = createTable("test-table-1");
+
+        // When
+        new TableBatcher(instanceProperties, List.of(table1), queueClient).batchTables();
+
+        // Then
+        assertThat(queueClient.getMessagesByQueueUrl()).isEqualTo(Map.of(
+                "table-batcher-queue", List.of(
+                        batchWithTables("test-table-1"))
+        ));
+    }
+
     private static InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(COMPACTION_TABLE_BATCHER_QUEUE_URL, "table-batcher-queue");
+        instanceProperties.set(TABLE_BATCHER_QUEUE_URL, "table-batcher-queue");
         return instanceProperties;
     }
 
