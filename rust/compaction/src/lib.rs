@@ -146,7 +146,7 @@ pub extern "C" fn allocate_result() -> *const FFICompactionResult {
         rows_read: 0,
         rows_written: 0,
     }));
-    debug!("Compaction result allocated @ {:p}", p);
+    info!("Compaction result allocated @ {:p}", p);
     p
 }
 
@@ -291,7 +291,7 @@ pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
     maybe_cfg_log();
     if !ob.is_null() {
         // we  need to de-allocate the two byte vectors inside the result
-        debug!("Compaction result destructed at {:p}", ob);
+        info!("Compaction result destructed at {:p}", ob);
         let _ = unsafe { Box::from_raw(ob) };
     }
 }

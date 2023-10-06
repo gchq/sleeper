@@ -117,7 +117,7 @@
 					<outputDirectory>${project.build.outputDirectory}/natives/</outputDirectory>
 					<resources>
 						<resource>
-							<directory>${project.build.directory}/rust/</directory>
+							<directory>${maven.multiModuleProjectDirectory}/../rust/target/</directory>
 							<includes>
 								<include>release/*.dylib</include>
 								<include>release/*.dll</include>
@@ -170,8 +170,6 @@
 									<arguments>
 										<argument>build</argument>
 										<argument>--release</argument>
-										<argument>--target-dir</argument>
-										<argument>${project.build.directory}/rust</argument>
 										<argument>--target</argument>
 										<argument>x86_64-unknown-linux-gnu</argument>
 									</arguments>
@@ -189,8 +187,6 @@
 									<arguments>
 										<argument>build</argument>
 										<argument>--release</argument>
-										<argument>--target-dir</argument>
-										<argument>${project.build.directory}/rust</argument>
 										<argument>--target</argument>
 										<argument>aarch64-unknown-linux-gnu</argument>
 									</arguments>

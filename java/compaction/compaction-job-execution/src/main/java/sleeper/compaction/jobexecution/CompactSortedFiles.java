@@ -112,6 +112,7 @@ public class CompactSortedFiles {
             try {
                 switch (method) {
                 case RUST:
+                    LOGGER.info("Selecting Rust compactor for compaction");
                     recordsProcessed = RustCompaction.compact(this.schema, this.tableProperties, this.compactionJob, this.stateStore);
                     break;
                 default:
@@ -119,9 +120,11 @@ public class CompactSortedFiles {
                 }
             } catch (IOException e) {
                 LOGGER.error("Compaction failed with method " + method.toString(), e);
+                LOGGER.info("Falling back to Java compaction");
                 recordsProcessed = useJavaCompaction();
             }
         } else {
+            LOGGER.info("Using Java compactor for compaction");
             recordsProcessed = useJavaCompaction();
         }
 

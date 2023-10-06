@@ -58,6 +58,8 @@ public class RustCompaction {
         // Create object to hold the result (in native memory)
         RustBridge.FFICompactionResult compactionData = nativeLib.allocate_result();
 
+        LOGGER.info("Invoking native Rust compaction...");
+
         try {
             // Perform compaction
             int result = nativeLib.ffi_merge_sorted_files(
