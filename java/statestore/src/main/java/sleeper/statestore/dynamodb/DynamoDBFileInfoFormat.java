@@ -21,24 +21,27 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import static sleeper.core.statestore.FileInfo.FileStatus.ACTIVE;
+import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createNumberAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBFileInfoFormat {
-
     static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
-    static final String NAME = "Name";
+    static final String PARTITION_ID_AND_FILENAME = "PartitionIdAndFileName";
+    static final String FILENAME = "FileName";
     static final String STATUS = "Status";
-    static final String PARTITION = "Partition";
-    private static final String NUMBER_LINES = "NumLines";
+    static final String PARTITION_ID = "PartitionId";
+    private static final String NUMBER_OF_RECORDS = "NumRecords";
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String JOB_ID = "Job_name";
-
+    private static final String DELIMITER = "|";
+    private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
     private final String sleeperTableName;
     private final List<PrimitiveType> rowKeyTypes;
 
@@ -47,23 +50,31 @@ class DynamoDBFileInfoFormat {
         this.rowKeyTypes = schema.getRowKeyTypes();
     }
 
-    /**
-     * Creates a record with a new status
-     *
-     * @param fileInfo  the File
-     * @param newStatus the new status of that file
-     * @return A Dynamo record
-     */
-    Map<String, AttributeValue> createRecordWithStatus(FileInfo fileInfo, FileInfo.FileStatus newStatus) {
-        Map<String, AttributeValue> record = createRecord(fileInfo);
-        record.put(STATUS, createStringAttribute(newStatus.toString()));
-        return record;
-    }
-
     Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) {
         Map<String, AttributeValue> record = createRecord(fileInfo);
         record.put(JOB_ID, createStringAttribute(jobId));
         return record;
+    }
+
+    Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
+        if (ACTIVE == fileInfo.getFileStatus()) {
+            return createActiveFileRecord(fileInfo);
+        } else {
+            return createReadyForGCRecord(fileInfo);
+        }
+    }
+
+    Map<String, AttributeValue> createActiveFileRecord(FileInfo fileInfo) {
+        Map<String, AttributeValue> itemValues = createActiveFileKey(fileInfo);
+        itemValues.put(STATUS, createStringAttribute(ACTIVE.toString()));
+        return createRecord(itemValues, fileInfo);
+    }
+
+    Map<String, AttributeValue> createReadyForGCRecord(FileInfo fileInfo) {
+        Map<String, AttributeValue> itemValues = createReadyForGCKey(fileInfo);
+        itemValues.put(STATUS, createStringAttribute(READY_FOR_GARBAGE_COLLECTION.toString()));
+        itemValues.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
+        return createRecord(itemValues, fileInfo);
     }
 
     /**
@@ -72,15 +83,9 @@ class DynamoDBFileInfoFormat {
      * @param fileInfo the File which the record is about
      * @return A record in DynamoDB
      */
-    Map<String, AttributeValue> createRecord(FileInfo fileInfo) {
-        Map<String, AttributeValue> itemValues = new HashMap<>();
-
-        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
-        itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
-        itemValues.put(PARTITION, createStringAttribute(fileInfo.getPartitionId()));
-        itemValues.put(STATUS, createStringAttribute(fileInfo.getFileStatus().toString()));
+    Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileInfo fileInfo) {
         if (null != fileInfo.getNumberOfRecords()) {
-            itemValues.put(NUMBER_LINES, createNumberAttribute(fileInfo.getNumberOfRecords()));
+            itemValues.put(NUMBER_OF_RECORDS, createNumberAttribute(fileInfo.getNumberOfRecords()));
         }
         if (null != fileInfo.getJobId()) {
             itemValues.put(JOB_ID, createStringAttribute(fileInfo.getJobId()));
@@ -91,28 +96,48 @@ class DynamoDBFileInfoFormat {
         return itemValues;
     }
 
-    Map<String, AttributeValue> createKey(FileInfo fileInfo) {
+    Map<String, AttributeValue> createActiveFileKey(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
-        itemValues.put(NAME, createStringAttribute(fileInfo.getFilename()));
+        itemValues.put(PARTITION_ID_AND_FILENAME, createStringAttribute(getActiveFileSortKey(fileInfo)));
         return itemValues;
     }
 
-    Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+    Map<String, AttributeValue> createReadyForGCKey(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = new HashMap<>();
         itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
-        itemValues.put(NAME, item.get(NAME));
+        itemValues.put(FILENAME, createStringAttribute(fileInfo.getFilename()));
         return itemValues;
     }
 
-    FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) throws IOException {
+    Map<String, AttributeValue> getActiveFileKey(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(PARTITION_ID_AND_FILENAME, item.get(PARTITION_ID_AND_FILENAME));
+        return itemValues;
+    }
+
+    Map<String, AttributeValue> getReadyForGCKey(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> itemValues = new HashMap<>();
+        itemValues.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        itemValues.put(FILENAME, item.get(FILENAME));
+        return itemValues;
+    }
+
+    FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
-                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()))
-                .partitionId(item.get(PARTITION).getS())
-                .filename(item.get(NAME).getS());
-        if (null != item.get(NUMBER_LINES)) {
-            fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_LINES).getN()));
+                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
+        if (null != item.get(PARTITION_ID_AND_FILENAME)) {
+            String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
+            fileInfoBuilder.partitionId(partitionIdAndFilename[0])
+                    .filename(partitionIdAndFilename[1]);
+        } else {
+            fileInfoBuilder.partitionId(item.get(PARTITION_ID).getS())
+                    .filename(item.get(FILENAME).getS());
+        }
+        if (null != item.get(NUMBER_OF_RECORDS)) {
+            fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_OF_RECORDS).getN()));
         }
         if (null != item.get(JOB_ID)) {
             fileInfoBuilder.jobId(item.get(JOB_ID).getS());
@@ -121,5 +146,13 @@ class DynamoDBFileInfoFormat {
             fileInfoBuilder.lastStateStoreUpdateTime(Long.parseLong(item.get(LAST_UPDATE_TIME).getN()));
         }
         return fileInfoBuilder.build();
+    }
+
+    static String getActiveFileSortKey(FileInfo fileInfo) {
+        return fileInfo.getPartitionId() + DELIMITER + fileInfo.getFilename();
+    }
+
+    private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {
+        return item.get(PARTITION_ID_AND_FILENAME).getS().split(DELIMITER_REGEX);
     }
 }
