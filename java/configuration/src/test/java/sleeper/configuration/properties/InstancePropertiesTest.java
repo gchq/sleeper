@@ -54,7 +54,6 @@ import static sleeper.configuration.properties.instance.CompactionProperty.COMPA
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB;
-import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_ARM_CPU;
@@ -271,7 +270,6 @@ class InstancePropertiesTest {
         instanceProperties.set(INGEST_JOB_QUEUE_URL, "url10");
         instanceProperties.set(INGEST_JOB_DLQ_URL, "url11");
         instanceProperties.set(INGEST_CLUSTER, "ecsCluster3");
-        instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES, 5);
         instanceProperties.setNumber(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES, 6);
         instanceProperties.setNumber(INGEST_TASK_CREATION_PERIOD_IN_MINUTES, 7);
         instanceProperties.setNumber(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB, 1024);

@@ -40,12 +40,6 @@ public interface CompactionProperty {
                     "This should be less than the value of sleeper.compaction.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.job.creation.period.minutes")
-            .description("The rate at which the compaction job creation lambda runs (in minutes, must be >=1).")
-            .defaultValue("1")
-            .validationPredicate(Utils::isPositiveInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.creation.memory")
             .description("The amount of memory for the lambda that creates compaction jobs.")
             .defaultValue("1024")
@@ -164,7 +158,7 @@ public interface CompactionProperty {
             .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty TABLE_BATCHER_LAMBDA_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.table.batcher.period.minutes")
             .description("The frequency in minutes with which the table batcher lambda is run.")
-            .defaultValue("5")
+            .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty TABLE_BATCHER_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.table.batcher.batch.size")
