@@ -101,8 +101,7 @@ public class RunAndWaitIfNeededTest {
                 (waitTime) -> waits.add(waitTime),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:05Z"),
-                        Instant.parse("2023-10-06T10:56:10Z"),
-                        Instant.parse("2023-10-06T10:56:15Z")).iterator()::next,
+                        Instant.parse("2023-10-06T10:56:10Z")).iterator()::next,
                 10000L);
 
         // When
@@ -113,6 +112,6 @@ public class RunAndWaitIfNeededTest {
         // Then
         assertThat(timesRun.get()).isEqualTo(3);
         assertThat(waits)
-                .containsExactly(10000L, 15000L);
+                .containsExactly(15000L, 20000L);
     }
 }
