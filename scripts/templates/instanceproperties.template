@@ -444,6 +444,17 @@ sleeper.bulk.import.emr.serverless.architecture=X86_64
 # The version of EMR Serverless to use.
 sleeper.bulk.import.emr.serverless.release=emr-6.13.0
 
+# Set to true to allow an EMR Serverless Application to start automatically when a job is submitted.
+sleeper.bulk.import.emr.serverless.autostart.enabled=true
+
+# Set to true to allow an EMR Serverless Application to stop automatically when there are no jobs to
+# process.
+# Turning this off with pre-initialised capacity turned off is not recommended.
+sleeper.bulk.import.emr.serverless.autostop.enabled=true
+
+# The number of minutes of inactivity before EMR Serverless stops the application.
+sleeper.bulk.import.emr.serverless.autostop.timeout=15
+
 # The number of cores used by a Serverless executor. Used to set spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.serverless.spark.executor.cores=4
@@ -541,7 +552,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.executor.cores=4vCPU
 
 # The amount of memory per executor for the pre-initialise capacity.
 # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
-sleeper.bulk.import.emr.serverless.initial.capacity.executor.memory=16GB
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.memory=18GB
 
 # The amount of storage per executor for the pre-initialise capacity.
 # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
@@ -549,7 +560,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.executor.disk=200GB
 
 # The number of drivers to pre-initialise.
 # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
-sleeper.bulk.import.emr.serverless.initial.capacity.driver.count=2
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.count=5
 
 # The amount of CPUs per driver for the pre-initialise capacity.
 # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
@@ -557,7 +568,7 @@ sleeper.bulk.import.emr.serverless.initial.capacity.driver.cores=4vCPU
 
 # The amount of memory per driver for the pre-initialise capacity.
 # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
-sleeper.bulk.import.emr.serverless.initial.capacity.driver.memory=16GB
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.memory=18GB
 
 # The amount of storage per driver for the pre-initialise capacity.
 # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html

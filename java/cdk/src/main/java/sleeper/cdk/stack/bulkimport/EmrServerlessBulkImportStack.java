@@ -22,6 +22,8 @@ import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStartConfigurationProperty;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStopConfigurationProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.ImageConfigurationInputProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigKeyValuePairProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigProperty;
@@ -64,6 +66,9 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTART;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_CORES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_COUNT;
@@ -150,6 +155,11 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .type("Spark")
                 .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
                 .initialCapacity(createInitialCapacity(instanceProperties))
+                .autoStartConfiguration(AutoStartConfigurationProperty.builder()
+                    .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTART)).build())
+                .autoStopConfiguration(AutoStopConfigurationProperty.builder()
+                    .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP))
+                    .idleTimeoutMinutes(instanceProperties.getInt(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES)).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
                         .subnetIds(instanceProperties.getList(SUBNETS))
                         .securityGroupIds(List.of(createSecurityGroup(instanceProperties))).build())
