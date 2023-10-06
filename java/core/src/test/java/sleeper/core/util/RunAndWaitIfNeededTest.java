@@ -24,23 +24,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RunAndWaitForDelayTest {
-    private static final long DELAY = 10000L;
+public class RunAndWaitIfNeededTest {
 
     @Test
     void shouldWaitIfCurrentTimeBeforeEndTime() {
         // Given
         AtomicBoolean hasRun = new AtomicBoolean(false);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
-        RunAndWaitForDelay runAndWaitForDelay = new RunAndWaitForDelay(
+        RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
                 () -> hasRun.set(true),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:01Z")).iterator()::next,
-                DELAY);
+                2000L);
 
         // When
-        runAndWaitForDelay.runAndWait();
+        runAndWaitIfNeeded.run();
 
         // Then
         assertThat(hasRun.get()).isTrue();
@@ -52,15 +51,15 @@ public class RunAndWaitForDelayTest {
         // Given
         AtomicBoolean hasRun = new AtomicBoolean(false);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
-        RunAndWaitForDelay runAndWaitForDelay = new RunAndWaitForDelay(
+        RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
                 () -> hasRun.set(true),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
-                        Instant.parse("2023-10-06T10:56:30Z")).iterator()::next,
-                DELAY);
+                        Instant.parse("2023-10-06T10:56:05Z")).iterator()::next,
+                2000L);
 
         // When
-        runAndWaitForDelay.runAndWait();
+        runAndWaitIfNeeded.run();
 
         // Then
         assertThat(hasRun.get()).isTrue();

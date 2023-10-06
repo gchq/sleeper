@@ -21,14 +21,24 @@ import java.time.Instant;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class RunAndWaitForDelay {
+public class RunAndWaitIfNeeded {
     private Instant endTime;
     private final Runnable runnable;
     private final Consumer<Long> waitFn;
     private final Supplier<Instant> timeSupplier;
     private final long delayMillis;
 
-    public RunAndWaitForDelay(Runnable runnable, Consumer<Long> waitFn, Supplier<Instant> timeSupplier, long delayMillis) {
+    public RunAndWaitIfNeeded(Runnable runnable, long delayMillis) {
+        this(runnable, (time) -> {
+            try {
+                Thread.sleep(time);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }, Instant::now, delayMillis);
+    }
+
+    public RunAndWaitIfNeeded(Runnable runnable, Consumer<Long> waitFn, Supplier<Instant> timeSupplier, long delayMillis) {
         this.runnable = runnable;
         this.waitFn = waitFn;
         this.timeSupplier = timeSupplier;
@@ -36,16 +46,12 @@ public class RunAndWaitForDelay {
         this.endTime = timeSupplier.get().plus(Duration.ofMillis(delayMillis));
     }
 
-    public void runAndWait() {
+    public void run() {
         Instant currentTime = timeSupplier.get();
-        sleepIfNeeded(currentTime);
-        endTime = endTime.plus(Duration.ofMillis(delayMillis));
-        runnable.run();
-    }
-
-    private void sleepIfNeeded(Instant currentTime) {
-        if (endTime.isAfter(currentTime)) {
+        if (currentTime.isBefore(endTime)) {
             waitFn.accept(Duration.between(currentTime, endTime).toMillis());
         }
+        endTime = endTime.plus(Duration.ofMillis(delayMillis));
+        runnable.run();
     }
 }
