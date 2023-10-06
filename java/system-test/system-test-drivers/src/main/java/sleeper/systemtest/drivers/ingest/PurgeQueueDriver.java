@@ -38,7 +38,9 @@ public class PurgeQueueDriver {
 
     public void purgeQueue(InstanceProperty property) {
         String queueUrl = instance.getInstanceProperties().get(property);
-        LOGGER.info("Purging SQS queue: {}", queueUrl);
-        RUNNER.run(() -> sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl)));
+        RUNNER.run(() -> {
+            LOGGER.info("Purging SQS queue: {}", queueUrl);
+            sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl));
+        });
     }
 }
