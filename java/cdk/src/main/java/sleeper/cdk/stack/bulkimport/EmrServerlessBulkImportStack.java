@@ -22,8 +22,13 @@ import software.amazon.awscdk.services.ec2.SecurityGroup;
 import software.amazon.awscdk.services.ec2.Vpc;
 import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.emrserverless.CfnApplication;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStartConfigurationProperty;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.AutoStopConfigurationProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.ImageConfigurationInputProperty;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigKeyValuePairProperty;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.InitialCapacityConfigProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplication.NetworkConfigurationProperty;
+import software.amazon.awscdk.services.emrserverless.CfnApplication.WorkerConfigurationProperty;
 import software.amazon.awscdk.services.emrserverless.CfnApplicationProps;
 import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
@@ -49,6 +54,7 @@ import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +66,19 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTART;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_CORES;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_COUNT;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_DISK;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_MEMORY;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_ENABLED;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_CORES;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_COUNT;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_DISK;
+import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_MEMORY;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_RELEASE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME;
@@ -136,6 +154,12 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .architecture(instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_ARCHITECTURE))
                 .type("Spark")
                 .imageConfiguration(ImageConfigurationInputProperty.builder().imageUri(uri).build())
+                .initialCapacity(createInitialCapacity(instanceProperties))
+                .autoStartConfiguration(AutoStartConfigurationProperty.builder()
+                    .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTART)).build())
+                .autoStopConfiguration(AutoStopConfigurationProperty.builder()
+                    .enabled(instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP))
+                    .idleTimeoutMinutes(instanceProperties.getInt(BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES)).build())
                 .networkConfiguration(NetworkConfigurationProperty.builder()
                         .subnetIds(instanceProperties.getList(SUBNETS))
                         .securityGroupIds(List.of(createSecurityGroup(instanceProperties))).build())
@@ -157,6 +181,42 @@ public class EmrServerlessBulkImportStack extends NestedStack {
                 .description("Security Group used by EMR Serverless").vpc(vpc).build();
         return securityGroup.getSecurityGroupId();
     }
+
+    private List<InitialCapacityConfigKeyValuePairProperty> createInitialCapacity(InstanceProperties instanceProperties) {
+            List<InitialCapacityConfigKeyValuePairProperty> properties =
+            instanceProperties.getBoolean(BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_ENABLED) ?
+            List.of(
+                    InitialCapacityConfigKeyValuePairProperty.builder().key("EXECUTOR")
+                            .value(InitialCapacityConfigProperty.builder()
+                                    .workerCount(instanceProperties.getInt(
+                                            BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_COUNT))
+                                    .workerConfiguration(WorkerConfigurationProperty.builder()
+                                            .cpu(instanceProperties.get(
+                                                    BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_CORES))
+                                            .memory(instanceProperties.get(
+                                                    BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_MEMORY))
+                                            .disk(instanceProperties.get(
+                                                    BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_EXECUTOR_DISK))
+                                            .build())
+                                    .build())
+                            .build(),
+                    InitialCapacityConfigKeyValuePairProperty.builder().key("DRIVER")
+                            .value(InitialCapacityConfigProperty.builder()
+                                    .workerCount(instanceProperties.getInt(
+                                            BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_COUNT))
+                                    .workerConfiguration(WorkerConfigurationProperty.builder()
+                                            .cpu(instanceProperties.get(
+                                                    BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_CORES))
+                                            .memory(instanceProperties.get(
+                                                    BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_MEMORY))
+                                            .disk(instanceProperties.get(
+                                                    BULK_IMPORT_EMR_SERVERLESS_INITIAL_CAPACITY_DRIVER_DISK))
+                                            .build())
+                                    .build())
+                            .build())
+            : Collections.emptyList();
+            return properties;
+        }
 
     private IRole createEmrServerlessRole(
             InstanceProperties instanceProperties,
