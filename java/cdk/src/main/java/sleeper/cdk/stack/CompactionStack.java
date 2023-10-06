@@ -384,7 +384,7 @@ public class CompactionStack extends NestedStack {
 
         String tableBatcherFunctionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "table-batcher"));
-        IFunction tableBatcherHandler = jobCreatorJar.buildFunction(this, "JobCreationLambda", builder -> builder
+        IFunction tableBatcherHandler = jobCreatorJar.buildFunction(this, "TableBatcherLambda", builder -> builder
                 .functionName(tableBatcherFunctionName)
                 .description("Batch tables to parallelise creation of compaction jobs")
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11)
