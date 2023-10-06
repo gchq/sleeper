@@ -56,7 +56,7 @@ public class RunAndWaitIfNeeded {
         if (currentTime.isBefore(endTime)) {
             waitFn.accept(Duration.between(currentTime, endTime).toMillis());
         }
-        endTime = endTime.plus(Duration.ofMillis(delayMillis));
+        endTime = currentTime.plus(Duration.ofMillis(delayMillis));
         runnable.run();
     }
 }

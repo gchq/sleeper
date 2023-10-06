@@ -19,6 +19,7 @@ package sleeper.core.util;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -64,5 +65,28 @@ public class RunAndWaitIfNeededTest {
         // Then
         assertThat(hasRun.get()).isTrue();
         assertThat(hasWaited.get()).isFalse();
+    }
+
+    @Test
+    void shouldCalculateNewEndTimeFromCurrentTime() {
+        // Given
+        AtomicBoolean hasRun = new AtomicBoolean(false);
+        List<Long> waits = new ArrayList<>();
+        RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
+                () -> hasRun.set(true),
+                (waitTime) -> waits.add(waitTime),
+                List.of(Instant.parse("2023-10-06T10:56:00Z"),
+                        Instant.parse("2023-10-06T10:56:01Z"),
+                        Instant.parse("2023-10-06T10:56:02Z")).iterator()::next,
+                5000L);
+
+        // When
+        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run();
+
+        // Then
+        assertThat(hasRun.get()).isTrue();
+        assertThat(waits)
+                .containsExactly(4000L, 4000L);
     }
 }
