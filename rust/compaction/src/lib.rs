@@ -125,14 +125,6 @@ async fn credentials_and_merge(
 /// Contains all output data from a compaction operation.
 #[repr(C)]
 pub struct FFICompactionResult {
-    /// The minimum key seen in column zero.
-    min_key: *const c_uchar,
-    /// Length of minimum key
-    min_key_len: size_t,
-    /// The maximum key seen in column zero.
-    max_key: *const c_uchar,
-    /// Length of maximum key
-    max_key_len: size_t,
     /// The total number of rows read by a compaction.
     rows_read: size_t,
     /// The total number of rows written by a compaction.
@@ -151,10 +143,6 @@ pub struct FFICompactionResult {
 pub extern "C" fn allocate_result() -> *const FFICompactionResult {
     maybe_cfg_log();
     let p = Box::into_raw(Box::new(FFICompactionResult {
-        min_key: std::ptr::null(),
-        min_key_len: 0,
-        max_key: std::ptr::null(),
-        max_key_len: 0,
         rows_read: 0,
         rows_written: 0,
     }));
@@ -280,33 +268,9 @@ pub extern "C" fn ffi_merge_sorted_files(
 
     match result {
         Ok(mut res) => {
-            // Safely take the min/max key vectors out of the compaction result
-            let mut min_vec = std::mem::take(&mut res.min_key);
-            // shrink the vector as necessary and confirm size
-            min_vec.shrink_to_fit();
-            assert!(min_vec.len() == min_vec.capacity());
-            let min_key_len = min_vec.len();
-            let min_vec_ptr = min_vec.as_mut_ptr();
-            // make sure we don't deallocate the vector!
-            std::mem::forget(min_vec);
-
-            // Safely take the min/max key vectors out of the compaction result
-            let mut max_vec = std::mem::take(&mut res.max_key);
-            // shrink the vector as necessary and confirm size
-            max_vec.shrink_to_fit();
-            assert!(max_vec.len() == max_vec.capacity());
-            let max_key_len = max_vec.len();
-            let max_vec_ptr = max_vec.as_mut_ptr();
-            // make sure we don't deallocate the vector!
-            std::mem::forget(max_vec);
-
             if let Some(data) = unsafe { output_data.as_mut() } {
                 data.rows_read = res.rows_read;
                 data.rows_written = res.rows_written;
-                data.min_key_len = min_key_len;
-                data.min_key = min_vec_ptr;
-                data.max_key_len = max_key_len;
-                data.max_key = max_vec_ptr;
             }
             0
         }
@@ -329,23 +293,5 @@ pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
         // we  need to de-allocate the two byte vectors inside the result
         debug!("Compaction result destructed at {:p}", ob);
         let res = unsafe { Box::from_raw(ob) };
-        if !res.min_key.is_null() {
-            unsafe {
-                Vec::from_raw_parts(
-                    res.min_key as *mut c_uchar,
-                    res.min_key_len,
-                    res.min_key_len,
-                );
-            }
-        }
-        if !res.max_key.is_null() {
-            unsafe {
-                Vec::from_raw_parts(
-                    res.max_key as *mut c_uchar,
-                    res.max_key_len,
-                    res.max_key_len,
-                );
-            }
-        }
     }
 }

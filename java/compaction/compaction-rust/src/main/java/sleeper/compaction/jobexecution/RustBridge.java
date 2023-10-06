@@ -123,38 +123,11 @@ public class RustBridge {
      */
     @SuppressWarnings(value = { "checkstyle:membername", "checkstyle:parametername" })
     public static class FFICompactionResult extends Struct {
-        public final Struct.Pointer min_key = new Struct.Pointer();
-        public final Struct.size_t min_key_len = new Struct.size_t();
-
-        public final Struct.Pointer max_key = new Struct.Pointer();
-        public final Struct.size_t max_key_len = new Struct.size_t();
         public final Struct.size_t rows_read = new Struct.size_t();
         public final Struct.size_t rows_written = new Struct.size_t();
 
         public FFICompactionResult(jnr.ffi.Runtime runtime) {
             super(runtime);
-        }
-
-        public byte[] getMinKey() {
-            return toBytes(min_key, min_key_len.intValue());
-        }
-
-        public byte[] getMaxKey() {
-            return toBytes(max_key, max_key_len.intValue());
-        }
-
-        public static byte[] toBytes(Struct.Pointer p, int size) {
-            nullCheck(p);
-            byte[] result = new byte[size];
-            p.get().get(0, result, 0, size);
-            return result;
-        }
-
-        public static void nullCheck(Struct.Pointer p) {
-            if (p.get() == null || p.get().address() == 0) {
-                throw new IllegalStateException(
-                        "Pointer is null, this struct hasn't been populated?");
-            }
         }
     }
 

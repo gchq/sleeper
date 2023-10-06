@@ -24,15 +24,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.stream.LongStream;
 
@@ -72,8 +66,6 @@ public class RustCompaction {
                     RUST_MAX_ROW_GROUP_ROWS, maxPageSize, rowKeys, rowKeys.length, sortKeys,
                     sortKeys.length, compactionData);
 
-            long finishTime = System.currentTimeMillis();
-
             // Check result
             if (result != 0) {
                 LOGGER.error("Rust compaction failed, return code: {}", result);
@@ -83,15 +75,11 @@ public class RustCompaction {
             long totalNumberOfRecordsRead = compactionData.rows_read.get();
             long recordsWritten = compactionData.rows_written.get();
 
-            Object minKey = convertBytesToType(compactionData.getMinKey(), schema.getRowKeyTypes().get(0));
-            Object maxKey = convertBytesToType(compactionData.getMaxKey(), schema.getRowKeyTypes().get(0));
-
             LOGGER.info("Compaction job {}: Read {} records and wrote {} records",
                     compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
             StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFile(),
-                    compactionJob.getPartitionId(), recordsWritten, minKey, maxKey, finishTime,
-                    stateStore, schema.getRowKeyTypes());
+                    compactionJob.getPartitionId(), recordsWritten, stateStore, schema.getRowKeyTypes());
             LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
                     LocalDateTime.now());
 
@@ -99,21 +87,6 @@ public class RustCompaction {
         } finally {
             // Ensure de-allocation
             nativeLib.free_result(compactionData);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T convertBytesToType(byte[] arr, PrimitiveType t) {
-        if (t instanceof IntType) {
-            return (T) Integer.valueOf(Integer.parseInt(new String(arr, StandardCharsets.UTF_8)));
-        } else if (t instanceof LongType) {
-            return (T) Long.valueOf(Long.parseLong(new String(arr, StandardCharsets.UTF_8)));
-        } else if (t instanceof StringType) {
-            return (T) new String(arr, StandardCharsets.UTF_8);
-        } else if (t instanceof ByteArrayType) {
-            return (T) arr;
-        } else {
-            throw new IllegalArgumentException("unrecognised primitive type");
         }
     }
 }

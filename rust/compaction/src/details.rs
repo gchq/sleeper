@@ -72,10 +72,6 @@ impl OwnedRowIter {
 /// will use to update its record keeping.
 ///
 pub struct CompactionResult {
-    /// The minimum key seen in column zero.
-    pub min_key: Vec<u8>,
-    /// The maximum key seen in column zero.
-    pub max_key: Vec<u8>,
     /// The total number of rows read by a compaction.
     pub rows_read: usize,
     /// The total number of rows written by a compaction.
@@ -370,8 +366,6 @@ where
     let merged = kmerge(error_free);
 
     // Need to collect min/max key on column 0. Not sure we can assume col. 0 is a row key column, so it might not have a quantiles sketch
-    let mut min_key_zero = None;
-    let mut max_key_zero = None;
     let mut rows_written = 0;
     for chunk in &merged.chunks(row_group_size) {
         // Check for errors
@@ -395,14 +389,6 @@ where
         let cols = converter_ptr.borrow_mut().convert_rows(rows)?;
         let batch = RecordBatch::try_new(schema.clone(), cols)?;
 
-        // Collect min key zero?
-        if min_key_zero.is_none() {
-            min_key_zero = Some(get_zero_col_item(&batch, 0));
-        }
-
-        // Update max key zero
-        max_key_zero = Some(get_zero_col_item(&batch, batch.num_rows() - 1));
-
         // update the data sketches on this batch
         update_sketches(&batch, &mut sketches, &row_key_fields);
 
@@ -419,60 +405,9 @@ where
     serialise_sketches(store_factory, &sketch_path, &sketches)?;
 
     Ok(CompactionResult {
-        min_key: min_key_zero.unwrap_or(Vec::new()),
-        max_key: max_key_zero.unwrap_or(Vec::new()),
         rows_read: rows_written,
         rows_written,
     })
-}
-
-/// Get the item at a given position in column zero as a byte vector.
-///
-/// The type of array is used to work out how to do the conversion. Display types
-/// are converted via [`Display::to_string()`].
-///
-/// # Panics
-/// If the array datatype is not recognised.
-///  
-fn get_zero_col_item(batch: &RecordBatch, pos: usize) -> Vec<u8> {
-    let zero_col = batch.column(0);
-    match zero_col.data_type() {
-        DataType::Int32 => get_item_bytes(&zero_col.as_primitive::<Int32Type>(), pos),
-        DataType::Int64 => get_item_bytes(&zero_col.as_primitive::<Int64Type>(), pos),
-        DataType::Utf8 => get_item_bytes(
-            &zero_col.as_string::<<Utf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
-            pos,
-        ),
-        DataType::LargeUtf8 => get_item_bytes(
-            &zero_col.as_string::<<LargeUtf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
-            pos,
-        ),
-        DataType::Binary => get_binary_bytes(
-            &zero_col.as_binary::<<BinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
-            pos,
-        ),
-        DataType::LargeBinary => get_binary_bytes(
-            &zero_col.as_binary::<<LargeBinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
-            pos,
-        ),
-        _ => panic!("Row type {} not supported", zero_col.data_type()),
-    }
-}
-
-/// Retrieves an item from an array type whose item is string convertible.
-///
-/// We use the [`Display`] trait to convert the item at position `pos` to a string
-/// then return the byte representation of that item.
-fn get_item_bytes<T: Display, A: ArrayAccessor<Item = T>>(array: &A, pos: usize) -> Vec<u8> {
-    array.value(pos).to_string().into_bytes()
-}
-
-/// Retrieves an item from a binary byte array.
-///
-/// As the array type is already a binary slice, we just
-/// convert it to an owning vector.
-fn get_binary_bytes<'a, A: ArrayAccessor<Item = &'a [u8]>>(array: &A, pos: usize) -> Vec<u8> {
-    array.value(pos).to_vec()
 }
 
 /// Creates a file path suitable for writing sketches to.
