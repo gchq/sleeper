@@ -1,0 +1,51 @@
+/*
+ * Copyright 2022-2023 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sleeper.core.util;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+public class RunAndWaitForDelay {
+    private Instant endTime;
+    private final Runnable runnable;
+    private final Consumer<Long> waitFn;
+    private final Supplier<Instant> timeSupplier;
+    private final long delayMillis;
+
+    public RunAndWaitForDelay(Runnable runnable, Consumer<Long> waitFn, Supplier<Instant> timeSupplier, long delayMillis) {
+        this.runnable = runnable;
+        this.waitFn = waitFn;
+        this.timeSupplier = timeSupplier;
+        this.delayMillis = delayMillis;
+        this.endTime = timeSupplier.get().plus(Duration.ofMillis(delayMillis));
+    }
+
+    public void runAndWait() {
+        Instant currentTime = timeSupplier.get();
+        sleepIfNeeded(currentTime);
+        endTime = endTime.plus(Duration.ofMillis(delayMillis));
+        runnable.run();
+    }
+
+    private void sleepIfNeeded(Instant currentTime) {
+        if (endTime.isAfter(currentTime)) {
+            waitFn.accept(Duration.between(currentTime, endTime).toMillis());
+        }
+    }
+}
