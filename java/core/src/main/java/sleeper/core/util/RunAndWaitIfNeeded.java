@@ -16,6 +16,7 @@
 
 package sleeper.core.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,10 +33,10 @@ public class RunAndWaitIfNeeded {
     private final long delayMillis;
     private boolean hasRunBefore = false;
 
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     public RunAndWaitIfNeeded(long delayMillis) {
         this((time) -> {
             try {
-                LOGGER.info("Waiting for {} millis", time);
                 Thread.sleep(time);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -55,7 +56,11 @@ public class RunAndWaitIfNeeded {
             LOGGER.info("Has run before, checking if wait needed");
             LOGGER.info("Current time: {}, End time: {}", currentTime, endTime);
             if (currentTime.isBefore(endTime)) {
-                waitFn.accept(Duration.between(currentTime, endTime).toMillis());
+                Duration waitDuration = Duration.between(currentTime, endTime);
+                LOGGER.info("Waiting for {} seconds", waitDuration.toSeconds());
+                waitFn.accept(waitDuration.toMillis());
+            } else {
+                LOGGER.info("Wait not needed as current time is after end time");
             }
             endTime = endTime.plus(Duration.ofMillis(delayMillis));
         } else {

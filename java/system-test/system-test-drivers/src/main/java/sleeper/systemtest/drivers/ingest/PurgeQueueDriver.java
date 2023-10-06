@@ -18,12 +18,15 @@ package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.PurgeQueueRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.RunAndWaitIfNeeded;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 public class PurgeQueueDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueDriver.class);
     private static final RunAndWaitIfNeeded RUNNER = new RunAndWaitIfNeeded(61000L);
     private final SleeperInstanceContext instance;
     private final AmazonSQS sqsClient;
@@ -34,7 +37,8 @@ public class PurgeQueueDriver {
     }
 
     public void purgeQueue(InstanceProperty property) {
-        RUNNER.run(() -> sqsClient.purgeQueue(new PurgeQueueRequest(
-                instance.getInstanceProperties().get(property))));
+        String queueUrl = instance.getInstanceProperties().get(property);
+        LOGGER.info("Purging SQS queue: {}", queueUrl);
+        RUNNER.run(() -> sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl)));
     }
 }
