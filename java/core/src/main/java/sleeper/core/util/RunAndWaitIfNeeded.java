@@ -53,12 +53,15 @@ public class RunAndWaitIfNeeded {
     }
 
     public void run() {
-        Instant currentTime = timeSupplier.get();
         if (hasRunBefore) {
+            LOGGER.info("Has run before, checking if wait needed");
+            Instant currentTime = timeSupplier.get();
+            LOGGER.info("Current time: {}, End time: {}", currentTime, endTime);
             if (currentTime.isBefore(endTime)) {
                 waitFn.accept(Duration.between(currentTime, endTime).toMillis());
             }
         } else {
+            LOGGER.info("Skipping wait for first run");
             hasRunBefore = true;
         }
         endTime = endTime.plus(Duration.ofMillis(delayMillis));
