@@ -34,7 +34,7 @@ use log::{debug, error, LevelFilter};
 use std::io::Write;
 use std::sync::Once;
 use std::{
-    ffi::{c_char, c_int, c_uchar, CStr},
+    ffi::{c_char, c_int, CStr},
     slice,
 };
 use url::Url;
@@ -215,12 +215,12 @@ pub extern "C" fn ffi_merge_sorted_files(
                 }
                 // convert to string and check it's valid
                 CStr::from_ptr(*s)
-                .to_str()
-                .map_err(|e| ArrowError::ExternalError(Box::new(e)))
+                    .to_str()
+                    .map_err(|e| ArrowError::ExternalError(Box::new(e)))
             })
             // now convert to a vector if all strings OK, else Err
             .map(|x| x.map(Url::parse))
-            .collect::<Result<Vec<_>,_>>()
+            .collect::<Result<Vec<_>, _>>()
     }) else {
         error!("Error converting input paths as valid UTF-8");
         return EINVAL;
@@ -236,9 +236,9 @@ pub extern "C" fn ffi_merge_sorted_files(
     };
 
     // Get output file URL
-    let Ok(Ok(output_path)) = (unsafe {
-        CStr::from_ptr(output_file_path).to_str()
-    }).map(Url::parse) else {
+    let Ok(Ok(output_path)) =
+        (unsafe { CStr::from_ptr(output_file_path).to_str() }).map(Url::parse)
+    else {
         error!("URL parsing error on output path");
         return EINVAL;
     };
@@ -267,7 +267,7 @@ pub extern "C" fn ffi_merge_sorted_files(
     ));
 
     match result {
-        Ok(mut res) => {
+        Ok(res) => {
             if let Some(data) = unsafe { output_data.as_mut() } {
                 data.rows_read = res.rows_read;
                 data.rows_written = res.rows_written;
@@ -292,6 +292,6 @@ pub extern "C" fn free_result(ob: *mut FFICompactionResult) {
     if !ob.is_null() {
         // we  need to de-allocate the two byte vectors inside the result
         debug!("Compaction result destructed at {:p}", ob);
-        let res = unsafe { Box::from_raw(ob) };
+        let _ = unsafe { Box::from_raw(ob) };
     }
 }

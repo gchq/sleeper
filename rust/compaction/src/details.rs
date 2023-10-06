@@ -20,11 +20,7 @@ use crate::{
     sketch::{make_sketches_for_schema, serialise_sketches, update_sketches},
 };
 use arrow::{
-    array::{ArrayAccessor, AsArray},
-    datatypes::{
-        BinaryType, DataType, Int32Type, Int64Type, LargeBinaryType, LargeUtf8Type, Schema,
-        Utf8Type,
-    },
+    datatypes::Schema,
     error::ArrowError,
     record_batch::RecordBatch,
     row::{OwnedRow, RowConverter, Rows, SortField},
@@ -44,7 +40,7 @@ use parquet::{
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
-use std::{cell::RefCell, fmt::Display, path::PathBuf, sync::Arc};
+use std::{cell::RefCell, path::PathBuf, sync::Arc};
 use url::Url;
 
 /// A simple iterator for a batch of rows (owned).
