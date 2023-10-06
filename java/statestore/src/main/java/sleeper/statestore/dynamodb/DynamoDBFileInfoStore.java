@@ -244,12 +244,14 @@ class DynamoDBFileInfoStore implements FileInfoStore {
         setLastUpdateTimes(files, updateTime).forEach(fileInfo -> {
             Map<String, String> attributeNames;
             Map<String, AttributeValue> attributeValues;
+            String conditionExpression;
             if (fileInfo.getFileStatus() == ACTIVE) {
                 attributeNames = Map.of(
-                        "#filename", PARTITION_ID_AND_FILENAME,
+                        "#partitionidandfilename", PARTITION_ID_AND_FILENAME,
                         "#jobid", JOB_ID);
                 attributeValues = Map.of(
-                        ":filename", new AttributeValue().withS(getActiveFileSortKey(fileInfo)));
+                        ":partitionidandfilename", new AttributeValue().withS(getActiveFileSortKey(fileInfo)));
+                conditionExpression = "#partitionidandfilename=:partitionidandfilename and attribute_not_exists(#jobid)";
             } else {
                 attributeNames = Map.of(
                         "#filename", FILENAME,
@@ -258,13 +260,14 @@ class DynamoDBFileInfoStore implements FileInfoStore {
                 attributeValues = Map.of(
                         ":filename", new AttributeValue().withS(fileInfo.getFilename()),
                         ":partitionid", new AttributeValue().withS(fileInfo.getPartitionId()));
+                conditionExpression = "#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)";
             }
             Put put = new Put()
                     .withTableName(activeTableName)
                     .withItem(fileInfoFormat.createRecordWithJobId(fileInfo, jobId))
                     .withExpressionAttributeNames(attributeNames)
                     .withExpressionAttributeValues(attributeValues)
-                    .withConditionExpression("#filename=:filename and #partitionid=:partitionid and attribute_not_exists(#jobid)");
+                    .withConditionExpression(conditionExpression);
             writes.add(new TransactWriteItem().withPut(put));
         });
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
