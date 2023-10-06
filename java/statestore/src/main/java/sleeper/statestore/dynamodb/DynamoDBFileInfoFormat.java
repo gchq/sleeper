@@ -41,6 +41,7 @@ class DynamoDBFileInfoFormat {
     static final String LAST_UPDATE_TIME = "LastUpdateTime";
     static final String JOB_ID = "Job_name";
     private static final String DELIMITER = "|";
+    private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
     private final String sleeperTableName;
     private final List<PrimitiveType> rowKeyTypes;
 
@@ -150,6 +151,6 @@ class DynamoDBFileInfoFormat {
     }
 
     private static String getFilenameFromSortKey(Map<String, AttributeValue> item) {
-        return item.get(PARTITION_ID_AND_FILENAME).getS().split(Pattern.quote(DELIMITER))[1];
+        return item.get(PARTITION_ID_AND_FILENAME).getS().split(DELIMITER_REGEX)[1];
     }
 }
