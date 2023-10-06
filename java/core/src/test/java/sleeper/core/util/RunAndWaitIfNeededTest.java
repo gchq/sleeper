@@ -33,14 +33,13 @@ public class RunAndWaitIfNeededTest {
         AtomicLong timesRun = new AtomicLong(0);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> timesRun.getAndIncrement(),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:05Z")).iterator()::next,
                 10000L);
 
         // When
-        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement);
 
         // Then
         assertThat(timesRun.get()).isEqualTo(1);
@@ -53,7 +52,6 @@ public class RunAndWaitIfNeededTest {
         AtomicLong timesRun = new AtomicLong(0);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> timesRun.getAndIncrement(),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:01Z"),
@@ -61,8 +59,8 @@ public class RunAndWaitIfNeededTest {
                 2000L);
 
         // When
-        runAndWaitIfNeeded.run();
-        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement);
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement);
 
         // Then
         assertThat(timesRun.get()).isEqualTo(2);
@@ -75,7 +73,6 @@ public class RunAndWaitIfNeededTest {
         AtomicLong timesRun = new AtomicLong(0);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> timesRun.getAndIncrement(),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:05Z"),
@@ -83,8 +80,8 @@ public class RunAndWaitIfNeededTest {
                 2000L);
 
         // When
-        runAndWaitIfNeeded.run();
-        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement);
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement);
 
         // Then
         assertThat(timesRun.get()).isEqualTo(2);
@@ -97,7 +94,6 @@ public class RunAndWaitIfNeededTest {
         AtomicLong timesRun = new AtomicLong(0);
         List<Long> waits = new ArrayList<>();
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> timesRun.getAndIncrement(),
                 (waitTime) -> waits.add(waitTime),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:05Z"),
@@ -105,9 +101,9 @@ public class RunAndWaitIfNeededTest {
                 10000L);
 
         // When
-        runAndWaitIfNeeded.run(); // end time is now 10:56:20
-        runAndWaitIfNeeded.run(); // end time is now 10:56:30
-        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement); // end time is now 10:56:20
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement); // end time is now 10:56:30
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement);
 
         // Then
         assertThat(timesRun.get()).isEqualTo(3);

@@ -16,14 +16,13 @@
 
 package sleeper.systemtest.suite.dsl.ingest;
 
-import com.amazonaws.services.sqs.model.PurgeQueueRequest;
-
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.ingest.PurgeIngestQueueDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
@@ -31,17 +30,19 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import java.nio.file.Path;
 
 public class SystemTestIngest {
-
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
     private final IngestSourceFilesDriver sourceFiles;
+    private final PurgeIngestQueueDriver purgeIngestQueueDriver;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
-                            IngestSourceFilesDriver sourceFiles) {
+                            IngestSourceFilesDriver sourceFiles,
+                            PurgeIngestQueueDriver purgeIngestQueueDriver) {
         this.instance = instance;
         this.clients = clients;
         this.sourceFiles = sourceFiles;
+        this.purgeIngestQueueDriver = purgeIngestQueueDriver;
     }
 
     public SystemTestIngestBatcher batcher() {
@@ -73,7 +74,6 @@ public class SystemTestIngest {
     }
 
     public void purgeQueue(InstanceProperty queueProperty) {
-        clients.getSqs().purgeQueue(new PurgeQueueRequest(
-                instance.getInstanceProperties().get(queueProperty)));
+        purgeIngestQueueDriver.purgeQueue(queueProperty);
     }
 }

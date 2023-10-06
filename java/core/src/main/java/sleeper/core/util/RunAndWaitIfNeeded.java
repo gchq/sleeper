@@ -27,14 +27,13 @@ import java.util.function.Supplier;
 public class RunAndWaitIfNeeded {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunAndWaitIfNeeded.class);
     private Instant endTime;
-    private final Runnable runnable;
     private final Consumer<Long> waitFn;
     private final Supplier<Instant> timeSupplier;
     private final long delayMillis;
     private boolean hasRunBefore = false;
 
-    public RunAndWaitIfNeeded(Runnable runnable, long delayMillis) {
-        this(runnable, (time) -> {
+    public RunAndWaitIfNeeded(long delayMillis) {
+        this((time) -> {
             try {
                 LOGGER.info("Waiting for {} millis", time);
                 Thread.sleep(time);
@@ -44,15 +43,14 @@ public class RunAndWaitIfNeeded {
         }, Instant::now, delayMillis);
     }
 
-    public RunAndWaitIfNeeded(Runnable runnable, Consumer<Long> waitFn, Supplier<Instant> timeSupplier, long delayMillis) {
-        this.runnable = runnable;
+    public RunAndWaitIfNeeded(Consumer<Long> waitFn, Supplier<Instant> timeSupplier, long delayMillis) {
         this.waitFn = waitFn;
         this.timeSupplier = timeSupplier;
         this.delayMillis = delayMillis;
         this.endTime = timeSupplier.get().plus(Duration.ofMillis(delayMillis));
     }
 
-    public void run() {
+    public void run(Runnable runnable) {
         if (hasRunBefore) {
             LOGGER.info("Has run before, checking if wait needed");
             Instant currentTime = timeSupplier.get();

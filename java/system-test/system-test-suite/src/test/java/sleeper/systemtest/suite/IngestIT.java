@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import sleeper.core.util.RunAndWaitIfNeeded;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
@@ -34,8 +33,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 @Tag("SystemTest")
 public class IngestIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
-    private final RunAndWaitIfNeeded purgeIngestQueue = new RunAndWaitIfNeeded(
-            () -> sleeper.ingest().purgeQueue(INGEST_JOB_QUEUE_URL), 60000L);
+
 
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
@@ -44,7 +42,7 @@ public class IngestIT {
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        purgeIngestQueue.run();
+        sleeper.ingest().purgeQueue(INGEST_JOB_QUEUE_URL);
     }
 
     @Test

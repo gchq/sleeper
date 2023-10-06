@@ -25,6 +25,7 @@ import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.ingest.PurgeIngestQueueDriver;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -75,6 +76,7 @@ public class SleeperSystemTest {
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
+    private final PurgeIngestQueueDriver purgeIngestQueueDriver = new PurgeIngestQueueDriver(instance, clients.getSqs());
 
     private SleeperSystemTest() {
     }
@@ -129,7 +131,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, sourceFiles);
+        return new SystemTestIngest(instance, clients, sourceFiles, purgeIngestQueueDriver);
     }
 
     public SystemTestQuery query() {
