@@ -52,7 +52,8 @@ public interface EMRServerlessProperty {
                     + "automatically when a job is submitted.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.autostop.enabled")
             .description("Set to true to allow an EMR Serverless Application to stop "
@@ -60,13 +61,15 @@ public interface EMRServerlessProperty {
                     + "Turning this off with pre-initialised capacity turned off is not recommended.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_AUTOSTOP_TIMEOUT_MINUTES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.autostop.timeout")
             .description("The number of minutes of inactivity before EMR Serverless stops the application.")
             .defaultValue("15")
             .validationPredicate(Utils::isInteger)
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCDKDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES = Index
             .propertyBuilder("sleeper.bulk.import.emr.serverless.spark.executor.cores")
             .description("The number of cores used by a Serverless executor. Used to set spark.executor.cores.\n"
