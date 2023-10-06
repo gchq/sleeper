@@ -44,27 +44,27 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.table.TableProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.table.TableProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
+import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 @Testcontainers
@@ -82,57 +82,38 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected final AmazonCloudWatch cloudWatch = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.CLOUDWATCH, AmazonCloudWatchClientBuilder.standard());
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
-    private final String instanceId = UUID.randomUUID().toString();
-    protected final String tableName = UUID.randomUUID().toString();
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    protected final String instanceId = instanceProperties.get(ID);
+    protected final String tableName = tableProperties.get(TABLE_NAME);
     private final String ingestQueueName = instanceId + "-ingestqueue";
-    private final String configBucketName = instanceId + "-configbucket";
-    private final String ingestDataBucketName = tableName + "-ingestdata";
-    private final String tableDataBucketName = tableName + "-tabledata";
+    private final String configBucketName = instanceProperties.get(CONFIG_BUCKET);
+    private final String ingestDataBucketName = instanceId + "-ingestdata";
+    private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final String fileSystemPrefix = "s3a://";
     @TempDir
     public java.nio.file.Path temporaryFolder;
-    protected final InstanceProperties instanceProperties = new InstanceProperties();
 
     @BeforeEach
     public void before() {
         s3.createBucket(configBucketName);
-        s3.createBucket(tableDataBucketName);
+        s3.createBucket(dataBucketName);
         s3.createBucket(ingestDataBucketName);
         sqs.createQueue(ingestQueueName);
-        instanceProperties.set(ID, instanceId);
-        instanceProperties.set(CONFIG_BUCKET, configBucketName);
         instanceProperties.set(INGEST_JOB_QUEUE_URL, sqs.getQueueUrl(ingestQueueName).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, fileSystemPrefix);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
-        StateStore stateStore = new DynamoDBStateStoreCreator(
-                instanceProperties, createTableProperties(schema), dynamoDB)
-                .create();
+        tableProperties.setSchema(schema);
+        tableProperties.saveToS3(s3);
+        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
         stateStore.initialise();
         return stateStore;
-    }
-
-    private TableProperties createTableProperties(Schema schema) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schema);
-        tableProperties.set(DATA_BUCKET, getTableDataBucket());
-        tableProperties.set(ACTIVE_FILEINFO_TABLENAME, tableName + "-af");
-        tableProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, tableName + "-rfgcf");
-        tableProperties.set(PARTITION_TABLENAME, tableName + "-p");
-        tableProperties.saveToS3(s3);
-        return tableProperties;
-    }
-
-    protected String getTableDataBucket() {
-        return tableDataBucketName;
-    }
-
-    protected String getIngestBucket() {
-        return ingestDataBucketName;
     }
 
     protected List<String> writeParquetFilesForIngest(
@@ -142,7 +123,7 @@ public abstract class IngestJobQueueConsumerTestBase {
         List<String> files = new ArrayList<>();
 
         for (int fileNo = 0; fileNo < numberOfFiles; fileNo++) {
-            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", getIngestBucket(), subDirectory, fileNo);
+            String fileWithoutSystemPrefix = String.format("%s/%s/file-%d.parquet", ingestDataBucketName, subDirectory, fileNo);
             files.add(fileWithoutSystemPrefix);
             Path path = new Path(fileSystemPrefix + fileWithoutSystemPrefix);
             try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(

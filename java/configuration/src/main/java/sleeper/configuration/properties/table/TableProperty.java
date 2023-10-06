@@ -38,7 +38,6 @@ import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
@@ -94,28 +93,17 @@ public interface TableProperty extends SleeperProperty {
             .description("Splits file which will be used to initialise the partitions for this table. Defaults to nothing and the " +
                     "table will be created with a single root partition.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true)
             .build();
     TableProperty SPLIT_POINTS_BASE64_ENCODED = Index.propertyBuilder("sleeper.table.splits.base64.encoded")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .description("Flag to set if you have base64 encoded the split points (only used for string key types and defaults to false).")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .runCDKDeployWhenChanged(true).build();
+            .build();
     TableProperty PARTITION_SPLIT_THRESHOLD = Index.propertyBuilder("sleeper.table.partition.splitting.threshold")
             .defaultProperty(DEFAULT_PARTITION_SPLIT_THRESHOLD)
             .description("Partitions in this table with more than the following number of records in will be split.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .build();
-    TableProperty ENCRYPTED = Index.propertyBuilder("sleeper.table.encrypted")
-            .defaultValue("true")
-            .validationPredicate(s -> s.equals("true") || s.equals("false"))
-            .description("Whether or not to encrypt the table. If set to \"true\", all data at rest will be encrypted.\n" +
-                    "When this is changed, existing files will retain their encryption status. Further compactions may " +
-                    "apply the new encryption status for that data.\n" +
-                    "See also: https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html")
-            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
-            .runCDKDeployWhenChanged(true)
             .build();
     TableProperty ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.table.rowgroup.size")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
@@ -223,18 +211,6 @@ public interface TableProperty extends SleeperProperty {
                     "are strongly consistent.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
-    TableProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for DynamoDB tables if " +
-                    "the DynamoDBStateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true).build();
-    TableProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.pointintimerecovery")
-            .defaultProperty(DEFAULT_DYNAMO_POINT_IN_TIME_RECOVERY_ENABLED)
-            .description("This specifies whether point in time recovery is enabled for the revision table if " +
-                    "the S3StateStore is used.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .runCDKDeployWhenChanged(true).build();
     TableProperty BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.table.bulk.import.emr.instance.architecture")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
@@ -367,29 +343,6 @@ public interface TableProperty extends SleeperProperty {
     TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
             .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
             .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .systemDefined(true).build();
-    TableProperty DATA_BUCKET = Index.propertyBuilder("sleeper.table.data.bucket")
-            .description("The S3 bucket name where table data is stored.")
-            .propertyGroup(TablePropertyGroup.DATA_STORAGE)
-            .systemDefined(true).build();
-    // DynamoDBStateStore properties
-    TableProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.active.table")
-            .description("The name of the DynamoDB table holding metadata of active files in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.gc.table")
-            .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
-                    "in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    TableProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.dynamo.partition.table")
-            .description("The name of the DynamoDB table holding metadata of partitions in the Sleeper table.")
-            .propertyGroup(TablePropertyGroup.METADATA)
-            .systemDefined(true).build();
-    // S3StateStore properties
-    TableProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.table.metadata.s3.dynamo.revision.table")
-            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
-            .propertyGroup(TablePropertyGroup.METADATA)
             .systemDefined(true).build();
 
     static List<TableProperty> getAll() {

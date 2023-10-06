@@ -33,8 +33,8 @@ import sleeper.trino.testutils.PopulatedSleeperExternalResource;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -51,19 +51,19 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
                     new PopulatedSleeperExternalResource.TableDefinition(
                             "customer_unpartitioned",
                             generateCustomerSchemaForPartitioning(),
-                            Optional.empty(),
-                            Optional.empty()),
+                            List.of(),
+                            Stream.empty()),
                     new PopulatedSleeperExternalResource.TableDefinition(
                             "customer_partitioned",
                             generateCustomerSchemaForPartitioning(),
-                            Optional.of(generateCustomerPartitionBoundaries()),
-                            Optional.empty()));
+                            generateCustomerPartitionBoundaries(),
+                            Stream.empty()));
 
     private static final Map<String, String> EXTRA_PROPERTIES_FOR_QUERY_RUNNER = ImmutableMap.of("task.writer-count", "4");
     private static final SleeperConfig SLEEPER_CONFIG = (new SleeperConfig()).setEnableTrinoPartitioning(false);
     @RegisterExtension
     public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE =
-            new PopulatedSleeperExternalResource(EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS, Optional.of(SLEEPER_CONFIG));
+            new PopulatedSleeperExternalResource(EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS, SLEEPER_CONFIG);
 
     private static QueryAssertions assertions;
 
@@ -133,17 +133,15 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     @Test
     public void testMoreThanOneParquetFileInRootPartitionInUnpartitionedTable() throws StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
-        assertThat(stateStore.getAllPartitions().stream()
-                .filter(p -> p.getId().equals("root"))
-                .allMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
+        assertThat(stateStore.getPartitionToActiveFilesMap())
+                .containsOnlyKeys("root")
+                .extractingByKey("root").satisfies(files -> assertThat(files).hasSizeGreaterThan(1));
     }
 
     @Test
     public void testMoreThanOneParquetFileInAnyPartitionInPartitionedTable() throws StateStoreException {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
-        Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
-        assertThat(stateStore.getLeafPartitions().stream()
-                .anyMatch(partition -> partitionToActiveFilesMap.getOrDefault(partition.getId(), ImmutableList.of()).size() > 1));
+        assertThat(stateStore.getPartitionToActiveFilesMap())
+                .anySatisfy((partitionId, files) -> assertThat(files).hasSizeGreaterThan(1));
     }
 }

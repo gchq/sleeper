@@ -45,6 +45,7 @@ import java.util.Optional;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.METRICS_NAMESPACE;
 import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.configuration.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
@@ -81,7 +82,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         while (true) {
             ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsJobQueueUrl)
                     .withMaxNumberOfMessages(1)
-                    .withWaitTimeSeconds(20); // Must be >= 0 and <= 20
+                    .withWaitTimeSeconds(instanceProperties.getInt(INGEST_JOB_QUEUE_WAIT_TIME));
             ReceiveMessageResult receiveMessageResult = sqsClient.receiveMessage(receiveMessageRequest);
             List<Message> messages = receiveMessageResult.getMessages();
             if (messages.isEmpty()) {

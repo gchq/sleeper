@@ -63,7 +63,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
@@ -109,7 +109,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
@@ -150,7 +150,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -202,7 +202,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -253,7 +253,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
@@ -296,7 +296,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)

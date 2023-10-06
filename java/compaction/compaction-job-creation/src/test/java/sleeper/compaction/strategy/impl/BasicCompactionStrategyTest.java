@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -41,8 +40,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicCompactionStrategyTest {
@@ -52,9 +51,9 @@ public class BasicCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -73,8 +72,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -83,8 +80,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
 
@@ -99,7 +94,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_" + partition.getId() + "/" + compactionJobs.get(0).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -113,9 +108,9 @@ public class BasicCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "config");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -135,8 +130,6 @@ public class BasicCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .numberOfRecords(1_000_000L - i * 100L)
                     .rowKeyTypes(new IntType())
-                    .minRowKey(Key.create(1))
-                    .maxRowKey(Key.create(100))
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -156,7 +149,7 @@ public class BasicCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .inputFiles(inputFiles)
                     .isSplittingJob(false)
-                    .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
+                    .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_" + partition.getId() + "/" + compactionJobs.get(i).getId() + ".parquet")
                     .childPartitions(null)
                     .splitPoint(null)
                     .dimension(-1)
@@ -170,9 +163,9 @@ public class BasicCompactionStrategyTest {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -191,8 +184,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -201,8 +192,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
 
@@ -219,9 +208,9 @@ public class BasicCompactionStrategyTest {
         // jobs, the "right" child partition only has files for 1 compaction job
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -254,8 +243,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -264,8 +251,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(200L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
         FileInfo fileInfo3 = FileInfo.builder()
@@ -274,8 +259,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(300L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo3);
         FileInfo fileInfo4 = FileInfo.builder()
@@ -284,8 +267,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(400L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo4);
         FileInfo fileInfo5 = FileInfo.builder()
@@ -294,8 +275,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("right")
                 .numberOfRecords(500L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo5);
         FileInfo fileInfo6 = FileInfo.builder()
@@ -304,8 +283,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("right")
                 .numberOfRecords(600L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo6);
 
@@ -320,7 +297,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_left/" + compactionJobs.get(0).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -332,7 +309,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .inputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_left/" + compactionJobs.get(1).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -344,7 +321,7 @@ public class BasicCompactionStrategyTest {
                 .partitionId("right")
                 .inputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()))
                 .isSplittingJob(false)
-                .outputFile(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET) + "/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
+                .outputFile(instanceProperties.get(FILE_SYSTEM) + "databucket/table/partition_right/" + compactionJobs.get(2).getId() + ".parquet")
                 .childPartitions(null)
                 .splitPoint(null)
                 .dimension(-1)
@@ -361,9 +338,9 @@ public class BasicCompactionStrategyTest {
         Schema schema = Schema.builder().rowKeyFields(field).build();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, "table");
-        tableProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         tableProperties.setSchema(schema);
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
@@ -404,8 +381,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -414,8 +389,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("root")
                 .numberOfRecords(200L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
 

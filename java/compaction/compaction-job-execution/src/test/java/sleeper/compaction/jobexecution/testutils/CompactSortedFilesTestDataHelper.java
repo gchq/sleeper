@@ -52,8 +52,8 @@ public class CompactSortedFilesTestDataHelper {
         return fileInfo;
     }
 
-    public FileInfo writeRootFile(String filename, List<Record> records, Object min, Object max) throws IOException {
-        FileInfo fileInfo = fileInfoFactory.rootFile(filename, records.size(), min, max);
+    public FileInfo writeRootFile(String filename, List<Record> records) throws IOException {
+        FileInfo fileInfo = fileInfoFactory.rootFile(filename, records.size());
         writeDataFile(schema, filename, records);
         fileInfos.add(fileInfo);
         return fileInfo;
@@ -63,8 +63,8 @@ public class CompactSortedFilesTestDataHelper {
         return fileInfoFactory.leafFile(filename, records, min, max);
     }
 
-    public FileInfo expectedPartitionFile(String partitionId, String filename, long records, Object min, Object max) {
-        return fileInfoFactory.partitionFile(partitionId, filename, records, min, max);
+    public FileInfo expectedPartitionFile(String partitionId, String filename, long records) {
+        return fileInfoFactory.partitionFile(partitionId, filename, records);
     }
 
     public void addFilesToStateStoreForJob(CompactionJob compactionJob) throws StateStoreException {

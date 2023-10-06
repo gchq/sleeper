@@ -40,7 +40,7 @@ public class StateStoreFactory {
     public StateStore getStateStore(TableProperties tableProperties) {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
         if (stateStoreClassName.equals(DynamoDBStateStore.class.getName())) {
-            return new DynamoDBStateStore(tableProperties, dynamoDB);
+            return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
         }
         if (stateStoreClassName.equals(S3StateStore.class.getName())) {
             return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);

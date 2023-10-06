@@ -19,6 +19,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.TableUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.FileInfo;
@@ -30,7 +31,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -45,7 +46,7 @@ public class CompactionJobFactory {
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
         this(withTableName(tableProperties.get(TABLE_NAME))
-                .outputFilePrefix(instanceProperties.get(FILE_SYSTEM) + tableProperties.get(DATA_BUCKET))
+                .outputFilePrefix(instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME))
                 .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
                 .iteratorConfig(tableProperties.get(ITERATOR_CONFIG)));
     }
@@ -128,7 +129,7 @@ public class CompactionJobFactory {
     }
 
     private String outputFileForPartitionAndJob(String partitionId, String jobId) {
-        return outputFilePrefix + "/partition_" + partitionId + "/" + jobId + ".parquet";
+        return TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
     }
 
     public static final class Builder {

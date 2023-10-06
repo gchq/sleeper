@@ -57,7 +57,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
-import static sleeper.configuration.properties.table.TableProperty.ENCRYPTED;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -96,7 +95,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldIncludeTableInLocalDirectory() throws IOException {
+        void shouldIncludeTableInLocalDirectory() {
             // Given
             createTableInS3("test-table");
 
@@ -110,7 +109,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() throws IOException {
+        void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() {
             // Given
             createTableInS3("old-test-table");
             updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
@@ -132,7 +131,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     class UpdateTableProperties {
 
         @Test
-        void shouldUpdateTablePropertyInS3() throws IOException {
+        void shouldUpdateTablePropertyInS3() {
             // Given
             createTableInS3("test-table");
 
@@ -145,7 +144,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldUpdateTablePropertyInLocalDirectory() throws IOException {
+        void shouldUpdateTablePropertyInLocalDirectory() {
             // Given
             createTableInS3("test-table");
 
@@ -159,7 +158,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldIncludeNotUpdatedTableInLocalDirectory() throws IOException {
+        void shouldIncludeNotUpdatedTableInLocalDirectory() {
             // Given
             createTableInS3("test-table");
             createTableInS3("test-table-2");
@@ -174,7 +173,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() throws IOException {
+        void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() {
             // Given
             createTableInS3("old-test-table");
             updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
@@ -271,89 +270,6 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
     }
 
-    @DisplayName("Deploy table property change with CDK")
-    @Nested
-    class DeployTableWithCdk {
-
-        @Test
-        void shouldRunCdkDeployWithLocalPropertiesFilesWhenCdkFlaggedTablePropertyUpdated() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
-
-            AtomicReference<InstanceProperties> localPropertiesWhenCdkDeployed = new AtomicReference<>();
-            List<TableProperties> localTablesWhenCdkDeployed = new ArrayList<>();
-            rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
-
-            // When
-            updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
-
-            // Then
-            verifyPropertiesDeployedWithCdk();
-            assertThat(localPropertiesWhenCdkDeployed).hasValue(instanceProperties);
-            assertThat(localTablesWhenCdkDeployed)
-                    .extracting(table -> table.getBoolean(ENCRYPTED))
-                    .containsExactly(false);
-        }
-
-        @Test
-        void shouldNotRunCdkDeployWhenUnflaggedTablePropertyUpdated() throws Exception {
-            // Given
-            createTableInS3("test-table");
-
-            // When
-            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
-
-            // Then
-            verifyNoInteractions(cdk);
-        }
-
-        @Test
-        void shouldLeaveCdkToUpdateS3WhenApplyingChangeWithCdk() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
-
-            // When
-            updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
-
-            // Then
-            verifyPropertiesDeployedWithCdk();
-            assertThat(store().loadTableProperties(instanceProperties, "test-table")
-                    .getBoolean(ENCRYPTED))
-                    .isTrue();
-        }
-
-        @Test
-        void shouldFailWhenCdkDeployFails() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
-            IOException thrown = new IOException("CDK failed");
-            doThrowWhenPropertiesDeployedWithCdk(thrown);
-
-            // When / Then
-            assertThatThrownBy(() -> updateTableProperty(
-                    INSTANCE_ID, "test-table", ENCRYPTED, "false"))
-                    .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveTableProperties.class)
-                    .hasCauseReference(thrown);
-        }
-
-        @Test
-        void shouldResetLocalPropertiesWhenCdkDeployFails() throws Exception {
-            // Given
-            createTableInS3("test-table", table -> table.set(ENCRYPTED, "true"));
-            doThrowWhenPropertiesDeployedWithCdk(new IOException("CDK failed"));
-
-            // When / Then
-            try {
-                updateTableProperty(INSTANCE_ID, "test-table", ENCRYPTED, "false");
-                fail("CDK failure did not cause an exception");
-            } catch (Exception e) {
-                assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
-                        .extracting(table -> table.getBoolean(ENCRYPTED))
-                        .containsExactly(true);
-            }
-        }
-    }
-
     @DisplayName("Load invalid properties")
     @Nested
     class LoadInvalidProperties {
@@ -369,7 +285,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldLoadInvalidTableProperties() throws IOException {
+        void shouldLoadInvalidTableProperties() {
             // Given
             createTableInS3("test-table", table -> table.set(PARTITION_SPLIT_THRESHOLD, "abc"));
 
@@ -398,7 +314,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         }
 
         @Test
-        void shouldCreateGeneratedDirectoryWhenSavingTableProperties() throws IOException {
+        void shouldCreateGeneratedDirectoryWhenSavingTableProperties() {
             // Given
             Path generatedDir = tempDir.resolve("dir-to-create");
             createTableInS3("test-table");
@@ -418,7 +334,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     @DisplayName("Upload docker images")
     class UploadDockerImages {
         @BeforeEach
-        void setup() throws IOException {
+        void setup() {
             instanceProperties.set(OPTIONAL_STACKS, "QueryStack,CompactionStack");
             instanceProperties.saveToS3(s3);
         }

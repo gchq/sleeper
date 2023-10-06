@@ -28,6 +28,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionTree;
@@ -43,6 +45,7 @@ import sleeper.ingest.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
 import java.io.IOException;
@@ -58,8 +61,10 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.testutils.AwsExternalResource.getHadoopConfiguration;
+import static sleeper.ingest.testutils.HadoopConfigurationLocalStackUtil.getHadoopConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 import static sleeper.ingest.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
@@ -77,14 +82,18 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     @BeforeEach
     public void before() {
         s3.createBucket(dataBucketName);
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     private StateStore createStateStore(Schema schema) {
-        return new DynamoDBStateStoreCreator(UUID.randomUUID().toString(), schema, dynamoDB).create();
+        tableProperties.setSchema(schema);
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
     }
 
     @Test
@@ -97,10 +106,11 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildTree();
+        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
 
         ingestRecords(
                 recordListAndSchema,
@@ -108,8 +118,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 5,
                 1000L,
                 ingestLocalWorkingDirectory,
-                Stream.of("leftFile", "rightFile"),
-                stateStoreUpdateTime);
+                Stream.of("leftFile", "rightFile")
+        );
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -118,8 +128,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100, -100L, -1L);
-        FileInfo rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100, 0L, 99L);
+        FileInfo leftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/leftFile.parquet", 100);
+        FileInfo rightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/rightFile.parquet", 100);
         List<Record> leftRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, leftFile, hadoopConfiguration);
         List<Record> rightRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, rightFile, hadoopConfiguration);
         List<Record> allRecords = Stream.of(leftRecords, rightRecords).flatMap(List::stream).collect(Collectors.toUnmodifiableList());
@@ -152,6 +162,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
         stateStore.initialise(tree.getAllPartitions());
+        stateStore.fixTime(stateStoreUpdateTime);
         String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
         Stream<String> fileNames = IntStream.iterate(0, i -> i + 1).mapToObj(i -> "file" + i);
 
@@ -162,8 +173,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 5,
                 10L,
                 ingestLocalWorkingDirectory,
-                fileNames,
-                stateStoreUpdateTime);
+                fileNames
+        );
 
         // Then
         List<FileInfo> actualFiles = stateStore.getActiveFiles();
@@ -172,15 +183,14 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5, -90L, -2L);
-        FileInfo firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5, 12L, 83L);
+        FileInfo firstLeftFile = fileInfoFactory.partitionFile("left", "s3a://" + dataBucketName + "/partition_left/file0.parquet", 5);
+        FileInfo firstRightFile = fileInfoFactory.partitionFile("right", "s3a://" + dataBucketName + "/partition_right/file1.parquet", 5);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         List<Record> firstLeftFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstLeftFile, hadoopConfiguration);
         List<Record> firstRightFileRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema, firstRightFile, hadoopConfiguration);
 
         assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles)
-                .hasSize(40)
+        assertThat(actualFiles).hasSize(40)
                 .contains(firstLeftFile, firstRightFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(firstLeftFileRecords).extracting(record -> record.getValues(List.of("key0")).get(0))
@@ -200,8 +210,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
-            Stream<String> fileNames,
-            Instant stateStoreUpdateTime) throws StateStoreException, IteratorException, IOException {
+            Stream<String> fileNames) throws StateStoreException, IteratorException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
         try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinator(
@@ -215,8 +224,8 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration,
                         "s3a://" + dataBucketName,
-                        fileNames.iterator()::next,
-                        () -> stateStoreUpdateTime))) {
+                        fileNames.iterator()::next
+                ))) {
             for (Record record : recordListAndSchema.recordList) {
                 ingestCoordinator.write(record);
             }

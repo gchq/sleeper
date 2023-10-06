@@ -72,7 +72,9 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(finishedIngestJobWithValidation(job.toIngestJob(), "test-task",
                         validationTime, summary(startTime, finishTime, 100, 100)));
-        assertThat(stateStore.getActiveFiles()).isEqualTo(outputFiles);
+        assertThat(stateStore.getActiveFiles())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .isEqualTo(outputFiles);
     }
 
     @Test

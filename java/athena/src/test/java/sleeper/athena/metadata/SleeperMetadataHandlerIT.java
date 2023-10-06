@@ -73,7 +73,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldJustReturnLeafPartitionsWhichContainValuesGreaterThanMinKey() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -82,7 +82,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
@@ -126,7 +126,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldJustReturnPartitionsWhichContainValuesLessThanMaxKey() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -134,7 +134,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
@@ -179,7 +179,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldJustReturnPartitionsThatContainASpecificKey() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -188,7 +188,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -234,7 +234,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldNotFilterPartitionsBasedOnDenyList() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -243,7 +243,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -286,7 +286,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldScanAllFilesWhenANonKeyFieldIsFiltered() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -295,7 +295,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -338,7 +338,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldGenerateArrowSchemaFromSleeperSchema() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         String tableName = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
@@ -364,7 +364,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldReturnMultiplePartitionsWhenExactQueryMatchesMultiplePartitions() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
 
         // When
@@ -373,7 +373,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
@@ -419,7 +419,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldProvideSetContainingInstanceIdWhenAskedForSchemaList() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
 
         // When
         AmazonS3 s3Client = createS3Client();
@@ -435,7 +435,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldJustReturnAllTheTablesWithinTheInstanceWhenAskedToListTheTables() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         String table1 = createEmptyTable(instance).get(TABLE_NAME);
         String table2 = createEmptyTable(instance).get(TABLE_NAME);
         String table3 = createEmptyTable(instance).get(TABLE_NAME);
@@ -458,7 +458,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldProvideSubsetOfTheTablesWithinTheInstanceWhenAskedToListTheTablesAndPageSizeIsSet() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         String table1 = createEmptyTable(instance).get(TABLE_NAME);
         String table2 = createEmptyTable(instance).get(TABLE_NAME);
 
@@ -482,7 +482,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldProvideSubsetOfTheTablesWithinTheInstanceWhenAskedToListTheTablesAndPageSizeIsSetStartingWithStartToken() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         String table1 = createEmptyTable(instance).get(TABLE_NAME);
         String table2 = createEmptyTable(instance).get(TABLE_NAME);
 
@@ -504,7 +504,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldReturnBothPartitionsWhenItHasBeenSplitBySystemAndLeftMaxAppearsInDenyList() throws Exception {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
@@ -512,8 +512,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(table, dynamoClient);
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -553,7 +552,7 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     @Test
     public void shouldCallExtraSchemaEnhancementMethodWhenEnhanceingSchema() throws IOException {
         // Given
-        InstanceProperties instance = TestUtils.createInstance(createS3Client());
+        InstanceProperties instance = createInstance();
         AmazonS3 s3Client = createS3Client();
         AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl handler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));

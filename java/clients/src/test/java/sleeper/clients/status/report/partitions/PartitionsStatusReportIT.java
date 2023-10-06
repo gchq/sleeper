@@ -19,7 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -34,17 +34,20 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.StateStoreProvider;
+import sleeper.statestore.dynamodb.DynamoDBStateStore;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.partitions.PartitionStatusReportTestHelper.createRootPartitionWithTwoChildren;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.statestore.dynamodb.DynamoDBStateStoreTestHelper.createTestTable;
 
 @Testcontainers
 public class PartitionsStatusReportIT {
@@ -59,8 +62,12 @@ public class PartitionsStatusReportIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties(s3);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
-            instanceProperties, schema, s3, dynamoDB,
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
+
+    @BeforeEach
+    void setUp() {
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+    }
 
     @Test
     void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
@@ -69,15 +76,16 @@ public class PartitionsStatusReportIT {
                 .singleFileInEachLeafPartitionWithRecords(100)
                 .setupStateStore(stateStore());
 
-        // When
-        ToStringPrintStream out = new ToStringPrintStream();
-        PartitionsStatusReportArguments.fromArgs(
-                        instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
-                .runReport(s3, dynamoDB, out.getPrintStream());
-
-        // Then
-        assertThat(out).hasToString(
+        // When / Then
+        assertThat(runReport()).isEqualTo(
                 example("reports/partitions/rootWithTwoChildrenBothNeedSplitting.txt"));
+    }
+
+    private String runReport() throws Exception {
+        ToStringPrintStream out = new ToStringPrintStream();
+        PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
+                .runReport(s3, dynamoDB, out.getPrintStream());
+        return out.toString();
     }
 
     private static AmazonS3 createS3Client() {
@@ -89,6 +97,10 @@ public class PartitionsStatusReportIT {
     }
 
     private StateStore stateStore() {
-        return new StateStoreProvider(dynamoDB, instanceProperties, new Configuration()).getStateStore(tableProperties);
+        return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+    }
+
+    private TableProperties createTestTable(Consumer<TableProperties> tableConfig) {
+        return createTestTableProperties(instanceProperties, schema, s3, tableConfig);
     }
 }

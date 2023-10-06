@@ -47,4 +47,8 @@ public class StateStoreTestHelper {
     public static StateStore inMemoryStateStoreWithPartitions(List<Partition> partitions) {
         return new DelegatingStateStore(new InMemoryFileInfoStore(), new InMemoryPartitionStore(partitions));
     }
+
+    public static StateStore inMemoryStateStoreWithNoPartitions() {
+        return new DelegatingStateStore(new InMemoryFileInfoStore(), new InMemoryPartitionStore(List.of()));
+    }
 }

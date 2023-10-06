@@ -68,7 +68,6 @@ import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -103,8 +102,7 @@ public class QueryStack extends NestedStack {
                       String id,
                       InstanceProperties instanceProperties,
                       BuiltJars jars,
-                      List<IBucket> dataBuckets,
-                      List<StateStoreStack> stateStoreStacks) {
+                      StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         super(scope, id);
 
         // Config bucket
@@ -237,9 +235,8 @@ public class QueryStack extends NestedStack {
         // Grant the lambda permission to read from the Dynamo tables, read from
         // the S3 bucket, write back to the query queue and write to the results
         // queue and S3 bucket
-        dataBuckets.forEach(bucket -> bucket.grantRead(queryExecutorLambda));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadActiveFileMetadata(queryExecutorLambda));
-        stateStoreStacks.forEach(stateStoreStack -> stateStoreStack.grantReadPartitionMetadata(queryExecutorLambda));
+        dataStack.getDataBucket().grantRead(queryExecutorLambda);
+        stateStoreStacks.grantReadActiveFilesAndPartitions(queryExecutorLambda);
         configBucket.grantRead(queryExecutorLambda);
         jarsBucket.grantRead(queryExecutorLambda);
         queriesQueue.grantSendMessages(queryExecutorLambda);

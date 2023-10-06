@@ -75,8 +75,7 @@ class SleeperClient:
         :param job_id: the id of the ingest job, will be randomly generated if not provided 
         """
         # Generate a filename to write to
-        databucket: str = _make_ingest_bucket_name(
-            self._basename, table_name)
+        databucket: str = _make_ingest_bucket_name(self._basename)
         databucket_file = _make_ingest_s3_name(databucket)
         logger.debug(f"Writing to {databucket_file}")
         # Upload it
@@ -118,7 +117,7 @@ class SleeperClient:
                      self._eks_bulk_import_queue, self._emr_serverless_bulk_import_queue, id, platform, platform_spec,
                      class_name)
 
-    def exact_key_query(self, table_name: str, keys, query_id: str = str(uuid.uuid4())) -> list:
+    def exact_key_query(self, table_name: str, keys, query_id: str = None) -> list:
         """
         Query a Sleeper table for records where the key matches a given list of query keys.
 
@@ -146,14 +145,14 @@ class SleeperClient:
         return self._exact_key_query_from_dicts(table_name, keys, query_id)
 
     def _exact_key_query_from_list_of_values(self, table_name: str, row_key_field_name: str, values: list,
-                                             query_id: str = str(uuid.uuid4())) -> list:
+                                             query_id: str) -> list:
         regions = []
         for value in values:
             region = {row_key_field_name: [value, True, value, True]}
             regions.append(region)
         return self.range_key_query(table_name, regions, query_id)
 
-    def _exact_key_query_from_dicts(self, table_name: str, keys: dict, query_id: str = str(uuid.uuid4())) -> list:
+    def _exact_key_query_from_dicts(self, table_name: str, keys: dict, query_id: str) -> list:
         regions = []
         for key in keys:
             if not isinstance(key, dict):
@@ -166,7 +165,7 @@ class SleeperClient:
             regions.append(region)
         return self.range_key_query(table_name, regions, query_id)
 
-    def range_key_query(self, table_name: str, regions: list, query_id: str = str(uuid.uuid4())) -> list:
+    def range_key_query(self, table_name: str, regions: list, query_id: str = None) -> list:
         """
         Query a Sleeper table for records where the key is within one of the provided list of ranges.
 
@@ -181,6 +180,8 @@ class SleeperClient:
 
         :return: list of the result records
         """
+        if query_id is None:
+            query_id = str(uuid.uuid4())
         json_regions_list = []
         if not isinstance(regions, list):
             raise Exception("Regions must be a list")
@@ -285,8 +286,7 @@ class SleeperClient:
                 parquet_file.write_tail()
 
                 # Get name of file to upload to on S3
-                databucket: str = _make_ingest_bucket_name(
-                    self._basename, table_name)
+                databucket: str = _make_ingest_bucket_name(self._basename)
                 s3_filename: str = _make_ingest_s3_name(databucket)
                 bucket: str = s3_filename.split('/', 1)[0]
                 key: str = s3_filename.split('/', 1)[1]
@@ -373,7 +373,7 @@ def _write_and_upload_parquet(records_to_write: list, s3_file: str):
         _s3.upload_file(fp.name, databucket_name, file_name)
 
 
-def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: str = str(uuid.uuid4())):
+def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: str):
     """
     Instructs Sleeper to ingest the given file from S3.
 
@@ -383,6 +383,8 @@ def _ingest(table_name: str, files_to_ingest: list, ingest_queue: str, job_id: s
     """
     if ingest_queue == None:
         raise Exception("Ingest queue is not defined - was the Ingest Stack deployed?")
+    if job_id is None:
+        job_id = str(uuid.uuid4())
 
     # Creates the ingest message and generates an ID
     ingest_message = {
@@ -520,16 +522,15 @@ def _receive_messages(self, query_id: str, timeout: int = DEFAULT_MAX_WAIT_TIME)
     raise RuntimeError("No results received from Sleeper within specified timeout.")
 
 
-def _make_ingest_bucket_name(basename: str, table_name: str) -> str:
+def _make_ingest_bucket_name(basename: str) -> str:
     """
     Returns the S3 bucket name that Sleeper will use for storing table data.
 
     :param basename: the Sleeper instance base name (sleeper.id)
-    :param table_name: the table being worked with
 
     :return: S3 bucket name
     """
-    return f"sleeper-{basename}-table-{table_name}"
+    return f"sleeper-{basename}-table-data"
 
 
 def _make_ingest_s3_name(bucket: str) -> str:

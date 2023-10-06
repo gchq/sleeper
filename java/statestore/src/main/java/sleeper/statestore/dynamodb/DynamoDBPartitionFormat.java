@@ -33,6 +33,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 
 class DynamoDBPartitionFormat {
 
+    static final String TABLE_NAME = DynamoDBStateStore.TABLE_NAME;
     static final String ID = "PartitionId";
     static final String IS_LEAF = "PartitionIsLeaf";
     private static final String PARENT_ID = "PartitionParentId";
@@ -40,16 +41,19 @@ class DynamoDBPartitionFormat {
     private static final String SPLIT_DIMENSION = "PartitionSplitDimension";
     private static final String REGION = "Region";
 
+    private final String sleeperTableName;
     private final List<PrimitiveType> rowKeyTypes;
     private final RegionSerDe regionSerDe;
 
-    DynamoDBPartitionFormat(Schema schema) {
+    DynamoDBPartitionFormat(String sleeperTableName, Schema schema) {
+        this.sleeperTableName = sleeperTableName;
         rowKeyTypes = schema.getRowKeyTypes();
         regionSerDe = new RegionSerDe(schema);
     }
 
     Map<String, AttributeValue> getItemFromPartition(Partition partition) {
         Map<String, AttributeValue> map = new HashMap<>();
+        map.put(TABLE_NAME, createStringAttribute(sleeperTableName));
         map.put(ID, createStringAttribute(partition.getId()));
         map.put(IS_LEAF, createStringAttribute("" + partition.isLeafPartition()));
         if (null != partition.getParentPartitionId()) {
@@ -65,7 +69,15 @@ class DynamoDBPartitionFormat {
 
     Map<String, AttributeValue> getKeyFromPartition(Partition partition) {
         Map<String, AttributeValue> map = new HashMap<>();
+        map.put(TABLE_NAME, createStringAttribute(sleeperTableName));
         map.put(ID, createStringAttribute(partition.getId()));
+        return map;
+    }
+
+    Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
+        Map<String, AttributeValue> map = new HashMap<>();
+        map.put(TABLE_NAME, createStringAttribute(sleeperTableName));
+        map.put(ID, item.get(ID));
         return map;
     }
 

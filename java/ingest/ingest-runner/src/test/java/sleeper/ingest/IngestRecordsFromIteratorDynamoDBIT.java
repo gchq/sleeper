@@ -22,7 +22,6 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.ingest.testutils.AssertQuantiles;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -35,10 +34,10 @@ public class IngestRecordsFromIteratorDynamoDBIT extends IngestRecordsDynamoDBIT
     @Test
     public void shouldWriteRecordsCorrectly() throws Exception {
         // Given
-        DynamoDBStateStore stateStore = getStateStore(schema);
+        DynamoDBStateStore stateStore = initialiseStateStore();
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -47,15 +46,13 @@ public class IngestRecordsFromIteratorDynamoDBIT extends IngestRecordsDynamoDBIT
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records
         List<Record> readRecords = readRecordsFromParquetFile(fileInfo.getFilename(), schema);
         assertThat(readRecords).containsExactly(getRecords().get(0), getRecords().get(1));
         //  - Local files should have been deleted
-        assertThat(Files.walk(Paths.get(inputFolderName)).filter(Files::isRegularFile).count()).isZero();
+        assertThat(Paths.get(inputFolderName)).isEmptyDirectory();
         //  - Check quantiles sketches have been written and are correct (NB the sketches are stochastic so may not be identical)
         AssertQuantiles.forSketch(getSketches(schema, activeFiles.get(0).getFilename()).getQuantilesSketch("key"))
                 .min(1L).max(3L)

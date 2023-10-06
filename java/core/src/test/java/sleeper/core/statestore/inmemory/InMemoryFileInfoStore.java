@@ -19,6 +19,9 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.StateStoreException;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,16 +32,18 @@ import java.util.Map;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION;
 
 public class InMemoryFileInfoStore implements FileInfoStore {
 
     private final Map<String, FileInfo> activeFiles = new HashMap<>();
     private final Map<String, FileInfo> readyForGCFiles = new HashMap<>();
+    private Clock clock = Clock.systemUTC();
 
     @Override
     public void addFile(FileInfo fileInfo) {
-        activeFiles.put(fileInfo.getFilename(), fileInfo);
+        activeFiles.put(fileInfo.getFilename(), fileInfo.toBuilder().lastStateStoreUpdateTime(clock.millis()).build());
     }
 
     @Override
@@ -60,9 +65,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
 
     @Override
     public List<FileInfo> getActiveFilesWithNoJobId() {
-        return Collections.unmodifiableList(activeFiles.values().stream()
+        return activeFiles.values().stream()
                 .filter(file -> file.getJobId() == null)
-                .collect(toList()));
+                .collect(toUnmodifiableList());
     }
 
     @Override
@@ -88,7 +93,9 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     private void moveToGC(FileInfo file) {
         activeFiles.remove(file.getFilename());
         readyForGCFiles.put(file.getFilename(),
-                file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION).build());
+                file.toBuilder().fileStatus(READY_FOR_GARBAGE_COLLECTION)
+                        .lastStateStoreUpdateTime(clock.millis())
+                        .build());
     }
 
     @Override
@@ -98,7 +105,8 @@ public class InMemoryFileInfoStore implements FileInfoStore {
             throw new StateStoreException("Job ID already set: " + filenamesWithJobId);
         }
         for (FileInfo file : fileInfos) {
-            activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId).build());
+            activeFiles.put(file.getFilename(), file.toBuilder().jobId(jobId)
+                    .lastStateStoreUpdateTime(clock.millis()).build());
         }
     }
 
@@ -117,5 +125,21 @@ public class InMemoryFileInfoStore implements FileInfoStore {
     @Override
     public void initialise() {
 
+    }
+
+    @Override
+    public boolean hasNoFiles() {
+        return activeFiles.isEmpty() && readyForGCFiles.isEmpty();
+    }
+
+    @Override
+    public void clearTable() {
+        activeFiles.clear();
+        readyForGCFiles.clear();
+    }
+
+    @Override
+    public void fixTime(Instant now) {
+        clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 }

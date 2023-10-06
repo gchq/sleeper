@@ -39,6 +39,33 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    // Data
+    SystemDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
+            .description("The S3 bucket name used to store table data.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
+    // DynamoDBStateStore
+    SystemDefinedInstanceProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
+            .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    SystemDefinedInstanceProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.gc.table")
+            .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
+                    "in Sleeper tables.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    SystemDefinedInstanceProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.partition.table")
+            .description("The name of the DynamoDB table holding metadata of partitions in Sleeper tables.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
+    // S3StateStore
+    SystemDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.metadata.s3.dynamo.revision.table")
+            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // Table metrics
     SystemDefinedInstanceProperty TABLE_METRICS_RULES = Index.propertyBuilder("sleeper.table.metrics.rulenames")
             .description("The names of the CloudWatch rules that trigger generation of metrics for tables.")

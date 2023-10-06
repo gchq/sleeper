@@ -129,6 +129,14 @@ sleeper.properties.force.reload=false
 # the ability to use this in the CDK in the future.
 # sleeper.ecr.repository.prefix=
 
+# This specifies whether point in time recovery is enabled for the DynamoDB state store. This is set
+# on the DynamoDB tables.
+sleeper.metadata.dynamo.pointintimerecovery=false
+
+# This specifies whether point in time recovery is enabled for the S3 state store. This is set on the
+# revision DynamoDB table.
+sleeper.metadata.s3.dynamo.pointintimerecovery=false
+
 
 ## The following properties relate to standard ingest.
 
@@ -202,6 +210,12 @@ sleeper.ingest.job.status.ttl=604800
 # The expiry time is fixed when an update is saved to the store, so changing this will only affect new
 # data.
 sleeper.ingest.task.status.ttl=604800
+
+# The time in seconds to wait for ingest jobs to appear on the queue before an ingest task terminates.
+# Must be >= 0 and <= 20.
+# See also
+# https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-short-and-long-polling.html
+sleeper.ingest.job.queue.wait.time=20
 
 # The maximum number of records written to local file in an ingest job. (Records are written in sorted
 # order to local disk before being uploaded to S3. Increasing this value increases the amount of time
@@ -428,37 +442,38 @@ sleeper.bulk.import.emr.ebs.volumes.per.instance=4
 sleeper.bulk.import.emr.serverless.architecture=X86_64
 
 # The version of EMR Serverless to use.
-sleeper.bulk.import.emr.serverless.release=emr-6.10.0
+sleeper.bulk.import.emr.serverless.release=emr-6.13.0
 
 # The number of cores used by a Serverless executor. Used to set spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.executor.cores=4
+sleeper.bulk.import.emr.serverless.spark.executor.cores=4
 
 # The amount of memory allocated to a Serverless executor. Used to set spark.executor.memory.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.executor.memory=16g
+sleeper.bulk.import.emr.serverless.spark.executor.memory=16G
 
 # The amount of storage allocated to a Serverless executor.
-sleeper.bulk.import.emr.serverless.executor.disk=200g
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.emr-serverless.executor.disk=200G
 
 # The number of executors to be used with Serverless. Used to set spark.executor.instances.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.executor.instances=36
+sleeper.bulk.import.emr.serverless.spark.executor.instances=36
 
 # The number of cores used by the Serverless Spark driver. Used to set spark.driver.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.driver.cores=4
+sleeper.bulk.import.emr.serverless.spark.driver.cores=4
 
 # The amount of memory allocated to the Serverless Spark driver. Used to set spark.driver.memory.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.driver.memory=16g
+sleeper.bulk.import.emr.serverless.spark.driver.memory=16G
 
 # The path to JAVA_HOME to be used by the custom image for bulk import.
-sleeper.bulk.import.emr.serverless.java.home=/usr/lib/jvm/jre-11
+sleeper.bulk.import.emr.serverless.spark.executorEnv.JAVA_HOME=/usr/lib/jvm/jre-11
 
 # Whether Spark should use dynamic allocation to scale resources up and down. Used to set
 # spark.dynamicAllocation.enabled. See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.serverless.dynamic.allocation.enabled=false
+sleeper.bulk.import.emr.serverless.spark.dynamic.allocation.enabled=false
 
 # Whether to compress serialized RDD partitions. Used to set spark.rdd.compress.
 # See https://spark.apache.org/docs/latest/configuration.html.
@@ -499,11 +514,24 @@ sleeper.bulk.import.emr.serverless.spark.memory.fraction=0.80
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.serverless.spark.memory.storage.fraction=0.30
 
+# If true then speculative execution of tasks will be performed. Used to set spark.speculation.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.speculation=false
+
+# Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used
+# to set spark.speculation.quantile.
+# See https://spark.apache.org/docs/latest/configuration.html.
+sleeper.bulk.import.emr.serverless.spark.speculation.quantile=0.75
+
+# The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.
+# Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested.
+sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec=lz4
+
 # (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
 # for bulk importing data using Spark running on EMR.
 # This property is a default which can be overridden by a table property or by a property in the bulk
 # import job specification.
-sleeper.default.bulk.import.emr.release.label=emr-6.10.0
+sleeper.default.bulk.import.emr.release.label=emr-6.13.0
 
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
@@ -556,7 +584,7 @@ sleeper.default.bulk.import.emr.executor.initial.instances=2
 sleeper.default.bulk.import.emr.executor.max.instances=10
 
 # (Persistent EMR mode only) The EMR release used to create the persistent EMR cluster.
-sleeper.bulk.import.persistent.emr.release.label=emr-6.10.0
+sleeper.bulk.import.persistent.emr.release.label=emr-6.13.0
 
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
@@ -884,10 +912,6 @@ sleeper.default.parquet.columnindex.truncate.length=128
 # The length in bytes to truncate the min/max binary values in row groups.
 sleeper.default.parquet.statistics.truncate.length=2147483647
 
-# This specifies whether point in time recovery is turned on for DynamoDB tables. This default can be
-# overridden by a table property.
-sleeper.default.table.dynamo.pointintimerecovery=false
-
 # This specifies whether queries and scans against DynamoDB tables used in the DynamoDB state store
 # are strongly consistent. This default can be overridden by a table property.
 sleeper.default.table.dynamo.strongly.consistent.reads=false
@@ -923,7 +947,8 @@ sleeper.default.ingest.batcher.job.max.files=100
 sleeper.default.ingest.batcher.file.max.age.seconds=300
 
 # Specifies the target ingest queue where batched jobs are sent.
-# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks]
+# Valid values are: [standard_ingest, bulk_import_emr, bulk_import_persistent_emr, bulk_import_eks,
+# bulk_import_emr_serverless]
 sleeper.default.ingest.batcher.ingest.mode=standard_ingest
 
 # The time in minutes that the tracking information is retained for a file before the records of its

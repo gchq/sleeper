@@ -18,6 +18,8 @@ package sleeper.statestore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 
+import java.util.Map;
+
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class FixedStateStoreProvider extends StateStoreProvider {
@@ -28,6 +30,16 @@ public class FixedStateStoreProvider extends StateStoreProvider {
                 throw new IllegalArgumentException("Table not found: " + tableProperties.get(TABLE_NAME));
             }
             return stateStore;
+        });
+    }
+
+    public FixedStateStoreProvider(Map<String, StateStore> stateStoreByTableName) {
+        super(tableProperties -> {
+            String tableName = tableProperties.get(TABLE_NAME);
+            if (!stateStoreByTableName.containsKey(tableName)) {
+                throw new IllegalArgumentException("Table not found: " + tableName);
+            }
+            return stateStoreByTableName.get(tableName);
         });
     }
 }

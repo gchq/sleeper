@@ -55,7 +55,7 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         Files.writeString(filePath, "abc");
 
         // When
-        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, List.of(filePath), s3Client, sqsClient);
+        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3Client, sqsClient);
 
         // Then
         assertThat(getObjectContents(instanceProperties.get(INGEST_SOURCE_BUCKET), "ingest/test-file.parquet"))

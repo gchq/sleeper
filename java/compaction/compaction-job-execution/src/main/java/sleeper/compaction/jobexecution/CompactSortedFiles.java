@@ -75,7 +75,6 @@ public class CompactSortedFiles {
     private final TableProperties tableProperties;
     private final Schema schema;
     private final ObjectFactory objectFactory;
-    private final String rowKeyName0;
     private final CompactionJob compactionJob;
     private final StateStore stateStore;
     private final CompactionJobStatusStore jobStatusStore;
@@ -91,7 +90,6 @@ public class CompactSortedFiles {
         this.tableProperties = tableProperties;
         this.schema = this.tableProperties.getSchema();
         this.objectFactory = objectFactory;
-        this.rowKeyName0 = this.schema.getRowKeyFieldNames().get(0);
         this.compactionJob = compactionJob;
         this.stateStore = stateStore;
         this.jobStatusStore = jobStatusStore;
@@ -167,18 +165,9 @@ public class CompactSortedFiles {
         Map<String, ItemsSketch> keyFieldToSketch = getSketches();
 
         long recordsWritten = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first
-        // record, the max is from
-        // the last).
-        Object minKey = null;
-        Object maxKey = null;
 
         while (mergingIterator.hasNext()) {
             Record record = mergingIterator.next();
-            if (null == minKey) {
-                minKey = record.get(rowKeyName0);
-            }
-            maxKey = record.get(rowKeyName0);
             updateQuantilesSketch(record, keyFieldToSketch);
             // Write out
             writer.write(record);
@@ -206,7 +195,6 @@ public class CompactSortedFiles {
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
-        long finishTime = System.currentTimeMillis();
         long totalNumberOfRecordsRead = 0L;
         for (CloseableIterator<Record> iterator : inputIterators) {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
@@ -214,9 +202,13 @@ public class CompactSortedFiles {
 
         LOGGER.info("Compaction job {}: Read {} records and wrote {} records", compactionJob.getId(), totalNumberOfRecordsRead, recordsWritten);
 
-        StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFile(), compactionJob.getPartitionId(), recordsWritten, minKey, maxKey, finishTime,
-                stateStore, schema.getRowKeyTypes());
-        LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(), LocalDateTime.now());
+        updateStateStoreSuccess(compactionJob.getInputFiles(),
+                compactionJob.getOutputFile(),
+                compactionJob.getPartitionId(),
+                recordsWritten,
+                stateStore,
+                schema.getRowKeyTypes());
+        LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
     }
@@ -248,13 +240,6 @@ public class CompactSortedFiles {
 
         long recordsWrittenToLeftFile = 0L;
         long recordsWrittenToRightFile = 0L;
-        // Record min and max of the first dimension of the row key (the min is from the first
-        // record, the max is from
-        // the last) from both files.
-        Object minKeyLeftFile = null;
-        Object minKeyRightFile = null;
-        Object maxKeyLeftFile = null;
-        Object maxKeyRightFile = null;
         int dimension = compactionJob.getDimension();
         // Compare using the key of dimension compactionJob.getDimension(), i.e. of that position in
         // the list
@@ -275,18 +260,10 @@ public class CompactSortedFiles {
             if (keyComparator.compare(record.get(comparisonKeyFieldName), splitPoint) < 0) {
                 leftWriter.write(record);
                 recordsWrittenToLeftFile++;
-                if (null == minKeyLeftFile) {
-                    minKeyLeftFile = record.get(rowKeyName0);
-                }
-                maxKeyLeftFile = record.get(rowKeyName0);
                 updateQuantilesSketch(record, leftKeyFieldToSketch);
             } else {
                 rightWriter.write(record);
                 recordsWrittenToRightFile++;
-                if (null == minKeyRightFile) {
-                    minKeyRightFile = record.get(rowKeyName0);
-                }
-                maxKeyRightFile = record.get(rowKeyName0);
                 updateQuantilesSketch(record, rightKeyFieldToSketch);
             }
 
@@ -325,7 +302,6 @@ public class CompactSortedFiles {
         }
         LOGGER.debug("Compaction job {}: Closed readers", compactionJob.getId());
 
-        long finishTime = System.currentTimeMillis();
         long totalNumberOfRecordsRead = 0L;
         for (CloseableIterator<Record> iterator : inputIterators) {
             totalNumberOfRecordsRead += ((ParquetReaderIterator) iterator).getNumberOfRecordsRead();
@@ -338,8 +314,7 @@ public class CompactSortedFiles {
         StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFiles(),
                 compactionJob.getPartitionId(), compactionJob.getChildPartitions(),
                 new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
-                new ImmutablePair<>(minKeyLeftFile, minKeyRightFile),
-                new ImmutablePair<>(maxKeyLeftFile, maxKeyRightFile), finishTime, stateStore,
+                stateStore,
                 schema.getRowKeyTypes());
         LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
                 LocalDateTime.now());
@@ -387,8 +362,81 @@ public class CompactSortedFiles {
         return HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
     }
 
-    // TODO These methods are copies of the same ones in IngestRecordsFromIterator - move to
-    // sketches module
+    private static boolean updateStateStoreSuccess(List<String> inputFiles,
+                                                   String outputFile,
+                                                   String partitionId,
+                                                   long recordsWritten,
+                                                   StateStore stateStore,
+                                                   List<PrimitiveType> rowKeyTypes) {
+        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
+        for (String file : inputFiles) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(rowKeyTypes)
+                    .filename(file)
+                    .partitionId(partitionId)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .build();
+            filesToBeMarkedReadyForGC.add(fileInfo);
+        }
+        FileInfo fileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFile)
+                .partitionId(partitionId)
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(recordsWritten)
+                .build();
+        try {
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(filesToBeMarkedReadyForGC, fileInfo);
+            LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
+            return true;
+        } catch (StateStoreException e) {
+            LOGGER.error("Exception updating DynamoDB (moving input files to ready for GC and creating new active file): {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean updateStateStoreSuccess(List<String> inputFiles,
+                                                   Pair<String, String> outputFiles,
+                                                   String partition,
+                                                   List<String> childPartitions,
+                                                   Pair<Long, Long> recordsWritten,
+                                                   StateStore stateStore,
+                                                   List<PrimitiveType> rowKeyTypes) {
+        List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
+        for (String file : inputFiles) {
+            FileInfo fileInfo = FileInfo.builder()
+                    .rowKeyTypes(rowKeyTypes)
+                    .filename(file)
+                    .partitionId(partition)
+                    .fileStatus(FileInfo.FileStatus.ACTIVE)
+                    .build();
+            filesToBeMarkedReadyForGC.add(fileInfo);
+        }
+        FileInfo leftFileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFiles.getLeft())
+                .partitionId(childPartitions.get(0))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(recordsWritten.getLeft())
+                .build();
+        FileInfo rightFileInfo = FileInfo.builder()
+                .rowKeyTypes(rowKeyTypes)
+                .filename(outputFiles.getRight())
+                .partitionId(childPartitions.get(1))
+                .fileStatus(FileInfo.FileStatus.ACTIVE)
+                .numberOfRecords(recordsWritten.getRight())
+                .build();
+        try {
+            stateStore.atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(filesToBeMarkedReadyForGC, leftFileInfo, rightFileInfo);
+            LOGGER.debug("Called atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile method on DynamoDBStateStore");
+            return true;
+        } catch (StateStoreException e) {
+            LOGGER.error("Exception updating DynamoDB while moving input files to ready for GC and creating new active file", e);
+            return false;
+        }
+    }
+
+    // TODO These methods are copies of the same ones in IngestRecordsFromIterator - move to sketches module
     private Map<String, ItemsSketch> getSketches() {
         Map<String, ItemsSketch> keyFieldToSketch = new HashMap<>();
         for (Field rowKeyField : schema.getRowKeyFields()) {

@@ -43,38 +43,36 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestRecordsTestDataHelper {
-    public static final String TEST_TABLE_NAME = "test-ingest-records";
 
     private IngestRecordsTestDataHelper() {
     }
 
-    public static TableProperties defaultTableProperties(Schema schema, String tableName, String bucketName, InstanceProperties instanceProperties) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.setSchema(schema);
-        tableProperties.set(TABLE_NAME, tableName);
+    public static TableProperties defaultTableProperties(Schema schema, InstanceProperties instanceProperties) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.setNumber(ROW_GROUP_SIZE, ParquetWriter.DEFAULT_BLOCK_SIZE);
         tableProperties.setNumber(PAGE_SIZE, ParquetWriter.DEFAULT_PAGE_SIZE);
         tableProperties.set(COMPRESSION_CODEC, "zstd");
-        tableProperties.set(DATA_BUCKET, bucketName);
         return tableProperties;
     }
 
-    public static InstanceProperties defaultInstanceProperties() {
-        InstanceProperties instanceProperties = new InstanceProperties();
+    public static InstanceProperties defaultInstanceProperties(String dataBucket) {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, dataBucket);
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);

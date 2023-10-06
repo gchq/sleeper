@@ -68,8 +68,8 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.configuration.properties.table.TableProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
@@ -593,11 +593,11 @@ public class QueryExecutorIT {
         Partition leftPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
                 .findFirst()
-                .get();
+                .orElseThrow();
         Partition rightPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == 5L))
                 .findFirst()
-                .get();
+                .orElseThrow();
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsMultidimRowKey().iterator());
         }
@@ -747,11 +747,12 @@ public class QueryExecutorIT {
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
         // Split the root partition into 2:
-        stateStore.initialise(new PartitionsBuilder(schema)
+        PartitionTree partialTree = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
-                .buildList()
-        );
+                .buildTree();
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
+                partialTree.getPartition("left"), partialTree.getPartition("right"));
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
@@ -761,7 +762,10 @@ public class QueryExecutorIT {
                 .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
                 .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
+                tree.getPartition("P1"), tree.getPartition("P3"));
+        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
+                tree.getPartition("P2"), tree.getPartition("P4"));
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
         List<String> filesInLeafPartition1 = stateStore.getActiveFiles().stream()
@@ -980,19 +984,19 @@ public class QueryExecutorIT {
         LeafPartitionQuery leafPartition1Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P1"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery leafPartition2Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P2"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery leafPartition3Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P3"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery leafPartition4Query = leafPartitionQueries.stream()
                 .filter(p -> p.getLeafPartitionId().equals("P4"))
                 .findFirst()
-                .get();
+                .orElseThrow();
         LeafPartitionQuery expectedLeafPartition1Query = new LeafPartitionQuery.Builder(
                 "myTable", "id", leafPartition1Query.getSubQueryId(), region, "P1",
                 tree.getPartition("P1").getRegion(), filesInLeafPartition1
@@ -1265,9 +1269,7 @@ public class QueryExecutorIT {
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
                               TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorException {
-        instanceProperties.set(FILE_SYSTEM, "file://");
         tableProperties.set(COMPRESSION_CODEC, "snappy");
-        tableProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(createTempDirectory(folder, null).toString())
@@ -1377,9 +1379,11 @@ public class QueryExecutorIT {
         return record;
     }
 
-    private static InstanceProperties createInstanceProperties() {
+    private InstanceProperties createInstanceProperties() throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
+        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(DATA_BUCKET, createTempDirectory(folder, null).toString());
         return instanceProperties;
     }
 }

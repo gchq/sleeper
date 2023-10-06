@@ -49,7 +49,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         );
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getRecords().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -57,17 +57,13 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
+                .sorted((f1, f2) -> f1.getPartitionId().compareTo(f2.getPartitionId()))
                 .collect(Collectors.toList());
         assertThat(activeFiles).hasSize(2);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
         fileInfo = activeFiles.get(1);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isEqualTo(3L);
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition2");
         //  - Read files and check they have the correct records
@@ -111,12 +107,10 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         //  - Check StateStore has correct information
         List<FileInfo> activeFiles = stateStore.getActiveFiles()
                 .stream()
-                .sorted((f1, f2) -> (int) (((long) f1.getMinRowKey().get(0)) - ((long) f2.getMinRowKey().get(0))))
+                .sorted((f1, f2) -> f1.getPartitionId().compareTo(f2.getPartitionId()))
                 .collect(Collectors.toList());
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isOne();
         assertThat(fileInfo.getNumberOfRecords().longValue()).isOne();
         assertThat(fileInfo.getPartitionId()).isEqualTo("partition1");
 

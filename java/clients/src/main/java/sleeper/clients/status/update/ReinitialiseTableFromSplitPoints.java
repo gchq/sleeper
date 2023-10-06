@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -31,7 +32,6 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.InitialiseStateStore;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -58,10 +58,9 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
             AmazonDynamoDB dynamoDBClient,
             String instanceId,
             String tableName,
-            boolean deletePartitions,
             String splitPointsFileLocation,
             boolean splitPointStringsBase64Encoded) {
-        super(s3Client, dynamoDBClient, instanceId, tableName, deletePartitions);
+        super(s3Client, dynamoDBClient, instanceId, tableName, true);
         this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.splitPointsFileLocation = splitPointsFileLocation;
     }
@@ -69,7 +68,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
     @Override
     protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
         List<Object> splitPoints = calculateSplitPoints(tableProperties);
-        InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(tableProperties, stateStore, splitPoints).run();
+        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
     }
 
     private List<Object> calculateSplitPoints(TableProperties tableProperties) throws IOException {
@@ -135,7 +134,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
 
         try {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(amazonS3, dynamoDBClient, instanceId, tableName,
-                    true, splitPointsFile, splitPointsFileBase64Encoded);
+                    splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
         } catch (RuntimeException | IOException | StateStoreException e) {

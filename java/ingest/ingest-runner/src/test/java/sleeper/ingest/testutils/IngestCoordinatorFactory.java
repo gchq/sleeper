@@ -55,7 +55,7 @@ public class IngestCoordinatorFactory {
                 arrowConfigBuilder.build(),
                 DirectPartitionFileWriterFactory.from(
                         parquetConfiguration, filePathPrefix,
-                        parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
+                        parameters.getFileNameGenerator()))
                 .build();
     }
 
@@ -84,7 +84,7 @@ public class IngestCoordinatorFactory {
                             .localWorkingDirectory(parameters.getWorkingDir())
                             .s3BucketName(parameters.getDataBucketName())
                             .fileNameGenerator(parameters.getFileNameGenerator())
-                            .timeSupplier(parameters.getFileUpdatedTimeSupplier())
+                            .filePathPrefix(parameters.getTableName())
                             .build())
                     .build();
         } catch (Exception e) {
@@ -105,7 +105,7 @@ public class IngestCoordinatorFactory {
                             .buildAcceptingRecords(),
                     DirectPartitionFileWriterFactory.from(
                             parquetConfiguration, filePathPrefix,
-                            parameters.getFileNameGenerator(), parameters.getFileUpdatedTimeSupplier()))
+                            parameters.getFileNameGenerator()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);

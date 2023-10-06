@@ -204,8 +204,10 @@ public class PartitionsFromSplitPoints {
             validateCorrectType(obj);
             Comparable comparable = getAsComparable(obj);
             if (count > 0) {
-                if (previous.compareTo(comparable) >= 0) {
-                    throw new IllegalArgumentException("Invalid split point: " + previous + " should be less than " + comparable);
+                if (previous.compareTo(comparable) == 0) {
+                    throw new IllegalArgumentException("Invalid split point: " + previous + " - duplicate found");
+                } else if (previous.compareTo(comparable) > 0) {
+                    throw new IllegalArgumentException("Invalid split point: " + previous + " - should be less than " + comparable);
                 }
             }
             previous = comparable;

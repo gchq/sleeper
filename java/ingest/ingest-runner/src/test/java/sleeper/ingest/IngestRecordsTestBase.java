@@ -38,23 +38,27 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.TEST_TABLE_NAME;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultInstanceProperties;
+import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.defaultTableProperties;
 import static sleeper.ingest.testutils.IngestRecordsTestDataHelper.schemaWithRowKeys;
 
 public class IngestRecordsTestBase {
     @TempDir
-    public Path folder;
+    public Path tempDir;
 
     protected final Field field = new Field("key", new LongType());
     protected final Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
-    protected String sketchFolderName;
+    protected String dataFolderName;
+    protected InstanceProperties instanceProperties;
+    protected TableProperties tableProperties;
 
     @BeforeEach
     public void setUpBase() throws Exception {
-        inputFolderName = createTempDirectory(folder, null).toString();
-        sketchFolderName = createTempDirectory(folder, null).toString();
+        inputFolderName = createTempDirectory(tempDir, null).toString();
+        dataFolderName = createTempDirectory(tempDir, null).toString();
+        instanceProperties = defaultInstanceProperties(dataFolderName);
+        tableProperties = defaultTableProperties(schema, instanceProperties);
     }
 
     protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {
@@ -82,11 +86,14 @@ public class IngestRecordsTestBase {
             Consumer<InstanceProperties> instancePropertiesConfig,
             Consumer<TableProperties> tablePropertiesConfig) throws Exception {
 
-        InstanceProperties instanceProperties = defaultInstanceProperties();
         instancePropertiesConfig.accept(instanceProperties);
-        TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
+        tableProperties.setSchema(schema);
         tablePropertiesConfig.accept(tableProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        return ingestRecords(stateStore, records);
+    }
+
+    protected IngestResult ingestRecords(StateStore stateStore, List<Record> records) throws Exception {
+        IngestFactory factory = createIngestFactory(stateStore);
 
         IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
         ingestRecords.init();
@@ -98,17 +105,19 @@ public class IngestRecordsTestBase {
 
     protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator)
             throws StateStoreException, IteratorException, IOException {
-        InstanceProperties instanceProperties = defaultInstanceProperties();
-        TableProperties tableProperties = defaultTableProperties(schema, instanceProperties);
-        IngestFactory factory = createIngestFactory(stateStore, tableProperties, instanceProperties);
+        tableProperties.setSchema(schema);
+        IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    private TableProperties defaultTableProperties(Schema schema, InstanceProperties instanceProperties) {
-        return IngestRecordsTestDataHelper.defaultTableProperties(schema, TEST_TABLE_NAME, sketchFolderName, instanceProperties);
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator)
+            throws StateStoreException, IteratorException, IOException {
+        IngestFactory factory = createIngestFactory(stateStore);
+        return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    private IngestFactory createIngestFactory(StateStore stateStore, TableProperties tableProperties, InstanceProperties instanceProperties) {
-        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName, new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+    private IngestFactory createIngestFactory(StateStore stateStore) {
+        return IngestRecordsTestDataHelper.createIngestFactory(inputFolderName,
+                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
     }
 }

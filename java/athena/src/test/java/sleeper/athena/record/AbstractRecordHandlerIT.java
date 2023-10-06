@@ -86,8 +86,9 @@ public abstract class AbstractRecordHandlerIT {
     }
 
     @BeforeEach
-    public void createInstance() {
-        this.instanceProperties = TestUtils.createInstance(createS3Client());
+    public void createInstance() throws IOException {
+        this.instanceProperties = TestUtils.createInstance(createS3Client(), createDynamoClient(),
+                createTempDirectory(tempDir, null).toString());
     }
 
     protected InstanceProperties getInstanceProperties() {
@@ -109,13 +110,13 @@ public abstract class AbstractRecordHandlerIT {
         return table;
     }
 
-    protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
-        return TestUtils.createTable(instanceProperties, SCHEMA, createTempDirectory(tempDir, null).toString(),
+    protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
+        return TestUtils.createTable(instanceProperties, SCHEMA,
                 createDynamoClient(), createS3Client(), initialSplits);
     }
 
-    protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) throws IOException {
-        return TestUtils.createTable(instanceProperties, schema, createTempDirectory(tempDir, null).toString(),
+    protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
+        return TestUtils.createTable(instanceProperties, schema,
                 createDynamoClient(), createS3Client(), initialSplits);
     }
 

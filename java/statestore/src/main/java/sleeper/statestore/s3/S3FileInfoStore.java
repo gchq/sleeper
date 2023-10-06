@@ -15,10 +15,7 @@
  */
 package sleeper.statestore.s3;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
@@ -26,11 +23,9 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.key.KeySerDe;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
@@ -42,6 +37,7 @@ import sleeper.io.parquet.record.ParquetRecordReader;
 import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -59,39 +55,28 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static sleeper.statestore.s3.S3RevisionUtils.RevisionId;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_REVISION;
-import static sleeper.statestore.s3.S3StateStore.CURRENT_UUID;
-import static sleeper.statestore.s3.S3StateStore.REVISION_ID_KEY;
+import static sleeper.statestore.s3.S3StateStore.FIRST_REVISION;
 
-public class S3FileInfoStore implements FileInfoStore {
+class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
-    public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
+    private static final Schema FILE_SCHEMA = initialiseFileInfoSchema();
+
     private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
-    private final KeySerDe keySerDe;
-    private final String fs;
-    private final String s3Bucket;
-    private final AmazonDynamoDB dynamoDB;
-    private final String dynamoRevisionIdTable;
-    private final Schema fileSchema;
+    private final String stateStorePath;
     private final Configuration conf;
     private final S3RevisionUtils s3RevisionUtils;
     private Clock clock = Clock.systemUTC();
 
     private S3FileInfoStore(Builder builder) {
-        this.fs = Objects.requireNonNull(builder.fs, "fs must not be null");
-        this.s3Bucket = Objects.requireNonNull(builder.s3Bucket, "s3Bucket must not be null");
-        this.dynamoRevisionIdTable = Objects.requireNonNull(builder.dynamoRevisionIdTable, "dynamoRevisionIdTable must not be null");
+        this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.rowKeyTypes = builder.rowKeyTypes;
         this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
-        this.dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
-        this.keySerDe = new KeySerDe(rowKeyTypes);
-        this.fileSchema = initialiseFileInfoSchema();
-        this.conf = builder.conf;
-        this.s3RevisionUtils = new S3RevisionUtils(dynamoDB, dynamoRevisionIdTable);
+        this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
+        this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
     }
 
-    public static Builder builder() {
+    static Builder builder() {
         return new Builder();
     }
 
@@ -102,6 +87,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void addFiles(List<FileInfo> fileInfos) throws StateStoreException {
+        long updateTime = clock.millis();
         for (FileInfo fileInfo : fileInfos) {
             if (null == fileInfo.getFilename()
                     || null == fileInfo.getFileStatus()
@@ -111,7 +97,7 @@ public class S3FileInfoStore implements FileInfoStore {
             }
         }
         Function<List<FileInfo>, List<FileInfo>> update = list -> {
-            list.addAll(fileInfos);
+            list.addAll(setLastUpdateTimes(fileInfos, updateTime));
             return list;
         };
         try {
@@ -124,6 +110,7 @@ public class S3FileInfoStore implements FileInfoStore {
     @Override
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFile(List<FileInfo> filesToBeMarkedReadyForGC, FileInfo newActiveFile)
             throws StateStoreException {
+        long updateTime = clock.millis();
         Set<String> namesOfFilesToBeMarkedReadyForGC = filesToBeMarkedReadyForGC.stream()
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toSet());
@@ -146,12 +133,12 @@ public class S3FileInfoStore implements FileInfoStore {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .lastStateStoreUpdateTime(updateTime)
                             .build();
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(newActiveFile);
+            filteredFiles.add(setLastUpdateTime(newActiveFile, updateTime));
             return filteredFiles;
         };
 
@@ -166,6 +153,7 @@ public class S3FileInfoStore implements FileInfoStore {
     public void atomicallyUpdateFilesToReadyForGCAndCreateNewActiveFiles(List<FileInfo> filesToBeMarkedReadyForGC,
                                                                          FileInfo leftFileInfo,
                                                                          FileInfo rightFileInfo) throws StateStoreException {
+        long updateTime = clock.millis();
         Set<String> namesOfFilesToBeMarkedReadyForGC = new HashSet<>();
         filesToBeMarkedReadyForGC.stream().map(FileInfo::getFilename).forEach(namesOfFilesToBeMarkedReadyForGC::add);
 
@@ -187,13 +175,13 @@ public class S3FileInfoStore implements FileInfoStore {
                 if (namesOfFilesToBeMarkedReadyForGC.contains(fileInfo.getFilename())) {
                     fileInfo = fileInfo.toBuilder()
                             .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
-                            .lastStateStoreUpdateTime(System.currentTimeMillis())
+                            .lastStateStoreUpdateTime(updateTime)
                             .build();
                 }
                 filteredFiles.add(fileInfo);
             }
-            filteredFiles.add(leftFileInfo);
-            filteredFiles.add(rightFileInfo);
+            filteredFiles.add(setLastUpdateTime(leftFileInfo, updateTime));
+            filteredFiles.add(setLastUpdateTime(rightFileInfo, updateTime));
             return filteredFiles;
         };
         try {
@@ -205,6 +193,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void atomicallyUpdateJobStatusOfFiles(String jobId, List<FileInfo> fileInfos) throws StateStoreException {
+        long updateTime = clock.millis();
         Set<String> namesOfFiles = new HashSet<>();
         fileInfos.stream().map(FileInfo::getFilename).forEach(namesOfFiles::add);
 
@@ -224,7 +213,9 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (namesOfFiles.contains(fileInfo.getFilename())) {
-                    fileInfo = fileInfo.toBuilder().jobId(jobId).build();
+                    fileInfo = fileInfo.toBuilder().jobId(jobId)
+                            .lastStateStoreUpdateTime(updateTime)
+                            .build();
                 }
                 filteredFiles.add(fileInfo);
             }
@@ -242,6 +233,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
     @Override
     public void deleteReadyForGCFile(FileInfo readyForGCFileInfo) throws StateStoreException {
+        long updateTime = clock.millis();
         Function<List<FileInfo>, String> condition = list -> {
             Map<String, FileInfo> fileNameToFileInfo = new HashMap<>();
             list.forEach(f -> fileNameToFileInfo.put(f.getFilename(), f));
@@ -257,7 +249,7 @@ public class S3FileInfoStore implements FileInfoStore {
             List<FileInfo> filteredFiles = new ArrayList<>();
             for (FileInfo fileInfo : list) {
                 if (!readyForGCFileInfo.getFilename().equals(fileInfo.getFilename())) {
-                    filteredFiles.add(fileInfo);
+                    filteredFiles.add(setLastUpdateTime(fileInfo, updateTime));
                 }
             }
             return filteredFiles;
@@ -275,7 +267,7 @@ public class S3FileInfoStore implements FileInfoStore {
         // TODO Optimise the following by pushing the predicate down to the Parquet reader
         RevisionId revisionId = getCurrentFilesRevisionId();
         if (null == revisionId) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         try {
             List<FileInfo> fileInfos = readFileInfosFromParquet(getFilesPath(revisionId));
@@ -359,7 +351,7 @@ public class S3FileInfoStore implements FileInfoStore {
 
             // Check condition
             String conditionCheck = condition.apply(files);
-            if (!conditionCheck.equals("")) {
+            if (!conditionCheck.isEmpty()) {
                 throw new StateStoreException("Conditional check failed: " + conditionCheck);
             }
 
@@ -416,7 +408,7 @@ public class S3FileInfoStore implements FileInfoStore {
         s3RevisionUtils.conditionalUpdateOfFileInfoRevisionId(currentRevisionId, newRevisionId);
     }
 
-    private Schema initialiseFileInfoSchema() {
+    private static Schema initialiseFileInfoSchema() {
         return Schema.builder()
                 .rowKeyFields(new Field("fileName", new StringType()))
                 .valueFields(
@@ -424,37 +416,52 @@ public class S3FileInfoStore implements FileInfoStore {
                         new Field("partitionId", new StringType()),
                         new Field("lastStateStoreUpdateTime", new LongType()),
                         new Field("numberOfRecords", new LongType()),
-                        new Field("jobId", new StringType()),
-                        new Field("minRowKeys", new ByteArrayType()),
-                        new Field("maxRowKeys", new ByteArrayType()))
+                        new Field("jobId", new StringType()))
                 .build();
     }
 
     public void initialise() throws StateStoreException {
-        RevisionId firstRevisionId = new RevisionId(S3StateStore.getZeroPaddedLong(1L), UUID.randomUUID().toString());
+        RevisionId firstRevisionId = new RevisionId(FIRST_REVISION, UUID.randomUUID().toString());
         String path = getFilesPath(firstRevisionId);
         try {
-            writeFileInfosToParquet(Collections.EMPTY_LIST, path);
+            writeFileInfosToParquet(Collections.emptyList(), path);
             LOGGER.debug("Written initial empty file to {}", path);
         } catch (IOException e) {
             throw new StateStoreException("IOException writing files to file " + path, e);
         }
-        Map<String, AttributeValue> item = new HashMap<>();
-        item.put(REVISION_ID_KEY, new AttributeValue().withS(CURRENT_FILES_REVISION_ID_KEY));
-        item.put(CURRENT_REVISION, new AttributeValue().withS(firstRevisionId.getRevision()));
-        item.put(CURRENT_UUID, new AttributeValue().withS(firstRevisionId.getUuid()));
-        PutItemRequest putItemRequest = new PutItemRequest()
-                .withTableName(dynamoRevisionIdTable)
-                .withItem(item);
-        dynamoDB.putItem(putItemRequest);
-        LOGGER.debug("Put item to DynamoDB (item = {}, table = {})", item, dynamoRevisionIdTable);
+        s3RevisionUtils.saveFirstFilesRevision(firstRevisionId);
+    }
+
+    @Override
+    public boolean hasNoFiles() {
+        RevisionId revisionId = getCurrentFilesRevisionId();
+        if (revisionId == null) {
+            return true;
+        }
+        String path = getFilesPath(revisionId);
+        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+            return reader.read() == null;
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed loading files", e);
+        }
+    }
+
+    @Override
+    public void clearTable() {
+        Path path = new Path(stateStorePath + "/files");
+        try {
+            path.getFileSystem(conf).delete(path, true);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        s3RevisionUtils.deleteFilesRevision();
     }
 
     private String getFilesPath(RevisionId revisionId) {
-        return fs + s3Bucket + "/statestore/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
+        return stateStorePath + "/files/" + revisionId.getRevision() + "-" + revisionId.getUuid() + "-files.parquet";
     }
 
-    private Record getRecordFromFileInfo(FileInfo fileInfo) throws IOException {
+    private Record getRecordFromFileInfo(FileInfo fileInfo) {
         Record record = new Record();
         record.put("fileName", fileInfo.getFilename());
         record.put("fileStatus", "" + fileInfo.getFileStatus());
@@ -466,12 +473,10 @@ public class S3FileInfoStore implements FileInfoStore {
         } else {
             record.put("jobId", fileInfo.getJobId());
         }
-        record.put("minRowKeys", keySerDe.serialise(fileInfo.getMinRowKey()));
-        record.put("maxRowKeys", keySerDe.serialise(fileInfo.getMaxRowKey()));
         return record;
     }
 
-    private FileInfo getFileInfoFromRecord(Record record) throws IOException {
+    private FileInfo getFileInfoFromRecord(Record record) {
         String jobId = (String) record.get("jobId");
         return FileInfo.builder()
                 .filename((String) record.get("fileName"))
@@ -480,14 +485,12 @@ public class S3FileInfoStore implements FileInfoStore {
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
-                .minRowKey(keySerDe.deserialise((byte[]) record.get("minRowKeys")))
-                .maxRowKey(keySerDe.deserialise((byte[]) record.get("maxRowKeys")))
                 .rowKeyTypes(rowKeyTypes)
                 .build();
     }
 
     private void writeFileInfosToParquet(List<FileInfo> fileInfos, String path) throws IOException {
-        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), fileSchema, conf);
+        ParquetWriter<Record> recordWriter = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(path), FILE_SCHEMA, conf);
 
         for (FileInfo fileInfo : fileInfos) {
             recordWriter.write(getRecordFromFileInfo(fileInfo));
@@ -498,70 +501,70 @@ public class S3FileInfoStore implements FileInfoStore {
 
     private List<FileInfo> readFileInfosFromParquet(String path) throws IOException {
         List<FileInfo> fileInfos = new ArrayList<>();
-        ParquetReader<Record> reader = new ParquetRecordReader.Builder(new Path(path), fileSchema)
+        try (ParquetReader<Record> reader = fileInfosReader(path)) {
+            ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
+            while (recordReader.hasNext()) {
+                fileInfos.add(getFileInfoFromRecord(recordReader.next()));
+            }
+        }
+        return fileInfos;
+    }
+
+    private ParquetReader<Record> fileInfosReader(String path) throws IOException {
+        return new ParquetRecordReader.Builder(new Path(path), FILE_SCHEMA)
                 .withConf(conf)
                 .build();
-        ParquetReaderIterator recordReader = new ParquetReaderIterator(reader);
-        while (recordReader.hasNext()) {
-            fileInfos.add(getFileInfoFromRecord(recordReader.next()));
-        }
-        recordReader.close();
-        return fileInfos;
     }
 
     public void fixTime(Instant now) {
         clock = Clock.fixed(now, ZoneId.of("UTC"));
     }
 
-    public static final class Builder {
-        private AmazonDynamoDB dynamoDB;
-        private String dynamoRevisionIdTable;
+    private static FileInfo setLastUpdateTime(FileInfo fileInfo, long updateTime) {
+        return fileInfo.toBuilder().lastStateStoreUpdateTime(updateTime).build();
+    }
+
+    private static List<FileInfo> setLastUpdateTimes(List<FileInfo> fileInfos, long updateTime) {
+        return fileInfos.stream().map(file -> setLastUpdateTime(file, updateTime)).collect(Collectors.toList());
+    }
+
+    static final class Builder {
         private List<PrimitiveType> rowKeyTypes;
-        private String fs;
-        private String s3Bucket;
+        private String stateStorePath;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
+        private S3RevisionUtils s3RevisionUtils;
 
-        public Builder() {
+        private Builder() {
         }
 
-        public Builder dynamoDB(AmazonDynamoDB dynamoDB) {
-            this.dynamoDB = dynamoDB;
-            return this;
-        }
-
-        public Builder dynamoRevisionIdTable(String dynamoRevisionIdTable) {
-            this.dynamoRevisionIdTable = dynamoRevisionIdTable;
-            return this;
-        }
-
-        public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
+        Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
             this.rowKeyTypes = rowKeyTypes;
             return this;
         }
 
-        public Builder fs(String fs) {
-            this.fs = fs;
+        Builder stateStorePath(String stateStorePath) {
+            this.stateStorePath = stateStorePath;
             return this;
         }
 
-        public Builder s3Bucket(String s3Bucket) {
-            this.s3Bucket = s3Bucket;
-            return this;
-        }
-
-        public S3FileInfoStore build() {
-            return new S3FileInfoStore(this);
-        }
-
-        public Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
+        Builder garbageCollectorDelayBeforeDeletionInMinutes(int garbageCollectorDelayBeforeDeletionInMinutes) {
             this.garbageCollectorDelayBeforeDeletionInMinutes = garbageCollectorDelayBeforeDeletionInMinutes;
             return this;
         }
 
-        public Builder conf(Configuration conf) {
+        Builder conf(Configuration conf) {
             this.conf = conf;
             return this;
+        }
+
+        Builder s3RevisionUtils(S3RevisionUtils s3RevisionUtils) {
+            this.s3RevisionUtils = s3RevisionUtils;
+            return this;
+        }
+
+        S3FileInfoStore build() {
+            return new S3FileInfoStore(this);
         }
     }
 }
