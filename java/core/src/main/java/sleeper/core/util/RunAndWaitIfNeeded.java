@@ -16,12 +16,16 @@
 
 package sleeper.core.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class RunAndWaitIfNeeded {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunAndWaitIfNeeded.class);
     private Instant endTime;
     private final Runnable runnable;
     private final Consumer<Long> waitFn;
@@ -31,6 +35,7 @@ public class RunAndWaitIfNeeded {
     public RunAndWaitIfNeeded(Runnable runnable, long delayMillis) {
         this(runnable, (time) -> {
             try {
+                LOGGER.info("Waiting for {} millis", time);
                 Thread.sleep(time);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
