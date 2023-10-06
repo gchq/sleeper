@@ -73,6 +73,7 @@ class DynamoDBFileInfoFormat {
     Map<String, AttributeValue> createReadyForGCRecord(FileInfo fileInfo) {
         Map<String, AttributeValue> itemValues = createReadyForGCKey(fileInfo);
         itemValues.put(STATUS, createStringAttribute(READY_FOR_GARBAGE_COLLECTION.toString()));
+        itemValues.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
         return createRecord(itemValues, fileInfo);
     }
 
@@ -83,7 +84,6 @@ class DynamoDBFileInfoFormat {
      * @return A record in DynamoDB
      */
     Map<String, AttributeValue> createRecord(Map<String, AttributeValue> itemValues, FileInfo fileInfo) {
-        itemValues.put(PARTITION_ID, createStringAttribute(fileInfo.getPartitionId()));
         if (null != fileInfo.getNumberOfRecords()) {
             itemValues.put(NUMBER_OF_RECORDS, createNumberAttribute(fileInfo.getNumberOfRecords()));
         }
@@ -127,12 +127,14 @@ class DynamoDBFileInfoFormat {
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
-                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()))
-                .partitionId(item.get(PARTITION_ID).getS());
-        if (null != item.get(FILENAME)) {
-            fileInfoBuilder.filename(item.get(FILENAME).getS());
+                .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
+        if (null != item.get(PARTITION_ID_AND_FILENAME)) {
+            String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);
+            fileInfoBuilder.partitionId(partitionIdAndFilename[0])
+                    .filename(partitionIdAndFilename[1]);
         } else {
-            fileInfoBuilder.filename(getFilenameFromSortKey(item));
+            fileInfoBuilder.partitionId(item.get(PARTITION_ID).getS())
+                    .filename(item.get(FILENAME).getS());
         }
         if (null != item.get(NUMBER_OF_RECORDS)) {
             fileInfoBuilder.numberOfRecords(Long.parseLong(item.get(NUMBER_OF_RECORDS).getN()));
@@ -150,7 +152,7 @@ class DynamoDBFileInfoFormat {
         return fileInfo.getPartitionId() + DELIMITER + fileInfo.getFilename();
     }
 
-    private static String getFilenameFromSortKey(Map<String, AttributeValue> item) {
-        return item.get(PARTITION_ID_AND_FILENAME).getS().split(DELIMITER_REGEX)[1];
+    private static String[] splitPartitionIdAndFilename(Map<String, AttributeValue> item) {
+        return item.get(PARTITION_ID_AND_FILENAME).getS().split(DELIMITER_REGEX);
     }
 }
