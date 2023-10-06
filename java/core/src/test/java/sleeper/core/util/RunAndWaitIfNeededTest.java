@@ -68,7 +68,7 @@ public class RunAndWaitIfNeededTest {
     }
 
     @Test
-    void shouldCalculateNewEndTimeFromCurrentTime() {
+    void shouldCalculateNewEndTimeFromPreviousEndTime() {
         // Given
         AtomicBoolean hasRun = new AtomicBoolean(false);
         List<Long> waits = new ArrayList<>();
@@ -76,9 +76,9 @@ public class RunAndWaitIfNeededTest {
                 () -> hasRun.set(true),
                 (waitTime) -> waits.add(waitTime),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
-                        Instant.parse("2023-10-06T10:56:01Z"),
-                        Instant.parse("2023-10-06T10:56:02Z")).iterator()::next,
-                5000L);
+                        Instant.parse("2023-10-06T10:56:05Z"),
+                        Instant.parse("2023-10-06T10:56:10Z")).iterator()::next,
+                10000L);
 
         // When
         runAndWaitIfNeeded.run();
@@ -87,6 +87,6 @@ public class RunAndWaitIfNeededTest {
         // Then
         assertThat(hasRun.get()).isTrue();
         assertThat(waits)
-                .containsExactly(4000L, 4000L);
+                .containsExactly(5000L, 10000L);
     }
 }
