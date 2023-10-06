@@ -25,7 +25,6 @@ import sleeper.core.statestore.StateStore;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -42,7 +41,7 @@ public class IngestCoordinatorTestParameters {
     private final Configuration hadoopConfiguration;
     private final S3AsyncClient s3AsyncClient;
     private final List<String> fileNames;
-    private final Supplier<Instant> fileUpdatedTimes;
+    private final String tableName;
 
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = builder.stateStore;
@@ -54,7 +53,7 @@ public class IngestCoordinatorTestParameters {
         hadoopConfiguration = builder.hadoopConfiguration;
         s3AsyncClient = builder.s3AsyncClient;
         fileNames = builder.fileNames;
-        fileUpdatedTimes = builder.fileUpdatedTimes;
+        tableName = builder.tableName;
     }
 
     public static Builder builder() {
@@ -66,7 +65,7 @@ public class IngestCoordinatorTestParameters {
     }
 
     public String getAsyncS3Prefix() {
-        return "s3a://" + dataBucketName;
+        return "s3a://" + dataBucketName + "/" + tableName;
     }
 
     public String getDataBucketName() {
@@ -101,8 +100,8 @@ public class IngestCoordinatorTestParameters {
         return fileNames.iterator()::next;
     }
 
-    public Supplier<Instant> getFileUpdatedTimeSupplier() {
-        return fileUpdatedTimes;
+    public String getTableName() {
+        return tableName;
     }
 
     public static final class Builder {
@@ -115,7 +114,7 @@ public class IngestCoordinatorTestParameters {
         private Configuration hadoopConfiguration;
         private S3AsyncClient s3AsyncClient;
         private List<String> fileNames;
-        private Supplier<Instant> fileUpdatedTimes;
+        private String tableName;
 
         private Builder() {
         }
@@ -173,12 +172,8 @@ public class IngestCoordinatorTestParameters {
             return this;
         }
 
-        public Builder fileUpdatedTimes(List<Instant> fileUpdatedTimes) {
-            return fileUpdatedTimes(fileUpdatedTimes.iterator()::next);
-        }
-
-        public Builder fileUpdatedTimes(Supplier<Instant> fileUpdatedTimes) {
-            this.fileUpdatedTimes = fileUpdatedTimes;
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
             return this;
         }
 

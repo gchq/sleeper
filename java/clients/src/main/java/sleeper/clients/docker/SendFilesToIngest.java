@@ -42,11 +42,12 @@ public class SendFilesToIngest {
     }
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            throw new IllegalArgumentException("Usage: <instance-id> <files>");
+        if (args.length < 3) {
+            throw new IllegalArgumentException("Usage: <instance-id> <table-name> <files>");
         }
         String instanceId = args[0];
-        List<Path> filePaths = Stream.of(args).skip(1)
+        String tableName = args[1];
+        List<Path> filePaths = Stream.of(args).skip(2)
                 .map(Path::of)
                 .filter(Files::isRegularFile)
                 .collect(Collectors.toList());
@@ -54,13 +55,13 @@ public class SendFilesToIngest {
         AmazonSQS sqsClient = buildAwsV1Client(AmazonSQSClientBuilder.standard());
         InstanceProperties properties = new InstanceProperties();
         properties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        uploadFilesAndSendJob(properties, filePaths, s3Client, sqsClient);
+        uploadFilesAndSendJob(properties, tableName, filePaths, s3Client, sqsClient);
     }
 
     public static void uploadFilesAndSendJob(
-            InstanceProperties properties, List<Path> filePaths, AmazonS3 s3Client, AmazonSQS sqsClient) {
+            InstanceProperties properties, String tableName, List<Path> filePaths, AmazonS3 s3Client, AmazonSQS sqsClient) {
         uploadFiles(properties, filePaths, s3Client);
-        sendJobForFiles(properties, filePaths, sqsClient);
+        sendJobForFiles(properties, tableName, filePaths, sqsClient);
     }
 
     public static void uploadFiles(InstanceProperties properties, List<Path> filePaths, AmazonS3 s3Client) {
@@ -68,7 +69,7 @@ public class SendFilesToIngest {
                 "ingest/" + filePath.getFileName().toString(), filePath.toFile()));
     }
 
-    public static void sendJobForFiles(InstanceProperties properties, List<Path> filePaths, AmazonSQS sqsClient) {
+    public static void sendJobForFiles(InstanceProperties properties, String tableName, List<Path> filePaths, AmazonSQS sqsClient) {
         IngestJob job = IngestJob.builder()
                 .files(filePaths.stream()
                         .map(filePath -> properties.get(INGEST_SOURCE_BUCKET) + "/ingest/" + filePath.getFileName().toString())

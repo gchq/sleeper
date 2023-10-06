@@ -17,22 +17,14 @@ package sleeper.ingest.impl.partitionfilewriter;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.parquet.hadoop.ParquetWriter;
 
-import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
-import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
-import sleeper.io.parquet.record.ParquetRecordWriterFactory;
 
-import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,46 +46,19 @@ public class PartitionFileWriterUtils {
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
-     * @param minKey          -
-     * @param maxKey          -
-     * @param updateTime      -
      * @return The {@link FileInfo} object
      */
     public static FileInfo createFileInfo(Schema sleeperSchema,
                                           String filename,
                                           String partitionId,
-                                          long numberOfRecords,
-                                          Object minKey,
-                                          Object maxKey,
-                                          long updateTime) {
+                                          long numberOfRecords) {
         return FileInfo.builder()
                 .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(numberOfRecords)
-                .minRowKey(Key.create(minKey))
-                .maxRowKey(Key.create(maxKey))
-                .lastStateStoreUpdateTime(updateTime)
                 .build();
-    }
-
-    /**
-     * Create a {@link ParquetWriter} for {@link Record} objects, based on the supplied details.
-     *
-     * @param outputFile          The file to write to, which may include a prefix such as s3a://
-     * @param tableProperties     The table properties
-     * @param hadoopConfiguration The Hadoop configuration to use to create the Parquet writer. This allows the
-     *                            library to locate classes which correspond to a prefix such as s3a://. Note that
-     *                            the library uses a cache and so unusual errors may occur if this configuration
-     *                            changes.
-     * @return The {@link ParquetWriter}
-     * @throws IOException -
-     */
-    public static ParquetWriter<Record> createParquetWriter(String outputFile,
-                                                            TableProperties tableProperties,
-                                                            Configuration hadoopConfiguration) throws IOException {
-        return ParquetRecordWriterFactory.createParquetRecordWriter(new Path(outputFile), tableProperties, hadoopConfiguration);
     }
 
     /**
@@ -131,35 +96,5 @@ public class PartitionFileWriterUtils {
                 keyFieldToSketchMap.get(rowKeyField.getName()).update(value);
             }
         }
-    }
-
-    /**
-     * Construct the full path for the Parquet partition file, to maintain consistency across different file writer
-     * implementations.
-     *
-     * @param filePathPrefix -
-     * @param partition      -
-     * @param fileName       -
-     * @return The file path
-     */
-    public static String constructPartitionParquetFilePath(String filePathPrefix,
-                                                           Partition partition,
-                                                           String fileName) {
-        return String.format("%s/partition_%s/%s.parquet", filePathPrefix, partition.getId(), fileName);
-    }
-
-    /**
-     * Construct the full path for the quantile sketches file, to maintain consistency across different file writer
-     * implementations.
-     *
-     * @param filePathPrefix -
-     * @param partition      -
-     * @param fileName       -
-     * @return The file path
-     */
-    public static String constructQuantileSketchesFilePath(String filePathPrefix,
-                                                           Partition partition,
-                                                           String fileName) {
-        return String.format("%s/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
     }
 }

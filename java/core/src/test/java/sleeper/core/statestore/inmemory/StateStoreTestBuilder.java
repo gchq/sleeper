@@ -15,18 +15,16 @@
  */
 package sleeper.core.statestore.inmemory;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.range.Range;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StateStoreTestBuilder {
@@ -35,13 +33,25 @@ public class StateStoreTestBuilder {
     private final List<Partition> partitions;
     private final List<FileInfo> files = new ArrayList<>();
 
+    private StateStoreTestBuilder(PartitionTree tree) {
+        this.tree = tree;
+        this.partitions = tree.getAllPartitions();
+    }
+
     private StateStoreTestBuilder(PartitionsBuilder partitionsBuilder) {
-        tree = partitionsBuilder.buildTree();
-        partitions = partitionsBuilder.buildList();
+        this(partitionsBuilder.buildTree());
     }
 
     public static StateStoreTestBuilder from(PartitionsBuilder partitionsBuilder) {
         return new StateStoreTestBuilder(partitionsBuilder);
+    }
+
+    public static StateStoreTestBuilder withSinglePartition(Schema schema) {
+        return withSinglePartition(schema, "root");
+    }
+
+    public static StateStoreTestBuilder withSinglePartition(Schema schema, String partitionId) {
+        return from(new PartitionsBuilder(schema).singlePartition(partitionId));
     }
 
     public StateStoreTestBuilder singleFileInEachLeafPartitionWithRecords(long records) {
@@ -84,22 +94,10 @@ public class StateStoreTestBuilder {
     private static FileInfo partitionFile(Partition partition, String filename, long records) {
         return FileInfo.builder()
                 .rowKeyTypes(partition.getRowKeyTypes())
-                .minRowKey(minRowKey(partition)).maxRowKey(maxRowKey(partition))
                 .filename(filename).partitionId(partition.getId())
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))
                 .build();
     }
 
-    private static Key minRowKey(Partition partition) {
-        return Key.create(partition.getRegion().getRanges().stream()
-                .map(Range::getMin)
-                .collect(Collectors.toList()));
-    }
-
-    private static Key maxRowKey(Partition partition) {
-        return Key.create(partition.getRegion().getRanges().stream()
-                .map(Range::getMax)
-                .collect(Collectors.toList()));
-    }
 }

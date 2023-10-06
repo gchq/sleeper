@@ -17,7 +17,6 @@ package sleeper.splitter;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -56,8 +55,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new IntType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(2))
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
@@ -65,8 +62,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new IntType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(10))
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -102,8 +97,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new LongType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(2L))
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
@@ -111,8 +104,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new LongType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(1L))
-                .maxRowKey(Key.create(10L))
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -148,8 +139,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new StringType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create("A"))
-                .maxRowKey(Key.create("Z"))
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
@@ -157,8 +146,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new StringType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create("A"))
-                .maxRowKey(Key.create("Z"))
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -194,8 +181,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new StringType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create("A"))
-                .maxRowKey(Key.create("Z"))
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
@@ -203,8 +188,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new StringType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create("A"))
-                .maxRowKey(Key.create("Z"))
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -240,8 +223,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new ByteArrayType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(new byte[]{}))
-                .maxRowKey(Key.create(new byte[]{64, 64}))
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
@@ -249,8 +230,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new ByteArrayType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(new byte[]{}))
-                .maxRowKey(Key.create(new byte[]{64, 64}))
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();
@@ -286,8 +265,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new ByteArrayType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(new byte[]{}))
-                .maxRowKey(Key.create(new byte[]{64, 64}))
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
@@ -295,8 +272,6 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .rowKeyTypes(new ByteArrayType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .minRowKey(Key.create(new byte[]{}))
-                .maxRowKey(Key.create(new byte[]{64, 64}))
                 .numberOfRecords(1000L)
                 .partitionId("123")
                 .build();

@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore;
 
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -127,4 +128,6 @@ public interface FileInfoStore {
     boolean hasNoFiles();
 
     void clearTable();
+
+    void fixTime(Instant time);
 }

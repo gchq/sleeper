@@ -47,8 +47,6 @@ public class IngestRecordsDynamoDBIT extends IngestRecordsDynamoDBITBase {
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
         assertThat(activeFiles).hasSize(1);
         FileInfo fileInfo = activeFiles.get(0);
-        assertThat((long) fileInfo.getMinRowKey().get(0)).isOne();
-        assertThat((long) fileInfo.getMaxRowKey().get(0)).isEqualTo(3L);
         assertThat(fileInfo.getNumberOfRecords().longValue()).isEqualTo(2L);
         assertThat(fileInfo.getPartitionId()).isEqualTo(stateStore.getAllPartitions().get(0).getId());
         //  - Read file and check it has correct records

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.query;
+package sleeper.clients.status.report.job.query;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.compaction.job.status.CompactionJobStatus;
 
 import java.time.Instant;

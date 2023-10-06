@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.status.report.query;
+package sleeper.clients.status.report.job.query;
 
 import org.junit.jupiter.api.Test;
 

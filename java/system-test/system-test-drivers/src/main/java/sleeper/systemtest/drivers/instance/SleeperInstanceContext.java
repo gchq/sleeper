@@ -231,7 +231,7 @@ public class SleeperInstanceContext {
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .extraInstanceProperties(instanceProperties ->
                             instanceProperties.set(JARS_BUCKET, parameters.buildJarsBucketName()))
-                    .deployWithClients(sts, regionProvider, s3v2, ecr);
+                    .deployWithClients(sts, regionProvider, s3, s3v2, ecr, dynamoDB);
             return loadInstance(identifier, instanceId, tableName);
         }
     }

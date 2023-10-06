@@ -17,13 +17,7 @@ package sleeper.clients.status.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
@@ -47,7 +41,6 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -67,7 +60,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -555,12 +547,9 @@ public class ReinitialiseTableIT {
         String file2 = folderName + "/file2.parquet";
         String file3 = folderName + "/file3.parquet";
 
-        FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
-                Key.create("0"), Key.create("98"));
-        FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId(),
-                Key.create("1"), Key.create("9"));
-        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, rootPartition.getId(),
-                Key.create("1"), Key.create("9"));
+        FileInfo fileInfo1 = createFileInfo(file1, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
+        FileInfo fileInfo2 = createFileInfo(file2, FileInfo.FileStatus.ACTIVE, rootPartition.getId());
+        FileInfo fileInfo3 = createFileInfo(file3, FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION, rootPartition.getId());
 
         //  - Split root partition
         PartitionTree tree = new PartitionsBuilder(KEY_VALUE_SCHEMA)
@@ -575,17 +564,13 @@ public class ReinitialiseTableIT {
         stateStore.addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3));
     }
 
-    private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId,
-                                    Key minRowKey, Key maxRowKey) {
+    private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId) {
         return FileInfo.builder()
                 .rowKeyTypes(new StringType())
                 .filename(filename)
                 .fileStatus(fileStatus)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
-                .minRowKey(minRowKey)
-                .maxRowKey(maxRowKey)
-                .lastStateStoreUpdateTime(100L)
                 .build();
     }
 
@@ -604,18 +589,5 @@ public class ReinitialiseTableIT {
         }
         info.close();
         return splitPointsFileName;
-    }
-
-    private void createRevisionDynamoTable(String tableName) {
-        List<AttributeDefinition> attributeDefinitions = new ArrayList<>();
-        attributeDefinitions.add(new AttributeDefinition(REVISION_ID_KEY, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = new ArrayList<>();
-        keySchemaElements.add(new KeySchemaElement(REVISION_ID_KEY, KeyType.HASH));
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(tableName)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
-        dynamoDBClient.createTable(request);
     }
 }

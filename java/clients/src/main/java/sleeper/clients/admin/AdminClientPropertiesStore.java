@@ -34,7 +34,6 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.table.job.TableLister;
@@ -166,15 +165,9 @@ public class AdminClientPropertiesStore {
                     streamTableProperties(instanceProperties)
                             .map(table -> tableName.equals(table.get(TABLE_NAME))
                                     ? properties : table));
-            List<TableProperty> propertiesDeployedByCdk = diff.getChangedPropertiesDeployedByCDK(properties.getPropertiesIndex());
-            if (!propertiesDeployedByCdk.isEmpty()) {
-                LOGGER.info("Deploying by CDK, properties requiring CDK deployment: {}", propertiesDeployedByCdk);
-                cdk.invokeInferringType(instanceProperties, CdkCommand.deployPropertiesChange());
-            } else {
-                LOGGER.info("Saving to AWS");
-                properties.saveToS3(s3);
-            }
-        } catch (IOException | AmazonS3Exception | InterruptedException e) {
+            LOGGER.info("Saving to AWS");
+            properties.saveToS3(s3);
+        } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
                 SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);

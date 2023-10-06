@@ -25,11 +25,11 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.IteratorException;
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
-import sleeper.statestore.InitialiseStateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -81,7 +81,7 @@ public class TestUtils {
 
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, tableProperties, dynamoDB);
-            InitialiseStateStore.createInitialiseStateStoreFromSplitPoints(schema, stateStore, Lists.newArrayList(splitPoints)).run();
+            stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
         } finally {

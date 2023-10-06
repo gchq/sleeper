@@ -21,8 +21,6 @@ import org.apache.spark.sql.types.StructType;
 
 import sleeper.core.statestore.FileInfo;
 
-import java.time.Instant;
-
 public class SparkFileInfoRow {
 
     private SparkFileInfoRow() {
@@ -36,7 +34,6 @@ public class SparkFileInfoRow {
         return FileInfo.builder()
                 .filename(row.getAs(FILENAME_FIELD_NAME))
                 .jobId(null)
-                .lastStateStoreUpdateTime(Instant.now())
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(row.getAs(PARTITION_FIELD_NAME))
                 .numberOfRecords(row.getAs(NUM_RECORDS_FIELD_NAME))

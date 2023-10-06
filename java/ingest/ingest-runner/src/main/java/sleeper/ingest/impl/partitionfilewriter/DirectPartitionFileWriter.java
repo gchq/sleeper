@@ -22,6 +22,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -31,10 +32,8 @@ import sleeper.sketches.Sketches;
 import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,13 +49,9 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     private final Configuration hadoopConfiguration;
     private final String partitionParquetFileName;
     private final String quantileSketchesFileName;
-    private final Supplier<Instant> timeSupplier;
     private final ParquetWriter<Record> parquetWriter;
     private final Map<String, ItemsSketch> keyFieldToSketchMap;
-    private final String rowKeyName;
     private long recordsWrittenToCurrentPartition;
-    private Object currentPartitionMinKey;
-    private Object currentPartitionMaxKey;
 
     /**
      * Construct a {@link DirectPartitionFileWriter}.
@@ -82,21 +77,16 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
             Partition partition,
             ParquetConfiguration parquetConfiguration,
             String filePathPrefix,
-            String fileName,
-            Supplier<Instant> timeSupplier) throws IOException {
+            String fileName) throws IOException {
         this.sleeperSchema = parquetConfiguration.getTableProperties().getSchema();
         this.partition = requireNonNull(partition);
         this.hadoopConfiguration = parquetConfiguration.getHadoopConfiguration();
-        this.partitionParquetFileName = PartitionFileWriterUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
-        this.quantileSketchesFileName = PartitionFileWriterUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
-        this.timeSupplier = timeSupplier;
+        this.partitionParquetFileName = TableUtils.constructPartitionParquetFilePath(filePathPrefix, partition, fileName);
+        this.quantileSketchesFileName = TableUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(this.partitionParquetFileName);
         LOGGER.info("Created Parquet writer for partition {} to file {}", partition.getId(), partitionParquetFileName);
         this.keyFieldToSketchMap = PartitionFileWriterUtils.createQuantileSketchMap(sleeperSchema);
-        this.rowKeyName = this.sleeperSchema.getRowKeyFields().get(0).getName();
         this.recordsWrittenToCurrentPartition = 0L;
-        this.currentPartitionMinKey = null;
-        this.currentPartitionMaxKey = null;
     }
 
 
@@ -113,10 +103,6 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 sleeperSchema,
                 keyFieldToSketchMap,
                 record);
-        if (currentPartitionMinKey == null) {
-            currentPartitionMinKey = record.get(rowKeyName);
-        }
-        currentPartitionMaxKey = record.get(rowKeyName);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
@@ -144,10 +130,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 sleeperSchema,
                 partitionParquetFileName,
                 partition.getId(),
-                recordsWrittenToCurrentPartition,
-                currentPartitionMinKey,
-                currentPartitionMaxKey,
-                timeSupplier.get().toEpochMilli());
+                recordsWrittenToCurrentPartition);
         return CompletableFuture.completedFuture(fileInfo);
     }
 

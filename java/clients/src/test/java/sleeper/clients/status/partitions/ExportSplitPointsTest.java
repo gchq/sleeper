@@ -17,6 +17,7 @@ package sleeper.clients.status.partitions;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -27,13 +28,11 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.inmemory.StateStoreTestHelper;
-import sleeper.statestore.InitialiseStateStore;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.statestore.InitialiseStateStore.createInitialiseStateStoreFromSplitPoints;
 
 public class ExportSplitPointsTest {
 
@@ -57,8 +56,7 @@ public class ExportSplitPointsTest {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
         splitPoints.add(1000);
-        InitialiseStateStore initialiseStateStore = createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When
@@ -76,8 +74,7 @@ public class ExportSplitPointsTest {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10L);
         splitPoints.add(1000L);
-        InitialiseStateStore initialiseStateStore = createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When
@@ -95,8 +92,7 @@ public class ExportSplitPointsTest {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("A");
         splitPoints.add("T");
-        InitialiseStateStore initialiseStateStore = createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When
@@ -114,8 +110,7 @@ public class ExportSplitPointsTest {
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{100});
-        InitialiseStateStore initialiseStateStore = createInitialiseStateStoreFromSplitPoints(schema, stateStore, splitPoints);
-        initialiseStateStore.run();
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, splitPoints).construct());
         ExportSplitPoints exportSplitPoints = new ExportSplitPoints(stateStore, schema);
 
         // When

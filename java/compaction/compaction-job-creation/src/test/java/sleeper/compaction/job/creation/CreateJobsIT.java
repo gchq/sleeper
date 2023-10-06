@@ -24,6 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -46,7 +47,7 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableCreator;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.table.job.TableLister;
 
 import java.io.IOException;
@@ -62,7 +63,6 @@ import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTablePro
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -73,9 +73,10 @@ public class CreateJobsIT {
             LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.IAM
     );
 
-    private final AmazonS3 s3 = createS3Client();
-    private final AmazonSQS sqs = createSQSClient();
-    private final InstanceProperties instanceProperties = createProperties(s3);
+    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
     private StateStore stateStore;
     private CreateJobs createJobs;
@@ -83,18 +84,23 @@ public class CreateJobsIT {
 
     @BeforeEach
     public void setUp() throws Exception {
-        AmazonDynamoDB dynamoDB = createDynamoClient();
-        TableProperties tableProperties = createTable(s3, dynamoDB, instanceProperties, schema);
+        TableProperties tableProperties = createTable(schema);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
                 new TableLister(s3, instanceProperties),
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
+    }
+
+    @AfterEach
+    void tearDown() {
+        s3.shutdown();
+        dynamoDB.shutdown();
+        sqs.shutdown();
     }
 
     @Test
@@ -138,40 +144,22 @@ public class CreateJobsIT {
         }
     }
 
-    private static AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    private static AmazonSQS createSQSClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    }
-
-    private static AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    private static InstanceProperties createProperties(AmazonS3 s3) {
-        String queue = UUID.randomUUID().toString();
-
-        AmazonSQS sqs = createSQSClient();
-        String queueUrl = sqs.createQueue(queue).getQueueUrl();
-        sqs.shutdown();
-
+    private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createInstanceProperties();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, "");
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        instanceProperties.saveToS3(s3);
 
         return instanceProperties;
     }
 
-    private static TableProperties createTable(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, Schema schema) {
+    private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-        TableCreator tableCreator = new TableCreator(s3, dynamoDB, instanceProperties);
-        tableCreator.createTable(tableProperties);
-
-        tableProperties.loadFromS3(s3, tableProperties.get(TABLE_NAME));
+        tableProperties.saveToS3(s3);
         return tableProperties;
     }
 

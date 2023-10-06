@@ -21,13 +21,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
@@ -64,8 +61,8 @@ public class IngestDockerStack implements DockerStack {
 
     public void tearDown() {
         tearDownBucket(s3Client, instanceProperties.get(INGEST_SOURCE_BUCKET));
-        dynamoDB.deleteTable(DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID)));
-        dynamoDB.deleteTable(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceProperties.get(ID)));
+        DynamoDBIngestJobStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
+        DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         sqsClient.deleteQueue(instanceProperties.get(INGEST_JOB_QUEUE_URL));
     }
 

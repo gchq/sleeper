@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.key.Key;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
@@ -43,26 +42,6 @@ public class FileInfoSerDe {
         int count = 0;
         for (PrimitiveType type : rowKeyTypes) {
             dos.writeUTF(type.getClass().getSimpleName());
-            if (type instanceof IntType) {
-                dos.writeInt((int) fileInfo.getMinRowKey().get(count));
-                dos.writeInt((int) fileInfo.getMaxRowKey().get(count));
-            } else if (type instanceof LongType) {
-                dos.writeLong((long) fileInfo.getMinRowKey().get(count));
-                dos.writeLong((long) fileInfo.getMaxRowKey().get(count));
-            } else if (type instanceof StringType) {
-                dos.writeUTF((String) fileInfo.getMinRowKey().get(count));
-                dos.writeUTF((String) fileInfo.getMaxRowKey().get(count));
-            } else if (type instanceof ByteArrayType) {
-                byte[] minBA = (byte[]) fileInfo.getMinRowKey().get(count);
-                byte[] maxBA = (byte[]) fileInfo.getMaxRowKey().get(count);
-                dos.writeInt(minBA.length);
-                dos.write(minBA);
-                dos.writeInt(maxBA.length);
-                dos.write(maxBA);
-            } else {
-                throw new RuntimeException("Unknown type of " + type);
-            }
-            count++;
         }
         dos.writeUTF(fileInfo.getFilename());
         dos.writeUTF(fileInfo.getFileStatus().toString());
@@ -83,33 +62,17 @@ public class FileInfoSerDe {
         DataInputStream dis = new DataInputStream(bais);
         int numRowKeys = dis.readInt();
         List<PrimitiveType> rowKeyTypes = new ArrayList<>();
-        List<Object> minRowKey = new ArrayList<>();
-        List<Object> maxRowKey = new ArrayList<>();
         for (int i = 0; i < numRowKeys; i++) {
             String simpleClassName = dis.readUTF();
             PrimitiveType keyType;
             if (simpleClassName.equals(IntType.class.getSimpleName())) {
                 keyType = new IntType();
-                minRowKey.add(dis.readInt());
-                maxRowKey.add(dis.readInt());
             } else if (simpleClassName.equals(LongType.class.getSimpleName())) {
                 keyType = new LongType();
-                minRowKey.add(dis.readLong());
-                maxRowKey.add(dis.readLong());
             } else if (simpleClassName.equals(StringType.class.getSimpleName())) {
                 keyType = new StringType();
-                minRowKey.add(dis.readUTF());
-                maxRowKey.add(dis.readUTF());
             } else if (simpleClassName.equals(ByteArrayType.class.getSimpleName())) {
                 keyType = new ByteArrayType();
-                int minBASize = dis.readInt();
-                byte[] min = new byte[minBASize];
-                dis.readFully(min);
-                minRowKey.add(min);
-                int maxBASize = dis.readInt();
-                byte[] max = new byte[maxBASize];
-                dis.readFully(max);
-                maxRowKey.add(max);
             } else {
                 throw new IOException("Unknown type of " + simpleClassName);
             }
@@ -118,8 +81,6 @@ public class FileInfoSerDe {
 
         return FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
-                .minRowKey(Key.create(minRowKey))
-                .maxRowKey(Key.create(maxRowKey))
                 .filename(dis.readUTF())
                 .fileStatus(FileInfo.FileStatus.valueOf(dis.readUTF()))
                 .numberOfRecords(dis.readLong())

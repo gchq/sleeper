@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
@@ -73,8 +72,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -83,8 +80,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
 
@@ -135,8 +130,6 @@ public class BasicCompactionStrategyTest {
                     .partitionId(partition.getId())
                     .numberOfRecords(1_000_000L - i * 100L)
                     .rowKeyTypes(new IntType())
-                    .minRowKey(Key.create(1))
-                    .maxRowKey(Key.create(100))
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -191,8 +184,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -201,8 +192,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
 
@@ -254,8 +243,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -264,8 +251,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(200L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
         FileInfo fileInfo3 = FileInfo.builder()
@@ -274,8 +259,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(300L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo3);
         FileInfo fileInfo4 = FileInfo.builder()
@@ -284,8 +267,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("left")
                 .numberOfRecords(400L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo4);
         FileInfo fileInfo5 = FileInfo.builder()
@@ -294,8 +275,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("right")
                 .numberOfRecords(500L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo5);
         FileInfo fileInfo6 = FileInfo.builder()
@@ -304,8 +283,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("right")
                 .numberOfRecords(600L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo6);
 
@@ -404,8 +381,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(1))
-                .maxRowKey(Key.create(100))
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -414,8 +389,6 @@ public class BasicCompactionStrategyTest {
                 .partitionId("root")
                 .numberOfRecords(200L)
                 .rowKeyTypes(new IntType())
-                .minRowKey(Key.create(2))
-                .maxRowKey(Key.create(200))
                 .build();
         fileInfos.add(fileInfo2);
 

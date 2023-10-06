@@ -58,8 +58,8 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
                 .parentJoining("C", "A", "B"));
         CompactionJob job = jobFactory.createSplittingCompactionJob(
                 Arrays.asList(
-                        fileFactory.rootFile("file1", 100L, "a", "c"),
-                        fileFactory.rootFile("file2", 100L, "w", "z")),
+                        fileFactory.rootFile("file1", 100L),
+                        fileFactory.rootFile("file2", 100L)),
                 "C", "A", "B", "ggg", 0);
 
         // When
@@ -127,7 +127,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         CompactionJob job1 = jobFactory.createCompactionJob(
                 Collections.singletonList(fileFactory.leafFile(100L, "a", "c")), "A");
         CompactionJob job2 = jobFactory.createSplittingCompactionJob(
-                Collections.singletonList(fileFactory.rootFile(100L, "b", "w")),
+                Collections.singletonList(fileFactory.rootFile(100L)),
                 "C", "A", "B", "ggg", 0);
 
         // When

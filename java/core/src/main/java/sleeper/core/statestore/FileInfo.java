@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.key.Key;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.time.Instant;
@@ -35,8 +34,6 @@ public class FileInfo {
     }
 
     private final List<PrimitiveType> rowKeyTypes;
-    private final Key minRowKey;
-    private final Key maxRowKey;
     private final String filename;
     private final String partitionId;
     private final Long numberOfRecords;
@@ -46,8 +43,6 @@ public class FileInfo {
 
     private FileInfo(Builder builder) {
         this.rowKeyTypes = builder.rowKeyTypes;
-        this.minRowKey = builder.minRowKey;
-        this.maxRowKey = builder.maxRowKey;
         this.filename = builder.filename;
         this.partitionId = builder.partitionId;
         this.numberOfRecords = builder.numberOfRecords;
@@ -62,14 +57,6 @@ public class FileInfo {
 
     public List<PrimitiveType> getRowKeyTypes() {
         return rowKeyTypes;
-    }
-
-    public Key getMinRowKey() {
-        return minRowKey;
-    }
-
-    public Key getMaxRowKey() {
-        return maxRowKey;
     }
 
     public String getFilename() {
@@ -110,8 +97,6 @@ public class FileInfo {
                 Objects.equals(filename, fileInfo.filename) &&
                 Objects.equals(partitionId, fileInfo.partitionId) &&
                 Objects.equals(numberOfRecords, fileInfo.numberOfRecords) &&
-                Objects.equals(minRowKey, fileInfo.minRowKey) &&
-                Objects.equals(maxRowKey, fileInfo.maxRowKey) &&
                 fileStatus == fileInfo.fileStatus &&
                 Objects.equals(jobId, fileInfo.jobId) &&
                 Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
@@ -120,8 +105,7 @@ public class FileInfo {
     @Override
     public int hashCode() {
         return Objects.hash(rowKeyTypes, filename, partitionId,
-                numberOfRecords, minRowKey, maxRowKey,
-                fileStatus, jobId, lastStateStoreUpdateTime);
+                numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime);
     }
 
     @Override
@@ -131,8 +115,6 @@ public class FileInfo {
                 ", filename='" + filename + '\'' +
                 ", partition='" + partitionId + '\'' +
                 ", numberOfRecords=" + numberOfRecords +
-                ", minKey=" + minRowKey +
-                ", maxKey=" + maxRowKey +
                 ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
                 ", lastStateStoreUpdateTime=" + lastStateStoreUpdateTime +
@@ -142,8 +124,6 @@ public class FileInfo {
     public Builder toBuilder() {
         return FileInfo.builder()
                 .rowKeyTypes(rowKeyTypes)
-                .minRowKey(minRowKey)
-                .maxRowKey(maxRowKey)
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
@@ -154,8 +134,6 @@ public class FileInfo {
 
     public static final class Builder {
         private List<PrimitiveType> rowKeyTypes;
-        private Key minRowKey;
-        private Key maxRowKey;
         private String filename;
         private String partitionId;
         private Long numberOfRecords;
@@ -173,16 +151,6 @@ public class FileInfo {
 
         public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
             this.rowKeyTypes = Arrays.asList(rowKeyTypes);
-            return this;
-        }
-
-        public Builder minRowKey(Key minRowKey) {
-            this.minRowKey = minRowKey;
-            return this;
-        }
-
-        public Builder maxRowKey(Key maxRowKey) {
-            this.maxRowKey = maxRowKey;
             return this;
         }
 
