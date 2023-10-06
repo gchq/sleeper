@@ -88,13 +88,13 @@ impl ObjectStoreFactory {
                         .with_region(self.1.as_ref())
                         .with_bucket_name(
                             src.host_str()
-                                .ok_or(ArrowError::IoError("invalid S3 bucket name".into()))?,
+                                .ok_or(ArrowError::InvalidArgumentError("invalid S3 bucket name".into()))?,
                         )
                         .build()
                         .map(Arc::new)
                         .map_err(|e| ArrowError::ExternalError(Box::new(e)))?)
                 } else {
-                    Err(ArrowError::IoError("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from".into()))
+                    Err(ArrowError::InvalidArgumentError("Can't create AWS S3 object_store: no credentials provided to ObjectStoreFactory::from".into()))
                 }
             }
             "file" => Ok(Arc::new(LocalFileSystem::new())),
