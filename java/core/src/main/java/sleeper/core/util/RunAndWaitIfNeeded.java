@@ -47,22 +47,22 @@ public class RunAndWaitIfNeeded {
         this.waitFn = waitFn;
         this.timeSupplier = timeSupplier;
         this.delayMillis = delayMillis;
-        this.endTime = timeSupplier.get().plus(Duration.ofMillis(delayMillis));
     }
 
     public void run(Runnable runnable) {
+        Instant currentTime = timeSupplier.get();
         if (hasRunBefore) {
             LOGGER.info("Has run before, checking if wait needed");
-            Instant currentTime = timeSupplier.get();
             LOGGER.info("Current time: {}, End time: {}", currentTime, endTime);
             if (currentTime.isBefore(endTime)) {
                 waitFn.accept(Duration.between(currentTime, endTime).toMillis());
             }
+            endTime = endTime.plus(Duration.ofMillis(delayMillis));
         } else {
             LOGGER.info("Skipping wait for first run");
             hasRunBefore = true;
+            endTime = currentTime.plus(Duration.ofMillis(delayMillis));
         }
-        endTime = endTime.plus(Duration.ofMillis(delayMillis));
         runnable.run();
     }
 }

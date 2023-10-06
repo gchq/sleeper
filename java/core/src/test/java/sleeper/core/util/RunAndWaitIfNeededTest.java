@@ -101,13 +101,13 @@ public class RunAndWaitIfNeededTest {
                 10000L);
 
         // When
+        runAndWaitIfNeeded.run(timesRun::getAndIncrement); // end time is now 10:56:10
         runAndWaitIfNeeded.run(timesRun::getAndIncrement); // end time is now 10:56:20
-        runAndWaitIfNeeded.run(timesRun::getAndIncrement); // end time is now 10:56:30
         runAndWaitIfNeeded.run(timesRun::getAndIncrement);
 
         // Then
         assertThat(timesRun.get()).isEqualTo(3);
         assertThat(waits)
-                .containsExactly(15000L, 20000L);
+                .containsExactly(5000L, 10000L);
     }
 }
