@@ -159,6 +159,14 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .description("The function name of the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
+    SystemDefinedInstanceProperty COMPACTION_TABLE_BATCHER_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.table.batcher.queue.url")
+            .description("The URL of the queue for the table batcher.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    SystemDefinedInstanceProperty COMPACTION_TABLE_BATCHER_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.table.batcher.queue.arn")
+            .description("The ARN of the queue for table batcher.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
     SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.task.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)

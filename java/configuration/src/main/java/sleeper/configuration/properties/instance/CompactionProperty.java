@@ -151,6 +151,16 @@ public interface CompactionProperty {
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TABLE_BATCHER_PERIOD_IN_MINUTES = Index.propertyBuilder("sleeper.compaction.table.batcher.period.minutes")
+            .description("The frequency in minutes with which the table batcher lambda is run.")
+            .defaultValue("5")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_TABLE_BATCHER_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.table.batcher.batch.size")
+            .description("The size of table batches to create when batching tables.")
+            .defaultValue("10")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.default.compaction.strategy.class")
             .description("The name of the class that defines how compaction jobs should be created. " +
                     "This should implement sleeper.compaction.strategy.CompactionStrategy. The value of this property is the " +
