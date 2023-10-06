@@ -30,7 +30,7 @@ use aws_credential_types::provider::ProvideCredentials;
 use chrono::Local;
 use futures::TryFutureExt;
 use libc::{size_t, EFAULT, EINVAL, EIO};
-use log::{debug, error, LevelFilter};
+use log::{error, info, LevelFilter};
 use std::io::Write;
 use std::sync::Once;
 use std::{
@@ -100,10 +100,10 @@ async fn credentials_and_merge(
     let config = aws_config::from_env().load().await;
     let region = config
         .region()
-        .ok_or(ArrowError::IoError("Couldn't retrieve AWS region".into()))?;
+        .ok_or(ArrowError::InvalidArgumentError("Couldn't retrieve AWS region".into()))?;
     let creds: aws_credential_types::Credentials = config
         .credentials_provider()
-        .ok_or(ArrowError::IoError(
+        .ok_or(ArrowError::InvalidArgumentError(
             "Couldn't retrieve AWS credentials".into(),
         ))?
         .provide_credentials()
@@ -211,7 +211,7 @@ pub extern "C" fn ffi_merge_sorted_files(
             .map(|s| {
                 // is pointer valid?
                 if s.is_null() {
-                    return Err(ArrowError::IoError(String::new()));
+                    return Err(ArrowError::InvalidArgumentError(String::new()));
                 }
                 // convert to string and check it's valid
                 CStr::from_ptr(*s)

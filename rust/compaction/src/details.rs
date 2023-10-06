@@ -93,7 +93,7 @@ impl Iterator for OwnedRowIter {
                     None
                 } else {
                     self.error_reported = true;
-                    Some(Err(ArrowError::IoError(e.to_string())))
+                    Some(Err(ArrowError::InvalidArgumentError(e.to_string())))
                 }
             }
         }
@@ -497,7 +497,7 @@ async fn get_file_iterator_for_row_group_range(
             .map_err(ArrowError::from)
     } else {
         let p = extension.unwrap_or("<none>".to_owned());
-        Err(ArrowError::IoError(format!("Unrecognised extension {p}")))
+        Err(ArrowError::InvalidArgumentError(format!("Unrecognised extension {p}")))
     }
 }
 
