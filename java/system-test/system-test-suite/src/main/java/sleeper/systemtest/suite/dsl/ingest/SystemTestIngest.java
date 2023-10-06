@@ -22,7 +22,7 @@ import sleeper.systemtest.drivers.ingest.DirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.IngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.IngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
-import sleeper.systemtest.drivers.ingest.PurgeIngestQueueDriver;
+import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import sleeper.systemtest.drivers.util.WaitForJobsDriver;
 import sleeper.systemtest.suite.fixtures.SystemTestClients;
@@ -33,16 +33,16 @@ public class SystemTestIngest {
     private final SleeperInstanceContext instance;
     private final SystemTestClients clients;
     private final IngestSourceFilesDriver sourceFiles;
-    private final PurgeIngestQueueDriver purgeIngestQueueDriver;
+    private final PurgeQueueDriver purgeQueueDriver;
 
     public SystemTestIngest(SleeperInstanceContext instance,
                             SystemTestClients clients,
                             IngestSourceFilesDriver sourceFiles,
-                            PurgeIngestQueueDriver purgeIngestQueueDriver) {
+                            PurgeQueueDriver purgeQueueDriver) {
         this.instance = instance;
         this.clients = clients;
         this.sourceFiles = sourceFiles;
-        this.purgeIngestQueueDriver = purgeIngestQueueDriver;
+        this.purgeQueueDriver = purgeQueueDriver;
     }
 
     public SystemTestIngestBatcher batcher() {
@@ -74,6 +74,6 @@ public class SystemTestIngest {
     }
 
     public void purgeQueue(InstanceProperty queueProperty) {
-        purgeIngestQueueDriver.purgeQueue(queueProperty);
+        purgeQueueDriver.purgeQueue(queueProperty);
     }
 }

@@ -23,12 +23,12 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.core.util.RunAndWaitIfNeeded;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-public class PurgeIngestQueueDriver {
+public class PurgeQueueDriver {
     private static final RunAndWaitIfNeeded RUNNER = new RunAndWaitIfNeeded(60000L);
     private final SleeperInstanceContext instance;
     private final AmazonSQS sqsClient;
 
-    public PurgeIngestQueueDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
+    public PurgeQueueDriver(SleeperInstanceContext instance, AmazonSQS sqsClient) {
         this.instance = instance;
         this.sqsClient = sqsClient;
     }
