@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.creation;
+package sleeper.compaction.job.batcher;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
@@ -23,7 +23,7 @@ import sleeper.configuration.properties.table.TableProperty;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.compaction.job.creation.TableBatch.batchWithTables;
+import static sleeper.compaction.job.batcher.TableBatch.batchWithTables;
 import static sleeper.configuration.properties.instance.CompactionProperty.TABLE_BATCHER_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_BATCHER_QUEUE_URL;
 

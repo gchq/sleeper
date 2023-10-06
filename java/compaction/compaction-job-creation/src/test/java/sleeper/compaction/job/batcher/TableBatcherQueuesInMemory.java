@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job;
-
-import sleeper.compaction.job.creation.TableBatch;
-import sleeper.compaction.job.creation.TableBatcherQueueClient;
+package sleeper.compaction.job.batcher;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

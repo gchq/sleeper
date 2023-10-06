@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.creation;
+package sleeper.compaction.job.batcher;
 
 import java.util.List;
 import java.util.Objects;

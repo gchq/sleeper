@@ -14,8 +14,23 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.job.creation;
+package sleeper.compaction.job.batcher;
 
-public interface TableBatcherQueueClient {
-    void send(String queueUrl, TableBatch job);
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+public class SQSTableBatcherQueueClient implements TableBatcherQueueClient {
+
+    private static final Gson GSON = new GsonBuilder().create();
+    private final AmazonSQS sqs;
+
+    public SQSTableBatcherQueueClient(AmazonSQS sqs) {
+        this.sqs = sqs;
+    }
+
+    @Override
+    public void send(String queueUrl, TableBatch tableBatch) {
+        sqs.sendMessage(queueUrl, GSON.toJson(tableBatch));
+    }
 }
