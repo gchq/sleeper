@@ -22,71 +22,97 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class RunAndWaitIfNeededTest {
-
     @Test
-    void shouldWaitIfCurrentTimeBeforeEndTime() {
+    void shouldSkipWaitOnFirstRun() {
         // Given
-        AtomicBoolean hasRun = new AtomicBoolean(false);
+        AtomicLong timesRun = new AtomicLong(0);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> hasRun.set(true),
+                () -> timesRun.getAndIncrement(),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
-                        Instant.parse("2023-10-06T10:56:01Z")).iterator()::next,
-                2000L);
+                        Instant.parse("2023-10-06T10:56:05Z")).iterator()::next,
+                10000L);
 
         // When
         runAndWaitIfNeeded.run();
 
         // Then
-        assertThat(hasRun.get()).isTrue();
+        assertThat(timesRun.get()).isEqualTo(1);
+        assertThat(hasWaited).isFalse();
+    }
+
+    @Test
+    void shouldWaitIfCurrentTimeBeforeEndTime() {
+        // Given
+        AtomicLong timesRun = new AtomicLong(0);
+        AtomicBoolean hasWaited = new AtomicBoolean(false);
+        RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
+                () -> timesRun.getAndIncrement(),
+                (waitTime) -> hasWaited.set(true),
+                List.of(Instant.parse("2023-10-06T10:56:00Z"),
+                        Instant.parse("2023-10-06T10:56:01Z"),
+                        Instant.parse("2023-10-06T10:56:02Z")).iterator()::next,
+                2000L);
+
+        // When
+        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run();
+
+        // Then
+        assertThat(timesRun.get()).isEqualTo(2);
         assertThat(hasWaited.get()).isTrue();
     }
 
     @Test
     void shouldNotWaitIfCurrentTimeAfterEndTime() {
         // Given
-        AtomicBoolean hasRun = new AtomicBoolean(false);
+        AtomicLong timesRun = new AtomicLong(0);
         AtomicBoolean hasWaited = new AtomicBoolean(false);
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> hasRun.set(true),
+                () -> timesRun.getAndIncrement(),
                 (waitTime) -> hasWaited.set(true),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
-                        Instant.parse("2023-10-06T10:56:05Z")).iterator()::next,
+                        Instant.parse("2023-10-06T10:56:05Z"),
+                        Instant.parse("2023-10-06T10:56:10Z")).iterator()::next,
                 2000L);
 
         // When
         runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run();
 
         // Then
-        assertThat(hasRun.get()).isTrue();
+        assertThat(timesRun.get()).isEqualTo(2);
         assertThat(hasWaited.get()).isFalse();
     }
 
     @Test
     void shouldCalculateNewEndTimeFromPreviousEndTime() {
         // Given
-        AtomicBoolean hasRun = new AtomicBoolean(false);
+        AtomicLong timesRun = new AtomicLong(0);
         List<Long> waits = new ArrayList<>();
         RunAndWaitIfNeeded runAndWaitIfNeeded = new RunAndWaitIfNeeded(
-                () -> hasRun.set(true),
+                () -> timesRun.getAndIncrement(),
                 (waitTime) -> waits.add(waitTime),
                 List.of(Instant.parse("2023-10-06T10:56:00Z"),
                         Instant.parse("2023-10-06T10:56:05Z"),
-                        Instant.parse("2023-10-06T10:56:10Z")).iterator()::next,
+                        Instant.parse("2023-10-06T10:56:10Z"),
+                        Instant.parse("2023-10-06T10:56:15Z")).iterator()::next,
                 10000L);
 
         // When
-        runAndWaitIfNeeded.run();
+        runAndWaitIfNeeded.run(); // end time is now 10:56:20
+        runAndWaitIfNeeded.run(); // end time is now 10:56:30
         runAndWaitIfNeeded.run();
 
         // Then
-        assertThat(hasRun.get()).isTrue();
+        assertThat(timesRun.get()).isEqualTo(3);
         assertThat(waits)
-                .containsExactly(5000L, 10000L);
+                .containsExactly(10000L, 15000L);
     }
 }

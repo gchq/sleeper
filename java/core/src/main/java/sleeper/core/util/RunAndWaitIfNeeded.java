@@ -31,6 +31,7 @@ public class RunAndWaitIfNeeded {
     private final Consumer<Long> waitFn;
     private final Supplier<Instant> timeSupplier;
     private final long delayMillis;
+    private boolean hasRunBefore = false;
 
     public RunAndWaitIfNeeded(Runnable runnable, long delayMillis) {
         this(runnable, (time) -> {
@@ -53,8 +54,12 @@ public class RunAndWaitIfNeeded {
 
     public void run() {
         Instant currentTime = timeSupplier.get();
-        if (currentTime.isBefore(endTime)) {
-            waitFn.accept(Duration.between(currentTime, endTime).toMillis());
+        if (hasRunBefore) {
+            if (currentTime.isBefore(endTime)) {
+                waitFn.accept(Duration.between(currentTime, endTime).toMillis());
+            }
+        } else {
+            hasRunBefore = true;
         }
         endTime = endTime.plus(Duration.ofMillis(delayMillis));
         runnable.run();
