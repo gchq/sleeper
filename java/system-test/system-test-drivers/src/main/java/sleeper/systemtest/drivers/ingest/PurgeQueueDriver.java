@@ -24,7 +24,7 @@ import sleeper.core.util.RunAndWaitIfNeeded;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
 public class PurgeQueueDriver {
-    private static final RunAndWaitIfNeeded RUNNER = new RunAndWaitIfNeeded(60000L);
+    private static final RunAndWaitIfNeeded RUNNER = new RunAndWaitIfNeeded(61000L);
     private final SleeperInstanceContext instance;
     private final AmazonSQS sqsClient;
 
