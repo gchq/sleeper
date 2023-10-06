@@ -133,14 +133,16 @@ pub async fn merge_sorted_files(
     sort_columns: impl AsRef<[usize]>,
 ) -> Result<CompactionResult, ArrowError> {
     // Read the schema from the first file
+    info!("Here test");
     if input_file_paths.is_empty() {
         Err(ArrowError::InvalidArgumentError(
             "No input paths supplied".into(),
         ))
     } else {
         // Create our object store factory
+        info!("Here test");
         let store_factory = ObjectStoreFactory::new(aws_creds, region);
-
+        info!("Here test");
         // Java tends to use s3a:// URI scheme instead of s3:// so map it here
         let input_file_paths: Vec<Url> = input_file_paths
             .iter()
@@ -154,14 +156,15 @@ pub async fn merge_sorted_files(
             .collect();
 
         // Change output file scheme
+        info!("Here test");
         let mut output_file_path = output_file_path.to_owned();
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
         }
-
+        info!("Here test");
         // Read Schema from first file
         let schema: Arc<Schema> = read_schema(&store_factory, &input_file_paths[0])?;
-
+        info!("Here test");
         // validate all files have same schema
         if validate_schemas_same(&store_factory, &input_file_paths, &schema) {
             // Sort the row key column numbers
@@ -548,9 +551,11 @@ pub fn read_schema(
     store_factory: &ObjectStoreFactory,
     src: &Url,
 ) -> Result<Arc<Schema>, ArrowError> {
+    info!("Here test");
     let builder = futures::executor::block_on(get_parquet_builder(store_factory, src))?;
+    info!("Here test");
     let stream = builder.build()?;
-
+    info!("Here test");
     Ok(stream.schema().clone())
 }
 

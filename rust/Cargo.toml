@@ -19,4 +19,4 @@ resolver = "2"
 incremental = true
 lto = false
 overflow-checks = true
-debug = false
+debug = true

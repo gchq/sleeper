@@ -64,9 +64,11 @@ fn maybe_cfg_log() {
             .format(|buf, record| {
                 writeln!(
                     buf,
-                    "{} [{}] - {}",
+                    "{} [{}] {}:{} - {}",
                     Local::now().format("%Y-%m-%dT%H:%M:%S"),
                     record.level(),
+                    record.file().unwrap_or("??"),
+                    record.line().unwrap_or(0),
                     record.args()
                 )
             })
@@ -257,6 +259,7 @@ pub extern "C" fn ffi_merge_sorted_files(
     };
 
     // Run compaction
+    info!("Here test");
     let result = rt.block_on(credentials_and_merge(
         &input_paths,
         &output_path,
