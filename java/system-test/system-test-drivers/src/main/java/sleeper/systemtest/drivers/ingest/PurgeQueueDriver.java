@@ -38,6 +38,7 @@ public class PurgeQueueDriver {
         String queueUrl = instance.getInstanceProperties().get(property);
         LOGGER.info("Purging SQS queue: {}", queueUrl);
         sqsClient.purgeQueue(new PurgeQueueRequest(queueUrl));
+        LOGGER.info("Waiting 60s for queue to purge");
         try {
             Thread.sleep(60000L);
         } catch (InterruptedException e) {
