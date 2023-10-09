@@ -73,10 +73,12 @@ runMavenSystemTests() {
        -DskipTests=true \
        -DstagingDirectory="$TEST_OUTPUT_DIR/site"
     popd
-    zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "$TEST_OUTPUT_DIR/site"
+    pushd "$TEST_OUTPUT_DIR/site"
+    zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
+    popd
     rm -rf "$TEST_OUTPUT_DIR/site"
     INSTANCE_IDS=()
-    read_instance_ids_to_array "$OUTPUT_DIR/$TEST_NAME/instanceIds.txt" INSTANCE_IDS
+    read_instance_ids_to_array "$TEST_OUTPUT_DIR/instanceIds.txt" INSTANCE_IDS
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
