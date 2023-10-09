@@ -42,7 +42,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
-                        .dynamoDB(dynamoDB).schema(tableProperties.getSchema())
+                        .dynamoDB(dynamoDB)
                         .activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
                         .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
                         .sleeperTableName(tableProperties.get(TableProperty.TABLE_NAME))

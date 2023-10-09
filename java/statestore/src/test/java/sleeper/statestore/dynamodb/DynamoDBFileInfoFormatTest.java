@@ -31,7 +31,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class DynamoDBFileInfoFormatTest {
     private String tableName = "test-table";
     private Schema schema = schemaWithKey("key");
-    private DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableName, schema);
+    private DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableName);
 
     @Test
     void shouldCreateActiveFileRecord() {
