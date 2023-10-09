@@ -152,7 +152,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -178,7 +177,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -204,7 +202,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -230,7 +227,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");

@@ -18,7 +18,6 @@ package sleeper.core.statestore;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,7 +32,6 @@ public class FileInfo {
         ACTIVE, READY_FOR_GARBAGE_COLLECTION
     }
 
-    private final List<PrimitiveType> rowKeyTypes;
     private final String filename;
     private final String partitionId;
     private final Long numberOfRecords;
@@ -42,7 +40,6 @@ public class FileInfo {
     private final Long lastStateStoreUpdateTime; // The latest time (in milliseconds since the epoch) that the status of the file was updated in the StateStore
 
     private FileInfo(Builder builder) {
-        this.rowKeyTypes = builder.rowKeyTypes;
         this.filename = builder.filename;
         this.partitionId = builder.partitionId;
         this.numberOfRecords = builder.numberOfRecords;
@@ -53,10 +50,6 @@ public class FileInfo {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public List<PrimitiveType> getRowKeyTypes() {
-        return rowKeyTypes;
     }
 
     public String getFilename() {
@@ -84,36 +77,27 @@ public class FileInfo {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        FileInfo fileInfo = (FileInfo) o;
-
-        return Objects.equals(rowKeyTypes, fileInfo.rowKeyTypes) &&
-                Objects.equals(filename, fileInfo.filename) &&
-                Objects.equals(partitionId, fileInfo.partitionId) &&
-                Objects.equals(numberOfRecords, fileInfo.numberOfRecords) &&
-                fileStatus == fileInfo.fileStatus &&
-                Objects.equals(jobId, fileInfo.jobId) &&
-                Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
+        FileInfo fileInfo = (FileInfo) object;
+        return Objects.equals(filename, fileInfo.filename) && Objects.equals(partitionId, fileInfo.partitionId) && Objects.equals(numberOfRecords, fileInfo.numberOfRecords) && fileStatus == fileInfo.fileStatus && Objects.equals(jobId, fileInfo.jobId) && Objects.equals(lastStateStoreUpdateTime, fileInfo.lastStateStoreUpdateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(rowKeyTypes, filename, partitionId,
-                numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime);
+        return Objects.hash(filename, partitionId, numberOfRecords, fileStatus, jobId, lastStateStoreUpdateTime);
     }
 
     @Override
     public String toString() {
         return "FileInfo{" +
-                "rowKeyTypes=" + rowKeyTypes +
-                ", filename='" + filename + '\'' +
-                ", partition='" + partitionId + '\'' +
+                "filename='" + filename + '\'' +
+                ", partitionId='" + partitionId + '\'' +
                 ", numberOfRecords=" + numberOfRecords +
                 ", fileStatus=" + fileStatus +
                 ", jobId='" + jobId + '\'' +
@@ -123,7 +107,6 @@ public class FileInfo {
 
     public Builder toBuilder() {
         return FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(numberOfRecords)
@@ -133,7 +116,6 @@ public class FileInfo {
     }
 
     public static final class Builder {
-        private List<PrimitiveType> rowKeyTypes;
         private String filename;
         private String partitionId;
         private Long numberOfRecords;
@@ -145,12 +127,10 @@ public class FileInfo {
         }
 
         public Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = rowKeyTypes;
             return this;
         }
 
         public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
-            this.rowKeyTypes = Arrays.asList(rowKeyTypes);
             return this;
         }
 
