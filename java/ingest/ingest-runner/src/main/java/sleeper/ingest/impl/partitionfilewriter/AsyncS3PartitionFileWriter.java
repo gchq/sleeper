@@ -118,19 +118,16 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     /**
      * Create a {@link FileInfo} object from the values supplied
      *
-     * @param sleeperSchema   -
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
      * @return The {@link FileInfo} object
      */
     private static FileInfo createFileInfo(
-            Schema sleeperSchema,
             String filename,
             String partitionId,
             long numberOfRecords) {
         return FileInfo.builder()
-                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -250,7 +247,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 hadoopConfiguration);
         LOGGER.debug("Wrote sketches to local file {}", quantileSketchesLocalFileName);
         FileInfo fileInfo = createFileInfo(
-                sleeperSchema,
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
                 recordsWrittenToCurrentPartition);
