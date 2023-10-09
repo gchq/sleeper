@@ -127,7 +127,6 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
                 hadoopConfiguration);
         LOGGER.info("Wrote sketches for partition {} to file {}", partition.getId(), quantileSketchesFileName);
         FileInfo fileInfo = PartitionFileWriterUtils.createFileInfo(
-                sleeperSchema,
                 partitionParquetFileName,
                 partition.getId(),
                 recordsWrittenToCurrentPartition);
