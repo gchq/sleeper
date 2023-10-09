@@ -29,6 +29,6 @@ public class FixedTablePropertiesProvider extends TablePropertiesProvider {
     public FixedTablePropertiesProvider(List<TableProperties> tables) {
         super(tableName -> tables.stream()
                 .filter(table -> Objects.equals(tableName, table.get(TABLE_NAME)))
-                .findFirst().orElseThrow(), Integer.MAX_VALUE, () -> Instant.MAX);
+                .findFirst().orElseThrow(), Integer.MAX_VALUE, () -> Instant.MIN);
     }
 }

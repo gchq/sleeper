@@ -249,7 +249,7 @@ public class FindPartitionsToSplitIT {
         private final long splitThreshold;
 
         TestTablePropertiesProvider(Schema schema, long splitThreshold) {
-            super(null, null);
+            super(null, new InstanceProperties());
             this.schema = schema;
             this.splitThreshold = splitThreshold;
         }
