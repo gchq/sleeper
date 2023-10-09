@@ -181,8 +181,7 @@ public class CompactSortedFiles {
                 compactionJob.getOutputFile(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
-                stateStore,
-                schema.getRowKeyTypes());
+                stateStore);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
@@ -322,12 +321,10 @@ public class CompactSortedFiles {
                                                    String outputFile,
                                                    String partitionId,
                                                    long recordsWritten,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
+                                                   StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(rowKeyTypes)
                     .filename(file)
                     .partitionId(partitionId)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -335,7 +332,6 @@ public class CompactSortedFiles {
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
         FileInfo fileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
