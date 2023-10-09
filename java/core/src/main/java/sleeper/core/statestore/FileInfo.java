@@ -15,8 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.schema.type.PrimitiveType;
-
 import java.time.Instant;
 import java.util.Objects;
 
@@ -123,10 +121,6 @@ public class FileInfo {
         private Long lastStateStoreUpdateTime;
 
         private Builder() {
-        }
-
-        public Builder rowKeyTypes(PrimitiveType... rowKeyTypes) {
-            return this;
         }
 
         public Builder filename(String filename) {

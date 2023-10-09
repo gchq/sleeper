@@ -293,7 +293,6 @@ public class GarbageCollectorIT {
     private void createFile(String filename, StateStore stateStore, FileInfo.FileStatus status) throws Exception {
         String partitionId = stateStore.getAllPartitions().get(0).getId();
         FileInfo fileInfo = FileInfo.builder()
-                .rowKeyTypes(new IntType())
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)

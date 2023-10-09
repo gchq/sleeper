@@ -52,14 +52,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .region(new Region(range))
                 .build();
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new IntType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new IntType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
@@ -94,14 +92,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .region(new Region(range))
                 .build();
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
@@ -136,14 +132,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .region(new Region(range))
                 .build();
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new StringType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new StringType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
@@ -178,14 +172,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .region(new Region(range))
                 .build();
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new StringType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new StringType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
@@ -220,14 +212,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .region(new Region(range))
                 .build();
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
@@ -262,14 +252,12 @@ public class SplitPartitionJobDefinitionSerDeTest {
                 .region(new Region(range))
                 .build();
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
                 .filename("f1")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(100L)
                 .partitionId("123")
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new ByteArrayType())
                 .filename("f2")
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(1000L)
