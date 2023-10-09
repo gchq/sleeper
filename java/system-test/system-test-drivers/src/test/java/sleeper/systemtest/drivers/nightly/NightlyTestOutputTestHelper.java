@@ -16,7 +16,6 @@
 
 package sleeper.systemtest.drivers.nightly;
 
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
@@ -31,13 +30,9 @@ public class NightlyTestOutputTestHelper {
     }
 
     public static NightlyTestOutput outputWithStatusCodeByTest(Map<String, Integer> statusCodeByTest) {
-        return outputWithStatusCodeByTest(statusCodeByTest, null);
-    }
-
-    public static NightlyTestOutput outputWithStatusCodeByTest(Map<String, Integer> statusCodeByTest, Path siteFile) {
         return new NightlyTestOutput(statusCodeByTest.entrySet().stream()
                 .map(entry -> TestResult.builder().testName(entry.getKey()).exitCode(entry.getValue()).build())
                 .sorted(Comparator.comparing(TestResult::getTestName))
-                .collect(Collectors.toList()), siteFile);
+                .collect(Collectors.toList()));
     }
 }
