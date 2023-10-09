@@ -169,6 +169,28 @@ class NightlyTestOutputFileSystemIT {
         }
     }
 
+    @Nested
+    @DisplayName("Read Maven site files")
+    class ReadSiteFiles {
+
+        @Test
+        void shouldReadSiteFiles() throws Exception {
+            // Given
+            Path siteFile1 = tempDir.resolve("bulkImportPerformance-site.zip");
+            Path siteFile2 = tempDir.resolve("compactionPerformance-site.zip");
+            Files.writeString(siteFile1, "");
+            Files.writeString(siteFile2, "");
+
+            // When / Then
+            assertThat(NightlyTestOutput.from(tempDir))
+                    .isEqualTo(new NightlyTestOutput(List.of(
+                            TestResult.builder().testName("bulkImportPerformance")
+                                    .siteFile(siteFile1).build(),
+                            TestResult.builder().testName("compactionPerformance")
+                                    .siteFile(siteFile2).build())));
+        }
+    }
+
     @Test
     void shouldIgnoreFileWithUnrecognisedExtension() throws Exception {
         // Given

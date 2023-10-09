@@ -60,9 +60,10 @@ runMavenSystemTests() {
     SHORT_ID=$1
     TEST_NAME=$2
     EXTRA_MAVEN_PARAMS=$3
-    mkdir "$OUTPUT_DIR/$TEST_NAME"
+    TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
+    mkdir "$TEST_OUTPUT_DIR"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
-      -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
+      -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "$EXTRA_MAVEN_PARAMS" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
@@ -70,12 +71,10 @@ runMavenSystemTests() {
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
-       -DstagingDirectory="$OUTPUT_DIR/site"
+       -DstagingDirectory="$TEST_OUTPUT_DIR/site"
     popd
-    pushd "$OUTPUT_DIR/site"
-    zip -r "../site.zip" "."
-    popd
-    rm -rf "$OUTPUT_DIR/site"
+    zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "$TEST_OUTPUT_DIR/site"
+    rm -rf "$TEST_OUTPUT_DIR/site"
     INSTANCE_IDS=()
     read_instance_ids_to_array "$OUTPUT_DIR/$TEST_NAME/instanceIds.txt" INSTANCE_IDS
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
