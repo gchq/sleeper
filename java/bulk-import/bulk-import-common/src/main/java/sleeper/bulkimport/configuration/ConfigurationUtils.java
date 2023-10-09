@@ -95,8 +95,8 @@ public class ConfigurationUtils {
         sparkConf.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY));
 
         // spark.yarn properties
-        sparkConf.put("spark.yarn.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD));
-        sparkConf.put("spark.yarn.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD));
+        sparkConf.put("spark.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD));
+        sparkConf.put("spark.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD));
         sparkConf.put("spark.yarn.scheduler.reporterThread.maxFailures", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES));
 
         // spark.default properties
@@ -143,7 +143,7 @@ public class ConfigurationUtils {
     }
 
     public static Map<String, String> getSparkServerlessConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
-                                                                                  EmrInstanceArchitecture arch) {
+                                                                                            EmrInstanceArchitecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));

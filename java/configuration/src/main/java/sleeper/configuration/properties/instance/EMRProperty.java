@@ -41,14 +41,14 @@ public interface EMRProperty {
             .defaultValue("29")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead")
-            .description("The memory overhead for an executor. Used to set spark.yarn.executor.memoryOverhead.\n" +
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.executor.memory.overhead")
+            .description("The memory overhead for an executor. Used to set spark.executor.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("2g")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead")
-            .description("The memory overhead for the driver. Used to set spark.yarn.driver.memoryOverhead.\n" +
+    UserDefinedInstanceProperty BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD = Index.propertyBuilder("sleeper.bulk.import.emr.spark.driver.memory.overhead")
+            .description("The memory overhead for the driver. Used to set spark.driver.memoryOverhead.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue(BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD.getDefaultValue())
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
