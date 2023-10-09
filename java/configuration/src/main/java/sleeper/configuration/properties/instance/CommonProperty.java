@@ -174,6 +174,13 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCDKDeployWhenChanged(true).build();
 
+    UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index.propertyBuilder("sleeper.table.properties.provider.timeout")
+            .description("The timeout for when the table properties provider cache should be cleared.")
+            .defaultValue("300")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }

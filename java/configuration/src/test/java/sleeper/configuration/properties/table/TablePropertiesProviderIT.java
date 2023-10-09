@@ -19,9 +19,14 @@ package sleeper.configuration.properties.table;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+
+import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
 class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
 
@@ -35,7 +40,7 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
 
         // When
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-load");
+        instanceProperties.set(CONFIG_BUCKET, "provider-load");
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
 
         // Then
@@ -50,11 +55,67 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
 
         // When
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-no-table");
+        instanceProperties.set(CONFIG_BUCKET, "provider-no-table");
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
 
         // Then
         assertThat(provider.getTablePropertiesIfExists("test"))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldReloadPropertiesFromS3WhenTimeoutReached() {
+        // Given
+        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
+                "test", "provider-load");
+        s3Client.createBucket("provider-load");
+        validProperties.setNumber(ROW_GROUP_SIZE, 123L);
+        validProperties.saveToS3(s3Client);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(CONFIG_BUCKET, "provider-load");
+        instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
+                List.of(
+                        Instant.parse("2023-10-09T17:10:00Z"),
+                        Instant.parse("2023-10-09T17:11:00Z"),
+                        Instant.parse("2023-10-09T17:15:00Z")
+                ).iterator()::next);
+
+        // When
+        provider.getTableProperties("test"); // Populate cache
+        validProperties.setNumber(ROW_GROUP_SIZE, 456L);
+        validProperties.saveToS3(s3Client);
+
+        // Then
+        assertThat(provider.getTableProperties("test").getLong(ROW_GROUP_SIZE))
+                .isEqualTo(456L);
+    }
+
+    @Test
+    void shouldNotReloadPropertiesFromS3WhenTimeoutHasNotBeenReached() {
+        // Given
+        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
+                "test", "provider-load");
+        s3Client.createBucket("provider-load");
+        validProperties.setNumber(ROW_GROUP_SIZE, 123L);
+        validProperties.saveToS3(s3Client);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(CONFIG_BUCKET, "provider-load");
+        instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
+                List.of(
+                        Instant.parse("2023-10-09T17:10:00Z"),
+                        Instant.parse("2023-10-09T17:11:00Z"),
+                        Instant.parse("2023-10-09T17:12:00Z")
+                ).iterator()::next);
+
+        // When
+        provider.getTableProperties("test"); // Populate cache
+        validProperties.setNumber(ROW_GROUP_SIZE, 456L);
+        validProperties.saveToS3(s3Client);
+
+        // Then
+        assertThat(provider.getTableProperties("test").getLong(ROW_GROUP_SIZE))
+                .isEqualTo(123L);
     }
 }
