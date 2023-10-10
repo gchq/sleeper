@@ -91,8 +91,8 @@ public class DynamoDBTableIdStore implements TableIdStore {
                     tableName, id.getTableId(), totalCapacity);
             return id;
         } catch (TransactionCanceledException e) {
-            CancellationReason reason = e.getCancellationReasons().get(0);
-            if ("ConditionalCheckFailed".equals(reason.getCode())) {
+            CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
+            if ("ConditionalCheckFailed".equals(nameIndexReason.getCode())) {
                 throw new TableAlreadyExistsException(tableName);
             } else {
                 throw e;
