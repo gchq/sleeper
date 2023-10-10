@@ -19,6 +19,7 @@ package sleeper.core.table;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests:
@@ -38,5 +39,12 @@ public class InMemoryTableIdStoreTest {
 
         assertThat(store.streamAllTables())
                 .containsExactly(TableId.idAndName(tableId, "test-table"));
+    }
+
+    @Test
+    void shouldFailToCreateATableWhichAlreadyExists() {
+        store.createTableGetId("duplicate-table");
+        assertThatThrownBy(() -> store.createTableGetId("duplicate-table"))
+                .isInstanceOf(TableAlreadyExistsException.class);
     }
 }

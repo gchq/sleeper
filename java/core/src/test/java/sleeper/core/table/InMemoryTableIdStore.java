@@ -27,8 +27,11 @@ public class InMemoryTableIdStore implements TableIdStore {
 
     @Override
     public String createTableGetId(String tableName) {
+        if (idByName.containsKey(tableName)) {
+            throw new TableAlreadyExistsException(tableName);
+        }
         String id = UUID.randomUUID().toString();
-        idByName.put(id, TableId.idAndName(id, tableName));
+        idByName.put(tableName, TableId.idAndName(id, tableName));
         return id;
     }
 
