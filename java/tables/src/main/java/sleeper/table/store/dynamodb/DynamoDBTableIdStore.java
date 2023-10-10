@@ -36,14 +36,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIdStore;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
@@ -60,7 +59,7 @@ public class DynamoDBTableIdStore implements TableIdStore {
     private final AmazonDynamoDB dynamoDB;
     private final String nameIndexDynamoTableName;
     private final String idIndexDynamoTableName;
-    private final Supplier<String> idGenerator = () -> UUID.randomUUID().toString();
+    private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     public DynamoDBTableIdStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         this.dynamoDB = dynamoDB;
@@ -70,7 +69,7 @@ public class DynamoDBTableIdStore implements TableIdStore {
 
     @Override
     public TableId createTable(String tableName) throws TableAlreadyExistsException {
-        TableId id = TableId.idAndName(idGenerator.get(), tableName);
+        TableId id = TableId.idAndName(idGenerator.generateString(), tableName);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
