@@ -21,6 +21,7 @@ use std::{future::ready, pin::Pin, sync::Arc};
 use arrow::error::ArrowError;
 use aws_types::region::Region;
 use futures::Future;
+use log::info;
 use object_store::{
     aws::{AmazonS3Builder, AwsCredential},
     local::LocalFileSystem,
@@ -87,10 +88,9 @@ impl ObjectStoreFactory {
                     Ok(AmazonS3Builder::from_env()
                         .with_credentials(creds.clone())
                         .with_region(self.1.as_ref())
-                        .with_bucket_name(
-                            src.host_str()
-                                .ok_or(ArrowError::InvalidArgumentError("invalid S3 bucket name".into()))?,
-                        )
+                        .with_bucket_name(src.host_str().ok_or(
+                            ArrowError::InvalidArgumentError("invalid S3 bucket name".into()),
+                        )?)
                         .build()
                         .map(Arc::new)
                         .map_err(|e| ArrowError::ExternalError(Box::new(e)))?)
