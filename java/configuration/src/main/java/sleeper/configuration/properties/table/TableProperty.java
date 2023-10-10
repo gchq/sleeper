@@ -340,10 +340,6 @@ public interface TableProperty extends SleeperProperty {
         return Index.INSTANCE.getAll();
     }
 
-    static List<TableProperty> getSystemDefined() {
-        return Index.INSTANCE.getSystemDefined();
-    }
-
     static List<TableProperty> getUserDefined() {
         return Index.INSTANCE.getUserDefined();
     }
@@ -351,7 +347,6 @@ public interface TableProperty extends SleeperProperty {
     static boolean has(String propertyName) {
         return Index.INSTANCE.getByName(propertyName).isPresent();
     }
-
 
     class Index {
         private Index() {
