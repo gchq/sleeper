@@ -127,5 +127,10 @@ public class InMemoryTableIdStoreTest {
             assertThat(store.streamAllTables())
                     .containsExactly(table1, table2);
         }
+
+        @Test
+        void shouldGetNoTables() {
+            assertThat(store.streamAllTables()).isEmpty();
+        }
     }
 }
