@@ -18,8 +18,12 @@ package sleeper.table.store.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -43,6 +47,7 @@ import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
 public class DynamoDBTableIdStore implements TableIdStore {
@@ -103,11 +108,21 @@ public class DynamoDBTableIdStore implements TableIdStore {
 
     @Override
     public Optional<TableId> getTableByName(String tableName) {
-        return Optional.empty();
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(nameIndexDynamoTableName)
+                .addKeyConditionsEntry(TABLE_NAME_FIELD, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableName))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        return result.getItems().stream().map(DynamoDBTableIdFormat::readItem).findFirst();
     }
 
     @Override
     public Optional<TableId> getTableById(String tableId) {
-        return Optional.empty();
+        QueryResult result = dynamoDB.query(new QueryRequest()
+                .withTableName(idIndexDynamoTableName)
+                .addKeyConditionsEntry(TABLE_ID_FIELD, new Condition()
+                        .withAttributeValueList(createStringAttribute(tableId))
+                        .withComparisonOperator(ComparisonOperator.EQ)));
+        return result.getItems().stream().map(DynamoDBTableIdFormat::readItem).findFirst();
     }
 }

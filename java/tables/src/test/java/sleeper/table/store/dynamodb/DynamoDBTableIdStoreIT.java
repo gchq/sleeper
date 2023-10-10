@@ -60,4 +60,41 @@ public class DynamoDBTableIdStoreIT extends DynamoDBTestBase {
                     .isInstanceOf(TableAlreadyExistsException.class);
         }
     }
+
+    @Nested
+    @DisplayName("Look up a table")
+    class LookupTable {
+
+        @Test
+        void shouldGetTableByName() {
+            TableId tableId = store.createTable("test-table");
+
+            assertThat(store.getTableByName("test-table"))
+                    .contains(tableId);
+        }
+
+        @Test
+        void shouldGetNoTableByName() {
+            store.createTable("existing-table");
+
+            assertThat(store.getTableByName("not-a-table"))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldGetTableById() {
+            TableId tableId = store.createTable("test-table");
+
+            assertThat(store.getTableById(tableId.getTableId()))
+                    .contains(tableId);
+        }
+
+        @Test
+        void shouldGetNoTableById() {
+            store.createTable("existing-table");
+
+            assertThat(store.getTableById("not-a-table"))
+                    .isEmpty();
+        }
+    }
 }
