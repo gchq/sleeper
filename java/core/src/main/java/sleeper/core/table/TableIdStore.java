@@ -19,7 +19,7 @@ package sleeper.core.table;
 import java.util.stream.Stream;
 
 public interface TableIdStore {
-    TableId createTable(String tableName);
+    TableId createTable(String tableName) throws TableAlreadyExistsException;
 
     Stream<TableId> streamAllTables();
 
