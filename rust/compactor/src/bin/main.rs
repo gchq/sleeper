@@ -65,10 +65,12 @@ async fn main() -> color_eyre::Result<()> {
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{} [{}] - {}",
-                Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                record.level().blue().dimmed(),
-                record.args()
+                "{} [{}] {}:{} - {}",
+                    Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                    record.level(),
+                    record.file().unwrap_or("??"),
+                    record.line().unwrap_or(0),
+                    record.args()
             )
         })
         .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
