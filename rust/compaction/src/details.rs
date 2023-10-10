@@ -515,17 +515,19 @@ pub async fn get_parquet_builder(
     store_factory: &ObjectStoreFactory,
     src: &Url,
 ) -> Result<ParquetRecordBatchStreamBuilder<ParquetObjectReader>, ArrowError> {
+    info!("Here test");
     let store = store_factory.get_object_store(src)?;
-
+    info!("Here test");
     // HEAD the file to get metadata
     let path = object_store::path::Path::from(src.path());
     let object_meta = store
         .head(&path)
         .await
         .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
-
+    info!("Here test");
     // Create a reader for the target file, use it to construct a Stream
     let reader = ParquetObjectReader::new(store, object_meta);
+    info!("Here test");
     Ok(ParquetRecordBatchStreamBuilder::new(reader).await?)
 }
 
