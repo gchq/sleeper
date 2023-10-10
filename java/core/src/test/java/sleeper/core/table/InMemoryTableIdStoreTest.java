@@ -29,25 +29,43 @@ public class InMemoryTableIdStoreTest {
 
     @Test
     void shouldCreateATable() {
-        String tableId = store.createTableGetId("test-table");
+        TableId tableId = store.createTable("test-table");
 
         assertThat(store.streamAllTables())
-                .containsExactly(TableId.idAndName(tableId, "test-table"));
+                .containsExactly(tableId);
     }
 
     @Test
     void shouldFailToCreateATableWhichAlreadyExists() {
-        store.createTableGetId("duplicate-table");
-        assertThatThrownBy(() -> store.createTableGetId("duplicate-table"))
+        store.createTable("duplicate-table");
+
+        assertThatThrownBy(() -> store.createTable("duplicate-table"))
                 .isInstanceOf(TableAlreadyExistsException.class);
     }
 
     @Test
     void shouldGenerateNumericTableIds() {
-        String tableIdA = store.createTableGetId("A");
-        String tableIdB = store.createTableGetId("B");
+        TableId tableIdA = store.createTable("A");
+        TableId tableIdB = store.createTable("B");
 
-        assertThat(List.of(tableIdA, tableIdB))
-                .containsExactly("table-1", "table-2");
+        assertThat(List.of(tableIdA, tableIdB)).containsExactly(
+                TableId.idAndName("table-1", "A"),
+                TableId.idAndName("table-2", "B"));
+    }
+
+    @Test
+    void shouldGetTableByName() {
+        TableId tableId = store.createTable("test-table");
+
+        assertThat(store.getTableByName("test-table"))
+                .isEqualTo(tableId);
+    }
+
+    @Test
+    void shouldGetTableById() {
+        TableId tableId = store.createTable("test-table");
+
+        assertThat(store.getTableById(tableId.getTableId()))
+                .isEqualTo(tableId);
     }
 }

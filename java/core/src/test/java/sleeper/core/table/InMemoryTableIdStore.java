@@ -23,21 +23,33 @@ import java.util.stream.Stream;
 public class InMemoryTableIdStore implements TableIdStore {
 
     private final Map<String, TableId> idByName = new TreeMap<>();
+    private final Map<String, TableId> nameById = new TreeMap<>();
     private int nextIdNumber = 1;
 
     @Override
-    public String createTableGetId(String tableName) {
+    public TableId createTable(String tableName) {
         if (idByName.containsKey(tableName)) {
             throw new TableAlreadyExistsException(tableName);
         }
-        String id = "table-" + nextIdNumber;
+        TableId id = TableId.idAndName("table-" + nextIdNumber, tableName);
         nextIdNumber++;
-        idByName.put(tableName, TableId.idAndName(id, tableName));
+        idByName.put(tableName, id);
+        nameById.put(id.getTableId(), id);
         return id;
     }
 
     @Override
     public Stream<TableId> streamAllTables() {
         return idByName.values().stream();
+    }
+
+    @Override
+    public TableId getTableByName(String tableName) {
+        return idByName.get(tableName);
+    }
+
+    @Override
+    public TableId getTableById(String tableId) {
+        return nameById.get(tableId);
     }
 }

@@ -19,7 +19,11 @@ package sleeper.core.table;
 import java.util.stream.Stream;
 
 public interface TableIdStore {
-    String createTableGetId(String tableName);
+    TableId createTable(String tableName);
 
     Stream<TableId> streamAllTables();
+
+    TableId getTableByName(String tableName);
+
+    TableId getTableById(String tableId);
 }

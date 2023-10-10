@@ -32,6 +32,14 @@ public class TableId {
         return new TableId(tableId, tableName);
     }
 
+    public String getTableName() {
+        return tableName;
+    }
+
+    public String getTableId() {
+        return tableId;
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
