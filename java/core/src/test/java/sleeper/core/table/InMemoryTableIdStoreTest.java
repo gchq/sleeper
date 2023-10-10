@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class InMemoryTableIdStoreTest {
 
@@ -45,12 +46,30 @@ public class InMemoryTableIdStoreTest {
 
     @Test
     void shouldGenerateNumericTableIds() {
-        TableId tableIdA = store.createTable("A");
-        TableId tableIdB = store.createTable("B");
+        TableId tableIdA = store.createTable("table-a");
+        TableId tableIdB = store.createTable("table-b");
 
-        assertThat(List.of(tableIdA, tableIdB)).containsExactly(
-                TableId.idAndName("table-1", "A"),
-                TableId.idAndName("table-2", "B"));
+        assertThat(List.of(tableIdA, tableIdB))
+                .extracting(TableId::getTableName, TableId::getTableId)
+                .containsExactly(
+                        tuple("table-a", "table-1"),
+                        tuple("table-b", "table-2"));
+    }
+
+    @Test
+    void shouldGetTablesOrderedByName() {
+        store.createTable("some-table");
+        store.createTable("a-table");
+        store.createTable("this-table");
+        store.createTable("other-table");
+
+        assertThat(store.streamAllTables())
+                .extracting(TableId::getTableName)
+                .containsExactly(
+                        "a-table",
+                        "other-table",
+                        "some-table",
+                        "this-table");
     }
 
     @Test
