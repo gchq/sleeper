@@ -25,7 +25,7 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class TableLister {
     private final AmazonS3 s3Client;

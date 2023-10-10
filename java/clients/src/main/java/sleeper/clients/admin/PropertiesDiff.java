@@ -88,7 +88,7 @@ public class PropertiesDiff {
     public <T extends SleeperProperty> List<T> getChangedPropertiesDeployedByCDK(SleeperPropertyIndex<T> propertyIndex) {
         return changes.values().stream()
                 .flatMap(diff -> diff.getProperty(propertyIndex).stream())
-                .filter(SleeperProperty::isRunCDKDeployWhenChanged)
+                .filter(SleeperProperty::isRunCdkDeployWhenChanged)
                 .collect(Collectors.toList());
     }
 

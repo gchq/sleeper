@@ -48,7 +48,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOS
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 
 public class UploadDockerImagesTest {
     private static final List<StackDockerImage> STACK_DOCKER_IMAGES = List.of(

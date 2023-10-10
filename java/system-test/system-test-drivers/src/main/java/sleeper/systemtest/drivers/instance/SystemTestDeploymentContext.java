@@ -109,7 +109,7 @@ public class SystemTestDeploymentContext {
     public void resetProperties() {
         updateProperties(properties ->
                 properties.getPropertiesIndex().getUserDefined().stream()
-                        .filter(property -> property.isEditable() && !property.isRunCDKDeployWhenChanged())
+                        .filter(property -> property.isEditable() && !property.isRunCdkDeployWhenChanged())
                         .forEach(properties::unset));
     }
 

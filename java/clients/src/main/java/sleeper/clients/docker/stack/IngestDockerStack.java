@@ -26,7 +26,7 @@ import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class IngestDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;

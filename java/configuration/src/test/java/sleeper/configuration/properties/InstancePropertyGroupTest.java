@@ -19,7 +19,7 @@ package sleeper.configuration.properties;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 
 import java.util.List;
@@ -36,6 +36,6 @@ public class InstancePropertyGroupTest {
         // Then
         assertThat(propertyList)
                 .containsAll(UserDefinedInstanceProperty.getAll())
-                .containsAll(SystemDefinedInstanceProperty.getAll());
+                .containsAll(CdkDefinedInstanceProperty.getAll());
     }
 }

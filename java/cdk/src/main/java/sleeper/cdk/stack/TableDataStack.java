@@ -31,7 +31,7 @@ import java.util.Locale;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 public class TableDataStack extends NestedStack {
 

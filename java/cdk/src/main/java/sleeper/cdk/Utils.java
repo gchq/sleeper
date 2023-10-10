@@ -28,7 +28,7 @@ import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
@@ -53,8 +53,8 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.AW
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 
 /**
  * Collection of utility methods related to the CDK deployment
@@ -189,7 +189,7 @@ public class Utils {
         }
         String deployedVersion = properties.get(VERSION);
         String localVersion = SleeperVersion.getVersion();
-        SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
+        CdkDefinedInstanceProperty.getAll().forEach(properties::unset);
 
         if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
                 && deployedVersion != null

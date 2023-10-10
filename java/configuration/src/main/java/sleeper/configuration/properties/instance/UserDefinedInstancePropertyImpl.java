@@ -31,7 +31,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     private final Predicate<String> validationPredicate;
     private final String description;
     private final PropertyGroup propertyGroup;
-    private final boolean runCDKDeployWhenChanged;
+    private final boolean runCdkDeployWhenChanged;
     private final boolean editable;
     private final boolean includedInTemplate;
     private final boolean includedInBasicTemplate;
@@ -42,7 +42,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
-        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
+        runCdkDeployWhenChanged = builder.runCdkDeployWhenChanged;
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
         includedInBasicTemplate = Optional.ofNullable(builder.includedInBasicTemplate)
@@ -87,8 +87,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
-        return runCDKDeployWhenChanged;
+    public boolean isRunCdkDeployWhenChanged() {
+        return runCdkDeployWhenChanged;
     }
 
     @Override
@@ -112,7 +112,7 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
         private Predicate<String> validationPredicate = s -> true;
         private String description;
         private PropertyGroup propertyGroup;
-        private boolean runCDKDeployWhenChanged;
+        private boolean runCdkDeployWhenChanged;
         private boolean editable = true;
         private boolean includedInTemplate = true;
         private Boolean includedInBasicTemplate;
@@ -146,8 +146,8 @@ class UserDefinedInstancePropertyImpl implements UserDefinedInstanceProperty {
             return this;
         }
 
-        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
-            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+        public Builder runCdkDeployWhenChanged(boolean runCdkDeployWhenChanged) {
+            this.runCdkDeployWhenChanged = runCdkDeployWhenChanged;
             return this;
         }
 

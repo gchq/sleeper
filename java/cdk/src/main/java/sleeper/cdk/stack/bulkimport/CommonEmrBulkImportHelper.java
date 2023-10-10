@@ -40,7 +40,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 
 import java.util.List;
 import java.util.Locale;
@@ -52,7 +52,7 @@ import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class CommonEmrBulkImportHelper {
 
@@ -87,7 +87,7 @@ public class CommonEmrBulkImportHelper {
     // Queue for messages to trigger jobs - note that each concrete substack
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
-    public Queue createJobQueue(SystemDefinedInstanceProperty jobQueueUrl, SystemDefinedInstanceProperty jobQueueArn, ITopic errorsTopic) {
+    public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn, ITopic errorsTopic) {
         String instanceId = instanceProperties.get(ID);
         Queue queueForDLs = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobDeadLetterQueue")

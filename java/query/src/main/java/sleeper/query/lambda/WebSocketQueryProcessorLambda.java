@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -58,7 +58,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         this(
                 AmazonS3ClientBuilder.defaultClient(),
                 AmazonSQSClientBuilder.defaultClient(),
-                System.getenv(SystemDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable())
+                System.getenv(CdkDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable())
         );
     }
 
@@ -66,7 +66,7 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
         this.sqsClient = sqsClient;
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
-        this.queryQueueUrl = instanceProperties.get(SystemDefinedInstanceProperty.QUERY_QUEUE_URL);
+        this.queryQueueUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.serde = new QuerySerDe(tablePropertiesProvider);
     }

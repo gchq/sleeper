@@ -64,7 +64,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,8 +79,8 @@ import static sleeper.configuration.properties.instance.CommonProperty.QUEUE_VIS
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 
 /**
  * A {@link NestedStack} to handle queries. This consists of a {@link Queue} that
@@ -149,10 +149,10 @@ public class QueryStack extends NestedStack {
                 .deadLetterQueue(queriesDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_QUEUE_URL, queriesQueue.getQueueUrl());
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_QUEUE_ARN, queriesQueue.getQueueArn());
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_DLQ_URL, queueForDLs.getQueueUrl());
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_DLQ_ARN, queueForDLs.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_URL, queriesQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_QUEUE_ARN, queriesQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_URL, queueForDLs.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_DLQ_ARN, queueForDLs.getQueueArn());
 
         // Queue for results
         String queryResultsQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-QueryResultsQ");
@@ -161,8 +161,8 @@ public class QueryStack extends NestedStack {
                 .queueName(queryResultsQueueName)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, queryResultsQueue.getQueueUrl());
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_ARN, queryResultsQueue.getQueueArn());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, queryResultsQueue.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_ARN, queryResultsQueue.getQueueArn());
 
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
@@ -177,7 +177,7 @@ public class QueryStack extends NestedStack {
                 .lifecycleRules(Collections.singletonList(
                         LifecycleRule.builder().expiration(Duration.days(instanceProperties.getInt(QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS))).build()))
                 .build();
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET, queryResultsBucket.getBucketName());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, queryResultsBucket.getBucketName());
 
         CfnOutputProps queriesQueueOutputNameProps = new CfnOutputProps.Builder()
                 .value(queriesQueue.getQueueName())
@@ -265,7 +265,7 @@ public class QueryStack extends NestedStack {
                 .build();
         new CfnOutput(this, QUERY_LAMBDA_ROLE_ARN, queryLambdaRoleOutputProps);
         IRole role = Objects.requireNonNull(queryExecutorLambda.getRole());
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
 
         this.setupWebSocketApi(queryJar, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
 
@@ -347,7 +347,7 @@ public class QueryStack extends NestedStack {
         new CfnOutput(this, "WebSocketApiUrl", CfnOutputProps.builder()
                 .value(stage.getUrl())
                 .build());
-        instanceProperties.set(SystemDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL, stage.getUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL, stage.getUrl());
     }
 
     public Grant grantAccessToWebSocketQueryApi(IGrantable identity) {

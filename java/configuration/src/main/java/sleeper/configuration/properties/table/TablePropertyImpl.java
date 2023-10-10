@@ -86,7 +86,7 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
+    public boolean isRunCdkDeployWhenChanged() {
         return false;
     }
 

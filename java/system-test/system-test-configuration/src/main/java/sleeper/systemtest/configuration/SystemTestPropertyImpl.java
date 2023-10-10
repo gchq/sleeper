@@ -30,7 +30,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final String description;
-    private final boolean runCDKDeployWhenChanged;
+    private final boolean runCdkDeployWhenChanged;
     private final boolean systemDefined;
     private final boolean editable;
 
@@ -39,7 +39,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         defaultValue = builder.defaultValue;
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
-        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
+        runCdkDeployWhenChanged = builder.runCdkDeployWhenChanged;
         systemDefined = builder.systemDefined;
         editable = builder.editable;
     }
@@ -78,12 +78,12 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
-        return runCDKDeployWhenChanged;
+    public boolean isRunCdkDeployWhenChanged() {
+        return runCdkDeployWhenChanged;
     }
 
     @Override
-    public boolean isSystemDefined() {
+    public boolean isSetByCdk() {
         return systemDefined;
     }
 
@@ -101,7 +101,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description;
-        private boolean runCDKDeployWhenChanged;
+        private boolean runCdkDeployWhenChanged;
         private boolean systemDefined;
         private boolean editable;
         private Consumer<SystemTestProperty> addToIndex;
@@ -129,8 +129,8 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
             return this;
         }
 
-        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
-            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+        public Builder runCdkDeployWhenChanged(boolean runCdkDeployWhenChanged) {
+            this.runCdkDeployWhenChanged = runCdkDeployWhenChanged;
             return this;
         }
 

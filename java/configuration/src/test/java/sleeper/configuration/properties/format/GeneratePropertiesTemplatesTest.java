@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 
@@ -78,7 +78,7 @@ class GeneratePropertiesTemplatesTest {
     static class SystemDefinedInstanceProperties implements ArgumentsProvider {
         @Override
         public Stream<Arguments> provideArguments(ExtensionContext context) {
-            return SystemDefinedInstanceProperty.getAll().stream()
+            return CdkDefinedInstanceProperty.getAll().stream()
                     .map(Arguments::of);
         }
     }
@@ -98,7 +98,7 @@ class GeneratePropertiesTemplatesTest {
 
         @ParameterizedTest
         @ArgumentsSource(SystemDefinedInstanceProperties.class)
-        void shouldExcludeSystemDefinedProperties(SystemDefinedInstanceProperty property) {
+        void shouldExcludeSystemDefinedProperties(CdkDefinedInstanceProperty property) {
             assertThat(propertiesString)
                     .doesNotContain(property.getPropertyName() + "=");
         }
