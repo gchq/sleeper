@@ -17,6 +17,7 @@
 package sleeper.table.store.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
@@ -24,6 +25,7 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +65,7 @@ public class DynamoDBTableIdStore implements TableIdStore {
     @Override
     public TableId createTable(String tableName) throws TableAlreadyExistsException {
         TableId id = TableId.idAndName(idGenerator.get(), tableName);
-        TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
+        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
                         new TransactWriteItem().withPut(new Put()
@@ -75,12 +77,22 @@ public class DynamoDBTableIdStore implements TableIdStore {
                                 .withTableName(idIndexDynamoTableName)
                                 .withItem(DynamoDBTableIdFormat.getItem(id))
                                 .withConditionExpression("attribute_not_exists(#tableid)")
-                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD)))));
-        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-        double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Created table {} with ID {}, capacity consumed = {}",
-                tableName, id.getTableId(), totalCapacity);
-        return id;
+                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Created table {} with ID {}, capacity consumed = {}",
+                    tableName, id.getTableId(), totalCapacity);
+            return id;
+        } catch (TransactionCanceledException e) {
+            CancellationReason reason = e.getCancellationReasons().get(0);
+            if ("ConditionalCheckFailed".equals(reason.getCode())) {
+                throw new TableAlreadyExistsException(tableName);
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override

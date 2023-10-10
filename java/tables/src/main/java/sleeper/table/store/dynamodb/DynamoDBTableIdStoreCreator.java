@@ -48,15 +48,11 @@ public class DynamoDBTableIdStoreCreator {
 
     public void create() {
         initialiseTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
-                List.of(new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S),
-                        new AttributeDefinition(TABLE_ID_FIELD, ScalarAttributeType.S)),
-                List.of(new KeySchemaElement(TABLE_NAME_FIELD, KeyType.HASH),
-                        new KeySchemaElement(TABLE_ID_FIELD, KeyType.RANGE)));
+                List.of(new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
+                List.of(new KeySchemaElement(TABLE_NAME_FIELD, KeyType.HASH)));
         initialiseTable(instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
-                List.of(new AttributeDefinition(TABLE_ID_FIELD, ScalarAttributeType.S),
-                        new AttributeDefinition(TABLE_NAME_FIELD, ScalarAttributeType.S)),
-                List.of(new KeySchemaElement(TABLE_ID_FIELD, KeyType.HASH),
-                        new KeySchemaElement(TABLE_NAME_FIELD, KeyType.RANGE)));
+                List.of(new AttributeDefinition(TABLE_ID_FIELD, ScalarAttributeType.S)),
+                List.of(new KeySchemaElement(TABLE_ID_FIELD, KeyType.HASH)));
     }
 
     private void initialiseTable(

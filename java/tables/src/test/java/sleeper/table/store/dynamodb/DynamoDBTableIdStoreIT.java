@@ -17,14 +17,18 @@
 package sleeper.table.store.dynamodb;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdStore;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class DynamoDBTableIdStoreIT extends DynamoDBTestBase {
@@ -37,11 +41,23 @@ public class DynamoDBTableIdStoreIT extends DynamoDBTestBase {
         DynamoDBTableIdStoreCreator.create(dynamoDBClient, instanceProperties);
     }
 
-    @Test
-    void shouldCreateATable() {
-        TableId tableId = store.createTable("test-table");
+    @Nested
+    @DisplayName("Create a table")
+    class CreateTable {
+        @Test
+        void shouldCreateATable() {
+            TableId tableId = store.createTable("test-table");
 
-        assertThat(store.streamAllTables())
-                .containsExactly(tableId);
+            assertThat(store.streamAllTables())
+                    .containsExactly(tableId);
+        }
+
+        @Test
+        void shouldFailToCreateATableWhichAlreadyExists() {
+            store.createTable("duplicate-table");
+
+            assertThatThrownBy(() -> store.createTable("duplicate-table"))
+                    .isInstanceOf(TableAlreadyExistsException.class);
+        }
     }
 }
