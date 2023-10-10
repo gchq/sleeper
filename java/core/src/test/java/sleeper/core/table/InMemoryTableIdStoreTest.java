@@ -45,6 +45,22 @@ public class InMemoryTableIdStoreTest {
     }
 
     @Test
+    void shouldGetTableByName() {
+        TableId tableId = store.createTable("test-table");
+
+        assertThat(store.getTableByName("test-table"))
+                .isEqualTo(tableId);
+    }
+
+    @Test
+    void shouldGetTableById() {
+        TableId tableId = store.createTable("test-table");
+
+        assertThat(store.getTableById(tableId.getTableId()))
+                .isEqualTo(tableId);
+    }
+
+    @Test
     void shouldGenerateNumericTableIds() {
         TableId tableIdA = store.createTable("table-a");
         TableId tableIdB = store.createTable("table-b");
@@ -70,21 +86,5 @@ public class InMemoryTableIdStoreTest {
                         "other-table",
                         "some-table",
                         "this-table");
-    }
-
-    @Test
-    void shouldGetTableByName() {
-        TableId tableId = store.createTable("test-table");
-
-        assertThat(store.getTableByName("test-table"))
-                .isEqualTo(tableId);
-    }
-
-    @Test
-    void shouldGetTableById() {
-        TableId tableId = store.createTable("test-table");
-
-        assertThat(store.getTableById(tableId.getTableId()))
-                .isEqualTo(tableId);
     }
 }
