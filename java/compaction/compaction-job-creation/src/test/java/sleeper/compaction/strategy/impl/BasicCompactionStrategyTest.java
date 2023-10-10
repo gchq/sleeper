@@ -71,7 +71,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -79,7 +78,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo2);
 
@@ -129,7 +127,6 @@ public class BasicCompactionStrategyTest {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords(1_000_000L - i * 100L)
-                    .rowKeyTypes(new IntType())
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -183,7 +180,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -191,7 +187,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId(partition.getId())
                 .numberOfRecords(100L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo2);
 
@@ -242,7 +237,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(100L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -250,7 +244,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(200L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo2);
         FileInfo fileInfo3 = FileInfo.builder()
@@ -258,7 +251,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(300L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo3);
         FileInfo fileInfo4 = FileInfo.builder()
@@ -266,7 +258,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("left")
                 .numberOfRecords(400L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo4);
         FileInfo fileInfo5 = FileInfo.builder()
@@ -274,7 +265,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(500L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo5);
         FileInfo fileInfo6 = FileInfo.builder()
@@ -282,7 +272,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("right")
                 .numberOfRecords(600L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo6);
 
@@ -380,7 +369,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo1);
         FileInfo fileInfo2 = FileInfo.builder()
@@ -388,7 +376,6 @@ public class BasicCompactionStrategyTest {
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(200L)
-                .rowKeyTypes(new IntType())
                 .build();
         fileInfos.add(fileInfo2);
 

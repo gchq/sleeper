@@ -140,7 +140,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
@@ -152,7 +151,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new LongType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -166,7 +164,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithSingleRowKeyType(new ByteArrayType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new ByteArrayType())
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
@@ -178,7 +175,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -192,7 +188,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithTwoRowKeyTypes(new ByteArrayType(), new ByteArrayType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new ByteArrayType(), new ByteArrayType())
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
@@ -204,7 +199,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new ByteArrayType(), new ByteArrayType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -218,7 +212,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithTwoRowKeyTypes(new LongType(), new StringType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType(), new StringType())
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
@@ -230,7 +223,6 @@ public class DynamoDBStateStoreIT {
 
             // Then
             assertThat(dynamoDBStateStore.getActiveFiles()).singleElement().satisfies(found -> {
-                assertThat(found.getRowKeyTypes()).containsExactly(new LongType(), new StringType());
                 assertThat(found.getFilename()).isEqualTo("abc");
                 assertThat(found.getFileStatus()).isEqualTo(FileInfo.FileStatus.ACTIVE);
                 assertThat(found.getPartitionId()).isEqualTo("1");
@@ -247,7 +239,6 @@ public class DynamoDBStateStoreIT {
             Set<FileInfo> expected = new HashSet<>();
             for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dynamo are paged
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file-" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + i)
@@ -273,7 +264,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
                     .build();
@@ -289,7 +279,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("abc")
                     .partitionId("1")
                     .build();
@@ -305,7 +294,6 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("abc")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .build();
@@ -321,21 +309,18 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
             DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo1 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("1")
                     .build();
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("2")
                     .build();
             dynamoDBStateStore.addFile(fileInfo2);
             FileInfo fileInfo3 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file3")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("3")
@@ -360,7 +345,6 @@ public class DynamoDBStateStoreIT {
             Set<FileInfo> expected = new HashSet<>();
             for (int i = 0; i < 10000; i++) { // 10,000 figure chosen to ensure results returned from Dyanmo are paged
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file-" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + i)
@@ -386,25 +370,21 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithKeyAndValueWithTypes(new LongType(), new StringType());
             DynamoDBStateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo file1 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P1")
                     .build();
             FileInfo file2 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P2")
                     .build();
             FileInfo file3 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file3")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P1")
                     .build();
             FileInfo file4 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file4")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("P2")
@@ -434,7 +414,6 @@ public class DynamoDBStateStoreIT {
             Partition partition = stateStore.getAllPartitions().get(0);
             //  - A file which should be garbage collected immediately
             FileInfo fileInfo1 = FileInfo.builder()
-                    .rowKeyTypes(new IntType())
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .partitionId(partition.getId())
@@ -445,7 +424,6 @@ public class DynamoDBStateStoreIT {
             stateStore.addFile(fileInfo1);
             //  - An active file which should not be garbage collected
             FileInfo fileInfo2 = FileInfo.builder()
-                    .rowKeyTypes(new IntType())
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
@@ -457,7 +435,6 @@ public class DynamoDBStateStoreIT {
             //  - A file which is ready for garbage collection but which should not be garbage collected now as it has only
             //      just been marked as ready for GC
             FileInfo fileInfo3 = FileInfo.builder()
-                    .rowKeyTypes(new IntType())
                     .filename("file3")
                     .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .partitionId(partition.getId())
@@ -482,14 +459,12 @@ public class DynamoDBStateStoreIT {
             Schema schema = schemaWithSingleRowKeyType(new LongType());
             StateStore dynamoDBStateStore = getStateStore(schema);
             FileInfo fileInfo1 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file1")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("4")
                     .build();
             dynamoDBStateStore.addFile(fileInfo1);
             FileInfo fileInfo2 = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file2")
                     .fileStatus(FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION)
                     .partitionId("5")
@@ -518,7 +493,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
@@ -527,7 +501,6 @@ public class DynamoDBStateStoreIT {
                 dynamoDBStateStore.addFile(fileInfo);
             }
             FileInfo newFileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -551,7 +524,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
@@ -560,13 +532,11 @@ public class DynamoDBStateStoreIT {
                 dynamoDBStateStore.addFile(fileInfo);
             }
             FileInfo newLeftFileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file-left-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
                     .build();
             FileInfo newRightFileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file-right-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -590,7 +560,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> filesToMoveToReadyForGC = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("7")
@@ -604,7 +573,6 @@ public class DynamoDBStateStoreIT {
             filesToMoveToReadyForGC.add(3, updatedFileInfo);
             dynamoDBStateStore.addFiles(filesToMoveToReadyForGC);
             FileInfo newFileInfo = FileInfo.builder()
-                    .rowKeyTypes(new LongType())
                     .filename("file-new")
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId("7")
@@ -624,7 +592,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("8")
@@ -653,7 +620,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("9")
@@ -678,7 +644,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> files = new ArrayList<>();
             for (int i = 1; i < 5; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("8")
@@ -790,7 +755,6 @@ public class DynamoDBStateStoreIT {
             List<FileInfo> files = new ArrayList<>();
             for (int i = 0; i < 10; i++) {
                 FileInfo fileInfo = FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file" + i)
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
                         .partitionId("" + (i % 5))

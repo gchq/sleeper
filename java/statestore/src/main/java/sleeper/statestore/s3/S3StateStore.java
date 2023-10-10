@@ -53,7 +53,6 @@ public class S3StateStore extends DelegatingStateStore {
         super(S3FileInfoStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
                         .s3RevisionUtils(s3RevisionUtils(dynamoDB, instanceProperties, tableProperties))
-                        .rowKeyTypes(tableProperties.getSchema().getRowKeyTypes())
                         .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
                         .conf(conf)
                         .build(),

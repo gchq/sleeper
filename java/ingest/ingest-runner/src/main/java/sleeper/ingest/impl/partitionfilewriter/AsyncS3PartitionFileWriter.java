@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.impl.partitionfilewriter;
 
-import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -29,9 +28,7 @@ import software.amazon.awssdk.transfer.s3.model.FileUpload;
 import sleeper.configuration.TableUtils;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.ingest.impl.ParquetConfiguration;
 import sleeper.sketches.Sketches;
@@ -39,12 +36,13 @@ import sleeper.sketches.s3.SketchesSerDeToS3;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
+import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createFileInfo;
+import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.createQuantileSketchMap;
+import static sleeper.ingest.impl.partitionfilewriter.PartitionFileWriterUtils.updateQuantileSketchMap;
 
 /**
  * This class writes partition files to S3 in an asynchronous manner.
@@ -111,31 +109,8 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
         this.quantileSketchesS3Key = TableUtils.constructQuantileSketchesFilePath(filePathPrefix, partition, fileName);
         this.parquetWriter = parquetConfiguration.createParquetWriter(partitionParquetLocalFileName);
         LOGGER.info("Created Parquet writer for partition {}", partition.getId());
-        this.keyFieldToSketchMap = createKeyFieldToSketchMap(sleeperSchema);
+        this.keyFieldToSketchMap = createQuantileSketchMap(sleeperSchema);
         this.recordsWrittenToCurrentPartition = 0L;
-    }
-
-    /**
-     * Create a {@link FileInfo} object from the values supplied
-     *
-     * @param sleeperSchema   -
-     * @param filename        -
-     * @param partitionId     -
-     * @param numberOfRecords -
-     * @return The {@link FileInfo} object
-     */
-    private static FileInfo createFileInfo(
-            Schema sleeperSchema,
-            String filename,
-            String partitionId,
-            long numberOfRecords) {
-        return FileInfo.builder()
-                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
-                .filename(filename)
-                .partitionId(partitionId)
-                .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .numberOfRecords(numberOfRecords)
-                .build();
     }
 
     /**
@@ -178,41 +153,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     }
 
     /**
-     * Create a map from the name of each row-key to an empty sketch.
-     *
-     * @param sleeperSchema The schema that contains the row keys
-     * @return The map
-     */
-    private static Map<String, ItemsSketch> createKeyFieldToSketchMap(Schema sleeperSchema) {
-        return sleeperSchema.getRowKeyFields().stream()
-                .collect(Collectors.toMap(
-                        Field::getName,
-                        rowKeyField -> ItemsSketch.getInstance(1024, Comparator.naturalOrder())));
-    }
-
-    /**
-     * Update all of the sketches in the supplied map with the values taken from the supplied record.
-     *
-     * @param keyFieldToSketchMap The map to update
-     * @param sleeperSchema       The schema of the corresponding record
-     * @param record              The record to take the values from
-     */
-    private static void updateKeyFieldToSketchMap(
-            Map<String, ItemsSketch> keyFieldToSketchMap,
-            Schema sleeperSchema,
-            Record record) {
-        for (Field rowKeyField : sleeperSchema.getRowKeyFields()) {
-            if (rowKeyField.getType() instanceof ByteArrayType) {
-                byte[] value = (byte[]) record.get(rowKeyField.getName());
-                keyFieldToSketchMap.get(rowKeyField.getName()).update(ByteArray.wrap(value));
-            } else {
-                Object value = record.get(rowKeyField.getName());
-                keyFieldToSketchMap.get(rowKeyField.getName()).update(value);
-            }
-        }
-    }
-
-    /**
      * Append a record to the partition. This writes the record to a local Parquet file and does not upload it to S3.
      *
      * @param record The record to append
@@ -221,7 +161,7 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
     @Override
     public void append(Record record) throws IOException {
         parquetWriter.write(record);
-        updateKeyFieldToSketchMap(keyFieldToSketchMap, sleeperSchema, record);
+        updateQuantileSketchMap(sleeperSchema, keyFieldToSketchMap, record);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());
@@ -250,7 +190,6 @@ public class AsyncS3PartitionFileWriter implements PartitionFileWriter {
                 hadoopConfiguration);
         LOGGER.debug("Wrote sketches to local file {}", quantileSketchesLocalFileName);
         FileInfo fileInfo = createFileInfo(
-                sleeperSchema,
                 String.format("s3a://%s/%s", s3BucketName, partitionParquetS3Key),
                 partition.getId(),
                 recordsWrittenToCurrentPartition);
