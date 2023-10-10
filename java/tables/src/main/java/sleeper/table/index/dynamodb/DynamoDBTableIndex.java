@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.table.store.dynamodb;
+package sleeper.table.index.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;

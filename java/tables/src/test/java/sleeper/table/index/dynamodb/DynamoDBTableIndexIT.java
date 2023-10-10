@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.table.store.dynamodb;
+package sleeper.table.index.dynamodb;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
