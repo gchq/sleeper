@@ -16,6 +16,7 @@
 
 package sleeper.core.table;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -24,7 +25,7 @@ import java.util.stream.Stream;
 public class InMemoryTableIdStore implements TableIdStore {
 
     private final Map<String, TableId> idByName = new TreeMap<>();
-    private final Map<String, TableId> nameById = new TreeMap<>();
+    private final Map<String, TableId> nameById = new HashMap<>();
     private int nextIdNumber = 1;
 
     @Override

@@ -28,6 +28,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
+import com.amazonaws.services.dynamodbv2.model.Tag;
 import com.amazonaws.services.dynamodbv2.model.TimeToLiveSpecification;
 import com.amazonaws.services.dynamodbv2.model.UpdateTimeToLiveRequest;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DynamoDBUtils {
@@ -57,15 +59,30 @@ public class DynamoDBUtils {
             String tableName,
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements) {
+        initialiseTable(dynamoDB, tableName, attributeDefinitions, keySchemaElements, Map.of());
+    }
 
+    public static void initialiseTable(
+            AmazonDynamoDB dynamoDB,
+            String tableName,
+            List<AttributeDefinition> attributeDefinitions,
+            List<KeySchemaElement> keySchemaElements,
+            Map<String, String> tags) {
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
                 .withAttributeDefinitions(attributeDefinitions)
                 .withKeySchema(keySchemaElements)
                 .withBillingMode(BillingMode.PAY_PER_REQUEST);
+        String message = "";
+        if (!tags.isEmpty()) {
+            request = request.withTags(tags.entrySet().stream()
+                    .map(e -> new Tag().withKey(e.getKey()).withValue(e.getValue()))
+                    .collect(Collectors.toUnmodifiableList()));
+            message = " with tags " + tags;
+        }
         try {
             CreateTableResult result = dynamoDB.createTable(request);
-            LOGGER.info("Created table {}", result.getTableDescription().getTableName());
+            LOGGER.info("Created table {} {}", result.getTableDescription().getTableName(), message);
         } catch (ResourceInUseException e) {
             if (e.getMessage().contains("Table already exists")) {
                 LOGGER.warn("Table {} already exists", tableName);

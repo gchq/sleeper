@@ -45,6 +45,16 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
+    // Tables
+    SystemDefinedInstanceProperty TABLE_NAME_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.name.index.dynamo.table")
+            .description("The name of the DynamoDB table indexing tables by their name.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+    SystemDefinedInstanceProperty TABLE_ID_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.id.index.dynamo.table")
+            .description("The name of the DynamoDB table indexing tables by their ID.")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     // DynamoDBStateStore
     SystemDefinedInstanceProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
