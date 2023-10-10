@@ -17,6 +17,7 @@
 package sleeper.core.table;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -44,12 +45,12 @@ public class InMemoryTableIdStore implements TableIdStore {
     }
 
     @Override
-    public TableId getTableByName(String tableName) {
-        return idByName.get(tableName);
+    public Optional<TableId> getTableByName(String tableName) {
+        return Optional.ofNullable(idByName.get(tableName));
     }
 
     @Override
-    public TableId getTableById(String tableId) {
-        return nameById.get(tableId);
+    public Optional<TableId> getTableById(String tableId) {
+        return Optional.ofNullable(nameById.get(tableId));
     }
 }

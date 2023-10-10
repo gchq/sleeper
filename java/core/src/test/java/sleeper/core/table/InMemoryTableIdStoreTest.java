@@ -49,7 +49,15 @@ public class InMemoryTableIdStoreTest {
         TableId tableId = store.createTable("test-table");
 
         assertThat(store.getTableByName("test-table"))
-                .isEqualTo(tableId);
+                .contains(tableId);
+    }
+
+    @Test
+    void shouldGetNoTableByName() {
+        store.createTable("existing-table");
+
+        assertThat(store.getTableByName("not-a-table"))
+                .isEmpty();
     }
 
     @Test
@@ -57,7 +65,15 @@ public class InMemoryTableIdStoreTest {
         TableId tableId = store.createTable("test-table");
 
         assertThat(store.getTableById(tableId.getTableId()))
-                .isEqualTo(tableId);
+                .contains(tableId);
+    }
+
+    @Test
+    void shouldGetNoTableById() {
+        store.createTable("existing-table");
+
+        assertThat(store.getTableById("not-a-table"))
+                .isEmpty();
     }
 
     @Test

@@ -16,6 +16,7 @@
 
 package sleeper.core.table;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface TableIdStore {
@@ -23,7 +24,7 @@ public interface TableIdStore {
 
     Stream<TableId> streamAllTables();
 
-    TableId getTableByName(String tableName);
+    Optional<TableId> getTableByName(String tableName);
 
-    TableId getTableById(String tableId);
+    Optional<TableId> getTableById(String tableId);
 }
