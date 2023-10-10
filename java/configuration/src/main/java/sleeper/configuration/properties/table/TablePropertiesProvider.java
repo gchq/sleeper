@@ -16,6 +16,8 @@
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -30,11 +32,12 @@ import java.util.function.Supplier;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 
 public class TablePropertiesProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
     private final Map<String, TableProperties> tableNameToPropertiesCache;
     private final Function<String, TableProperties> getTableProperties;
     private Supplier<Instant> timeSupplier;
     private final int timeoutInMins;
-    private Instant timeout;
+    private Instant expireTime;
 
     public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
         this(s3Client, instanceProperties, Instant::now);
@@ -51,14 +54,15 @@ public class TablePropertiesProvider {
         this.tableNameToPropertiesCache = new HashMap<>();
         this.timeoutInMins = timeoutInMins;
         this.timeSupplier = timeSupplier;
-        this.timeout = timeSupplier.get().plus(Duration.ofMinutes(timeoutInMins));
+        this.expireTime = timeSupplier.get().plus(Duration.ofMinutes(timeoutInMins));
     }
 
     public TableProperties getTableProperties(String tableName) {
         Instant currentTime = timeSupplier.get();
-        if (currentTime.isAfter(timeout)) {
+        if (currentTime.isAfter(expireTime)) {
+            LOGGER.info("Table properties provider expiry time reached, clearing cache.");
             clearCache();
-            timeout = currentTime.plus(Duration.ofMinutes(timeoutInMins));
+            expireTime = currentTime.plus(Duration.ofMinutes(timeoutInMins));
         }
         return tableNameToPropertiesCache.computeIfAbsent(tableName, getTableProperties);
     }
