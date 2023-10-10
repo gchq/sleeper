@@ -17,7 +17,6 @@
 package sleeper.table.store.dynamodb;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -39,10 +38,8 @@ public class DynamoDBTableIdStoreIT extends DynamoDBTestBase {
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldCreateATable() throws InterruptedException {
+    void shouldCreateATable() {
         TableId tableId = store.createTable("test-table");
-        Thread.sleep(30000);
 
         assertThat(store.streamAllTables())
                 .containsExactly(tableId);

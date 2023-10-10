@@ -65,13 +65,13 @@ public class DynamoDBTableIdStore implements TableIdStore {
         TableId id = TableId.idAndName(idGenerator.get(), tableName);
         TransactWriteItemsResult result = dynamoDB.transactWriteItems(new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
-                .withTransactItems(new TransactWriteItem()
-                        .withPut(new Put()
+                .withTransactItems(
+                        new TransactWriteItem().withPut(new Put()
                                 .withTableName(nameIndexDynamoTableName)
                                 .withItem(DynamoDBTableIdFormat.getItem(id))
                                 .withConditionExpression("attribute_not_exists(#tablename)")
-                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD)))
-                        .withPut(new Put()
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
+                        new TransactWriteItem().withPut(new Put()
                                 .withTableName(idIndexDynamoTableName)
                                 .withItem(DynamoDBTableIdFormat.getItem(id))
                                 .withConditionExpression("attribute_not_exists(#tableid)")

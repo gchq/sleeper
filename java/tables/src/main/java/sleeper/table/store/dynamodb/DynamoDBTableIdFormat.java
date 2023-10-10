@@ -26,6 +26,8 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 
 class DynamoDBTableIdFormat {
+    private DynamoDBTableIdFormat() {
+    }
 
     static final String TABLE_NAME_FIELD = "TableName";
     static final String TABLE_ID_FIELD = "TableId";
