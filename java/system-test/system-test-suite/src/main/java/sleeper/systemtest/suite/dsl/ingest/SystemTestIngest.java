@@ -41,6 +41,11 @@ public class SystemTestIngest {
         this.sourceFiles = sourceFiles;
     }
 
+    public SystemTestIngest setType(SystemTestIngestType type) {
+        type.applyTo(instance);
+        return this;
+    }
+
     public SystemTestIngestBatcher batcher() {
         return new SystemTestIngestBatcher(this, sourceFiles, instance,
                 new IngestBatcherDriver(instance, clients.getDynamoDB(), clients.getSqs(), clients.getLambda()));

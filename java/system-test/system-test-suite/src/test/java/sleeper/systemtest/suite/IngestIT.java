@@ -17,17 +17,24 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestType;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.testutil.FileInfoSystemTestHelper.numberOfRecordsIn;
 
 @Tag("SystemTest")
 public class IngestIT {
@@ -96,5 +103,36 @@ public class IngestIT {
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().active()).hasSize(2);
+    }
+
+    @ParameterizedTest
+    @MethodSource("ingestTypesToTestWithManyRecords")
+    void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType) throws InterruptedException {
+        // Given
+        sleeper.sourceFiles()
+                .createWithNumberedRecords("file.parquet", LongStream.range(-10000, 10000));
+
+        // When
+        sleeper.ingest().setType(ingestType)
+                .byQueue().sendSourceFiles("file.parquet")
+                .invokeTask().waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(-10000, 10000)));
+        assertThat(sleeper.tableFiles().active())
+                .hasSize(1)
+                .matches(files -> numberOfRecordsIn(files) == 20_000L,
+                        "contain 20K records");
+    }
+
+    private static Stream<Arguments> ingestTypesToTestWithManyRecords() {
+        return Stream.of(
+                Arguments.of(Named.of("Direct write, backed by Arrow",
+                        SystemTestIngestType.directWriteBackedByArrow())),
+                Arguments.of(Named.of("Async write, backed by Arrow",
+                        SystemTestIngestType.asyncWriteBackedByArrow())),
+                Arguments.of(Named.of("Direct write, backed by ArrayList",
+                        SystemTestIngestType.directWriteBackedByArrayList())));
     }
 }
