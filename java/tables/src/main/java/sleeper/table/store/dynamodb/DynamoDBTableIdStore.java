@@ -38,6 +38,7 @@ import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdStore;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,7 +104,8 @@ public class DynamoDBTableIdStore implements TableIdStore {
     @Override
     public Stream<TableId> streamAllTables() {
         return streamPagedItems(dynamoDB, new ScanRequest().withTableName(nameIndexDynamoTableName))
-                .map(DynamoDBTableIdFormat::readItem);
+                .map(DynamoDBTableIdFormat::readItem)
+                .sorted(Comparator.comparing(TableId::getTableName));
     }
 
     @Override

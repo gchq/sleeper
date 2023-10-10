@@ -97,4 +97,39 @@ public class DynamoDBTableIdStoreIT extends DynamoDBTestBase {
                     .isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("List tables")
+    class ListTables {
+
+        @Test
+        void shouldGetTablesOrderedByName() {
+            store.createTable("some-table");
+            store.createTable("a-table");
+            store.createTable("this-table");
+            store.createTable("other-table");
+
+            assertThat(store.streamAllTables())
+                    .extracting(TableId::getTableName)
+                    .containsExactly(
+                            "a-table",
+                            "other-table",
+                            "some-table",
+                            "this-table");
+        }
+
+        @Test
+        void shouldGetTableIds() {
+            TableId table1 = store.createTable("first-table");
+            TableId table2 = store.createTable("second-table");
+
+            assertThat(store.streamAllTables())
+                    .containsExactly(table1, table2);
+        }
+
+        @Test
+        void shouldGetNoTables() {
+            assertThat(store.streamAllTables()).isEmpty();
+        }
+    }
 }
