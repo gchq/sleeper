@@ -143,14 +143,14 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .lastStateStoreUpdate(stateStoreUpdateTime)
                 .schema(recordListAndSchema.sleeperSchema)
                 .build();
-        FileInfo leftFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_left/leftFile1.parquet", 7908, -10000L, -2L);
-        FileInfo leftFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_left/leftFile2.parquet", 2092, -9998L, -1L);
-        FileInfo rightFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_right/rightFile1.parquet", 7791, 1L, 9998L);
-        FileInfo rightFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_right/rightFile2.parquet", 2209, 0L, 9999L);
+        FileInfo leftFile1 = fileInfoFactory.partitionFile("left",
+                parameters.getLocalFilePrefix() + "/partition_left/leftFile1.parquet", 7908);
+        FileInfo leftFile2 = fileInfoFactory.partitionFile("left",
+                parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet", 2092);
+        FileInfo rightFile1 = fileInfoFactory.partitionFile("right",
+                parameters.getLocalFilePrefix() + "/partition_right/rightFile1.parquet", 7791);
+        FileInfo rightFile2 = fileInfoFactory.partitionFile("right",
+                parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet", 2209);
 
         List<Record> leftFile1Records = readRecordsFromPartitionDataFile(
                 recordListAndSchema.sleeperSchema, leftFile1, configuration);
