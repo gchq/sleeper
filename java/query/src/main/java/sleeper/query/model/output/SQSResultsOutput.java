@@ -34,8 +34,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_RESULTS_BATCH_SIZE;
 
 /**
  * An implementation of {@link ResultsOutput} that writes results to an SQS queue.

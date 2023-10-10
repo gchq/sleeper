@@ -60,9 +60,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllFilesHaveJobId;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers

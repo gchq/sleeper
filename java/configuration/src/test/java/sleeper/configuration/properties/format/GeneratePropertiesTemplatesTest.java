@@ -26,8 +26,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 

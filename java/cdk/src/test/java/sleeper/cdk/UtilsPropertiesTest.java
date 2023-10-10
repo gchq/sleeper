@@ -34,9 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedInstanceProperties;
 import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.SleeperVersion.getVersion;
 

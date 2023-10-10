@@ -49,11 +49,11 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import java.util.Locale;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;

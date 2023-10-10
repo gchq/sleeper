@@ -38,9 +38,9 @@ import sleeper.utils.HadoopConfigurationProvider;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 
 /**
  * This is triggered via a periodic Cloudwatch rule. It runs

@@ -18,8 +18,8 @@ package sleeper.configuration.properties;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
 
 import java.util.List;

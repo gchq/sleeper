@@ -52,8 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 
 public class SingleFileWritingIterator implements Iterator<Row> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleFileWritingIterator.class);

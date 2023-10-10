@@ -39,8 +39,8 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Locale;
@@ -49,10 +49,10 @@ import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class CommonEmrBulkImportHelper {
 

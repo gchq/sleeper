@@ -33,10 +33,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_PAGE_SIZE;
 import static sleeper.configuration.properties.instance.QueryProperty.DEFAULT_RESULTS_ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.io.parquet.record.ParquetRecordWriterFactory.parquetRecordWriterBuilder;
 
 /**

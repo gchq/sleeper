@@ -30,11 +30,11 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
 public class TableDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;

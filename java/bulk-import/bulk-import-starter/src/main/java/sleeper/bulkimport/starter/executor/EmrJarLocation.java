@@ -16,8 +16,8 @@
 
 package sleeper.bulkimport.starter.executor;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 

@@ -25,8 +25,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class DirectPartitionFileWriterFactory implements PartitionFileWriterFactory {

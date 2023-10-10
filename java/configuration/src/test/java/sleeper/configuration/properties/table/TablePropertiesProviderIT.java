@@ -18,8 +18,8 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
+import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

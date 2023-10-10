@@ -37,10 +37,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Collections;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULES;
+import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(Construct scope,
