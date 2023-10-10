@@ -18,17 +18,11 @@ package sleeper.core.table;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Tests:
- * - Create a table
- * - Fail to create a table which already exists
- * - Generate numeric ID
- * - Fix generated table ID (?)
- * - Make table name same as ID (?)
- */
 public class InMemoryTableIdStoreTest {
 
     private final TableIdStore store = new InMemoryTableIdStore();
@@ -46,5 +40,14 @@ public class InMemoryTableIdStoreTest {
         store.createTableGetId("duplicate-table");
         assertThatThrownBy(() -> store.createTableGetId("duplicate-table"))
                 .isInstanceOf(TableAlreadyExistsException.class);
+    }
+
+    @Test
+    void shouldGenerateNumericTableIds() {
+        String tableIdA = store.createTableGetId("A");
+        String tableIdB = store.createTableGetId("B");
+
+        assertThat(List.of(tableIdA, tableIdB))
+                .containsExactly("table-1", "table-2");
     }
 }

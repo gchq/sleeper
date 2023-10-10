@@ -18,19 +18,20 @@ package sleeper.core.table;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 public class InMemoryTableIdStore implements TableIdStore {
 
     private final Map<String, TableId> idByName = new TreeMap<>();
+    private int nextIdNumber = 1;
 
     @Override
     public String createTableGetId(String tableName) {
         if (idByName.containsKey(tableName)) {
             throw new TableAlreadyExistsException(tableName);
         }
-        String id = UUID.randomUUID().toString();
+        String id = "table-" + nextIdNumber;
+        nextIdNumber++;
         idByName.put(tableName, TableId.idAndName(id, tableName));
         return id;
     }
