@@ -31,7 +31,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final Predicate<String> validationPredicate;
     private final String description;
     private final boolean runCdkDeployWhenChanged;
-    private final boolean systemDefined;
+    private final boolean setByCdk;
     private final boolean editable;
 
     private SystemTestPropertyImpl(Builder builder) {
@@ -40,7 +40,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         runCdkDeployWhenChanged = builder.runCdkDeployWhenChanged;
-        systemDefined = builder.systemDefined;
+        setByCdk = builder.setByCdk;
         editable = builder.editable;
     }
 
@@ -84,12 +84,12 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
 
     @Override
     public boolean isSetByCdk() {
-        return systemDefined;
+        return setByCdk;
     }
 
     @Override
     public boolean isEditable() {
-        return editable && !systemDefined;
+        return editable && !setByCdk;
     }
 
     public String toString() {
@@ -102,7 +102,7 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private Predicate<String> validationPredicate = s -> true;
         private String description;
         private boolean runCdkDeployWhenChanged;
-        private boolean systemDefined;
+        private boolean setByCdk;
         private boolean editable;
         private Consumer<SystemTestProperty> addToIndex;
 
@@ -134,8 +134,8 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
             return this;
         }
 
-        public Builder systemDefined(boolean systemDefined) {
-            this.systemDefined = systemDefined;
+        public Builder setByCdk(boolean setByCdk) {
+            this.setByCdk = setByCdk;
             return this;
         }
 
