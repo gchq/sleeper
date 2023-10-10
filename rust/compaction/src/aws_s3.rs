@@ -83,6 +83,7 @@ impl ObjectStoreFactory {
         match src.scheme() {
             "s3" => {
                 if let Some(creds) = &self.0 {
+                    info!("Here test");
                     Ok(AmazonS3Builder::from_env()
                         .with_credentials(creds.clone())
                         .with_region(self.1.as_ref())
