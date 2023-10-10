@@ -37,7 +37,6 @@ import static sleeper.cdk.UtilsTestHelper.createUserDefinedTableProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.SleeperVersion.getVersion;
 
@@ -86,24 +85,6 @@ class UtilsPropertiesTest {
 
             // Then
             assertThat(loaded.get(BULK_IMPORT_BUCKET)).isNull();
-        }
-
-        @Test
-        void shouldClearSystemDefinedPropertiesWhenTablePropertiesAreLoaded() throws IOException {
-            // Given
-            InstanceProperties instanceProperties = createUserDefinedInstanceProperties();
-            TableProperties properties = createUserDefinedTableProperties(instanceProperties);
-            properties.set(SPLIT_POINTS_KEY, "split-points-file.txt");
-            SaveLocalProperties.saveToDirectory(tempDir, instanceProperties, Stream.of(properties));
-
-            // When
-            Stream<TableProperties> loaded = Utils.getAllTableProperties(instanceProperties,
-                    cdkContextWithPropertiesFile());
-
-            // Then
-            assertThat(loaded)
-                    .extracting(tableProperties -> tableProperties.get(SPLIT_POINTS_KEY))
-                    .containsExactly((String) null);
         }
 
         @Test

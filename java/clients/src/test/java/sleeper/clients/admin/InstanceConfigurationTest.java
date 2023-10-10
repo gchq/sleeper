@@ -59,7 +59,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_KEY;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class InstanceConfigurationTest extends AdminClientMockStoreBase {
@@ -594,35 +593,6 @@ class InstanceConfigurationTest extends AdminClientMockStoreBase {
             order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
-        }
-
-        @Test
-        void shouldRejectAChangeToASystemDefinedProperty() throws Exception {
-            // Given
-            InstanceProperties properties = createValidInstanceProperties();
-            TableProperties before = createValidTableProperties(properties);
-            before.set(SPLIT_POINTS_KEY, "split-points-before.txt");
-            TableProperties after = createValidTableProperties(properties);
-            after.set(SPLIT_POINTS_KEY, "split-points-after.txt");
-
-            // When
-            String output = editTableConfiguration(properties, before, after)
-                    .enterPrompt(ValidateChangesScreen.DISCARD_CHANGES_OPTION)
-                    .exitGetOutput();
-
-            // Then
-            assertThat(output).isEqualTo(DISPLAY_MAIN_SCREEN + CLEAR_CONSOLE + TABLE_SELECT_SCREEN +
-                    "Found changes to properties:\n" +
-                    "\n" +
-                    "sleeper.table.splits.key\n" +
-                    "The key of the S3 object in the config bucket that defines initial split points for the table.\n" +
-                    "Before: split-points-before.txt\n" +
-                    "After (cannot be changed, please undo): split-points-after.txt\n" +
-                    "\n" +
-                    "Found invalid properties:\n" +
-                    "sleeper.table.splits.key\n" +
-                    "\n" +
-                    PROPERTY_VALIDATION_SCREEN + DISPLAY_MAIN_SCREEN);
         }
 
         @Test
