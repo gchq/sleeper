@@ -37,7 +37,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIdStore;
+import sleeper.core.table.TableIndex;
 
 import java.util.Comparator;
 import java.util.List;
@@ -50,8 +50,8 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
 import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBTableIdStore implements TableIdStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTableIdStore.class);
+public class DynamoDBTableIndex implements TableIndex {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTableIndex.class);
 
     public static final String TABLE_NAME_FIELD = DynamoDBTableIdFormat.TABLE_NAME_FIELD;
     public static final String TABLE_ID_FIELD = DynamoDBTableIdFormat.TABLE_ID_FIELD;
@@ -61,7 +61,7 @@ public class DynamoDBTableIdStore implements TableIdStore {
     private final String idIndexDynamoTableName;
     private final TableIdGenerator idGenerator = new TableIdGenerator();
 
-    public DynamoDBTableIdStore(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+    public DynamoDBTableIndex(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         this.dynamoDB = dynamoDB;
         this.nameIndexDynamoTableName = instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME);
         this.idIndexDynamoTableName = instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME);

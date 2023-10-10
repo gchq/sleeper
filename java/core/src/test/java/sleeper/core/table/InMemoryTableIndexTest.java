@@ -26,9 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
-public class InMemoryTableIdStoreTest {
+public class InMemoryTableIndexTest {
 
-    private final TableIdStore store = new InMemoryTableIdStore();
+    private final TableIndex store = new InMemoryTableIndex();
 
     @Nested
     @DisplayName("Create a table")

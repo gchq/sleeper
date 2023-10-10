@@ -24,17 +24,17 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
-import sleeper.core.table.TableIdStore;
+import sleeper.core.table.TableIndex;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBTableIdStoreIT extends DynamoDBTestBase {
+public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableIdStore store = new DynamoDBTableIdStore(dynamoDBClient, instanceProperties);
+    private final TableIndex store = new DynamoDBTableIndex(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     void setUp() {

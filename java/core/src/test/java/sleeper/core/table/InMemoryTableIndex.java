@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
-public class InMemoryTableIdStore implements TableIdStore {
+public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableId> idByName = new TreeMap<>();
     private final Map<String, TableId> nameById = new HashMap<>();
