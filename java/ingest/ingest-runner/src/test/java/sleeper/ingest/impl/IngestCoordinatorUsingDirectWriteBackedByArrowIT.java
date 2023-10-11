@@ -29,6 +29,7 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.ingest.testutils.TestFilesAndRecords;
 import sleeper.ingest.testutils.TestIngestType;
 
 import java.time.Instant;
@@ -41,6 +42,7 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
@@ -137,48 +139,38 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .maxNoOfBytesToWriteLocally(16 * 1024 * 1024L));
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile1 = fileInfoFactory.partitionFile("left",
-                parameters.getLocalFilePrefix() + "/partition_left/leftFile1.parquet", 7908);
-        FileInfo leftFile2 = fileInfoFactory.partitionFile("left",
-                parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet", 2092);
-        FileInfo rightFile1 = fileInfoFactory.partitionFile("right",
-                parameters.getLocalFilePrefix() + "/partition_right/rightFile1.parquet", 7791);
-        FileInfo rightFile2 = fileInfoFactory.partitionFile("right",
-                parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet", 2209);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
-        List<Record> leftFile1Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, leftFile1, configuration);
-        List<Record> leftFile2Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, leftFile2, configuration);
-        List<Record> rightFile1Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, rightFile1, configuration);
-        List<Record> rightFile2Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, rightFile2, configuration);
-        List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
-
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, leftFile2, rightFile1, rightFile2);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile1Records,
-                "key0", LongStream.range(-10000, -1));
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile2Records,
-                "key0", LongStream.range(-9998L, 0));
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile1Records,
-                "key0", LongStream.range(1L, 9999));
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile2Records,
-                "key0", LongStream.range(0, 10000));
+        assertThat(actualActiveData.getFiles())
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .containsExactlyInAnyOrder(
+                        tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile1.parquet"),
+                        tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet"),
+                        tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile1.parquet"),
+                        tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet"));
+        assertThat(actualActiveData.streamAllRecords())
+                .containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualActiveData.streamFilesWithPartitionId("left"))
+                .hasSize(2)
+                .extracting(actualActiveData::getRecordsInFile)
+                .allSatisfy(records ->
+                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(records,
+                                "key0", LongStream.range(-10_000, 0)))
+                .flatMap(records -> records)
+                .hasSize(10_000);
+        assertThat(actualActiveData.streamFilesWithPartitionId("right"))
+                .hasSize(2)
+                .extracting(actualActiveData::getRecordsInFile)
+                .allSatisfy(records ->
+                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(records,
+                                "key0", LongStream.range(0, 10_000)))
+                .flatMap(records -> records)
+                .hasSize(10_000);
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                actualActiveData.getFiles(),
                 configuration
         );
     }
