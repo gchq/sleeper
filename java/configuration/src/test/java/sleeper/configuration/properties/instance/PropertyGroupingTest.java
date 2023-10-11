@@ -96,8 +96,8 @@ class PropertyGroupingTest {
     }
 
     private static InstanceProperty systemProperty(
-            String name, PropertyGroup group, Consumer<SystemDefinedInstanceProperty> addToIndex) {
-        return SystemDefinedInstancePropertyImpl.named(name)
+            String name, PropertyGroup group, Consumer<CdkDefinedInstanceProperty> addToIndex) {
+        return CdkDefinedInstancePropertyImpl.named(name)
                 .propertyGroup(group)
                 .description("Test system property")
                 .addToIndex(addToIndex).build();

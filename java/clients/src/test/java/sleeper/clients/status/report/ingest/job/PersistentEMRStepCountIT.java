@@ -32,7 +32,7 @@ import static sleeper.clients.testutil.ClientWiremockTestHelper.wiremockEmrClien
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listActiveEmrClustersRequest;
 import static sleeper.clients.testutil.WiremockEmrTestHelper.listStepsRequestWithClusterId;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME;
 
 @WireMockTest
 class PersistentEMRStepCountIT {

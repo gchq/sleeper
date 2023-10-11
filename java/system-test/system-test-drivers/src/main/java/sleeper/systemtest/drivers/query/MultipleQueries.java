@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
  * Submits random queries to the query queue.

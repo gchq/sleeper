@@ -29,12 +29,14 @@ import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_CORES;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_EXTRA_JAVA_OPTIONS;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_DYNAMIC_ALLOCATION_ENABLED;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_CORES;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_EXTRA_JAVA_OPTIONS;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_HEARTBEAT_INTERVAL;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_INSTANCES;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY;
+import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_MEMORY_FRACTION;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_MEMORY_STORAGE_FRACTION;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_NETWORK_TIMEOUT;
@@ -43,8 +45,6 @@ import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SHUFFLE_SPILL_COMPRESS;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_SQL_SHUFFLE_PARTITIONS;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_STORAGE_LEVEL;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD;
-import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD;
 import static sleeper.configuration.properties.instance.EMRProperty.BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DRIVER_MEMORY;
 import static sleeper.configuration.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_DYNAMIC_ALLOCATION;
@@ -95,8 +95,8 @@ public class ConfigurationUtils {
         sparkConf.put("spark.executor.memory", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY));
 
         // spark.yarn properties
-        sparkConf.put("spark.yarn.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_DRIVER_MEMORY_OVERHEAD));
-        sparkConf.put("spark.yarn.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_EXECUTOR_MEMORY_OVERHEAD));
+        sparkConf.put("spark.driver.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_DRIVER_MEMORY_OVERHEAD));
+        sparkConf.put("spark.executor.memoryOverhead", instanceProperties.get(BULK_IMPORT_EMR_SPARK_EXECUTOR_MEMORY_OVERHEAD));
         sparkConf.put("spark.yarn.scheduler.reporterThread.maxFailures", instanceProperties.get(BULK_IMPORT_EMR_SPARK_YARN_SCHEDULER_REPORTER_THREAD_MAX_FAILURES));
 
         // spark.default properties
@@ -143,7 +143,7 @@ public class ConfigurationUtils {
     }
 
     public static Map<String, String> getSparkServerlessConfigurationFromInstanceProperties(InstanceProperties instanceProperties,
-                                                                                  EmrInstanceArchitecture arch) {
+                                                                                            EmrInstanceArchitecture arch) {
         Map<String, String> sparkConf = new HashMap<>();
         // spark.driver properties
         sparkConf.put("spark.driver.cores", instanceProperties.get(BULK_IMPORT_EMR_SERVERLESS_EXECUTOR_CORES));

@@ -28,12 +28,12 @@ public interface CompactionProperty {
             .description("The name of the repository for the compaction container. The Docker image from the compaction-job-execution module " +
                     "should have been uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the compaction job queue so that they are not processed by other processes.\n" +
@@ -45,18 +45,18 @@ public interface CompactionProperty {
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.creation.memory")
             .description("The amount of memory for the lambda that creates compaction jobs.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.creation.timeout.seconds")
             .description("The timeout for the lambda that creates compaction jobs in seconds.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -66,37 +66,37 @@ public interface CompactionProperty {
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_CPU_ARCHITECTURE = Index.propertyBuilder("sleeper.compaction.task.cpu.architecture")
             .description("The CPU architecture to run compaction tasks on. Valid values are X86_64 and ARM64.\n" +
                     "See Task CPU architecture at https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html")
             .defaultValue("X86_64")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_CPU = Index.propertyBuilder("sleeper.compaction.task.arm.cpu")
             .description("The CPU for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory")
             .description("The memory for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_CPU = Index.propertyBuilder("sleeper.compaction.task.x86.cpu")
             .description("The CPU for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory")
             .description("The memory for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")
@@ -138,7 +138,7 @@ public interface CompactionProperty {
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.status.ttl")
             .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")

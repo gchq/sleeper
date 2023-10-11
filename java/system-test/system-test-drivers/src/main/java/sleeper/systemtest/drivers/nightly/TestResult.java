@@ -20,18 +20,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class TestResult {
     private final String testName;
     private final int exitCode;
     private final String instanceId;
+    private final Path siteFile;
     private final List<Path> logFiles;
 
     private TestResult(Builder builder) {
-        testName = builder.testName;
+        testName = Objects.requireNonNull(builder.testName, "testName must not be null");
         exitCode = builder.exitCode;
         instanceId = builder.instanceId;
+        siteFile = builder.siteFile;
         logFiles = builder.logFiles;
         Collections.sort(logFiles);
     }
@@ -40,8 +43,8 @@ public class TestResult {
         return new Builder();
     }
 
-    public Stream<Path> streamLogFiles() {
-        return logFiles.stream();
+    public Stream<Path> filesToUpload() {
+        return Stream.concat(Optional.ofNullable(siteFile).stream(), logFiles.stream());
     }
 
     public String getTestName() {
@@ -57,35 +60,20 @@ public class TestResult {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-
-        TestResult that = (TestResult) o;
-
-        if (exitCode != that.exitCode) {
-            return false;
-        }
-        if (!Objects.equals(testName, that.testName)) {
-            return false;
-        }
-        if (!Objects.equals(instanceId, that.instanceId)) {
-            return false;
-        }
-        return logFiles.equals(that.logFiles);
+        TestResult that = (TestResult) object;
+        return exitCode == that.exitCode && Objects.equals(testName, that.testName) && Objects.equals(instanceId, that.instanceId) && Objects.equals(siteFile, that.siteFile) && Objects.equals(logFiles, that.logFiles);
     }
 
     @Override
     public int hashCode() {
-        int result = testName != null ? testName.hashCode() : 0;
-        result = 31 * result + exitCode;
-        result = 31 * result + (instanceId != null ? instanceId.hashCode() : 0);
-        result = 31 * result + logFiles.hashCode();
-        return result;
+        return Objects.hash(testName, exitCode, instanceId, siteFile, logFiles);
     }
 
     @Override
@@ -94,6 +82,7 @@ public class TestResult {
                 "testName='" + testName + '\'' +
                 ", exitCode=" + exitCode +
                 ", instanceId='" + instanceId + '\'' +
+                ", siteFile=" + siteFile +
                 ", logFiles=" + logFiles +
                 '}';
     }
@@ -102,6 +91,7 @@ public class TestResult {
         private String testName;
         private int exitCode = 1;
         private String instanceId;
+        private Path siteFile;
         private final List<Path> logFiles = new ArrayList<>();
 
         private Builder() {
@@ -123,6 +113,11 @@ public class TestResult {
 
         public Builder instanceId(String instanceId) {
             this.instanceId = instanceId;
+            return this;
+        }
+
+        public Builder siteFile(Path siteFile) {
+            this.siteFile = siteFile;
             return this;
         }
 

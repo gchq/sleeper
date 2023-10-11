@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;

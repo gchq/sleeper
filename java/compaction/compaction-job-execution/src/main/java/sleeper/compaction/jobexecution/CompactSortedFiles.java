@@ -44,7 +44,6 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -181,8 +180,7 @@ public class CompactSortedFiles {
                 compactionJob.getOutputFile(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
-                stateStore,
-                schema.getRowKeyTypes());
+                stateStore);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
@@ -278,8 +276,7 @@ public class CompactSortedFiles {
                 compactionJob.getPartitionId(),
                 compactionJob.getChildPartitions(),
                 new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
-                stateStore,
-                schema.getRowKeyTypes());
+                stateStore);
         LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
@@ -322,12 +319,10 @@ public class CompactSortedFiles {
                                                    String outputFile,
                                                    String partitionId,
                                                    long recordsWritten,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
+                                                   StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(rowKeyTypes)
                     .filename(file)
                     .partitionId(partitionId)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -335,7 +330,6 @@ public class CompactSortedFiles {
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
         FileInfo fileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .filename(outputFile)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -356,12 +350,10 @@ public class CompactSortedFiles {
                                                    String partition,
                                                    List<String> childPartitions,
                                                    Pair<Long, Long> recordsWritten,
-                                                   StateStore stateStore,
-                                                   List<PrimitiveType> rowKeyTypes) {
+                                                   StateStore stateStore) {
         List<FileInfo> filesToBeMarkedReadyForGC = new ArrayList<>();
         for (String file : inputFiles) {
             FileInfo fileInfo = FileInfo.builder()
-                    .rowKeyTypes(rowKeyTypes)
                     .filename(file)
                     .partitionId(partition)
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -369,14 +361,12 @@ public class CompactSortedFiles {
             filesToBeMarkedReadyForGC.add(fileInfo);
         }
         FileInfo leftFileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .filename(outputFiles.getLeft())
                 .partitionId(childPartitions.get(0))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .numberOfRecords(recordsWritten.getLeft())
                 .build();
         FileInfo rightFileInfo = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .filename(outputFiles.getRight())
                 .partitionId(childPartitions.get(1))
                 .fileStatus(FileInfo.FileStatus.ACTIVE)

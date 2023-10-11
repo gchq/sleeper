@@ -23,13 +23,13 @@ import sleeper.configuration.properties.PropertyGroup;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty {
+class CdkDefinedInstancePropertyImpl implements CdkDefinedInstanceProperty {
 
     private final String propertyName;
     private final String description;
     private final PropertyGroup group;
 
-    private SystemDefinedInstancePropertyImpl(Builder builder) {
+    private CdkDefinedInstancePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
         group = Objects.requireNonNull(builder.group, "group must not be null");
@@ -68,7 +68,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
+    public boolean isRunCdkDeployWhenChanged() {
         return true;
     }
 
@@ -76,7 +76,7 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
         private String propertyName;
         private String description;
         private PropertyGroup group;
-        private Consumer<SystemDefinedInstanceProperty> addToIndex;
+        private Consumer<CdkDefinedInstanceProperty> addToIndex;
 
         private Builder() {
         }
@@ -96,15 +96,15 @@ class SystemDefinedInstancePropertyImpl implements SystemDefinedInstanceProperty
             return this;
         }
 
-        public Builder addToIndex(Consumer<SystemDefinedInstanceProperty> addToIndex) {
+        public Builder addToIndex(Consumer<CdkDefinedInstanceProperty> addToIndex) {
             this.addToIndex = addToIndex;
             return this;
         }
 
         // We want an exception to be thrown if addToIndex is null
         @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
-        public SystemDefinedInstanceProperty build() {
-            SystemDefinedInstanceProperty property = new SystemDefinedInstancePropertyImpl(this);
+        public CdkDefinedInstanceProperty build() {
+            CdkDefinedInstanceProperty property = new CdkDefinedInstancePropertyImpl(this);
             addToIndex.accept(property);
             return property;
         }

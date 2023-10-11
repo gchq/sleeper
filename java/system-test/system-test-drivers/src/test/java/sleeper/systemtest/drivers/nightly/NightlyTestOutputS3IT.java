@@ -119,7 +119,7 @@ class NightlyTestOutputS3IT {
     void shouldUploadSiteFile() throws Exception {
         // Given
         Instant startTime = Instant.parse("2023-05-04T09:45:00Z");
-        Files.writeString(tempDir.resolve("site.zip"), "test data");
+        Files.writeString(tempDir.resolve("test-site.zip"), "test data");
 
         // When
         uploadFromTempDir(startTime);
@@ -127,7 +127,7 @@ class NightlyTestOutputS3IT {
         // Then
         assertThat(streamS3Objects())
                 .contains(
-                        tuple("20230504_094500/site.zip", "test data"));
+                        tuple("20230504_094500/test-site.zip", "test data"));
     }
 
     private void setExistingSummary(Instant startTime, Map<String, Integer> statusCodeByTest) {

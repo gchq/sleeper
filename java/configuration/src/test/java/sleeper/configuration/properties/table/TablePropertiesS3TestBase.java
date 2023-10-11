@@ -22,8 +22,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -48,7 +48,7 @@ public class TablePropertiesS3TestBase {
 
     protected TableProperties createValidPropertiesWithTableNameAndBucket(String tableName, String bucketName) {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, bucketName);
+        instanceProperties.set(CdkDefinedInstanceProperty.CONFIG_BUCKET, bucketName);
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
         tableProperties.setSchema(KEY_VALUE_SCHEMA);
