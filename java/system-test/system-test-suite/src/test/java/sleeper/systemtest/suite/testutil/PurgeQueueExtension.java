@@ -35,6 +35,7 @@ public class PurgeQueueExtension implements AfterEachCallback {
     public static PurgeQueueExtension withQueue(InstanceProperty queueProperty, SystemTestIngest ingest) {
         return new PurgeQueueExtension(queueProperty, ingest::purgeQueue, () -> {
             try {
+                LOGGER.info("Waiting 60s for queue to purge");
                 Thread.sleep(60000L);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -68,7 +69,6 @@ public class PurgeQueueExtension implements AfterEachCallback {
 
     private void purgeQueueAndWait() {
         purgeQueue.accept(queueProperty);
-        LOGGER.info("Waiting 60s for {} queue to purge", queueProperty);
         waitFn.run();
     }
 }
