@@ -28,8 +28,8 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.table.index.dynamodb.DynamoDBTableIdFormat.TABLE_ID_FIELD;
 import static sleeper.table.index.dynamodb.DynamoDBTableIdFormat.TABLE_NAME_FIELD;
 

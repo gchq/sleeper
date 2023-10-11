@@ -47,11 +47,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // Tables
-    SystemDefinedInstanceProperty TABLE_NAME_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.name.index.dynamo.table")
+    CdkDefinedInstanceProperty TABLE_NAME_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.name.index.dynamo.table")
             .description("The name of the DynamoDB table indexing tables by their name.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    SystemDefinedInstanceProperty TABLE_ID_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.id.index.dynamo.table")
+    CdkDefinedInstanceProperty TABLE_ID_INDEX_DYNAMO_TABLENAME = Index.propertyBuilder("sleeper.tables.id.index.dynamo.table")
             .description("The name of the DynamoDB table indexing tables by their ID.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();

@@ -29,10 +29,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.table.index.dynamodb.DynamoDBTableIndex;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_TABLE_INDEX_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 
 public class TableIndexStack extends NestedStack {
 
