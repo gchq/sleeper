@@ -175,9 +175,9 @@ public interface CommonProperty {
             .runCDKDeployWhenChanged(true).build();
 
     UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index.propertyBuilder("sleeper.table.properties.provider.timeout.minutes")
-            .description("The timeout for when the table properties provider cache should be cleared, forcing table " +
-                    "properties to be reloaded from S3.")
-            .defaultValue("600")
+            .description("The timeout in minutes for when the table properties provider cache should be cleared, " +
+                    "forcing table properties to be reloaded from S3.")
+            .defaultValue("60")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
