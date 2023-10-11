@@ -140,6 +140,8 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
 
         // Then
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
+        TestFilesAndRecords actualLeftData = actualActiveData.getPartitionData("left");
+        TestFilesAndRecords actualRightData = actualActiveData.getPartitionData("right");
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
@@ -150,22 +152,20 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet"));
         assertThat(actualActiveData.streamAllRecords())
                 .containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualActiveData.streamFilesWithPartitionId("left"))
-                .hasSize(2)
-                .extracting(actualActiveData::getRecordsInFile)
-                .allSatisfy(records ->
-                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(records,
-                                "key0", LongStream.range(-10_000, 0)))
-                .flatMap(records -> records)
-                .hasSize(10_000);
-        assertThat(actualActiveData.streamFilesWithPartitionId("right"))
-                .hasSize(2)
-                .extracting(actualActiveData::getRecordsInFile)
-                .allSatisfy(records ->
-                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(records,
-                                "key0", LongStream.range(0, 10_000)))
-                .flatMap(records -> records)
-                .hasSize(10_000);
+        assertThat(actualLeftData)
+                .satisfies(data -> assertThat(data.getFiles()).hasSize(2))
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
+                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRecordsInFile(file),
+                                "key0", LongStream.range(-10_000, 0))))
+                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
+        assertThat(actualRightData)
+                .satisfies(data -> assertThat(data.getFiles()).hasSize(2))
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
+                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRecordsInFile(file),
+                                "key0", LongStream.range(0, 10_000))))
+                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),

@@ -63,11 +63,21 @@ public class TestFilesAndRecords {
         return recordsByFilename.values().stream().flatMap(List::stream);
     }
 
-    public Stream<FileInfo> streamFilesWithPartitionId(String partitionId) {
-        return files.stream().filter(file -> Objects.equals(partitionId, file.getPartitionId()));
-    }
-
     public List<Record> getRecordsInFile(FileInfo file) {
         return recordsByFilename.get(file.getFilename());
+    }
+
+    public int getNumRecords() {
+        return recordsByFilename.values().stream().mapToInt(List::size).sum();
+    }
+
+    public TestFilesAndRecords getPartitionData(String partitionId) {
+        List<FileInfo> partitionFiles = files.stream()
+                .filter(file -> Objects.equals(partitionId, file.getPartitionId()))
+                .collect(Collectors.toUnmodifiableList());
+        Map<String, List<Record>> partitionRecords = partitionFiles.stream()
+                .map(file -> Map.entry(file.getFilename(), recordsByFilename.get(file.getFilename())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return new TestFilesAndRecords(partitionFiles, partitionRecords);
     }
 }
