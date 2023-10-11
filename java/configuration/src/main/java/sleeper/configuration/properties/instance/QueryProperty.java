@@ -33,12 +33,12 @@ public interface QueryProperty {
             .description("The amount of memory in MB for the lambda that executes queries.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.QUERY)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.query.processor.timeout.seconds")
             .description("The timeout for the lambda that executes queries in seconds.")
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.QUERY)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.query.processor.state.refresh.period.seconds")
             .description("The frequency with which the query processing lambda refreshes its knowledge of the system state " +
                     "(i.e. the partitions and the mapping from partition to files), in seconds.")
@@ -64,7 +64,7 @@ public interface QueryProperty {
             .defaultValue("7")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty DEFAULT_RESULTS_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.query.results.rowgroup.size")
             .description("The default value of the rowgroup size used when the results of queries are written to Parquet files. The " +
                     "value given below is 8MiB. This value can be overridden using the query config.")

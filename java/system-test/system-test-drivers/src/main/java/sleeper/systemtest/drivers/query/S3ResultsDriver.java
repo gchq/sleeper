@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 
 public class S3ResultsDriver {
     private final SleeperInstanceContext instance;

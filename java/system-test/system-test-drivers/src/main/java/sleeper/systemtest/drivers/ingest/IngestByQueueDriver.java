@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
 
 public class IngestByQueueDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestByQueueDriver.class);

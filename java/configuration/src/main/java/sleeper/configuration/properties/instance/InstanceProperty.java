@@ -43,7 +43,7 @@ public interface InstanceProperty extends SleeperProperty {
         private static SleeperPropertyIndex<InstanceProperty> createInstance() {
             SleeperPropertyIndex<InstanceProperty> index = new SleeperPropertyIndex<>();
             index.addAll(UserDefinedInstanceProperty.getAll());
-            index.addAll(SystemDefinedInstanceProperty.getAll());
+            index.addAll(CdkDefinedInstanceProperty.getAll());
             return index;
         }
     }

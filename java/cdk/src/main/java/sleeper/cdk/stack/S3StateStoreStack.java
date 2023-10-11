@@ -32,9 +32,9 @@ import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 
 public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;

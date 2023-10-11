@@ -25,12 +25,12 @@ public interface GarbageCollectionProperty {
             .description("The frequency in minutes with which the garbage collector lambda is run.")
             .defaultValue("15")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
             .description("The memory in MB for the lambda function used to perform garbage collection.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.batch.size")
             .description("The size of the batch of files ready for garbage collection requested from the State Store.")
             .defaultValue("2000")
