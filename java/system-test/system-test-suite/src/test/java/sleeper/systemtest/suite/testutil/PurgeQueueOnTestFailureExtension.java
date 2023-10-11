@@ -24,33 +24,22 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
-import java.util.function.Consumer;
-
 public class PurgeQueueOnTestFailureExtension implements AfterEachCallback {
     private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueOnTestFailureExtension.class);
     private final InstanceProperty queueProperty;
-    private final Consumer<InstanceProperty> purgeQueue;
-    private final Runnable waitFn;
+    private final PurgeQueueRunner purgeQueueRunner;
 
-    PurgeQueueOnTestFailureExtension(InstanceProperty queueProperty, Consumer<InstanceProperty> purgeQueue, Runnable waitFn) {
+    PurgeQueueOnTestFailureExtension(InstanceProperty queueProperty, PurgeQueueRunner purgeQueueRunner) {
         this.queueProperty = queueProperty;
-        this.purgeQueue = purgeQueue;
-        this.waitFn = waitFn;
+        this.purgeQueueRunner = purgeQueueRunner;
     }
 
     public static PurgeQueueOnTestFailureExtension withQueue(InstanceProperty queueProperty, SleeperSystemTest sleeper) {
-        return new PurgeQueueOnTestFailureExtension(queueProperty, sleeper.ingest()::purgeQueue, () -> {
-            try {
-                LOGGER.info("Waiting 60s for queue to purge");
-                Thread.sleep(60000L);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        return new PurgeQueueOnTestFailureExtension(queueProperty, (queue) -> sleeper.ingest().purgeQueue(queue));
     }
 
     @Override
-    public void afterEach(ExtensionContext testContext) {
+    public void afterEach(ExtensionContext testContext) throws InterruptedException {
         if (testContext.getExecutionException().isPresent()) {
             afterTestFailed();
         } else {
@@ -58,17 +47,16 @@ public class PurgeQueueOnTestFailureExtension implements AfterEachCallback {
         }
     }
 
-    public void afterTestFailed() {
+    public void afterTestFailed() throws InterruptedException {
         LOGGER.info("Test failed, purging queue: {}", queueProperty);
-        purgeQueueAndWait();
+        purgeQueueRunner.purge(queueProperty);
     }
 
     public void afterTestPassed() {
         LOGGER.info("Test passed, not purging queue");
     }
 
-    private void purgeQueueAndWait() {
-        purgeQueue.accept(queueProperty);
-        waitFn.run();
+    public interface PurgeQueueRunner {
+        void purge(InstanceProperty queueProperty) throws InterruptedException;
     }
 }

@@ -36,7 +36,7 @@ public class PurgeQueueOnTestFailureExtensionTest {
     @DisplayName("Only purge queues when test failed")
     class OnlyPurgeQueueWhenTestFailed {
         @Test
-        void shouldPurgeQueuesWhenTestFailed() {
+        void shouldPurgeQueuesWhenTestFailed() throws Exception {
             // Given
             PurgeQueueOnTestFailureExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
@@ -68,7 +68,6 @@ public class PurgeQueueOnTestFailureExtensionTest {
     }
 
     private PurgeQueueOnTestFailureExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
-        return new PurgeQueueOnTestFailureExtension(queueProperty, messageCountsByQueueProperty::remove, () -> {
-        });
+        return new PurgeQueueOnTestFailureExtension(queueProperty, messageCountsByQueueProperty::remove);
     }
 }

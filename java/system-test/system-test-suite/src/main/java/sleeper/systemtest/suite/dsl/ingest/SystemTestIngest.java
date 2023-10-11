@@ -73,7 +73,7 @@ public class SystemTestIngest {
                 waitForIngestJobsDriver());
     }
 
-    public void purgeQueue(InstanceProperty queueProperty) {
+    public void purgeQueue(InstanceProperty queueProperty) throws InterruptedException {
         purgeQueueDriver.purgeQueue(queueProperty);
     }
 }
