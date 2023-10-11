@@ -16,24 +16,24 @@
 
 package sleeper.systemtest.suite.testutil;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.PurgeQueueRequest;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import sleeper.configuration.properties.instance.InstanceProperty;
+import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
+
 import java.util.function.Consumer;
 
 public class PurgeQueueExtension implements AfterEachCallback {
     private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueExtension.class);
-    private final List<String> queueUrls;
-    private final Consumer<String> purgeQueue;
+    private final InstanceProperty queueProperty;
+    private final Consumer<InstanceProperty> purgeQueue;
     private final Runnable waitFn;
 
-    public PurgeQueueExtension(List<String> queueUrls, AmazonSQS sqsClient) {
-        this(queueUrls, queueUrl -> sqsClient.purgeQueue(new PurgeQueueRequest().withQueueUrl(queueUrl)), () -> {
+    public static PurgeQueueExtension withQueue(InstanceProperty queueProperty, SystemTestIngest ingest) {
+        return new PurgeQueueExtension(queueProperty, ingest::purgeQueue, () -> {
             try {
                 Thread.sleep(60000L);
             } catch (InterruptedException e) {
@@ -42,8 +42,8 @@ public class PurgeQueueExtension implements AfterEachCallback {
         });
     }
 
-    public PurgeQueueExtension(List<String> queueUrls, Consumer<String> purgeQueue, Runnable waitFn) {
-        this.queueUrls = queueUrls;
+    public PurgeQueueExtension(InstanceProperty queueProperty, Consumer<InstanceProperty> purgeQueue, Runnable waitFn) {
+        this.queueProperty = queueProperty;
         this.purgeQueue = purgeQueue;
         this.waitFn = waitFn;
     }
@@ -58,19 +58,17 @@ public class PurgeQueueExtension implements AfterEachCallback {
     }
 
     public void afterTestFailed() {
-        LOGGER.info("Test failed, purging queues: {}", queueUrls);
+        LOGGER.info("Test failed, purging queue: {}", queueProperty);
         purgeQueueAndWait();
     }
 
     public void afterTestPassed() {
-        LOGGER.info("Test passed, not purging queues");
+        LOGGER.info("Test passed, not purging queue");
     }
 
     private void purgeQueueAndWait() {
-        for (String queueUrl : queueUrls) {
-            purgeQueue.accept(queueUrl);
-            LOGGER.info("Waiting 60s for queue {} to purge", queueUrl);
-            waitFn.run();
-        }
+        purgeQueue.accept(queueProperty);
+        LOGGER.info("Waiting 60s for {} queue to purge", queueProperty);
+        waitFn.run();
     }
 }

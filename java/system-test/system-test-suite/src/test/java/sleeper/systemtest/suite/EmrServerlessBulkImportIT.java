@@ -19,10 +19,12 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 
 import java.time.Duration;
 import java.util.Map;
@@ -36,11 +38,13 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class EmrServerlessBulkImportIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.withQueue(
+            BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, sleeper.ingest());
 
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.ingest().purgeQueue(BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL);
     }
 
     @Test

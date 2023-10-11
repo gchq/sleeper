@@ -20,17 +20,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.InstanceProperty;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
 public class PurgeQueueExtensionTest {
-    private static final String QUEUE_URL_1 = "test-queue-url-1";
-    private static final String QUEUE_URL_2 = "test-queue-url-2";
-
-    private final Map<String, Integer> messageCountsByQueueUrl = new HashMap<>();
+    private final Map<InstanceProperty, Integer> messageCountsByQueueProperty = new HashMap<>();
 
     @Nested
     @DisplayName("Only purge queues when test failed")
@@ -38,36 +38,37 @@ public class PurgeQueueExtensionTest {
         @Test
         void shouldPurgeQueuesWhenTestFailed() {
             // Given
-            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(QUEUE_URL_1);
-            messageCountsByQueueUrl.put(QUEUE_URL_1, 123);
-            messageCountsByQueueUrl.put(QUEUE_URL_2, 456);
+            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
+            messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
+            messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
             // When
             purgeQueueExtension.afterTestFailed();
 
             // Then
-            assertThat(messageCountsByQueueUrl).isEqualTo(
-                    Map.of(QUEUE_URL_2, 456));
+            assertThat(messageCountsByQueueProperty).isEqualTo(
+                    Map.of(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456));
         }
 
         @Test
         void shouldNotPurgeQueuesWhenTestPassed() {
             // Given
-            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(QUEUE_URL_1);
-            messageCountsByQueueUrl.put(QUEUE_URL_1, 123);
-            messageCountsByQueueUrl.put(QUEUE_URL_2, 456);
+            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
+            messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
+            messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
             // When
             purgeQueueExtension.afterTestPassed();
 
             // Then
-            assertThat(messageCountsByQueueUrl).isEqualTo(
-                    Map.of(QUEUE_URL_1, 123, QUEUE_URL_2, 456));
+            assertThat(messageCountsByQueueProperty).isEqualTo(Map.of(
+                    INGEST_JOB_QUEUE_URL, 123,
+                    BULK_IMPORT_EMR_JOB_QUEUE_URL, 456));
         }
     }
 
-    private PurgeQueueExtension createExtensionPurgingQueue(String queueUrl) {
-        return new PurgeQueueExtension(List.of(queueUrl), messageCountsByQueueUrl::remove, () -> {
+    private PurgeQueueExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
+        return new PurgeQueueExtension(queueProperty, messageCountsByQueueProperty::remove, () -> {
         });
     }
 }

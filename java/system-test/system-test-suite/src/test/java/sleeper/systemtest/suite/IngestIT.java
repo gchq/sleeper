@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
@@ -38,11 +39,13 @@ public class IngestIT {
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
             sleeper.reportsForExtension().ingestTasksAndJobs());
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.withQueue(
+            INGEST_JOB_QUEUE_URL, sleeper.ingest());
 
     @BeforeEach
     void setUp() {
         sleeper.connectToInstance(MAIN);
-        sleeper.ingest().purgeQueue(INGEST_JOB_QUEUE_URL);
     }
 
     @Test

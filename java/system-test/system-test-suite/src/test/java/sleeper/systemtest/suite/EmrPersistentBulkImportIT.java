@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
@@ -44,12 +45,14 @@ public class EmrPersistentBulkImportIT {
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportAlways(
             sleeper.reportsForExtension().ingestJobs());
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.withQueue(
+            BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, sleeper.ingest());
 
     @BeforeEach
     void setUp() throws InterruptedException {
         sleeper.connectToInstance(MAIN);
         sleeper.enableOptionalStack(PersistentEmrBulkImportStack.class);
-        sleeper.ingest().purgeQueue(BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL);
     }
 
     @AfterEach
