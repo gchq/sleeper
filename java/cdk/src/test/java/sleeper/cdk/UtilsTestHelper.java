@@ -54,7 +54,7 @@ public class UtilsTestHelper {
     }
 
     public static InstanceProperties createUserDefinedInstanceProperties() {
-        String id = UUID.randomUUID().toString();
+        String id = UUID.randomUUID().toString().substring(0, 18);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");

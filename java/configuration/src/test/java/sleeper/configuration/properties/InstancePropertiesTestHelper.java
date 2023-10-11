@@ -65,7 +65,7 @@ public class InstancePropertiesTestHelper {
     }
 
     public static InstanceProperties createTestInstanceProperties() {
-        String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT);
+        String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(CONFIG_BUCKET, getConfigBucketFromInstanceId(id));
