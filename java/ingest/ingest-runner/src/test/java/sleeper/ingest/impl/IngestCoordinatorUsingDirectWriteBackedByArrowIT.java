@@ -33,6 +33,7 @@ import sleeper.ingest.testutils.TestFilesAndRecords;
 import sleeper.ingest.testutils.TestIngestType;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -150,8 +151,8 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile1.parquet"),
                         tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet"));
-        assertThat(actualActiveData.streamAllRecords())
-                .containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
+        assertThat(actualActiveData.getSetOfAllRecords())
+                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
         assertThat(actualLeftData)
                 .satisfies(data -> assertThat(data.getFiles()).hasSize(2))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->

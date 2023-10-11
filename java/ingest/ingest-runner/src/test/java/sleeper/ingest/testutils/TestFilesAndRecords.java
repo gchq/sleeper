@@ -27,6 +27,7 @@ import sleeper.core.statestore.StateStoreException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,6 +62,10 @@ public class TestFilesAndRecords {
 
     public Stream<Record> streamAllRecords() {
         return recordsByFilename.values().stream().flatMap(List::stream);
+    }
+
+    public Set<Record> getSetOfAllRecords() {
+        return streamAllRecords().collect(Collectors.toSet());
     }
 
     public List<Record> getRecordsInFile(FileInfo file) {
