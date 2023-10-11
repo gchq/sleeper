@@ -31,51 +31,51 @@ import sleeper.table.index.dynamodb.DynamoDBTableIndex;
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.configuration.properties.instance.CommonProperty.DYNAMO_TABLE_INDEX_POINT_IN_TIME_RECOVERY;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public class TableIndexStack extends NestedStack {
 
-    private final ITable nameIndexTable;
-    private final ITable idIndexTable;
+    private final ITable indexByNameDynamoTable;
+    private final ITable indexByIdDynamoTable;
 
     public TableIndexStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
-        nameIndexTable = Table.Builder
-                .create(this, "DynamoDBTableNameIndexTable")
-                .tableName(String.join("-", "sleeper", instanceId, "table-name-index"))
+        indexByNameDynamoTable = Table.Builder
+                .create(this, "IndexByNameDynamoDBTable")
+                .tableName(String.join("-", "sleeper", instanceId, "table-index-by-name"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
                         .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_TABLE_INDEX_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
-        instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, nameIndexTable.getTableName());
+        instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, indexByNameDynamoTable.getTableName());
 
-        idIndexTable = Table.Builder
-                .create(this, "DynamoDBTableIdIndexTable")
-                .tableName(String.join("-", "sleeper", instanceId, "table-id-index"))
+        indexByIdDynamoTable = Table.Builder
+                .create(this, "IndexByIdDynamoDBTable")
+                .tableName(String.join("-", "sleeper", instanceId, "table-index-by-id"))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
                         .name(DynamoDBTableIndex.TABLE_ID_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_TABLE_INDEX_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
-        instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, idIndexTable.getTableName());
+        instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
     }
 
-    public ITable getNameIndexTable() {
-        return nameIndexTable;
+    public ITable getIndexByNameDynamoTable() {
+        return indexByNameDynamoTable;
     }
 
-    public ITable getIdIndexTable() {
-        return idIndexTable;
+    public ITable getIndexByIdDynamoTable() {
+        return indexByIdDynamoTable;
     }
 }
