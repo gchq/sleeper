@@ -38,7 +38,7 @@ public class ReportingExtension implements AfterEachCallback {
         return new ReportingExtension(reports.build(), true);
     }
 
-    public static ReportingExtension reportIfFailed(SystemTestReports.Builder reports) {
+    public static ReportingExtension reportIfTestFailed(SystemTestReports.Builder reports) {
         return new ReportingExtension(reports.build(), false);
     }
 

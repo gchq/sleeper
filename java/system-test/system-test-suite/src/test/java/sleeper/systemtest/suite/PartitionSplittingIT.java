@@ -45,7 +45,7 @@ public class PartitionSplittingIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().partitionStatus());
 
     @BeforeEach

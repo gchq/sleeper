@@ -22,11 +22,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -34,8 +36,11 @@ public class IngestIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().ingestTasksAndJobs());
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
+            INGEST_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach
     void setUp() {

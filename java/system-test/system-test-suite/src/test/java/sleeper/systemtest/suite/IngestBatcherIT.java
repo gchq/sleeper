@@ -46,7 +46,7 @@ public class IngestBatcherIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().ingestTasksAndJobs());
 
     @BeforeEach
