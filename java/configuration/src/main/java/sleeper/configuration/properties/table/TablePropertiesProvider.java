@@ -37,7 +37,7 @@ public class TablePropertiesProvider {
     private final Function<String, TableProperties> getTableProperties;
     private Supplier<Instant> timeSupplier;
     private final int timeoutInMins;
-    private Instant expireTime;
+    private Map<String, Instant> expireTimeByTableName;
 
     public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
         this(s3Client, instanceProperties, Instant::now);
@@ -54,17 +54,21 @@ public class TablePropertiesProvider {
         this.tableNameToPropertiesCache = new HashMap<>();
         this.timeoutInMins = timeoutInMins;
         this.timeSupplier = timeSupplier;
-        this.expireTime = timeSupplier.get().plus(Duration.ofMinutes(timeoutInMins));
+        this.expireTimeByTableName = new HashMap<>();
     }
 
     public TableProperties getTableProperties(String tableName) {
-        Instant currentTime = timeSupplier.get();
-        if (currentTime.isAfter(expireTime)) {
-            LOGGER.info("Table properties provider expiry time reached, clearing cache.");
-            clearCache();
-            expireTime = currentTime.plus(Duration.ofMinutes(timeoutInMins));
-        }
+        checkExpiryTime(tableName);
         return tableNameToPropertiesCache.computeIfAbsent(tableName, getTableProperties);
+    }
+
+    private void checkExpiryTime(String tableName) {
+        Instant currentTime = timeSupplier.get();
+        if (expireTimeByTableName.containsKey(tableName) && currentTime.isAfter(expireTimeByTableName.get(tableName))) {
+            LOGGER.info("Table properties provider expiry time reached for table {}, clearing cache.", tableName);
+            tableNameToPropertiesCache.remove(tableName);
+        }
+        expireTimeByTableName.put(tableName, currentTime.plus(Duration.ofMinutes(timeoutInMins)));
     }
 
     public Optional<TableProperties> getTablePropertiesIfExists(String tableName) {

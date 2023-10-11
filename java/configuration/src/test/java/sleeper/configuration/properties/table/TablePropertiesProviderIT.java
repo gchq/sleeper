@@ -64,7 +64,7 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
     }
 
     @Test
-    void shouldReloadPropertiesFromS3WhenTimeoutReached() {
+    void shouldReloadPropertiesFromS3WhenTimeoutReachedForTable() {
         // Given
         TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
                 "test", "provider-load");
@@ -76,7 +76,6 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
                 List.of(
-                        Instant.parse("2023-10-09T17:10:00Z"),
                         Instant.parse("2023-10-09T17:11:00Z"),
                         Instant.parse("2023-10-09T17:15:00Z")
                 ).iterator()::next);
@@ -92,7 +91,7 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
     }
 
     @Test
-    void shouldNotReloadPropertiesFromS3WhenTimeoutHasNotBeenReached() {
+    void shouldNotReloadPropertiesFromS3WhenTimeoutHasNotBeenReachedForTable() {
         // Given
         TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
                 "test", "provider-load");
@@ -104,7 +103,6 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
                 List.of(
-                        Instant.parse("2023-10-09T17:10:00Z"),
                         Instant.parse("2023-10-09T17:11:00Z"),
                         Instant.parse("2023-10-09T17:12:00Z")
                 ).iterator()::next);
@@ -116,6 +114,44 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
 
         // Then
         assertThat(provider.getTableProperties("test").getLong(ROW_GROUP_SIZE))
+                .isEqualTo(123L);
+    }
+
+    @Test
+    void shouldNotReloadPropertiesFromS3WhenTimeoutHasBeenReachedForOtherTable() {
+        // Given
+        TableProperties validProperties1 = createValidPropertiesWithTableNameAndBucket(
+                "table-1", "provider-load");
+        TableProperties validProperties2 = createValidPropertiesWithTableNameAndBucket(
+                "table-2", "provider-load");
+        s3Client.createBucket("provider-load");
+        validProperties1.setNumber(ROW_GROUP_SIZE, 123L);
+        validProperties1.saveToS3(s3Client);
+        validProperties2.setNumber(ROW_GROUP_SIZE, 123L);
+        validProperties2.saveToS3(s3Client);
+        InstanceProperties instanceProperties = new InstanceProperties();
+        instanceProperties.set(CONFIG_BUCKET, "provider-load");
+        instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
+                List.of(
+                        Instant.parse("2023-10-09T17:11:00Z"),
+                        Instant.parse("2023-10-09T17:14:00Z"),
+                        Instant.parse("2023-10-09T17:15:00Z"),
+                        Instant.parse("2023-10-09T17:15:00Z")
+                ).iterator()::next);
+
+        // When
+        provider.getTableProperties("table-1"); // Populate cache
+        provider.getTableProperties("table-2"); // Populate cache
+        validProperties1.setNumber(ROW_GROUP_SIZE, 456L);
+        validProperties1.saveToS3(s3Client);
+        validProperties2.setNumber(ROW_GROUP_SIZE, 456L);
+        validProperties2.saveToS3(s3Client);
+
+        // Then
+        assertThat(provider.getTableProperties("table-1").getLong(ROW_GROUP_SIZE))
+                .isEqualTo(456L);
+        assertThat(provider.getTableProperties("table-2").getLong(ROW_GROUP_SIZE))
                 .isEqualTo(123L);
     }
 }
