@@ -110,7 +110,7 @@ public class IngestIT {
     void shouldIngest20kRecordsWithIngestType(SystemTestIngestType ingestType) throws InterruptedException {
         // Given
         sleeper.sourceFiles()
-                .createWithNumberedRecords("file.parquet", LongStream.range(-10000, 10000));
+                .createWithNumberedRecords("file.parquet", LongStream.range(0, 20000));
 
         // When
         sleeper.ingest().setType(ingestType)
@@ -119,7 +119,7 @@ public class IngestIT {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
-                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(-10000, 10000)));
+                .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 20000)));
         assertThat(sleeper.tableFiles().active())
                 .hasSize(1)
                 .matches(files -> numberOfRecordsIn(files) == 20_000L,
