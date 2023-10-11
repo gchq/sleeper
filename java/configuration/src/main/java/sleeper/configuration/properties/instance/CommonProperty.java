@@ -27,7 +27,7 @@ public interface CommonProperty {
     UserDefinedInstanceProperty ID = Index.propertyBuilder("sleeper.id")
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")
-            .validationPredicate(Objects::nonNull)
+            .validationPredicate(value -> Utils.isNonNullNonEmptyStringWithMaxLength(value, 20))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")

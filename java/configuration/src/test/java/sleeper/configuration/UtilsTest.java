@@ -93,4 +93,38 @@ class UtilsTest {
             assertThat(Utils.readBytes("2E")).isEqualTo(2 * 1024 * 1024 * 1024L * 1024L * 1024L * 1024L);
         }
     }
+
+    @Nested
+    @DisplayName("Validate strings")
+    class ValidateStrings {
+        @Test
+        void shouldFailToValidateNullString() {
+            assertThat(Utils.isNonNullNonEmptyString(null)).isFalse();
+        }
+
+        @Test
+        void shouldFailToValidateEmptyString() {
+            assertThat(Utils.isNonNullNonEmptyString("")).isFalse();
+        }
+
+        @Test
+        void shouldValidateNonNullNonEmptyString() {
+            assertThat(Utils.isNonNullNonEmptyString("test")).isTrue();
+        }
+
+        @Test
+        void shouldValidateStringWhenStringLengthIsLowerThanMaxLength() {
+            assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 5)).isTrue();
+        }
+
+        @Test
+        void shouldFailToValidateWhenStringLengthExceedsMaxLength() {
+            assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 1)).isFalse();
+        }
+
+        @Test
+        void shouldValidateStringWhenStringLengthMeetsMaxLength() {
+            assertThat(Utils.isNonNullNonEmptyStringWithMaxLength("test", 4)).isTrue();
+        }
+    }
 }

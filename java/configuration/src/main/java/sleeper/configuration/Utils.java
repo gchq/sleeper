@@ -74,6 +74,10 @@ public class Utils {
         return null != string && !string.isEmpty();
     }
 
+    public static boolean isNonNullNonEmptyStringWithMaxLength(String string, int length) {
+        return isNonNullNonEmptyString(string) && string.length() <= length;
+    }
+
     public static boolean isTrueOrFalse(String string) {
         return "true".equalsIgnoreCase(string) || "false".equalsIgnoreCase(string);
     }
