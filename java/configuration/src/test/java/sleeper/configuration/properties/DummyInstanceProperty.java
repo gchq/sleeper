@@ -47,7 +47,7 @@ public class DummyInstanceProperty implements InstanceProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
+    public boolean isRunCdkDeployWhenChanged() {
         return false;
     }
 }

@@ -28,8 +28,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 public class SendCompactionJobToSqs {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendCompactionJobToSqs.class);

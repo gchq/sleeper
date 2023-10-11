@@ -43,12 +43,12 @@ import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCode;
 import static sleeper.clients.testutil.RunCommandTestHelper.returningExitCodeForCommand;
 import static sleeper.clients.util.CommandPipeline.pipeline;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 public class UploadDockerImagesTest {
     private static final List<StackDockerImage> STACK_DOCKER_IMAGES = List.of(

@@ -17,12 +17,9 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.statestore.FileInfo;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -43,11 +40,9 @@ class DynamoDBFileInfoFormat {
     private static final String DELIMITER = "|";
     private static final String DELIMITER_REGEX = Pattern.quote(DELIMITER);
     private final String sleeperTableName;
-    private final List<PrimitiveType> rowKeyTypes;
 
-    DynamoDBFileInfoFormat(String sleeperTableName, Schema schema) {
+    DynamoDBFileInfoFormat(String sleeperTableName) {
         this.sleeperTableName = sleeperTableName;
-        this.rowKeyTypes = schema.getRowKeyTypes();
     }
 
     Map<String, AttributeValue> createRecordWithJobId(FileInfo fileInfo, String jobId) {
@@ -126,7 +121,6 @@ class DynamoDBFileInfoFormat {
 
     FileInfo getFileInfoFromAttributeValues(Map<String, AttributeValue> item) {
         FileInfo.Builder fileInfoBuilder = FileInfo.builder()
-                .rowKeyTypes(rowKeyTypes)
                 .fileStatus(FileInfo.FileStatus.valueOf(item.get(STATUS).getS()));
         if (null != item.get(PARTITION_ID_AND_FILENAME)) {
             String[] partitionIdAndFilename = splitPartitionIdAndFilename(item);

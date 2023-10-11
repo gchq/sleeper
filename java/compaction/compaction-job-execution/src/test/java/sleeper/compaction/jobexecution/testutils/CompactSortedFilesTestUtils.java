@@ -87,11 +87,10 @@ public class CompactSortedFilesTestUtils {
         assertThat(dynamoStateStore.getReadyForGCFiles()).toIterable()
                 .extracting(
                         FileInfo::getFilename,
-                        FileInfo::getRowKeyTypes,
                         FileInfo::getPartitionId,
                         FileInfo::getFileStatus)
                 .containsExactlyInAnyOrder(files.stream()
-                        .map(file -> tuple(file.getFilename(), file.getRowKeyTypes(), file.getPartitionId(),
+                        .map(file -> tuple(file.getFilename(), file.getPartitionId(),
                                 FileInfo.FileStatus.READY_FOR_GARBAGE_COLLECTION))
                         .toArray(Tuple[]::new));
     }

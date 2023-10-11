@@ -37,7 +37,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Triggered by an SQS event containing a {@link SplitPartitionJobDefinition}

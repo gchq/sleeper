@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -67,7 +67,6 @@ public class SizeRatioCompactionStrategyTest {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords(i == 7 ? 100L : 50L)
-                    .rowKeyTypes(new IntType())
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -107,7 +106,6 @@ public class SizeRatioCompactionStrategyTest {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) Math.pow(2, i + 1))
-                    .rowKeyTypes(new IntType())
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -151,7 +149,6 @@ public class SizeRatioCompactionStrategyTest {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
-                    .rowKeyTypes(new IntType())
                     .build();
             fileInfos.add(fileInfo);
         }
@@ -212,7 +209,6 @@ public class SizeRatioCompactionStrategyTest {
                     .fileStatus(FileInfo.FileStatus.ACTIVE)
                     .partitionId(partition.getId())
                     .numberOfRecords((long) sizes.get(i))
-                    .rowKeyTypes(new IntType())
                     .build();
             fileInfos.add(fileInfo);
         }

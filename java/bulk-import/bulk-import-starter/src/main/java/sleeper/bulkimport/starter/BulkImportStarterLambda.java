@@ -45,7 +45,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
 
 /**

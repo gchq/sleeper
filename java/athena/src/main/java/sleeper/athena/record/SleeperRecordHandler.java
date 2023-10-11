@@ -50,7 +50,7 @@ import sleeper.core.schema.type.Type;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import static sleeper.athena.metadata.IteratorApplyingMetadataHandler.SOURCE_TYPE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * An abstraction layer for the {@link RecordHandler} so that users can choose how to create a record iterator. The

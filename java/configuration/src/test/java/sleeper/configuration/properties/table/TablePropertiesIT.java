@@ -17,8 +17,8 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -48,7 +48,7 @@ class TablePropertiesIT extends TablePropertiesS3TestBase {
 
         // When
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "load-properties");
+        instanceProperties.set(CdkDefinedInstanceProperty.CONFIG_BUCKET, "load-properties");
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.loadFromS3(s3Client, "test");
 
