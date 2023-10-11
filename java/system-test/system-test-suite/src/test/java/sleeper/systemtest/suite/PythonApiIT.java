@@ -52,7 +52,7 @@ public class PythonApiIT {
     class IngestFiles {
 
         @RegisterExtension
-        public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+        public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
                 sleeper.reportsForExtension().ingestTasksAndJobs());
 
         @Test

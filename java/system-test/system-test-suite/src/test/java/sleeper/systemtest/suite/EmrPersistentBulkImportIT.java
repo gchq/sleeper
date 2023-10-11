@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
-import sleeper.systemtest.suite.testutil.PurgeQueueOnTestFailureExtension;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
@@ -46,7 +46,7 @@ public class EmrPersistentBulkImportIT {
     public final ReportingExtension reporting = ReportingExtension.reportAlways(
             sleeper.reportsForExtension().ingestJobs());
     @RegisterExtension
-    public final PurgeQueueOnTestFailureExtension purgeQueue = PurgeQueueOnTestFailureExtension.withQueue(
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
             BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach

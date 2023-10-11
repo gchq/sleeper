@@ -24,18 +24,18 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
-public class PurgeQueueOnTestFailureExtension implements AfterEachCallback {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueOnTestFailureExtension.class);
+public class PurgeQueueExtension implements AfterEachCallback {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueExtension.class);
     private final InstanceProperty queueProperty;
     private final PurgeQueueRunner purgeQueueRunner;
 
-    PurgeQueueOnTestFailureExtension(InstanceProperty queueProperty, PurgeQueueRunner purgeQueueRunner) {
+    PurgeQueueExtension(InstanceProperty queueProperty, PurgeQueueRunner purgeQueueRunner) {
         this.queueProperty = queueProperty;
         this.purgeQueueRunner = purgeQueueRunner;
     }
 
-    public static PurgeQueueOnTestFailureExtension withQueue(InstanceProperty queueProperty, SleeperSystemTest sleeper) {
-        return new PurgeQueueOnTestFailureExtension(queueProperty, (queue) -> sleeper.ingest().purgeQueue(queue));
+    public static PurgeQueueExtension purgeIfTestFailed(InstanceProperty queueProperty, SleeperSystemTest sleeper) {
+        return new PurgeQueueExtension(queueProperty, (queue) -> sleeper.ingest().purgeQueue(queue));
     }
 
     @Override

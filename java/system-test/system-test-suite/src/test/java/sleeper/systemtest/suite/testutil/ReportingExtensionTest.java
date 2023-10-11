@@ -80,7 +80,7 @@ public class ReportingExtensionTest {
         }
 
         private ReportingExtension extensionReportIfFailed(String report) {
-            return ReportingExtension.reportIfFailed(
+            return ReportingExtension.reportIfTestFailed(
                     SystemTestReports.builder(new ReportingContext(tempDir))
                             .report(fixedReport(report)));
         }

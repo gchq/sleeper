@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class PurgeQueueOnTestFailureExtensionTest {
+public class PurgeQueueExtensionTest {
     private final Map<InstanceProperty, Integer> messageCountsByQueueProperty = new HashMap<>();
 
     @Nested
@@ -38,7 +38,7 @@ public class PurgeQueueOnTestFailureExtensionTest {
         @Test
         void shouldPurgeQueuesWhenTestFailed() throws Exception {
             // Given
-            PurgeQueueOnTestFailureExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
+            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
             messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
@@ -53,7 +53,7 @@ public class PurgeQueueOnTestFailureExtensionTest {
         @Test
         void shouldNotPurgeQueuesWhenTestPassed() {
             // Given
-            PurgeQueueOnTestFailureExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
+            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
             messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
@@ -67,7 +67,7 @@ public class PurgeQueueOnTestFailureExtensionTest {
         }
     }
 
-    private PurgeQueueOnTestFailureExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
-        return new PurgeQueueOnTestFailureExtension(queueProperty, messageCountsByQueueProperty::remove);
+    private PurgeQueueExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
+        return new PurgeQueueExtension(queueProperty, messageCountsByQueueProperty::remove);
     }
 }

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.PurgeQueueOnTestFailureExtension;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 
 import java.time.Duration;
 import java.util.Map;
@@ -39,7 +39,7 @@ public class EmrServerlessBulkImportIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
     @RegisterExtension
-    public final PurgeQueueOnTestFailureExtension purgeQueue = PurgeQueueOnTestFailureExtension.withQueue(
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
             BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach
