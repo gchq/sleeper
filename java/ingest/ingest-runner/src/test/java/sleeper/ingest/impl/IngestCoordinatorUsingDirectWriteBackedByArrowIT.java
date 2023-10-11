@@ -23,7 +23,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
@@ -38,14 +37,12 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.ingest.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
@@ -76,38 +73,29 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L));
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_left/leftFile.parquet", 10000, -10000L, -1L);
-        FileInfo rightFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_right/rightFile.parquet", 10000, 0L, 9999L);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
-        List<Record> leftFileRecords = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, leftFile, configuration);
-        List<Record> rightFileRecords = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, rightFile, configuration);
-        List<Record> actualRecords = Stream.of(leftFileRecords, rightFileRecords)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+        assertThat(actualActiveData.getFiles())
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .containsExactlyInAnyOrder(
+                        tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile.parquet"),
+                        tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile.parquet"));
 
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(leftFileRecords).extracting(record -> record.get("key0"))
+        assertThat(actualActiveData.getSetOfAllRecords())
+                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+        assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
+                .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
                         .collect(Collectors.toList()));
-        assertThat(rightFileRecords).extracting(record -> record.get("key0"))
+        assertThat(actualActiveData.getPartitionData("right").streamAllRecords())
+                .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                actualActiveData.getFiles(),
                 configuration
         );
     }
@@ -141,8 +129,6 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
 
         // Then
         TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
-        TestFilesAndRecords actualLeftData = actualActiveData.getPartitionData("left");
-        TestFilesAndRecords actualRightData = actualActiveData.getPartitionData("right");
 
         assertThat(actualActiveData.getFiles())
                 .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
@@ -153,15 +139,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                         tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet"));
         assertThat(actualActiveData.getSetOfAllRecords())
                 .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
-        assertThat(actualLeftData)
-                .satisfies(data -> assertThat(data.getFiles()).hasSize(2))
+        assertThat(actualActiveData.getPartitionData("left"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
                         assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
                                 data.getRecordsInFile(file),
                                 "key0", LongStream.range(-10_000, 0))))
                 .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
-        assertThat(actualRightData)
-                .satisfies(data -> assertThat(data.getFiles()).hasSize(2))
+        assertThat(actualActiveData.getPartitionData("right"))
                 .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
                         assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
                                 data.getRecordsInFile(file),
