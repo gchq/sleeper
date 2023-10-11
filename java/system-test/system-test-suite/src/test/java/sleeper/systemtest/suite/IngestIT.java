@@ -35,13 +35,12 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class IngestIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
-
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
             sleeper.reportsForExtension().ingestTasksAndJobs());
     @RegisterExtension
     public final PurgeQueueOnTestFailureExtension purgeQueue = PurgeQueueOnTestFailureExtension.withQueue(
-            INGEST_JOB_QUEUE_URL, sleeper.ingest());
+            INGEST_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach
     void setUp() {

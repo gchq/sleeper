@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
+import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 
 import java.util.function.Consumer;
 
@@ -38,8 +38,8 @@ public class PurgeQueueOnTestFailureExtension implements AfterEachCallback {
         this.waitFn = waitFn;
     }
 
-    public static PurgeQueueOnTestFailureExtension withQueue(InstanceProperty queueProperty, SystemTestIngest ingest) {
-        return new PurgeQueueOnTestFailureExtension(queueProperty, ingest::purgeQueue, () -> {
+    public static PurgeQueueOnTestFailureExtension withQueue(InstanceProperty queueProperty, SleeperSystemTest sleeper) {
+        return new PurgeQueueOnTestFailureExtension(queueProperty, sleeper.ingest()::purgeQueue, () -> {
             try {
                 LOGGER.info("Waiting 60s for queue to purge");
                 Thread.sleep(60000L);
