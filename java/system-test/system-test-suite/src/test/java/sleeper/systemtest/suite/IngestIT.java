@@ -26,8 +26,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestType;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.stream.LongStream;
