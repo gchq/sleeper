@@ -26,12 +26,11 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.logs.RetentionDays;
 import software.constructs.Construct;
 
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.local.LoadLocalProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.SleeperVersion;
 
 import java.nio.file.Path;
@@ -45,6 +44,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
@@ -54,8 +55,6 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.AW
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 
 /**
  * Collection of utility methods related to the CDK deployment
@@ -190,7 +189,7 @@ public class Utils {
         }
         String deployedVersion = properties.get(VERSION);
         String localVersion = SleeperVersion.getVersion();
-        SystemDefinedInstanceProperty.getAll().forEach(properties::unset);
+        CdkDefinedInstanceProperty.getAll().forEach(properties::unset);
 
         if (!"true".equalsIgnoreCase(tryGetContext.apply("skipVersionCheck"))
                 && deployedVersion != null
@@ -211,11 +210,7 @@ public class Utils {
     public static Stream<TableProperties> getAllTableProperties(
             InstanceProperties instanceProperties, Function<String, String> tryGetContext) {
         return LoadLocalProperties.loadTablesFromInstancePropertiesFile(
-                        instanceProperties, Path.of(tryGetContext.apply("propertiesfile")))
-                .map(tableProperties -> {
-                    TableProperty.getSystemDefined().forEach(tableProperties::unset);
-                    return tableProperties;
-                });
+                instanceProperties, Path.of(tryGetContext.apply("propertiesfile")));
     }
 
     private static Function<String, String> tryGetContext(Construct scope) {

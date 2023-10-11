@@ -67,9 +67,9 @@ import java.util.UUID;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -151,28 +151,24 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String file3 = folderName + "/file3.parquet";
         String file4 = folderName + "/file4.parquet";
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file1)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file2)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo3 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file3)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo4 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file4)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
                 .partitionId("root")

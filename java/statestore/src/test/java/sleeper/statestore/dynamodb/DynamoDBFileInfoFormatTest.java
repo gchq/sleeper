@@ -19,19 +19,15 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DynamoDBFileInfoFormatTest {
     private String tableName = "test-table";
-    private Schema schema = schemaWithKey("key");
-    private DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableName, schema);
+    private DynamoDBFileInfoFormat fileInfoFormat = new DynamoDBFileInfoFormat(tableName);
 
     @Test
     void shouldCreateActiveFileRecord() {
@@ -122,7 +118,6 @@ public class DynamoDBFileInfoFormatTest {
         // When / Then
         assertThat(fileInfoFormat.getFileInfoFromAttributeValues(item))
                 .isEqualTo(FileInfo.builder()
-                        .rowKeyTypes(new LongType())
                         .filename("file1.parquet")
                         .partitionId("partition1")
                         .fileStatus(FileInfo.FileStatus.ACTIVE)
@@ -142,7 +137,6 @@ public class DynamoDBFileInfoFormatTest {
                 .filename(fileName)
                 .partitionId(partitionId)
                 .fileStatus(status)
-                .rowKeyTypes(schema.getRowKeyTypes().get(0))
                 .build();
     }
 }

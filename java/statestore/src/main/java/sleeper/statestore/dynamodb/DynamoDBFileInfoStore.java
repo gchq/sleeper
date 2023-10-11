@@ -43,7 +43,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactionInProgressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
 import sleeper.core.statestore.StateStoreException;
@@ -90,13 +89,12 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     private DynamoDBFileInfoStore(Builder builder) {
         dynamoDB = Objects.requireNonNull(builder.dynamoDB, "dynamoDB must not be null");
-        Schema schema = Objects.requireNonNull(builder.schema, "schema must not be null");
         activeTableName = Objects.requireNonNull(builder.activeTableName, "activeTableName must not be null");
         readyForGCTableName = Objects.requireNonNull(builder.readyForGCTableName, "readyForGCTableName must not be null");
         sleeperTableName = Objects.requireNonNull(builder.sleeperTableName, "sleeperTableName must not be null");
         stronglyConsistentReads = builder.stronglyConsistentReads;
         garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
-        fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableName, schema);
+        fileInfoFormat = new DynamoDBFileInfoFormat(sleeperTableName);
     }
 
     public static Builder builder() {
@@ -467,7 +465,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
     static final class Builder {
         private AmazonDynamoDB dynamoDB;
-        private Schema schema;
         private String activeTableName;
         private String readyForGCTableName;
         private String sleeperTableName;
@@ -479,11 +476,6 @@ class DynamoDBFileInfoStore implements FileInfoStore {
 
         Builder dynamoDB(AmazonDynamoDB dynamoDB) {
             this.dynamoDB = dynamoDB;
-            return this;
-        }
-
-        Builder schema(Schema schema) {
-            this.schema = schema;
             return this;
         }
 

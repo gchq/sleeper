@@ -22,25 +22,26 @@ import sleeper.configuration.properties.SleeperPropertyIndex;
 import java.util.List;
 
 /**
- * Properties set internally by sleeper and not by the user. These are set by the system itself at deployment time
- * so require no default or validation. Even if you set these in your properties file, they will be overwritten.
+ * Properties set internally by the Sleeper CDK app and not by the user. These are set by the system itself at
+ * deployment time so require no default or validation. Even if you set these in your properties file, they will be
+ * overwritten.
  */
 // Suppress as this class will always be referenced before impl class, so initialization behaviour will be deterministic
 @SuppressFBWarnings("IC_SUPERCLASS_USES_SUBCLASS_DURING_INITIALIZATION")
-public interface SystemDefinedInstanceProperty extends InstanceProperty {
-    SystemDefinedInstanceProperty VERSION = Index.propertyBuilder("sleeper.version")
+public interface CdkDefinedInstanceProperty extends InstanceProperty {
+    CdkDefinedInstanceProperty VERSION = Index.propertyBuilder("sleeper.version")
             .description("The version of Sleeper that is being used. This property is used to identify the correct " +
                     "jars in the S3 jars bucket and to select the correct tag in the ECR repositories.")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
     // Configuration
-    SystemDefinedInstanceProperty CONFIG_BUCKET = Index.propertyBuilder("sleeper.config.bucket")
+    CdkDefinedInstanceProperty CONFIG_BUCKET = Index.propertyBuilder("sleeper.config.bucket")
             .description("The S3 bucket name used to store configuration files.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     // Data
-    SystemDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
+    CdkDefinedInstanceProperty DATA_BUCKET = Index.propertyBuilder("sleeper.data.bucket")
             .description("The S3 bucket name used to store table data.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
@@ -56,349 +57,349 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
             .build();
 
     // DynamoDBStateStore
-    SystemDefinedInstanceProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
+    CdkDefinedInstanceProperty ACTIVE_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.active.table")
             .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    SystemDefinedInstanceProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.gc.table")
+    CdkDefinedInstanceProperty READY_FOR_GC_FILEINFO_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.gc.table")
             .description("The name of the DynamoDB table holding metadata of files ready for garbage collection " +
                     "in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
-    SystemDefinedInstanceProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.partition.table")
+    CdkDefinedInstanceProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.metadata.dynamo.partition.table")
             .description("The name of the DynamoDB table holding metadata of partitions in Sleeper tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     // S3StateStore
-    SystemDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.metadata.s3.dynamo.revision.table")
+    CdkDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.metadata.s3.dynamo.revision.table")
             .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     // Table metrics
-    SystemDefinedInstanceProperty TABLE_METRICS_RULES = Index.propertyBuilder("sleeper.table.metrics.rulenames")
+    CdkDefinedInstanceProperty TABLE_METRICS_RULES = Index.propertyBuilder("sleeper.table.metrics.rulenames")
             .description("The names of the CloudWatch rules that trigger generation of metrics for tables.")
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
     // Query
-    SystemDefinedInstanceProperty QUERY_LAMBDA_ROLE = Index.propertyBuilder("sleeper.query.role.arn")
+    CdkDefinedInstanceProperty QUERY_LAMBDA_ROLE = Index.propertyBuilder("sleeper.query.role.arn")
             .description("The ARN for the role with required permissions to query sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_WEBSOCKET_API_URL = Index.propertyBuilder("sleeper.query.websocket.api.url")
+    CdkDefinedInstanceProperty QUERY_WEBSOCKET_API_URL = Index.propertyBuilder("sleeper.query.websocket.api.url")
             .description("The URL of the WebSocket API for querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_QUEUE_URL = Index.propertyBuilder("sleeper.query.queue.url")
+    CdkDefinedInstanceProperty QUERY_QUEUE_URL = Index.propertyBuilder("sleeper.query.queue.url")
             .description("The URL of the queue responsible for sending a query to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_QUEUE_ARN = Index.propertyBuilder("sleeper.query.queue.arn")
+    CdkDefinedInstanceProperty QUERY_QUEUE_ARN = Index.propertyBuilder("sleeper.query.queue.arn")
             .description("The ARN of the queue responsible for sending a query to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_DLQ_URL = Index.propertyBuilder("sleeper.query.dlq.url")
+    CdkDefinedInstanceProperty QUERY_DLQ_URL = Index.propertyBuilder("sleeper.query.dlq.url")
             .description("The URL of the dead letter queue used when querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_DLQ_ARN = Index.propertyBuilder("sleeper.query.dlq.arn")
+    CdkDefinedInstanceProperty QUERY_DLQ_ARN = Index.propertyBuilder("sleeper.query.dlq.arn")
             .description("The ARN of the dead letter queue used when querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_RESULTS_QUEUE_URL = Index.propertyBuilder("sleeper.query.results.queue.url")
+    CdkDefinedInstanceProperty QUERY_RESULTS_QUEUE_URL = Index.propertyBuilder("sleeper.query.results.queue.url")
             .description("The URL of the queue responsible for retrieving results from a query sent to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_RESULTS_QUEUE_ARN = Index.propertyBuilder("sleeper.query.results.queue.arn")
+    CdkDefinedInstanceProperty QUERY_RESULTS_QUEUE_ARN = Index.propertyBuilder("sleeper.query.results.queue.arn")
             .description("The ARN of the queue responsible for retrieving results from a query sent to sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_RESULTS_BUCKET = Index.propertyBuilder("sleeper.query.results.bucket")
+    CdkDefinedInstanceProperty QUERY_RESULTS_BUCKET = Index.propertyBuilder("sleeper.query.results.bucket")
             .description("The S3 Bucket name of the query results bucket.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
-    SystemDefinedInstanceProperty QUERY_TRACKER_TABLE_NAME = Index.propertyBuilder("sleeper.query.tracker.table.name")
+    CdkDefinedInstanceProperty QUERY_TRACKER_TABLE_NAME = Index.propertyBuilder("sleeper.query.tracker.table.name")
             .description("The name of the table responsible for tracking query progress.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
 
     // Compactions
-    SystemDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
+    CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.splitting.cluster")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.splitting.cluster")
             .description("The name of the cluster used for splitting compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.ec2.task.definition")
+    CdkDefinedInstanceProperty COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.ec2.task.definition")
             .description("The name of the family of EC2 task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.fargate.task.definition")
+    CdkDefinedInstanceProperty COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.fargate.task.definition")
             .description("The name of the family of Fargate task definitions used for compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.lambda.function")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.job.creation.lambda.function")
             .description("The function name of the compaction job creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.job.creation.rule")
+    CdkDefinedInstanceProperty COMPACTION_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.job.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the compaction job creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")
+    CdkDefinedInstanceProperty COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.job.queue.url")
             .description("The URL of the queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.queue.arn")
+    CdkDefinedInstanceProperty COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.job.queue.arn")
             .description("The ARN of the queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.dlq.url")
+    CdkDefinedInstanceProperty COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.job.dlq.url")
             .description("The URL of the dead letter queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.dlq.arn")
+    CdkDefinedInstanceProperty COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.job.dlq.arn")
             .description("The ARN of the dead letter queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.task.creation.lambda.function")
+    CdkDefinedInstanceProperty COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.task.creation.lambda.function")
             .description("The function name of the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.task.creation.rule")
+    CdkDefinedInstanceProperty COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.task.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.scaling.group")
+    CdkDefinedInstanceProperty COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.scaling.group")
             .description("The name of the compaction EC2 auto scaling group.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.ec2.task.definition")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_EC2_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.ec2.task.definition")
             .description("The name of the family of EC2 task definitions used for splitting compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.fargate.task.definition")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_FARGATE_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.compaction.splitting.fargate.task.definition")
             .description("The name of the family of Fargate task definitions used for splitting compactions.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.url")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.url")
             .description("The URL of the queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.queue.arn")
             .description("The ARN of the queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_URL = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.url")
             .description("The URL of the dead letter queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.arn")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.splitting.job.dlq.arn")
             .description("The ARN of the dead letter queue for splitting compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.lambda.function")
             .description("The function name of the splitting compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.rule")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_TASK_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.compaction.splitting.task.creation.rule")
             .description("The name of the CloudWatch rule that periodically triggers the splitting compaction task creation lambda.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    SystemDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.splitting.scaling.group")
+    CdkDefinedInstanceProperty SPLITTING_COMPACTION_AUTO_SCALING_GROUP = Index.propertyBuilder("sleeper.compaction.splitting.scaling.group")
             .description("The name of the splitting compaction EC2 auto scaling group.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
 
     // Partition splitting
-    SystemDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.queue.url")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_URL = Index.propertyBuilder("sleeper.partition.splitting.queue.url")
             .description("The URL of the queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    SystemDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.queue.arn")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_QUEUE_ARN = Index.propertyBuilder("sleeper.partition.splitting.queue.arn")
             .description("The ARN of the queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    SystemDefinedInstanceProperty PARTITION_SPLITTING_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.dlq.url")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_DLQ_URL = Index.propertyBuilder("sleeper.partition.splitting.dlq.url")
             .description("The URL of the dead letter queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    SystemDefinedInstanceProperty PARTITION_SPLITTING_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.dlq.arn")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_DLQ_ARN = Index.propertyBuilder("sleeper.partition.splitting.dlq.arn")
             .description("The ARN of the dead letter queue for partition splitting.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    SystemDefinedInstanceProperty PARTITION_SPLITTING_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.lambda.function")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.partition.splitting.lambda.function")
             .description("The function name of the partition splitting lambda.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
-    SystemDefinedInstanceProperty PARTITION_SPLITTING_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.partition.splitting.rule")
+    CdkDefinedInstanceProperty PARTITION_SPLITTING_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.partition.splitting.rule")
             .description("The name of the CloudWatch rule that periodically triggers the partition splitting lambda.")
             .propertyGroup(InstancePropertyGroup.PARTITION_SPLITTING)
             .build();
 
     // Garbage collection
-    SystemDefinedInstanceProperty GARBAGE_COLLECTOR_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.gc.rule")
+    CdkDefinedInstanceProperty GARBAGE_COLLECTOR_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.gc.rule")
             .description("The name of the CloudWatch rule that periodically triggers the garbage collector lambda.")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .build();
 
     // Ingest
-    SystemDefinedInstanceProperty INGEST_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.ingest.lambda.function")
+    CdkDefinedInstanceProperty INGEST_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.ingest.lambda.function")
             .description("The function name of the ingest task creator lambda.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.rule")
+    CdkDefinedInstanceProperty INGEST_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.rule")
             .description("The name of the CloudWatch rule that periodically triggers the ingest task creator lambda.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.job.queue.url")
+    CdkDefinedInstanceProperty INGEST_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.job.queue.url")
             .description("The URL of the queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.ingest.job.queue.arn")
+    CdkDefinedInstanceProperty INGEST_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.ingest.job.queue.arn")
             .description("The ARN of the queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_JOB_DLQ_URL = Index.propertyBuilder("sleeper.ingest.job.dlq.url")
+    CdkDefinedInstanceProperty INGEST_JOB_DLQ_URL = Index.propertyBuilder("sleeper.ingest.job.dlq.url")
             .description("The URL of the dead letter queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.ingest.job.dlq.arn")
+    CdkDefinedInstanceProperty INGEST_JOB_DLQ_ARN = Index.propertyBuilder("sleeper.ingest.job.dlq.arn")
             .description("The ARN of the dead letter queue for ingest jobs.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.url")
+    CdkDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.url")
             .description("The URL of the queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_ARN = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.arn")
+    CdkDefinedInstanceProperty INGEST_BATCHER_SUBMIT_QUEUE_ARN = Index.propertyBuilder("sleeper.ingest.batcher.submit.queue.arn")
             .description("The ARN of the queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.url")
+    CdkDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_URL = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.url")
             .description("The URL of the dead letter queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_ARN = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.arn")
+    CdkDefinedInstanceProperty INGEST_BATCHER_SUBMIT_DLQ_ARN = Index.propertyBuilder("sleeper.ingest.batcher.submit.dlq.arn")
             .description("The ARN of the dead letter queue for ingest batcher file submission.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.rule")
+    CdkDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.rule")
             .description("The name of the CloudWatch rule to trigger the batcher to create jobs from file ingest requests.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.lambda")
+    CdkDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.lambda")
             .description("The name of the ingest batcher Lambda to create jobs from file ingest requests.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.submit.lambda")
+    CdkDefinedInstanceProperty INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION = Index.propertyBuilder("sleeper.ingest.batcher.submit.lambda")
             .description("The name of the ingest batcher Lambda to submit file ingest requests.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.ingest.task.definition.family")
+    CdkDefinedInstanceProperty INGEST_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.ingest.task.definition.family")
             .description("The name of the family of task definitions used for ingest tasks.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
-    SystemDefinedInstanceProperty INGEST_CLUSTER = Index.propertyBuilder("sleeper.ingest.cluster")
+    CdkDefinedInstanceProperty INGEST_CLUSTER = Index.propertyBuilder("sleeper.ingest.cluster")
             .description("The name of the cluster used for ingest.")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .build();
 
     // Bulk import
-    SystemDefinedInstanceProperty BULK_IMPORT_BUCKET = Index.propertyBuilder("sleeper.bulk.import.bucket")
+    CdkDefinedInstanceProperty BULK_IMPORT_BUCKET = Index.propertyBuilder("sleeper.bulk.import.bucket")
             .description("The S3 Bucket name of the bulk import bucket.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
     // Bulk import using EMR - these properties are used by both the persistent
     // and non-persistent EMR stacks
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_EC2_ROLE_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.ec2.role.name")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_EC2_ROLE_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.ec2.role.name")
             .description("The name of the job flow role for bulk import using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_CLUSTER_ROLE_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.role.name")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_CLUSTER_ROLE_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.role.name")
             .description("The name of the role assumed by the bulk import clusters using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SECURITY_CONF_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.security.conf.name")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SECURITY_CONF_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.security.conf.name")
             .description("The name of the security configuration used by bulk import using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     // Bulk import using EMR
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.emr.job.queue.url")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.job.queue.arn")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.job.queue.arn")
             .description("The ARN of the queue for bulk import jobs using EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     // Bulk import using EMR Serverless
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.cluster.name")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.cluster.name")
             .description("The name of the cluster used for EMR Serverless bulk import jobs.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.application.id")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_APPLICATION_ID = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.application.id")
             .description("The id of the application used for EMR Serverless bulk import jobs.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.role.arn")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_CLUSTER_ROLE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.role.arn")
             .description("The ARN of the role assumed by the bulk import clusters using EMR Serverless.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.job.queue.url")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.job.queue.url")
             .description("The URL of the queue for bulk import jobs using EMR Serverless.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.job.queue.arn")
+    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.job.queue.arn")
             .description("The ARN of the queue for bulk import jobs using EMR Serverless.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     // Bulk import using persistent EMR
-    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
+    CdkDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.url")
             .description("The URL of the queue for bulk import jobs using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.arn")
+    CdkDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.job.queue.arn")
             .description("The ARN of the queue for bulk import jobs using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.cluster.name")
+    CdkDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_CLUSTER_NAME = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.cluster.name")
             .description("The name of the cluster used for persistent EMR bulk import jobs.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master")
+    CdkDefinedInstanceProperty BULK_IMPORT_PERSISTENT_EMR_MASTER_DNS = Index.propertyBuilder("sleeper.bulk.import.persistent.emr.master")
             .description("The public DNS name of the cluster's master node for bulk import using persistent EMR.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     // Bulk import using EKS
-    SystemDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.url")
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_URL = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.url")
             .description("The URL of the queue for bulk import jobs using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.arn")
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_JOB_QUEUE_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.job.queue.arn")
             .description("The ARN of the queue for bulk import jobs using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EKS_STATE_MACHINE_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.statemachine.arn")
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_STATE_MACHINE_ARN = Index.propertyBuilder("sleeper.bulk.import.eks.statemachine.arn")
             .description("The ARN of the state machine for bulk import jobs using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EKS_NAMESPACE = Index.propertyBuilder("sleeper.bulk.import.eks.k8s.namespace")
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_NAMESPACE = Index.propertyBuilder("sleeper.bulk.import.eks.k8s.namespace")
             .description("The namespace ID of the bulk import cluster using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
-    SystemDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_ENDPOINT = Index.propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
+    CdkDefinedInstanceProperty BULK_IMPORT_EKS_CLUSTER_ENDPOINT = Index.propertyBuilder("sleeper.bulk.import.eks.k8s.endpoint")
             .description("The endpoint of the bulk import cluster using EKS.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
 
-    static List<SystemDefinedInstanceProperty> getAll() {
+    static List<CdkDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
 
@@ -407,20 +408,19 @@ public interface SystemDefinedInstanceProperty extends InstanceProperty {
     }
 
     @Override
-    default boolean isSystemDefined() {
+    default boolean isSetByCdk() {
         return true;
     }
-
 
     class Index {
 
         private Index() {
         }
 
-        private static final SleeperPropertyIndex<SystemDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
+        private static final SleeperPropertyIndex<CdkDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        private static SystemDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
-            return SystemDefinedInstancePropertyImpl.named(propertyName)
+        private static CdkDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+            return CdkDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }
     }

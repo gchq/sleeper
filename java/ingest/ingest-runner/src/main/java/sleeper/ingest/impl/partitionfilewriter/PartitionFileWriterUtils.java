@@ -42,18 +42,15 @@ public class PartitionFileWriterUtils {
     /**
      * Create a {@link FileInfo} object to use to add the file to a {@link StateStore}
      *
-     * @param sleeperSchema   -
      * @param filename        -
      * @param partitionId     -
      * @param numberOfRecords -
      * @return The {@link FileInfo} object
      */
-    public static FileInfo createFileInfo(Schema sleeperSchema,
-                                          String filename,
+    public static FileInfo createFileInfo(String filename,
                                           String partitionId,
                                           long numberOfRecords) {
         return FileInfo.builder()
-                .rowKeyTypes(sleeperSchema.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partitionId)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
