@@ -16,8 +16,8 @@
 
 package sleeper.bulkimport.starter.executor;
 
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 
@@ -30,6 +30,6 @@ public class EmrJarLocation {
         return "s3a://"
                 + instanceProperties.get(JARS_BUCKET)
                 + "/bulk-import-runner-"
-                + instanceProperties.get(SystemDefinedInstanceProperty.VERSION) + ".jar";
+                + instanceProperties.get(CdkDefinedInstanceProperty.VERSION) + ".jar";
     }
 }

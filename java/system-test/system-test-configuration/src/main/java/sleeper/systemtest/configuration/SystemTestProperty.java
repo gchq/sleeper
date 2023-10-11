@@ -42,37 +42,37 @@ public interface SystemTestProperty extends InstanceProperty {
             .editable(false).build();
     SystemTestProperty SYSTEM_TEST_JARS_BUCKET = Index.propertyBuilder("sleeper.systemtest.standalone.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components, when deploying standalone.")
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_REPO = Index.propertyBuilder("sleeper.systemtest.repo")
             .description("The image in ECR used for writing random data to the system")
             .validationPredicate(Objects::nonNull)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_ENABLED = Index.propertyBuilder("sleeper.systemtest.cluster.enabled")
             .description("Whether to deploy the system test cluster for data generation")
             .defaultValue("true").validationPredicate(Utils::isTrueOrFalse)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_CLUSTER_NAME = Index.propertyBuilder("sleeper.systemtest.cluster")
             .description("The name of the ECS cluster where system test tasks will run")
-            .systemDefined(true).build();
+            .setByCdk(true).build();
     SystemTestProperty SYSTEM_TEST_BUCKET_NAME = Index.propertyBuilder("sleeper.systemtest.bucket")
             .description("The name of the bucket where system test data will be stored")
-            .systemDefined(true).build();
+            .setByCdk(true).build();
     SystemTestProperty WRITE_DATA_TASK_DEFINITION_FAMILY = Index.propertyBuilder("sleeper.systemtest.task.definition")
             .description("The name of the family of task definitions used for writing data")
-            .systemDefined(true).build();
+            .setByCdk(true).build();
     SystemTestProperty WRITE_DATA_ROLE_NAME = Index.propertyBuilder("sleeper.systemtest.writer.role")
             .description("The name of the role used when writing data for an instance in an ECS cluster")
-            .systemDefined(true).build();
+            .setByCdk(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_CPU = Index.propertyBuilder("sleeper.systemtest.task.cpu")
             .description("The number of CPU units for the containers that write random data, where 1024 is 1 vCPU.\n" +
                     "For valid values, see: " +
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
-            .defaultValue("1024").runCDKDeployWhenChanged(true).build();
+            .defaultValue("1024").runCdkDeployWhenChanged(true).build();
     SystemTestProperty SYSTEM_TEST_TASK_MEMORY = Index.propertyBuilder("sleeper.systemtest.task.memory.mb")
             .description("The amount of memory for the containers that write random data, in MiB.\n" +
                     "For valid values, see: " +
                     "https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-defs.html")
-            .defaultValue("4096").runCDKDeployWhenChanged(true).build();
+            .defaultValue("4096").runCdkDeployWhenChanged(true).build();
     SystemTestProperty INGEST_MODE = Index.propertyBuilder("sleeper.systemtest.ingest.mode")
             .description("The ingest mode to write random data. This should be either 'direct', 'queue', or 'generate_only'.\n" +
                     "'Direct' means that the data is written directly using an ingest coordinator.\n" +

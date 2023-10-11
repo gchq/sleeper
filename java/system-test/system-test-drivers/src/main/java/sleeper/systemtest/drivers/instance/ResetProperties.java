@@ -56,7 +56,7 @@ public class ResetProperties {
     private static <T extends SleeperProperty> Iterable<T> propertiesToReset(SleeperProperties<T> properties) {
         return () -> properties.getPropertiesIndex().getUserDefined().stream()
                 .filter(SleeperProperty::isEditable)
-                .filter(not(SleeperProperty::isRunCDKDeployWhenChanged))
+                .filter(not(SleeperProperty::isRunCdkDeployWhenChanged))
                 .iterator();
     }
 }

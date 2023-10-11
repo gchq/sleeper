@@ -32,7 +32,7 @@ import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
 import java.time.Instant;
 import java.util.UUID;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class DirectEmrServerlessDriver {

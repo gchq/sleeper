@@ -61,13 +61,13 @@ import java.util.Set;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -359,7 +359,7 @@ public class SleeperInstanceContext {
             List<? extends P> userDefinedProperties, T deployProperties, T foundProperties) {
         boolean redeployNeeded = false;
         for (P property : userDefinedProperties) {
-            if (!property.isEditable() || !property.isRunCDKDeployWhenChanged()) {
+            if (!property.isEditable() || !property.isRunCdkDeployWhenChanged()) {
                 // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
                 continue;
             }

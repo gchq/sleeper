@@ -42,14 +42,19 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.configuration.properties.SleeperScheduleRule;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB;
@@ -57,11 +62,6 @@ import static sleeper.configuration.properties.instance.PartitionSplittingProper
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.PARTITION_SPLITTING_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_LAMBDA_FUNCTION;
 
 /**
  * A {@link NestedStack} to look for partitions that need splitting and to split them.
@@ -101,9 +101,9 @@ public class PartitionSplittingStack extends NestedStack {
                 .deadLetterQueue(partitionSplittingDeadLetterQueue)
                 .visibilityTimeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS))) // TODO Needs to be >= function timeout
                 .build();
-        instanceProperties.set(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL,
+        instanceProperties.set(CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL,
                 partitionSplittingQueue.getQueueUrl());
-        instanceProperties.set(SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_ARN,
+        instanceProperties.set(CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_ARN,
                 partitionSplittingQueue.getQueueArn());
         instanceProperties.set(PARTITION_SPLITTING_DLQ_URL,
                 partitionSplittingDeadLetterQueue.getQueue().getQueueUrl());

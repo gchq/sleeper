@@ -28,7 +28,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 
 public class S3StateStoreCreator {
     private final AmazonDynamoDB dynamoDB;

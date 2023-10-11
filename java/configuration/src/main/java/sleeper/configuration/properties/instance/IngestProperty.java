@@ -27,7 +27,7 @@ public interface IngestProperty {
             .description("The name of the ECR repository for the ingest container. The Docker image from the ingest module should have been " +
                     "uploaded to an ECR repository of this name in this account.")
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_INGEST_TASKS = Index.propertyBuilder("sleeper.ingest.max.concurrent.tasks")
             .description("The maximum number of concurrent ECS tasks to run.")
             .defaultValue("200")
@@ -38,7 +38,7 @@ public interface IngestProperty {
             .defaultValue("1")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the ingest queue so that they are not processed by other processes.\n" +
@@ -59,14 +59,14 @@ public interface IngestProperty {
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_TASK_MEMORY = Index.propertyBuilder("sleeper.ingest.task.memory")
             .description("The amount of memory used by Fargate tasks that perform ingest jobs.\n" +
                     "Note that only certain combinations of CPU and memory are valid.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.partition.refresh.period")
             .description("The frequency in seconds with which ingest tasks refresh their view of the partitions.\n" +
                     "(NB Refreshes only happen once a batch of data has been written so this is a lower bound " +
@@ -78,11 +78,11 @@ public interface IngestProperty {
                     "exist, i.e. they will not be created as part of the cdk deployment of this instance of Sleeper. The ingest " +
                     "and bulk import stacks will be given read access to these buckets so that they can consume data from them.")
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_SOURCE_ROLE = Index.propertyBuilder("sleeper.ingest.source.role")
             .description("A comma-separated list of role names which should be able to ingest data into Sleeper.")
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_RECORD_BATCH_TYPE = Index.propertyBuilder("sleeper.ingest.record.batch.type")
             .description("The way in which records are held in memory before they are written to a local store.\n" +
                     "Valid values are 'arraylist' and 'arrow'.\n" +
@@ -102,7 +102,7 @@ public interface IngestProperty {
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.INGEST)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_JOB_STATUS_TTL_IN_SECONDS = IngestProperty.Index.propertyBuilder("sleeper.ingest.job.status.ttl")
             .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")

@@ -31,8 +31,8 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import sleeper.clients.util.ClientUtils;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
@@ -54,7 +54,7 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     protected QueryWebSocketClient(AmazonS3 s3Client, InstanceProperties instanceProperties) {
         super(s3Client, instanceProperties);
 
-        this.apiUrl = instanceProperties.get(SystemDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
+        this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }

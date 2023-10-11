@@ -330,18 +330,8 @@ public interface TableProperty extends SleeperProperty {
                     "Defaults to 1 week.")
             .propertyGroup(TablePropertyGroup.INGEST_BATCHER).build();
 
-    // System defined
-    TableProperty SPLIT_POINTS_KEY = Index.propertyBuilder("sleeper.table.splits.key")
-            .description("The key of the S3 object in the config bucket that defines initial split points for the table.")
-            .propertyGroup(TablePropertyGroup.PARTITION_SPLITTING)
-            .systemDefined(true).build();
-
     static List<TableProperty> getAll() {
         return Index.INSTANCE.getAll();
-    }
-
-    static List<TableProperty> getSystemDefined() {
-        return Index.INSTANCE.getSystemDefined();
     }
 
     static List<TableProperty> getUserDefined() {
@@ -351,7 +341,6 @@ public interface TableProperty extends SleeperProperty {
     static boolean has(String propertyName) {
         return Index.INSTANCE.getByName(propertyName).isPresent();
     }
-
 
     class Index {
         private Index() {
