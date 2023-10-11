@@ -26,20 +26,20 @@ import sleeper.systemtest.suite.dsl.ingest.SystemTestIngest;
 
 import java.util.function.Consumer;
 
-public class PurgeQueueExtension implements AfterEachCallback {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueExtension.class);
+public class PurgeQueueOnTestFailureExtension implements AfterEachCallback {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PurgeQueueOnTestFailureExtension.class);
     private final InstanceProperty queueProperty;
     private final Consumer<InstanceProperty> purgeQueue;
     private final Runnable waitFn;
 
-    PurgeQueueExtension(InstanceProperty queueProperty, Consumer<InstanceProperty> purgeQueue, Runnable waitFn) {
+    PurgeQueueOnTestFailureExtension(InstanceProperty queueProperty, Consumer<InstanceProperty> purgeQueue, Runnable waitFn) {
         this.queueProperty = queueProperty;
         this.purgeQueue = purgeQueue;
         this.waitFn = waitFn;
     }
 
-    public static PurgeQueueExtension withQueue(InstanceProperty queueProperty, SystemTestIngest ingest) {
-        return new PurgeQueueExtension(queueProperty, ingest::purgeQueue, () -> {
+    public static PurgeQueueOnTestFailureExtension withQueue(InstanceProperty queueProperty, SystemTestIngest ingest) {
+        return new PurgeQueueOnTestFailureExtension(queueProperty, ingest::purgeQueue, () -> {
             try {
                 LOGGER.info("Waiting 60s for queue to purge");
                 Thread.sleep(60000L);

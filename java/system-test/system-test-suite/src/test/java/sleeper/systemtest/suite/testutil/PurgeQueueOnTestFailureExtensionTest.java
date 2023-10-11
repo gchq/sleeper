@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 
-public class PurgeQueueExtensionTest {
+public class PurgeQueueOnTestFailureExtensionTest {
     private final Map<InstanceProperty, Integer> messageCountsByQueueProperty = new HashMap<>();
 
     @Nested
@@ -38,7 +38,7 @@ public class PurgeQueueExtensionTest {
         @Test
         void shouldPurgeQueuesWhenTestFailed() {
             // Given
-            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
+            PurgeQueueOnTestFailureExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
             messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
@@ -53,7 +53,7 @@ public class PurgeQueueExtensionTest {
         @Test
         void shouldNotPurgeQueuesWhenTestPassed() {
             // Given
-            PurgeQueueExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
+            PurgeQueueOnTestFailureExtension purgeQueueExtension = createExtensionPurgingQueue(INGEST_JOB_QUEUE_URL);
             messageCountsByQueueProperty.put(INGEST_JOB_QUEUE_URL, 123);
             messageCountsByQueueProperty.put(BULK_IMPORT_EMR_JOB_QUEUE_URL, 456);
 
@@ -67,8 +67,8 @@ public class PurgeQueueExtensionTest {
         }
     }
 
-    private PurgeQueueExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
-        return new PurgeQueueExtension(queueProperty, messageCountsByQueueProperty::remove, () -> {
+    private PurgeQueueOnTestFailureExtension createExtensionPurgingQueue(InstanceProperty queueProperty) {
+        return new PurgeQueueOnTestFailureExtension(queueProperty, messageCountsByQueueProperty::remove, () -> {
         });
     }
 }
