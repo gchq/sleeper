@@ -32,6 +32,12 @@ public class PurgeQueueExtension implements AfterEachCallback {
     private final Consumer<InstanceProperty> purgeQueue;
     private final Runnable waitFn;
 
+    PurgeQueueExtension(InstanceProperty queueProperty, Consumer<InstanceProperty> purgeQueue, Runnable waitFn) {
+        this.queueProperty = queueProperty;
+        this.purgeQueue = purgeQueue;
+        this.waitFn = waitFn;
+    }
+
     public static PurgeQueueExtension withQueue(InstanceProperty queueProperty, SystemTestIngest ingest) {
         return new PurgeQueueExtension(queueProperty, ingest::purgeQueue, () -> {
             try {
@@ -41,12 +47,6 @@ public class PurgeQueueExtension implements AfterEachCallback {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    public PurgeQueueExtension(InstanceProperty queueProperty, Consumer<InstanceProperty> purgeQueue, Runnable waitFn) {
-        this.queueProperty = queueProperty;
-        this.purgeQueue = purgeQueue;
-        this.waitFn = waitFn;
     }
 
     @Override
