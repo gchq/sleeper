@@ -638,7 +638,7 @@ public class QuerySerDeTest {
         private final TableProperties tableProperties;
 
         TestPropertiesProvider(final String tableName, final Schema schema) {
-            super(null, null);
+            super(null, new InstanceProperties());
             this.tableProperties = new TableProperties(new InstanceProperties());
             tableProperties.set(TABLE_NAME, tableName);
             tableProperties.setSchema(schema);

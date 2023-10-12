@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.table;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -28,6 +29,6 @@ public class FixedTablePropertiesProvider extends TablePropertiesProvider {
     public FixedTablePropertiesProvider(List<TableProperties> tables) {
         super(tableName -> tables.stream()
                 .filter(table -> Objects.equals(tableName, table.get(TABLE_NAME)))
-                .findFirst().orElseThrow());
+                .findFirst().orElseThrow(), Integer.MAX_VALUE, () -> Instant.MIN);
     }
 }
