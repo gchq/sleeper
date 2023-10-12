@@ -38,6 +38,9 @@ import java.util.List;
 
 public class ReadSplitPoints {
 
+    private ReadSplitPoints() {
+    }
+
     public static List<Object> readSplitPoints(TableProperties tableProperties) throws IOException {
         if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
             return readSplitPoints(tableProperties,
