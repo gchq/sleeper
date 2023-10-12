@@ -20,24 +20,24 @@ import java.util.Objects;
 
 public class TableId {
 
-    private final String tableId;
+    private final String tableUniqueId;
     private final String tableName;
 
-    private TableId(String tableId, String tableName) {
-        this.tableId = tableId;
+    private TableId(String tableUniqueId, String tableName) {
+        this.tableUniqueId = tableUniqueId;
         this.tableName = tableName;
     }
 
-    public static TableId idAndName(String tableId, String tableName) {
-        return new TableId(tableId, tableName);
+    public static TableId uniqueIdAndName(String tableUniqueId, String tableName) {
+        return new TableId(tableUniqueId, tableName);
     }
 
     public String getTableName() {
         return tableName;
     }
 
-    public String getTableId() {
-        return tableId;
+    public String getTableUniqueId() {
+        return tableUniqueId;
     }
 
     @Override
@@ -49,18 +49,18 @@ public class TableId {
             return false;
         }
         TableId tableId1 = (TableId) object;
-        return Objects.equals(tableId, tableId1.tableId) && Objects.equals(tableName, tableId1.tableName);
+        return Objects.equals(tableUniqueId, tableId1.tableUniqueId) && Objects.equals(tableName, tableId1.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, tableName);
+        return Objects.hash(tableUniqueId, tableName);
     }
 
     @Override
     public String toString() {
         return "TableId{" +
-                "tableId='" + tableId + '\'' +
+                "tableUniqueId='" + tableUniqueId + '\'' +
                 ", tableName='" + tableName + '\'' +
                 '}';
     }

@@ -26,5 +26,5 @@ public interface TableIndex {
 
     Optional<TableId> getTableByName(String tableName);
 
-    Optional<TableId> getTableById(String tableId);
+    Optional<TableId> getTableByUniqueId(String tableUniqueId);
 }

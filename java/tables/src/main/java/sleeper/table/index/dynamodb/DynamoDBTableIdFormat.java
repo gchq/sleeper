@@ -34,12 +34,12 @@ class DynamoDBTableIdFormat {
 
     public static Map<String, AttributeValue> getItem(TableId id) {
         return Map.of(
-                TABLE_ID_FIELD, createStringAttribute(id.getTableId()),
+                TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()),
                 TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
     }
 
     public static TableId readItem(Map<String, AttributeValue> item) {
-        return TableId.idAndName(
+        return TableId.uniqueIdAndName(
                 getStringAttribute(item, TABLE_ID_FIELD),
                 getStringAttribute(item, TABLE_NAME_FIELD));
     }

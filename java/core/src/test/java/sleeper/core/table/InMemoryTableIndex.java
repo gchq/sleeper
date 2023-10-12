@@ -33,10 +33,10 @@ public class InMemoryTableIndex implements TableIndex {
         if (idByName.containsKey(tableName)) {
             throw new TableAlreadyExistsException(tableName);
         }
-        TableId id = TableId.idAndName("table-" + nextIdNumber, tableName);
+        TableId id = TableId.uniqueIdAndName("table-" + nextIdNumber, tableName);
         nextIdNumber++;
         idByName.put(tableName, id);
-        nameById.put(id.getTableId(), id);
+        nameById.put(id.getTableUniqueId(), id);
         return id;
     }
 
@@ -51,7 +51,7 @@ public class InMemoryTableIndex implements TableIndex {
     }
 
     @Override
-    public Optional<TableId> getTableById(String tableId) {
-        return Optional.ofNullable(nameById.get(tableId));
+    public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
+        return Optional.ofNullable(nameById.get(tableUniqueId));
     }
 }

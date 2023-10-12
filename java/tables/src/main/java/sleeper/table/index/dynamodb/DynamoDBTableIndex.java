@@ -69,7 +69,7 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public TableId createTable(String tableName) throws TableAlreadyExistsException {
-        TableId id = TableId.idAndName(idGenerator.generateString(), tableName);
+        TableId id = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -88,7 +88,7 @@ public class DynamoDBTableIndex implements TableIndex {
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
             LOGGER.debug("Created table {} with ID {}, capacity consumed = {}",
-                    tableName, id.getTableId(), totalCapacity);
+                    tableName, id.getTableUniqueId(), totalCapacity);
             return id;
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
@@ -118,11 +118,11 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public Optional<TableId> getTableById(String tableId) {
+    public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(idIndexDynamoTableName)
                 .addKeyConditionsEntry(TABLE_ID_FIELD, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableId))
+                        .withAttributeValueList(createStringAttribute(tableUniqueId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return result.getItems().stream().map(DynamoDBTableIdFormat::readItem).findFirst();
     }

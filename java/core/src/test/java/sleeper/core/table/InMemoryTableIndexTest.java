@@ -55,7 +55,7 @@ public class InMemoryTableIndexTest {
             TableId tableIdB = store.createTable("table-b");
 
             assertThat(List.of(tableIdA, tableIdB))
-                    .extracting(TableId::getTableName, TableId::getTableId)
+                    .extracting(TableId::getTableName, TableId::getTableUniqueId)
                     .containsExactly(
                             tuple("table-a", "table-1"),
                             tuple("table-b", "table-2"));
@@ -86,7 +86,7 @@ public class InMemoryTableIndexTest {
         void shouldGetTableById() {
             TableId tableId = store.createTable("test-table");
 
-            assertThat(store.getTableById(tableId.getTableId()))
+            assertThat(store.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
         }
 
@@ -94,7 +94,7 @@ public class InMemoryTableIndexTest {
         void shouldGetNoTableById() {
             store.createTable("existing-table");
 
-            assertThat(store.getTableById("not-a-table"))
+            assertThat(store.getTableByUniqueId("not-a-table"))
                     .isEmpty();
         }
     }
