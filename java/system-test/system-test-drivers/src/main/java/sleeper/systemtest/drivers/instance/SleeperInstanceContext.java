@@ -138,6 +138,12 @@ public class SleeperInstanceContext {
         return currentInstance.getInstanceProperties();
     }
 
+    public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        values.forEach(instanceProperties::set);
+        instanceProperties.saveToS3(s3);
+    }
+
     public TableProperties getTableProperties() {
         return currentInstance.getTableProperties();
     }

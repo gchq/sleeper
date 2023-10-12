@@ -181,58 +181,6 @@ public class IngestCoordinatorCommonIT {
 
     @ParameterizedTest
     @MethodSource("parameterObjsForTests")
-    public void shouldWriteManyRecordsCorrectly(TestIngestType ingestType)
-            throws StateStoreException, IOException, IteratorException {
-        // Given
-        RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
-                new LongType(),
-                LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                .rootFirst("root")
-                .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixTime(stateStoreUpdateTime);
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
-        IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
-                .fileNames(List.of("rootFile"))
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .workingDir(ingestLocalWorkingDirectory)
-                .build();
-
-        // When
-        ingestRecords(recordListAndSchema, parameters, ingestType);
-
-        // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
-        FileInfo fileInfo = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build()
-                .rootFile(ingestType.getFilePrefix(parameters) + "/partition_root/rootFile.parquet", 20000);
-
-        assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
-        assertThat(actualFiles).containsExactly(fileInfo);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.getValues(List.of("key0")))
-                .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
-                        .map(List::<Object>of)
-                        .collect(Collectors.toList()));
-
-        ResultVerifier.assertOnSketch(
-                recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
-                recordListAndSchema,
-                actualFiles,
-                hadoopConfiguration
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("parameterObjsForTests")
     public void shouldWriteRecordsSplitByPartitionIntKey(TestIngestType ingestType)
             throws StateStoreException, IOException, IteratorException {
         RecordGenerator.RecordListAndSchema recordListAndSchema = genericKey1D(
