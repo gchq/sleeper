@@ -18,6 +18,8 @@ package sleeper.core.table;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TableIdGeneratorTest {
@@ -32,5 +34,12 @@ public class TableIdGeneratorTest {
     void shouldGenerateAnother32BitHexId() {
         assertThat(TableIdGenerator.fromRandomSeed(123).generateString())
                 .isEqualTo("ddf121b9");
+    }
+
+    @Test
+    void shouldGenerateDifferentIdsFromSameGenerator() {
+        TableIdGenerator generator = TableIdGenerator.fromRandomSeed(42);
+        assertThat(List.of(generator.generateString(), generator.generateString()))
+                .containsExactly("359d41ba", "f78afe0d");
     }
 }
