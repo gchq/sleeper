@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.CommandRunner;
@@ -35,16 +35,17 @@ import java.util.function.Function;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
-public class UpdatePropertiesWithNano {
+public class UpdatePropertiesWithTextEditor {
 
     private final Path tempDirectory;
     private final CommandRunner runCommand;
+    private final UpdatePropertiesTextEditorCommand editorCommand = new UpdatePropertiesTextEditorCommand();
 
-    public UpdatePropertiesWithNano(Path tempDirectory) {
+    public UpdatePropertiesWithTextEditor(Path tempDirectory) {
         this(tempDirectory, ClientUtils::runCommandInheritIO);
     }
 
-    public UpdatePropertiesWithNano(Path tempDirectory, CommandRunner runCommand) {
+    public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand) {
         this.tempDirectory = tempDirectory;
         this.runCommand = runCommand;
     }
@@ -83,7 +84,7 @@ public class UpdatePropertiesWithNano {
         try (BufferedWriter writer = Files.newBufferedWriter(propertiesFile)) {
             printer.apply(new PrintWriter(writer)).print(properties);
         }
-        runCommand.run("nano", propertiesFile.toString());
+        runCommand.run(editorCommand.getCommand(), propertiesFile.toString());
         return loadProperties(propertiesFile);
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.SleeperPropertyIndex;

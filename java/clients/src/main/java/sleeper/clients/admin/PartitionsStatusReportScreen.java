@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.status.report.partitions.PartitionsStatus;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.clients.util.console.ConsoleInput;
