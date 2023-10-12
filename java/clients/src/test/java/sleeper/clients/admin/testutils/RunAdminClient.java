@@ -18,7 +18,7 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
-import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.admin.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -44,13 +44,13 @@ public class RunAdminClient {
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness store;
     private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
-    private final UpdatePropertiesWithNano editor;
+    private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
     private final String instanceId;
 
     RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
                    AdminConfigStoreTestHarness store,
-                   UpdatePropertiesWithNano editor,
+                   UpdatePropertiesWithTextEditor editor,
                    String instanceId) {
         this.out = out;
         this.in = in;

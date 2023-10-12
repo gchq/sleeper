@@ -35,7 +35,7 @@ import sleeper.clients.admin.IngestStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
-import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.admin.UpdatePropertiesWithTextEditor;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.util.EcrRepositoryCreator;
@@ -56,14 +56,14 @@ public class AdminClient {
 
     private final AdminClientPropertiesStore store;
     private final AdminClientStatusStoreFactory statusStores;
-    private final UpdatePropertiesWithNano editor;
+    private final UpdatePropertiesWithTextEditor editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final QueueMessageCount.Client queueClient;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public AdminClient(AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
-                       UpdatePropertiesWithNano editor, ConsoleOutput out, ConsoleInput in,
+                       UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
                        QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.store = store;
         this.statusStores = statusStores;
@@ -102,7 +102,7 @@ public class AdminClient {
                                 .ecrClient(EcrRepositoryCreator.withEcrClient(ecrClient))
                                 .baseDockerDirectory(baseDockerDir).build()),
                 AdminClientStatusStoreFactory.from(dynamoDB),
-                new UpdatePropertiesWithNano(Path.of("/tmp")),
+                new UpdatePropertiesWithTextEditor(Path.of("/tmp")),
                 new ConsoleOutput(System.out),
                 new ConsoleInput(System.console()),
                 QueueMessageCount.withSqsClient(sqsClient),

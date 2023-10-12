@@ -38,9 +38,9 @@ public class InstanceConfigurationScreen {
     private final PropertyGroupSelectHelper selectGroup;
     private final TableSelectHelper selectTable;
     private final AdminClientPropertiesStore store;
-    private final UpdatePropertiesWithNano editor;
+    private final UpdatePropertiesWithTextEditor editor;
 
-    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithNano editor) {
+    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithTextEditor editor) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);

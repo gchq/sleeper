@@ -43,15 +43,15 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LO
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
-class UpdatePropertiesWithNanoTest {
+class UpdatePropertiesWithTextEditorTest {
 
     @TempDir
     private Path tempDir;
-    private UpdatePropertiesWithNanoTestHelper helper;
+    private UpdatePropertiesWithTextEditorTestHelper helper;
 
     @BeforeEach
     void setUp() {
-        helper = new UpdatePropertiesWithNanoTestHelper(tempDir);
+        helper = new UpdatePropertiesWithTextEditorTestHelper(tempDir);
     }
 
     @Nested

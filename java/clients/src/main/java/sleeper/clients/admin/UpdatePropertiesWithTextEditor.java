@@ -35,16 +35,16 @@ import java.util.function.Function;
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
-public class UpdatePropertiesWithNano {
+public class UpdatePropertiesWithTextEditor {
 
     private final Path tempDirectory;
     private final CommandRunner runCommand;
 
-    public UpdatePropertiesWithNano(Path tempDirectory) {
+    public UpdatePropertiesWithTextEditor(Path tempDirectory) {
         this(tempDirectory, ClientUtils::runCommandInheritIO);
     }
 
-    public UpdatePropertiesWithNano(Path tempDirectory, CommandRunner runCommand) {
+    public UpdatePropertiesWithTextEditor(Path tempDirectory, CommandRunner runCommand) {
         this.tempDirectory = tempDirectory;
         this.runCommand = runCommand;
     }
