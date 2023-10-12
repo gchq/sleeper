@@ -54,6 +54,9 @@ public class IngestJob {
         if (tableName == null) {
             validationFailures.add("Missing property \"tableName\"");
         }
+        if (files.contains(null)) {
+            validationFailures.add("One of the files was null");
+        }
         return validationFailures;
     }
 

@@ -118,5 +118,29 @@ public class IngestJobMessageHandlerTest {
                                     "Model validation failed. Missing property \"files\"",
                                     "Model validation failed. Missing property \"tableName\"")));
         }
+
+        @Test
+        void shouldReportValidationFailureIfFileIsNull() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+            IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
+                    null, new InstanceProperties(), ingestJobStatusStore,
+                    () -> "test-job-id", () -> validationTime);
+            String json = "{" +
+                    "\"id\": \"invalid-job-1\"," +
+                    "\"tableName\": \"system-test\"," +
+                    "\"files\": [,]" +
+                    "}";
+
+            // When
+            ingestJobMessageHandler.handleMessage(json);
+
+            // Then
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(jobStatus("test-job-id",
+                            rejectedRun("test-job-id", json, validationTime,
+                                    "Model validation failed. One of the files was null")));
+        }
     }
 }
