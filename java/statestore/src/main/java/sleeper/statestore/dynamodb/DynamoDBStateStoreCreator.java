@@ -17,23 +17,15 @@ package sleeper.statestore.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.services.dynamodbv2.model.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.dynamodb.tools.DynamoDBUtils;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
@@ -49,19 +41,12 @@ import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_NAME;
  * normally done using CDK.
  */
 public class DynamoDBStateStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBStateStoreCreator.class);
-    private final AmazonDynamoDB dynamoDB;
     private final InstanceProperties instanceProperties;
-    private final Collection<Tag> tags;
+    private final AmazonDynamoDB dynamoDB;
 
     public DynamoDBStateStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+        this.instanceProperties = Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
-        this.instanceProperties = instanceProperties;
-        this.tags = instanceProperties.getTags()
-                .entrySet()
-                .stream()
-                .map(e -> new Tag().withKey(e.getKey()).withValue(e.getValue()))
-                .collect(Collectors.toList());
     }
 
     public void create() {
@@ -100,25 +85,8 @@ public class DynamoDBStateStoreCreator {
             String tableName,
             List<AttributeDefinition> attributeDefinitions,
             List<KeySchemaElement> keySchemaElements) {
-        CreateTableRequest request = new CreateTableRequest()
-                .withTableName(tableName)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchemaElements)
-                .withBillingMode(BillingMode.PAY_PER_REQUEST);
-        String message = "";
-        if (!tags.isEmpty()) {
-            request = request.withTags(tags);
-            message = " with tags " + tags;
-        }
-        try {
-            CreateTableResult result = dynamoDB.createTable(request);
-            LOGGER.info("Created table {} {}", result.getTableDescription().getTableName(), message);
-        } catch (ResourceInUseException e) {
-            if (e.getMessage().contains("Table already exists")) {
-                LOGGER.warn("Table {} already exists", tableName);
-            } else {
-                throw e;
-            }
-        }
+        DynamoDBUtils.initialiseTable(dynamoDB,
+                tableName, attributeDefinitions, keySchemaElements,
+                instanceProperties.getTags());
     }
 }

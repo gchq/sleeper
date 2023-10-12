@@ -32,6 +32,8 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -80,6 +82,8 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, id + "-rfgcf");
         instanceProperties.set(PARTITION_TABLENAME, id + "-p");
         instanceProperties.set(REVISION_TABLENAME, id + "-rv");
+        instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, id + "-tni");
+        instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, id + "-tii");
         return instanceProperties;
     }
 
