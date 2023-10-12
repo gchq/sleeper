@@ -17,7 +17,6 @@ package sleeper.ingest.impl;
 
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -26,7 +25,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileInfo;
-import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriter;
@@ -34,22 +32,23 @@ import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordWriterAcceptingRecords;
 import sleeper.ingest.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.testutils.RecordGenerator;
 import sleeper.ingest.testutils.ResultVerifier;
+import sleeper.ingest.testutils.TestFilesAndRecords;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.ingest.testutils.IngestCoordinatorFactory.ingestCoordinatorDirectWriteBackedByArrow;
-import static sleeper.ingest.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordListIT extends DirectWriteBackedByArrowTestBase {
 
@@ -80,41 +79,29 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .maxNoOfBytesToWriteLocally(128 * 1024 * 1024L));
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_left/leftFile.parquet", 10000, -10000L, -1L);
-        FileInfo rightFile = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_right/rightFile.parquet", 10000, 0L, 9999L);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
-        List<Record> leftFileRecords = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, leftFile, new Configuration());
-        List<Record> rightFileRecords = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, rightFile, new Configuration());
-        List<Record> actualRecords = Stream.of(leftFileRecords, rightFileRecords)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+        assertThat(actualActiveData.getFiles())
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .containsExactlyInAnyOrder(
+                        tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile.parquet"),
+                        tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile.parquet"));
 
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile, rightFile);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThat(actualRecords).extracting(record -> record.get("key0"))
-                .containsExactlyElementsOf(LongStream.range(-10000, 10000).boxed()
-                        .collect(Collectors.toList()));
-        assertThat(leftFileRecords).extracting(record -> record.get("key0"))
+        assertThat(actualActiveData.getSetOfAllRecords())
+                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+        assertThat(actualActiveData.getPartitionData("left").streamAllRecords())
+                .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(-10000, 0).boxed()
                         .collect(Collectors.toList()));
-        assertThat(rightFileRecords).extracting(record -> record.get("key0"))
+        assertThat(actualActiveData.getPartitionData("right").streamAllRecords())
+                .extracting(record -> record.get("key0"))
                 .containsExactlyElementsOf(LongStream.range(0, 10000).boxed()
                         .collect(Collectors.toList()));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                actualActiveData.getFiles(),
                 configuration
         );
     }
@@ -146,48 +133,34 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowRecordWriterAcceptingRecordL
                 .maxNoOfBytesToWriteLocally(2 * 1024 * 1024L));
 
         // Then
-        List<FileInfo> actualFiles = stateStore.getActiveFiles();
-        FileInfoFactory fileInfoFactory = FileInfoFactory.builder()
-                .partitionTree(tree)
-                .lastStateStoreUpdate(stateStoreUpdateTime)
-                .schema(recordListAndSchema.sleeperSchema)
-                .build();
-        FileInfo leftFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_left/leftFile1.parquet", 5950, -9999L, -1L);
-        FileInfo leftFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_left/leftFile2.parquet", 4050, -10000L, -3L);
-        FileInfo rightFile1 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_right/rightFile1.parquet", 6050, 1L, 9998L);
-        FileInfo rightFile2 = fileInfoFactory.leafFile(parameters.getLocalFilePrefix() +
-                "/partition_right/rightFile2.parquet", 3950, 0L, 9999L);
+        TestFilesAndRecords actualActiveData = TestFilesAndRecords.loadActiveFiles(stateStore, recordListAndSchema.sleeperSchema, configuration);
 
-        List<Record> leftFile1Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, leftFile1, configuration);
-        List<Record> leftFile2Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, leftFile2, configuration);
-        List<Record> rightFile1Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, rightFile1, configuration);
-        List<Record> rightFile2Records = readRecordsFromPartitionDataFile(
-                recordListAndSchema.sleeperSchema, rightFile2, configuration);
-        List<Record> actualRecords = Stream.of(leftFile1Records, leftFile2Records, rightFile1Records, rightFile2Records)
-                .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
-
-        assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
-        assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile1Records,
-                "key0", LongStream.range(-9999L, 0));
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(leftFile2Records,
-                "key0", LongStream.range(-10000L, -2));
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile1Records,
-                "key0", LongStream.range(1L, 9999));
-        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(rightFile2Records,
-                "key0", LongStream.range(0, 10000));
+        assertThat(actualActiveData.getFiles())
+                .extracting(FileInfo::getPartitionId, FileInfo::getFilename)
+                .containsExactlyInAnyOrder(
+                        tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile1.parquet"),
+                        tuple("left", parameters.getLocalFilePrefix() + "/partition_left/leftFile2.parquet"),
+                        tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile1.parquet"),
+                        tuple("right", parameters.getLocalFilePrefix() + "/partition_right/rightFile2.parquet"));
+        assertThat(actualActiveData.getSetOfAllRecords())
+                .isEqualTo(new HashSet<>(recordListAndSchema.recordList));
+        assertThat(actualActiveData.getPartitionData("left"))
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
+                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRecordsInFile(file),
+                                "key0", LongStream.range(-10_000, 0))))
+                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
+        assertThat(actualActiveData.getPartitionData("right"))
+                .satisfies(data -> assertThat(data.getFiles()).allSatisfy(file ->
+                        assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(
+                                data.getRecordsInFile(file),
+                                "key0", LongStream.range(0, 10_000))))
+                .satisfies(data -> assertThat(data.getNumRecords()).isEqualTo(10_000));
 
         ResultVerifier.assertOnSketch(
                 recordListAndSchema.sleeperSchema.getField("key0").orElseThrow(),
                 recordListAndSchema,
-                actualFiles,
+                actualActiveData.getFiles(),
                 configuration
         );
     }
