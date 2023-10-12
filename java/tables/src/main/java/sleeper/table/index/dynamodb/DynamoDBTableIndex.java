@@ -104,7 +104,10 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public Stream<TableId> streamAllTables() {
-        return streamPagedItems(dynamoDB, new ScanRequest().withTableName(nameIndexDynamoTableName))
+        return streamPagedItems(dynamoDB,
+                new ScanRequest()
+                        .withTableName(nameIndexDynamoTableName)
+                        .withConsistentRead(true))
                 .map(DynamoDBTableIdFormat::readItem)
                 .sorted(Comparator.comparing(TableId::getTableName));
     }
