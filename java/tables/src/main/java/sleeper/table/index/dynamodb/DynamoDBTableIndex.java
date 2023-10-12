@@ -17,6 +17,7 @@
 package sleeper.table.index.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -70,17 +71,18 @@ public class DynamoDBTableIndex implements TableIndex {
     @Override
     public TableId createTable(String tableName) throws TableAlreadyExistsException {
         TableId id = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(id);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
                         new TransactWriteItem().withPut(new Put()
                                 .withTableName(nameIndexDynamoTableName)
-                                .withItem(DynamoDBTableIdFormat.getItem(id))
+                                .withItem(idItem)
                                 .withConditionExpression("attribute_not_exists(#tablename)")
                                 .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
                         new TransactWriteItem().withPut(new Put()
                                 .withTableName(idIndexDynamoTableName)
-                                .withItem(DynamoDBTableIdFormat.getItem(id))
+                                .withItem(idItem)
                                 .withConditionExpression("attribute_not_exists(#tableid)")
                                 .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
         try {
