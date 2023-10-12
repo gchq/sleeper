@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.admin.properties.UpdatePropertiesRequest;
 import sleeper.configuration.properties.SleeperProperties;
 
 public class UpdatePropertiesRequestTestHelper {

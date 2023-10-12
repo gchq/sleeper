@@ -34,8 +34,8 @@ import sleeper.job.common.QueueMessageCount;
 import java.util.Collections;
 
 import static org.mockito.Mockito.when;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
+import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
+import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
 

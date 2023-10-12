@@ -63,7 +63,7 @@ import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CONF
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-class InstanceConfigurationTest extends AdminClientMockStoreBase {
+class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
 
     @DisplayName("Navigate from main screen and back")
     @Nested

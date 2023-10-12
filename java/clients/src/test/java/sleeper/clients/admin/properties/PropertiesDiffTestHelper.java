@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
-import sleeper.clients.admin.properties.PropertyDiff;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 public class PropertiesDiffTestHelper {

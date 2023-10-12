@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.clients.admin.properties.PropertiesDiff;
-import sleeper.clients.admin.properties.PropertyDiff;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
@@ -31,9 +29,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.admin.PropertiesDiffTestHelper.newValue;
-import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
-import static sleeper.clients.admin.PropertiesDiffTestHelper.valueDeleted;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.newValue;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueDeleted;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
