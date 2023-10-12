@@ -20,6 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.admin.properties.PropertyDiff;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;

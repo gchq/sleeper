@@ -16,6 +16,8 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.UpdatePropertiesRequest;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.PropertyGroup;
 import sleeper.configuration.properties.SleeperProperties;

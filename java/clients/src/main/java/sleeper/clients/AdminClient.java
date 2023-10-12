@@ -25,7 +25,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 
-import sleeper.clients.admin.AdminClientPropertiesStore;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.CompactionStatusReportScreen;
@@ -35,7 +34,8 @@ import sleeper.clients.admin.IngestStatusReportScreen;
 import sleeper.clients.admin.InstanceConfigurationScreen;
 import sleeper.clients.admin.PartitionsStatusReportScreen;
 import sleeper.clients.admin.TableNamesReport;
-import sleeper.clients.admin.UpdatePropertiesWithTextEditor;
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.status.report.ingest.job.PersistentEMRStepCount;
 import sleeper.clients.util.EcrRepositoryCreator;

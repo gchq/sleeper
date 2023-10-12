@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.admin.properties.UpdatePropertiesRequest;
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;

@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.UpdatePropertiesWithTextEditor;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;

@@ -23,6 +23,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.admin.properties.PropertiesDiff;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstancePropertyGroup;

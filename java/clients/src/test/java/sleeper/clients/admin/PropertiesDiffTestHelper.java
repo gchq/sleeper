@@ -15,6 +15,7 @@
  */
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.PropertyDiff;
 import sleeper.configuration.properties.instance.SleeperProperty;
 
 public class PropertiesDiffTestHelper {

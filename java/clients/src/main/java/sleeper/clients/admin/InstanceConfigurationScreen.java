@@ -16,6 +16,12 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.admin.properties.PropertyGroupSelectHelper;
+import sleeper.clients.admin.properties.PropertyGroupWithCategory;
+import sleeper.clients.admin.properties.UpdatePropertiesRequest;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ChooseOne;
