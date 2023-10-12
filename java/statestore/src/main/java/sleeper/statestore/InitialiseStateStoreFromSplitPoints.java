@@ -15,7 +15,6 @@
  */
 package sleeper.statestore;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -55,37 +54,32 @@ import java.util.List;
  * is created.
  */
 public class InitialiseStateStoreFromSplitPoints {
-    private final AmazonDynamoDB dynamoDB;
-    private final InstanceProperties instanceProperties;
+    private final StateStoreProvider stateStoreProvider;
     private final TableProperties tableProperties;
     private final List<Object> splitPoints;
 
     public InitialiseStateStoreFromSplitPoints(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
             TableProperties tableProperties) throws IOException {
-        this.dynamoDB = dynamoDB;
-        this.instanceProperties = instanceProperties;
-        this.tableProperties = tableProperties;
-        if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
-            this.splitPoints = readSplitPoints(tableProperties);
-        } else {
-            this.splitPoints = List.of();
-        }
+        this(dynamoDB, instanceProperties, tableProperties, readSplitPoints(tableProperties));
     }
 
     public InitialiseStateStoreFromSplitPoints(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
             TableProperties tableProperties, List<Object> splitPoints) {
-        this.dynamoDB = dynamoDB;
-        this.instanceProperties = instanceProperties;
+        this(new StateStoreProvider(dynamoDB, instanceProperties, new Configuration()),
+                tableProperties, splitPoints);
+    }
+
+    public InitialiseStateStoreFromSplitPoints(
+            StateStoreProvider stateStoreProvider, TableProperties tableProperties, List<Object> splitPoints) {
+        this.stateStoreProvider = stateStoreProvider;
         this.tableProperties = tableProperties;
         this.splitPoints = splitPoints;
     }
 
     public void run() {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, conf).getStateStore(tableProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         try {
             stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
         } catch (StateStoreException e) {
@@ -123,9 +117,13 @@ public class InitialiseStateStoreFromSplitPoints {
     }
 
     private static List<Object> readSplitPoints(TableProperties tableProperties) throws IOException {
-        return readSplitPoints(tableProperties,
-                tableProperties.get(TableProperty.SPLIT_POINTS_FILE),
-                tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
+        if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
+            return readSplitPoints(tableProperties,
+                    tableProperties.get(TableProperty.SPLIT_POINTS_FILE),
+                    tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
+        } else {
+            return List.of();
+        }
     }
 
     private static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
