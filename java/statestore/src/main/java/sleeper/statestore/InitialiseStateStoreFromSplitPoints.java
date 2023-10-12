@@ -48,16 +48,8 @@ public class InitialiseStateStoreFromSplitPoints {
     private final List<Object> splitPoints;
 
     public InitialiseStateStoreFromSplitPoints(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-            TableProperties tableProperties) throws IOException {
-        this(dynamoDB, instanceProperties, tableProperties, readSplitPoints(tableProperties));
-    }
-
-    public InitialiseStateStoreFromSplitPoints(
-            AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
-            TableProperties tableProperties, List<Object> splitPoints) {
-        this(new StateStoreProvider(dynamoDB, instanceProperties, new Configuration()),
-                tableProperties, splitPoints);
+            StateStoreProvider stateStoreProvider, TableProperties tableProperties) throws IOException {
+        this(stateStoreProvider, tableProperties, readSplitPoints(tableProperties));
     }
 
     public InitialiseStateStoreFromSplitPoints(
@@ -97,8 +89,9 @@ public class InitialiseStateStoreFromSplitPoints {
             splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
         }
 
-        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties,
-                splitPoints).run();
+        StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
+
+        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, splitPoints).run();
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
