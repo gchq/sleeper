@@ -48,6 +48,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
+START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
 OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
@@ -82,8 +83,8 @@ runMavenSystemTests() {
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
-runMavenSystemTests "mvn-$START_TIME" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
-runMavenSystemTests "s3-$START_TIME" s3-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.s3.S3StateStore
+runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
+runMavenSystemTests "s3-$START_TIME_SHORT" s3-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.s3.S3StateStore
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \

@@ -62,7 +62,7 @@ class WriteParquetFilesIT {
 
     public InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
+        instanceProperties.set(ID, UUID.randomUUID().toString().substring(0, 18));
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(JARS_BUCKET, "test-jars-bucket");
         instanceProperties.set(ACCOUNT, "test-account");

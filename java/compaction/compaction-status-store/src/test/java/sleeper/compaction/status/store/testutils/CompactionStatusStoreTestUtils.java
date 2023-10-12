@@ -40,7 +40,7 @@ public class CompactionStatusStoreTestUtils {
     public static InstanceProperties createInstanceProperties() {
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
+        instanceProperties.set(ID, UUID.randomUUID().toString().substring(0, 18));
         instanceProperties.set(CONFIG_BUCKET, "test-bucket");
         instanceProperties.set(FILE_SYSTEM, "test-fs");
         return instanceProperties;

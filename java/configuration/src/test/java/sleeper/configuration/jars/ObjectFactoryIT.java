@@ -72,7 +72,7 @@ public class ObjectFactoryIT {
 
     private InstanceProperties createInstanceProperties(AmazonS3 s3Client) {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
+        instanceProperties.set(ID, UUID.randomUUID().toString().substring(0, 18));
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(JARS_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, "");

@@ -61,7 +61,7 @@ public enum SystemTestInstance {
 
     MAIN("main", SystemTestInstance::buildMainConfiguration),
     INGEST_PERFORMANCE("ingest", SystemTestInstance::buildIngestPerformanceConfiguration),
-    COMPACTION_PERFORMANCE("compaction", SystemTestInstance::buildCompactionPerformanceConfiguration),
+    COMPACTION_PERFORMANCE("compact", SystemTestInstance::buildCompactionPerformanceConfiguration),
     BULK_IMPORT_PERFORMANCE("emr", SystemTestInstance::buildBulkImportPerformanceConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";

@@ -94,7 +94,7 @@ class IngestJobRunnerIT {
     protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
-    private final String instanceId = UUID.randomUUID().toString();
+    private final String instanceId = UUID.randomUUID().toString().substring(0, 18);
     private final String tableName = UUID.randomUUID().toString();
     private final String ingestDataBucketName = tableName + "-ingestdata";
     private final String tableDataBucketName = tableName + "-tabledata";
