@@ -31,7 +31,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
@@ -40,7 +39,7 @@ public class UpdatePropertiesWithTextEditor {
 
     private final Path tempDirectory;
     private final CommandRunner runCommand;
-    private final Supplier<String> getEditorCommand = () -> "nano";
+    private final UpdatePropertiesTextEditorCommand editorCommand = new UpdatePropertiesTextEditorCommand();
 
     public UpdatePropertiesWithTextEditor(Path tempDirectory) {
         this(tempDirectory, ClientUtils::runCommandInheritIO);
@@ -85,7 +84,7 @@ public class UpdatePropertiesWithTextEditor {
         try (BufferedWriter writer = Files.newBufferedWriter(propertiesFile)) {
             printer.apply(new PrintWriter(writer)).print(properties);
         }
-        runCommand.run(getEditorCommand.get(), propertiesFile.toString());
+        runCommand.run(editorCommand.getCommand(), propertiesFile.toString());
         return loadProperties(propertiesFile);
     }
 
