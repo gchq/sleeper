@@ -123,6 +123,14 @@ public interface CommonProperty {
             .defaultValue("25")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty S3_UPLOAD_BLOCK_SIZE = Index.propertyBuilder("sleeper.s3.upload.block.size")
+            .description("Used to set the value of fs.s3a.block.size on the Hadoop configuration. Uploads to S3 " +
+                    "happen in blocks, and this sets the size of blocks. If a larger value is used, then more data " +
+                    "is buffered before the upload begins.\n" +
+                    "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
+            .defaultValue("32M")
+            .validationPredicate(Utils::isValidHadoopLongBytes)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FARGATE_VERSION = Index.propertyBuilder("sleeper.fargate.version")
             .description("The version of Fargate to use.")
             .defaultValue("1.4.0")
