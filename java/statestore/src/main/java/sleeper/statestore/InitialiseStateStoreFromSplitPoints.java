@@ -19,31 +19,20 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+
+import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
 
 /**
  * Initialises a {@link StateStore}. If a file of split points is
@@ -102,10 +91,9 @@ public class InitialiseStateStoreFromSplitPoints {
         TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
 
         List<Object> splitPoints = null;
-        boolean stringsBase64Encoded = false;
         if (args.length > 2) {
             String splitPointsFile = args[2];
-            stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
+            boolean stringsBase64Encoded = 4 == args.length && Boolean.parseBoolean(args[2]);
             splitPoints = readSplitPoints(tableProperties, splitPointsFile, stringsBase64Encoded);
         }
 
@@ -114,49 +102,5 @@ public class InitialiseStateStoreFromSplitPoints {
 
         dynamoDBClient.shutdown();
         s3Client.shutdown();
-    }
-
-    private static List<Object> readSplitPoints(TableProperties tableProperties) throws IOException {
-        if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
-            return readSplitPoints(tableProperties,
-                    tableProperties.get(TableProperty.SPLIT_POINTS_FILE),
-                    tableProperties.getBoolean(TableProperty.SPLIT_POINTS_BASE64_ENCODED));
-        } else {
-            return List.of();
-        }
-    }
-
-    private static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
-        List<Object> splitPoints = new ArrayList<>();
-        PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8))) {
-            String lineFromFile = reader.readLine();
-            while (null != lineFromFile) {
-                lines.add(lineFromFile);
-                lineFromFile = reader.readLine();
-            }
-        }
-        for (String line : lines) {
-            if (rowKey1Type instanceof IntType) {
-                splitPoints.add(Integer.parseInt(line));
-            } else if (rowKey1Type instanceof LongType) {
-                splitPoints.add(Long.parseLong(line));
-            } else if (rowKey1Type instanceof StringType) {
-                if (stringsBase64Encoded) {
-                    byte[] encodedString = Base64.decodeBase64(line);
-                    splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                } else {
-                    splitPoints.add(line);
-                }
-            } else if (rowKey1Type instanceof ByteArrayType) {
-                splitPoints.add(Base64.decodeBase64(line));
-            } else {
-                throw new RuntimeException("Unknown key type " + rowKey1Type);
-            }
-        }
-        System.out.println("Read " + splitPoints.size() + " split points from file");
-        return splitPoints;
     }
 }
