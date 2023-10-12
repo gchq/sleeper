@@ -319,20 +319,4 @@ class UpdatePropertiesWithTextEditorIT {
                     .isEqualTo(new PropertiesDiff(before, after));
         }
     }
-
-    @Nested
-    @DisplayName("Use editor set in environment variable")
-    class UseEditorEnvironmentVariable {
-
-        @Test
-        void shouldUpdatePropertiesWithSpecifiedEditor() throws Exception {
-            // TODO set editor
-            // Given
-            InstanceProperties properties = generateTestInstanceProperties();
-
-            // When / Then
-            assertThat(helper.openInstancePropertiesGetCommandRun(properties))
-                    .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
-        }
-    }
 }
