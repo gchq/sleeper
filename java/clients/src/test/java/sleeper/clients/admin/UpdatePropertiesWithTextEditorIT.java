@@ -43,7 +43,7 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LO
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
-class UpdatePropertiesWithTextEditorTest {
+class UpdatePropertiesWithTextEditorIT {
 
     @TempDir
     private Path tempDir;
@@ -317,6 +317,22 @@ class UpdatePropertiesWithTextEditorTest {
                     .isEqualTo(after);
             assertThat(updatePropertiesRequest.getDiff())
                     .isEqualTo(new PropertiesDiff(before, after));
+        }
+    }
+
+    @Nested
+    @DisplayName("Use editor set in environment variable")
+    class UseEditorEnvironmentVariable {
+
+        @Test
+        void shouldUpdatePropertiesWithSpecifiedEditor() throws Exception {
+            // TODO set editor
+            // Given
+            InstanceProperties properties = generateTestInstanceProperties();
+
+            // When / Then
+            assertThat(helper.openInstancePropertiesGetCommandRun(properties))
+                    .containsExactly("nano", tempDir.resolve("sleeper/admin/temp.properties").toString());
         }
     }
 }
