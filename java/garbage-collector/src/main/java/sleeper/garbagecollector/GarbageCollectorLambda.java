@@ -61,7 +61,7 @@ public class GarbageCollectorLambda {
         LOGGER.debug("Loaded InstanceProperties from {}", s3Bucket);
 
         TableLister tableLister = new TableLister(s3Client, instanceProperties);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
 

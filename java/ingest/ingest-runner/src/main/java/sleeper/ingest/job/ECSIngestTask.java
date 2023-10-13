@@ -103,7 +103,7 @@ public class ECSIngestTask {
                                               AmazonCloudWatch cloudWatchClient,
                                               S3AsyncClient s3AsyncClient,
                                               Configuration hadoopConfiguration) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, hadoopConfiguration);
         IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
