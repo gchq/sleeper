@@ -50,13 +50,13 @@ public class IngestJob {
         List<String> validationFailures = new ArrayList<>();
         if (files == null) {
             validationFailures.add("Missing property \"files\"");
+        } else if (files.contains(null)) {
+            validationFailures.add("One of the files was null");
         }
         if (tableName == null) {
             validationFailures.add("Missing property \"tableName\"");
         }
-        if (files.contains(null)) {
-            validationFailures.add("One of the files was null");
-        }
+
         return validationFailures;
     }
 
