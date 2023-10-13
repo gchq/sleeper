@@ -26,12 +26,12 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.index.dynamodb.DynamoDBTableIndex;
 
 import java.io.IOException;
 import java.nio.file.Path;

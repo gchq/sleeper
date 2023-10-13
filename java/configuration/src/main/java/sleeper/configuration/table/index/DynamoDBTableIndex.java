@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.table.index.dynamodb;
+package sleeper.configuration.table.index;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;

@@ -33,6 +33,8 @@ import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
@@ -42,8 +44,6 @@ import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.index.dynamodb.DynamoDBTableIndex;
-import sleeper.table.index.dynamodb.DynamoDBTableIndexCreator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.configuration.properties.table;
 
-import java.time.Instant;
-import java.util.List;
+import sleeper.core.table.TableId;
 
-public class FixedTablePropertiesProvider extends TablePropertiesProvider {
-    public FixedTablePropertiesProvider(TableProperties tableProperties) {
-        this(List.of(tableProperties));
+import java.util.HashMap;
+import java.util.Map;
+
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+
+public class InMemoryTablePropertiesStore implements TablePropertiesStore {
+
+    private final Map<String, TableProperties> propertiesByTableName = new HashMap<>();
+
+    @Override
+    public TableProperties loadProperties(TableId tableId) {
+        return propertiesByTableName.get(tableId.getTableName());
     }
 
-    public FixedTablePropertiesProvider(List<TableProperties> tables) {
-        super(new InMemoryTablePropertiesStore(), Integer.MAX_VALUE, () -> Instant.MIN);
-        tables.forEach(propertiesStore::save);
+    @Override
+    public void save(TableProperties tableProperties) {
+        propertiesByTableName.put(tableProperties.get(TABLE_NAME), tableProperties);
     }
 }
