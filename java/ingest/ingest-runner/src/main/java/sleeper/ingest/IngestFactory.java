@@ -34,6 +34,7 @@ import sleeper.ingest.impl.recordbatch.RecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -59,7 +60,7 @@ public class IngestFactory {
         stateStoreProvider = Objects.requireNonNull(builder.stateStoreProvider, "stateStoreProvider must not be null");
         instanceProperties = Objects.requireNonNull(builder.instanceProperties, "instanceProperties must not be null");
         hadoopConfiguration = Objects.requireNonNullElseGet(builder.hadoopConfiguration,
-                IngestFactory::defaultHadoopConfiguration);
+                () -> HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         // If S3AsyncClient is not set, a default client will be created if it is needed.
         s3AsyncClient = builder.s3AsyncClient;
     }
@@ -130,19 +131,6 @@ public class IngestFactory {
         } else {
             throw new UnsupportedOperationException(String.format("File writer type %s not supported", fileWriterType));
         }
-    }
-
-    /**
-     * Create a simple default Hadoop configuration which may be used if no other configuration is provided.
-     *
-     * @return The Hadoop configuration
-     */
-    private static Configuration defaultHadoopConfiguration() {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
-        conf.set("fs.s3a.fast.upload", "true");
-        conf.set("fs.s3a.bucket.probe", "0");
-        return conf;
     }
 
     public static final class Builder {
