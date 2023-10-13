@@ -103,13 +103,13 @@ sleeper.log.retention.days=30
 # Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the
 # maximum number of http connections to S3.
 # See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
-sleeper.s3.max-connections=25
+sleeper.fs.s3a.max-connections=25
 
 # Used to set the value of fs.s3a.block.size on the Hadoop configuration. Uploads to S3 happen in
 # blocks, and this sets the size of blocks. If a larger value is used, then more data is buffered
 # before the upload begins.
 # See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
-sleeper.s3.upload.block.size=32M
+sleeper.fs.s3a.upload.block.size=32M
 
 # The version of Fargate to use.
 sleeper.fargate.version=1.4.0
