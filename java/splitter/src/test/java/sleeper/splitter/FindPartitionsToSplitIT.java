@@ -104,7 +104,7 @@ public class FindPartitionsToSplitIT {
         partitionFinder.run();
 
         // Then
-        List<Message> messages = sqsClient.receiveMessage(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL)).getMessages();
+        List<Message> messages = receivePartitionSplittingMessages();
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
@@ -118,36 +118,33 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws StateStoreException, IOException {
         // Given
-        CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 10, sqsClient, queue.getQueueUrl());
+                stateStore, 10, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
 
         partitionFinder.run();
 
-        // Then
-        List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
-        assertThat(messages).isEmpty();
+        // The
+        assertThat(receivePartitionSplittingMessages()).isEmpty();
     }
 
     @Test
     public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws IOException, StateStoreException {
         // Given
-        CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 5, sqsClient, queue.getQueueUrl());
+                stateStore, 5, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
 
         partitionFinder.run();
 
         // Then
-        List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
+        List<Message> messages = receivePartitionSplittingMessages();
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
@@ -161,18 +158,17 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws StateStoreException, IOException {
         // Given
-        CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
         writeFiles(stateStore, SCHEMA, createAscendingRecordList(100, 10));
 
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 5, sqsClient, queue.getQueueUrl());
+                stateStore, 5, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
 
         partitionFinder.run();
 
         // Then
-        List<Message> messages = sqsClient.receiveMessage(queue.getQueueUrl()).getMessages();
+        List<Message> messages = receivePartitionSplittingMessages();
         assertThat(messages).hasSize(1);
 
         SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
@@ -245,6 +241,10 @@ public class FindPartitionsToSplitIT {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    private List<Message> receivePartitionSplittingMessages() {
+        return sqsClient.receiveMessage(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL)).getMessages();
     }
 
     public static class TestTablePropertiesProvider extends TablePropertiesProvider {
