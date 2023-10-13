@@ -15,6 +15,7 @@
  */
 package sleeper.clients;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
 
@@ -52,10 +53,10 @@ public abstract class QueryCommandLineClient {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
 
-    protected QueryCommandLineClient(AmazonS3 s3Client, InstanceProperties instanceProperties) {
+    protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
         this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
     }
 
     public void run() throws StateStoreException {

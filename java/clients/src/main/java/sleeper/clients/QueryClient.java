@@ -57,10 +57,10 @@ public class QueryClient extends QueryCommandLineClient {
     private final ExecutorService executorService;
     private final Map<String, QueryExecutor> cachedQueryExecutors = new HashMap<>();
 
-    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoClient, Configuration conf) throws ObjectFactoryException {
-        super(s3Client, instanceProperties);
+    public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf) throws ObjectFactoryException {
+        super(s3Client, dynamoDBClient, instanceProperties);
         this.objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
-        this.stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         this.executorService = Executors.newFixedThreadPool(30);
     }
 
