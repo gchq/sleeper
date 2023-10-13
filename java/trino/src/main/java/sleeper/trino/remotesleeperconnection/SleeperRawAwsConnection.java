@@ -134,7 +134,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
         List<String> tableNames = pullAllSleeperTableNames();
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(this.s3Client, this.instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDbClient);
         LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         this.tableNameToSleeperTablePropertiesMap = tableNames.stream()
                 .collect(ImmutableMap.toImmutableMap(

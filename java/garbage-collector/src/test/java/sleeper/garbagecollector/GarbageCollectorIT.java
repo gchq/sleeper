@@ -126,7 +126,7 @@ public class GarbageCollectorIT {
 
             // When
             stateStore.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isFalse();
@@ -144,7 +144,7 @@ public class GarbageCollectorIT {
             createActiveFile(filePath.toString(), stateStore);
 
             // When
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -162,7 +162,7 @@ public class GarbageCollectorIT {
             createReadyForGCFile(filePath.toString(), stateStore);
 
             // When
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -186,7 +186,7 @@ public class GarbageCollectorIT {
 
             // When
             stateStore.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
@@ -211,7 +211,7 @@ public class GarbageCollectorIT {
 
             // When
             stateStore.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Stream.of(filePath1, filePath2, filePath3).filter(Files::exists))
@@ -259,7 +259,7 @@ public class GarbageCollectorIT {
             // When
             stateStore1.fixTime(currentTime);
             stateStore2.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
@@ -349,10 +349,9 @@ public class GarbageCollectorIT {
         return tableProperties;
     }
 
-    private static GarbageCollector createGarbageCollector(
-            AmazonS3 s3Client, InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
+    private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
         return new GarbageCollector(new Configuration(), new TableLister(s3Client, instanceProperties),
-                new TablePropertiesProvider(s3Client, instanceProperties), stateStoreProvider,
+                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), stateStoreProvider,
                 instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
     }
 

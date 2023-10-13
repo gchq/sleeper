@@ -118,5 +118,6 @@ public class DeadLettersStatusReport {
 
         sqsClient.shutdown();
         amazonS3.shutdown();
+        dynamoDB.shutdown();
     }
 }

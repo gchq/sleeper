@@ -19,6 +19,8 @@ import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.services.apigatewaymanagementapi.AmazonApiGatewayManagementApi;
 import com.amazonaws.services.apigatewaymanagementapi.AmazonApiGatewayManagementApiClientBuilder;
 import com.amazonaws.services.apigatewaymanagementapi.model.PostToConnectionRequest;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2WebSocketEvent;
@@ -57,17 +59,18 @@ public class WebSocketQueryProcessorLambda implements RequestHandler<APIGatewayV
     public WebSocketQueryProcessorLambda() {
         this(
                 AmazonS3ClientBuilder.defaultClient(),
+                AmazonDynamoDBClientBuilder.defaultClient(),
                 AmazonSQSClientBuilder.defaultClient(),
                 System.getenv(CdkDefinedInstanceProperty.CONFIG_BUCKET.toEnvironmentVariable())
         );
     }
 
-    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonSQS sqsClient, String configBucket) {
+    public WebSocketQueryProcessorLambda(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, AmazonSQS sqsClient, String configBucket) {
         this.sqsClient = sqsClient;
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
         this.queryQueueUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_QUEUE_URL);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         this.serde = new QuerySerDe(tablePropertiesProvider);
     }
 

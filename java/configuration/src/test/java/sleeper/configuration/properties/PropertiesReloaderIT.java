@@ -16,8 +16,11 @@
 
 package sleeper.configuration.properties;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -46,55 +49,60 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class PropertiesReloaderIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+
+    @BeforeEach
+    void setUp() {
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+    }
 
     @Test
     void shouldReloadInstancePropertiesIfForceReloadPropertiesSetToTrue() throws Exception {
         // Given
-        InstanceProperties propertiesBefore = createTestInstanceProperties(s3Client, properties -> {
-            properties.set(FORCE_RELOAD_PROPERTIES, "true");
-            properties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        });
-        updatePropertiesInS3(propertiesBefore, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, propertiesBefore);
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
+        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
+        instanceProperties.saveToS3(s3Client);
+        updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
+        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
         // When
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(propertiesBefore.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(26);
+        assertThat(instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(26);
     }
 
     @Test
     void shouldNotReloadInstancePropertiesIfForceReloadPropertiesSetToFalse() throws Exception {
         // Given
-        InstanceProperties propertiesBefore = createTestInstanceProperties(s3Client, properties -> {
-            properties.set(FORCE_RELOAD_PROPERTIES, "false");
-            properties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        });
-        updatePropertiesInS3(propertiesBefore, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, propertiesBefore);
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
+        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
+        instanceProperties.saveToS3(s3Client);
+        updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
+        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
         // When
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(propertiesBefore.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(42);
+        assertThat(instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(42);
     }
 
     @Test
     void shouldReloadTablePropertiesIfForceReloadPropertiesSetToTrue() throws Exception {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties(s3Client,
-                properties -> properties.set(FORCE_RELOAD_PROPERTIES, "true"));
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
+        instanceProperties.saveToS3(s3Client);
         String tableName = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
         updatePropertiesInS3(instanceProperties, tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         provider.getTableProperties(tableName);
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
@@ -110,12 +118,12 @@ public class PropertiesReloaderIT {
     @Test
     void shouldNotReloadTablePropertiesIfForceReloadPropertiesSetToFalse() throws Exception {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties(s3Client,
-                properties -> properties.set(FORCE_RELOAD_PROPERTIES, "false"));
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
+        instanceProperties.saveToS3(s3Client);
         String tableName = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         provider.getTableProperties(tableName);
         updatePropertiesInS3(instanceProperties, tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
@@ -130,22 +138,20 @@ public class PropertiesReloaderIT {
                 .isEqualTo(123);
     }
 
-    private InstanceProperties updatePropertiesInS3(
+    private void updatePropertiesInS3(
             InstanceProperties propertiesBefore, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties propertiesAfter = new InstanceProperties();
         propertiesAfter.loadFromS3(s3Client, propertiesBefore.get(CONFIG_BUCKET));
         extraProperties.accept(propertiesAfter);
         propertiesAfter.saveToS3(s3Client);
-        return propertiesAfter;
     }
 
-    private TableProperties updatePropertiesInS3(
+    private void updatePropertiesInS3(
             InstanceProperties instanceProperties, String tableName,
             Consumer<TableProperties> extraProperties) {
         TableProperties propertiesAfter = new TableProperties(instanceProperties);
         propertiesAfter.loadFromS3(s3Client, tableName);
         extraProperties.accept(propertiesAfter);
         propertiesAfter.saveToS3(s3Client);
-        return propertiesAfter;
     }
 }

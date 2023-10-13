@@ -78,7 +78,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucketName);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         List<TableProperties> tablePropertiesList = new TableLister(s3Client, instanceProperties).listTables().stream()
                 .map(tablePropertiesProvider::getTableProperties)
                 .collect(Collectors.toUnmodifiableList());

@@ -85,7 +85,7 @@ public class CreateJobsIT {
     @BeforeEach
     public void setUp() throws Exception {
         TableProperties tableProperties = createTable(schema);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
         stateStore = stateStoreProvider.getStateStore(tableProperties);
         stateStore.initialise();

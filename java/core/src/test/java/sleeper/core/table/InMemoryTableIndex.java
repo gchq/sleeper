@@ -35,9 +35,13 @@ public class InMemoryTableIndex implements TableIndex {
         }
         TableId id = TableId.uniqueIdAndName("table-" + nextIdNumber, tableName);
         nextIdNumber++;
-        idByName.put(tableName, id);
-        nameById.put(id.getTableUniqueId(), id);
+        save(id);
         return id;
+    }
+
+    public void save(TableId id) {
+        idByName.put(id.getTableName(), id);
+        nameById.put(id.getTableUniqueId(), id);
     }
 
     @Override
