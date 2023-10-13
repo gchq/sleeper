@@ -243,27 +243,4 @@ public class FindPartitionsToSplitIT {
     private List<Message> receivePartitionSplittingMessages() {
         return sqsClient.receiveMessage(instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL)).getMessages();
     }
-
-    public static class TestTablePropertiesProvider extends TablePropertiesProvider {
-        private final Schema schema;
-        private final long splitThreshold;
-
-        TestTablePropertiesProvider(Schema schema, long splitThreshold) {
-            super(null, new InstanceProperties());
-            this.schema = schema;
-            this.splitThreshold = splitThreshold;
-        }
-
-        TestTablePropertiesProvider(Schema schema) {
-            this(schema, 1_000_000_000L);
-        }
-
-        @Override
-        public TableProperties getTableProperties(String tableName) {
-            TableProperties tableProperties = new TableProperties(new InstanceProperties());
-            tableProperties.setSchema(schema);
-            tableProperties.set(PARTITION_SPLIT_THRESHOLD, "" + splitThreshold);
-            return tableProperties;
-        }
-    }
 }
