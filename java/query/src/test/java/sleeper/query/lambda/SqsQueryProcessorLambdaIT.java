@@ -570,7 +570,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -665,7 +665,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         SQSEvent event = new SQSEvent();
         SQSMessage sqsMessage = new SQSMessage();

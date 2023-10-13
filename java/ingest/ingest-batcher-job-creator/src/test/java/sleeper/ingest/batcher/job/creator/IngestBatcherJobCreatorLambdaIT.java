@@ -74,7 +74,7 @@ public class IngestBatcherJobCreatorLambdaIT {
     });
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3);
     private final IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDB, instanceProperties,
-            new TablePropertiesProvider(s3, instanceProperties));
+            new TablePropertiesProvider(instanceProperties, s3, dynamoDB));
 
     private IngestBatcherJobCreatorLambda lambdaWithTimesAndJobIds(List<Instant> times, List<String> jobIds) {
         return new IngestBatcherJobCreatorLambda(

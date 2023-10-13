@@ -137,7 +137,7 @@ public class QuerySerDe {
         }
 
         public QueryJsonSerDe(Map<String, Schema> tableNameToSchemaMap) {
-            this(tableName -> tableNameToSchemaMap.get(tableName));
+            this(tableNameToSchemaMap::get);
         }
 
         @Override
