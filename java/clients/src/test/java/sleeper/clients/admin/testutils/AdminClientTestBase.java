@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -47,7 +47,7 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
 
     protected final ToStringPrintStream out = new ToStringPrintStream();
     protected final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
-    protected final UpdatePropertiesWithNano editor = mock(UpdatePropertiesWithNano.class);
+    protected final UpdatePropertiesWithTextEditor editor = mock(UpdatePropertiesWithTextEditor.class);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

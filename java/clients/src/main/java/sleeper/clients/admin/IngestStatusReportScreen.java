@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.status.report.IngestJobStatusReport;
 import sleeper.clients.status.report.IngestTaskStatusReport;
 import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
