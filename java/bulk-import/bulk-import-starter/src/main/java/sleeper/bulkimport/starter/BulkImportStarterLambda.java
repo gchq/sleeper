@@ -67,7 +67,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
         instanceProperties = loadInstanceProperties(s3);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
