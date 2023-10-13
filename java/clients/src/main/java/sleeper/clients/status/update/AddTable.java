@@ -58,6 +58,7 @@ public class AddTable {
         TableId id = tableIndex.createTable(tableProperties.get(TABLE_NAME));
         tableProperties.set(TABLE_ID, id.getTableUniqueId());
         tablePropertiesStore.save(tableProperties);
+        tableProperties.addTable(tableIndex, tablePropertiesStore);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
 

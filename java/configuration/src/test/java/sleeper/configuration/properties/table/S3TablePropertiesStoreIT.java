@@ -23,7 +23,7 @@ import sleeper.core.table.TableId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class S3TablePropertiesStoreIT extends TablePropertiesS3TestBase {
+class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
     @Test
     void shouldSaveToS3() {

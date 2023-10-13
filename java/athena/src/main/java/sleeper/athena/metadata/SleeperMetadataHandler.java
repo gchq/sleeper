@@ -91,10 +91,10 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     public static final String SOURCE_TYPE = "Sleeper";
     public static final String RELEVANT_FILES_FIELD = "_SleeperRelevantFiles";
-    private AmazonS3 s3Client;
-    private InstanceProperties instanceProperties;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
+    private final AmazonS3 s3Client;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
 
     public SleeperMetadataHandler() {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -105,7 +105,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 
@@ -121,7 +121,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 

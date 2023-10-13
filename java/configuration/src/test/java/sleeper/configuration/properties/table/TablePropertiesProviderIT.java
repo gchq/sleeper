@@ -26,9 +26,14 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PRO
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
+class TablePropertiesProviderIT extends TablePropertiesITBase {
 
-    private final TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+    private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+
+    private TablePropertiesProvider providerWithTimes(Instant... times) {
+        return new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient,
+                List.of(times).iterator()::next);
+    }
 
     @Test
     void shouldLoadFromS3() {
@@ -53,11 +58,9 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
         tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
         store.save(tableProperties);
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
-                List.of(
-                        Instant.parse("2023-10-09T17:11:00Z"),
-                        Instant.parse("2023-10-09T17:15:00Z")
-                ).iterator()::next);
+        TablePropertiesProvider provider = providerWithTimes(
+                Instant.parse("2023-10-09T17:11:00Z"),
+                Instant.parse("2023-10-09T17:15:00Z"));
 
         // When
         provider.getTableProperties(tableName); // Populate cache
@@ -75,11 +78,9 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
         tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
         store.save(tableProperties);
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
-                List.of(
-                        Instant.parse("2023-10-09T17:11:00Z"),
-                        Instant.parse("2023-10-09T17:12:00Z")
-                ).iterator()::next);
+        TablePropertiesProvider provider = providerWithTimes(
+                Instant.parse("2023-10-09T17:11:00Z"),
+                Instant.parse("2023-10-09T17:12:00Z"));
 
         // When
         provider.getTableProperties(tableName); // Populate cache
@@ -101,13 +102,11 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
         store.save(tableProperties1);
         store.save(tableProperties2);
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
-                List.of(
-                        Instant.parse("2023-10-09T17:11:00Z"),
-                        Instant.parse("2023-10-09T17:14:00Z"),
-                        Instant.parse("2023-10-09T17:15:00Z"),
-                        Instant.parse("2023-10-09T17:15:00Z")
-                ).iterator()::next);
+        TablePropertiesProvider provider = providerWithTimes(
+                Instant.parse("2023-10-09T17:11:00Z"),
+                Instant.parse("2023-10-09T17:14:00Z"),
+                Instant.parse("2023-10-09T17:15:00Z"),
+                Instant.parse("2023-10-09T17:15:00Z"));
 
         // When
         provider.getTableProperties(tableProperties1.get(TABLE_NAME)); // Populate cache

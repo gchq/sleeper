@@ -34,6 +34,7 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIndex;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -164,6 +165,12 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     public TableId getId() {
         return TableId.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
+    }
+
+    public void addTable(TableIndex tableIndex, TablePropertiesStore tablePropertiesStore) {
+        TableId id = tableIndex.createTable(get(TABLE_NAME));
+        set(TABLE_ID, id.getTableUniqueId());
+        tablePropertiesStore.save(this);
     }
 
     public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {

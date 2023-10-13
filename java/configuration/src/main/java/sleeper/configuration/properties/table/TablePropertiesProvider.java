@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +41,14 @@ public class TablePropertiesProvider {
     private final Map<String, Instant> expireTimeByTableName = new HashMap<>();
 
     public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        this(s3Client, instanceProperties, Instant::now);
+        this(instanceProperties, s3Client, null, Instant::now);
     }
 
-    protected TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
+    public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
+        this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
+    }
+
+    protected TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Supplier<Instant> timeSupplier) {
         this(new S3TablePropertiesStore(instanceProperties, s3Client),
                 instanceProperties.getInt(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS), timeSupplier);
     }
