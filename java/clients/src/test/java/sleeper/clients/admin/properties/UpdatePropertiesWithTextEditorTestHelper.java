@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
 import sleeper.clients.util.CommandRunner;
 import sleeper.configuration.properties.PropertyGroup;
@@ -31,11 +31,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import static sleeper.clients.testutil.RunCommandTestHelper.commandRunOn;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
 
-public class UpdatePropertiesWithNanoTestHelper {
+public class UpdatePropertiesWithTextEditorTestHelper {
     private final Path tempDir;
     private final Path expectedPropertiesFile;
 
-    public UpdatePropertiesWithNanoTestHelper(Path tempDir) {
+    public UpdatePropertiesWithTextEditorTestHelper(Path tempDir) {
         this.tempDir = tempDir;
         this.expectedPropertiesFile = tempDir.resolve("sleeper/admin/temp.properties");
     }
@@ -81,7 +81,7 @@ public class UpdatePropertiesWithNanoTestHelper {
 
     @FunctionalInterface
     public interface OpenFile<T extends SleeperProperties<?>> {
-        UpdatePropertiesRequest<T> open(UpdatePropertiesWithNano updater) throws IOException, InterruptedException;
+        UpdatePropertiesRequest<T> open(UpdatePropertiesWithTextEditor updater) throws IOException, InterruptedException;
     }
 
     public <T extends SleeperProperties<?>> Properties openFileGetPropertiesWritten(OpenFile<T> openFile) throws Exception {
@@ -98,14 +98,14 @@ public class UpdatePropertiesWithNanoTestHelper {
         return expectedPropertiesFile;
     }
 
-    private UpdatePropertiesWithNano updaterSavingProperties(SleeperProperties<?> after) {
+    private UpdatePropertiesWithTextEditor updaterSavingProperties(SleeperProperties<?> after) {
         return updaterWithCommandHandler(command -> {
             after.save(expectedPropertiesFile);
             return 0;
         });
     }
 
-    private UpdatePropertiesWithNano updaterWithCommandHandler(CommandRunner runCommand) {
-        return new UpdatePropertiesWithNano(tempDir, runCommand);
+    private UpdatePropertiesWithTextEditor updaterWithCommandHandler(CommandRunner runCommand) {
+        return new UpdatePropertiesWithTextEditor(tempDir, runCommand);
     }
 }

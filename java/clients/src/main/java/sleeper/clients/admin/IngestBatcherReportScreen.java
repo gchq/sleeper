@@ -16,6 +16,7 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.status.report.IngestBatcherReport;
 import sleeper.clients.status.report.ingest.batcher.BatcherQuery;
 import sleeper.clients.status.report.ingest.batcher.StandardIngestBatcherReporter;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.admin;
+package sleeper.clients.admin.properties;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,7 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.clients.admin.PropertiesDiffTestHelper.valueChanged;
+import static sleeper.clients.admin.properties.PropertiesDiffTestHelper.valueChanged;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestInstanceProperties;
 import static sleeper.clients.deploy.PopulatePropertiesTestHelper.generateTestTableProperties;
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
@@ -43,15 +43,15 @@ import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LO
 import static sleeper.configuration.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 
-class UpdatePropertiesWithNanoTest {
+class UpdatePropertiesWithTextEditorIT {
 
     @TempDir
     private Path tempDir;
-    private UpdatePropertiesWithNanoTestHelper helper;
+    private UpdatePropertiesWithTextEditorTestHelper helper;
 
     @BeforeEach
     void setUp() {
-        helper = new UpdatePropertiesWithNanoTestHelper(tempDir);
+        helper = new UpdatePropertiesWithTextEditorTestHelper(tempDir);
     }
 
     @Nested

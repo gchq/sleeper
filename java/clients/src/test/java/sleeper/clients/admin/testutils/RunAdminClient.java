@@ -18,7 +18,7 @@ package sleeper.clients.admin.testutils;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientStatusStoreFactory;
-import sleeper.clients.admin.UpdatePropertiesWithNano;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.compaction.job.CompactionJobStatusStore;
@@ -34,8 +34,8 @@ import sleeper.job.common.QueueMessageCount;
 import java.util.Collections;
 
 import static org.mockito.Mockito.when;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.noChanges;
-import static sleeper.clients.admin.UpdatePropertiesRequestTestHelper.withChanges;
+import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
+import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
 
@@ -44,13 +44,13 @@ public class RunAdminClient {
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness store;
     private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
-    private final UpdatePropertiesWithNano editor;
+    private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
     private final String instanceId;
 
     RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
                    AdminConfigStoreTestHarness store,
-                   UpdatePropertiesWithNano editor,
+                   UpdatePropertiesWithTextEditor editor,
                    String instanceId) {
         this.out = out;
         this.in = in;
