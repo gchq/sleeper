@@ -188,7 +188,7 @@ public class AdminClientPropertiesStore {
     }
 
     public TablePropertiesProvider createTablePropertiesProvider(InstanceProperties properties) {
-        return new TablePropertiesProvider(s3, properties);
+        return new TablePropertiesProvider(properties, s3, dynamoDB);
     }
 
     public static class CouldNotLoadInstanceProperties extends CouldNotLoadProperties {
