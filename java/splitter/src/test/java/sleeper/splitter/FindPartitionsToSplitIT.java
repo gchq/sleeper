@@ -58,6 +58,7 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -94,14 +95,12 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldPutMessagesOnAQueueIfAPartitionSizeGoesBeyondThreshold() throws StateStoreException, IOException {
         // Given
+        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
+        writeFiles(createEvenRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 10, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
-
-        partitionFinder.run();
+        findPartitionsToSplit().run();
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -118,14 +117,12 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws StateStoreException, IOException {
         // Given
+        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
-        writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
+        writeFiles(createEvenRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 10, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
-
-        partitionFinder.run();
+        findPartitionsToSplit().run();
 
         // The
         assertThat(receivePartitionSplittingMessages()).isEmpty();
@@ -134,8 +131,9 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws IOException, StateStoreException {
         // Given
+        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
+        writeFiles(createEvenRecordList(100, 10));
 
         // When
         FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
@@ -158,14 +156,12 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws StateStoreException, IOException {
         // Given
+        instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 5);
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-        writeFiles(stateStore, SCHEMA, createAscendingRecordList(100, 10));
+        writeFiles(createAscendingRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 5, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
-
-        partitionFinder.run();
+        findPartitionsToSplit().run();
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -185,6 +181,12 @@ public class FindPartitionsToSplitIT {
 
         // 109 + 108 + 107 + 106 + 105 = 535
         assertThat(numberOfRecords).contains(535L);
+    }
+
+    private FindPartitionsToSplit findPartitionsToSplit() {
+        return new FindPartitionsToSplit(tableName, tablePropertiesProvider,
+                stateStore, instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB),
+                sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
     }
 
     private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {
@@ -219,13 +221,13 @@ public class FindPartitionsToSplitIT {
         return recordLists;
     }
 
-    private void writeFiles(StateStore stateStore, Schema schema, List<List<Record>> recordLists) {
-        ParquetConfiguration parquetConfiguration = parquetConfiguration(schema, new Configuration());
+    private void writeFiles(List<List<Record>> recordLists) {
+        ParquetConfiguration parquetConfiguration = parquetConfiguration(SCHEMA, new Configuration());
         recordLists.forEach(list -> {
             try {
                 File stagingArea = createTempDirectory(tempDir, null).toFile();
                 File directory = createTempDirectory(tempDir, null).toFile();
-                try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, schema,
+                try (IngestCoordinator<Record> coordinator = standardIngestCoordinator(stateStore, SCHEMA,
                         ArrayListRecordBatchFactory.builder()
                                 .parquetConfiguration(parquetConfiguration)
                                 .localWorkingDirectory(stagingArea.getAbsolutePath())
