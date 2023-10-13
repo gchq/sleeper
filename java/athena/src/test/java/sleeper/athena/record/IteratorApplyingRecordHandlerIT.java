@@ -88,7 +88,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                createS3Client(), createDynamoClient(),
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -146,7 +147,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                createS3Client(), createDynamoClient(),
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -207,7 +209,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                createS3Client(), createDynamoClient(),
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -260,7 +263,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         // When
         List<String> partition2016Files = new ArrayList<>();
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                createS3Client(), createDynamoClient(), instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -307,7 +311,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         // When
         List<String> emptyFiles = new ArrayList<>();
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                createS3Client(), createDynamoClient(),
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -358,7 +363,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                createS3Client(), createDynamoClient(),
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 

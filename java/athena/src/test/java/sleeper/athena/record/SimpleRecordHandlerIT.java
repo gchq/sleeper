@@ -66,7 +66,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), createDynamoClient(),
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -112,7 +113,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), createDynamoClient(),
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -160,7 +162,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), createDynamoClient(),
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -212,7 +215,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), createDynamoClient(),
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -256,7 +260,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), createDynamoClient(),
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -308,7 +313,8 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), createDynamoClient(),
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
