@@ -80,7 +80,7 @@ public class CreateJobsLambda {
 
         this.dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
@@ -105,7 +105,7 @@ public class CreateJobsLambda {
         this.dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(endpointConfiguration)
                 .build();
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
