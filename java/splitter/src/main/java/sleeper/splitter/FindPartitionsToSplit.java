@@ -19,6 +19,7 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -53,19 +56,18 @@ public class FindPartitionsToSplit {
     private final String sqsUrl;
 
     public FindPartitionsToSplit(
+            InstanceProperties instanceProperties,
             String tableName,
             TablePropertiesProvider tablePropertiesProvider,
             StateStore stateStore,
-            int maxFilesInJob,
-            AmazonSQS sqs,
-            String sqsUrl) {
+            AmazonSQS sqs) {
         this.tableName = tableName;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.tableProperties = tablePropertiesProvider.getTableProperties(tableName);
         this.stateStore = stateStore;
-        this.maxFilesInJob = maxFilesInJob;
+        this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
         this.sqs = sqs;
-        this.sqsUrl = sqsUrl;
+        this.sqsUrl = instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL);
     }
 
     public void run() throws StateStoreException, IOException {

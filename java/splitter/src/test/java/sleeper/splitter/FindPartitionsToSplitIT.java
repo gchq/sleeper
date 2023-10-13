@@ -136,10 +136,7 @@ public class FindPartitionsToSplitIT {
         writeFiles(createEvenRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, 5, sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
-
-        partitionFinder.run();
+        findPartitionsToSplit().run();
 
         // Then
         List<Message> messages = receivePartitionSplittingMessages();
@@ -184,9 +181,7 @@ public class FindPartitionsToSplitIT {
     }
 
     private FindPartitionsToSplit findPartitionsToSplit() {
-        return new FindPartitionsToSplit(tableName, tablePropertiesProvider,
-                stateStore, instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB),
-                sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
+        return new FindPartitionsToSplit(instanceProperties, tableName, tablePropertiesProvider, stateStore, sqsClient);
     }
 
     private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {

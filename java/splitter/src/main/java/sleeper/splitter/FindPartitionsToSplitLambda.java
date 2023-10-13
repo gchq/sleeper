@@ -39,8 +39,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
 
 /**
  * This is triggered via a periodic Cloudwatch rule. It runs
@@ -75,9 +73,8 @@ public class FindPartitionsToSplitLambda {
         new TableLister(s3Client, instanceProperties).listTables().stream().map(tableName -> {
             TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            return new FindPartitionsToSplit(tableName, tablePropertiesProvider, stateStore,
-                    instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB),
-                    sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
+            return new FindPartitionsToSplit(
+                    instanceProperties, tableName, tablePropertiesProvider, stateStore, sqsClient);
         }).forEach(partitionsFinder -> {
             try {
                 partitionsFinder.run();
