@@ -20,42 +20,45 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableId;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
+import sleeper.statestore.StateStoreProvider;
+import sleeper.table.index.dynamodb.DynamoDBTableIndex;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class AddTable {
-    private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoDB;
-    private final InstanceProperties instanceProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final TableProperties tableProperties;
+    private final TablePropertiesStore tablePropertiesStore;
+    private final TableIndex tableIndex;
+    private final StateStoreProvider stateStoreProvider;
 
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
-        this.s3Client = s3Client;
-        this.dynamoDB = dynamoDB;
-        this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.tableProperties = tableProperties;
+        this.tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3Client);
+        this.tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
+        this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
     }
 
     public void run() throws IOException {
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (tablePropertiesProvider.getTablePropertiesIfExists(tableName).isPresent()) {
-            throw new UnsupportedOperationException("Table with name " + tableName + " already exists");
-        }
-        tableProperties.saveToS3(s3Client);
-        new InitialiseStateStoreFromSplitPoints(dynamoDB, instanceProperties, tableProperties).run();
+        TableId id = tableIndex.createTable(tableProperties.get(TABLE_NAME));
+        tableProperties.set(TABLE_ID, id.getTableUniqueId());
+        tablePropertiesStore.save(tableProperties);
+        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
 
     public static void main(String[] args) throws IOException {

@@ -19,16 +19,20 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIdGenerator;
 
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesTestHelper {
 
     private TablePropertiesTestHelper() {
     }
+
+    private static final TableIdGenerator TABLE_ID_GENERATOR = new TableIdGenerator();
 
     public static TableProperties createTestTableProperties(
             InstanceProperties instanceProperties, Schema schema, AmazonS3 s3) {
@@ -60,8 +64,10 @@ public class TablePropertiesTestHelper {
 
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
+        String tableId = TABLE_ID_GENERATOR.generateString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(TABLE_ID, tableId);
         return tableProperties;
     }
 }

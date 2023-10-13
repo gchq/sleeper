@@ -33,11 +33,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PRO
 
 public class TablePropertiesProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
-    private final Map<String, TableProperties> tableNameToPropertiesCache;
     private final Function<String, TableProperties> getTableProperties;
-    private Supplier<Instant> timeSupplier;
+    private final Supplier<Instant> timeSupplier;
     private final int timeoutInMins;
-    private Map<String, Instant> expireTimeByTableName;
+    private final Map<String, TableProperties> tableNameToPropertiesCache = new HashMap<>();
+    private final Map<String, Instant> expireTimeByTableName = new HashMap<>();
 
     public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
         this(s3Client, instanceProperties, Instant::now);
@@ -51,10 +51,8 @@ public class TablePropertiesProvider {
     protected TablePropertiesProvider(Function<String, TableProperties> getTableProperties,
                                       int timeoutInMins, Supplier<Instant> timeSupplier) {
         this.getTableProperties = getTableProperties;
-        this.tableNameToPropertiesCache = new HashMap<>();
         this.timeoutInMins = timeoutInMins;
         this.timeSupplier = timeSupplier;
-        this.expireTimeByTableName = new HashMap<>();
     }
 
     public TableProperties getTableProperties(String tableName) {

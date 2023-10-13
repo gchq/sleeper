@@ -33,17 +33,17 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.table.index.dynamodb.DynamoDBTableIdFormat.TABLE_ID_FIELD;
 import static sleeper.table.index.dynamodb.DynamoDBTableIdFormat.TABLE_NAME_FIELD;
 
-public class DynamoDBTableIdStoreCreator {
+public class DynamoDBTableIndexCreator {
     private final InstanceProperties instanceProperties;
     private final AmazonDynamoDB dynamoDB;
 
-    private DynamoDBTableIdStoreCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
+    private DynamoDBTableIndexCreator(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.instanceProperties = Objects.requireNonNull(instanceProperties, "instanceProperties must not be null");
         this.dynamoDB = Objects.requireNonNull(dynamoDB, "dynamoDB must not be null");
     }
 
     public static void create(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
-        new DynamoDBTableIdStoreCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBTableIndexCreator(instanceProperties, dynamoDBClient).create();
     }
 
     public void create() {

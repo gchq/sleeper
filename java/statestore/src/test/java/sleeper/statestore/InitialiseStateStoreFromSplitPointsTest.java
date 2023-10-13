@@ -16,60 +16,36 @@
 
 package sleeper.statestore;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.dynamodb.tools.DynamoDBContainer;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 
-import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
-@Testcontainers
-public class InitialiseStateStoreFromSplitPointsIT {
-    @Container
-    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
-    private static AmazonDynamoDB dynamoDBClient;
-
+public class InitialiseStateStoreFromSplitPointsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-
-    @TempDir
-    public Path tempDir;
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
+    private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
+            inMemoryStateStoreWithNoPartitions());
 
     @Test
     void shouldInitialiseStateStoreFromSplitPoints() throws Exception {
-        // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-
-        // When
-        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties, List.of(123L)).run();
+        // Given / When
+        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, List.of(123L)).run();
 
         // Then
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         assertThat(stateStore.getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(
@@ -81,14 +57,11 @@ public class InitialiseStateStoreFromSplitPointsIT {
 
     @Test
     void shouldInitialiseStateStoreWithRootLeafPartitionIfSplitPointsNotProvided() throws Exception {
-        // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-
-        // When
-        new InitialiseStateStoreFromSplitPoints(dynamoDBClient, instanceProperties, tableProperties, null).run();
+        // Given / When
+        new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties, null).run();
 
         // Then
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyInAnyOrderElementsOf(
                         new PartitionsBuilder(schema)

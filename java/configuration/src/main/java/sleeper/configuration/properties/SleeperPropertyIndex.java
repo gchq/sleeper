@@ -40,7 +40,8 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
                 .add(property);
         if (property.isSetByCdk()) {
             cdkDefined.add(property);
-        } else {
+        }
+        if (property.isUserDefined()) {
             userDefined.add(property);
         }
     }

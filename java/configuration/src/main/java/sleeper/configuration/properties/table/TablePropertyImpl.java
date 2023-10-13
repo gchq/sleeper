@@ -35,6 +35,7 @@ class TablePropertyImpl implements TableProperty {
     private final PropertyGroup propertyGroup;
     private final boolean editable;
     private final boolean includedInTemplate;
+    private final boolean setBySleeper;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -45,6 +46,7 @@ class TablePropertyImpl implements TableProperty {
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
+        setBySleeper = builder.setBySleeper;
     }
 
     static Builder builder() {
@@ -92,7 +94,12 @@ class TablePropertyImpl implements TableProperty {
 
     @Override
     public boolean isEditable() {
-        return editable;
+        return editable && !setBySleeper;
+    }
+
+    @Override
+    public boolean isUserDefined() {
+        return !setBySleeper;
     }
 
     @Override
@@ -114,6 +121,7 @@ class TablePropertyImpl implements TableProperty {
         private Consumer<TableProperty> addToIndex;
         private boolean editable = true;
         private boolean includedInTemplate = true;
+        private boolean setBySleeper;
 
         private Builder() {
         }
@@ -151,6 +159,11 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder includedInTemplate(boolean includedInTemplate) {
             this.includedInTemplate = includedInTemplate;
+            return this;
+        }
+
+        public Builder setBySleeper(boolean setBySleeper) {
+            this.setBySleeper = setBySleeper;
             return this;
         }
 
