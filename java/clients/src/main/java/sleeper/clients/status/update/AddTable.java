@@ -25,11 +25,12 @@ import org.apache.hadoop.conf.Configuration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreProvider;
+import sleeper.table.index.dynamodb.DynamoDBTableIndex;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -39,23 +40,20 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class AddTable {
     private final TableProperties tableProperties;
-    private final TablePropertiesProvider tablePropertiesProvider;
     private final TablePropertiesStore tablePropertiesStore;
+    private final TableIndex tableIndex;
     private final StateStoreProvider stateStoreProvider;
 
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
         this.tableProperties = tableProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
         this.tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3Client);
+        this.tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
     }
 
     public void run() throws IOException {
-        String tableName = tableProperties.get(TABLE_NAME);
-        if (tablePropertiesProvider.getTablePropertiesIfExists(tableName).isPresent()) {
-            throw new UnsupportedOperationException("Table with name " + tableName + " already exists");
-        }
+        tableIndex.createTable(tableProperties.get(TABLE_NAME));
         tablePropertiesStore.save(tableProperties);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }

@@ -35,8 +35,12 @@ import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableAlreadyExistsException;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
+import sleeper.table.index.dynamodb.DynamoDBTableIndex;
+import sleeper.table.index.dynamodb.DynamoDBTableIndexCreator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -59,6 +64,7 @@ public class AddTableIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
+    private final TableIndex tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
     @TempDir
     private Path tempDir;
 
@@ -66,6 +72,7 @@ public class AddTableIT {
     void setUp() {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
     }
 
     @Test
@@ -82,6 +89,7 @@ public class AddTableIT {
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
                         .buildList());
+        assertThat(tableIndex.getTableByName(tableProperties.get(TABLE_NAME))).isNotEmpty();
     }
 
     @Test
@@ -92,7 +100,7 @@ public class AddTableIT {
 
         // When / Then
         assertThatThrownBy(() -> new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run())
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(TableAlreadyExistsException.class);
     }
 
     @Test

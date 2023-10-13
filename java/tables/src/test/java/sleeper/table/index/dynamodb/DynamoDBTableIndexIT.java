@@ -38,7 +38,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
     @BeforeEach
     void setUp() {
-        DynamoDBTableIdStoreCreator.create(dynamoDBClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
     }
 
     @Nested
