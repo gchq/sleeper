@@ -28,6 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.CommonTestConstants;
@@ -54,7 +55,10 @@ import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.ingest.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
@@ -69,11 +73,13 @@ public class FindPartitionsToSplitIT {
     @TempDir
     public Path tempDir;
 
+    private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer,
+            LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
-
-    private AmazonSQS createSQSClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    }
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
+    private final String tableName = tableProperties.get(TABLE_NAME);
+    private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
 
     private StateStore createStateStore() {
         return inMemoryStateStoreWithSinglePartition(SCHEMA);
@@ -138,14 +144,13 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldPutMessagesOnAQueueIfAPartitionSizeGoesBeyondThreshold() throws StateStoreException, IOException {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
         StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
+        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
                 stateStore, 10, sqsClient, queue.getQueueUrl());
 
         partitionFinder.run();
@@ -158,21 +163,20 @@ public class FindPartitionsToSplitIT {
                 .fromJson(messages.get(0).getBody());
 
         assertThat(job.getFileNames()).hasSize(10);
-        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getTableName()).isEqualTo(tableName);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
     @Test
     public void shouldNotPutMessagesOnAQueueIfPartitionsAreAllUnderThreshold() throws StateStoreException, IOException {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 1001);
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 1001);
         StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
+        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
                 stateStore, 10, sqsClient, queue.getQueueUrl());
 
         partitionFinder.run();
@@ -185,14 +189,13 @@ public class FindPartitionsToSplitIT {
     @Test
     public void shouldLimitNumberOfFilesInJobAccordingToTheMaximum() throws IOException, StateStoreException {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
         StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createEvenRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
+        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
                 stateStore, 5, sqsClient, queue.getQueueUrl());
 
         partitionFinder.run();
@@ -205,21 +208,20 @@ public class FindPartitionsToSplitIT {
                 .fromJson(messages.get(0).getBody());
 
         assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getTableName()).isEqualTo(tableName);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
     }
 
     @Test
     public void shouldPrioritiseFilesContainingTheLargestNumberOfRecords() throws StateStoreException, IOException {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
         CreateQueueResult queue = sqsClient.createQueue(UUID.randomUUID().toString());
-        TablePropertiesProvider tablePropertiesProvider = new TestTablePropertiesProvider(SCHEMA, 500);
+        tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
         StateStore stateStore = createStateStore();
         writeFiles(stateStore, SCHEMA, createAscendingRecordList(100, 10));
 
         // When
-        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit("test", tablePropertiesProvider,
+        FindPartitionsToSplit partitionFinder = new FindPartitionsToSplit(tableName, tablePropertiesProvider,
                 stateStore, 5, sqsClient, queue.getQueueUrl());
 
         partitionFinder.run();
@@ -232,7 +234,7 @@ public class FindPartitionsToSplitIT {
                 .fromJson(messages.get(0).getBody());
 
         assertThat(job.getFileNames()).hasSize(5);
-        assertThat(job.getTableName()).isEqualTo("test");
+        assertThat(job.getTableName()).isEqualTo(tableName);
         assertThat(job.getPartition()).isEqualTo(stateStore.getAllPartitions().get(0));
 
         List<FileInfo> activeFiles = stateStore.getActiveFiles();
