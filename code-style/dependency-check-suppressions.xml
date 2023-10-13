@@ -87,6 +87,16 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        The version of Spark we're using uses an old version of Zookeeper, and to get a fixed version we'd need a
+        significant upgrade.
+
+        All the Zookeeper communication takes place within a Spark cluster, so this shouldn't be a serious problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.zookeeper/zookeeper@3.6.3$</packageUrl>
+        <vulnerabilityName>CVE-2023-44981</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         The version of Athena we're using uses an old version of Bouncy Castle Provider, with an old Maven artifact that
         doesn't have a fixed version.
         ]]></notes>
