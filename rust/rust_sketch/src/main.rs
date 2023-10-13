@@ -32,7 +32,8 @@ fn main() {
     // Serialise it and then deserialise it
     let serial = sketch.serialize(0).expect("Serialise fail");
 
-    let recreate = rust_sketch::quantiles::byte::byte_deserialize(&serial).expect("Deserialise fail");
+    let recreate =
+        rust_sketch::quantiles::byte::byte_deserialize(&serial).expect("Deserialise fail");
 
     println!(
         "Sketch contains {} values, median {} 99th q {}",

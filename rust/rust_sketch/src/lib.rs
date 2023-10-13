@@ -18,7 +18,7 @@
 //! **Note** If this crate has already cloned the datasketches-cpp repo then changing the URL to point
 //! at a different repository will not trigger a new clone operation, you will need to `cargo clean` the
 //! build directory first.
-//! 
+//!
 //! ## Performance
 //! Based on the assumption that sketches are updated often and read infrequently, the API design
 //! has been created to allow for quick updates, minimizing copies and trying to do moves instead,

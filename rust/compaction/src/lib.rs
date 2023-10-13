@@ -100,9 +100,9 @@ async fn credentials_and_merge(
     sort_cols: &[usize],
 ) -> Result<CompactionResult, ArrowError> {
     let config = aws_config::from_env().load().await;
-    let region = config
-        .region()
-        .ok_or(ArrowError::InvalidArgumentError("Couldn't retrieve AWS region".into()))?;
+    let region = config.region().ok_or(ArrowError::InvalidArgumentError(
+        "Couldn't retrieve AWS region".into(),
+    ))?;
     let creds: aws_credential_types::Credentials = config
         .credentials_provider()
         .ok_or(ArrowError::InvalidArgumentError(
@@ -259,7 +259,6 @@ pub extern "C" fn ffi_merge_sorted_files(
     };
 
     // Run compaction
-    info!("Here test");
     let result = rt.block_on(credentials_and_merge(
         &input_paths,
         &output_path,

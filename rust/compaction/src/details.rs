@@ -122,6 +122,7 @@ impl Iterator for OwnedRowIter {
 /// There must be at least one input file.
 ///
 #[allow(clippy::too_many_arguments)]
+#[allow(clippy::arc_with_non_send_sync)]
 pub async fn merge_sorted_files(
     aws_creds: Option<Credentials>,
     region: &Region,
@@ -133,21 +134,18 @@ pub async fn merge_sorted_files(
     sort_columns: impl AsRef<[usize]>,
 ) -> Result<CompactionResult, ArrowError> {
     // Read the schema from the first file
-    info!("Here test");
     if input_file_paths.is_empty() {
         Err(ArrowError::InvalidArgumentError(
             "No input paths supplied".into(),
         ))
     } else {
         // Create our object store factory
-        info!("Here test");
         let store_factory = ObjectStoreFactory::new(aws_creds, region);
-        info!("Here test");
         // Java tends to use s3a:// URI scheme instead of s3:// so map it here
         let input_file_paths: Vec<Url> = input_file_paths
             .iter()
             .map(|u| {
-                let mut t = u.to_owned();
+                let mut t = u.clone();
                 if t.scheme() == "s3a" {
                     let _ = t.set_scheme("s3");
                 }
@@ -156,17 +154,14 @@ pub async fn merge_sorted_files(
             .collect();
 
         // Change output file scheme
-        info!("Here test");
-        let mut output_file_path = output_file_path.to_owned();
+        let mut output_file_path = output_file_path.clone();
         if output_file_path.scheme() == "s3a" {
             let _ = output_file_path.set_scheme("s3");
         }
-        info!("Here test");
         // Read Schema from first file
-        let schema: Arc<Schema> = read_schema(&store_factory, &input_file_paths[0])?;
-        info!("Here test");
+        let schema: Arc<Schema> = read_schema(&store_factory, &input_file_paths[0]).await?;
         // validate all files have same schema
-        if validate_schemas_same(&store_factory, &input_file_paths, &schema) {
+        if validate_schemas_same(&store_factory, &input_file_paths, &schema).await {
             // Sort the row key column numbers
             let sorted_row_keys: Vec<usize> = row_key_fields
                 .as_ref()
@@ -500,7 +495,9 @@ async fn get_file_iterator_for_row_group_range(
             .map_err(ArrowError::from)
     } else {
         let p = extension.unwrap_or("<none>".to_owned());
-        Err(ArrowError::InvalidArgumentError(format!("Unrecognised extension {p}")))
+        Err(ArrowError::InvalidArgumentError(format!(
+            "Unrecognised extension {p}"
+        )))
     }
 }
 
@@ -515,19 +512,15 @@ pub async fn get_parquet_builder(
     store_factory: &ObjectStoreFactory,
     src: &Url,
 ) -> Result<ParquetRecordBatchStreamBuilder<ParquetObjectReader>, ArrowError> {
-    info!("Here test");
     let store = store_factory.get_object_store(src)?;
-    info!("Here test");
     // HEAD the file to get metadata
     let path = object_store::path::Path::from(src.path());
     let object_meta = store
         .head(&path)
         .await
         .map_err(|e| ArrowError::ExternalError(Box::new(e)))?;
-    info!("Here test");
     // Create a reader for the target file, use it to construct a Stream
     let reader = ParquetObjectReader::new(store, object_meta);
-    info!("Here test");
     Ok(ParquetRecordBatchStreamBuilder::new(reader).await?)
 }
 
@@ -549,15 +542,12 @@ pub async fn get_parquet_builder(
 /// # Errors
 /// Errors can occur if we are not able to read the named file or if the schema/file is corrupt.
 ///
-pub fn read_schema(
+pub async fn read_schema(
     store_factory: &ObjectStoreFactory,
     src: &Url,
 ) -> Result<Arc<Schema>, ArrowError> {
-    info!("Here test");
-    let builder = futures::executor::block_on(get_parquet_builder(store_factory, src))?;
-    info!("Here test");
+    let builder = get_parquet_builder(store_factory, src).await?;
     let stream = builder.build()?;
-    info!("Here test");
     Ok(stream.schema().clone())
 }
 
@@ -566,14 +556,18 @@ pub fn read_schema(
 /// The schema should be provided from the first file, all subsequent
 /// file schemas are compared to this. This function returns true if all match.
 #[must_use]
-pub fn validate_schemas_same(
+pub async fn validate_schemas_same(
     store_factory: &ObjectStoreFactory,
     input_file_paths: &[Url],
     schema: &Arc<Schema>,
 ) -> bool {
-    input_file_paths
-        .iter()
-        .skip(1)
-        .map(|u| read_schema(store_factory, u))
-        .all(|s| s.as_ref().unwrap_or(&Arc::new(Schema::empty())) == schema)
+    for path in input_file_paths {
+        let file_schema = read_schema(store_factory, path)
+            .await
+            .unwrap_or(Arc::new(Schema::empty()));
+        if file_schema != *schema {
+            return false;
+        }
+    }
+    true
 }

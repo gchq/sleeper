@@ -19,7 +19,6 @@ use chrono::Local;
 use clap::Parser;
 use compaction::merge_sorted_files;
 use human_panic::setup_panic;
-use owo_colors::OwoColorize;
 use std::io::Write;
 use url::Url;
 
@@ -66,11 +65,11 @@ async fn main() -> color_eyre::Result<()> {
             writeln!(
                 buf,
                 "{} [{}] {}:{} - {}",
-                    Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                    record.level(),
-                    record.file().unwrap_or("??"),
-                    record.line().unwrap_or(0),
-                    record.args()
+                Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                record.level(),
+                record.file().unwrap_or("??"),
+                record.line().unwrap_or(0),
+                record.args()
             )
         })
         .format_timestamp(Some(env_logger::TimestampPrecision::Millis))
