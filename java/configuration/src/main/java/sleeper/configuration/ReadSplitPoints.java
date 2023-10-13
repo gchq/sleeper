@@ -17,6 +17,8 @@
 package sleeper.configuration;
 
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
@@ -40,6 +42,8 @@ public class ReadSplitPoints {
     private ReadSplitPoints() {
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReadSplitPoints.class);
+
     public static List<Object> readSplitPoints(TableProperties tableProperties) throws IOException {
         if (tableProperties.get(TableProperty.SPLIT_POINTS_FILE) != null) {
             return readSplitPoints(tableProperties,
@@ -51,7 +55,9 @@ public class ReadSplitPoints {
     }
 
     public static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
-        return fromLines(Files.lines(Paths.get(splitPointsFile)), tableProperties.getSchema(), stringsBase64Encoded);
+        List<Object> splitPoints = fromLines(Files.lines(Paths.get(splitPointsFile)), tableProperties.getSchema(), stringsBase64Encoded);
+        LOGGER.info("Read {} split points from file: {}", splitPoints.size(), splitPointsFile);
+        return splitPoints;
     }
 
     public static List<Object> fromString(String splitPoints, Schema schema, boolean stringsBase64Encoded) {
@@ -60,11 +66,8 @@ public class ReadSplitPoints {
 
     private static List<Object> fromLines(Stream<String> lines, Schema schema, boolean stringsBase64Encoded) {
         PrimitiveType rowKey1Type = schema.getRowKeyTypes().get(0);
-        List<Object> splitPoints = lines
-                .map(line -> readSplitPoint(line, rowKey1Type, stringsBase64Encoded))
+        return lines.map(line -> readSplitPoint(line, rowKey1Type, stringsBase64Encoded))
                 .collect(Collectors.toUnmodifiableList());
-        System.out.println("Read " + splitPoints.size() + " split points from file");
-        return splitPoints;
     }
 
     private static Object readSplitPoint(String line, PrimitiveType rowKeyType, boolean stringsBase64Encoded) {
