@@ -376,7 +376,7 @@ class S3FileInfoStore implements FileInfoStore {
                 LOGGER.info("Attempt number {} to update files failed with conditional check failure, deleting file {} and retrying ({}) ",
                         numberAttempts, nextRevisionIdPath, e.getMessage());
                 Path path = new Path(nextRevisionIdPath);
-                path.getFileSystem(new Configuration()).delete(path, false);
+                path.getFileSystem(conf).delete(path, false);
                 LOGGER.info("Deleted file {}", path);
                 numberAttempts++;
                 sleep(numberAttempts);

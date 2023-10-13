@@ -131,7 +131,7 @@ class S3PartitionStore implements PartitionStore {
                         numberAttempts, e.getMessage());
                 Path path = new Path(nextRevisionIdPath);
                 try {
-                    path.getFileSystem(new Configuration()).delete(path, false);
+                    path.getFileSystem(conf).delete(path, false);
                     LOGGER.debug("Deleted file {}", path);
                 } catch (IOException e2) {
                     LOGGER.debug("IOException attempting to delete file {}: {}", path, e.getMessage());
