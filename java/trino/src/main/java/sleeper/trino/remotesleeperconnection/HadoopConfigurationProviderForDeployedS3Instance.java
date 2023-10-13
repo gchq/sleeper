@@ -20,7 +20,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 
-import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.utils.HadoopConfigurationProvider.getConfigurationForECS;
 
 public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopConfigurationProvider {
     /**
@@ -37,12 +37,9 @@ public class HadoopConfigurationProviderForDeployedS3Instance implements HadoopC
      */
     @Override
     public Configuration getHadoopConfiguration(InstanceProperties instanceProperties) {
-        Configuration configuration = new Configuration();
+        Configuration configuration = getConfigurationForECS(instanceProperties);
         configuration.setClassLoader(HadoopConfigurationProviderForDeployedS3Instance.class.getClassLoader());
-        configuration.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
         configuration.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());
-        configuration.set("fs.s3a.fast.upload", "true");
-        configuration.set("fs.s3a.bucket.probe", "0");
         configuration.set("fs.file.impl", org.apache.hadoop.fs.LocalFileSystem.class.getName());
         return configuration;
     }
