@@ -40,10 +40,6 @@ public class TablePropertiesProvider {
     private final Map<String, TableProperties> tableNameToPropertiesCache = new HashMap<>();
     private final Map<String, Instant> expireTimeByTableName = new HashMap<>();
 
-    public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        this(instanceProperties, s3Client, null, Instant::now);
-    }
-
     public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
         this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
     }
