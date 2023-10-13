@@ -27,14 +27,13 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ReadSplitPoints {
 
@@ -52,40 +51,38 @@ public class ReadSplitPoints {
     }
 
     public static List<Object> readSplitPoints(TableProperties tableProperties, String splitPointsFile, boolean stringsBase64Encoded) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                Files.newInputStream(Paths.get(splitPointsFile)), StandardCharsets.UTF_8))) {
-            String lineFromFile = reader.readLine();
-            List<String> lines = new ArrayList<>();
-            while (null != lineFromFile) {
-                lines.add(lineFromFile);
-                lineFromFile = reader.readLine();
-            }
-            return fromLines(tableProperties.getSchema(), lines, stringsBase64Encoded);
-        }
+        return fromLines(Files.lines(Paths.get(splitPointsFile)), tableProperties.getSchema(), stringsBase64Encoded);
     }
 
-    static List<Object> fromLines(Schema schema, List<String> lines, boolean stringsBase64Encoded) {
-        List<Object> splitPoints = new ArrayList<>();
+    public static List<Object> fromString(String splitPoints, Schema schema, boolean stringsBase64Encoded) {
+        return fromLines(splitPoints.lines(), schema, stringsBase64Encoded);
+    }
+
+    private static List<Object> fromLines(Stream<String> lines, Schema schema, boolean stringsBase64Encoded) {
         PrimitiveType rowKey1Type = schema.getRowKeyTypes().get(0);
-        for (String line : lines) {
-            if (rowKey1Type instanceof IntType) {
-                splitPoints.add(Integer.parseInt(line));
-            } else if (rowKey1Type instanceof LongType) {
-                splitPoints.add(Long.parseLong(line));
-            } else if (rowKey1Type instanceof StringType) {
-                if (stringsBase64Encoded) {
-                    byte[] encodedString = Base64.decodeBase64(line);
-                    splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                } else {
-                    splitPoints.add(line);
-                }
-            } else if (rowKey1Type instanceof ByteArrayType) {
-                splitPoints.add(Base64.decodeBase64(line));
-            } else {
-                throw new RuntimeException("Unknown key type " + rowKey1Type);
-            }
-        }
+        List<Object> splitPoints = lines
+                .map(line -> readSplitPoint(line, rowKey1Type, stringsBase64Encoded))
+                .collect(Collectors.toUnmodifiableList());
         System.out.println("Read " + splitPoints.size() + " split points from file");
         return splitPoints;
+    }
+
+    private static Object readSplitPoint(String line, PrimitiveType rowKeyType, boolean stringsBase64Encoded) {
+        if (rowKeyType instanceof IntType) {
+            return Integer.parseInt(line);
+        } else if (rowKeyType instanceof LongType) {
+            return Long.parseLong(line);
+        } else if (rowKeyType instanceof StringType) {
+            if (stringsBase64Encoded) {
+                byte[] encodedString = Base64.decodeBase64(line);
+                return new String(encodedString, StandardCharsets.UTF_8);
+            } else {
+                return line;
+            }
+        } else if (rowKeyType instanceof ByteArrayType) {
+            return Base64.decodeBase64(line);
+        } else {
+            throw new RuntimeException("Unknown key type " + rowKeyType);
+        }
     }
 }

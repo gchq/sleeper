@@ -27,7 +27,6 @@ import sleeper.core.schema.type.StringType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -71,7 +70,8 @@ public class ReadSplitPointsTest {
     }
 
     @Test
-    void shouldEncodeBase64Data() { // Compare this against the previous test
+    void shouldEncodeBase64Data() {
+        // Compare this against the previous test to confirm Base64 strings are correct
         assertThat(List.of(new byte[]{1}, new byte[]{2}, new byte[]{3}))
                 .extracting(Base64::encodeBase64String)
                 .containsExactly("AQ==", "Ag==", "Aw==");
@@ -87,21 +87,18 @@ public class ReadSplitPointsTest {
     }
 
     @Test
-    void shouldEncodeBase64DataFromStrings() { // Compare this against the previous test
+    void shouldEncodeBase64DataFromStrings() {
+        // Compare this against the previous test to confirm Base64 strings are correct
         assertThat(List.of("1", "2", "3"))
                 .extracting(str -> Base64.encodeBase64String(str.getBytes(StandardCharsets.UTF_8)))
                 .containsExactly("MQ==", "Mg==", "Mw==");
     }
 
     public static List<Object> readSplitPoints(Schema schema, String splitPointsString) {
-        return ReadSplitPoints.fromLines(schema, lines(splitPointsString), false);
+        return ReadSplitPoints.fromString(splitPointsString, schema, false);
     }
 
     public static List<Object> readSplitPointsWithBase64Strings(Schema schema, String splitPointsString) {
-        return ReadSplitPoints.fromLines(schema, lines(splitPointsString), true);
-    }
-
-    private static List<String> lines(String string) {
-        return string.lines().collect(Collectors.toUnmodifiableList());
+        return ReadSplitPoints.fromString(splitPointsString, schema, true);
     }
 }
