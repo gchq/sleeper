@@ -27,6 +27,7 @@ import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreProvider;
@@ -35,6 +36,7 @@ import sleeper.table.index.dynamodb.DynamoDBTableIndex;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
@@ -53,7 +55,8 @@ public class AddTable {
     }
 
     public void run() throws IOException {
-        tableIndex.createTable(tableProperties.get(TABLE_NAME));
+        TableId id = tableIndex.createTable(tableProperties.get(TABLE_NAME));
+        tableProperties.set(TABLE_ID, id.getTableUniqueId());
         tablePropertiesStore.save(tableProperties);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }

@@ -18,61 +18,40 @@ package sleeper.configuration.properties.table;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
+
+    private final TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
 
     @Test
     void shouldLoadFromS3() {
         // Given
-        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
-                "test", "provider-load");
-        s3Client.createBucket("provider-load");
-        validProperties.saveToS3(s3Client);
+        store.save(tableProperties);
 
-        // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "provider-load");
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
-
-        // Then
-        assertThat(provider.getTableProperties("test")).isEqualTo(validProperties);
-        assertThat(provider.getTablePropertiesIfExists("test")).contains(validProperties);
+        // When / Then
+        assertThat(provider.getTableProperties(tableName)).isEqualTo(tableProperties);
+        assertThat(provider.getTablePropertiesIfExists(tableName)).contains(tableProperties);
     }
 
     @Test
     void shouldReportTableDoesNotExistWhenNotInBucket() {
-        // Given
-        s3Client.createBucket("provider-no-table");
-
-        // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "provider-no-table");
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
-
-        // Then
-        assertThat(provider.getTablePropertiesIfExists("test"))
+        // When / Then
+        assertThat(provider.getTablePropertiesIfExists(tableName))
                 .isEmpty();
     }
 
     @Test
     void shouldReloadPropertiesFromS3WhenTimeoutReachedForTable() {
         // Given
-        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
-                "test", "provider-load");
-        s3Client.createBucket("provider-load");
-        validProperties.setNumber(ROW_GROUP_SIZE, 123L);
-        validProperties.saveToS3(s3Client);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "provider-load");
+        tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
+        store.save(tableProperties);
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
                 List.of(
@@ -81,25 +60,20 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
                 ).iterator()::next);
 
         // When
-        provider.getTableProperties("test"); // Populate cache
-        validProperties.setNumber(ROW_GROUP_SIZE, 456L);
-        validProperties.saveToS3(s3Client);
+        provider.getTableProperties(tableName); // Populate cache
+        tableProperties.setNumber(ROW_GROUP_SIZE, 456L);
+        store.save(tableProperties);
 
         // Then
-        assertThat(provider.getTableProperties("test").getLong(ROW_GROUP_SIZE))
+        assertThat(provider.getTableProperties(tableName).getLong(ROW_GROUP_SIZE))
                 .isEqualTo(456L);
     }
 
     @Test
     void shouldNotReloadPropertiesFromS3WhenTimeoutHasNotBeenReachedForTable() {
         // Given
-        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
-                "test", "provider-load");
-        s3Client.createBucket("provider-load");
-        validProperties.setNumber(ROW_GROUP_SIZE, 123L);
-        validProperties.saveToS3(s3Client);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "provider-load");
+        tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
+        store.save(tableProperties);
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
                 List.of(
@@ -108,29 +82,24 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
                 ).iterator()::next);
 
         // When
-        provider.getTableProperties("test"); // Populate cache
-        validProperties.setNumber(ROW_GROUP_SIZE, 456L);
-        validProperties.saveToS3(s3Client);
+        provider.getTableProperties(tableName); // Populate cache
+        tableProperties.setNumber(ROW_GROUP_SIZE, 456L);
+        store.save(tableProperties);
 
         // Then
-        assertThat(provider.getTableProperties("test").getLong(ROW_GROUP_SIZE))
+        assertThat(provider.getTableProperties(tableName).getLong(ROW_GROUP_SIZE))
                 .isEqualTo(123L);
     }
 
     @Test
     void shouldNotReloadPropertiesFromS3WhenTimeoutHasBeenReachedForOtherTable() {
         // Given
-        TableProperties validProperties1 = createValidPropertiesWithTableNameAndBucket(
-                "table-1", "provider-load");
-        TableProperties validProperties2 = createValidPropertiesWithTableNameAndBucket(
-                "table-2", "provider-load");
-        s3Client.createBucket("provider-load");
-        validProperties1.setNumber(ROW_GROUP_SIZE, 123L);
-        validProperties1.saveToS3(s3Client);
-        validProperties2.setNumber(ROW_GROUP_SIZE, 123L);
-        validProperties2.saveToS3(s3Client);
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "provider-load");
+        TableProperties tableProperties1 = createValidTableProperties();
+        TableProperties tableProperties2 = createValidTableProperties();
+        tableProperties1.setNumber(ROW_GROUP_SIZE, 123L);
+        tableProperties2.setNumber(ROW_GROUP_SIZE, 123L);
+        store.save(tableProperties1);
+        store.save(tableProperties2);
         instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
         TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties,
                 List.of(
@@ -141,17 +110,17 @@ class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
                 ).iterator()::next);
 
         // When
-        provider.getTableProperties("table-1"); // Populate cache
-        provider.getTableProperties("table-2"); // Populate cache
-        validProperties1.setNumber(ROW_GROUP_SIZE, 456L);
-        validProperties1.saveToS3(s3Client);
-        validProperties2.setNumber(ROW_GROUP_SIZE, 456L);
-        validProperties2.saveToS3(s3Client);
+        provider.getTableProperties(tableProperties1.get(TABLE_NAME)); // Populate cache
+        provider.getTableProperties(tableProperties2.get(TABLE_NAME)); // Populate cache
+        tableProperties1.setNumber(ROW_GROUP_SIZE, 456L);
+        tableProperties2.setNumber(ROW_GROUP_SIZE, 456L);
+        store.save(tableProperties1);
+        store.save(tableProperties2);
 
         // Then
-        assertThat(provider.getTableProperties("table-1").getLong(ROW_GROUP_SIZE))
+        assertThat(provider.getTableProperties(tableProperties1.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
                 .isEqualTo(456L);
-        assertThat(provider.getTableProperties("table-2").getLong(ROW_GROUP_SIZE))
+        assertThat(provider.getTableProperties(tableProperties2.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
                 .isEqualTo(123L);
     }
 }

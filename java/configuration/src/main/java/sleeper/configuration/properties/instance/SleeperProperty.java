@@ -42,6 +42,10 @@ public interface SleeperProperty {
         return !isSetByCdk();
     }
 
+    default boolean isUserDefined() {
+        return !isSetByCdk();
+    }
+
     default Predicate<String> validationPredicate() {
         return s -> true;
     }

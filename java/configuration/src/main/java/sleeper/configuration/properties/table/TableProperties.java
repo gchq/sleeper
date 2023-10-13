@@ -33,6 +33,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
+import sleeper.core.table.TableId;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +49,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
@@ -158,6 +160,10 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     @Override
     protected SleeperPropertiesPrettyPrinter<TableProperty> getPrettyPrinter(PrintWriter writer) {
         return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
+    }
+
+    public TableId getId() {
+        return TableId.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
     }
 
     public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {

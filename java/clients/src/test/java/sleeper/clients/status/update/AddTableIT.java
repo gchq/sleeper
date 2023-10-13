@@ -29,13 +29,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
+import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
@@ -50,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -65,6 +69,7 @@ public class AddTableIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
     private final TableIndex tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
+    private final TablePropertiesStore propertiesStore = new S3TablePropertiesStore(instanceProperties, s3);
     @TempDir
     private Path tempDir;
 
@@ -84,12 +89,15 @@ public class AddTableIT {
         new AddTable(s3, dynamoDB, instanceProperties, tableProperties).run();
 
         // Then
-        StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+        TableId foundId = tableIndex.getTableByName(tableProperties.get(TABLE_NAME)).orElseThrow();
+        TableProperties foundProperties = propertiesStore.loadProperties(foundId);
+        assertThat(foundProperties.get(TABLE_ID))
+                .isNotEmpty().isEqualTo(foundId.getTableUniqueId());
+        StateStore stateStore = new DynamoDBStateStore(instanceProperties, foundProperties, dynamoDB);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
                         .buildList());
-        assertThat(tableIndex.getTableByName(tableProperties.get(TABLE_NAME))).isNotEmpty();
     }
 
     @Test
