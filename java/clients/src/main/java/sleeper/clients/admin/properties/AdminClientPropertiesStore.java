@@ -32,6 +32,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -150,11 +151,11 @@ public class AdminClientPropertiesStore {
         return !dockerImageConfiguration.getStacksToDeploy(newStacks).isEmpty();
     }
 
-    public void saveTableProperties(String instanceId, TableProperties properties, PropertiesDiff diff) {
-        saveTableProperties(loadInstanceProperties(instanceId), properties, diff);
+    public void saveTableProperties(String instanceId, TableProperties properties) {
+        saveTableProperties(loadInstanceProperties(instanceId), properties);
     }
 
-    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties, PropertiesDiff diff) {
+    public void saveTableProperties(InstanceProperties instanceProperties, TableProperties properties) {
         String instanceId = instanceProperties.get(ID);
         String tableName = properties.get(TABLE_NAME);
         try {
@@ -166,16 +167,13 @@ public class AdminClientPropertiesStore {
                             .map(table -> tableName.equals(table.get(TABLE_NAME))
                                     ? properties : table));
             LOGGER.info("Saving to AWS");
-            properties.saveToS3(s3);
+            new S3TablePropertiesStore(instanceProperties, s3).save(properties);
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
                 SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
-            }
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
             }
             throw wrapped;
         }

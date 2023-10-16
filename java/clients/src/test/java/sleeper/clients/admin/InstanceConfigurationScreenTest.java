@@ -552,7 +552,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after);
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }
@@ -566,7 +566,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             after.set(ROW_GROUP_SIZE, "123");
             doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(INSTANCE_ID, TABLE_NAME_VALUE,
                     new RuntimeException("Something went wrong")))
-                    .when(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
+                    .when(store).saveTableProperties(properties, after);
 
             // When
             String output = editTableConfiguration(properties, before, after)
@@ -592,7 +592,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             order.verify(in.mock).promptLine(any());
             order.verify(editor).openPropertiesFile(before);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after);
             order.verify(in.mock, times(2)).promptLine(any());
             order.verifyNoMoreInteractions();
         }
@@ -717,7 +717,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             order.verify(in.mock, times(2)).promptLine(any());
             order.verify(editor).openPropertiesFile(before, TablePropertyGroup.METADATA);
             order.verify(in.mock).promptLine(any());
-            order.verify(store).saveTableProperties(properties, after, new PropertiesDiff(before, after));
+            order.verify(store).saveTableProperties(properties, after);
             order.verify(in.mock).promptLine(any());
             order.verifyNoMoreInteractions();
         }

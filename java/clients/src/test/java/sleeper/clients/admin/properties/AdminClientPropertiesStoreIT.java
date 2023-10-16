@@ -412,9 +412,8 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     private void updateTableProperty(AdminClientPropertiesStore store, String instanceId, String tableName, TableProperty property, String value) {
         TableProperties properties = store.loadTableProperties(instanceProperties, tableName);
-        String valueBefore = properties.get(property);
         properties.set(property, value);
-        store.saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveTableProperties(instanceId, properties);
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(
