@@ -54,7 +54,7 @@ public abstract class TablePropertiesITBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-    protected final TablePropertiesStore store = new S3TablePropertiesStore(instanceProperties, s3Client);
+    protected final TablePropertiesStore store = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDBClient);
     protected final String tableName = tableProperties.get(TABLE_NAME);
 
     @BeforeEach

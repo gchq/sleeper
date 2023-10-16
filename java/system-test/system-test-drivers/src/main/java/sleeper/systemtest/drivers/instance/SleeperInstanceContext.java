@@ -117,7 +117,7 @@ public class SleeperInstanceContext {
         ResetProperties.reset(configuration,
                 currentInstance.getInstanceProperties(),
                 currentInstance.getTableProperties(),
-                s3);
+                s3, dynamoDB);
     }
 
     public void reinitialise() {
@@ -164,7 +164,7 @@ public class SleeperInstanceContext {
             throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
         }
         values.forEach(tableProperties::set);
-        new S3TablePropertiesStore(getInstanceProperties(), s3)
+        new S3TablePropertiesStore(getInstanceProperties(), s3, dynamoDB)
                 .save(tableProperties);
     }
 

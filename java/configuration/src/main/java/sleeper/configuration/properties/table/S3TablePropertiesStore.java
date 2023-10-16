@@ -16,6 +16,7 @@
 
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 
@@ -29,7 +30,7 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
 
-    public S3TablePropertiesStore(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+    public S3TablePropertiesStore(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
     }

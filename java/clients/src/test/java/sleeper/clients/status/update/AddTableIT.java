@@ -69,7 +69,7 @@ public class AddTableIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
     private final TableIndex tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
-    private final TablePropertiesStore propertiesStore = new S3TablePropertiesStore(instanceProperties, s3);
+    private final TablePropertiesStore propertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     @TempDir
     private Path tempDir;
 

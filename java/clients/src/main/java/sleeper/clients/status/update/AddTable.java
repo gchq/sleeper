@@ -46,7 +46,7 @@ public class AddTable {
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
         this.tableProperties = tableProperties;
-        this.tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3Client);
+        this.tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDB);
         this.tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
     }

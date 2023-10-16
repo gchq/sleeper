@@ -70,7 +70,7 @@ public class DeployDockerInstance {
         TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
 
         instanceProperties.saveToS3(s3Client);
-        new S3TablePropertiesStore(instanceProperties, s3Client).save(tableProperties);
+        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
 
         IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }

@@ -167,7 +167,7 @@ public class AdminClientPropertiesStore {
                             .map(table -> tableName.equals(table.get(TABLE_NAME))
                                     ? properties : table));
             LOGGER.info("Saving to AWS");
-            new S3TablePropertiesStore(instanceProperties, s3).save(properties);
+            new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {

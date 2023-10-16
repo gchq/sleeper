@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.drivers.instance;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.clients.deploy.DeployInstanceConfiguration;
@@ -35,11 +36,11 @@ public class ResetProperties {
     public static void reset(DeployInstanceConfiguration configuration,
                              InstanceProperties instanceProperties,
                              TableProperties tableProperties,
-                             AmazonS3 s3Client) {
+                             AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         reset(instanceProperties, configuration.getInstanceProperties());
         instanceProperties.saveToS3(s3Client);
         reset(tableProperties, configuration.getTableProperties());
-        new S3TablePropertiesStore(instanceProperties, s3Client).save(tableProperties);
+        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
     }
 
     private static <T extends SleeperProperty> void reset(
