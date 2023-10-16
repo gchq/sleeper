@@ -23,7 +23,9 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
@@ -68,6 +70,7 @@ public class TestUtils {
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
 
         s3Client.shutdown();
@@ -78,6 +81,7 @@ public class TestUtils {
 
     public static TableProperties createTable(InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instance, schema);
+        new S3TablePropertiesStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, tableProperties, dynamoDB);
@@ -88,7 +92,6 @@ public class TestUtils {
             dynamoDB.shutdown();
         }
 
-        tableProperties.saveToS3(s3Client);
         s3Client.shutdown();
         return tableProperties;
     }
