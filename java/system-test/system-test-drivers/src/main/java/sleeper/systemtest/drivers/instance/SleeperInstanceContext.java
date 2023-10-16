@@ -39,6 +39,7 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -58,9 +59,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -138,18 +141,31 @@ public class SleeperInstanceContext {
         return currentInstance.getInstanceProperties();
     }
 
-    public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
-        InstanceProperties instanceProperties = getInstanceProperties();
-        values.forEach(instanceProperties::set);
-        instanceProperties.saveToS3(s3);
-    }
-
     public TableProperties getTableProperties() {
         return currentInstance.getTableProperties();
     }
 
     public TablePropertiesProvider getTablePropertiesProvider() {
         return currentInstance.getTablePropertiesProvider();
+    }
+
+    public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        values.forEach(instanceProperties::set);
+        instanceProperties.saveToS3(s3);
+    }
+
+    public void updateTableProperties(Map<TableProperty, String> values) {
+        TableProperties tableProperties = getTableProperties();
+        List<TableProperty> uneditableProperties = values.keySet().stream()
+                .filter(not(TableProperty::isEditable))
+                .collect(Collectors.toUnmodifiableList());
+        if (!uneditableProperties.isEmpty()) {
+            throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
+        }
+        values.forEach(tableProperties::set);
+        new S3TablePropertiesStore(getInstanceProperties(), s3)
+                .save(tableProperties);
     }
 
     public StateStoreProvider getStateStoreProvider() {

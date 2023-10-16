@@ -50,7 +50,7 @@ public class EmrServerlessBulkImportIT {
     @Test
     void shouldBulkImportOneRecordWithEmrServerlessByQueue() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(properties -> properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
+        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,
