@@ -18,9 +18,13 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.TableId;
 
+import java.util.Optional;
+
 public interface TablePropertiesStore {
 
     TableProperties loadProperties(TableId tableId);
+
+    Optional<TableProperties> loadByName(String tableName);
 
     void save(TableProperties tableProperties);
 }

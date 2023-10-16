@@ -20,6 +20,7 @@ import sleeper.core.table.TableId;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -29,7 +30,12 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public TableProperties loadProperties(TableId tableId) {
-        return propertiesByTableName.get(tableId.getTableName());
+        return loadByName(tableId.getTableName()).orElseThrow();
+    }
+
+    @Override
+    public Optional<TableProperties> loadByName(String tableName) {
+        return Optional.ofNullable(propertiesByTableName.get(tableName));
     }
 
     @Override

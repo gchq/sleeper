@@ -17,9 +17,12 @@
 package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
+
+import java.util.Optional;
 
 public class S3TablePropertiesStore implements TablePropertiesStore {
 
@@ -36,6 +39,21 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
         TableProperties properties = new TableProperties(instanceProperties);
         properties.loadFromS3(s3Client, tableId.getTableName());
         return properties;
+    }
+
+    @Override
+    public Optional<TableProperties> loadByName(String tableName) {
+        TableProperties properties = new TableProperties(instanceProperties);
+        try {
+            properties.loadFromS3(s3Client, tableName);
+            return Optional.of(properties);
+        } catch (AmazonS3Exception e) {
+            if ("NoSuchKey".equals(e.getErrorCode())) {
+                return Optional.empty();
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override

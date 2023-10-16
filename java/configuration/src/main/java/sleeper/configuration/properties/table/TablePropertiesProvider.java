@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableId;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -62,7 +61,7 @@ public class TablePropertiesProvider {
     public TableProperties getTableProperties(String tableName) {
         checkExpiryTime(tableName);
         return tableNameToPropertiesCache.computeIfAbsent(tableName,
-                name -> propertiesStore.loadProperties(TableId.uniqueIdAndName(null, name)));
+                name -> propertiesStore.loadByName(name).orElse(null));
     }
 
     private void checkExpiryTime(String tableName) {
