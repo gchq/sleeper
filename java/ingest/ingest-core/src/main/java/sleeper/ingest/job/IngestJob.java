@@ -56,7 +56,6 @@ public class IngestJob {
         if (tableName == null) {
             validationFailures.add("Missing property \"tableName\"");
         }
-
         return validationFailures;
     }
 
