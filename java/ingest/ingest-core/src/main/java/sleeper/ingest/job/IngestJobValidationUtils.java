@@ -42,9 +42,9 @@ public class IngestJobValidationUtils {
         T job;
         try {
             job = deserialiser.apply(message);
-            LOGGER.info("Job deserialised successfully");
+            LOGGER.info("Deserialised message to ingest job {}", job);
         } catch (RuntimeException e) {
-            LOGGER.info("Deserialisation failed: {}", e.getMessage());
+            LOGGER.warn("Deserialisation failed: {}", e.getStackTrace());
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
                             "Error parsing JSON. Reason: " + Optional.ofNullable(e.getCause()).orElse(e).getMessage()));
@@ -55,7 +55,7 @@ public class IngestJobValidationUtils {
             LOGGER.info("No validation failures found");
             return Optional.of(job);
         } else {
-            LOGGER.info("Validation failed: {}", validationFailures);
+            LOGGER.warn("Validation failed: {}", validationFailures);
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
                             validationFailures.stream()

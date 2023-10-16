@@ -92,7 +92,6 @@ public class IngestJobQueueConsumer implements IngestJobSource {
             LOGGER.info("Received message {}", messages.get(0).getBody());
             Optional<IngestJob> ingestJob = ingestJobMessageHandler.handleMessage(messages.get(0).getBody());
             if (ingestJob.isPresent()) {
-                LOGGER.info("Deserialised message to ingest job {}", ingestJob);
                 long recordsWritten = ingest(ingestJob.get(), messages.get(0).getReceiptHandle(), runJob);
                 LOGGER.info("{} records were written", recordsWritten);
             } else {
