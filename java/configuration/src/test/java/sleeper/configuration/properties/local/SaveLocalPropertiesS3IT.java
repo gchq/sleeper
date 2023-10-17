@@ -42,7 +42,6 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstanceProperties;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromInstancePropertiesFile;
-import static sleeper.configuration.properties.local.SaveLocalProperties.saveFromS3;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -58,13 +57,17 @@ class SaveLocalPropertiesS3IT {
     @TempDir
     private Path tempDir;
 
+    private InstanceProperties saveFromS3(String instanceId) throws IOException {
+        return SaveLocalProperties.saveFromS3(s3Client, dynamoClient, instanceId, tempDir);
+    }
+
     @Test
     void shouldLoadInstancePropertiesFromS3() throws IOException {
         // Given
         InstanceProperties properties = createTestInstance();
 
         // When
-        saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveFromS3(properties.get(ID));
 
         // Then
         assertThat(loadInstanceProperties(new InstanceProperties(), tempDir.resolve("instance.properties")))
@@ -79,7 +82,7 @@ class SaveLocalPropertiesS3IT {
         TableProperties table2 = createTestTable(properties, schemaWithKey("key2"));
 
         // When
-        saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveFromS3(properties.get(ID));
 
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties")))
@@ -92,7 +95,7 @@ class SaveLocalPropertiesS3IT {
         InstanceProperties properties = createTestInstance();
 
         // When
-        saveFromS3(s3Client, properties.get(ID), tempDir);
+        saveFromS3(properties.get(ID));
 
         // Then
         assertThat(loadTablesFromInstancePropertiesFile(properties, tempDir.resolve("instance.properties"))).isEmpty();
@@ -104,10 +107,10 @@ class SaveLocalPropertiesS3IT {
         InstanceProperties properties = createTestInstance();
 
         // When
-        InstanceProperties saved = saveFromS3(s3Client, properties.get(ID), tempDir);
+        InstanceProperties saved = saveFromS3(properties.get(ID));
 
         // Then
-        assertThat(properties).isEqualTo(saved);
+        assertThat(saved).isEqualTo(properties);
     }
 
     private InstanceProperties createTestInstance() {

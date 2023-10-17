@@ -125,7 +125,7 @@ public class AdminClientPropertiesStore {
             String instanceId = properties.get(ID);
             CouldNotSaveInstanceProperties wrapped = new CouldNotSaveInstanceProperties(instanceId, e);
             try {
-                SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+                SaveLocalProperties.saveFromS3(s3, dynamoDB, instanceId, generatedDirectory);
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
@@ -170,7 +170,7 @@ public class AdminClientPropertiesStore {
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
-                SaveLocalProperties.saveFromS3(s3, instanceId, generatedDirectory);
+                SaveLocalProperties.saveFromS3(s3, dynamoDB, instanceId, generatedDirectory);
             } catch (Exception e2) {
                 wrapped.addSuppressed(e2);
             }
