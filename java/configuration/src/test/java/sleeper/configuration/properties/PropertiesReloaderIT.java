@@ -34,6 +34,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.schema.Schema;
 
 import java.util.function.Consumer;
 
@@ -102,7 +103,7 @@ public class PropertiesReloaderIT {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
         instanceProperties.saveToS3(s3Client);
-        String tableName = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client,
+        String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
         updatePropertiesInS3(tableName,
@@ -125,7 +126,7 @@ public class PropertiesReloaderIT {
         // Given
         instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
         instanceProperties.saveToS3(s3Client);
-        String tableName = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client,
+        String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
         TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
@@ -156,5 +157,12 @@ public class PropertiesReloaderIT {
         TableProperties propertiesAfter = tablePropertiesStore.loadByName(tableName).orElseThrow();
         extraProperties.accept(propertiesAfter);
         tablePropertiesStore.save(propertiesAfter);
+    }
+
+    private TableProperties createTestTable(Schema schema, Consumer<TableProperties> tableConfig) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableConfig.accept(tableProperties);
+        tablePropertiesStore.save(tableProperties);
+        return tableProperties;
     }
 }
