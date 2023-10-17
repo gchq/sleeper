@@ -91,6 +91,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("invalid-query-id")
                             .lastKnownState(QueryState.FAILED)
+                            .errorMessage("java.io.EOFException: End of input at line 1 column 2 path $.")
                             .build());
 
         }
@@ -117,6 +118,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("invalid-query-id")
                             .lastKnownState(QueryState.FAILED)
+                            .errorMessage("tableName field must be provided")
                             .build());
         }
 
@@ -143,6 +145,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("invalid-query-id")
                             .lastKnownState(QueryState.FAILED)
+                            .errorMessage("Unknown query type: invalid-query-type")
                             .build());
         }
     }

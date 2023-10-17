@@ -224,6 +224,42 @@ public class DynamoDBQueryTrackerIT {
         assertThat(queryTracker.getStatus("parent", "my-other-id").getRecordCount()).isEqualTo(Long.valueOf(25));
     }
 
+    @Test
+    void shouldStoreErrorMessageWhenQueryFailed() {
+        // Given
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+
+        // When
+        queryTracker.queryFailed(createQueryWithId("failed-query"), new Exception("Query has failed"));
+
+        // Then
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(TrackedQuery.builder()
+                        .queryId("failed-query")
+                        .lastKnownState(FAILED)
+                        .errorMessage("Query has failed").build());
+    }
+
+    @Test
+    void shouldStoreErrorMessageWhenQueryCompletedWithError() {
+        // Given
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+
+        // When
+        queryTracker.queryCompleted(createQueryWithId("completed-query-that-errored"),
+                new ResultsOutputInfo(100L, List.of(), new Exception("Query has failed")));
+
+        // Then
+        assertThat(queryTracker.getAllQueries())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                .containsExactly(TrackedQuery.builder()
+                        .queryId("completed-query-that-errored")
+                        .lastKnownState(FAILED)
+                        .recordCount(100L)
+                        .errorMessage("Query has failed").build());
+    }
+
     @Nested
     @DisplayName("Get tracked queries")
     class GetTrackedQueries {

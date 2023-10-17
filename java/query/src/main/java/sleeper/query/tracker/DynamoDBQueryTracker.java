@@ -57,6 +57,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     public static final String LAST_KNOWN_STATE = "lastKnownState";
     public static final String RECORD_COUNT = "recordCount";
     public static final String SUB_QUERY_ID = "subQueryId";
+    public static final String ERROR_MESSAGE = "errors";
     public static final String NON_NESTED_QUERY_PLACEHOLDER = "-";
     public static final String EXPIRY_DATE = "expiryDate";
 
@@ -139,7 +140,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                 .collect(Collectors.toList());
     }
 
-    private void updateState(String queryId, String subQueryId, QueryState state, long recordCount) {
+    private void updateState(String queryId, String subQueryId, QueryState state, long recordCount, String errorMessage) {
         Map<String, AttributeValue> key = new HashMap<>();
         key.put(QUERY_ID, new AttributeValue(queryId));
         key.put(SUB_QUERY_ID, new AttributeValue(subQueryId));
@@ -158,31 +159,43 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
         valueUpdate.put(LAST_KNOWN_STATE, new AttributeValueUpdate(
                 new AttributeValue(state.name()), AttributeAction.PUT));
+        if (!errorMessage.isEmpty()) {
+            valueUpdate.put(ERROR_MESSAGE, new AttributeValueUpdate(
+                    new AttributeValue().withS(errorMessage), AttributeAction.PUT));
+        }
 
         dynamoDB.updateItem(new UpdateItemRequest(trackerTableName, key, valueUpdate));
     }
 
-    private void updateState(String queryId, QueryState state, long recordCount) {
-        updateState(queryId, NON_NESTED_QUERY_PLACEHOLDER, state, recordCount);
+    private void updateState(String queryId, QueryState state, long recordCount, String errorMessage) {
+        updateState(queryId, NON_NESTED_QUERY_PLACEHOLDER, state, recordCount, errorMessage);
     }
 
     private void updateState(Query query, QueryState state) {
-        this.updateState(query, state, 0);
+        this.updateState(query, state, null);
+    }
+
+    private void updateState(Query query, QueryState state, String errorMessage) {
+        this.updateState(query, state, 0, errorMessage);
     }
 
     private void updateState(Query query, QueryState state, long recordCount) {
+        updateState(query, state, recordCount, null);
+    }
+
+    private void updateState(Query query, QueryState state, long recordCount, String errorMessage) {
         if (query instanceof LeafPartitionQuery) {
             LeafPartitionQuery leafPartitionQuery = (LeafPartitionQuery) query;
-            updateState(query.getQueryId(), leafPartitionQuery.getSubQueryId(), state, recordCount);
+            updateState(query.getQueryId(), leafPartitionQuery.getSubQueryId(), state, recordCount, errorMessage);
             if (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED)) {
-                updateStateOfParent(leafPartitionQuery);
+                updateStateOfParent(leafPartitionQuery, errorMessage);
             }
         } else {
-            updateState(query.getQueryId(), state, recordCount);
+            updateState(query.getQueryId(), state, recordCount, errorMessage);
         }
     }
 
-    private void updateStateOfParent(LeafPartitionQuery leafPartitionQuery) {
+    private void updateStateOfParent(LeafPartitionQuery leafPartitionQuery, String errorMessage) {
         List<Map<String, AttributeValue>> trackedQueries = dynamoDB.query(new QueryRequest()
                 .withTableName(trackerTableName)
                 .addKeyConditionsEntry(QUERY_ID, new Condition()
@@ -202,7 +215,8 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
             long totalRecordCount = children.stream().mapToLong(query ->
                     query.getRecordCount() != null ? query.getRecordCount() : 0).sum();
             LOGGER.info("Updating state of parent to {}", parentState);
-            updateState(leafPartitionQuery.getQueryId(), NON_NESTED_QUERY_PLACEHOLDER, parentState, totalRecordCount);
+            updateState(leafPartitionQuery.getQueryId(), NON_NESTED_QUERY_PLACEHOLDER, parentState,
+                    totalRecordCount, errorMessage);
         }
     }
 
@@ -242,6 +256,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).getN());
         QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).getS());
         String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).getS();
+        String errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).getS();
 
         return TrackedQuery.builder()
                 .queryId(id).subQueryId(subQueryId)
@@ -249,6 +264,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
                 .expiryDate(expiryDate)
                 .lastKnownState(state)
                 .recordCount(recordCount)
+                .errorMessage(errorMessage)
                 .build();
     }
 
@@ -271,9 +287,10 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     public void queryCompleted(Query query, ResultsOutputInfo outputInfo) {
         if (outputInfo.getError() != null) {
             if (outputInfo.getRecordCount() > 0) {
-                this.updateState(query, QueryState.PARTIALLY_FAILED, outputInfo.getRecordCount());
+                this.updateState(query, QueryState.PARTIALLY_FAILED, outputInfo.getRecordCount(),
+                        outputInfo.getError().getMessage());
             } else {
-                this.updateState(query, QueryState.FAILED);
+                this.updateState(query, QueryState.FAILED, outputInfo.getError().getMessage());
             }
         } else {
             this.updateState(query, QueryState.COMPLETED, outputInfo.getRecordCount());
@@ -282,6 +299,6 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
     @Override
     public void queryFailed(Query query, Exception e) {
-        this.updateState(query, QueryState.FAILED);
+        this.updateState(query, QueryState.FAILED, e.getMessage());
     }
 }
