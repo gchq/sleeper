@@ -31,8 +31,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableId;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +59,6 @@ public class CreateJobs {
     private final JobSender jobSender;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final TableLister tableLister;
     private final CompactionJobStatusStore jobStatusStore;
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -67,11 +66,10 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       AmazonSQS sqsClient,
-                      TableLister tableLister,
                       CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
-                tableLister, jobStatusStore);
+                jobStatusStore);
     }
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -79,19 +77,19 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       JobSender jobSender,
-                      TableLister tableLister,
                       CompactionJobStatusStore jobStatusStore) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.tableLister = tableLister;
         this.jobStatusStore = jobStatusStore;
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<String> tables = tableLister.listTables();
+        List<String> tables = tablePropertiesProvider.streamAllTableIds()
+                .map(TableId::getTableName)
+                .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} tables", tables.size());
         for (String table : tables) {
             createJobsForTable(table);

@@ -51,7 +51,6 @@ import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -96,7 +95,6 @@ public class CreateJobsIT {
         compactionJobSerDe = new CompactionJobSerDe(tablePropertiesProvider);
         createJobs = new CreateJobs(new ObjectFactory(instanceProperties, s3, null),
                 instanceProperties, tablePropertiesProvider, stateStoreProvider, sqs,
-                new TableLister(s3, instanceProperties),
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties));
     }
 

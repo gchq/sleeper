@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableId;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -28,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 
@@ -79,6 +81,10 @@ public class TablePropertiesProvider {
         } catch (RuntimeException e) {
             return Optional.empty();
         }
+    }
+
+    public Stream<TableId> streamAllTableIds() {
+        return propertiesStore.streamAllTableIds();
     }
 
     public void clearCache() {

@@ -31,6 +31,8 @@ public interface TablePropertiesStore {
 
     Stream<TableProperties> streamAllTables();
 
+    Stream<TableId> streamAllTableIds();
+
     void save(TableProperties tableProperties);
 
     void deleteByName(String tableName);

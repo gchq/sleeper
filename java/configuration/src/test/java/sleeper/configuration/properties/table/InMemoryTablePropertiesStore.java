@@ -50,6 +50,11 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
     }
 
     @Override
+    public Stream<TableId> streamAllTableIds() {
+        return streamAllTables().map(TableProperties::getId);
+    }
+
+    @Override
     public void save(TableProperties tableProperties) {
         propertiesByTableName.put(tableProperties.get(TABLE_NAME), tableProperties);
     }
