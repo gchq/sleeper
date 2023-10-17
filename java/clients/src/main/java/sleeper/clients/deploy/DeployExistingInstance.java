@@ -34,6 +34,7 @@ import sleeper.clients.util.cdk.CdkDeploy;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.local.SaveLocalProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.SleeperVersion;
 
@@ -42,8 +43,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static sleeper.configuration.properties.table.TableProperties.streamTablesFromS3;
 
 public class DeployExistingInstance {
 
@@ -181,7 +180,8 @@ public class DeployExistingInstance {
         public Builder loadPropertiesFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB) {
             properties = new InstanceProperties();
             properties.loadFromS3GivenInstanceId(s3, instanceId);
-            tablePropertiesList = streamTablesFromS3(s3, dynamoDB, properties).collect(Collectors.toList());
+            tablePropertiesList = new S3TablePropertiesStore(properties, s3, dynamoDB)
+                    .streamAllTables().collect(Collectors.toList());
             return this;
         }
 

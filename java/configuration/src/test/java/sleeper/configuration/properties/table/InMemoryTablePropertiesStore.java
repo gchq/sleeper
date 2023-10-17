@@ -21,6 +21,7 @@ import sleeper.core.table.TableId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -41,6 +42,11 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
     @Override
     public Optional<TableProperties> loadByNameNoValidation(String tableName) {
         return Optional.ofNullable(propertiesByTableName.get(tableName));
+    }
+
+    @Override
+    public Stream<TableProperties> streamAllTables() {
+        return propertiesByTableName.values().stream();
     }
 
     @Override

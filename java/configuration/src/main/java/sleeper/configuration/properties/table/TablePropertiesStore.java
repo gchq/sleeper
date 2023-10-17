@@ -19,6 +19,7 @@ package sleeper.configuration.properties.table;
 import sleeper.core.table.TableId;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public interface TablePropertiesStore {
 
@@ -27,6 +28,8 @@ public interface TablePropertiesStore {
     Optional<TableProperties> loadByName(String tableName);
 
     Optional<TableProperties> loadByNameNoValidation(String tableName);
+
+    Stream<TableProperties> streamAllTables();
 
     void save(TableProperties tableProperties);
 

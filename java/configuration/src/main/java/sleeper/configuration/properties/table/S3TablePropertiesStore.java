@@ -24,6 +24,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
@@ -32,10 +33,12 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
 
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoClient;
 
     public S3TablePropertiesStore(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
     }
 
     @Override
@@ -72,6 +75,11 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
                 throw e;
             }
         }
+    }
+
+    @Override
+    public Stream<TableProperties> streamAllTables() {
+        return TableProperties.streamTablesFromS3(s3Client, dynamoClient, instanceProperties);
     }
 
     @Override
