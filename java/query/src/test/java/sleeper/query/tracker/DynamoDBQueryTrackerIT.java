@@ -17,13 +17,6 @@ package sleeper.query.tracker;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.BillingMode;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,12 +41,11 @@ import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
@@ -77,17 +69,11 @@ public class DynamoDBQueryTrackerIT {
         dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
     }
 
-    private InstanceProperties instanceProperties;
+    private final InstanceProperties instanceProperties = createInstanceProperties();
 
     @BeforeEach
     public void createDynamoTable() {
-        String tableName = UUID.randomUUID().toString();
-        dynamoDBClient.createTable(new CreateTableRequest(tableName, createKeySchema())
-                .withAttributeDefinitions(createAttributeDefinitions())
-                .withBillingMode(BillingMode.PAY_PER_REQUEST)
-        );
-        instanceProperties = new InstanceProperties();
-        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, tableName);
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoDBClient).create();
     }
 
     @Test
@@ -325,13 +311,6 @@ public class DynamoDBQueryTrackerIT {
         return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), records);
     }
 
-    private Collection<AttributeDefinition> createAttributeDefinitions() {
-        return Lists.newArrayList(
-                new AttributeDefinition(DynamoDBQueryTracker.QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBQueryTracker.SUB_QUERY_ID, ScalarAttributeType.S)
-        );
-    }
-
     private Query createQueryWithId(String id) {
         Field field = new Field("field1", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -352,14 +331,9 @@ public class DynamoDBQueryTrackerIT {
         return new LeafPartitionQuery.Builder("myTable", parentId, subId, region, "leafId", partitionRegion, new ArrayList<>()).build();
     }
 
-    private List<KeySchemaElement> createKeySchema() {
-        return Lists.newArrayList(
-                new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.QUERY_ID)
-                        .withKeyType(KeyType.HASH),
-                new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.SUB_QUERY_ID)
-                        .withKeyType(KeyType.RANGE)
-        );
+    private static InstanceProperties createInstanceProperties() {
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, "tracker-table");
+        return instanceProperties;
     }
 }
