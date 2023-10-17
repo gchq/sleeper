@@ -49,7 +49,11 @@ public class QueryValidator {
             query = querySerDe.fromJson(message);
             LOGGER.info("Deserialised message to query {}", query);
         } catch (JsonParseException e) {
-            LOGGER.error("JSONParseException deserialsing query from JSON {}", message);
+            LOGGER.error("JSONParseException deserialsing query from JSON {}", message, e);
+            queryTracker.queryFailed(invalidQuery(), e);
+            return Optional.empty();
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("IllegalArgumentException deserialsing query from JSON {}", message, e);
             queryTracker.queryFailed(invalidQuery(), e);
             return Optional.empty();
         }

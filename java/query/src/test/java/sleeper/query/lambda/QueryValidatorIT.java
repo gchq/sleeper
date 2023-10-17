@@ -20,12 +20,16 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
 import sleeper.query.model.Query;
 import sleeper.query.tracker.DynamoDBQueryTracker;
@@ -39,6 +43,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -63,29 +69,94 @@ public class QueryValidatorIT {
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoDBClient).create();
     }
 
-    @Test
-    void shouldReportValidationFailureWhenJsonInvalid() {
-        // Given
-        String json = "{";
+    @Nested
+    @DisplayName("Failed to deserialise")
+    class FailedToDeserialise {
+        TableProperties tableProperties = createTable("table-1");
+        QueryValidator queryValidator = new QueryValidator(new FixedTablePropertiesProvider(tableProperties),
+                queryTracker, () -> "invalid-query-id");
 
-        // When
-        QueryValidator queryValidator = new QueryValidator(null, queryTracker, () -> "invalid-query-id");
-        Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+        @Test
+        void shouldReportQueryFailedWhenJsonInvalid() {
+            // Given
+            String json = "{";
 
-        // Then
-        assertThat(query).isNotPresent();
-        assertThat(queryTracker.getFailedQueries())
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
-                .containsExactly(TrackedQuery.builder()
-                        .queryId("invalid-query-id")
-                        .lastKnownState(QueryState.FAILED)
-                        .build());
+            // When
+            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
 
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("invalid-query-id")
+                            .lastKnownState(QueryState.FAILED)
+                            .build());
+
+        }
+
+        @Test
+        void shouldReportQueryFailedWhenMissingMandatoryField() {
+            // Given json is missing tableName
+            String json = "{" +
+                    "  \"queryId\": \"my-query\"," +
+                    "  \"resultsPublisherConfig\": {}," +
+                    "  \"type\": \"Query\"," +
+                    "  \"keys\": [{" +
+                    "    \"field1\": 10" +
+                    "  }]" +
+                    "}";
+
+            // When
+            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("invalid-query-id")
+                            .lastKnownState(QueryState.FAILED)
+                            .build());
+        }
+
+        @Test
+        void shouldReportQueryFailedWithInvalidQueryType() {
+            // Given
+            String json = "{" +
+                    "  \"queryId\": \"my-query\"," +
+                    "  \"type\": \"invalid-query-type\"," +
+                    "  \"resultsPublisherConfig\": {}," +
+                    "  \"tableName\": \"table-1\"," +
+                    "  \"keys\": [{" +
+                    "    \"field1\": 10" +
+                    "  }]" +
+                    "}";
+
+            // When
+            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("invalid-query-id")
+                            .lastKnownState(QueryState.FAILED)
+                            .build());
+        }
     }
 
     private static InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(QUERY_TRACKER_TABLE_NAME, instanceProperties.get(ID) + "-query-tracker");
         return instanceProperties;
+    }
+
+    private TableProperties createTable(String tableName) {
+        TableProperties tableProperties = new TableProperties(instanceProperties);
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.setSchema(schemaWithKey("key"));
+        return tableProperties;
     }
 }
