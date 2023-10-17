@@ -57,8 +57,10 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -724,7 +726,7 @@ public class SqsQueryProcessorLambdaIT {
 
     private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        tableProperties.saveToS3(s3Client);
+        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
         try {
@@ -761,6 +763,7 @@ public class SqsQueryProcessorLambdaIT {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
 
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;

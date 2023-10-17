@@ -36,7 +36,10 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -83,6 +86,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TablePropertiesStore tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);
@@ -105,12 +109,13 @@ public abstract class IngestJobQueueConsumerTestBase {
         instanceProperties.set(INGEST_RECORD_BATCH_TYPE, "arraylist");
         instanceProperties.set(INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
         instanceProperties.set(INGEST_JOB_QUEUE_WAIT_TIME, "0");
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
     protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
         tableProperties.setSchema(schema);
-        tableProperties.saveToS3(s3);
+        tablePropertiesStore.save(tableProperties);
         StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
         stateStore.initialise();
         return stateStore;
