@@ -26,15 +26,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
-import static sleeper.ingest.job.IngestJobValidationUtils.expandDirectoriesAndUpdateJob;
-
 public class IngestJobMessageHandler {
-    private final Configuration configuration;
-    private final InstanceProperties instanceProperties;
-    private final IngestJobStatusStore ingestJobStatusStore;
-    private final Supplier<String> invalidJobIdSupplier;
-    private final Supplier<Instant> timeSupplier;
+    private final IngestJobValidationUtils ingestJobValidationUtils;
 
     public IngestJobMessageHandler(Configuration configuration, InstanceProperties instanceProperties,
                                    IngestJobStatusStore ingestJobStatusStore) {
@@ -45,17 +38,14 @@ public class IngestJobMessageHandler {
     public IngestJobMessageHandler(Configuration configuration, InstanceProperties instanceProperties,
                                    IngestJobStatusStore ingestJobStatusStore,
                                    Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
-        this.configuration = configuration;
-        this.instanceProperties = instanceProperties;
-        this.ingestJobStatusStore = ingestJobStatusStore;
-        this.invalidJobIdSupplier = invalidJobIdSupplier;
-        this.timeSupplier = timeSupplier;
+        this.ingestJobValidationUtils = new IngestJobValidationUtils(ingestJobStatusStore, invalidJobIdSupplier,
+                timeSupplier, configuration, instanceProperties);
     }
 
     public Optional<IngestJob> handleMessage(String message) {
-        return deserialiseAndValidate(message, new IngestJobSerDe()::fromJson,
-                IngestJob::getValidationFailures, ingestJobStatusStore, invalidJobIdSupplier, timeSupplier)
-                .flatMap(job -> expandDirectoriesAndUpdateJob(job.getFiles(), configuration, instanceProperties,
+        return ingestJobValidationUtils.deserialiseAndValidate(message,
+                        new IngestJobSerDe()::fromJson, IngestJob::getValidationFailures)
+                .flatMap(job -> ingestJobValidationUtils.expandDirectories(job,
                         files -> job.toBuilder().files(files).build()));
     }
 }

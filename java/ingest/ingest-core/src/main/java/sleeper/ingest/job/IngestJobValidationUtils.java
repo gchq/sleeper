@@ -35,13 +35,24 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejecte
 
 public class IngestJobValidationUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobValidationUtils.class);
+    private final IngestJobStatusStore ingestJobStatusStore;
+    private final Supplier<String> invalidJobIdSupplier;
+    private final Supplier<Instant> timeSupplier;
+    private final Configuration configuration;
+    private final InstanceProperties instanceProperties;
 
-    private IngestJobValidationUtils() {
+    public IngestJobValidationUtils(
+            IngestJobStatusStore ingestJobStatusStore, Supplier<String> invalidJobIdSupplier,
+            Supplier<Instant> timeSupplier, Configuration configuration, InstanceProperties instanceProperties) {
+        this.ingestJobStatusStore = ingestJobStatusStore;
+        this.invalidJobIdSupplier = invalidJobIdSupplier;
+        this.timeSupplier = timeSupplier;
+        this.configuration = configuration;
+        this.instanceProperties = instanceProperties;
     }
 
-    public static <T> Optional<T> deserialiseAndValidate(
-            String message, Function<String, T> deserialiser, Function<T, List<String>> getValidationFailures,
-            IngestJobStatusStore ingestJobStatusStore, Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
+    public <T> Optional<T> deserialiseAndValidate(
+            String message, Function<String, T> deserialiser, Function<T, List<String>> getValidationFailures) {
         T job;
         try {
             job = deserialiser.apply(message);
@@ -68,11 +79,12 @@ public class IngestJobValidationUtils {
         }
     }
 
-    public static <T> Optional<T> expandDirectoriesAndUpdateJob(
-            List<String> jobFiles, Configuration configuration, InstanceProperties instanceProperties,
-            Function<List<String>, T> setFiles) {
-        List<String> files = HadoopPathUtils.expandDirectories(jobFiles, configuration, instanceProperties);
+    public <T> Optional<T> expandDirectories(IngestJob job, Function<List<String>, T> setFiles) {
+        List<String> files = HadoopPathUtils.expandDirectories(job.getFiles(), configuration, instanceProperties);
         if (files.isEmpty()) {
+            LOGGER.warn("Could not find files for job: {}", job);
+            ingestJobStatusStore.jobValidated(
+                    ingestJobRejected(job, timeSupplier.get(), "No files found after expanding directories. Files were " + job.getFiles()));
             return Optional.empty();
         } else {
             return Optional.of(setFiles.apply(files));
