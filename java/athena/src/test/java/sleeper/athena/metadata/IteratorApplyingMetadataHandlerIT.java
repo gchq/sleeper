@@ -35,8 +35,6 @@ import com.amazonaws.athena.connector.lambda.metadata.GetTableRequest;
 import com.amazonaws.athena.connector.lambda.metadata.GetTableResponse;
 import com.amazonaws.athena.connector.lambda.security.EncryptionKeyFactory;
 import com.amazonaws.services.athena.AmazonAthena;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -80,8 +78,6 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(
                 s3Client, dynamoClient, instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
@@ -127,8 +123,6 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
     public void shouldPassOnTheListofFilesAndRowKeysWhenCallingGetSplits() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
 
         // When
         IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
@@ -169,8 +163,6 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
@@ -215,8 +207,6 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
@@ -274,8 +264,6 @@ public class IteratorApplyingMetadataHandlerIT extends AbstractMetadataHandlerIT
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         IteratorApplyingMetadataHandler sleeperMetadataHandler = new IteratorApplyingMetadataHandler(s3Client, dynamoClient,
                 instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),

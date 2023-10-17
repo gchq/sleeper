@@ -78,8 +78,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
@@ -131,8 +129,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
@@ -184,8 +180,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
@@ -239,8 +233,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
@@ -291,8 +283,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
@@ -342,8 +332,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         String tableName = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
@@ -369,8 +357,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
         // When
         // Make query
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, table, dynamoClient);
@@ -422,8 +408,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         InstanceProperties instance = createInstance();
 
         // When
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListSchemasResponse listSchemasResponse = sleeperMetadataHandler.doListSchemaNames(new BlockAllocatorImpl(), new ListSchemasRequest(TestUtils.createIdentity(), "abc", "def"));
@@ -441,8 +425,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         String table3 = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListTablesResponse listTablesResponse = sleeperMetadataHandler.doListTables(new BlockAllocatorImpl(),
@@ -463,8 +445,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         String table2 = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListTablesResponse listTablesResponse = sleeperMetadataHandler.doListTables(new BlockAllocatorImpl(),
@@ -489,8 +469,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         List<String> sorted = Lists.newArrayList(table1, table2).stream().sorted().collect(Collectors.toList());
 
         // When
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListTablesResponse listTablesResponse = sleeperMetadataHandler.doListTables(new BlockAllocatorImpl(),
@@ -506,8 +484,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
@@ -553,8 +529,6 @@ public class SleeperMetadataHandlerIT extends AbstractMetadataHandlerIT {
     public void shouldCallExtraSchemaEnhancementMethodWhenEnhanceingSchema() throws IOException {
         // Given
         InstanceProperties instance = createInstance();
-        AmazonS3 s3Client = createS3Client();
-        AmazonDynamoDB dynamoClient = createDynamoClient();
         SleeperMetadataHandlerImpl handler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         // When

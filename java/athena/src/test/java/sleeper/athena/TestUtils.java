@@ -73,9 +73,6 @@ public class TestUtils {
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
 
-        s3Client.shutdown();
-        dynamoDB.shutdown();
-
         return instanceProperties;
     }
 
@@ -88,15 +85,12 @@ public class TestUtils {
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
-        } finally {
-            dynamoDB.shutdown();
         }
 
-        s3Client.shutdown();
         return tableProperties;
     }
 
-    public static void ingestData(AmazonDynamoDB dynamoClient, AmazonS3 s3Client, String dataDir, InstanceProperties instanceProperties,
+    public static void ingestData(AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties,
                                   TableProperties table) {
         try {
             IngestFactory factory = IngestFactory.builder()
@@ -109,9 +103,6 @@ public class TestUtils {
             factory.ingestFromRecordIterator(table, generateTimeSeriesData().iterator());
         } catch (IOException | StateStoreException | IteratorException e) {
             throw new RuntimeException("Failed to Ingest data", e);
-        } finally {
-            dynamoClient.shutdown();
-            s3Client.shutdown();
         }
     }
 
