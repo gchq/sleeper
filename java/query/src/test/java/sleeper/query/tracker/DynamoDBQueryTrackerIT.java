@@ -47,6 +47,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_TRACKER_ITEM_TTL_IN_DAYS;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.query.tracker.QueryState.COMPLETED;
@@ -69,7 +70,7 @@ public class DynamoDBQueryTrackerIT {
         dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
     }
 
-    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private InstanceProperties instanceProperties = createInstanceProperties();
 
     @BeforeEach
     public void createDynamoTable() {
@@ -333,7 +334,7 @@ public class DynamoDBQueryTrackerIT {
 
     private static InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, "tracker-table");
+        instanceProperties.set(QUERY_TRACKER_TABLE_NAME, instanceProperties.get(ID) + "-query-tracker");
         return instanceProperties;
     }
 }
