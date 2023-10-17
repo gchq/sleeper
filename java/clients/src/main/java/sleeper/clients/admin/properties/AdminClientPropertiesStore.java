@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -83,12 +84,10 @@ public class AdminClientPropertiesStore {
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
-        try {
-            return new TableProperties(instanceProperties,
-                    TableProperties.loadPropertiesFromS3(s3, instanceProperties, tableName));
-        } catch (AmazonS3Exception e) {
-            throw new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName, e);
-        }
+        return new S3TablePropertiesStore(instanceProperties, s3, dynamoDB)
+                .loadByNameNoValidation(tableName)
+                .orElseThrow(() -> new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName,
+                        new NoSuchElementException("Table not found")));
     }
 
     public List<String> listTables(String instanceId) {

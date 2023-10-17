@@ -58,6 +58,20 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
     }
 
     @Override
+    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
+        try {
+            return Optional.of(new TableProperties(instanceProperties,
+                    TableProperties.loadPropertiesFromS3(s3Client, instanceProperties, tableName)));
+        } catch (AmazonS3Exception e) {
+            if ("NoSuchKey".equals(e.getErrorCode())) {
+                return Optional.empty();
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
     public void save(TableProperties tableProperties) {
         tableProperties.saveToS3(s3Client);
     }

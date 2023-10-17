@@ -24,7 +24,9 @@ import sleeper.core.table.TableId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.PAGE_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
@@ -72,8 +74,48 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
         }
 
         @Test
+        void shouldNotLoadInvalidTableById() {
+            // When
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // Then
+            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldNotLoadInvalidTableByName() {
+            // When
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // Then
+            assertThatThrownBy(() -> store.loadByName(tableProperties.get(TABLE_NAME)))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldLoadInvalidTablePropertiesByName() {
+            // When
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // Then
+            assertThat(store.loadByNameNoValidation(tableProperties.get(TABLE_NAME)))
+                    .map(properties -> properties.get(COMPRESSION_CODEC))
+                    .contains("abc");
+        }
+
+        @Test
         void shouldFindNoTableByName() {
             assertThat(store.loadByName("not-a-table"))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldFindNoTableByNameNoValidation() {
+            assertThat(store.loadByNameNoValidation("not-a-table"))
                     .isEmpty();
         }
 

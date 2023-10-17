@@ -26,5 +26,7 @@ public interface TablePropertiesStore {
 
     Optional<TableProperties> loadByName(String tableName);
 
+    Optional<TableProperties> loadByNameNoValidation(String tableName);
+
     void save(TableProperties tableProperties);
 }

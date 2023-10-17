@@ -35,6 +35,11 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public Optional<TableProperties> loadByName(String tableName) {
+        return loadByNameNoValidation(tableName);
+    }
+
+    @Override
+    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
         return Optional.ofNullable(propertiesByTableName.get(tableName));
     }
 
