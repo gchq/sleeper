@@ -216,12 +216,8 @@ public class IngestJobMessageHandlerIT {
     }
 
     private static IngestJob jobWithFiles(String... files) {
-        return jobWithFiles(List.of(files));
-    }
-
-    private static IngestJob jobWithFiles(List<String> files) {
         return IngestJob.builder()
-                .id("id").tableName("test-table").files(files).build();
+                .id("id").tableName("test-table").files(List.of(files)).build();
     }
 
     private static Configuration createHadoopConfiguration() {
