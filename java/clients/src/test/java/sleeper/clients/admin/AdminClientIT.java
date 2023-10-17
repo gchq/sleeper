@@ -136,8 +136,7 @@ class AdminClientIT extends AdminClientITBase {
                         PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                         DISPLAY_MAIN_SCREEN);
 
-        TableProperties found = new TableProperties(instanceProperties);
-        found.loadFromS3(s3, before.get(TABLE_NAME));
+        TableProperties found = tablePropertiesStore.loadByName(before.get(TABLE_NAME)).orElseThrow();
         assertThat(found.get(ITERATOR_CLASS_NAME)).isEqualTo("AfterIteratorClass");
     }
 

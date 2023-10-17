@@ -56,7 +56,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
-    private TablePropertiesStore tablePropertiesStore;
+    protected TablePropertiesStore tablePropertiesStore;
 
     @TempDir
     protected Path tempDir;
