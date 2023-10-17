@@ -33,8 +33,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -80,16 +82,8 @@ public class GarbageCollectorIT {
 
     @TempDir
     public java.nio.file.Path tempDir;
-    private final AmazonS3 s3Client = createS3Client();
-    private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
-
-    private AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
     @AfterEach
     void tearDown() {
@@ -325,6 +319,7 @@ public class GarbageCollectorIT {
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
 
         extraProperties.accept(instanceProperties);
         return instanceProperties;
@@ -345,7 +340,7 @@ public class GarbageCollectorIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
         tableProperties.set(TABLE_NAME, tableName);
         extraProperties.accept(tableProperties);
-        tableProperties.saveToS3(s3Client);
+        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 
