@@ -66,7 +66,6 @@ public class CreateJobsLambda {
     /**
      * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
      *
-     * @throws IOException            if instance properties cannot be loaded from S3
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
     public CreateJobsLambda() throws ObjectFactoryException {
