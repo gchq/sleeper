@@ -82,9 +82,9 @@ public class IngestJobValidationUtils {
     public <T> Optional<T> expandDirectories(IngestJob job, Function<List<String>, T> setFiles) {
         List<String> files = HadoopPathUtils.expandDirectories(job.getFiles(), configuration, instanceProperties);
         if (files.isEmpty()) {
-            LOGGER.warn("Could not find files for job: {}", job);
+            LOGGER.warn("Could not find one or more files for job: {}", job);
             ingestJobStatusStore.jobValidated(
-                    ingestJobRejected(job, timeSupplier.get(), "No files found after expanding directories. Files were " + job.getFiles()));
+                    ingestJobRejected(job, timeSupplier.get(), "Could not find one or more files"));
             return Optional.empty();
         } else {
             return Optional.of(setFiles.apply(files));

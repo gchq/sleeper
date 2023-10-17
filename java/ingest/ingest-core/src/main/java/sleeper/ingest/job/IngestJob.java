@@ -102,7 +102,7 @@ public class IngestJob {
     public String toString() {
         return "IngestJob{" +
                 "id='" + id + '\'' +
-                ", tableName=" + tableName +
+                ", tableName='" + tableName + '\'' +
                 ", files=" + files +
                 '}';
     }
