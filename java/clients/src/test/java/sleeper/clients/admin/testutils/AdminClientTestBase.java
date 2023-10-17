@@ -33,7 +33,6 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_C
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -51,8 +50,13 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     protected String instanceId;
     protected static final String TABLE_NAME_VALUE = "test-table";
 
+    @Override
+    public String getInstanceId() {
+        return instanceId;
+    }
+
     protected RunAdminClient runClient() {
-        return new RunAdminClient(out, in, this, editor, instanceId);
+        return new RunAdminClient(out, in, this, editor);
     }
 
     protected InstanceProperties createValidInstanceProperties() {
@@ -61,7 +65,6 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
         tags.put("name", "abc");
         tags.put("project", "test");
         instanceProperties.setTags(tags);
-        instanceProperties.set(VPC_ID, "aVPC");
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.setNumber(LOG_RETENTION_IN_DAYS, 1);
         return instanceProperties;

@@ -97,9 +97,6 @@ public class ExpectedAdminConsoleValues {
             "\n" +
             "Input: \n";
 
-    public static final String NO_INSTANCE_SCREEN = "" +
-            "Could not load properties for instance test-instance\n";
-
     public static final String COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE = "" +
             "\nCompaction status store not enabled. Please enable in instance properties to access this screen\n";
     public static final String INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE = "" +

@@ -51,6 +51,7 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.configuration.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
@@ -92,7 +93,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
@@ -117,7 +118,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
@@ -145,7 +146,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When
@@ -178,7 +179,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(FARGATE_VERSION, "1.4.1");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(FARGATE_VERSION, "1.4.2");
 
             // When
@@ -199,7 +200,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldSetADefaultedProperty() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(FARGATE_VERSION, "1.4.1");
 
             // When
@@ -220,7 +221,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldSetAnUnknownProperty() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.loadFromString("unknown.property=abc");
 
             // When
@@ -241,7 +242,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldEditPropertyWithLongDescription() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS, "123");
 
             // When
@@ -264,7 +265,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldOrderKnownPropertiesInTheOrderTheyAreDefinedInTheirGroups() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(OPTIONAL_STACKS, "CompactionStack");
             after.set(DEFAULT_S3A_READAHEAD_RANGE, "123");
             after.set(DEFAULT_PAGE_SIZE, "456");
@@ -283,7 +284,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldOrderUnknownPropertiesAfterKnownProperties() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(OPTIONAL_STACKS, "CompactionStack");
             after.loadFromString("" +
                     "some.unknown.property=a-value\n" +
@@ -307,7 +308,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldShowValidationFailure() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
 
             // When
@@ -331,7 +332,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldShowValidationScreen() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
 
             // When
@@ -346,7 +347,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldShowValidationFailuresForMultipleProperties() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
             after.set(DEFAULT_S3A_READAHEAD_RANGE, "def");
 
@@ -379,7 +380,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(VPC_ID, "before-vpc");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(VPC_ID, "after-vpc");
 
             // When
@@ -404,7 +405,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(VPC_ID, "before-vpc");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(VPC_ID, "after-vpc");
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
 
@@ -435,7 +436,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
         void shouldRejectAChangeToASystemDefinedProperty() throws Exception {
             // Given
             InstanceProperties before = createValidInstanceProperties();
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(CONFIG_BUCKET, "changed-bucket");
 
             // When
@@ -447,7 +448,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "\n" +
                     "sleeper.config.bucket\n" +
                     "The S3 bucket name used to store configuration files.\n" +
-                    "Before: sleeper-test-instance-config\n" +
+                    "Before: sleeper-" + instanceId + "-config\n" +
                     "After (cannot be changed, please undo): changed-bucket\n" +
                     "\n" +
                     "Found invalid properties:\n" +
@@ -464,7 +465,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When
@@ -492,9 +493,9 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-            doThrow(new AdminClientPropertiesStore.CouldNotSaveInstanceProperties(instanceId,
+            doThrow(new AdminClientPropertiesStore.CouldNotSaveInstanceProperties(before.get(ID),
                     new RuntimeException("Something went wrong")))
                     .when(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
 
@@ -509,7 +510,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "\n\n" +
                             "----------------------------------\n" +
                             "\n" +
-                            "Could not save properties for instance test-instance\n" +
+                            "Could not save properties for instance " + instanceId + "\n" +
                             "Cause: Something went wrong\n" +
                             "\n" +
                             PROPERTY_SAVE_CHANGES_SCREEN +
@@ -564,7 +565,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             TableProperties before = createValidTableProperties(properties);
             TableProperties after = createValidTableProperties(properties);
             after.set(ROW_GROUP_SIZE, "123");
-            doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(instanceId, TABLE_NAME_VALUE,
+            doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(properties.get(ID), TABLE_NAME_VALUE,
                     new RuntimeException("Something went wrong")))
                     .when(store).saveTableProperties(properties, after);
 
@@ -579,7 +580,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                             "\n\n" +
                             "----------------------------------\n" +
                             "\n" +
-                            "Could not save properties for table test-table in instance test-instance\n" +
+                            "Could not save properties for table test-table in instance " + instanceId + "\n" +
                             "Cause: Something went wrong\n" +
                             "\n" +
                             PROPERTY_SAVE_CHANGES_SCREEN +
@@ -656,7 +657,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties before = createValidInstanceProperties();
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
-            InstanceProperties after = createValidInstanceProperties();
+            InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
 
             // When

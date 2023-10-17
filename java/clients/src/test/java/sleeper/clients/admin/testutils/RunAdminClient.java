@@ -37,27 +37,23 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
-import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
 
 public class RunAdminClient {
     private final ToStringPrintStream out;
     private final TestConsoleInput in;
-    private final AdminConfigStoreTestHarness store;
+    private final AdminConfigStoreTestHarness harness;
     private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
     private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
-    private String instanceId;
 
     RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
-                   AdminConfigStoreTestHarness store,
-                   UpdatePropertiesWithTextEditor editor,
-                   String instanceId) {
+                   AdminConfigStoreTestHarness harness,
+                   UpdatePropertiesWithTextEditor editor) {
         this.out = out;
         this.in = in;
-        this.store = store;
+        this.harness = harness;
         this.editor = editor;
-        this.instanceId = instanceId;
     }
 
     public RunAdminClient enterPrompt(String entered) {
@@ -71,16 +67,14 @@ public class RunAdminClient {
     }
 
     public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after) throws Exception {
-        store.setInstanceProperties(before);
-        instanceId = before.get(ID);
+        harness.setInstanceProperties(before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
         return this;
     }
 
     public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after, PropertyGroup group) throws Exception {
-        store.setInstanceProperties(before);
-        instanceId = before.get(ID);
+        harness.setInstanceProperties(before);
         when(editor.openPropertiesFile(before, group))
                 .thenReturn(withChanges(before, after));
         return this;
@@ -94,8 +88,7 @@ public class RunAdminClient {
 
     public RunAdminClient editFromStore(InstanceProperties properties,
                                         TableProperties before, TableProperties after) throws Exception {
-        store.setInstanceProperties(properties, before);
-        instanceId = properties.get(ID);
+        harness.setInstanceProperties(properties, before);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
         return this;
@@ -104,32 +97,28 @@ public class RunAdminClient {
     public RunAdminClient editFromStore(InstanceProperties properties,
                                         TableProperties before, TableProperties after, PropertyGroup group)
             throws Exception {
-        store.setInstanceProperties(properties, before);
-        instanceId = properties.get(ID);
+        harness.setInstanceProperties(properties, before);
         when(editor.openPropertiesFile(before, group))
                 .thenReturn(withChanges(before, after));
         return this;
     }
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties) throws Exception {
-        store.setInstanceProperties(properties);
-        instanceId = properties.get(ID);
+        harness.setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties))
                 .thenReturn(noChanges(properties));
         return this;
     }
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties, PropertyGroup propertyGroup) throws Exception {
-        store.setInstanceProperties(properties);
-        instanceId = properties.get(ID);
+        harness.setInstanceProperties(properties);
         when(editor.openPropertiesFile(properties, propertyGroup))
                 .thenReturn(noChanges(properties));
         return this;
     }
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties, TableProperties tableProperties) throws Exception {
-        store.setInstanceProperties(properties, tableProperties);
-        instanceId = properties.get(ID);
+        harness.setInstanceProperties(properties, tableProperties);
         when(editor.openPropertiesFile(tableProperties))
                 .thenReturn(noChanges(tableProperties));
         return this;
@@ -141,7 +130,7 @@ public class RunAdminClient {
     }
 
     public String runGetOutput() throws Exception {
-        client().start(instanceId);
+        client().start(harness.getInstanceId());
         return out.toString();
     }
 
@@ -151,27 +140,27 @@ public class RunAdminClient {
     }
 
     public RunAdminClient statusStore(CompactionJobStatusStore store) {
-        statusStores.setStore(instanceId, store);
+        statusStores.setStore(harness.getInstanceId(), store);
         return this;
     }
 
     public RunAdminClient statusStore(CompactionTaskStatusStore store) {
-        statusStores.setStore(instanceId, store);
+        statusStores.setStore(harness.getInstanceId(), store);
         return this;
     }
 
     public RunAdminClient statusStore(IngestJobStatusStore store) {
-        statusStores.setStore(instanceId, store);
+        statusStores.setStore(harness.getInstanceId(), store);
         return this;
     }
 
     public RunAdminClient statusStore(IngestTaskStatusStore store) {
-        statusStores.setStore(instanceId, store);
+        statusStores.setStore(harness.getInstanceId(), store);
         return this;
     }
 
     public RunAdminClient batcherStore(IngestBatcherStore store) {
-        statusStores.setStore(instanceId, store);
+        statusStores.setStore(harness.getInstanceId(), store);
         return this;
     }
 
@@ -180,7 +169,7 @@ public class RunAdminClient {
     }
 
     private AdminClient client() {
-        return new AdminClient(store.getStore(), statusStores, editor, out.consoleOut(), in.consoleIn(),
+        return new AdminClient(harness.getStore(), statusStores, editor, out.consoleOut(), in.consoleIn(),
                 queueClient, (properties -> Collections.emptyMap()));
     }
 }

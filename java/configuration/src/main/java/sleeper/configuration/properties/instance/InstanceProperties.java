@@ -54,6 +54,12 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
         tags = csvTagsToMap(get(TAGS));
     }
 
+    public static InstanceProperties copyOf(InstanceProperties instanceProperties) {
+        InstanceProperties copy = new InstanceProperties();
+        copy.loadFromString(instanceProperties.saveAsString());
+        return copy;
+    }
+
     @Override
     protected void init() {
         tags = csvTagsToMap(get(TAGS));

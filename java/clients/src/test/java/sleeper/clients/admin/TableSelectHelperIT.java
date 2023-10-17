@@ -19,7 +19,6 @@ package sleeper.clients.admin;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.admin.testutils.AdminClientITBase;
-import sleeper.configuration.properties.instance.InstanceProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
@@ -33,6 +32,7 @@ class TableSelectHelperIT extends AdminClientITBase {
     void shouldReturnToMenuIfInstanceDoesNotExist() {
         // Given
         in.enterNextPrompts(CONFIRM_PROMPT);
+        instanceId = "not-an-instance";
 
         // When
         String output = runTableSelectHelperGetOutput();
@@ -40,8 +40,8 @@ class TableSelectHelperIT extends AdminClientITBase {
         // Then
         assertThat(output)
                 .startsWith("\n" +
-                        "Could not load properties for instance test-instance\n" +
-                        "Cause: The specified key does not exist")
+                        "Could not load properties for instance not-an-instance\n" +
+                        "Cause: The specified bucket does not exist")
                 .contains("Amazon S3")
                 .endsWith(PROMPT_RETURN_TO_MAIN);
     }
@@ -49,8 +49,7 @@ class TableSelectHelperIT extends AdminClientITBase {
     @Test
     void shouldReturnToMenuIfTableDoesNotExist() {
         // Given
-        InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.saveToS3(s3);
+        setInstanceProperties(createValidInstanceProperties());
         in.enterNextPrompts("test-table", CONFIRM_PROMPT);
 
         // When
@@ -59,9 +58,8 @@ class TableSelectHelperIT extends AdminClientITBase {
         // Then
         assertThat(output)
                 .startsWith(CLEAR_CONSOLE + TABLE_SELECT_SCREEN + "\n" +
-                        "Could not load properties for table test-table in instance test-instance\n" +
-                        "Cause: The specified key does not exist")
-                .contains("Amazon S3")
+                        "Could not load properties for table test-table in instance " + instanceId + "\n" +
+                        "Cause: Table not found")
                 .endsWith(PROMPT_RETURN_TO_MAIN);
     }
 
