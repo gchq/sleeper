@@ -18,7 +18,9 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.TableId;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface TablePropertiesStore {
@@ -32,6 +34,10 @@ public interface TablePropertiesStore {
     Stream<TableProperties> streamAllTables();
 
     Stream<TableId> streamAllTableIds();
+
+    default List<String> listTableNames() {
+        return streamAllTableIds().map(TableId::getTableName).collect(Collectors.toUnmodifiableList());
+    }
 
     void save(TableProperties tableProperties);
 

@@ -26,6 +26,7 @@ import sleeper.core.table.TableId;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -85,6 +86,10 @@ public class TablePropertiesProvider {
 
     public Stream<TableId> streamAllTableIds() {
         return propertiesStore.streamAllTableIds();
+    }
+
+    public List<String> listTableNames() {
+        return propertiesStore.listTableNames();
     }
 
     public void clearCache() {

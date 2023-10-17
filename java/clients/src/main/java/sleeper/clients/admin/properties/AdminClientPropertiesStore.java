@@ -37,7 +37,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -95,12 +94,11 @@ public class AdminClientPropertiesStore {
     }
 
     private List<String> listTables(InstanceProperties instanceProperties) {
-        return new TableLister(s3, instanceProperties).listTables();
+        return new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).listTableNames();
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
-        return listTables(instanceProperties).stream()
-                .map(tableName -> loadTableProperties(instanceProperties, tableName));
+        return new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).streamAllTables();
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {

@@ -31,7 +31,6 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableId;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -87,9 +86,7 @@ public class CreateJobs {
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<String> tables = tablePropertiesProvider.streamAllTableIds()
-                .map(TableId::getTableName)
-                .collect(Collectors.toUnmodifiableList());
+        List<String> tables = tablePropertiesProvider.listTableNames();
         LOGGER.info("Found {} tables", tables.size());
         for (String table : tables) {
             createJobsForTable(table);
