@@ -59,11 +59,9 @@ class AdminClientIT extends AdminClientITBase {
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.saveToS3(s3);
         TableProperties tableProperties1 = createValidTableProperties(instanceProperties, "test-table-1");
-        tableProperties1.saveToS3(s3);
         TableProperties tableProperties2 = createValidTableProperties(instanceProperties, "test-table-2");
-        tableProperties2.saveToS3(s3);
+        setInstanceProperties(instanceProperties, tableProperties1, tableProperties2);
 
         // When
         String output = runClient()

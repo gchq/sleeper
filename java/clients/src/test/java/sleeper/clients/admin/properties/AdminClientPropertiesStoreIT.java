@@ -67,7 +67,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     @BeforeEach
     void setUp() {
-        instanceProperties.saveToS3(s3);
+        setInstanceProperties(instanceProperties);
     }
 
     @DisplayName("Update instance properties")
@@ -429,13 +429,13 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void createTableInS3(String tableName) {
-        createValidTableProperties(instanceProperties, tableName).saveToS3(s3);
+        saveTableProperties(createValidTableProperties(instanceProperties, tableName));
     }
 
     private void createTableInS3(String tableName, Consumer<TableProperties> config) {
         TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
         config.accept(tableProperties);
-        tableProperties.saveToS3(s3);
+        saveTableProperties(tableProperties);
     }
 
     private void deleteTableInS3(String tableName) {

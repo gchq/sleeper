@@ -15,6 +15,8 @@
  */
 package sleeper.clients.admin.testutils;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -30,7 +32,9 @@ import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.CommonTestConstants;
 
 import java.nio.file.Path;
@@ -45,11 +49,13 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
+    private TablePropertiesStore tablePropertiesStore;
 
     @TempDir
     protected Path tempDir;
@@ -64,7 +70,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     }
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
-        return new AdminClientPropertiesStore(s3, null, cdk, path, uploadDockerImages);
+        return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImages);
     }
 
     @BeforeEach
@@ -83,12 +89,11 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
         instanceProperties.saveToS3(s3);
+        tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     }
 
     @Override
-    public void setInstanceProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        setInstanceProperties(instanceProperties);
-        tableProperties.saveToS3(s3);
+    public void saveTableProperties(TableProperties tableProperties) {
+        tablePropertiesStore.save(tableProperties);
     }
-
 }

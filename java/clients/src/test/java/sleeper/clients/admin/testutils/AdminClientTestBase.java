@@ -63,11 +63,6 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
                 out, in, this, editor, INSTANCE_ID);
     }
 
-    public abstract void setInstanceProperties(InstanceProperties properties);
-
-    public abstract void setInstanceProperties(
-            InstanceProperties instanceProperties, TableProperties tableProperties);
-
     protected InstanceProperties createValidInstanceProperties() {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, INSTANCE_ID);
