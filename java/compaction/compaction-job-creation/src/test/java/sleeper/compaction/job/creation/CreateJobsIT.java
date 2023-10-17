@@ -42,6 +42,7 @@ import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -151,6 +152,7 @@ public class CreateJobsIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, "");
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
 

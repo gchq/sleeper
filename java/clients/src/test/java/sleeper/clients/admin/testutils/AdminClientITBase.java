@@ -35,6 +35,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 
 import java.nio.file.Path;
@@ -89,6 +90,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     @Override
     public void setInstanceProperties(InstanceProperties instanceProperties) {
         instanceProperties.saveToS3(s3);
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     }
 

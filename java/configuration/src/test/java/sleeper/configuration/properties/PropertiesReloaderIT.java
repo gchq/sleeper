@@ -32,6 +32,7 @@ import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 
 import java.util.function.Consumer;
@@ -61,6 +62,7 @@ public class PropertiesReloaderIT {
     @BeforeEach
     void setUp() {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test

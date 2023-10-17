@@ -42,6 +42,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -121,6 +122,7 @@ public class ReinitialiseTableIT {
     public void beforeEach() {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
     }
 
     @AfterEach

@@ -43,6 +43,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -170,6 +171,7 @@ class BulkImportJobDriverIT {
         instanceProperties.set(FILE_SYSTEM, "file://");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
 

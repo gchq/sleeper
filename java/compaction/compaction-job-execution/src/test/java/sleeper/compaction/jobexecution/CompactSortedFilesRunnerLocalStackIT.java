@@ -50,6 +50,7 @@ import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -102,6 +103,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3);
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
