@@ -29,4 +29,6 @@ public interface TablePropertiesStore {
     Optional<TableProperties> loadByNameNoValidation(String tableName);
 
     void save(TableProperties tableProperties);
+
+    void deleteByName(String tableName);
 }

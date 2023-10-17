@@ -46,7 +46,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.FARGATE_VERSION;
@@ -57,7 +56,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
-import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -440,7 +438,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void deleteTableInS3(String tableName) {
-        s3.deleteObject(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
+        tablePropertiesStore.deleteByName(tableName);
     }
 
     private void verifyAnyPropertiesDeployedWithCdk() throws Exception {

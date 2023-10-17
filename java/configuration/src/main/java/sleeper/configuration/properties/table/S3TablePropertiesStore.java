@@ -25,6 +25,9 @@ import sleeper.core.table.TableId;
 
 import java.util.Optional;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
+
 public class S3TablePropertiesStore implements TablePropertiesStore {
 
     private final InstanceProperties instanceProperties;
@@ -74,5 +77,10 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
     @Override
     public void save(TableProperties tableProperties) {
         tableProperties.saveToS3(s3Client);
+    }
+
+    @Override
+    public void deleteByName(String tableName) {
+        s3Client.deleteObject(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
     }
 }

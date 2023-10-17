@@ -47,4 +47,9 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
     public void save(TableProperties tableProperties) {
         propertiesByTableName.put(tableProperties.get(TABLE_NAME), tableProperties);
     }
+
+    @Override
+    public void deleteByName(String tableName) {
+        propertiesByTableName.remove(tableName);
+    }
 }

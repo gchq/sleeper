@@ -60,6 +60,24 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
     }
 
     @Nested
+    @DisplayName("Delete properties")
+    class DeleteProperties {
+        @Test
+        void shouldDeleteATable() {
+            // Given
+            store.save(tableProperties);
+
+            // When
+            store.deleteByName(tableName);
+
+            // Then
+            assertThat(store.loadByName(tableName)).isEmpty();
+            assertThatThrownBy(() -> store.loadProperties(tableProperties.getId()))
+                    .isInstanceOf(AmazonS3Exception.class);
+        }
+    }
+
+    @Nested
     @DisplayName("Load table properties")
     class LoadProperties {
 
