@@ -37,16 +37,15 @@ import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.utils.HadoopConfigurationProvider;
-import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
+import static sleeper.ingest.job.IngestJobValidationUtils.expandDirectoriesAndUpdateJob;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link BulkImportJob} messages from SQS and starts executes them using
@@ -107,21 +106,12 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
                         invalidJobIdSupplier, timeSupplier))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .map(this::expandDirectories)
+                .map(job -> expandDirectoriesAndUpdateJob(job.getFiles(), hadoopConfig, instanceProperties,
+                        files -> job.toBuilder().files(files).build()))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .forEach(executor::runJob);
         return null;
-    }
-
-    private Optional<BulkImportJob> expandDirectories(BulkImportJob job) {
-        BulkImportJob.Builder builder = job.toBuilder();
-        List<String> files = HadoopPathUtils.expandDirectories(job.getFiles(), hadoopConfig, instanceProperties);
-        if (files.isEmpty()) {
-            LOGGER.warn("Could not find files for job: {}", job);
-            return Optional.empty();
-        }
-        return Optional.of(builder.files(files).build());
     }
 
     private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {

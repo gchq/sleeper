@@ -20,15 +20,14 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
-import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
+import static sleeper.ingest.job.IngestJobValidationUtils.expandDirectoriesAndUpdateJob;
 
 public class IngestJobMessageHandler {
     private final Configuration configuration;
@@ -56,14 +55,7 @@ public class IngestJobMessageHandler {
     public Optional<IngestJob> handleMessage(String message) {
         return deserialiseAndValidate(message, new IngestJobSerDe()::fromJson,
                 IngestJob::getValidationFailures, ingestJobStatusStore, invalidJobIdSupplier, timeSupplier)
-                .flatMap(this::expandDirectories);
-    }
-
-    private Optional<IngestJob> expandDirectories(IngestJob ingestJob) {
-        List<String> files = HadoopPathUtils.expandDirectories(ingestJob.getFiles(), configuration, instanceProperties);
-        if (files.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(ingestJob.toBuilder().files(files).build());
+                .flatMap(job -> expandDirectoriesAndUpdateJob(job.getFiles(), configuration, instanceProperties,
+                        files -> job.toBuilder().files(files).build()));
     }
 }

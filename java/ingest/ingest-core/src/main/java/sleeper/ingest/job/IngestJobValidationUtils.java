@@ -16,10 +16,13 @@
 
 package sleeper.ingest.job;
 
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
 import java.util.List;
@@ -62,6 +65,17 @@ public class IngestJobValidationUtils {
                                     .map(failure -> "Model validation failed. " + failure)
                                     .collect(Collectors.toList())));
             return Optional.empty();
+        }
+    }
+
+    public static <T> Optional<T> expandDirectoriesAndUpdateJob(
+            List<String> jobFiles, Configuration configuration, InstanceProperties instanceProperties,
+            Function<List<String>, T> setFiles) {
+        List<String> files = HadoopPathUtils.expandDirectories(jobFiles, configuration, instanceProperties);
+        if (files.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(setFiles.apply(files));
         }
     }
 }
