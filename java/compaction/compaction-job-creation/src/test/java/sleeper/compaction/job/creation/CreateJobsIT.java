@@ -38,8 +38,10 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
@@ -78,6 +80,7 @@ public class CreateJobsIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
+    private final TablePropertiesStore tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     private StateStore stateStore;
     private CreateJobs createJobs;
     private CompactionJobSerDe compactionJobSerDe;
@@ -159,7 +162,7 @@ public class CreateJobsIT {
 
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-        tableProperties.saveToS3(s3);
+        tablePropertiesStore.save(tableProperties);
         return tableProperties;
     }
 

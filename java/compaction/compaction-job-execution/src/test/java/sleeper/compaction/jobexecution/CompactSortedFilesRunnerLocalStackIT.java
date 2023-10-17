@@ -46,8 +46,10 @@ import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -87,6 +89,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
+    private final TablePropertiesStore tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
@@ -114,7 +117,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        tableProperties.saveToS3(s3);
+        tablePropertiesStore.save(tableProperties);
         try {
             stateStoreProvider.getStateStore(tableProperties).initialise();
         } catch (StateStoreException e) {
