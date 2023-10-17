@@ -150,7 +150,7 @@ public class IngestBatcherJobCreatorLambdaIT {
 
     private InstanceProperties createTestInstance(Consumer<InstanceProperties> config) {
         InstanceProperties instance = createTestInstanceProperties(s3, config);
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoDB, instance);
         return instance;
     }
 
