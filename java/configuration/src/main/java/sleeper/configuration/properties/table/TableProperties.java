@@ -15,6 +15,7 @@
  */
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -173,7 +174,7 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         tablePropertiesStore.save(this);
     }
 
-    public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
+    public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
                 s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
         return StreamSupport.stream(objects.spliterator(), false)

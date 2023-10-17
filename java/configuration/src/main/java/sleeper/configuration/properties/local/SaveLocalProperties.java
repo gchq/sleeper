@@ -41,7 +41,7 @@ public class SaveLocalProperties {
     public static InstanceProperties saveFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        saveToDirectory(directory, instanceProperties, TableProperties.streamTablesFromS3(s3, instanceProperties));
+        saveToDirectory(directory, instanceProperties, TableProperties.streamTablesFromS3(s3, dynamoDB, instanceProperties));
         return instanceProperties;
     }
 

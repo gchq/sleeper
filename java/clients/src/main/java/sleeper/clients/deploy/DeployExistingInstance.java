@@ -16,6 +16,8 @@
 
 package sleeper.clients.deploy;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.ecr.AmazonECR;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -74,12 +76,13 @@ public class DeployExistingInstance {
         }
 
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonECR ecr = AmazonECRClientBuilder.defaultClient();
         try (S3Client s3v2 = S3Client.create()) {
             builder().clients(s3v2, ecr)
                     .scriptsDirectory(Path.of(args[0]))
                     .instanceId(args[1])
-                    .loadPropertiesFromS3(s3)
+                    .loadPropertiesFromS3(s3, dynamoDB)
                     .build().update();
         }
     }
@@ -175,10 +178,10 @@ public class DeployExistingInstance {
             return this;
         }
 
-        public Builder loadPropertiesFromS3(AmazonS3 s3) {
+        public Builder loadPropertiesFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB) {
             properties = new InstanceProperties();
             properties.loadFromS3GivenInstanceId(s3, instanceId);
-            tablePropertiesList = streamTablesFromS3(s3, properties).collect(Collectors.toList());
+            tablePropertiesList = streamTablesFromS3(s3, dynamoDB, properties).collect(Collectors.toList());
             return this;
         }
 
