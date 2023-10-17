@@ -494,7 +494,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             before.set(MAXIMUM_CONNECTIONS_TO_S3, "123");
             InstanceProperties after = createValidInstanceProperties();
             after.set(MAXIMUM_CONNECTIONS_TO_S3, "456");
-            doThrow(new AdminClientPropertiesStore.CouldNotSaveInstanceProperties(INSTANCE_ID,
+            doThrow(new AdminClientPropertiesStore.CouldNotSaveInstanceProperties(instanceId,
                     new RuntimeException("Something went wrong")))
                     .when(store).saveInstanceProperties(after, new PropertiesDiff(before, after));
 
@@ -564,7 +564,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             TableProperties before = createValidTableProperties(properties);
             TableProperties after = createValidTableProperties(properties);
             after.set(ROW_GROUP_SIZE, "123");
-            doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(INSTANCE_ID, TABLE_NAME_VALUE,
+            doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(instanceId, TABLE_NAME_VALUE,
                     new RuntimeException("Something went wrong")))
                     .when(store).saveTableProperties(properties, after);
 

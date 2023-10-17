@@ -142,7 +142,6 @@ class AdminClientIT extends AdminClientITBase {
 
     @Test
     void shouldFailAtStartupWhenInstanceDoesNotExist() throws Exception {
-
         // When
         String output = runClient().runGetOutput();
 

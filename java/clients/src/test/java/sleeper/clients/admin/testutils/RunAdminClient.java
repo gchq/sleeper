@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.noChanges;
 import static sleeper.clients.admin.properties.UpdatePropertiesRequestTestHelper.withChanges;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
+import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.job.common.QueueMessageCountsInMemory.noQueues;
 
 public class RunAdminClient {
@@ -46,7 +47,7 @@ public class RunAdminClient {
     private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
     private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
-    private final String instanceId;
+    private String instanceId;
 
     RunAdminClient(ToStringPrintStream out, TestConsoleInput in,
                    AdminConfigStoreTestHarness store,
@@ -71,6 +72,7 @@ public class RunAdminClient {
 
     public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after) throws Exception {
         store.setInstanceProperties(before);
+        instanceId = before.get(ID);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
         return this;
@@ -78,6 +80,7 @@ public class RunAdminClient {
 
     public RunAdminClient editFromStore(InstanceProperties before, InstanceProperties after, PropertyGroup group) throws Exception {
         store.setInstanceProperties(before);
+        instanceId = before.get(ID);
         when(editor.openPropertiesFile(before, group))
                 .thenReturn(withChanges(before, after));
         return this;
@@ -92,6 +95,7 @@ public class RunAdminClient {
     public RunAdminClient editFromStore(InstanceProperties properties,
                                         TableProperties before, TableProperties after) throws Exception {
         store.setInstanceProperties(properties, before);
+        instanceId = properties.get(ID);
         when(editor.openPropertiesFile(before))
                 .thenReturn(withChanges(before, after));
         return this;
@@ -101,6 +105,7 @@ public class RunAdminClient {
                                         TableProperties before, TableProperties after, PropertyGroup group)
             throws Exception {
         store.setInstanceProperties(properties, before);
+        instanceId = properties.get(ID);
         when(editor.openPropertiesFile(before, group))
                 .thenReturn(withChanges(before, after));
         return this;
@@ -108,6 +113,7 @@ public class RunAdminClient {
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties) throws Exception {
         store.setInstanceProperties(properties);
+        instanceId = properties.get(ID);
         when(editor.openPropertiesFile(properties))
                 .thenReturn(noChanges(properties));
         return this;
@@ -115,6 +121,7 @@ public class RunAdminClient {
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties, PropertyGroup propertyGroup) throws Exception {
         store.setInstanceProperties(properties);
+        instanceId = properties.get(ID);
         when(editor.openPropertiesFile(properties, propertyGroup))
                 .thenReturn(noChanges(properties));
         return this;
@@ -122,6 +129,7 @@ public class RunAdminClient {
 
     public RunAdminClient viewInEditorFromStore(InstanceProperties properties, TableProperties tableProperties) throws Exception {
         store.setInstanceProperties(properties, tableProperties);
+        instanceId = properties.get(ID);
         when(editor.openPropertiesFile(tableProperties))
                 .thenReturn(noChanges(tableProperties));
         return this;
