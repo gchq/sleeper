@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
@@ -98,18 +99,21 @@ public class IngestRandomDataToDocker {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-number-of-records>");
         }
         AmazonS3 s3Client = buildAwsV1Client(AmazonS3ClientBuilder.standard());
-        AmazonDynamoDB dynamoDB = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
+        AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3Client, args[1]);
+        TableProperties tableProperties = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient)
+                .loadByName(args[1]).orElseThrow();
         long numberOfRecords = 100000;
         if (args.length > 2) {
             numberOfRecords = Long.parseLong(args[2]);
         }
 
-        new IngestRandomDataToDocker(instanceProperties, tableProperties, dynamoDB, numberOfRecords)
+        new IngestRandomDataToDocker(instanceProperties, tableProperties, dynamoClient, numberOfRecords)
                 .run();
+
+        s3Client.shutdown();
+        dynamoClient.shutdown();
     }
 }
