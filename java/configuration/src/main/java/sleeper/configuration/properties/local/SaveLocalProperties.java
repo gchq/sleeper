@@ -21,7 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.BufferedWriter;
@@ -43,7 +43,7 @@ public class SaveLocalProperties {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         saveToDirectory(directory, instanceProperties,
-                new S3TablePropertiesStore(instanceProperties, s3, dynamoDB)
+                S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
                         .streamAllTables());
         return instanceProperties;
     }

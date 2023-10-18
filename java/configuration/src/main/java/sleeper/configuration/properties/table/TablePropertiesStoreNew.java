@@ -16,79 +16,80 @@
 
 package sleeper.configuration.properties.table;
 
-import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-public class InMemoryTablePropertiesStore implements TablePropertiesStore {
+public class TablePropertiesStoreNew implements TablePropertiesStore {
 
-    private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final TableIdGenerator tableIdGenerator = new TableIdGenerator();
-    private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
+    private static final TableIdGenerator ID_GENERATOR = new TableIdGenerator();
 
-    @Override
+    private final TableIndex tableIndex;
+    private final Client client;
+
+    public TablePropertiesStoreNew(TableIndex tableIndex, Client client) {
+        this.tableIndex = tableIndex;
+        this.client = client;
+    }
+
     public TableProperties loadProperties(TableId tableId) {
-        return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
-                .orElseThrow();
+        TableProperties tableProperties = client.loadProperties(tableId);
+        tableProperties.validate();
+        return tableProperties;
     }
 
-    @Override
     public Optional<TableProperties> loadByName(String tableName) {
-        return loadByNameNoValidation(tableName);
-    }
-
-    @Override
-    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(this::loadProperties);
     }
 
-    @Override
-    public Stream<TableProperties> streamAllTables() {
-        return tableIndex.streamAllTables().map(this::loadProperties);
+    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
+        return tableIndex.getTableByName(tableName)
+                .map(client::loadProperties);
     }
 
-    @Override
+    public Stream<TableProperties> streamAllTables() {
+        return streamAllTableIds().map(this::loadProperties);
+    }
+
     public Stream<TableId> streamAllTableIds() {
         return tableIndex.streamAllTables();
     }
 
-    @Override
     public void save(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         Optional<TableId> existingId = tableIndex.getTableByName(tableName);
         if (existingId.isPresent()) {
-            String tableId = existingId.get().getTableUniqueId();
-            tableProperties.set(TABLE_ID, tableId);
-            propertiesByTableId.put(tableId, tableProperties);
+            tableProperties.set(TABLE_ID, existingId.get().getTableUniqueId());
+            client.saveProperties(tableProperties);
         } else {
-            String tableId;
-            if (tableProperties.isSet(TABLE_ID)) {
-                tableId = tableProperties.get(TABLE_ID);
-            } else {
-                tableId = tableIdGenerator.generateString();
-                tableProperties.set(TABLE_ID, tableId);
+            if (!tableProperties.isSet(TABLE_ID)) {
+                tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
             }
-            propertiesByTableId.put(tableId, tableProperties);
+            client.saveProperties(tableProperties);
             tableIndex.create(tableProperties.getId());
         }
     }
 
-    @Override
     public void deleteByName(String tableName) {
         tableIndex.getTableByName(tableName)
                 .ifPresent(tableId -> {
                     tableIndex.delete(tableId);
-                    propertiesByTableId.remove(tableId.getTableUniqueId());
+                    client.deleteProperties(tableId);
                 });
+    }
+
+    public interface Client {
+        TableProperties loadProperties(TableId tableId);
+
+        void saveProperties(TableProperties tableProperties);
+
+        void deleteProperties(TableId tableId);
     }
 }

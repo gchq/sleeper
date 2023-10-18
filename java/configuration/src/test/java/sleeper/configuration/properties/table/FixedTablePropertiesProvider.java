@@ -24,7 +24,7 @@ public class FixedTablePropertiesProvider extends TablePropertiesProvider {
     }
 
     public FixedTablePropertiesProvider(List<TableProperties> tables) {
-        super(new InMemoryTablePropertiesStore(), Integer.MAX_VALUE, () -> Instant.MIN);
+        super(InMemoryTableProperties.getStore(), Integer.MAX_VALUE, () -> Instant.MIN);
         tables.forEach(propertiesStore::save);
     }
 }

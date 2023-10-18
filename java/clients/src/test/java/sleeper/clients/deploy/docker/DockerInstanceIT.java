@@ -31,7 +31,7 @@ import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.clients.docker.TearDownDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
@@ -62,7 +62,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         // Then
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance");
-        TableProperties tableProperties = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDB)
+        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                 .loadByName("system-test").orElseThrow();
         assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
     }
@@ -102,7 +102,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             DeployDockerInstance.deploy("test-instance-3", s3Client, dynamoDB, sqsClient);
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-3");
-            TableProperties tableProperties = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDB)
+            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
                     .loadByName("system-test").orElseThrow();
 
             // When

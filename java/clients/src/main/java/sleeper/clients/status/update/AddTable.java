@@ -23,7 +23,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
@@ -48,7 +48,7 @@ public class AddTable {
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
         this.tableProperties = tableProperties;
-        this.tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDB);
+        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
         this.tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
     }

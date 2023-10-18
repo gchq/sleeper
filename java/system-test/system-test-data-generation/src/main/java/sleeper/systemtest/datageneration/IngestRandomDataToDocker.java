@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.IngestFactory;
 import sleeper.statestore.StateStoreProvider;
@@ -103,7 +103,7 @@ public class IngestRandomDataToDocker {
 
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-        TableProperties tableProperties = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient)
+        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
                 .loadByName(args[1]).orElseThrow();
         long numberOfRecords = 100000;
         if (args.length > 2) {

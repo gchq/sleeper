@@ -36,7 +36,7 @@ import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -86,7 +86,7 @@ public abstract class IngestJobQueueConsumerTestBase {
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     protected final String instanceId = instanceProperties.get(ID);
     protected final String tableName = tableProperties.get(TABLE_NAME);

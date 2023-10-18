@@ -33,7 +33,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -156,7 +156,7 @@ public class IngestBatcherJobCreatorLambdaIT {
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(tableProperties);
         return tableProperties;
     }
 }

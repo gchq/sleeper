@@ -46,7 +46,7 @@ import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TablePropertiesStore;
@@ -90,7 +90,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
-    private final TablePropertiesStore tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();

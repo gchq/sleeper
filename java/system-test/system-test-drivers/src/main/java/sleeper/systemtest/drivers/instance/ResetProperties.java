@@ -23,7 +23,7 @@ import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import static java.util.function.Predicate.not;
@@ -40,7 +40,7 @@ public class ResetProperties {
         reset(instanceProperties, configuration.getInstanceProperties());
         instanceProperties.saveToS3(s3Client);
         reset(tableProperties, configuration.getTableProperties());
-        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
     }
 
     private static <T extends SleeperProperty> void reset(

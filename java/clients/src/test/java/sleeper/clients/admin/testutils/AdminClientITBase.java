@@ -30,7 +30,7 @@ import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -83,7 +83,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3);
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
+        tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     }
 
     @Override

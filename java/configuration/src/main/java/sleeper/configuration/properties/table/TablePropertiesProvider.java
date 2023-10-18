@@ -47,7 +47,7 @@ public class TablePropertiesProvider {
     }
 
     protected TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Supplier<Instant> timeSupplier) {
-        this(instanceProperties, new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDBClient), timeSupplier);
+        this(instanceProperties, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient), timeSupplier);
     }
 
     protected TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore, Supplier<Instant> timeSupplier) {

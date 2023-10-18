@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -122,7 +122,7 @@ class SaveLocalPropertiesS3IT {
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         return tableProperties;
     }
 }

@@ -39,7 +39,7 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -164,7 +164,7 @@ public class SleeperInstanceContext {
             throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
         }
         values.forEach(tableProperties::set);
-        new S3TablePropertiesStore(getInstanceProperties(), s3, dynamoDB)
+        S3TableProperties.getStore(getInstanceProperties(), s3, dynamoDB)
                 .save(tableProperties);
     }
 

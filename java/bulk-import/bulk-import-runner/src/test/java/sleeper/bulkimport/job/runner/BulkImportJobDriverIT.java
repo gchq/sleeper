@@ -40,7 +40,7 @@ import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -189,7 +189,7 @@ class BulkImportJobDriverIT {
     }
 
     private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
-        return new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDBClient);
+        return S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
     }
 
     private static Schema getSchema() {

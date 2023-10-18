@@ -33,7 +33,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -339,7 +339,7 @@ public class GarbageCollectorIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
         tableProperties.set(TABLE_NAME, tableName);
         extraProperties.accept(tableProperties);
-        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 

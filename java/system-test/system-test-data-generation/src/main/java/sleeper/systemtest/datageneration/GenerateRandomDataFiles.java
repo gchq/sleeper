@@ -22,7 +22,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.systemtest.configuration.SystemTestProperties;
 
@@ -64,7 +64,7 @@ public class GenerateRandomDataFiles {
         AmazonDynamoDB dynamoClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
-        TableProperties tableProperties = new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient)
+        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient)
                 .loadByName("system-test").orElseThrow();
 
         new GenerateRandomDataFiles(tableProperties, numberOfRecords, outputDirectory)

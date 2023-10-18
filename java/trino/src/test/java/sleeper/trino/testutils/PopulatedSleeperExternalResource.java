@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -136,7 +136,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
-        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 

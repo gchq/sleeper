@@ -29,7 +29,7 @@ import sleeper.clients.docker.stack.ConfigurationDockerStack;
 import sleeper.clients.docker.stack.IngestDockerStack;
 import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -70,7 +70,7 @@ public class DeployDockerInstance {
         TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
 
         instanceProperties.saveToS3(s3Client);
-        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
 
         IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }

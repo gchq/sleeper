@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
@@ -353,7 +353,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
-        new S3TablePropertiesStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();

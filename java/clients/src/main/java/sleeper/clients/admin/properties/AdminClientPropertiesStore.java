@@ -32,7 +32,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.local.SaveLocalProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -83,7 +83,7 @@ public class AdminClientPropertiesStore {
     }
 
     public TableProperties loadTableProperties(InstanceProperties instanceProperties, String tableName) {
-        return new S3TablePropertiesStore(instanceProperties, s3, dynamoDB)
+        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
                 .loadByNameNoValidation(tableName)
                 .orElseThrow(() -> new CouldNotLoadTableProperties(instanceProperties.get(ID), tableName,
                         new NoSuchElementException("Table not found")));
@@ -94,11 +94,11 @@ public class AdminClientPropertiesStore {
     }
 
     private List<String> listTables(InstanceProperties instanceProperties) {
-        return new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).listTableNames();
+        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).listTableNames();
     }
 
     private Stream<TableProperties> streamTableProperties(InstanceProperties instanceProperties) {
-        return new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).streamAllTables();
+        return S3TableProperties.getStore(instanceProperties, s3, dynamoDB).streamAllTables();
     }
 
     public void saveInstanceProperties(InstanceProperties properties, PropertiesDiff diff) {
@@ -164,7 +164,7 @@ public class AdminClientPropertiesStore {
                             .map(table -> tableName.equals(table.get(TABLE_NAME))
                                     ? properties : table));
             LOGGER.info("Saving to AWS");
-            new S3TablePropertiesStore(instanceProperties, s3, dynamoDB).save(properties);
+            S3TableProperties.getStore(instanceProperties, s3, dynamoDB).save(properties);
         } catch (IOException | AmazonS3Exception e) {
             CouldNotSaveTableProperties wrapped = new CouldNotSaveTableProperties(instanceId, tableName, e);
             try {
