@@ -62,11 +62,6 @@
             <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>tables</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.amazonaws</groupId>
