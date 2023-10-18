@@ -49,7 +49,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -62,10 +62,10 @@ class StateMachinePlatformExecutorTest {
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
     private final AtomicReference<StartExecutionRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableName = tableProperties.get(TABLE_NAME);
     private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-            inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key")));
+            inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
     @BeforeEach
