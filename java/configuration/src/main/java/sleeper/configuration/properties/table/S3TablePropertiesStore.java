@@ -18,28 +18,30 @@ package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIndex;
 
-import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class S3TablePropertiesStore implements TablePropertiesStore {
 
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
-    private final AmazonDynamoDB dynamoClient;
+    private final TableIndex tableIndex;
 
     public S3TablePropertiesStore(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
-        this.dynamoClient = dynamoClient;
+        this.tableIndex = new DynamoDBTableIndex(dynamoClient, instanceProperties);
     }
 
     @Override
@@ -51,52 +53,41 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public Optional<TableProperties> loadByName(String tableName) {
-        TableProperties properties = new TableProperties(instanceProperties);
-        try {
-            properties.loadFromS3(s3Client, tableName);
-            return Optional.of(properties);
-        } catch (AmazonS3Exception e) {
-            if ("NoSuchKey".equals(e.getErrorCode())) {
-                return Optional.empty();
-            } else {
-                throw e;
-            }
-        }
+        return tableIndex.getTableByName(tableName)
+                .map(this::loadProperties);
     }
 
     @Override
     public Optional<TableProperties> loadByNameNoValidation(String tableName) {
-        try {
-            return Optional.of(new TableProperties(instanceProperties,
-                    TableProperties.loadPropertiesFromS3(s3Client, instanceProperties, tableName)));
-        } catch (AmazonS3Exception e) {
-            if ("NoSuchKey".equals(e.getErrorCode())) {
-                return Optional.empty();
-            } else {
-                throw e;
-            }
-        }
+        return tableIndex.getTableByName(tableName)
+                .map(tableId -> new TableProperties(instanceProperties,
+                        TableProperties.loadPropertiesFromS3(s3Client, instanceProperties, tableName)));
     }
 
     @Override
     public Stream<TableProperties> streamAllTables() {
-        return TableProperties.streamTablesFromS3(s3Client, dynamoClient, instanceProperties);
+        return streamAllTableIds().map(this::loadProperties);
     }
 
     @Override
     public Stream<TableId> streamAllTableIds() {
-        return streamAllTables()
-                .map(TableProperties::getId)
-                .sorted(Comparator.comparing(TableId::getTableName));
+        return tableIndex.streamAllTables();
     }
 
     @Override
     public void save(TableProperties tableProperties) {
+        String tableId = tableIndex.getOrCreateTableByName(tableProperties.get(TABLE_NAME))
+                .getTableUniqueId();
+        tableProperties.set(TABLE_ID, tableId);
         tableProperties.saveToS3(s3Client);
     }
 
     @Override
     public void deleteByName(String tableName) {
-        s3Client.deleteObject(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
+        tableIndex.getTableByName(tableName)
+                .ifPresent(tableId -> {
+                    tableIndex.delete(tableId);
+                    s3Client.deleteObject(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
+                });
     }
 }

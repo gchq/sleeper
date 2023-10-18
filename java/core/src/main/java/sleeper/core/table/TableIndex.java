@@ -27,4 +27,11 @@ public interface TableIndex {
     Optional<TableId> getTableByName(String tableName);
 
     Optional<TableId> getTableByUniqueId(String tableUniqueId);
+
+    default TableId getOrCreateTableByName(String tableName) {
+        return getTableByName(tableName)
+                .orElseGet(() -> createTable(tableName));
+    }
+
+    void delete(TableId tableId);
 }

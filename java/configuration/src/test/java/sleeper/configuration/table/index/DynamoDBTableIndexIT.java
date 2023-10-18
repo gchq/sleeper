@@ -132,4 +132,27 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             assertThat(store.streamAllTables()).isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("Delete table")
+    class DeleteTable {
+
+        @Test
+        void deleteTableNameReference() {
+            TableId tableId = store.createTable("test-table");
+
+            store.delete(tableId);
+
+            assertThat(store.getTableByName("test-table")).isEmpty();
+        }
+
+        @Test
+        void deleteTableIdReference() {
+            TableId tableId = store.createTable("test-table");
+
+            store.delete(tableId);
+
+            assertThat(store.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
+        }
+    }
 }

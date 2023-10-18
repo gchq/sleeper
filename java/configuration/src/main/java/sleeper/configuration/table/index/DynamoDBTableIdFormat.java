@@ -38,6 +38,14 @@ class DynamoDBTableIdFormat {
                 TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
     }
 
+    public static Map<String, AttributeValue> getIdKey(TableId id) {
+        return Map.of(TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()));
+    }
+
+    public static Map<String, AttributeValue> getNameKey(TableId id) {
+        return Map.of(TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
+    }
+
     public static TableId readItem(Map<String, AttributeValue> item) {
         return TableId.uniqueIdAndName(
                 getStringAttribute(item, TABLE_ID_FIELD),

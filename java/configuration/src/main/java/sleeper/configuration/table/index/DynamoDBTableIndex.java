@@ -22,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -89,8 +90,7 @@ public class DynamoDBTableIndex implements TableIndex {
             TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Created table {} with ID {}, capacity consumed = {}",
-                    tableName, id.getTableUniqueId(), totalCapacity);
+            LOGGER.debug("Created table {}, capacity consumed = {}", id, totalCapacity);
             return id;
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
@@ -130,5 +130,22 @@ public class DynamoDBTableIndex implements TableIndex {
                         .withAttributeValueList(createStringAttribute(tableUniqueId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return result.getItems().stream().map(DynamoDBTableIdFormat::readItem).findFirst();
+    }
+
+    @Override
+    public void delete(TableId tableId) {
+        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTransactItems(
+                        new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))),
+                        new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(idIndexDynamoTableName)
+                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))));
+        TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+        double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+        LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
     }
 }

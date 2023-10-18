@@ -58,4 +58,10 @@ public class InMemoryTableIndex implements TableIndex {
     public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
         return Optional.ofNullable(nameById.get(tableUniqueId));
     }
+
+    @Override
+    public void delete(TableId tableId) {
+        idByName.remove(tableId.getTableName());
+        nameById.remove(tableId.getTableUniqueId());
+    }
 }

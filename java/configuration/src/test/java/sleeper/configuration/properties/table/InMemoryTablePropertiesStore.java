@@ -16,22 +16,27 @@
 
 package sleeper.configuration.properties.table;
 
+import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIndex;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class InMemoryTablePropertiesStore implements TablePropertiesStore {
 
-    private final Map<String, TableProperties> propertiesByTableName = new HashMap<>();
+    private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
 
     @Override
     public TableProperties loadProperties(TableId tableId) {
-        return loadByName(tableId.getTableName()).orElseThrow();
+        return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
+                .orElseThrow();
     }
 
     @Override
@@ -41,26 +46,34 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public Optional<TableProperties> loadByNameNoValidation(String tableName) {
-        return Optional.ofNullable(propertiesByTableName.get(tableName));
+        return tableIndex.getTableByName(tableName)
+                .map(this::loadProperties);
     }
 
     @Override
     public Stream<TableProperties> streamAllTables() {
-        return propertiesByTableName.values().stream();
+        return tableIndex.streamAllTables().map(this::loadProperties);
     }
 
     @Override
     public Stream<TableId> streamAllTableIds() {
-        return streamAllTables().map(TableProperties::getId);
+        return tableIndex.streamAllTables();
     }
 
     @Override
     public void save(TableProperties tableProperties) {
-        propertiesByTableName.put(tableProperties.get(TABLE_NAME), tableProperties);
+        String tableId = tableIndex.getOrCreateTableByName(tableProperties.get(TABLE_NAME))
+                .getTableUniqueId();
+        tableProperties.set(TABLE_ID, tableId);
+        propertiesByTableId.put(tableId, tableProperties);
     }
 
     @Override
     public void deleteByName(String tableName) {
-        propertiesByTableName.remove(tableName);
+        tableIndex.getTableByName(tableName)
+                .ifPresent(tableId -> {
+                    tableIndex.delete(tableId);
+                    propertiesByTableId.remove(tableId.getTableUniqueId());
+                });
     }
 }
