@@ -57,6 +57,55 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             assertThat(provider.getTablePropertiesIfExists(tableName))
                     .isEmpty();
         }
+
+        @Test
+        void shouldLoadMultipleTables() {
+            // Given
+            TableProperties table1 = createValidTableProperties();
+            TableProperties table2 = createValidTableProperties();
+            store.save(table1);
+            store.save(table2);
+
+            // When / Then
+            assertThat(provider.streamAllTables())
+                    .containsExactlyInAnyOrder(table1, table2);
+            assertThat(provider.streamAllTableIds())
+                    .containsExactlyInAnyOrder(table1.getId(), table2.getId());
+        }
+
+        @Test
+        void shouldCachePropertiesAfterLoadingAllTables() {
+            // Given
+            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
+            store.save(tableProperties);
+
+            provider.streamAllTables().forEach(properties -> {
+            });
+
+            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.getTableProperties(tableName).getInt(ROW_GROUP_SIZE))
+                    .isEqualTo(123);
+        }
+
+        @Test
+        void shouldRetrieveFromCacheWhenLoadingAllTables() {
+            // Given
+            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
+            store.save(tableProperties);
+
+            provider.getTableProperties(tableName);
+
+            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.streamAllTables()
+                    .map(properties -> properties.getInt(ROW_GROUP_SIZE)))
+                    .contains(123);
+        }
     }
 
     @Nested

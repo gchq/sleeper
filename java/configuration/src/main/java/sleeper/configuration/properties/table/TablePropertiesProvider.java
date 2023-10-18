@@ -88,6 +88,11 @@ public class TablePropertiesProvider {
         return propertiesStore.streamAllTableIds();
     }
 
+    public Stream<TableProperties> streamAllTables() {
+        return propertiesStore.streamAllTableIds()
+                .map(id -> getTableProperties(id.getTableName()));
+    }
+
     public List<String> listTableNames() {
         return propertiesStore.listTableNames();
     }

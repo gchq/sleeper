@@ -19,13 +19,10 @@ package sleeper.configuration.properties.table;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -87,12 +84,8 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public Stream<TableId> streamAllTableIds() {
-        ListObjectsV2Result result = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), TableProperties.TABLES_PREFIX + "/");
-        List<S3ObjectSummary> objectSummaries = result.getObjectSummaries();
-        return objectSummaries.stream()
-                .map(S3ObjectSummary::getKey)
-                .map(s -> s.substring(TableProperties.TABLES_PREFIX.length() + 1))
-                .map(tableName -> TableId.uniqueIdAndName(null, tableName));
+        return streamAllTables()
+                .map(TableProperties::getId);
     }
 
     @Override
