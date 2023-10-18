@@ -29,6 +29,9 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
     private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
 
+    private InMemoryTableProperties() {
+    }
+
     public static TablePropertiesStore getStore() {
         return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties());
     }
