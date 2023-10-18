@@ -42,13 +42,22 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     class LoadProperties {
 
         @Test
-        void shouldLoadFromS3() {
+        void shouldLoadByName() {
             // Given
             store.save(tableProperties);
 
             // When / Then
             assertThat(provider.getTableProperties(tableName)).isEqualTo(tableProperties);
             assertThat(provider.getTablePropertiesIfExists(tableName)).contains(tableProperties);
+        }
+
+        @Test
+        void shouldLoadByFullIdentifier() {
+            // Given
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.getTableProperties(tableProperties.getId())).isEqualTo(tableProperties);
         }
 
         @Test

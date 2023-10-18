@@ -51,7 +51,6 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.job.TableLister;
 
 import java.nio.file.Files;
 import java.time.Duration;
@@ -345,7 +344,7 @@ public class GarbageCollectorIT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(new Configuration(), new TableLister(s3Client, instanceProperties),
+        return new GarbageCollector(new Configuration(),
                 new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), stateStoreProvider,
                 instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
     }

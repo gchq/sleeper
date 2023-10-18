@@ -37,7 +37,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -58,7 +57,6 @@ public class CreateJobsLambda {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
     private final StateStoreProvider stateStoreProvider;
-    private final TableLister tableLister;
     private final CompactionJobStatusStore jobStatusStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobsLambda.class);
@@ -83,7 +81,6 @@ public class CreateJobsLambda {
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
-        this.tableLister = new TableLister(s3Client, instanceProperties);
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
@@ -108,7 +105,6 @@ public class CreateJobsLambda {
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.tableLister = new TableLister(s3Client, instanceProperties);
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 

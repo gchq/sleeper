@@ -39,6 +39,10 @@ public interface TablePropertiesStore {
         return streamAllTableIds().map(TableId::getTableName).collect(Collectors.toUnmodifiableList());
     }
 
+    default List<TableId> listTableIds() {
+        return streamAllTableIds().collect(Collectors.toUnmodifiableList());
+    }
+
     void save(TableProperties tableProperties);
 
     void deleteByName(String tableName);

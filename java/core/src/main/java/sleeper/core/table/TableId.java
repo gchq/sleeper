@@ -59,9 +59,6 @@ public class TableId {
 
     @Override
     public String toString() {
-        return "TableId{" +
-                "tableUniqueId='" + tableUniqueId + '\'' +
-                ", tableName='" + tableName + '\'' +
-                '}';
+        return tableName + " (" + tableUniqueId + ")";
     }
 }

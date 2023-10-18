@@ -181,7 +181,7 @@ public class FindPartitionsToSplitIT {
     }
 
     private FindPartitionsToSplit findPartitionsToSplit() {
-        return new FindPartitionsToSplit(instanceProperties, tableName, tablePropertiesProvider, stateStore, sqsClient);
+        return new FindPartitionsToSplit(instanceProperties, tableProperties, tablePropertiesProvider, stateStore, sqsClient);
     }
 
     private List<List<Record>> createEvenRecordList(Integer recordsPerList, Integer numberOfLists) {

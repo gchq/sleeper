@@ -67,6 +67,12 @@ public class TablePropertiesProvider {
                 name -> propertiesStore.loadByName(name).orElse(null));
     }
 
+    public TableProperties getTableProperties(TableId tableId) {
+        checkExpiryTime(tableId.getTableName());
+        return tableNameToPropertiesCache.computeIfAbsent(tableId.getTableName(),
+                name -> propertiesStore.loadProperties(tableId));
+    }
+
     private void checkExpiryTime(String tableName) {
         Instant currentTime = timeSupplier.get();
         if (expireTimeByTableName.containsKey(tableName) && currentTime.isAfter(expireTimeByTableName.get(tableName))) {
@@ -95,6 +101,10 @@ public class TablePropertiesProvider {
 
     public List<String> listTableNames() {
         return propertiesStore.listTableNames();
+    }
+
+    public List<TableId> listTableIds() {
+        return propertiesStore.listTableIds();
     }
 
     public void clearCache() {

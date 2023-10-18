@@ -57,13 +57,13 @@ public class FindPartitionsToSplit {
 
     public FindPartitionsToSplit(
             InstanceProperties instanceProperties,
-            String tableName,
+            TableProperties tableProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStore stateStore,
             AmazonSQS sqs) {
-        this.tableName = tableName;
+        this.tableName = tableProperties.get(TABLE_NAME);
         this.tablePropertiesProvider = tablePropertiesProvider;
-        this.tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        this.tableProperties = tableProperties;
         this.stateStore = stateStore;
         this.maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
         this.sqs = sqs;

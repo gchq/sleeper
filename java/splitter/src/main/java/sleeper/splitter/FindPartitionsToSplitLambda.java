@@ -27,12 +27,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -46,7 +44,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
  */
 @SuppressWarnings("unused")
 public class FindPartitionsToSplitLambda {
-    private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
@@ -55,7 +52,7 @@ public class FindPartitionsToSplitLambda {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public FindPartitionsToSplitLambda() {
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");
@@ -70,11 +67,10 @@ public class FindPartitionsToSplitLambda {
 
     public void eventHandler(ScheduledEvent event, Context context) {
         LOGGER.info("FindPartitionsToSplitLambda triggered at {}", event.getTime());
-        new TableLister(s3Client, instanceProperties).listTables().stream().map(tableName -> {
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        tablePropertiesProvider.streamAllTables().map(tableProperties -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             return new FindPartitionsToSplit(
-                    instanceProperties, tableName, tablePropertiesProvider, stateStore, sqsClient);
+                    instanceProperties, tableProperties, tablePropertiesProvider, stateStore, sqsClient);
         }).forEach(partitionsFinder -> {
             try {
                 partitionsFinder.run();

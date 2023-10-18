@@ -34,7 +34,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,9 +78,7 @@ public class TableMetricsLambda implements RequestHandler<String, Void> {
         instanceProperties.loadFromS3(s3Client, configBucketName);
 
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        List<TableProperties> tablePropertiesList = new TableLister(s3Client, instanceProperties).listTables().stream()
-                .map(tablePropertiesProvider::getTableProperties)
-                .collect(Collectors.toUnmodifiableList());
+        List<TableProperties> tablePropertiesList = tablePropertiesProvider.streamAllTables().collect(Collectors.toUnmodifiableList());
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, new Configuration());
 
         String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
