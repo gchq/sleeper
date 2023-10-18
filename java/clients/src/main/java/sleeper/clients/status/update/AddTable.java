@@ -26,11 +26,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
-import sleeper.configuration.properties.table.TableProperty;
-import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.schema.Schema;
-import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableIndex;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreProvider;
 
@@ -42,23 +38,17 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 public class AddTable {
     private final TableProperties tableProperties;
     private final TablePropertiesStore tablePropertiesStore;
-    private final TableIndex tableIndex;
     private final StateStoreProvider stateStoreProvider;
 
     public AddTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties,
                     TableProperties tableProperties) {
         this.tableProperties = tableProperties;
         this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB);
-        this.tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
     }
 
     public void run() throws IOException {
-        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
-        if (tableIndex.getTableByName(tableName).isPresent()) {
-            throw new TableAlreadyExistsException(tableName);
-        }
-        tablePropertiesStore.save(tableProperties);
+        tablePropertiesStore.createTable(tableProperties);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
 

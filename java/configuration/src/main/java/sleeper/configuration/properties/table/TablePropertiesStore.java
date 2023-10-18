@@ -16,11 +16,14 @@
 
 package sleeper.configuration.properties.table;
 
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
@@ -62,6 +65,22 @@ public class TablePropertiesStore {
         return tableIndex.streamAllTables();
     }
 
+    public List<String> listTableNames() {
+        return streamAllTableIds().map(TableId::getTableName).collect(Collectors.toUnmodifiableList());
+    }
+
+    public List<TableId> listTableIds() {
+        return streamAllTableIds().collect(Collectors.toUnmodifiableList());
+    }
+
+    public void createTable(TableProperties tableProperties) {
+        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        tableIndex.getTableByName(tableName).ifPresent(tableId -> {
+            throw new TableAlreadyExistsException(tableId);
+        });
+        createWhenNotInIndex(tableProperties);
+    }
+
     public void save(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         Optional<TableId> existingId = tableIndex.getTableByName(tableName);
@@ -69,12 +88,16 @@ public class TablePropertiesStore {
             tableProperties.set(TABLE_ID, existingId.get().getTableUniqueId());
             client.saveProperties(tableProperties);
         } else {
-            if (!tableProperties.isSet(TABLE_ID)) {
-                tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
-            }
-            client.saveProperties(tableProperties);
-            tableIndex.create(tableProperties.getId());
+            createWhenNotInIndex(tableProperties);
         }
+    }
+
+    private void createWhenNotInIndex(TableProperties tableProperties) {
+        if (!tableProperties.isSet(TABLE_ID)) {
+            tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
+        }
+        client.saveProperties(tableProperties);
+        tableIndex.create(tableProperties.getId());
     }
 
     public void deleteByName(String tableName) {

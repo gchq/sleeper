@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,26 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
         @Test
         void shouldCreateNewTable() {
+            // When
+            store.createTable(tableProperties);
+
+            // Then
+            assertThat(store.loadByName(tableName))
+                    .contains(tableProperties);
+        }
+
+        @Test
+        void shouldNotCreateDuplicateTable() {
+            // Given
+            store.createTable(tableProperties);
+
+            // When / Then
+            assertThatThrownBy(() -> store.createTable(tableProperties))
+                    .isInstanceOf(TableAlreadyExistsException.class);
+        }
+
+        @Test
+        void shouldCreateNewTableWithSave() {
             // When
             store.save(tableProperties);
 
