@@ -534,7 +534,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
-            TableProperties after = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
             after.set(ITERATOR_CONFIG, "TestIterator");
 
             // When
@@ -563,7 +563,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
-            TableProperties after = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
             after.set(ROW_GROUP_SIZE, "123");
             doThrow(new AdminClientPropertiesStore.CouldNotSaveTableProperties(properties.get(ID), TABLE_NAME_VALUE,
                     new RuntimeException("Something went wrong")))
@@ -603,7 +603,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Given
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
-            TableProperties after = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
             after.set(ROW_GROUP_SIZE, "123");
 
             // When
@@ -692,7 +692,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             TableProperties before = createValidTableProperties(properties);
             before.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "false");
-            TableProperties after = createValidTableProperties(properties);
+            TableProperties after = TableProperties.copyOf(before);
             after.set(DYNAMODB_STRONGLY_CONSISTENT_READS, "true");
 
             // When

@@ -55,9 +55,7 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     }
 
     public static InstanceProperties copyOf(InstanceProperties instanceProperties) {
-        InstanceProperties copy = new InstanceProperties();
-        copy.loadFromString(instanceProperties.saveAsString());
-        return copy;
+        return new InstanceProperties(loadProperties(instanceProperties.saveAsString()));
     }
 
     @Override

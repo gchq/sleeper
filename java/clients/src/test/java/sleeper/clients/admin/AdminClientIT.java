@@ -121,7 +121,7 @@ class AdminClientIT extends AdminClientITBase {
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties before = createValidTableProperties(instanceProperties);
         before.set(ITERATOR_CLASS_NAME, "BeforeIteratorClass");
-        TableProperties after = createValidTableProperties(instanceProperties);
+        TableProperties after = TableProperties.copyOf(before);
         after.set(ITERATOR_CLASS_NAME, "AfterIteratorClass");
 
         // When

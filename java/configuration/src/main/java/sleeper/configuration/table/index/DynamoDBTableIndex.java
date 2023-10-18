@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
-import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
 import java.util.Comparator;
@@ -61,7 +60,6 @@ public class DynamoDBTableIndex implements TableIndex {
     private final AmazonDynamoDB dynamoDB;
     private final String nameIndexDynamoTableName;
     private final String idIndexDynamoTableName;
-    private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     public DynamoDBTableIndex(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
         this.dynamoDB = dynamoDB;
@@ -70,9 +68,8 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public TableId createTable(String tableName) throws TableAlreadyExistsException {
-        TableId id = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
-        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(id);
+    public void create(TableId tableId) throws TableAlreadyExistsException {
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(tableId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -90,12 +87,11 @@ public class DynamoDBTableIndex implements TableIndex {
             TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Created table {}, capacity consumed = {}", id, totalCapacity);
-            return id;
+            LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
             if ("ConditionalCheckFailed".equals(nameIndexReason.getCode())) {
-                throw new TableAlreadyExistsException(tableName);
+                throw new TableAlreadyExistsException(tableId);
             } else {
                 throw e;
             }

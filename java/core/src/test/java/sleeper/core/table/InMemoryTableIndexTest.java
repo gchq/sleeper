@@ -20,22 +20,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
 
 public class InMemoryTableIndexTest {
 
     private final TableIndex store = new InMemoryTableIndex();
+    private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @Nested
     @DisplayName("Create a table")
     class CreateTable {
         @Test
         void shouldCreateATable() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             assertThat(store.streamAllTables())
                     .containsExactly(tableId);
@@ -43,22 +41,10 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldFailToCreateATableWhichAlreadyExists() {
-            store.createTable("duplicate-table");
+            createTable("duplicate-table");
 
-            assertThatThrownBy(() -> store.createTable("duplicate-table"))
+            assertThatThrownBy(() -> createTable("duplicate-table"))
                     .isInstanceOf(TableAlreadyExistsException.class);
-        }
-
-        @Test
-        void shouldGenerateNumericTableIds() {
-            TableId tableIdA = store.createTable("table-a");
-            TableId tableIdB = store.createTable("table-b");
-
-            assertThat(List.of(tableIdA, tableIdB))
-                    .extracting(TableId::getTableName, TableId::getTableUniqueId)
-                    .containsExactly(
-                            tuple("table-a", "table-1"),
-                            tuple("table-b", "table-2"));
         }
     }
 
@@ -68,7 +54,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableByName() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             assertThat(store.getTableByName("test-table"))
                     .contains(tableId);
@@ -76,7 +62,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetNoTableByName() {
-            store.createTable("existing-table");
+            createTable("existing-table");
 
             assertThat(store.getTableByName("not-a-table"))
                     .isEmpty();
@@ -84,7 +70,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableById() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             assertThat(store.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
@@ -92,7 +78,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetNoTableById() {
-            store.createTable("existing-table");
+            createTable("existing-table");
 
             assertThat(store.getTableByUniqueId("not-a-table"))
                     .isEmpty();
@@ -105,10 +91,10 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTablesOrderedByName() {
-            store.createTable("some-table");
-            store.createTable("a-table");
-            store.createTable("this-table");
-            store.createTable("other-table");
+            createTable("some-table");
+            createTable("a-table");
+            createTable("this-table");
+            createTable("other-table");
 
             assertThat(store.streamAllTables())
                     .extracting(TableId::getTableName)
@@ -121,8 +107,8 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableIds() {
-            TableId table1 = store.createTable("first-table");
-            TableId table2 = store.createTable("second-table");
+            TableId table1 = createTable("first-table");
+            TableId table2 = createTable("second-table");
 
             assertThat(store.streamAllTables())
                     .containsExactly(table1, table2);
@@ -140,7 +126,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void deleteTableNameReference() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             store.delete(tableId);
 
@@ -149,11 +135,17 @@ public class InMemoryTableIndexTest {
 
         @Test
         void deleteTableIdReference() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             store.delete(tableId);
 
             assertThat(store.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
         }
+    }
+
+    private TableId createTable(String tableName) {
+        TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
+        store.create(tableId);
+        return tableId;
     }
 }

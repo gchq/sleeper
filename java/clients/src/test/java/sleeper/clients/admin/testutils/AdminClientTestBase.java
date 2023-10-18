@@ -33,7 +33,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_C
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.table.TableProperty.SPLIT_POINTS_BASE64_ENCODED;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness {
@@ -75,10 +75,8 @@ public abstract class AdminClientTestBase implements AdminConfigStoreTestHarness
     }
 
     protected TableProperties createValidTableProperties(InstanceProperties instanceProperties, String tableName) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(KEY_VALUE_SCHEMA);
-        tableProperties.set(SPLIT_POINTS_BASE64_ENCODED, "false");
         return tableProperties;
     }
 

@@ -18,6 +18,7 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class InMemoryTablePropertiesStore implements TablePropertiesStore {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final TableIdGenerator tableIdGenerator = new TableIdGenerator();
     private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
 
     @Override
@@ -62,10 +64,23 @@ public class InMemoryTablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public void save(TableProperties tableProperties) {
-        String tableId = tableIndex.getOrCreateTableByName(tableProperties.get(TABLE_NAME))
-                .getTableUniqueId();
-        tableProperties.set(TABLE_ID, tableId);
-        propertiesByTableId.put(tableId, tableProperties);
+        String tableName = tableProperties.get(TABLE_NAME);
+        Optional<TableId> existingId = tableIndex.getTableByName(tableName);
+        if (existingId.isPresent()) {
+            String tableId = existingId.get().getTableUniqueId();
+            tableProperties.set(TABLE_ID, tableId);
+            propertiesByTableId.put(tableId, tableProperties);
+        } else {
+            String tableId;
+            if (tableProperties.isSet(TABLE_ID)) {
+                tableId = tableProperties.get(TABLE_ID);
+            } else {
+                tableId = tableIdGenerator.generateString();
+                tableProperties.set(TABLE_ID, tableId);
+            }
+            propertiesByTableId.put(tableId, tableProperties);
+            tableIndex.create(tableProperties.getId());
+        }
     }
 
     @Override

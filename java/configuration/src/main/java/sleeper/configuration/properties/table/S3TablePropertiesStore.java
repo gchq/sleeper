@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
 import java.util.Optional;
@@ -34,6 +35,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class S3TablePropertiesStore implements TablePropertiesStore {
 
+    private static final TableIdGenerator ID_GENERATOR = new TableIdGenerator();
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final TableIndex tableIndex;
@@ -76,10 +78,19 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
 
     @Override
     public void save(TableProperties tableProperties) {
-        String tableId = tableIndex.getOrCreateTableByName(tableProperties.get(TABLE_NAME))
-                .getTableUniqueId();
-        tableProperties.set(TABLE_ID, tableId);
-        tableProperties.saveToS3(s3Client);
+        String tableName = tableProperties.get(TABLE_NAME);
+        Optional<TableId> existingId = tableIndex.getTableByName(tableName);
+        if (existingId.isPresent()) {
+            String tableId = existingId.get().getTableUniqueId();
+            tableProperties.set(TABLE_ID, tableId);
+            tableProperties.saveToS3(s3Client);
+        } else {
+            if (!tableProperties.isSet(TABLE_ID)) {
+                tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
+            }
+            tableProperties.saveToS3(s3Client);
+            tableIndex.create(tableProperties.getId());
+        }
     }
 
     @Override

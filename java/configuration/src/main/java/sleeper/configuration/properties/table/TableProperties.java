@@ -32,7 +32,6 @@ import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.core.table.TableId;
-import sleeper.core.table.TableIndex;
 
 import java.io.PrintWriter;
 import java.util.Objects;
@@ -62,6 +61,11 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super(properties);
         this.instanceProperties = instanceProperties;
         schema = loadSchema(properties);
+    }
+
+    public static TableProperties copyOf(TableProperties tableProperties) {
+        InstanceProperties instanceProperties = InstanceProperties.copyOf(tableProperties.instanceProperties);
+        return new TableProperties(instanceProperties, loadProperties(tableProperties.saveAsString()));
     }
 
     public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
@@ -158,12 +162,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
 
     public TableId getId() {
         return TableId.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
-    }
-
-    public void addTable(TableIndex tableIndex, TablePropertiesStore tablePropertiesStore) {
-        TableId id = tableIndex.createTable(get(TABLE_NAME));
-        set(TABLE_ID, id.getTableUniqueId());
-        tablePropertiesStore.save(this);
     }
 
     @Override

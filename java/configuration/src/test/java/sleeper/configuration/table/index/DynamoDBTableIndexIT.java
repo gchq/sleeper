@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
@@ -35,6 +36,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex store = new DynamoDBTableIndex(dynamoDBClient, instanceProperties);
+    private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @BeforeEach
     void setUp() {
@@ -46,7 +48,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
     class CreateTable {
         @Test
         void shouldCreateATable() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             assertThat(store.streamAllTables())
                     .containsExactly(tableId);
@@ -54,9 +56,9 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldFailToCreateATableWhichAlreadyExists() {
-            store.createTable("duplicate-table");
+            createTable("duplicate-table");
 
-            assertThatThrownBy(() -> store.createTable("duplicate-table"))
+            assertThatThrownBy(() -> createTable("duplicate-table"))
                     .isInstanceOf(TableAlreadyExistsException.class);
         }
     }
@@ -67,7 +69,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTableByName() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             assertThat(store.getTableByName("test-table"))
                     .contains(tableId);
@@ -75,7 +77,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetNoTableByName() {
-            store.createTable("existing-table");
+            createTable("existing-table");
 
             assertThat(store.getTableByName("not-a-table"))
                     .isEmpty();
@@ -83,7 +85,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTableById() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             assertThat(store.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
@@ -91,7 +93,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetNoTableById() {
-            store.createTable("existing-table");
+            createTable("existing-table");
 
             assertThat(store.getTableByUniqueId("not-a-table"))
                     .isEmpty();
@@ -104,10 +106,10 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTablesOrderedByName() {
-            store.createTable("some-table");
-            store.createTable("a-table");
-            store.createTable("this-table");
-            store.createTable("other-table");
+            createTable("some-table");
+            createTable("a-table");
+            createTable("this-table");
+            createTable("other-table");
 
             assertThat(store.streamAllTables())
                     .extracting(TableId::getTableName)
@@ -120,8 +122,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTableIds() {
-            TableId table1 = store.createTable("first-table");
-            TableId table2 = store.createTable("second-table");
+            TableId table1 = createTable("first-table");
+            TableId table2 = createTable("second-table");
 
             assertThat(store.streamAllTables())
                     .containsExactly(table1, table2);
@@ -139,7 +141,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void deleteTableNameReference() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             store.delete(tableId);
 
@@ -148,11 +150,17 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void deleteTableIdReference() {
-            TableId tableId = store.createTable("test-table");
+            TableId tableId = createTable("test-table");
 
             store.delete(tableId);
 
             assertThat(store.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
         }
+    }
+
+    private TableId createTable(String tableName) {
+        TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
+        store.create(tableId);
+        return tableId;
     }
 }

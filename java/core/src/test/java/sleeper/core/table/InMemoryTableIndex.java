@@ -26,17 +26,13 @@ public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableId> idByName = new TreeMap<>();
     private final Map<String, TableId> nameById = new HashMap<>();
-    private int nextIdNumber = 1;
 
     @Override
-    public TableId createTable(String tableName) {
-        if (idByName.containsKey(tableName)) {
-            throw new TableAlreadyExistsException(tableName);
+    public void create(TableId tableId) throws TableAlreadyExistsException {
+        if (idByName.containsKey(tableId.getTableName())) {
+            throw new TableAlreadyExistsException(tableId);
         }
-        TableId id = TableId.uniqueIdAndName("table-" + nextIdNumber, tableName);
-        nextIdNumber++;
-        save(id);
-        return id;
+        save(tableId);
     }
 
     public void save(TableId id) {

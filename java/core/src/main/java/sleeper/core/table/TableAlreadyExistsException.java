@@ -21,4 +21,8 @@ public class TableAlreadyExistsException extends RuntimeException {
     public TableAlreadyExistsException(String tableName) {
         super("Table already exists: " + tableName);
     }
+
+    public TableAlreadyExistsException(TableId tableId) {
+        super("Table already exists: " + tableId);
+    }
 }

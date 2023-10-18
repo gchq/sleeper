@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -62,17 +61,11 @@ public class PartitionsStatusReportIT {
 
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final InstanceProperties instanceProperties = createTestInstanceProperties(s3);
+    private final InstanceProperties instanceProperties = createTestInstance();
     private final TablePropertiesStore tablePropertiesStore = new S3TablePropertiesStore(instanceProperties, s3, dynamoDB);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
-
-    @BeforeEach
-    void setUp() {
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
-    }
 
     @Test
     void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
@@ -95,6 +88,13 @@ public class PartitionsStatusReportIT {
 
     private StateStore stateStore() {
         return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
+    }
+
+    private InstanceProperties createTestInstance() {
+        InstanceProperties properties = createTestInstanceProperties(s3);
+        DynamoDBTableIndexCreator.create(dynamoDB, properties);
+        new DynamoDBStateStoreCreator(properties, dynamoDB).create();
+        return properties;
     }
 
     private TableProperties createTestTable(Consumer<TableProperties> tableConfig) {

@@ -26,8 +26,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.InitialiseStateStoreFromSplitPoints;
 import sleeper.statestore.StateStoreProvider;
@@ -52,7 +54,11 @@ public class AddTable {
     }
 
     public void run() throws IOException {
-        tableProperties.addTable(tableIndex, tablePropertiesStore);
+        String tableName = tableProperties.get(TableProperty.TABLE_NAME);
+        if (tableIndex.getTableByName(tableName).isPresent()) {
+            throw new TableAlreadyExistsException(tableName);
+        }
+        tablePropertiesStore.save(tableProperties);
         new InitialiseStateStoreFromSplitPoints(stateStoreProvider, tableProperties).run();
     }
 
