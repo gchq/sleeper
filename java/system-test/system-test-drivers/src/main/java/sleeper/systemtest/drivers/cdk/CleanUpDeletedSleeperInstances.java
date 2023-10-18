@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package sleeper.clients.teardown;
+package sleeper.systemtest.drivers.cdk;
 
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.Repository;
 import software.amazon.awssdk.services.s3.model.Bucket;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
+import sleeper.clients.teardown.CloudFormationStacks;
+import sleeper.clients.teardown.TearDownClients;
+import sleeper.clients.teardown.TearDownInstance;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 public class CleanUpDeletedSleeperInstances {
 
@@ -42,7 +47,9 @@ public class CleanUpDeletedSleeperInstances {
 
     public void run() throws IOException, InterruptedException {
         for (String instanceId : getInstanceIds()) {
-            tearDownBuilder.instanceId(instanceId).build().tearDown();
+            tearDownBuilder.instanceId(instanceId)
+                    .getExtraEcrRepositories(properties -> List.of(buildSystemTestECRRepoName(instanceId)))
+                    .build().tearDown();
         }
     }
 
