@@ -31,8 +31,6 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 public class S3TableProperties implements TablePropertiesStore.Client {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
-    public static final String TABLES_PREFIX = "tables";
-
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
 
@@ -74,6 +72,6 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     }
 
     private String getS3Key(TableId tableId) {
-        return TABLES_PREFIX + "/" + tableId.getTableUniqueId();
+        return "tables/" + tableId.getTableUniqueId();
     }
 }
