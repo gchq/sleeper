@@ -31,7 +31,6 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
 import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
 public class CleanUpDeletedSleeperInstances {
@@ -56,18 +55,18 @@ public class CleanUpDeletedSleeperInstances {
     private Iterable<String> getInstanceIds() {
         CloudFormationStacks stacks = new CloudFormationStacks(clients.getCloudFormation());
         return () -> Stream.concat(
-                        instanceIdsByJarsBuckets(stacks),
-                        instanceIdsByEcrRepositories(stacks))
+                        instanceIdsByJarsBuckets(),
+                        instanceIdsByEcrRepositories())
+                .filter(instanceId -> !stacks.getStackNames().contains(instanceId))
                 .distinct().iterator();
     }
 
-    private Stream<String> instanceIdsByJarsBuckets(CloudFormationStacks stacks) {
-        return instanceIdsByJarsBuckets(stacks,
-                clients.getS3v2().listBuckets().buckets().stream().map(Bucket::name));
+    private Stream<String> instanceIdsByJarsBuckets() {
+        return instanceIdsByJarsBuckets(clients.getS3v2().listBuckets().buckets().stream().map(Bucket::name));
     }
 
-    private Stream<String> instanceIdsByEcrRepositories(CloudFormationStacks stacks) {
-        return instanceIdsByEcrRepositories(stacks, dockerImageConfiguration, allRepositoryNames());
+    private Stream<String> instanceIdsByEcrRepositories() {
+        return instanceIdsByEcrRepositories(dockerImageConfiguration, allRepositoryNames());
     }
 
     private Stream<String> allRepositoryNames() {
@@ -78,19 +77,16 @@ public class CleanUpDeletedSleeperInstances {
                 .map(Repository::getRepositoryName);
     }
 
-    public static Stream<String> instanceIdsByJarsBuckets(CloudFormationStacks stacks, Stream<String> bucketNames) {
+    public static Stream<String> instanceIdsByJarsBuckets(Stream<String> bucketNames) {
         return bucketNames
-                .filter(not(stacks::anyIn))
                 .filter(bucket -> bucket.startsWith("sleeper-") && bucket.endsWith("-jars"))
                 .map(bucket -> bucket.substring("sleeper-".length(), bucket.length() - "-jars".length()));
     }
 
     public static Stream<String> instanceIdsByEcrRepositories(
-            CloudFormationStacks stacks,
             DockerImageConfiguration dockerImageConfiguration,
             Stream<String> repositoryNames) {
         return repositoryNames
-                .filter(not(stacks::anyIn))
                 .flatMap(repo -> dockerImageConfiguration.getInstanceIdFromRepoName(repo).stream());
     }
 

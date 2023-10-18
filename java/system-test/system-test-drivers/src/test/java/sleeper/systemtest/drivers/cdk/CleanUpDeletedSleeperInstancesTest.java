@@ -19,7 +19,6 @@ package sleeper.systemtest.drivers.cdk;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.deploy.DockerImageConfiguration;
-import sleeper.clients.teardown.CloudFormationStacks;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -35,12 +34,10 @@ public class CleanUpDeletedSleeperInstancesTest {
     @Test
     void shouldGetInstanceIdsFromJarsBuckets() {
         assertThat(instanceIdsByJarsBuckets(
-                new CloudFormationStacks(List.of("active-instance")),
                 Stream.of("sleeper-an-instance-jars",
                         "not-a-jars-bucket",
                         "not-sleeper-jars",
                         "sleeper-another-instance-jars",
-                        "sleeper-active-instance-jars",
                         "sleeper-instance-config")))
                 .containsExactly("an-instance", "another-instance");
     }
@@ -48,15 +45,13 @@ public class CleanUpDeletedSleeperInstancesTest {
     @Test
     void shouldGetInstanceIdsFromEcrRepositories() {
         assertThat(instanceIdsByEcrRepositories(
-                new CloudFormationStacks(List.of("active-instance")),
                 DockerImageConfiguration.from(List.of(
                         dockerBuildImage("IngestStack", "ingest"),
                         dockerBuildxImage("CompactionStack", "compaction-job-execution"))),
                 Stream.of("an-instance/ingest",
                         "not-sleeper/something",
                         "not-an-instance",
-                        "another-instance/compaction-job-execution",
-                        "active-instance/ingest")))
+                        "another-instance/compaction-job-execution")))
                 .containsExactly("an-instance", "another-instance");
     }
 }
