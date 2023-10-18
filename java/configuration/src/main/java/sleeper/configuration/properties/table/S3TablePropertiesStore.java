@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.model.AmazonS3Exception;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -85,7 +86,8 @@ public class S3TablePropertiesStore implements TablePropertiesStore {
     @Override
     public Stream<TableId> streamAllTableIds() {
         return streamAllTables()
-                .map(TableProperties::getId);
+                .map(TableProperties::getId)
+                .sorted(Comparator.comparing(TableId::getTableName));
     }
 
     @Override

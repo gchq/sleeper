@@ -77,14 +77,16 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             // Given
             TableProperties table1 = createValidTableProperties();
             TableProperties table2 = createValidTableProperties();
+            table1.set(TABLE_NAME, "table-1");
+            table2.set(TABLE_NAME, "table-2");
             store.save(table1);
             store.save(table2);
 
             // When / Then
             assertThat(provider.streamAllTables())
-                    .containsExactlyInAnyOrder(table1, table2);
+                    .containsExactly(table1, table2);
             assertThat(provider.streamAllTableIds())
-                    .containsExactlyInAnyOrder(table1.getId(), table2.getId());
+                    .containsExactly(table1.getId(), table2.getId());
         }
 
         @Test
