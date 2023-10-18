@@ -68,7 +68,7 @@ public class AddTableIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TableIndex tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
+    private final TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
     private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     @TempDir
     private Path tempDir;

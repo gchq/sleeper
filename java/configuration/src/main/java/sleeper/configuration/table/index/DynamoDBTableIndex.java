@@ -61,7 +61,7 @@ public class DynamoDBTableIndex implements TableIndex {
     private final String nameIndexDynamoTableName;
     private final String idIndexDynamoTableName;
 
-    public DynamoDBTableIndex(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+    public DynamoDBTableIndex(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.nameIndexDynamoTableName = instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME);
         this.idIndexDynamoTableName = instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME);

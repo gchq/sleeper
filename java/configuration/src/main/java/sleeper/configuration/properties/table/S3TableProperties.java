@@ -39,7 +39,7 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     public static TablePropertiesStore getStore(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         return new TablePropertiesStore(
-                new DynamoDBTableIndex(dynamoClient, instanceProperties),
+                new DynamoDBTableIndex(instanceProperties, dynamoClient),
                 new S3TableProperties(instanceProperties, s3Client));
     }
 

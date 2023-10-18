@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableIndex store = new DynamoDBTableIndex(dynamoDBClient, instanceProperties);
+    private final TableIndex store = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
     private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @BeforeEach
