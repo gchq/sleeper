@@ -18,15 +18,20 @@ package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.PropertiesUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.table.TableId;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 
 public class S3TableProperties implements TablePropertiesStore.Client {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
+
+    public static final String TABLES_PREFIX = "tables";
 
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
@@ -45,17 +50,30 @@ public class S3TableProperties implements TablePropertiesStore.Client {
 
     @Override
     public TableProperties loadProperties(TableId tableId) {
-        return new TableProperties(instanceProperties,
-                TableProperties.loadPropertiesFromS3(s3Client, instanceProperties, tableId.getTableName()));
+        String bucket = instanceProperties.get(CONFIG_BUCKET);
+        String key = getS3Key(tableId);
+        LOGGER.info("Loading table properties from bucket {}, key {}", bucket, key);
+        String content = s3Client.getObjectAsString(bucket, key);
+        return new TableProperties(instanceProperties, PropertiesUtils.loadProperties(content));
     }
 
     @Override
     public void saveProperties(TableProperties tableProperties) {
-        tableProperties.saveToS3(s3Client);
+        String bucket = instanceProperties.get(CONFIG_BUCKET);
+        String key = getS3Key(tableProperties.getId());
+        s3Client.putObject(bucket, key, tableProperties.saveAsString());
+        LOGGER.info("Saved table properties to bucket {}, key {}", bucket, key);
     }
 
     @Override
     public void deleteProperties(TableId tableId) {
-        s3Client.deleteObject(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableId.getTableName());
+        String bucket = instanceProperties.get(CONFIG_BUCKET);
+        String key = getS3Key(tableId);
+        s3Client.deleteObject(bucket, key);
+        LOGGER.info("Deleted table properties in bucket {}, key {}", bucket, key);
+    }
+
+    private String getS3Key(TableId tableId) {
+        return TABLES_PREFIX + "/" + tableId.getTableUniqueId();
     }
 }

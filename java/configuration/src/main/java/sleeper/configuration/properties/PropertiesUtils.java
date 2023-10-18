@@ -20,7 +20,6 @@ import org.apache.commons.configuration2.convert.DisabledListDelimiterHandler;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
@@ -52,16 +51,6 @@ public class PropertiesUtils {
         Properties properties = new Properties();
         try {
             properties.load(reader);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return properties;
-    }
-
-    public static Properties loadProperties(InputStream inputStream) {
-        Properties properties = new Properties();
-        try {
-            properties.load(inputStream);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

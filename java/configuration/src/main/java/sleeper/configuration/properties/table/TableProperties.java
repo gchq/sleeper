@@ -15,7 +15,6 @@
  */
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -38,7 +37,6 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -48,7 +46,6 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class TableProperties extends SleeperProperties<TableProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
-    public static final String TABLES_PREFIX = "tables";
     // Schema is cached for faster access
     private Schema schema;
     private final InstanceProperties instanceProperties; // Used for default properties
@@ -130,24 +127,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     public void setSchema(Schema schema) {
         this.schema = schema;
         set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
-    }
-
-    public void saveToS3(AmazonS3 s3Client) {
-        super.saveToS3(s3Client, instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + get(TableProperty.TABLE_NAME));
-        LOGGER.info("Saved table properties to bucket {}, key {}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + get(TABLE_NAME));
-    }
-
-    public void loadFromS3(AmazonS3 s3Client, String tableName) {
-        loadFromString(loadStringFromS3(s3Client, instanceProperties, tableName));
-    }
-
-    public static Properties loadPropertiesFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
-        return loadProperties(loadStringFromS3(s3Client, instanceProperties, tableName));
-    }
-
-    private static String loadStringFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
-        LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
-        return s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
     }
 
     @Override
