@@ -57,9 +57,14 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             assertThat(provider.getTablePropertiesIfExists(tableName))
                     .isEmpty();
         }
+    }
+
+    @Nested
+    @DisplayName("Load all tables")
+    class LoadAllTables {
 
         @Test
-        void shouldLoadMultipleTables() {
+        void shouldLoadAllTables() {
             // Given
             TableProperties table1 = createValidTableProperties();
             TableProperties table2 = createValidTableProperties();
