@@ -25,12 +25,12 @@ import java.util.Optional;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 
-public class InMemoryTableProperties implements TablePropertiesStoreNew.Client {
+public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
     private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
 
     public static TablePropertiesStore getStore() {
-        return new TablePropertiesStoreNew(new InMemoryTableIndex(), new InMemoryTableProperties());
+        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties());
     }
 
     @Override

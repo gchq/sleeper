@@ -26,7 +26,7 @@ import sleeper.core.table.TableId;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 
-public class S3TableProperties implements TablePropertiesStoreNew.Client {
+public class S3TableProperties implements TablePropertiesStore.Client {
 
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
@@ -36,9 +36,9 @@ public class S3TableProperties implements TablePropertiesStoreNew.Client {
         this.s3Client = s3Client;
     }
 
-    public static TablePropertiesStoreNew getStore(
+    public static TablePropertiesStore getStore(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
-        return new TablePropertiesStoreNew(
+        return new TablePropertiesStore(
                 new DynamoDBTableIndex(dynamoClient, instanceProperties),
                 new S3TableProperties(instanceProperties, s3Client));
     }

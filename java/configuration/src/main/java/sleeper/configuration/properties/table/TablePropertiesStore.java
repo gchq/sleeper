@@ -17,33 +17,79 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIndex;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public interface TablePropertiesStore {
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-    TableProperties loadProperties(TableId tableId);
+public class TablePropertiesStore {
 
-    Optional<TableProperties> loadByName(String tableName);
+    private static final TableIdGenerator ID_GENERATOR = new TableIdGenerator();
 
-    Optional<TableProperties> loadByNameNoValidation(String tableName);
+    private final TableIndex tableIndex;
+    private final Client client;
 
-    Stream<TableProperties> streamAllTables();
-
-    Stream<TableId> streamAllTableIds();
-
-    default List<String> listTableNames() {
-        return streamAllTableIds().map(TableId::getTableName).collect(Collectors.toUnmodifiableList());
+    public TablePropertiesStore(TableIndex tableIndex, Client client) {
+        this.tableIndex = tableIndex;
+        this.client = client;
     }
 
-    default List<TableId> listTableIds() {
-        return streamAllTableIds().collect(Collectors.toUnmodifiableList());
+    public TableProperties loadProperties(TableId tableId) {
+        TableProperties tableProperties = client.loadProperties(tableId);
+        tableProperties.validate();
+        return tableProperties;
     }
 
-    void save(TableProperties tableProperties);
+    public Optional<TableProperties> loadByName(String tableName) {
+        return tableIndex.getTableByName(tableName)
+                .map(this::loadProperties);
+    }
 
-    void deleteByName(String tableName);
+    public Optional<TableProperties> loadByNameNoValidation(String tableName) {
+        return tableIndex.getTableByName(tableName)
+                .map(client::loadProperties);
+    }
+
+    public Stream<TableProperties> streamAllTables() {
+        return streamAllTableIds().map(this::loadProperties);
+    }
+
+    public Stream<TableId> streamAllTableIds() {
+        return tableIndex.streamAllTables();
+    }
+
+    public void save(TableProperties tableProperties) {
+        String tableName = tableProperties.get(TABLE_NAME);
+        Optional<TableId> existingId = tableIndex.getTableByName(tableName);
+        if (existingId.isPresent()) {
+            tableProperties.set(TABLE_ID, existingId.get().getTableUniqueId());
+            client.saveProperties(tableProperties);
+        } else {
+            if (!tableProperties.isSet(TABLE_ID)) {
+                tableProperties.set(TABLE_ID, ID_GENERATOR.generateString());
+            }
+            client.saveProperties(tableProperties);
+            tableIndex.create(tableProperties.getId());
+        }
+    }
+
+    public void deleteByName(String tableName) {
+        tableIndex.getTableByName(tableName)
+                .ifPresent(tableId -> {
+                    tableIndex.delete(tableId);
+                    client.deleteProperties(tableId);
+                });
+    }
+
+    public interface Client {
+        TableProperties loadProperties(TableId tableId);
+
+        void saveProperties(TableProperties tableProperties);
+
+        void deleteProperties(TableId tableId);
+    }
 }
