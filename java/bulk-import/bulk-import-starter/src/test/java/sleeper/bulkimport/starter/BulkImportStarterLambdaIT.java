@@ -168,7 +168,8 @@ public class BulkImportStarterLambdaIT {
         @Test
         void shouldReportValidationFailureIfFileDoesNotExist() {
             // Given
-            SQSEvent event = getSqsEvent(jobWithFiles("test-bucket/test-dir"));
+            String json = jobJsonWithFiles("test-bucket/test-dir");
+            SQSEvent event = getSqsEvent(json);
 
             // When
             bulkImportStarter.handleRequest(event, mock(Context.class));
@@ -177,17 +178,17 @@ public class BulkImportStarterLambdaIT {
             verify(executor, times(0)).runJob(any());
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("id",
-                            rejectedRun(jobWithFiles("test-bucket/not-a-file"),
-                                    validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
 
         @Test
         void shouldReportValidationFailureWhenOneFileExistsAndOneDoesNotExist() {
             // Given
             uploadFileToS3("test-file.parquet");
-            SQSEvent event = getSqsEvent(jobWithFiles(
+            String json = jobJsonWithFiles(
                     "test-bucket/test-file.parquet",
-                    "test-bucket/not-a-file"));
+                    "test-bucket/not-a-file");
+            SQSEvent event = getSqsEvent(json);
 
             // When
             bulkImportStarter.handleRequest(event, mock(Context.class));
@@ -196,10 +197,7 @@ public class BulkImportStarterLambdaIT {
             verify(executor, times(0)).runJob(any());
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("id",
-                            rejectedRun(jobWithFiles(
-                                            "test-bucket/test-file.parquet",
-                                            "test-bucket/not-a-file"),
-                                    validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
     }
 
@@ -210,23 +208,55 @@ public class BulkImportStarterLambdaIT {
         BulkImportExecutor executor = mock(BulkImportExecutor.class);
         BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
                 new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore());
-        SQSEvent event = getSqsEvent(jobWithFiles("test-bucket/test-1.parquet"));
+        BulkImportJob job = jobWithFiles("test-bucket/test-1.parquet");
+        SQSEvent event = getSqsEvent(job);
 
         // When
         bulkImportStarter.handleRequest(event, mock(Context.class));
 
         // Then
-        verify(executor, times(1)).runJob(any());
+        verify(executor, times(1)).runJob(job);
+    }
+
+    @Test
+    void shouldSetJobIdToUUIDIfNotSetByUser() {
+        // Given
+        uploadFileToS3("test-1.parquet");
+        BulkImportExecutor executor = mock(BulkImportExecutor.class);
+        BulkImportStarterLambda bulkImportStarter = new BulkImportStarterLambda(executor,
+                new InstanceProperties(), createHadoopConfiguration(), new WriteToMemoryIngestJobStatusStore(),
+                () -> "test-job", Instant::now);
+        BulkImportJob job = BulkImportJob.builder()
+                .tableName("test-table").files(List.of("test-bucket/test-1.parquet"))
+                .build();
+        SQSEvent event = getSqsEvent(job);
+
+        // When
+        bulkImportStarter.handleRequest(event, mock(Context.class));
+
+        // Then
+        verify(executor, times(1)).runJob(BulkImportJob.builder()
+                .id("test-job").tableName("test-table")
+                .files(List.of("test-bucket/test-1.parquet"))
+                .build());
     }
 
     private SQSEvent getSqsEvent(BulkImportJob importJob) {
         BulkImportJobSerDe jobSerDe = new BulkImportJobSerDe();
-        String jsonQuery = jobSerDe.toJson(importJob);
-        return BulkImportStarterLambdaTestHelper.getSqsEvent(jsonQuery);
+        return getSqsEvent(jobSerDe.toJson(importJob));
     }
 
-    private static ProcessRun rejectedRun(BulkImportJob job, Instant validationTime, String... reasons) {
-        return IngestJobStatusTestData.rejectedRun(job.toIngestJob(), validationTime, reasons);
+    private SQSEvent getSqsEvent(String json) {
+        return BulkImportStarterLambdaTestHelper.getSqsEvent(json);
+    }
+
+    private static String jobJsonWithFiles(String... files) {
+        BulkImportJobSerDe jobSerDe = new BulkImportJobSerDe();
+        return jobSerDe.toJson(jobWithFiles(files));
+    }
+
+    private static ProcessRun rejectedRun(String jobId, String json, Instant validationTime, String... reasons) {
+        return IngestJobStatusTestData.rejectedRun(jobId, json, validationTime, reasons);
     }
 
     private static BulkImportJob jobWithFiles(String... files) {

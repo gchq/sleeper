@@ -209,24 +209,6 @@ class StateMachinePlatformExecutorTest {
     }
 
     @Test
-    void shouldSetJobIdToUUIDIfNotSetByUser() {
-        // Given
-        instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
-        BulkImportExecutor stateMachineExecutor = createExecutorWithDefaults();
-        BulkImportJob myJob = new BulkImportJob.Builder()
-                .files(Lists.newArrayList("file1.parquet"))
-                .tableName("myTable")
-                .build();
-
-        // When
-        stateMachineExecutor.runJob(myJob);
-
-        // Then
-        assertThatJson(requested.get().getInput())
-                .inPath("$.job.id").isString().isNotBlank();
-    }
-
-    @Test
     void shouldPassConfigBucketAndJobIdsToSparkArgs() {
         // Given
         instanceProperties.set(CONFIG_BUCKET, "myConfigBucket");

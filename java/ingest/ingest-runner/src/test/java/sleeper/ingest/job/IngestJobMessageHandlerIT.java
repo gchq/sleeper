@@ -53,8 +53,11 @@ public class IngestJobMessageHandlerIT {
     private final InstanceProperties properties = new InstanceProperties();
     private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-    private final IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
-            createHadoopConfiguration(), properties, ingestJobStatusStore, () -> "invalid-job", () -> validationTime);
+    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
+                    properties, createHadoopConfiguration(), ingestJobStatusStore)
+            .jobIdSupplier(() -> "job-id")
+            .timeSupplier(() -> validationTime)
+            .build();
 
     private AmazonS3 createS3Client() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -87,12 +90,11 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(
-                            "test-bucket/test-dir/test-1.parquet"));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir/test-1.parquet"));
         }
 
         @Test
@@ -108,13 +110,12 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(
-                            "test-bucket/test-dir/test-1.parquet",
-                            "test-bucket/test-dir/test-2.parquet"));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir/test-1.parquet",
+                    "test-bucket/test-dir/test-2.parquet"));
         }
 
         @Test
@@ -129,12 +130,11 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(
-                            "test-bucket/test-dir/nested-dir/test-1.parquet"));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir/nested-dir/test-1.parquet"));
         }
 
         @Test
@@ -151,13 +151,12 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(
-                            "test-bucket/test-dir-1/test-1.parquet",
-                            "test-bucket/test-dir-2/test-2.parquet"));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir-1/test-1.parquet",
+                    "test-bucket/test-dir-2/test-2.parquet"));
         }
     }
 
@@ -175,14 +174,13 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(job).isNotPresent();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("id",
-                            rejectedRun(jobWithFiles("test-bucket/not-a-file"),
-                                    validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
 
         @Test
@@ -198,16 +196,13 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(job).isNotPresent();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("id",
-                            rejectedRun(jobWithFiles(
-                                            "test-bucket/test-file.parquet",
-                                            "test-bucket/not-a-file"),
-                                    validationTime, "Could not find one or more files")));
+                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
     }
 
