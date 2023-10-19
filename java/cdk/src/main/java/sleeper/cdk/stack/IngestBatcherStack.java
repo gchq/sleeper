@@ -62,7 +62,6 @@ import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_B
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_DLQ_ARN;
@@ -81,6 +80,7 @@ public class IngestBatcherStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
+            CoreStacks coreStacks,
             IngestStack ingestStack,
             EmrBulkImportStack emrBulkImportStack,
             PersistentEmrBulkImportStack persistentEmrBulkImportStack,
@@ -129,7 +129,6 @@ public class IngestBatcherStack extends NestedStack {
 
         // Lambdas to receive submitted files and create batches
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
         LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
@@ -155,7 +154,7 @@ public class IngestBatcherStack extends NestedStack {
 
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
-        configBucket.grantRead(submitterLambda);
+        coreStacks.grantReadTablesConfig(submitterLambda);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(submitterLambda));
 
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
@@ -171,7 +170,7 @@ public class IngestBatcherStack extends NestedStack {
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);
-        configBucket.grantRead(jobCreatorLambda);
+        coreStacks.grantReadTablesConfig(jobCreatorLambda);
         ingestQueues(ingestStack, emrBulkImportStack, persistentEmrBulkImportStack, eksBulkImportStack, emrServerlessBulkImportStack)
                 .forEach(queue -> queue.grantSendMessages(jobCreatorLambda));
 

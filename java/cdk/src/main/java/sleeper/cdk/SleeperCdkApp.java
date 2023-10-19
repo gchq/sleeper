@@ -26,7 +26,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.CompactionStack;
-import sleeper.cdk.stack.ConfigurationStack;
+import sleeper.cdk.stack.ConfigBucketStack;
 import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
@@ -69,7 +69,6 @@ public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
-    private TableDataStack dataStack;
     private CoreStacks coreStacks;
     private IngestStack ingestStack;
     private CompactionStack compactionStack;
@@ -81,7 +80,6 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
-    private StateStoreStacks stateStoreStacks;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -122,12 +120,12 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
-        dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        stateStoreStacks = new StateStoreStacks(
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties);
+        StateStoreStacks stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
         coreStacks = new CoreStacks(
-                new ConfigurationStack(this, "Configuration", instanceProperties),
+                new ConfigBucketStack(this, "Configuration", instanceProperties),
                 new TableIndexStack(this, "TableIndex", instanceProperties),
                 stateStoreStacks, dataStack);
         new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
@@ -235,7 +233,7 @@ public class SleeperCdkApp extends Stack {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack,
+                    coreStacks,
                     topicStack.getTopic(),
                     ingestStatusStoreStack);
         }
@@ -243,7 +241,7 @@ public class SleeperCdkApp extends Stack {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
             new IngestBatcherStack(this, "IngestBatcher",
-                    instanceProperties, jars,
+                    instanceProperties, jars, coreStacks,
                     ingestStack, emrBulkImportStack, persistentEmrBulkImportStack,
                     eksBulkImportStack, emrServerlessBulkImportStack);
         }
@@ -270,15 +268,7 @@ public class SleeperCdkApp extends Stack {
         return ingestStack;
     }
 
-    public StateStoreStacks getStateStoreStacks() {
-        return stateStoreStacks;
-    }
-
-    public TableDataStack getDataStack() {
-        return dataStack;
-    }
-
-    public CoreStacks getTableStacks() {
+    public CoreStacks getCoreStacks() {
         return coreStacks;
     }
 
@@ -301,7 +291,7 @@ public class SleeperCdkApp extends Stack {
 
     protected void generateProperties() {
         // Stack for writing properties
-        new PropertiesStack(this, "Properties", instanceProperties, jars);
+        new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
     }
 
     public static void main(String[] args) {

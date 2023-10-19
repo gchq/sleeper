@@ -20,49 +20,53 @@ import software.amazon.awscdk.services.iam.IGrantable;
 
 public class CoreStacks {
 
-    private final ConfigurationStack configurationStack;
+    private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
 
-    public CoreStacks(ConfigurationStack configurationStack, TableIndexStack tableIndexStack,
+    public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
-        this.configurationStack = configurationStack;
+        this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
     }
 
     public void grantReadInstanceConfig(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
+    }
+
+    public void grantWriteInstanceConfig(IGrantable grantee) {
+        configBucketStack.grantWrite(grantee);
     }
 
     public void grantReadTablesConfig(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
     }
 
     public void grantReadTablesAndData(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
         dataStack.grantRead(grantee);
     }
 
     public void grantReadTablesMetadata(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
     }
 
     public void grantReadConfigAndPartitions(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
     }
 
     public void grantIngest(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         dataStack.grantReadWrite(grantee);
@@ -82,27 +86,27 @@ public class CoreStacks {
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWriteReadyForGCFiles(grantee);
         dataStack.grantReadDelete(grantee);
     }
 
     public void grantCreateCompactionJobs(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
     }
 
     public void grantRunCompactionJobs(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
         dataStack.grantReadWrite(grantee);
     }
 
     public void grantSplitPartitions(IGrantable grantee) {
-        configurationStack.grantRead(grantee);
+        configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWritePartitions(grantee);
         dataStack.grantRead(grantee);

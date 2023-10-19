@@ -37,11 +37,11 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
  * This configuration stack deploys the config bucket used to store the Sleeper
  * properties.
  */
-public class ConfigurationStack extends NestedStack {
+public class ConfigBucketStack extends NestedStack {
 
     private final IBucket configBucket;
 
-    public ConfigurationStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
@@ -62,5 +62,9 @@ public class ConfigurationStack extends NestedStack {
 
     public void grantRead(IGrantable grantee) {
         configBucket.grantRead(grantee);
+    }
+
+    public void grantWrite(IGrantable grantee) {
+        configBucket.grantWrite(grantee);
     }
 }
