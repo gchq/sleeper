@@ -41,29 +41,4 @@ class BulkImportJobTest {
                         .files(List.of("test1.parquet", "test2.parquet"))
                         .tableName("test-table").build());
     }
-
-    @Test
-    void shouldGenerateIdForBulkImportJobWhenNoneProvided() {
-        // Given
-        BulkImportJob bulkImportJob = new BulkImportJob.Builder()
-                .files(List.of("test1.parquet", "test2.parquet"))
-                .tableName("test-table")
-                .build();
-
-        // When/Then
-        assertThat(bulkImportJob.getId()).isNotNull();
-    }
-
-    @Test
-    void shouldPropagateGeneratedIdToIngestJob() {
-        // Given
-        BulkImportJob bulkImportJob = new BulkImportJob.Builder()
-                .files(List.of("test1.parquet", "test2.parquet"))
-                .tableName("test-table")
-                .build();
-
-        // When/Then
-        assertThat(bulkImportJob.toIngestJob().getId())
-                .isEqualTo(bulkImportJob.getId());
-    }
 }

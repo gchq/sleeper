@@ -84,6 +84,30 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
             assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
         }
+
+        @Test
+        void shouldGenerateIdWhenEmpty() {
+            // Given
+            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+                    .jobIdSupplier(() -> "test-job-id")
+                    .build();
+            String json = "{" +
+                    "\"id\":\"\"," +
+                    "\"tableName\":\"test-table\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json))
+                    .contains(IngestJob.builder()
+                            .id("test-job-id")
+                            .tableName("test-table")
+                            .files("file1.parquet", "file2.parquet")
+                            .build());
+            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+        }
     }
 
     @Nested
