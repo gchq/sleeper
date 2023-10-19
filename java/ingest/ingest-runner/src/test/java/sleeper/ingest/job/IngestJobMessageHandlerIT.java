@@ -34,11 +34,14 @@ import sleeper.core.CommonTestConstants;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
+import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {
@@ -48,6 +51,13 @@ public class IngestJobMessageHandlerIT {
             .withServices(LocalStackContainer.Service.S3);
     private final AmazonS3 s3Client = createS3Client();
     private final InstanceProperties properties = new InstanceProperties();
+    private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
+    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
+                    properties, createHadoopConfiguration(), ingestJobStatusStore)
+            .jobIdSupplier(() -> "job-id")
+            .timeSupplier(() -> validationTime)
+            .build();
 
     private AmazonS3 createS3Client() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -68,10 +78,6 @@ public class IngestJobMessageHandlerIT {
     @Nested
     @DisplayName("Expand directories")
     class ExpandDirectories {
-        IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-        IngestJobMessageHandler ingestJobMessageHandler = new IngestJobMessageHandler(
-                createHadoopConfiguration(), properties, ingestJobStatusStore);
-
         @Test
         void shouldExpandDirectoryWithOneFileInside() {
             // Given
@@ -84,12 +90,11 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(List.of(
-                            "test-bucket/test-dir/test-1.parquet")));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir/test-1.parquet"));
         }
 
         @Test
@@ -105,13 +110,12 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(List.of(
-                            "test-bucket/test-dir/test-1.parquet",
-                            "test-bucket/test-dir/test-2.parquet")));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir/test-1.parquet",
+                    "test-bucket/test-dir/test-2.parquet"));
         }
 
         @Test
@@ -126,12 +130,11 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(List.of(
-                            "test-bucket/test-dir/nested-dir/test-1.parquet")));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir/nested-dir/test-1.parquet"));
         }
 
         @Test
@@ -148,30 +151,58 @@ public class IngestJobMessageHandlerIT {
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
-            assertThat(job).get()
-                    .isEqualTo(jobWithFiles(List.of(
-                            "test-bucket/test-dir-1/test-1.parquet",
-                            "test-bucket/test-dir-2/test-2.parquet")));
+            assertThat(job).contains(jobWithFiles(
+                    "test-bucket/test-dir-1/test-1.parquet",
+                    "test-bucket/test-dir-2/test-2.parquet"));
         }
+    }
 
+    @Nested
+    @DisplayName("Report validation failures")
+    class ReportValidationFailures {
         @Test
-        void shouldNotDeserialiseIfDirectoryOrFileDoesNotExist() {
+        void shouldReportValidationFailureIfFileDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"id\":\"id\"," +
-                    "\"tableName\":\"test-table\"," +
-                    "\"files\":[" +
-                    "   \"test-bucket/unknown-dir\"" +
+                    "\"id\": \"id\"," +
+                    "\"tableName\": \"system-test\"," +
+                    "\"files\": [" +
+                    "    \"test-bucket/not-a-file\"" +
                     "]}";
 
             // When
-            Optional<IngestJob> job = ingestJobMessageHandler.handleMessage(json);
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(job).isNotPresent();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(jobStatus("id",
+                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
+        }
+
+        @Test
+        void shouldReportValidationFailureWhenOneFileExistsAndOneDoesNotExist() {
+            // Given
+            uploadFileToS3("test-file.parquet");
+            String json = "{" +
+                    "\"id\": \"id\"," +
+                    "\"tableName\": \"system-test\"," +
+                    "\"files\": [" +
+                    "    \"test-bucket/test-file.parquet\"," +
+                    "    \"test-bucket/not-a-file\"" +
+                    "]}";
+
+            // When
+            Optional<IngestJob> job = ingestJobMessageHandler.deserialiseAndValidate(json);
+
+            // Then
+            assertThat(job).isNotPresent();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(jobStatus("id",
+                            rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
     }
 
@@ -179,9 +210,9 @@ public class IngestJobMessageHandlerIT {
         s3Client.putObject(TEST_BUCKET, filePath, "test");
     }
 
-    private static IngestJob jobWithFiles(List<String> files) {
+    private static IngestJob jobWithFiles(String... files) {
         return IngestJob.builder()
-                .id("id").tableName("test-table").files(files).build();
+                .id("id").tableName("test-table").files(List.of(files)).build();
     }
 
     private static Configuration createHadoopConfiguration() {
