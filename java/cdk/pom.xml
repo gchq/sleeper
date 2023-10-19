@@ -38,6 +38,11 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>compaction-status-store</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
