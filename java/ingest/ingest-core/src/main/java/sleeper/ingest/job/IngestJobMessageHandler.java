@@ -69,7 +69,7 @@ public class IngestJobMessageHandler<T> {
             job = deserialiser.apply(message);
             LOGGER.info("Deserialised message to ingest job {}", job);
         } catch (RuntimeException e) {
-            LOGGER.warn("Deserialisation failed", e);
+            LOGGER.warn("Deserialisation failed for message: {}", message, e);
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(jobIdSupplier.get(), message, timeSupplier.get(),
                             "Error parsing JSON. Reason: " + Optional.ofNullable(e.getCause()).orElse(e).getMessage()));
