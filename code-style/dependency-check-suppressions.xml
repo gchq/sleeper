@@ -92,7 +92,7 @@
 
         All the Zookeeper communication takes place within a Spark cluster, so this shouldn't be a serious problem.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.zookeeper/[zookeeper|zookeeper\-jute]@3.6.3$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.zookeeper/(zookeeper|zookeeper\-jute)@3.6.3$</packageUrl>
         <vulnerabilityName>CVE-2023-44981</vulnerabilityName>
     </suppress>
     <suppress>
