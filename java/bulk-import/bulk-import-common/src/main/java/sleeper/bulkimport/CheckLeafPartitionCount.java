@@ -21,10 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.statestore.StateStoreProvider;
 
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 
@@ -35,10 +33,7 @@ public class CheckLeafPartitionCount {
     }
 
     public static boolean hasMinimumPartitions(
-            StateStoreProvider stateStoreProvider, TablePropertiesProvider tablePropertiesProvider, BulkImportJob job) {
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
-
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+            TableProperties tableProperties, StateStore stateStore, BulkImportJob job) {
         int leafPartitionCount;
         try {
             leafPartitionCount = stateStore.getLeafPartitions().size();

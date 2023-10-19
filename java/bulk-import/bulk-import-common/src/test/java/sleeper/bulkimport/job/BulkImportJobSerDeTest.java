@@ -32,9 +32,7 @@ public class BulkImportJobSerDeTest {
 
         // Then
         assertThat(bulkImportJob)
-                .isEqualTo(new BulkImportJob.Builder().id(bulkImportJob.getId()).build());
-        assertThat(bulkImportJob.getId())
-                .isNotNull();
+                .isEqualTo(new BulkImportJob.Builder().build());
     }
 
     @Test

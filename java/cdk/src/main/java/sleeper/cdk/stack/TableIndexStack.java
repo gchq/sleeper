@@ -73,7 +73,10 @@ public class TableIndexStack extends NestedStack {
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
 
         addIngestSourceRoleReferences(this, "TableIndexReaderForIngest", instanceProperties)
-                .forEach(this::grantRead);
+                .forEach(role -> {
+                    indexByNameDynamoTable.grantReadData(role);
+                    indexByIdDynamoTable.grantReadData(role);
+                });
     }
 
     public void grantRead(IGrantable grantee) {
