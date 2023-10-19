@@ -37,6 +37,7 @@ import sleeper.job.common.action.ActionException;
 import sleeper.job.common.action.DeleteMessageAction;
 import sleeper.job.common.action.MessageReference;
 import sleeper.job.common.action.thread.PeriodicActionRunnable;
+import sleeper.utils.HadoopPathUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -61,7 +62,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
     private final String sqsJobQueueUrl;
     private final int keepAlivePeriod;
     private final int visibilityTimeoutInSeconds;
-    private final IngestJobMessageHandler ingestJobMessageHandler;
+    private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler;
 
     public IngestJobQueueConsumer(AmazonSQS sqsClient,
                                   AmazonCloudWatch cloudWatchClient,
@@ -74,7 +75,16 @@ public class IngestJobQueueConsumer implements IngestJobSource {
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = new IngestJobMessageHandler(configuration, instanceProperties, ingestJobStatusStore);
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, ingestJobStatusStore).build();
+    }
+
+    public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
+            InstanceProperties instanceProperties,
+            Configuration configuration,
+            IngestJobStatusStore ingestJobStatusStore) {
+        return IngestJobMessageHandler.forIngestJob()
+                .ingestJobStatusStore(ingestJobStatusStore)
+                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, configuration, instanceProperties));
     }
 
     @Override
@@ -90,7 +100,7 @@ public class IngestJobQueueConsumer implements IngestJobSource {
                 break;
             }
             LOGGER.info("Received message {}", messages.get(0).getBody());
-            Optional<IngestJob> ingestJob = ingestJobMessageHandler.handleMessage(messages.get(0).getBody());
+            Optional<IngestJob> ingestJob = ingestJobMessageHandler.deserialiseAndValidate(messages.get(0).getBody());
             if (ingestJob.isPresent()) {
                 long recordsWritten = ingest(ingestJob.get(), messages.get(0).getReceiptHandle(), runJob);
                 LOGGER.info("{} records were written", recordsWritten);

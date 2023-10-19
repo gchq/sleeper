@@ -26,11 +26,6 @@
     <artifactId>bulk-import-starter</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>bulk-import-common</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
         <!-- AWS Dependencies -->
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -56,6 +51,17 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>emrserverless</artifactId>
             <version>${aws-java-sdk-v2.version}</version>
+        </dependency>
+        <!-- Sleeper Dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>bulk-import-common</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>

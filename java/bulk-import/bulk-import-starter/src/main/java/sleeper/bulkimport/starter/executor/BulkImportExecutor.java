@@ -19,10 +19,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.bulkimport.CheckLeafPartitionCount;
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.job.BulkImportJobSerDe;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.StateStore;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreProvider;
 
@@ -34,7 +37,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static sleeper.bulkimport.CheckLeafPartitionCount.hasMinimumPartitions;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
@@ -92,24 +94,18 @@ public class BulkImportExecutor {
     private boolean validateJob(BulkImportJob bulkImportJob) {
         List<String> failedChecks = new ArrayList<>();
         String id = bulkImportJob.getId();
-        if (null == id) {
-            String newId = UUID.randomUUID().toString();
-            LOGGER.info("Bulk import job has null id, setting id to {}", newId);
-            bulkImportJob.setId(newId);
-        } else {
-            if (!LOWER_ALPHANUMERICS_AND_DASHES.test(id)) {
-                failedChecks.add("Job Ids must only contain lowercase alphanumerics and dashes.");
-            }
-            if (id.length() > 63) {
-                failedChecks.add("Job IDs are only allowed to be up to 63 characters long.");
-            }
+        if (!LOWER_ALPHANUMERICS_AND_DASHES.test(id)) {
+            failedChecks.add("Job Ids must only contain lowercase alphanumerics and dashes.");
+        }
+        if (id.length() > 63) {
+            failedChecks.add("Job IDs are only allowed to be up to 63 characters long.");
         }
 
         if (null == bulkImportJob.getTableName()) {
             failedChecks.add("The table name must be set to a non-null value.");
         } else if (!doesTableExist(bulkImportJob.getTableName())) {
             failedChecks.add("Table does not exist.");
-        } else if (!hasMinimumPartitions(stateStoreProvider, tablePropertiesProvider, bulkImportJob)) {
+        } else if (!hasMinimumPartitions(bulkImportJob)) {
             failedChecks.add("The minimum partition count was not reached");
         }
 
@@ -139,6 +135,12 @@ public class BulkImportExecutor {
             LOGGER.warn("Could not find properties for table");
         }
         return false;
+    }
+
+    private boolean hasMinimumPartitions(BulkImportJob bulkImportJob) {
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        return CheckLeafPartitionCount.hasMinimumPartitions(tableProperties, stateStore, bulkImportJob);
     }
 
     private void writeJobToJSONFile(BulkImportJob bulkImportJob, String jobRunID) {

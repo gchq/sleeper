@@ -18,84 +18,55 @@ package sleeper.bulkimport.job;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.ingest.job.IngestJob;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * POJO containing information needed to run a bulk import job.
  */
 public class BulkImportJob {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportJob.class);
-    private String className;
-    private List<String> files;
-    private String id;
-    private String tableName;
+    private final String id;
+    private final String tableName;
+    private final List<String> files;
+    private final String className;
+    private final Map<String, String> platformSpec;
     private Map<String, String> sparkConf;
-    private Map<String, String> platformSpec;
 
     private BulkImportJob(Builder builder) {
-        if (builder.id == null || builder.id.isEmpty()) {
-            id = UUID.randomUUID().toString();
-            LOGGER.info("Null or empty id provided. Generated new id: {}", id);
-        } else {
-            id = builder.id;
-        }
-        this.className = builder.className;
-        this.files = builder.files;
-        this.sparkConf = builder.sparkConf;
+        this.id = builder.id;
         this.tableName = builder.tableName;
+        this.files = builder.files;
+        this.className = builder.className;
         this.platformSpec = builder.platformSpec;
+        this.sparkConf = builder.sparkConf;
     }
 
     public static BulkImportJob.Builder builder() {
         return new Builder();
     }
 
-    public BulkImportJob validate() {
-        if (id == null || id.isEmpty()) {
-            id = UUID.randomUUID().toString();
-            LOGGER.info("Null or empty id provided. Generated new id: {}", id);
-        }
-        return this;
+    public String getId() {
+        return id;
     }
 
     public String getTableName() {
         return tableName;
     }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
+    public List<String> getFiles() {
+        return files;
     }
 
     public String getClassName() {
         return className;
     }
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public List<String> getFiles() {
-        return files;
-    }
-
-    public void setFiles(List<String> files) {
-        this.files = files;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public Map<String, String> getPlatformSpec() {
+        return platformSpec;
     }
 
     public Map<String, String> getSparkConf() {
@@ -106,21 +77,13 @@ public class BulkImportJob {
         this.sparkConf = sparkConf;
     }
 
-    public Map<String, String> getPlatformSpec() {
-        return platformSpec;
-    }
-
-    public void setPlatformSpec(Map<String, String> platformSpec) {
-        this.platformSpec = platformSpec;
-    }
-
     public IngestJob toIngestJob() {
         return IngestJob.builder().files(files).id(id).tableName(tableName).build();
     }
 
-    public Builder toBuilder() {
-        return builder().id(id).files(files).tableName(tableName)
-                .className(className).platformSpec(platformSpec).sparkConf(sparkConf);
+    public BulkImportJob applyIngestJobChanges(IngestJob job) {
+        return builder().id(job.getId()).files(job.getFiles()).tableName(job.getTableName())
+                .className(className).platformSpec(platformSpec).sparkConf(sparkConf).build();
     }
 
     @Override
@@ -215,15 +178,6 @@ public class BulkImportJob {
 
         public Builder platformSpec(Map<String, String> platformSpec) {
             this.platformSpec = platformSpec;
-            return this;
-        }
-
-        public Builder platformSpec(String key, String value) {
-            if (this.platformSpec == null) {
-                this.platformSpec = new HashMap<>();
-            }
-            this.platformSpec.put(key, value);
-
             return this;
         }
 
