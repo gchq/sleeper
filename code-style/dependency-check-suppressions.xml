@@ -87,6 +87,16 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
+        The version of Spark we're using uses an old version of Zookeeper, and to get a fixed version we'd need a
+        significant upgrade.
+
+        All the Zookeeper communication takes place within a Spark cluster, so this shouldn't be a serious problem.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.zookeeper/(zookeeper|zookeeper\-jute)@3.6.3$</packageUrl>
+        <vulnerabilityName>CVE-2023-44981</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
         The version of Athena we're using uses an old version of Bouncy Castle Provider, with an old Maven artifact that
         doesn't have a fixed version.
         ]]></notes>
@@ -183,5 +193,15 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Netty is a dependency for Spark, Athena, and AWS clients, eg. for S3.
+
+        This is about the HTTP/2 rapid reset vulnerability. We don't expose an HTTP server publicly, so this shouldn't
+        be a problem for us.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-44487</vulnerabilityName>
     </suppress>
 </suppressions>

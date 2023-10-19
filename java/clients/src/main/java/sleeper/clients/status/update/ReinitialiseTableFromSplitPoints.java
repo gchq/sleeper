@@ -19,29 +19,18 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.PartitionsFromSplitPoints;
-import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+
+import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
 
 /**
  * A utility class to reinitialise a table. It deletes all the data in the table
@@ -67,47 +56,8 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
 
     @Override
     protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
-        List<Object> splitPoints = calculateSplitPoints(tableProperties);
+        List<Object> splitPoints = readSplitPoints(tableProperties, splitPointsFileLocation, splitPointStringsBase64Encoded);
         stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
-    }
-
-    private List<Object> calculateSplitPoints(TableProperties tableProperties) throws IOException {
-        List<Object> splitPoints = null;
-        if (splitPointsFileLocation != null && !splitPointsFileLocation.isEmpty()) {
-            splitPoints = new ArrayList<>();
-
-            PrimitiveType rowKey1Type = tableProperties.getSchema().getRowKeyTypes().get(0);
-            List<String> lines = new ArrayList<>();
-            try (InputStream inputStream = new FileInputStream(splitPointsFileLocation);
-                 Reader tempReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                 BufferedReader reader = new BufferedReader(tempReader)) {
-                String lineFromFile = reader.readLine();
-                while (null != lineFromFile) {
-                    lines.add(lineFromFile);
-                    lineFromFile = reader.readLine();
-                }
-            }
-            for (String line : lines) {
-                if (rowKey1Type instanceof IntType) {
-                    splitPoints.add(Integer.parseInt(line));
-                } else if (rowKey1Type instanceof LongType) {
-                    splitPoints.add(Long.parseLong(line));
-                } else if (rowKey1Type instanceof StringType) {
-                    if (splitPointStringsBase64Encoded) {
-                        byte[] encodedString = Base64.decodeBase64(line);
-                        splitPoints.add(new String(encodedString, StandardCharsets.UTF_8));
-                    } else {
-                        splitPoints.add(line);
-                    }
-                } else if (rowKey1Type instanceof ByteArrayType) {
-                    splitPoints.add(Base64.decodeBase64(line));
-                } else {
-                    throw new RuntimeException("Unknown key type " + rowKey1Type);
-                }
-            }
-            LOGGER.info("Read {} split points from file", splitPoints.size());
-        }
-        return splitPoints;
     }
 
     public static void main(String[] args) {
