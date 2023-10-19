@@ -16,6 +16,9 @@
 
 package sleeper.ingest.job;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
@@ -28,6 +31,8 @@ import java.util.stream.Collectors;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class IngestJobValidationUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobValidationUtils.class);
+
     private IngestJobValidationUtils() {
     }
 
@@ -37,7 +42,9 @@ public class IngestJobValidationUtils {
         T job;
         try {
             job = deserialiser.apply(message);
+            LOGGER.info("Deserialised message to ingest job {}", job);
         } catch (RuntimeException e) {
+            LOGGER.warn("Deserialisation failed for message: {}", message, e);
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
                             "Error parsing JSON. Reason: " + Optional.ofNullable(e.getCause()).orElse(e).getMessage()));
@@ -45,8 +52,10 @@ public class IngestJobValidationUtils {
         }
         List<String> validationFailures = getValidationFailures.apply(job);
         if (validationFailures.isEmpty()) {
+            LOGGER.info("No validation failures found");
             return Optional.of(job);
         } else {
+            LOGGER.warn("Validation failed: {}", validationFailures);
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(invalidJobIdSupplier.get(), message, timeSupplier.get(),
                             validationFailures.stream()
