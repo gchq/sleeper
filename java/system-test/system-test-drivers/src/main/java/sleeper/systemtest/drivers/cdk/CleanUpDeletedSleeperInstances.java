@@ -33,6 +33,10 @@ import java.util.stream.Stream;
 
 import static sleeper.systemtest.drivers.instance.SystemTestParameters.buildSystemTestECRRepoName;
 
+/**
+ * This class can be used to clean up after deleted Sleeper instances when the CloudFormation stacks for those instances
+ * have been deleted. This is intended to delete old jars buckets and EMR repositories.
+ */
 public class CleanUpDeletedSleeperInstances {
 
     private final TearDownClients clients;
