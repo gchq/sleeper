@@ -70,8 +70,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
+import sleeper.cdk.stack.TableStacks;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
@@ -104,7 +103,6 @@ import static sleeper.configuration.properties.instance.EKSProperty.EKS_CLUSTER_
  * a statemachine which can run jobs on the cluster.
  */
 public final class EksBulkImportStack extends NestedStack {
-    private final StateMachine stateMachine;
     private final ServiceAccount sparkServiceAccount;
     private final Queue bulkImportJobQueue;
 
@@ -114,7 +112,7 @@ public final class EksBulkImportStack extends NestedStack {
             InstanceProperties instanceProperties,
             BuiltJars jars,
             BulkImportBucketStack importBucketStack,
-            StateStoreStacks stateStoreStacks, TableDataStack dataStack,
+            TableStacks tableStacks,
             TopicStack errorsTopicStack,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
@@ -162,8 +160,6 @@ public final class EksBulkImportStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "CodeBucketEKS", instanceProperties.get(JARS_BUCKET));
         LambdaCode bulkImportStarterJar = jars.lambdaCode(BuiltJar.BULK_IMPORT_STARTER, jarsBucket);
 
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CdkDefinedInstanceProperty.CONFIG_BUCKET));
-
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceId.toLowerCase(Locale.ROOT), "eks-bulk-import-job-starter"));
 
@@ -179,11 +175,10 @@ public final class EksBulkImportStack extends NestedStack {
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 
-        configBucket.grantRead(bulkImportJobStarter);
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
         ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
-        stateStoreStacks.grantReadPartitions(bulkImportJobStarter);
+        tableStacks.grantReadConfigAndPartitions(bulkImportJobStarter);
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -230,9 +225,9 @@ public final class EksBulkImportStack extends NestedStack {
 
         Lists.newArrayList(sparkServiceAccount, sparkSubmitServiceAccount)
                 .forEach(sa -> sa.getNode().addDependency(namespace));
-        grantAccesses(stateStoreStacks, dataStack, configBucket);
+        tableStacks.grantIngest(sparkServiceAccount);
 
-        this.stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
+        StateMachine stateMachine = createStateMachine(bulkImportCluster, instanceProperties, errorsTopicStack.getTopic());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EKS_STATE_MACHINE_ARN, stateMachine.getStateMachineArn());
 
         bulkImportCluster.getAwsAuth().addRoleMapping(stateMachine.getRole(), AwsAuthMapping.builder()
@@ -243,7 +238,8 @@ public final class EksBulkImportStack extends NestedStack {
         createManifests(bulkImportCluster, namespace, uniqueBulkImportId, stateMachine.getRole());
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
-        ingestSourceBuckets.forEach(bucket -> grantAccessToResources(bulkImportJobStarter, bucket));
+        stateMachine.grantStartExecution(bulkImportJobStarter);
+        ingestSourceBuckets.forEach(bucket -> bucket.grantRead(sparkServiceAccount));
         statusStoreStack.getResources().grantWriteJobEvent(sparkServiceAccount);
 
         Utils.addStackTagIfSet(this, instanceProperties);
@@ -305,12 +301,6 @@ public final class EksBulkImportStack extends NestedStack {
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build()))))
                 ).build();
-    }
-
-    private void grantAccesses(StateStoreStacks stateStoreStacks, TableDataStack dataStack, IBucket configBucket) {
-        dataStack.getDataBucket().grantReadWrite(sparkServiceAccount);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(sparkServiceAccount);
-        configBucket.grantRead(sparkServiceAccount);
     }
 
     private KubernetesManifest createNamespace(Cluster bulkImportCluster, String bulkImportNamespace) {
@@ -396,13 +386,6 @@ public final class EksBulkImportStack extends NestedStack {
             }
             return json;
         };
-    }
-
-    public void grantAccessToResources(IFunction starterFunction, IBucket ingestBucket) {
-        stateMachine.grantStartExecution(starterFunction);
-        if (ingestBucket != null) {
-            ingestBucket.grantRead(sparkServiceAccount);
-        }
     }
 
     public Queue getBulkImportJobQueue() {

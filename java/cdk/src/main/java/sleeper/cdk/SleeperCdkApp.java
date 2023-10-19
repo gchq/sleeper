@@ -145,7 +145,7 @@ public class SleeperCdkApp extends Stack {
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, bulkImportBucketStack, stateStoreStacks, dataStack, ingestStatusStoreStack);
+                    instanceProperties, tableStacks, bulkImportBucketStack, ingestStatusStoreStack);
         }
 
         // Stack to run bulk import jobs via EMR Serverless
@@ -154,7 +154,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     topicStack,
-                    stateStoreStacks, dataStack,
+                    tableStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -166,7 +166,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    stateStoreStacks,
+                    tableStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -179,7 +179,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    stateStoreStacks,
+                    tableStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -190,7 +190,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties,
                     jars,
                     bulkImportBucketStack,
-                    stateStoreStacks, dataStack,
+                    tableStacks,
                     topicStack,
                     ingestStatusStoreStack
             );

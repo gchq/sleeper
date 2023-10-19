@@ -39,6 +39,7 @@ import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.IngestStatusStoreResources;
+import sleeper.cdk.stack.TableStacks;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -49,7 +50,6 @@ import java.util.stream.Collectors;
 
 import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -60,27 +60,27 @@ public class CommonEmrBulkImportHelper {
     private final String shortId;
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
-    private final IBucket configBucket;
+    private final TableStacks tableStacks;
     private final List<IBucket> ingestBuckets;
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
+                                     TableStacks tableStacks,
                                      IngestStatusStoreResources ingestStatusStoreResources) {
-        this(scope, shortId, instanceProperties, ingestStatusStoreResources,
-                Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET)),
+        this(scope, shortId, instanceProperties, tableStacks, ingestStatusStoreResources,
                 addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties));
     }
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
+                                     TableStacks tableStacks,
                                      IngestStatusStoreResources ingestStatusStoreResources,
-                                     IBucket configBucket,
                                      List<IBucket> ingestBuckets) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
+        this.tableStacks = tableStacks;
         this.statusStoreResources = ingestStatusStoreResources;
-        this.configBucket = configBucket;
         this.ingestBuckets = ingestBuckets;
     }
 
@@ -156,7 +156,7 @@ public class CommonEmrBulkImportHelper {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
-        configBucket.grantRead(function);
+        tableStacks.grantReadConfigAndPartitions(function);
         importBucket.grantReadWrite(function);
         ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(function));
         statusStoreResources.grantWriteJobEvent(function);

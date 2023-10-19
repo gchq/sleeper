@@ -36,7 +36,7 @@ import sleeper.bulkimport.configuration.ConfigurationUtils;
 import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.StateStoreStacks;
+import sleeper.cdk.stack.TableStacks;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.validation.EmrInstanceArchitecture;
@@ -88,18 +88,17 @@ public class PersistentEmrBulkImportStack extends NestedStack {
             BulkImportBucketStack importBucketStack,
             CommonEmrBulkImportStack commonEmrStack,
             TopicStack errorsTopicStack,
-            StateStoreStacks stateStoreStacks,
+            TableStacks tableStacks,
             IngestStatusStoreResources statusStoreResources) {
         super(scope, id);
         CommonEmrBulkImportHelper commonHelper = new CommonEmrBulkImportHelper(
-                this, "PersistentEMR", instanceProperties, statusStoreResources);
+                this, "PersistentEMR", instanceProperties, tableStacks, statusStoreResources);
         bulkImportJobQueue = commonHelper.createJobQueue(
                 BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_ARN,
                 errorsTopicStack.getTopic());
         IFunction jobStarter = commonHelper.createJobStarterFunction(
                 "PersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
         configureJobStarterFunction(jobStarter);
-        stateStoreStacks.grantReadPartitions(jobStarter);
         createCluster(this, instanceProperties, importBucketStack.getImportBucket(), commonEmrStack);
         Utils.addStackTagIfSet(this, instanceProperties);
     }

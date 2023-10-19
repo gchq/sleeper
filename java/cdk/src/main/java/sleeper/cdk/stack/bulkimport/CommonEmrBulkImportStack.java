@@ -42,8 +42,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
+import sleeper.cdk.stack.TableStacks;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -71,13 +70,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
     public CommonEmrBulkImportStack(Construct scope,
                                     String id,
                                     InstanceProperties instanceProperties,
+                                    TableStacks tableStacks,
                                     BulkImportBucketStack importBucketStack,
-                                    StateStoreStacks stateStoreStacks,
-                                    TableDataStack dataStack,
                                     IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
-                importBucketStack.getImportBucket(), stateStoreStacks, dataStack);
+                importBucketStack.getImportBucket(), tableStacks);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
         IngestStatusStoreResources statusStore = statusStoreStack.getResources();
@@ -87,8 +85,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            StateStoreStacks stateStoreStacks,
-            TableDataStack dataStack) {
+            TableStacks tableStacks) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
@@ -97,8 +94,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
-        dataStack.getDataBucket().grantReadWrite(role);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(role);
+        tableStacks.grantWriteDataOnly(role);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
