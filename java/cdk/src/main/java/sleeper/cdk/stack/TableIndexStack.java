@@ -23,12 +23,14 @@ import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 
 import static sleeper.cdk.Utils.removalPolicy;
+import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -69,13 +71,13 @@ public class TableIndexStack extends NestedStack {
                 .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
+
+        addIngestSourceRoleReferences(this, "TableIndexReaderForIngest", instanceProperties)
+                .forEach(this::grantRead);
     }
 
-    public ITable getIndexByNameDynamoTable() {
-        return indexByNameDynamoTable;
-    }
-
-    public ITable getIndexByIdDynamoTable() {
-        return indexByIdDynamoTable;
+    public void grantRead(IGrantable grantee) {
+        indexByNameDynamoTable.grantReadData(grantee);
+        indexByIdDynamoTable.grantReadData(grantee);
     }
 }

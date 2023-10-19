@@ -73,7 +73,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -102,11 +101,8 @@ public class QueryStack extends NestedStack {
                       String id,
                       InstanceProperties instanceProperties,
                       BuiltJars jars,
-                      StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+                      CoreStacks coreStacks) {
         super(scope, id);
-
-        // Config bucket
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -235,9 +231,7 @@ public class QueryStack extends NestedStack {
         // Grant the lambda permission to read from the Dynamo tables, read from
         // the S3 bucket, write back to the query queue and write to the results
         // queue and S3 bucket
-        dataStack.getDataBucket().grantRead(queryExecutorLambda);
-        stateStoreStacks.grantReadActiveFilesAndPartitions(queryExecutorLambda);
-        configBucket.grantRead(queryExecutorLambda);
+        coreStacks.grantReadTablesAndData(queryExecutorLambda);
         jarsBucket.grantRead(queryExecutorLambda);
         queriesQueue.grantSendMessages(queryExecutorLambda);
         queryResultsQueue.grantSendMessages(queryExecutorLambda);
@@ -267,12 +261,12 @@ public class QueryStack extends NestedStack {
         IRole role = Objects.requireNonNull(queryExecutorLambda.getRole());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_LAMBDA_ROLE, role.getRoleName());
 
-        this.setupWebSocketApi(queryJar, instanceProperties, queriesQueue, queryExecutorLambda, configBucket);
+        this.setupWebSocketApi(queryJar, instanceProperties, queriesQueue, queryExecutorLambda, coreStacks);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, IBucket configBucket) {
+    protected void setupWebSocketApi(LambdaCode queryJar, InstanceProperties instanceProperties, Queue queriesQueue, IFunction queryExecutorLambda, CoreStacks coreStacks) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         IFunction handler = queryJar.buildFunction(this, "apiHandler", builder -> builder
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
@@ -284,7 +278,7 @@ public class QueryStack extends NestedStack {
                 .runtime(software.amazon.awscdk.services.lambda.Runtime.JAVA_11));
 
         queriesQueue.grantSendMessages(handler);
-        configBucket.grantRead(handler);
+        coreStacks.grantReadTablesConfig(handler);
 
         CfnApi api = CfnApi.Builder.create(this, "api")
                 .name("sleeper-" + instanceProperties.get(ID) + "-query-api")

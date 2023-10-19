@@ -34,9 +34,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
@@ -87,8 +86,7 @@ public class SystemTestClusterStack extends NestedStack {
     public SystemTestClusterStack(Construct scope,
                                   String id,
                                   SystemTestProperties properties,
-                                  StateStoreStacks stateStoreStacks,
-                                  TableDataStack dataStack,
+                                  CoreStacks coreStacks,
                                   IngestStack ingestStack,
                                   EmrBulkImportStack emrBulkImportStack) {
         super(scope, id);
@@ -96,10 +94,8 @@ public class SystemTestClusterStack extends NestedStack {
 
         addIngestSourceBucketReferences(this, "IngestBucket", properties)
                 .forEach(bucket -> bucket.grantReadWrite(taskRole));
-        Bucket.fromBucketName(this, "ConfigBucket", properties.get(CONFIG_BUCKET)).grantRead(taskRole);
 
-        dataStack.getDataBucket().grantReadWrite(taskRole);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(taskRole);
+        coreStacks.grantIngest(taskRole);
         if (null != ingestStack) {
             ingestStack.getIngestJobQueue().grantSendMessages(taskRole);
         }

@@ -47,10 +47,9 @@ public class TableMetricsStack extends NestedStack {
                              String id,
                              InstanceProperties instanceProperties,
                              BuiltJars jars,
-                             StateStoreStacks stateStoreStacks) {
+                             CoreStacks coreStacks) {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
         LambdaCode metricsJar = jars.lambdaCode(BuiltJar.METRICS, jarsBucket);
         // Metrics generation and publishing
         IFunction tableMetricsPublisher = metricsJar.buildFunction(this, "MetricsPublisher", builder -> builder
@@ -61,14 +60,13 @@ public class TableMetricsStack extends NestedStack {
                 .timeout(Duration.seconds(60))
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
-        configBucket.grantRead(tableMetricsPublisher);
-        stateStoreStacks.grantReadActiveFilesAndPartitions(tableMetricsPublisher);
+        coreStacks.grantReadTablesMetadata(tableMetricsPublisher);
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
                 .schedule(Schedule.rate(Duration.minutes(1)))
                 .targets(Collections.singletonList(
                         LambdaFunction.Builder.create(tableMetricsPublisher)
-                                .event(RuleTargetInput.fromText(configBucket.getBucketName()))
+                                .event(RuleTargetInput.fromText(instanceProperties.get(CONFIG_BUCKET)))
                                 .build()
                 ))
                 .enabled(!shouldDeployPaused(this))
