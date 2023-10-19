@@ -94,7 +94,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
-        coreStacks.grantWriteDataOnly(role);
+        coreStacks.grantIngest(role);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
