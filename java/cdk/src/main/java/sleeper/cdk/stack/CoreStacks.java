@@ -18,19 +18,23 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 
-public class TableStacks {
+public class CoreStacks {
 
     private final ConfigurationStack configurationStack;
     private final TableIndexStack tableIndexStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
 
-    public TableStacks(ConfigurationStack configurationStack, TableIndexStack tableIndexStack,
-                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+    public CoreStacks(ConfigurationStack configurationStack, TableIndexStack tableIndexStack,
+                      StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         this.configurationStack = configurationStack;
         this.tableIndexStack = tableIndexStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
+    }
+
+    public void grantReadInstanceConfig(IGrantable grantee) {
+        configurationStack.grantRead(grantee);
     }
 
     public void grantReadTablesAndData(IGrantable grantee) {
@@ -69,6 +73,26 @@ public class TableStacks {
      * @param grantee Entity to grant permissions to
      */
     public void grantWriteDataOnly(IGrantable grantee) {
+        dataStack.grantReadWrite(grantee);
+    }
+
+    public void grantGarbageCollection(IGrantable grantee) {
+        configurationStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+        stateStoreStacks.grantReadWriteReadyForGCFiles(grantee);
+        dataStack.grantReadDelete(grantee);
+    }
+
+    public void grantCreateCompactionJobs(IGrantable grantee) {
+        configurationStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
+    }
+
+    public void grantRunCompactionJobs(IGrantable grantee) {
+        configurationStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+        stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
         dataStack.grantReadWrite(grantee);
     }
 }

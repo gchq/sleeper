@@ -70,4 +70,9 @@ public class TableDataStack extends NestedStack {
     public void grantReadWrite(IGrantable grantee) {
         dataBucket.grantReadWrite(grantee);
     }
+
+    public void grantReadDelete(IGrantable grantee) {
+        dataBucket.grantRead(grantee);
+        dataBucket.grantDelete(grantee);
+    }
 }

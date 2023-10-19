@@ -38,8 +38,8 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.TableStacks;
 import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -60,26 +60,26 @@ public class CommonEmrBulkImportHelper {
     private final String shortId;
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
-    private final TableStacks tableStacks;
+    private final CoreStacks coreStacks;
     private final List<IBucket> ingestBuckets;
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
-                                     TableStacks tableStacks,
+                                     CoreStacks coreStacks,
                                      IngestStatusStoreResources ingestStatusStoreResources) {
-        this(scope, shortId, instanceProperties, tableStacks, ingestStatusStoreResources,
+        this(scope, shortId, instanceProperties, coreStacks, ingestStatusStoreResources,
                 addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties));
     }
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
-                                     TableStacks tableStacks,
+                                     CoreStacks coreStacks,
                                      IngestStatusStoreResources ingestStatusStoreResources,
                                      List<IBucket> ingestBuckets) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
-        this.tableStacks = tableStacks;
+        this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
         this.ingestBuckets = ingestBuckets;
     }
@@ -156,7 +156,7 @@ public class CommonEmrBulkImportHelper {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
-        tableStacks.grantReadConfigAndPartitions(function);
+        coreStacks.grantReadConfigAndPartitions(function);
         importBucket.grantReadWrite(function);
         ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(function));
         statusStoreResources.grantWriteJobEvent(function);

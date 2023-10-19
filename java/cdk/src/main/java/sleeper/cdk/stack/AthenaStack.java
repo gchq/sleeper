@@ -57,7 +57,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-                       TableStacks tableStacks) {
+                       CoreStacks coreStacks) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -122,7 +122,7 @@ public class AthenaStack extends NestedStack {
 
             jarsBucket.grantRead(handler);
 
-            tableStacks.grantReadTablesAndData(handler);
+            coreStacks.grantReadTablesAndData(handler);
             spillBucket.grantReadWrite(handler);
             spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
 
