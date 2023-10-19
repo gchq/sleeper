@@ -41,6 +41,7 @@ import sleeper.cdk.stack.StateStoreStacks;
 import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.TableIndexStack;
 import sleeper.cdk.stack.TableMetricsStack;
+import sleeper.cdk.stack.TableStacks;
 import sleeper.cdk.stack.TopicStack;
 import sleeper.cdk.stack.VpcStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
@@ -68,8 +69,9 @@ public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
-    private IngestStack ingestStack;
     private TableDataStack dataStack;
+    private TableStacks tableStacks;
+    private IngestStack ingestStack;
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
@@ -116,24 +118,23 @@ public class SleeperCdkApp extends Stack {
         // Stack for Checking VPC configuration
         new VpcStack(this, "Vpc", instanceProperties, jars);
 
-        // Stack for instance configuration
-        new ConfigurationStack(this, "Configuration", instanceProperties);
-
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
-
-        // Stack for tables
+        // Stacks for tables
         dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        new TableIndexStack(this, "TableIndex", instanceProperties);
         stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
-        new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, stateStoreStacks);
+        tableStacks = new TableStacks(
+                new ConfigurationStack(this, "Configuration", instanceProperties),
+                new TableIndexStack(this, "TableIndex", instanceProperties),
+                stateStoreStacks, dataStack);
+        new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, tableStacks);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, stateStoreStacks, dataStack);
+            new AthenaStack(this, "Athena", instanceProperties, jars, tableStacks);
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
@@ -275,6 +276,10 @@ public class SleeperCdkApp extends Stack {
 
     public TableDataStack getDataStack() {
         return dataStack;
+    }
+
+    public TableStacks getTableStacks() {
+        return tableStacks;
     }
 
     public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {

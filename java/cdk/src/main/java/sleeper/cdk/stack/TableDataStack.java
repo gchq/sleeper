@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -60,5 +61,9 @@ public class TableDataStack extends NestedStack {
 
     public IBucket getDataBucket() {
         return dataBucket;
+    }
+
+    public void grantRead(IGrantable grantee) {
+        dataBucket.grantRead(grantee);
     }
 }

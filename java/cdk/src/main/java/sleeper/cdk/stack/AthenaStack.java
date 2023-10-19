@@ -49,7 +49,6 @@ import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_CO
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_MEMORY;
 import static sleeper.configuration.properties.instance.AthenaProperty.ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.AthenaProperty.SPILL_BUCKET_AGE_OFF_IN_DAYS;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -58,15 +57,13 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+                       TableStacks tableStacks) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
-
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String bucketName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "spill-bucket"));
@@ -125,9 +122,7 @@ public class AthenaStack extends NestedStack {
 
             jarsBucket.grantRead(handler);
 
-            stateStoreStacks.grantReadActiveFilesAndPartitions(handler);
-            dataStack.getDataBucket().grantRead(handler);
-            configBucket.grantRead(handler);
+            tableStacks.grantReadTablesAndData(handler);
             spillBucket.grantReadWrite(handler);
             spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
 
