@@ -72,19 +72,6 @@ public class CoreStacks {
         dataStack.grantReadWrite(grantee);
     }
 
-    /**
-     * Grants access to write data into a table without access to any configuration.
-     * Requires that the configuration and table metadata should be read & written somewhere else,
-     * eg. transmitted across a Spark cluster from the driver.
-     * <p>
-     * This has the advantage of keeping the configuration fixed for a whole bulk import job.
-     *
-     * @param grantee Entity to grant permissions to
-     */
-    public void grantWriteDataOnly(IGrantable grantee) {
-        dataStack.grantReadWrite(grantee);
-    }
-
     public void grantGarbageCollection(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
