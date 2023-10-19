@@ -218,7 +218,7 @@ public class SleeperCdkApp extends Stack {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack,
+                    coreStacks,
                     topicStack.getTopic());
         }
 
@@ -227,7 +227,7 @@ public class SleeperCdkApp extends Stack {
             new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack);
+                    coreStacks);
         }
 
         // Stack for ingest jobs

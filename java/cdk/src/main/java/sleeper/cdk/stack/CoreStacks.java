@@ -37,6 +37,11 @@ public class CoreStacks {
         configurationStack.grantRead(grantee);
     }
 
+    public void grantReadTablesConfig(IGrantable grantee) {
+        configurationStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+    }
+
     public void grantReadTablesAndData(IGrantable grantee) {
         configurationStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
@@ -94,5 +99,12 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWriteActiveAndReadyForGCFiles(grantee);
         dataStack.grantReadWrite(grantee);
+    }
+
+    public void grantSplitPartitions(IGrantable grantee) {
+        configurationStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+        stateStoreStacks.grantReadWritePartitions(grantee);
+        dataStack.grantRead(grantee);
     }
 }
