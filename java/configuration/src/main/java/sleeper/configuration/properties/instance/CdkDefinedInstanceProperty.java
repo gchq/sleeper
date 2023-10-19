@@ -361,11 +361,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_STUDIO_URL = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.studio.url")
-            .description("The url for EME Studio used to access EMR Serverless.")
-            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
-            .build();
-    CdkDefinedInstanceProperty BULK_IMPORT_EMR_SERVERLESS_STUDIO_BUCKET = Index.propertyBuilder("sleeper.bulk.import.emr.serverless.studio.bucket")
-            .description("The S3 bucket used by EMR Studio")
+            .description("The url for EMR Studio used to access EMR Serverless.")
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .build();
     // Bulk import using persistent EMR
