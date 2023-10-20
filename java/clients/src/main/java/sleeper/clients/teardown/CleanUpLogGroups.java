@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.clients.status.update;
+package sleeper.clients.teardown;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
-import software.amazon.awssdk.services.cloudformation.model.StackStatus;
-import software.amazon.awssdk.services.cloudformation.model.StackSummary;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.model.LogGroup;
 
@@ -27,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static sleeper.core.util.RateLimitUtils.sleepForSustainedRatePerSecond;
 
@@ -59,26 +56,10 @@ public class CleanUpLogGroups {
     private static DeletionPlan planDeletions(
             CloudWatchLogsClient logsClient, CloudFormationClient cloudFormation, Instant queryTime) {
         Instant maxCreationTime = queryTime.minus(Duration.ofDays(30));
-        Stacks stacks = new Stacks(cloudFormation);
+        CloudFormationStacks stacks = new CloudFormationStacks(cloudFormation);
         DeletionPlan plan = new DeletionPlan(stacks, maxCreationTime);
         logsClient.describeLogGroupsPaginator().logGroups().forEach(plan::add);
         return plan;
-    }
-
-    public static class Stacks {
-        private final List<String> stackNames;
-
-        public Stacks(CloudFormationClient cloudFormation) {
-            stackNames = cloudFormation.listStacksPaginator(b -> b.stackStatusFilters(
-                            StackStatus.CREATE_COMPLETE, StackStatus.UPDATE_COMPLETE)).stackSummaries()
-                    .stream()
-                    .filter(stack -> stack.parentId() == null)
-                    .map(StackSummary::stackName).collect(Collectors.toList());
-        }
-
-        public boolean anyIn(String string) {
-            return stackNames.stream().anyMatch(string::contains);
-        }
     }
 
     public static class DeletionPlan {
@@ -86,10 +67,10 @@ public class CleanUpLogGroups {
         private int numEmpty;
         private int numOld;
         private int numToKeep;
-        private final Stacks stacks;
+        private final CloudFormationStacks stacks;
         private final Instant maxCreationTime;
 
-        public DeletionPlan(Stacks stacks, Instant maxCreationTime) {
+        public DeletionPlan(CloudFormationStacks stacks, Instant maxCreationTime) {
             this.stacks = stacks;
             this.maxCreationTime = maxCreationTime;
         }
@@ -139,7 +120,7 @@ public class CleanUpLogGroups {
         }
 
         private void logTotals() {
-            LOGGER.info("Keeping all groups containing stack names: {}", stacks.stackNames);
+            LOGGER.info("Keeping all groups containing stack names: {}", stacks.getStackNames());
             LOGGER.info("Groups to delete: {}", delete.size());
             LOGGER.info("Empty groups to delete: {}", numEmpty);
             LOGGER.info("Old groups to delete: {}", numOld);
