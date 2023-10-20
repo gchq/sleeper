@@ -16,7 +16,10 @@
 
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
+
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 
 import java.util.NoSuchElementException;
 
@@ -76,5 +79,27 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
                 .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void shouldReportTableDoesNotExistWhenInIndexButNotConfigBucket() {
+        // Given
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .create(tableProperties.getId());
+
+        // When / Then
+        assertThat(provider.getByNameIfExists(tableName))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
+        // Given
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .create(tableProperties.getId());
+
+        // When / Then
+        assertThatThrownBy(() -> provider.getByName(tableName))
+                .isInstanceOf(AmazonS3Exception.class);
     }
 }
