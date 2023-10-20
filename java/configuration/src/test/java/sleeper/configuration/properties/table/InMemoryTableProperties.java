@@ -28,28 +28,42 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
     private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
+    private final boolean defensiveCopy;
 
-    private InMemoryTableProperties() {
+    private InMemoryTableProperties(boolean defensiveCopy) {
+        this.defensiveCopy = defensiveCopy;
     }
 
     public static TablePropertiesStore getStore() {
-        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties());
+        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(false));
+    }
+
+    public static TablePropertiesStore getStoreWithDefensiveCopy() {
+        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(true));
     }
 
     @Override
     public TableProperties loadProperties(TableId tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
-                .map(TableProperties::copyOf)
+                .map(this::copyIfSet)
                 .orElseThrow();
     }
 
     @Override
     public void saveProperties(TableProperties tableProperties) {
-        propertiesByTableId.put(tableProperties.get(TABLE_ID), TableProperties.copyOf(tableProperties));
+        propertiesByTableId.put(tableProperties.get(TABLE_ID), copyIfSet(tableProperties));
     }
 
     @Override
     public void deleteProperties(TableId tableId) {
         propertiesByTableId.remove(tableId.getTableUniqueId());
+    }
+
+    private TableProperties copyIfSet(TableProperties properties) {
+        if (defensiveCopy) {
+            return TableProperties.copyOf(properties);
+        } else {
+            return properties;
+        }
     }
 }
