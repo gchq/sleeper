@@ -21,19 +21,26 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesProvider {
     protected final TablePropertiesStore propertiesStore;
-    private final TablePropertiesCache cache;
-    private final TablePropertiesExpiry expiry;
+    private final int timeoutInMins;
     private final Supplier<Instant> timeSupplier;
+    private final Map<String, CacheEntry> cacheById = new HashMap<>();
+    private final Map<String, CacheEntry> cacheByName = new HashMap<>();
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
         this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
@@ -50,35 +57,37 @@ public class TablePropertiesProvider {
     protected TablePropertiesProvider(TablePropertiesStore propertiesStore,
                                       int timeoutInMins, Supplier<Instant> timeSupplier) {
         this.propertiesStore = propertiesStore;
-        this.cache = new TablePropertiesCache();
-        this.expiry = new TablePropertiesExpiry(timeoutInMins);
+        this.timeoutInMins = timeoutInMins;
         this.timeSupplier = timeSupplier;
     }
 
     public TableProperties getByName(String tableName) {
-        return get(new TableNameCacheRef(tableName));
+        return get(tableName, cacheByName, propertiesStore::loadByName);
     }
 
     public TableProperties getById(String tableId) {
-        return get(new TableIdCacheRef(tableId));
+        return get(tableId, cacheById, propertiesStore::loadById);
+    }
+
+    private TableProperties get(String identifier,
+                                Map<String, CacheEntry> cache,
+                                Function<String, Optional<TableProperties>> loadProperties) {
+        Instant currentTime = timeSupplier.get();
+        CacheEntry currentEntry = cache.get(identifier);
+        TableProperties properties;
+        if (currentEntry == null || currentEntry.isExpired(currentTime)) {
+            properties = loadProperties.apply(identifier).orElseThrow();
+        } else {
+            properties = currentEntry.getTableProperties();
+        }
+        CacheEntry entry = new CacheEntry(properties, currentTime.plus(Duration.ofMinutes(timeoutInMins)));
+        cacheById.put(properties.get(TABLE_ID), entry);
+        cacheByName.put(properties.get(TABLE_NAME), entry);
+        return properties;
     }
 
     public TableProperties get(TableId tableId) {
         return getById(tableId.getTableUniqueId());
-    }
-
-    private TableProperties get(CacheRef ref) {
-        Instant currentTime = timeSupplier.get();
-        if (ref.isExpired(currentTime)) {
-            ref.remove();
-        }
-        return ref.getCached()
-                .orElseGet(() -> {
-                    TableProperties properties = ref.load().orElseThrow();
-                    cache.add(properties);
-                    expiry.setExpiryFromCurrentTime(properties.getId(), currentTime);
-                    return properties;
-                });
     }
 
     public Optional<TableId> lookupByName(String tableName) {
@@ -103,73 +112,25 @@ public class TablePropertiesProvider {
     }
 
     public void clearCache() {
-        cache.clear();
+        cacheByName.clear();
+        cacheById.clear();
     }
 
-    interface CacheRef {
-        boolean isExpired(Instant currentTime);
+    private static class CacheEntry {
+        private final TableProperties tableProperties;
+        private final Instant expiryTime;
 
-
-        void remove();
-
-        Optional<TableProperties> getCached();
-
-        Optional<TableProperties> load();
-    }
-
-    class TableNameCacheRef implements CacheRef {
-        private final String tableName;
-
-        public TableNameCacheRef(String tableName) {
-            this.tableName = tableName;
+        public CacheEntry(TableProperties tableProperties, Instant expiryTime) {
+            this.tableProperties = tableProperties;
+            this.expiryTime = expiryTime;
         }
 
-        @Override
+        public TableProperties getTableProperties() {
+            return tableProperties;
+        }
+
         public boolean isExpired(Instant currentTime) {
-            return expiry.isExpiredByName(tableName, currentTime);
-        }
-
-        @Override
-        public void remove() {
-            cache.removeByName(tableName);
-        }
-
-        @Override
-        public Optional<TableProperties> getCached() {
-            return cache.getByName(tableName);
-        }
-
-        @Override
-        public Optional<TableProperties> load() {
-            return propertiesStore.loadByName(tableName);
-        }
-    }
-
-    class TableIdCacheRef implements CacheRef {
-        private final String tableId;
-
-        public TableIdCacheRef(String tableId) {
-            this.tableId = tableId;
-        }
-
-        @Override
-        public boolean isExpired(Instant currentTime) {
-            return expiry.isExpiredById(tableId, currentTime);
-        }
-
-        @Override
-        public void remove() {
-            cache.removeById(tableId);
-        }
-
-        @Override
-        public Optional<TableProperties> getCached() {
-            return cache.getById(tableId);
-        }
-
-        @Override
-        public Optional<TableProperties> load() {
-            return propertiesStore.loadById(tableId);
+            return currentTime.isAfter(expiryTime);
         }
     }
 }
