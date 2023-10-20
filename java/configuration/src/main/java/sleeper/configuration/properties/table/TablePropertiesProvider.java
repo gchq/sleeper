@@ -38,7 +38,7 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
-    protected final TablePropertiesStore propertiesStore;
+    private final TablePropertiesStore propertiesStore;
     private final Duration cacheTimeout;
     private final Supplier<Instant> timeSupplier;
     private final Map<String, CacheEntry> cacheById = new HashMap<>();

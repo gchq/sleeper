@@ -20,6 +20,7 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableId;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -34,12 +35,18 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
         this.defensiveCopy = defensiveCopy;
     }
 
+    public static TablePropertiesStore getStore() {
+        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(true));
+    }
+
     public static TablePropertiesStore getStoreReturningExactInstance() {
         return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(false));
     }
 
-    public static TablePropertiesStore getStore() {
-        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(true));
+    public static TablePropertiesStore getStoreReturningExactInstances(List<TableProperties> properties) {
+        TablePropertiesStore store = getStoreReturningExactInstance();
+        properties.forEach(store::save);
+        return store;
     }
 
     @Override
