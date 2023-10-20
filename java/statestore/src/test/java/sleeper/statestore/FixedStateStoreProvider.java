@@ -17,8 +17,10 @@ package sleeper.statestore;
 
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableId;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -26,8 +28,9 @@ public class FixedStateStoreProvider extends StateStoreProvider {
 
     public FixedStateStoreProvider(TableProperties singleTableProperties, StateStore stateStore) {
         super(tableProperties -> {
-            if (tableProperties != singleTableProperties) {
-                throw new IllegalArgumentException("Table not found: " + tableProperties.get(TABLE_NAME));
+            TableId requestedId = tableProperties.getId();
+            if (!Objects.equals(requestedId, singleTableProperties.getId())) {
+                throw new IllegalArgumentException("Table not found: " + requestedId);
             }
             return stateStore;
         });
