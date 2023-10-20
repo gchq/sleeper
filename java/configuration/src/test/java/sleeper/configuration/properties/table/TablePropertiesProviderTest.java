@@ -41,6 +41,7 @@ public class TablePropertiesProviderTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore store = InMemoryTableProperties.getStore();
     private final TableProperties tableProperties = createValidTableProperties();
+    private final String tableId = tableProperties.get(TABLE_ID);
     private final String tableName = tableProperties.get(TABLE_NAME);
     private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, store, Instant::now);
 
@@ -63,7 +64,7 @@ public class TablePropertiesProviderTest {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(provider.getById(tableProperties.get(TABLE_ID)))
+            assertThat(provider.getById(tableId))
                     .isEqualTo(tableProperties);
         }
 
@@ -73,7 +74,8 @@ public class TablePropertiesProviderTest {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(provider.lookupByName(tableName)).contains(tableProperties.getId());
+            assertThat(provider.lookupByName(tableName))
+                    .contains(tableProperties.getId());
         }
 
         @Test
@@ -82,7 +84,40 @@ public class TablePropertiesProviderTest {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(provider.get(tableProperties.getId())).isEqualTo(tableProperties);
+            assertThat(provider.get(tableProperties.getId()))
+                    .isEqualTo(tableProperties);
+        }
+
+        @Test
+        void shouldCacheWhenLookingUpByIdThenName() {
+            // Given
+            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
+            store.save(tableProperties);
+
+            provider.getById(tableId);
+
+            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.getByName(tableName).getInt(ROW_GROUP_SIZE))
+                    .isEqualTo(123);
+        }
+
+        @Test
+        void shouldCacheWhenLookingUpByNameThenId() {
+            // Given
+            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
+            store.save(tableProperties);
+
+            provider.getByName(tableName);
+
+            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.getById(tableId).getInt(ROW_GROUP_SIZE))
+                    .isEqualTo(123);
         }
 
         @Test
@@ -135,6 +170,8 @@ public class TablePropertiesProviderTest {
 
             // When / Then
             assertThat(provider.getByName(tableName).getInt(ROW_GROUP_SIZE))
+                    .isEqualTo(123);
+            assertThat(provider.getById(tableId).getInt(ROW_GROUP_SIZE))
                     .isEqualTo(123);
         }
 
