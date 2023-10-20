@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.configuration.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -132,6 +133,28 @@ public class TablePropertiesProviderTest {
             // When / Then
             assertThatThrownBy(() -> provider.getByName(tableName))
                     .isInstanceOf(NoSuchElementException.class);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenPropertyIsInvalidLoadingByName() {
+            // Given
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThatThrownBy(() -> provider.getByName(tableName))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenPropertyIsInvalidLoadingById() {
+            // Given
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThatThrownBy(() -> provider.getById(tableId))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
