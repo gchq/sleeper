@@ -86,7 +86,7 @@ public class ExportPartitions {
         String tableName = args[1];
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
         ExportPartitions exportPartitions = new ExportPartitions(stateStore, tableProperties.getSchema());

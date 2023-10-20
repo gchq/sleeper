@@ -39,7 +39,7 @@ public class TablePropertiesProvider {
     protected final TablePropertiesStore propertiesStore;
     private final Supplier<Instant> timeSupplier;
     private final int timeoutInMins;
-    private final Map<String, TableProperties> tableNameToPropertiesCache = new HashMap<>();
+    private final Map<String, TableProperties> propertiesCacheByTableName = new HashMap<>();
     private final Map<String, Instant> expireTimeByTableName = new HashMap<>();
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
@@ -61,15 +61,15 @@ public class TablePropertiesProvider {
         this.timeSupplier = timeSupplier;
     }
 
-    public TableProperties getTableProperties(String tableName) {
+    public TableProperties getByName(String tableName) {
         checkExpiryTime(tableName);
-        return tableNameToPropertiesCache.computeIfAbsent(tableName,
+        return propertiesCacheByTableName.computeIfAbsent(tableName,
                 name -> propertiesStore.loadByName(name).orElse(null));
     }
 
-    public TableProperties getTableProperties(TableId tableId) {
+    public TableProperties get(TableId tableId) {
         checkExpiryTime(tableId.getTableName());
-        return tableNameToPropertiesCache.computeIfAbsent(tableId.getTableName(),
+        return propertiesCacheByTableName.computeIfAbsent(tableId.getTableName(),
                 name -> propertiesStore.loadProperties(tableId));
     }
 
@@ -77,14 +77,14 @@ public class TablePropertiesProvider {
         Instant currentTime = timeSupplier.get();
         if (expireTimeByTableName.containsKey(tableName) && currentTime.isAfter(expireTimeByTableName.get(tableName))) {
             LOGGER.info("Table properties provider expiry time reached for table {}, clearing cache.", tableName);
-            tableNameToPropertiesCache.remove(tableName);
+            propertiesCacheByTableName.remove(tableName);
         }
         expireTimeByTableName.put(tableName, currentTime.plus(Duration.ofMinutes(timeoutInMins)));
     }
 
-    public Optional<TableProperties> getTablePropertiesIfExists(String tableName) {
+    public Optional<TableProperties> getByNameIfExists(String tableName) {
         try {
-            return Optional.of(getTableProperties(tableName));
+            return Optional.of(getByName(tableName));
         } catch (RuntimeException e) {
             return Optional.empty();
         }
@@ -96,7 +96,7 @@ public class TablePropertiesProvider {
 
     public Stream<TableProperties> streamAllTables() {
         return propertiesStore.streamAllTableIds()
-                .map(id -> getTableProperties(id.getTableName()));
+                .map(id -> getByName(id.getTableName()));
     }
 
     public List<String> listTableNames() {
@@ -108,6 +108,6 @@ public class TablePropertiesProvider {
     }
 
     public void clearCache() {
-        tableNameToPropertiesCache.clear();
+        propertiesCacheByTableName.clear();
     }
 }

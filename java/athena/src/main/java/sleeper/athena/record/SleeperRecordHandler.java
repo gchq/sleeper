@@ -97,7 +97,7 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     @Override
     protected void readWithConstraint(BlockSpiller spiller, ReadRecordsRequest recordsRequest, QueryStatusChecker queryStatusChecker) throws Exception {
         LOGGER.info("User {} with groups {} made data read request: {}", recordsRequest.getIdentity().getArn(), recordsRequest.getIdentity().getIamGroups(), recordsRequest);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(recordsRequest.getTableName().getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(recordsRequest.getTableName().getTableName());
 
         Schema schema = createSchemaForDataRead(tableProperties.getSchema(), recordsRequest);
         CloseableIterator<Record> recordIterator = createRecordIterator(recordsRequest, schema, tableProperties);

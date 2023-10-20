@@ -79,7 +79,7 @@ public class ReinitialiseTable {
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider =
                 new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());

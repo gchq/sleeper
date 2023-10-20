@@ -262,7 +262,7 @@ public class SleeperInstanceContext {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return new Instance(identifier,
                 instanceProperties, tableProperties,

@@ -139,7 +139,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         this.tableNameToSleeperTablePropertiesMap = tableNames.stream()
                 .collect(ImmutableMap.toImmutableMap(
                         Function.identity(),
-                        tablePropertiesProvider::getTableProperties));
+                        tablePropertiesProvider::getByName));
         this.tableNameToSleeperTablePropertiesMap.forEach(
                 (tableName, tableProperties) ->
                         LOGGER.debug("Table %s with schema %s", tableName, tableProperties.getSchema()));

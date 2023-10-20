@@ -207,7 +207,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     public GetTableResponse doGetTable(BlockAllocator blockAllocator, GetTableRequest getTableRequest) {
         LOGGER.info("Received Get Table Request: {}", getTableRequest);
         String tableName = getTableRequest.getTableName().getTableName();
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         Schema schema = tableProperties.getSchema();
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = toArrowSchema(schema);
 
@@ -386,7 +386,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * @return the table properties
      */
     protected TableProperties getTableProperties(String tableName) {
-        return tablePropertiesProvider.getTableProperties(tableName);
+        return tablePropertiesProvider.getByName(tableName);
     }
 
     /**

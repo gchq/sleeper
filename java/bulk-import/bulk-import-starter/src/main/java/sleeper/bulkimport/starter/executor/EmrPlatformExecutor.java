@@ -81,7 +81,7 @@ public class EmrPlatformExecutor implements PlatformExecutor {
     @Override
     public void runJobOnPlatform(BulkImportArguments arguments) {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(bulkImportJob.getTableName());
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);
         String logUri = null == bulkImportBucket ? null : "s3://" + bulkImportBucket + "/logs";
         BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties, bulkImportJob);

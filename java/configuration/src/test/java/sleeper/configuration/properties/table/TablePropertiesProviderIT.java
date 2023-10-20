@@ -47,8 +47,8 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(provider.getTableProperties(tableName)).isEqualTo(tableProperties);
-            assertThat(provider.getTablePropertiesIfExists(tableName)).contains(tableProperties);
+            assertThat(provider.getByName(tableName)).isEqualTo(tableProperties);
+            assertThat(provider.getByNameIfExists(tableName)).contains(tableProperties);
         }
 
         @Test
@@ -57,13 +57,13 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(provider.getTableProperties(tableProperties.getId())).isEqualTo(tableProperties);
+            assertThat(provider.get(tableProperties.getId())).isEqualTo(tableProperties);
         }
 
         @Test
         void shouldReportTableDoesNotExistWhenNotInBucket() {
             // When / Then
-            assertThat(provider.getTablePropertiesIfExists(tableName))
+            assertThat(provider.getByNameIfExists(tableName))
                     .isEmpty();
         }
     }
@@ -102,7 +102,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             store.save(tableProperties);
 
             // When / Then
-            assertThat(provider.getTableProperties(tableName).getInt(ROW_GROUP_SIZE))
+            assertThat(provider.getByName(tableName).getInt(ROW_GROUP_SIZE))
                     .isEqualTo(123);
         }
 
@@ -112,7 +112,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
             tableProperties.setNumber(ROW_GROUP_SIZE, 123);
             store.save(tableProperties);
 
-            provider.getTableProperties(tableName);
+            provider.getByName(tableName);
 
             tableProperties.setNumber(ROW_GROUP_SIZE, 456);
             store.save(tableProperties);
@@ -139,12 +139,12 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
                     Instant.parse("2023-10-09T17:15:00Z"));
 
             // When
-            provider.getTableProperties(tableName); // Populate cache
+            provider.getByName(tableName); // Populate cache
             tableProperties.setNumber(ROW_GROUP_SIZE, 456L);
             store.save(tableProperties);
 
             // Then
-            assertThat(provider.getTableProperties(tableName).getLong(ROW_GROUP_SIZE))
+            assertThat(provider.getByName(tableName).getLong(ROW_GROUP_SIZE))
                     .isEqualTo(456L);
         }
 
@@ -159,12 +159,12 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
                     Instant.parse("2023-10-09T17:12:00Z"));
 
             // When
-            provider.getTableProperties(tableName); // Populate cache
+            provider.getByName(tableName); // Populate cache
             tableProperties.setNumber(ROW_GROUP_SIZE, 456L);
             store.save(tableProperties);
 
             // Then
-            assertThat(provider.getTableProperties(tableName).getLong(ROW_GROUP_SIZE))
+            assertThat(provider.getByName(tableName).getLong(ROW_GROUP_SIZE))
                     .isEqualTo(123L);
         }
 
@@ -185,17 +185,17 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
                     Instant.parse("2023-10-09T17:15:00Z"));
 
             // When
-            provider.getTableProperties(tableProperties1.get(TABLE_NAME)); // Populate cache
-            provider.getTableProperties(tableProperties2.get(TABLE_NAME)); // Populate cache
+            provider.getByName(tableProperties1.get(TABLE_NAME)); // Populate cache
+            provider.getByName(tableProperties2.get(TABLE_NAME)); // Populate cache
             tableProperties1.setNumber(ROW_GROUP_SIZE, 456L);
             tableProperties2.setNumber(ROW_GROUP_SIZE, 456L);
             store.save(tableProperties1);
             store.save(tableProperties2);
 
             // Then
-            assertThat(provider.getTableProperties(tableProperties1.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
+            assertThat(provider.getByName(tableProperties1.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
                     .isEqualTo(456L);
-            assertThat(provider.getTableProperties(tableProperties2.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
+            assertThat(provider.getByName(tableProperties2.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
                     .isEqualTo(123L);
         }
     }

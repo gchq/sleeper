@@ -61,7 +61,7 @@ public class IngestRandomData {
         }
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
-                .getTableProperties(args[1]);
+                .getByName(args[1]);
 
         s3Client.shutdown();
         dynamoClient.shutdown();

@@ -82,7 +82,7 @@ public class MultipleQueries {
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient);
         QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoClient, sqsClient, systemTestProperties);
 
-        Schema schema = tablePropertiesProvider.getTableProperties(tableName).getSchema();
+        Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Supplier<Key> keySupplier = RandomRecordSupplier.getSupplier(schema.getRowKeyTypes(),
                 new RandomRecordSupplierConfig(systemTestProperties));

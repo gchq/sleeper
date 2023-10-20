@@ -71,7 +71,7 @@ public abstract class QueryCommandLineClient {
         if (tableName == null) {
             return null;
         }
-        return tablePropertiesProvider.getTableProperties(tableName);
+        return tablePropertiesProvider.getByName(tableName);
     }
 
     protected void runQueries(TableProperties tableProperties) {
@@ -96,7 +96,7 @@ public abstract class QueryCommandLineClient {
                 query = constructRangeQuery(tableName, schema, rangeFactory, scanner);
             }
 
-            submitQuery(tablePropertiesProvider.getTableProperties(tableName), query);
+            submitQuery(tablePropertiesProvider.getByName(tableName), query);
         }
     }
 
@@ -236,7 +236,7 @@ public abstract class QueryCommandLineClient {
             }
         }
 
-        System.out.println("Thie table has schema " + tablePropertiesProvider.getTableProperties(tableName).getSchema());
+        System.out.println("Thie table has schema " + tablePropertiesProvider.getByName(tableName).getSchema());
 
         return tableName;
     }
