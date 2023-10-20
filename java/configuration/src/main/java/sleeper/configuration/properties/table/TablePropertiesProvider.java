@@ -17,6 +17,8 @@ package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
@@ -36,8 +38,9 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
     protected final TablePropertiesStore propertiesStore;
-    private final int timeoutInMins;
+    private final Duration cacheTimeout;
     private final Supplier<Instant> timeSupplier;
     private final Map<String, CacheEntry> cacheById = new HashMap<>();
     private final Map<String, CacheEntry> cacheByName = new HashMap<>();
@@ -51,13 +54,13 @@ public class TablePropertiesProvider {
     }
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore, Supplier<Instant> timeSupplier) {
-        this(propertiesStore, instanceProperties.getInt(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS), timeSupplier);
+        this(propertiesStore, Duration.ofMinutes(instanceProperties.getInt(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS)), timeSupplier);
     }
 
     protected TablePropertiesProvider(TablePropertiesStore propertiesStore,
-                                      int timeoutInMins, Supplier<Instant> timeSupplier) {
+                                      Duration cacheTimeout, Supplier<Instant> timeSupplier) {
         this.propertiesStore = propertiesStore;
-        this.timeoutInMins = timeoutInMins;
+        this.cacheTimeout = cacheTimeout;
         this.timeSupplier = timeSupplier;
     }
 
@@ -75,12 +78,19 @@ public class TablePropertiesProvider {
         Instant currentTime = timeSupplier.get();
         CacheEntry currentEntry = cache.get(identifier);
         TableProperties properties;
-        if (currentEntry == null || currentEntry.isExpired(currentTime)) {
+        if (currentEntry == null) {
             properties = loadProperties.apply(identifier).orElseThrow();
+            LOGGER.info("Cache miss, loaded properties for table {}", properties.getId());
+        } else if (currentEntry.isExpired(currentTime)) {
+            properties = loadProperties.apply(identifier).orElseThrow();
+            LOGGER.info("Expiry time reached, reloaded properties for table {}", properties.getId());
         } else {
             properties = currentEntry.getTableProperties();
+            LOGGER.info("Cache hit for table {}", properties.getId());
         }
-        CacheEntry entry = new CacheEntry(properties, currentTime.plus(Duration.ofMinutes(timeoutInMins)));
+        Instant expiryTime = currentTime.plus(cacheTimeout);
+        LOGGER.info("Setting expiry time: {}", expiryTime);
+        CacheEntry entry = new CacheEntry(properties, expiryTime);
         cacheById.put(properties.get(TABLE_ID), entry);
         cacheByName.put(properties.get(TABLE_NAME), entry);
         return properties;
