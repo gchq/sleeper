@@ -244,9 +244,9 @@ public class TablePropertiesProviderTest {
             store.save(tableProperties);
             instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
             TablePropertiesProvider provider = providerWithTimes(
-                    Instant.parse("2023-10-09T17:11:00Z"),
+                    Instant.parse("2023-10-09T17:10:00Z"),
                     Instant.parse("2023-10-09T17:12:00Z"),
-                    Instant.parse("2023-10-09T17:15:00Z"));
+                    Instant.parse("2023-10-09T17:14:00Z"));
 
             // When
             int foundInitialLoad = provider.getByName(tableName).getInt(ROW_GROUP_SIZE);
