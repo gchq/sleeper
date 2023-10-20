@@ -134,16 +134,16 @@ public class TablePropertiesProvider {
         private final TableProperties tableProperties;
         private final Instant expiryTime;
 
-        public CacheEntry(TableProperties tableProperties, Instant expiryTime) {
+        CacheEntry(TableProperties tableProperties, Instant expiryTime) {
             this.tableProperties = tableProperties;
             this.expiryTime = expiryTime;
         }
 
-        public TableProperties getTableProperties() {
+        TableProperties getTableProperties() {
             return tableProperties;
         }
 
-        public boolean isExpired(Instant currentTime) {
+        boolean isExpired(Instant currentTime) {
             return currentTime.isAfter(expiryTime);
         }
     }
