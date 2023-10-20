@@ -81,19 +81,24 @@ public class TablePropertiesProvider {
         if (currentEntry == null) {
             properties = loadProperties.apply(identifier).orElseThrow();
             LOGGER.info("Cache miss, loaded properties for table {}", properties.getId());
+            cache(properties, currentTime);
         } else if (currentEntry.isExpired(currentTime)) {
             properties = loadProperties.apply(identifier).orElseThrow();
             LOGGER.info("Expiry time reached, reloaded properties for table {}", properties.getId());
+            cache(properties, currentTime);
         } else {
             properties = currentEntry.getTableProperties();
             LOGGER.info("Cache hit for table {}", properties.getId());
         }
+        return properties;
+    }
+
+    private void cache(TableProperties properties, Instant currentTime) {
         Instant expiryTime = currentTime.plus(cacheTimeout);
         LOGGER.info("Setting expiry time: {}", expiryTime);
         CacheEntry entry = new CacheEntry(properties, expiryTime);
         cacheById.put(properties.get(TABLE_ID), entry);
         cacheByName.put(properties.get(TABLE_NAME), entry);
-        return properties;
     }
 
     public TableProperties get(TableId tableId) {

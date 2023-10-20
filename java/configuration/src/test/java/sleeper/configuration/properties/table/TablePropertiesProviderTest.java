@@ -238,6 +238,29 @@ public class TablePropertiesProviderTest {
         }
 
         @Test
+        void shouldLoadPropertiesThenHitCacheThenReloadOnExpiry() {
+            // Given
+            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
+            store.save(tableProperties);
+            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+            TablePropertiesProvider provider = providerWithTimes(
+                    Instant.parse("2023-10-09T17:11:00Z"),
+                    Instant.parse("2023-10-09T17:12:00Z"),
+                    Instant.parse("2023-10-09T17:15:00Z"));
+
+            // When
+            int foundInitialLoad = provider.getByName(tableName).getInt(ROW_GROUP_SIZE);
+            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
+            store.save(tableProperties);
+            int foundCacheHit = provider.getByName(tableName).getInt(ROW_GROUP_SIZE);
+            int foundCacheExpired = provider.getByName(tableName).getInt(ROW_GROUP_SIZE);
+
+            // Then
+            assertThat(List.of(foundInitialLoad, foundCacheHit, foundCacheExpired))
+                    .containsExactly(123, 123, 456);
+        }
+
+        @Test
         void shouldNotReloadPropertiesWhenTimeoutHasBeenReachedForOtherTable() {
             // Given
             TableProperties tableProperties1 = createValidTableProperties();
