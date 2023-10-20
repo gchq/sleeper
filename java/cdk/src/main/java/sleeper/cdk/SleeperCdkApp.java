@@ -26,7 +26,8 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.AthenaStack;
 import sleeper.cdk.stack.CompactionStack;
-import sleeper.cdk.stack.ConfigurationStack;
+import sleeper.cdk.stack.ConfigBucketStack;
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
@@ -69,8 +70,8 @@ public class SleeperCdkApp extends Stack {
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
+    private CoreStacks coreStacks;
     private IngestStack ingestStack;
-    private TableDataStack dataStack;
     private CompactionStack compactionStack;
     private PartitionSplittingStack partitionSplittingStack;
     private BulkImportBucketStack bulkImportBucketStack;
@@ -81,7 +82,6 @@ public class SleeperCdkApp extends Stack {
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
-    private StateStoreStacks stateStoreStacks;
 
     public SleeperCdkApp(App app, String id, StackProps props, InstanceProperties instanceProperties, BuiltJars jars) {
         super(app, id, props);
@@ -118,24 +118,23 @@ public class SleeperCdkApp extends Stack {
         // Stack for Checking VPC configuration
         new VpcStack(this, "Vpc", instanceProperties, jars);
 
-        // Stack for instance configuration
-        new ConfigurationStack(this, "Configuration", instanceProperties);
-
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
-
-        // Stack for tables
-        dataStack = new TableDataStack(this, "TableData", instanceProperties);
-        new TableIndexStack(this, "TableIndex", instanceProperties);
-        stateStoreStacks = new StateStoreStacks(
+        // Stacks for tables
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties);
+        StateStoreStacks stateStoreStacks = new StateStoreStacks(
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
-        new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, stateStoreStacks);
+        coreStacks = new CoreStacks(
+                new ConfigBucketStack(this, "Configuration", instanceProperties),
+                new TableIndexStack(this, "TableIndex", instanceProperties),
+                stateStoreStacks, dataStack);
+        new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
 
         // Stack for Athena analytics
         if (optionalStacks.contains(AthenaStack.class.getSimpleName())) {
-            new AthenaStack(this, "Athena", instanceProperties, jars, stateStoreStacks, dataStack);
+            new AthenaStack(this, "Athena", instanceProperties, jars, coreStacks);
         }
 
         if (INGEST_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
@@ -146,7 +145,7 @@ public class SleeperCdkApp extends Stack {
         }
         if (EMR_BULK_IMPORT_STACK_NAMES.stream().anyMatch(optionalStacks::contains)) {
             emrBulkImportCommonStack = new CommonEmrBulkImportStack(this, "BulkImportEMRCommon",
-                    instanceProperties, bulkImportBucketStack, stateStoreStacks, dataStack, ingestStatusStoreStack);
+                    instanceProperties, coreStacks, bulkImportBucketStack, ingestStatusStoreStack);
         }
 
         // Stack to run bulk import jobs via EMR Serverless
@@ -155,7 +154,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     bulkImportBucketStack,
                     topicStack,
-                    stateStoreStacks, dataStack,
+                    coreStacks,
                     ingestStatusStoreStack.getResources()
             );
 
@@ -172,7 +171,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    stateStoreStacks,
+                    coreStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -185,7 +184,7 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     emrBulkImportCommonStack,
                     topicStack,
-                    stateStoreStacks,
+                    coreStacks,
                     ingestStatusStoreStack.getResources()
             );
         }
@@ -196,7 +195,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties,
                     jars,
                     bulkImportBucketStack,
-                    stateStoreStacks, dataStack,
+                    coreStacks,
                     topicStack,
                     ingestStatusStoreStack
             );
@@ -207,7 +206,7 @@ public class SleeperCdkApp extends Stack {
             new GarbageCollectorStack(this,
                     "GarbageCollector",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack);
+                    coreStacks);
         }
 
         // Stack for containers for compactions and splitting compactions
@@ -216,7 +215,7 @@ public class SleeperCdkApp extends Stack {
                     "Compaction",
                     instanceProperties, jars,
                     topicStack.getTopic(),
-                    stateStoreStacks, dataStack);
+                    coreStacks);
         }
 
         // Stack to split partitions
@@ -224,7 +223,7 @@ public class SleeperCdkApp extends Stack {
             partitionSplittingStack = new PartitionSplittingStack(this,
                     "PartitionSplitting",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack,
+                    coreStacks,
                     topicStack.getTopic());
         }
 
@@ -233,7 +232,7 @@ public class SleeperCdkApp extends Stack {
             new QueryStack(this,
                     "Query",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack);
+                    coreStacks);
         }
 
         // Stack for ingest jobs
@@ -241,7 +240,7 @@ public class SleeperCdkApp extends Stack {
             ingestStack = new IngestStack(this,
                     "Ingest",
                     instanceProperties, jars,
-                    stateStoreStacks, dataStack,
+                    coreStacks,
                     topicStack.getTopic(),
                     ingestStatusStoreStack);
         }
@@ -249,7 +248,7 @@ public class SleeperCdkApp extends Stack {
         // Stack to batch up files to ingest and create jobs
         if (optionalStacks.contains(IngestBatcherStack.class.getSimpleName())) {
             new IngestBatcherStack(this, "IngestBatcher",
-                    instanceProperties, jars,
+                    instanceProperties, jars, coreStacks,
                     ingestStack, emrBulkImportStack, persistentEmrBulkImportStack,
                     eksBulkImportStack, emrServerlessBulkImportStack);
         }
@@ -276,12 +275,8 @@ public class SleeperCdkApp extends Stack {
         return ingestStack;
     }
 
-    public StateStoreStacks getStateStoreStacks() {
-        return stateStoreStacks;
-    }
-
-    public TableDataStack getDataStack() {
-        return dataStack;
+    public CoreStacks getCoreStacks() {
+        return coreStacks;
     }
 
     public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {
@@ -307,7 +302,7 @@ public class SleeperCdkApp extends Stack {
 
     protected void generateProperties() {
         // Stack for writing properties
-        new PropertiesStack(this, "Properties", instanceProperties, jars);
+        new PropertiesStack(this, "Properties", instanceProperties, jars, coreStacks);
     }
 
     public static void main(String[] args) {

@@ -23,8 +23,17 @@ public interface AdminConfigStoreTestHarness {
 
     void setInstanceProperties(InstanceProperties properties);
 
-    void setInstanceProperties(
-            InstanceProperties instanceProperties, TableProperties tableProperties);
+    void saveTableProperties(TableProperties tableProperties);
+
+    String getInstanceId();
+
+    default void setInstanceProperties(
+            InstanceProperties instanceProperties, TableProperties... tableProperties) {
+        setInstanceProperties(instanceProperties);
+        for (TableProperties table : tableProperties) {
+            saveTableProperties(table);
+        }
+    }
 
     AdminClientPropertiesStore getStore();
 }

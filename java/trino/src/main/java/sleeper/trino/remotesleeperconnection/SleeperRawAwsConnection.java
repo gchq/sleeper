@@ -17,8 +17,6 @@ package sleeper.trino.remotesleeperconnection;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -34,8 +32,10 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.Record;
@@ -63,12 +63,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * This class manages the basic connection to a Sleeper instance, such as retrieving configuration from S3 and
@@ -101,6 +99,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     private final AmazonDynamoDB dynamoDbClient;
     private final HadoopConfigurationProvider hadoopConfigurationProvider;
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
     private final StateStoreFactory stateStoreFactory;
     private final Map<String, TableProperties> tableNameToSleeperTablePropertiesMap;
@@ -126,6 +125,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // will be used to create a new state store for each thread.
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(this.s3Client, sleeperConfig.getConfigBucket());
+        this.tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDbClient);
         this.stateStoreProvider = new StateStoreProvider(this.dynamoDbClient, this.instanceProperties,
                 this.hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties));
         this.stateStoreFactory = new StateStoreFactory(this.dynamoDbClient, this.instanceProperties,
@@ -134,7 +134,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         // Member variables related to table properties
         // Note that the table-properties provider is NOT thread-safe.
         List<String> tableNames = pullAllSleeperTableNames();
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(this.s3Client, this.instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDbClient);
         LOGGER.info(String.format("Number of Sleeper tables: %d", tableNames.size()));
         this.tableNameToSleeperTablePropertiesMap = tableNames.stream()
                 .collect(ImmutableMap.toImmutableMap(
@@ -214,12 +214,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
      * @return A list of Sleeper table names.
      */
     private List<String> pullAllSleeperTableNames() {
-        ListObjectsV2Result result = s3Client.listObjectsV2(instanceProperties.get(CONFIG_BUCKET), TableProperties.TABLES_PREFIX + "/");
-        List<S3ObjectSummary> objectSummaries = result.getObjectSummaries();
-        return objectSummaries.stream()
-                .map(S3ObjectSummary::getKey)
-                .map(s -> s.substring(TableProperties.TABLES_PREFIX.length() + 1))
-                .collect(Collectors.toList());
+        return tablePropertiesStore.listTableNames();
     }
 
     /**

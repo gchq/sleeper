@@ -15,6 +15,8 @@
  */
 package sleeper.clients.status.update;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
@@ -39,9 +41,10 @@ public class DownloadConfig {
         String instanceId = args[0];
         Path basePath = Path.of(args[1]);
         AmazonS3 s3 = AwsV1ClientHelper.buildAwsV1Client(AmazonS3ClientBuilder.standard());
+        AmazonDynamoDB dynamoDB = AwsV1ClientHelper.buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         LOGGER.info("Downloading configuration from S3");
         try {
-            SaveLocalProperties.saveFromS3(s3, instanceId, basePath);
+            SaveLocalProperties.saveFromS3(s3, dynamoDB, instanceId, basePath);
             LOGGER.info("Download complete");
         } catch (IOException e) {
             LOGGER.error("Download failed: {}", e.getMessage());

@@ -26,18 +26,18 @@ public class InMemoryTableIndex implements TableIndex {
 
     private final Map<String, TableId> idByName = new TreeMap<>();
     private final Map<String, TableId> nameById = new HashMap<>();
-    private int nextIdNumber = 1;
 
     @Override
-    public TableId createTable(String tableName) {
-        if (idByName.containsKey(tableName)) {
-            throw new TableAlreadyExistsException(tableName);
+    public void create(TableId tableId) throws TableAlreadyExistsException {
+        if (idByName.containsKey(tableId.getTableName())) {
+            throw new TableAlreadyExistsException(tableId);
         }
-        TableId id = TableId.uniqueIdAndName("table-" + nextIdNumber, tableName);
-        nextIdNumber++;
-        idByName.put(tableName, id);
+        save(tableId);
+    }
+
+    public void save(TableId id) {
+        idByName.put(id.getTableName(), id);
         nameById.put(id.getTableUniqueId(), id);
-        return id;
     }
 
     @Override
@@ -53,5 +53,11 @@ public class InMemoryTableIndex implements TableIndex {
     @Override
     public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
         return Optional.ofNullable(nameById.get(tableUniqueId));
+    }
+
+    @Override
+    public void delete(TableId tableId) {
+        idByName.remove(tableId.getTableName());
+        nameById.remove(tableId.getTableUniqueId());
     }
 }

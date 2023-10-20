@@ -93,7 +93,7 @@ public class IngestBatcherReport {
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
-                new TablePropertiesProvider(amazonS3, instanceProperties));
+                new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient));
         new IngestBatcherReport(statusStore, reporter, queryType).run();
 
         amazonS3.shutdown();

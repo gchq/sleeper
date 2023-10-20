@@ -76,7 +76,7 @@ public class IngestBatcherJobCreatorLambda {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
         LOGGER.info("Loaded instance properties from bucket {}", configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
         IngestBatcher batcher = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)

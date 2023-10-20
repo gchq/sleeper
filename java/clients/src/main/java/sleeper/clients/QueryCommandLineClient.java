@@ -15,13 +15,13 @@
  */
 package sleeper.clients;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.commons.codec.binary.Base64;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.core.key.Key;
 import sleeper.core.range.Range;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
@@ -34,7 +34,6 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.model.Query;
-import sleeper.table.job.TableLister;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -48,14 +47,12 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
  * Allows a user to enter a query from the command line.
  */
 public abstract class QueryCommandLineClient {
-    private final AmazonS3 s3Client;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final InstanceProperties instanceProperties;
 
-    protected QueryCommandLineClient(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        this.s3Client = s3Client;
+    protected QueryCommandLineClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
     }
 
     public void run() throws StateStoreException {
@@ -70,7 +67,7 @@ public abstract class QueryCommandLineClient {
     protected abstract void submitQuery(TableProperties tableProperties, Query query);
 
     protected TableProperties getTableProperties() {
-        String tableName = getTableName(s3Client, instanceProperties);
+        String tableName = promptTableName();
         if (tableName == null) {
             return null;
         }
@@ -214,8 +211,8 @@ public abstract class QueryCommandLineClient {
         return new Query.Builder(tableName, UUID.randomUUID().toString(), region).build();
     }
 
-    private String getTableName(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        List<String> tables = new TableLister(s3Client, instanceProperties).listTables();
+    private String promptTableName() {
+        List<String> tables = tablePropertiesProvider.listTableNames();
         String tableName;
         if (tables.isEmpty()) {
             System.out.println("There are no tables. Please create one and add data before running this class.");
@@ -246,21 +243,6 @@ public abstract class QueryCommandLineClient {
 
     protected InstanceProperties getInstanceProperties() {
         return instanceProperties;
-    }
-
-    public Key deserialise(List<String> rowKeys, Schema schema) {
-        if (1 == schema.getRowKeyFields().size()) {
-            return Key.create(parse(rowKeys.get(0), schema.getRowKeyTypes().get(0)));
-        }
-
-        int i = 0;
-        List<Object> parsedKeys = new ArrayList<>();
-        for (String rowKey : rowKeys) {
-            parsedKeys.add(parse(rowKey, schema.getRowKeyTypes().get(i)));
-            i++;
-        }
-
-        return Key.create(parsedKeys);
     }
 
     private Object parse(String string, PrimitiveType type) {

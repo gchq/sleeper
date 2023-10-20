@@ -28,6 +28,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +60,7 @@ public class PartitionSplittingIT {
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         stringFromPrefixAndPadToSize("row-", 2)));
-        sleeper.updateTableProperties(properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.updateTableProperties(Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When

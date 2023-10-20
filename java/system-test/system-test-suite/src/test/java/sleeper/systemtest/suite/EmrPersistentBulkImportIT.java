@@ -28,6 +28,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,8 +64,7 @@ public class EmrPersistentBulkImportIT {
     @Test
     void shouldBulkImport100Records() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(properties ->
-                properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
+        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                 .rootFirst("root")
                 .splitToNewChildren("root", "A", "B", "row-50")

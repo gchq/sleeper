@@ -50,7 +50,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_DLQ_URL;
@@ -76,12 +75,9 @@ public class PartitionSplittingStack extends NestedStack {
                                    String id,
                                    InstanceProperties instanceProperties,
                                    BuiltJars jars,
-                                   StateStoreStacks stateStoreStacks, TableDataStack dataStack,
+                                   CoreStacks coreStacks,
                                    Topic topic) {
         super(scope, id);
-
-        // Config bucket
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
@@ -156,8 +152,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
-        configBucket.grantRead(findPartitionsToSplitLambda);
-        stateStoreStacks.grantReadActiveFilesReadWritePartitions(findPartitionsToSplitLambda);
+        coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
 
         // Grant this function permission to write to the SQS queue
         partitionSplittingQueue.grantSendMessages(findPartitionsToSplitLambda);
@@ -198,11 +193,9 @@ public class PartitionSplittingStack extends NestedStack {
         // Grant permission for this lambda to consume messages from the queue
         partitionSplittingQueue.grantConsumeMessages(splitPartitionLambda);
 
-        // Grant this function permission to read config files and to read
-        // from / write to the DynamoDB table
-        configBucket.grantRead(splitPartitionLambda);
-        dataStack.getDataBucket().grantRead(splitPartitionLambda);
-        stateStoreStacks.grantReadWritePartitions(splitPartitionLambda);
+        // Grant this function permission to read config files and data sketches,
+        // and to read / write partitions
+        coreStacks.grantSplitPartitions(splitPartitionLambda);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

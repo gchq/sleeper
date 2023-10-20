@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.table.index.dynamodb;
+package sleeper.configuration.table.index;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -22,6 +22,7 @@ import com.amazonaws.services.dynamodbv2.model.CancellationReason;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
+import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -37,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
-import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
 import java.util.Comparator;
@@ -60,18 +60,16 @@ public class DynamoDBTableIndex implements TableIndex {
     private final AmazonDynamoDB dynamoDB;
     private final String nameIndexDynamoTableName;
     private final String idIndexDynamoTableName;
-    private final TableIdGenerator idGenerator = new TableIdGenerator();
 
-    public DynamoDBTableIndex(AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
+    public DynamoDBTableIndex(InstanceProperties instanceProperties, AmazonDynamoDB dynamoDB) {
         this.dynamoDB = dynamoDB;
         this.nameIndexDynamoTableName = instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME);
         this.idIndexDynamoTableName = instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME);
     }
 
     @Override
-    public TableId createTable(String tableName) throws TableAlreadyExistsException {
-        TableId id = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
-        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(id);
+    public void create(TableId tableId) throws TableAlreadyExistsException {
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(tableId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -89,13 +87,11 @@ public class DynamoDBTableIndex implements TableIndex {
             TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
             List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
             double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-            LOGGER.debug("Created table {} with ID {}, capacity consumed = {}",
-                    tableName, id.getTableUniqueId(), totalCapacity);
-            return id;
+            LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
             if ("ConditionalCheckFailed".equals(nameIndexReason.getCode())) {
-                throw new TableAlreadyExistsException(tableName);
+                throw new TableAlreadyExistsException(tableId);
             } else {
                 throw e;
             }
@@ -130,5 +126,22 @@ public class DynamoDBTableIndex implements TableIndex {
                         .withAttributeValueList(createStringAttribute(tableUniqueId))
                         .withComparisonOperator(ComparisonOperator.EQ)));
         return result.getItems().stream().map(DynamoDBTableIdFormat::readItem).findFirst();
+    }
+
+    @Override
+    public void delete(TableId tableId) {
+        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTransactItems(
+                        new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))),
+                        new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(idIndexDynamoTableName)
+                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))));
+        TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+        double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+        LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
     }
 }

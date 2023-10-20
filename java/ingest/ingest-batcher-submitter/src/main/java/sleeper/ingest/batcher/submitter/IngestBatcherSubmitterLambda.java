@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.batcher.submitter;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -52,13 +53,13 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
-                instanceProperties, tablePropertiesProvider);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.configuration = new Configuration();
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }

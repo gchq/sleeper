@@ -56,7 +56,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadInstancePropertiesFromDirectory;
 import static sleeper.configuration.properties.local.LoadLocalProperties.loadTablesFromDirectory;
-import static sleeper.configuration.properties.table.TableProperties.TABLES_PREFIX;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -67,7 +66,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     @BeforeEach
     void setUp() {
-        instanceProperties.saveToS3(s3);
+        setInstanceProperties(instanceProperties);
     }
 
     @DisplayName("Update instance properties")
@@ -77,17 +76,17 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldUpdateInstancePropertyInS3() {
             // When
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
-            assertThat(store().loadInstanceProperties(INSTANCE_ID).get(FARGATE_VERSION))
+            assertThat(store().loadInstanceProperties(instanceId).get(FARGATE_VERSION))
                     .isEqualTo("1.2.3");
         }
 
         @Test
         void shouldUpdateInstancePropertyInLocalDirectory() {
             // When
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadInstancePropertiesFromDirectory(tempDir).get(FARGATE_VERSION))
@@ -100,7 +99,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -112,12 +111,12 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenInstancePropertyIsUpdated() {
             // Given
             createTableInS3("old-test-table");
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "4.5.6");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "4.5.6");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -136,7 +135,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(instanceId, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(store().loadTableProperties(instanceProperties, "test-table").getInt(ROW_GROUP_SIZE))
@@ -149,7 +148,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             createTableInS3("test-table");
 
             // When
-            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(instanceId, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -164,7 +163,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             createTableInS3("test-table-2");
 
             // When
-            updateTableProperty(INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(instanceId, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -176,12 +175,12 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         void shouldRemoveDeletedTableFromLocalDirectoryWhenTablePropertyIsUpdated() {
             // Given
             createTableInS3("old-test-table");
-            updateTableProperty(INSTANCE_ID, "old-test-table", ROW_GROUP_SIZE, "123");
+            updateTableProperty(instanceId, "old-test-table", ROW_GROUP_SIZE, "123");
             deleteTableInS3("old-test-table");
             createTableInS3("new-test-table");
 
             // When
-            updateTableProperty(INSTANCE_ID, "new-test-table", ROW_GROUP_SIZE, "456");
+            updateTableProperty(instanceId, "new-test-table", ROW_GROUP_SIZE, "456");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, tempDir))
@@ -202,7 +201,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             rememberLocalPropertiesWhenCdkDeployed(localPropertiesWhenCdkDeployed, localTablesWhenCdkDeployed);
 
             // When
-            updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
+            updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
 
             // Then
             instanceProperties.set(TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "123");
@@ -217,7 +216,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldNotRunCdkDeployWhenUnflaggedInstancePropertyUpdated() {
             // When
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
             verifyNoInteractions(cdk);
@@ -230,11 +229,11 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
             instanceProperties.saveToS3(s3);
 
             // When
-            updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+            updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
 
             // Then
             verifyAnyPropertiesDeployedWithCdk();
-            assertThat(store().loadInstanceProperties(INSTANCE_ID)
+            assertThat(store().loadInstanceProperties(instanceId)
                     .get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                     .isEqualTo("123");
         }
@@ -247,7 +246,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // When / Then
             assertThatThrownBy(() -> updateInstanceProperty(
-                    INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
+                    instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456"))
                     .isInstanceOf(AdminClientPropertiesStore.CouldNotSaveInstanceProperties.class)
                     .hasCauseReference(thrown);
         }
@@ -261,7 +260,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // When / Then
             try {
-                updateInstanceProperty(INSTANCE_ID, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
+                updateInstanceProperty(instanceId, TASK_RUNNER_LAMBDA_MEMORY_IN_MB, "456");
                 fail("CDK failure did not cause an exception");
             } catch (Exception e) {
                 assertThat(loadInstancePropertiesFromDirectory(tempDir).get(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
@@ -277,10 +276,10 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldLoadInvalidInstanceProperties() {
             // Given
-            updateInstanceProperty(INSTANCE_ID, MAXIMUM_CONNECTIONS_TO_S3, "abc");
+            updateInstanceProperty(instanceId, MAXIMUM_CONNECTIONS_TO_S3, "abc");
 
             // When / Then
-            assertThat(store().loadInstanceProperties(INSTANCE_ID).get(MAXIMUM_CONNECTIONS_TO_S3))
+            assertThat(store().loadInstanceProperties(instanceId).get(MAXIMUM_CONNECTIONS_TO_S3))
                     .isEqualTo("abc");
         }
 
@@ -306,7 +305,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // When
             updateInstanceProperty(storeWithGeneratedDirectory(generatedDir),
-                    INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+                    instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
             assertThat(loadInstancePropertiesFromDirectory(generatedDir).get(FARGATE_VERSION))
@@ -321,7 +320,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
             // When
             updateTableProperty(storeWithGeneratedDirectory(generatedDir),
-                    INSTANCE_ID, "test-table", ROW_GROUP_SIZE, "123");
+                    instanceId, "test-table", ROW_GROUP_SIZE, "123");
 
             // Then
             assertThat(loadTablesFromDirectory(instanceProperties, generatedDir))
@@ -342,7 +341,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldUploadDockerImagesWhenOneStackEnabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
+            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,IngestStack");
 
             // Then
             verify(uploadDockerImages).upload(withStacks("QueryStack", "CompactionStack", "IngestStack"));
@@ -351,7 +350,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldNotUploadDockerImagesWhenNoNewStacksAreEnabled() {
             // When
-            updateInstanceProperty(INSTANCE_ID, FARGATE_VERSION, "1.2.3");
+            updateInstanceProperty(instanceId, FARGATE_VERSION, "1.2.3");
 
             // Then
             verifyNoInteractions(uploadDockerImages);
@@ -360,7 +359,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldNotUploadDockerImagesWhenStackIsDisabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack");
+            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack");
 
             // Then
             verify(uploadDockerImages, times(0)).upload(any());
@@ -369,7 +368,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldUploadDockerImagesWhenOneStackIsEnabledAndAnotherStackIsDisabled() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,IngestStack");
+            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,IngestStack");
 
             // Then
             verify(uploadDockerImages).upload(withStacks("QueryStack", "IngestStack"));
@@ -378,7 +377,7 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
         @Test
         void shouldNotUploadDockerImagesWhenStackIsEnabledThatRequiresNoImage() throws IOException, InterruptedException {
             // When
-            updateInstanceProperty(INSTANCE_ID, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
+            updateInstanceProperty(instanceId, OPTIONAL_STACKS, "QueryStack,CompactionStack,GarbageCollectorStack");
 
             // Then
             verify(uploadDockerImages, times(0)).upload(any());
@@ -412,9 +411,8 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
 
     private void updateTableProperty(AdminClientPropertiesStore store, String instanceId, String tableName, TableProperty property, String value) {
         TableProperties properties = store.loadTableProperties(instanceProperties, tableName);
-        String valueBefore = properties.get(property);
         properties.set(property, value);
-        store.saveTableProperties(instanceId, properties, new PropertiesDiff(property, valueBefore, value));
+        store.saveTableProperties(instanceId, properties);
     }
 
     private void rememberLocalPropertiesWhenCdkDeployed(
@@ -430,17 +428,17 @@ public class AdminClientPropertiesStoreIT extends AdminClientITBase {
     }
 
     private void createTableInS3(String tableName) {
-        createValidTableProperties(instanceProperties, tableName).saveToS3(s3);
+        saveTableProperties(createValidTableProperties(instanceProperties, tableName));
     }
 
     private void createTableInS3(String tableName, Consumer<TableProperties> config) {
         TableProperties tableProperties = createValidTableProperties(instanceProperties, tableName);
         config.accept(tableProperties);
-        tableProperties.saveToS3(s3);
+        saveTableProperties(tableProperties);
     }
 
     private void deleteTableInS3(String tableName) {
-        s3.deleteObject(CONFIG_BUCKET_NAME, TABLES_PREFIX + "/" + tableName);
+        tablePropertiesStore.deleteByName(tableName);
     }
 
     private void verifyAnyPropertiesDeployedWithCdk() throws Exception {

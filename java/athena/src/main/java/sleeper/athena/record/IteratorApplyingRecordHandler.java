@@ -22,6 +22,8 @@ import com.amazonaws.athena.connector.lambda.domain.predicate.SortedRangeSet;
 import com.amazonaws.athena.connector.lambda.domain.predicate.ValueSet;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.services.athena.AmazonAthena;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
@@ -52,7 +54,6 @@ import sleeper.core.schema.type.Type;
 import sleeper.query.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.recordretrieval.RecordRetrievalException;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,18 +84,18 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private final ObjectFactory objectFactory;
 
-    public IteratorApplyingRecordHandler() throws IOException {
-        this(AmazonS3ClientBuilder.defaultClient(),
+    public IteratorApplyingRecordHandler() {
+        this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(),
                 System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket) {
-        super(s3Client, configBucket);
+    public IteratorApplyingRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket) {
+        super(s3Client, dynamoDB, configBucket);
         objectFactory = createObjectFactory(s3Client);
     }
 
-    public IteratorApplyingRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3Client, configBucket, secretsManager, athena);
+    public IteratorApplyingRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
+        super(s3Client, dynamoDB, configBucket, secretsManager, athena);
         objectFactory = createObjectFactory(s3Client);
     }
 

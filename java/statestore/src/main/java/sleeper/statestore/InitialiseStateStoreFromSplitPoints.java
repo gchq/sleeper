@@ -80,7 +80,7 @@ public class InitialiseStateStoreFromSplitPoints {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, args[0]);
 
-        TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties).getTableProperties(args[1]);
+        TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient).getTableProperties(args[1]);
 
         List<Object> splitPoints = null;
         if (args.length > 2) {

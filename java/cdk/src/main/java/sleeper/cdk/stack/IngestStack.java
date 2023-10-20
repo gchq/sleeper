@@ -67,7 +67,6 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_ARN;
@@ -109,8 +108,7 @@ public class IngestStack extends NestedStack {
             String id,
             InstanceProperties instanceProperties,
             BuiltJars jars,
-            StateStoreStacks stateStoreStacks,
-            TableDataStack dataStack,
+            CoreStacks coreStacks,
             Topic topic,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
@@ -123,9 +121,6 @@ public class IngestStack extends NestedStack {
         //      and if there are not enough (i.e. there is a backlog on the queue
         //      then it creates more tasks).
 
-        // Config bucket
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
-
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
 
@@ -136,10 +131,10 @@ public class IngestStack extends NestedStack {
         sqsQueueForIngestJobs(topic);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(configBucket, jarsBucket, stateStoreStacks, dataStack, ingestJobQueue);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
 
         // Lambda to create ingest tasks
-        lambdaToCreateIngestTasks(configBucket, ingestJobQueue, taskCreatorJar);
+        lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -232,10 +227,8 @@ public class IngestStack extends NestedStack {
     }
 
     private Cluster ecsClusterForIngestTasks(
-            IBucket configBucket,
             IBucket jarsBucket,
-            StateStoreStacks stateStoreStacks,
-            TableDataStack dataStack,
+            CoreStacks coreStacks,
             Queue ingestJobQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -271,10 +264,8 @@ public class IngestStack extends NestedStack {
                 .build();
         taskDefinition.addContainer("IngestContainer", containerDefinitionOptions);
 
-        configBucket.grantRead(taskDefinition.getTaskRole());
+        coreStacks.grantIngest(taskDefinition.getTaskRole());
         jarsBucket.grantRead(taskDefinition.getTaskRole());
-        dataStack.getDataBucket().grantReadWrite(taskDefinition.getTaskRole());
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(taskDefinition.getTaskRole());
         statusStore.grantWriteJobEvent(taskDefinition.getTaskRole());
         statusStore.grantWriteTaskEvent(taskDefinition.getTaskRole());
         ingestJobQueue.grantConsumeMessages(taskDefinition.getTaskRole());
@@ -303,7 +294,7 @@ public class IngestStack extends NestedStack {
         return cluster;
     }
 
-    private void lambdaToCreateIngestTasks(IBucket configBucket, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
+    private void lambdaToCreateIngestTasks(CoreStacks coreStacks, Queue ingestJobQueue, LambdaCode taskCreatorJar) {
 
         // Run tasks function
         String functionName = Utils.truncateTo64Characters(String.join("-", "sleeper",
@@ -321,7 +312,7 @@ public class IngestStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS))));
 
         // Grant this function permission to read from the S3 bucket
-        configBucket.grantRead(handler);
+        coreStacks.grantReadInstanceConfig(handler);
 
         // Grant this function permission to query the queue for number of messages
         ingestJobQueue.grantSendMessages(handler);

@@ -38,20 +38,8 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>tables</artifactId>
+            <artifactId>statestore</artifactId>
             <version>${project.parent.version}</version>
-            <!-- Adding the exclusions below became necessary when upgrading from
-                cdk 1.134 to 1.147 -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-jaxb-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                    <artifactId>jackson-jaxrs-json-provider</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>

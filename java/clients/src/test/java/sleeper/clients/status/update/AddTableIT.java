@@ -29,10 +29,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.S3TablePropertiesStore;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesStore;
 import sleeper.configuration.properties.table.TableProperty;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
@@ -42,8 +44,6 @@ import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.index.dynamodb.DynamoDBTableIndex;
-import sleeper.table.index.dynamodb.DynamoDBTableIndexCreator;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,8 +68,8 @@ public class AddTableIT {
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TableIndex tableIndex = new DynamoDBTableIndex(dynamoDB, instanceProperties);
-    private final TablePropertiesStore propertiesStore = new S3TablePropertiesStore(instanceProperties, s3);
+    private final TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDB);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     @TempDir
     private Path tempDir;
 

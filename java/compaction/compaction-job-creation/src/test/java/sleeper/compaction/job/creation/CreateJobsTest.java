@@ -23,7 +23,6 @@ import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -34,8 +33,6 @@ import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.FixedStateStoreProvider;
-import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -52,7 +49,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CreateJobsTest {
 
@@ -166,16 +162,11 @@ public class CreateJobsTest {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
-        TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore);
-
-        TableLister tableLister = mock(TableLister.class);
-        when(tableLister.listTables()).thenReturn(Collections.singletonList(tableProperties.get(TABLE_NAME)));
-
         List<CompactionJob> compactionJobs = new ArrayList<>();
-        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(),
-                instanceProperties, tablePropertiesProvider, stateStoreProvider, compactionJobs::add,
-                tableLister, jobStatusStore);
+        CreateJobs createJobs = new CreateJobs(ObjectFactory.noUserJars(), instanceProperties,
+                new FixedTablePropertiesProvider(tableProperties),
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                compactionJobs::add, jobStatusStore);
         createJobs.createJobs();
         return compactionJobs;
     }
