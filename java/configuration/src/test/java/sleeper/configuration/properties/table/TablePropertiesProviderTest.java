@@ -39,7 +39,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class TablePropertiesProviderTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore store = InMemoryTableProperties.getStoreWithDefensiveCopy();
+    private final TablePropertiesStore store = InMemoryTableProperties.getStore();
     private final TableProperties tableProperties = createValidTableProperties();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final String tableName = tableProperties.get(TABLE_NAME);

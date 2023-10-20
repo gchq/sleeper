@@ -34,11 +34,11 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
         this.defensiveCopy = defensiveCopy;
     }
 
-    public static TablePropertiesStore getStore() {
+    public static TablePropertiesStore getStoreReturningExactInstance() {
         return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(false));
     }
 
-    public static TablePropertiesStore getStoreWithDefensiveCopy() {
+    public static TablePropertiesStore getStore() {
         return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(true));
     }
 
