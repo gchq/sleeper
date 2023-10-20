@@ -88,7 +88,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
 
         // When / Then
         assertThat(provider.lookupByName(tableName))
-                .isEmpty();
+                .contains(tableProperties.getId());
     }
 
     @Test
