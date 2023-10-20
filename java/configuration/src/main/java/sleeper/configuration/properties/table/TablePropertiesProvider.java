@@ -17,17 +17,12 @@ package sleeper.configuration.properties.table;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableId;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -35,12 +30,9 @@ import java.util.stream.Stream;
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 
 public class TablePropertiesProvider {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
     protected final TablePropertiesStore propertiesStore;
-    private final Supplier<Instant> timeSupplier;
-    private final int timeoutInMins;
-    private final Map<String, TableProperties> propertiesCacheByTableName = new HashMap<>();
-    private final Map<String, Instant> expireTimeByTableName = new HashMap<>();
+    private final TablePropertiesCache cache;
+    private final TablePropertiesExpiry expiry;
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
         this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
@@ -57,29 +49,20 @@ public class TablePropertiesProvider {
     protected TablePropertiesProvider(TablePropertiesStore propertiesStore,
                                       int timeoutInMins, Supplier<Instant> timeSupplier) {
         this.propertiesStore = propertiesStore;
-        this.timeoutInMins = timeoutInMins;
-        this.timeSupplier = timeSupplier;
+        this.cache = new TablePropertiesCache();
+        this.expiry = new TablePropertiesExpiry(timeoutInMins, timeSupplier);
     }
 
     public TableProperties getByName(String tableName) {
-        checkExpiryTime(tableName);
-        return propertiesCacheByTableName.computeIfAbsent(tableName,
-                name -> propertiesStore.loadByName(name).orElse(null));
-    }
-
-    public TableProperties get(TableId tableId) {
-        checkExpiryTime(tableId.getTableName());
-        return propertiesCacheByTableName.computeIfAbsent(tableId.getTableName(),
-                name -> propertiesStore.loadProperties(tableId));
-    }
-
-    private void checkExpiryTime(String tableName) {
-        Instant currentTime = timeSupplier.get();
-        if (expireTimeByTableName.containsKey(tableName) && currentTime.isAfter(expireTimeByTableName.get(tableName))) {
-            LOGGER.info("Table properties provider expiry time reached for table {}, clearing cache.", tableName);
-            propertiesCacheByTableName.remove(tableName);
+        if (expiry.isExpired(tableName)) {
+            cache.removeByName(tableName);
         }
-        expireTimeByTableName.put(tableName, currentTime.plus(Duration.ofMinutes(timeoutInMins)));
+        return cache.getByName(tableName)
+                .orElseGet(() -> {
+                    TableProperties properties = propertiesStore.loadByName(tableName).orElseThrow();
+                    cache.add(properties);
+                    return properties;
+                });
     }
 
     public Optional<TableProperties> getByNameIfExists(String tableName) {
@@ -88,6 +71,10 @@ public class TablePropertiesProvider {
         } catch (RuntimeException e) {
             return Optional.empty();
         }
+    }
+
+    public TableProperties get(TableId tableId) {
+        return getByName(tableId.getTableName());
     }
 
     public Stream<TableId> streamAllTableIds() {
@@ -108,6 +95,6 @@ public class TablePropertiesProvider {
     }
 
     public void clearCache() {
-        propertiesCacheByTableName.clear();
+        cache.clear();
     }
 }
