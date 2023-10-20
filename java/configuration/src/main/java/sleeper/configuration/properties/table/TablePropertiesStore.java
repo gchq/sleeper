@@ -73,6 +73,10 @@ public class TablePropertiesStore {
         return streamAllTableIds().collect(Collectors.toUnmodifiableList());
     }
 
+    public Optional<TableId> lookupByName(String tableName) {
+        return tableIndex.getTableByName(tableName);
+    }
+
     public void createTable(TableProperties tableProperties) {
         String tableName = tableProperties.get(TableProperty.TABLE_NAME);
         tableIndex.getTableByName(tableName).ifPresent(tableId -> {

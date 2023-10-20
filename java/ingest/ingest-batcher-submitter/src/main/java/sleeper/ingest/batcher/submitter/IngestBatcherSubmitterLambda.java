@@ -91,8 +91,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         }
         // Table properties are needed to set the expiry time on DynamoDB records in the store.
         // To avoid that failing, we can discard the message here if the table does not exist.
-        if (requests.size() > 0 &&
-                tablePropertiesProvider.getByNameIfExists(requests.get(0).getTableName()).isEmpty()) {
+        if (!requests.isEmpty() &&
+                tablePropertiesProvider.lookupByName(requests.get(0).getTableName()).isEmpty()) {
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }

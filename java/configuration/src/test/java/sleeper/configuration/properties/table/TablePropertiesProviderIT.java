@@ -38,7 +38,6 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
 
         // When / Then
         assertThat(provider.getByName(tableName)).isEqualTo(tableProperties);
-        assertThat(provider.getByNameIfExists(tableName)).contains(tableProperties);
     }
 
     @Test
@@ -70,7 +69,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     @Test
     void shouldReportTableDoesNotExistWhenNotInBucket() {
         // When / Then
-        assertThat(provider.getByNameIfExists(tableName))
+        assertThat(provider.lookupByName(tableName))
                 .isEmpty();
     }
 
@@ -82,13 +81,13 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     }
 
     @Test
-    void shouldReportTableDoesNotExistWhenInIndexButNotConfigBucket() {
+    void shouldReportTableExistsWhenInIndexButNotConfigBucket() {
         // Given
         new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
                 .create(tableProperties.getId());
 
         // When / Then
-        assertThat(provider.getByNameIfExists(tableName))
+        assertThat(provider.lookupByName(tableName))
                 .isEmpty();
     }
 

@@ -65,16 +65,12 @@ public class TablePropertiesProvider {
                 });
     }
 
-    public Optional<TableProperties> getByNameIfExists(String tableName) {
-        try {
-            return Optional.of(getByName(tableName));
-        } catch (RuntimeException e) {
-            return Optional.empty();
-        }
-    }
-
     public TableProperties get(TableId tableId) {
         return getByName(tableId.getTableName());
+    }
+
+    public Optional<TableId> lookupByName(String tableName) {
+        return propertiesStore.lookupByName(tableName);
     }
 
     public Stream<TableId> streamAllTableIds() {

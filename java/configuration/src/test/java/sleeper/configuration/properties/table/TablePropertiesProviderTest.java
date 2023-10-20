@@ -54,7 +54,15 @@ public class TablePropertiesProviderTest {
 
             // When / Then
             assertThat(provider.getByName(tableName)).isEqualTo(tableProperties);
-            assertThat(provider.getByNameIfExists(tableName)).contains(tableProperties);
+        }
+
+        @Test
+        void shouldLookupByName() {
+            // Given
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.lookupByName(tableName)).contains(tableProperties.getId());
         }
 
         @Test
@@ -69,7 +77,7 @@ public class TablePropertiesProviderTest {
         @Test
         void shouldReportTableDoesNotExistWhenNotInBucket() {
             // When / Then
-            assertThat(provider.getByNameIfExists(tableName))
+            assertThat(provider.lookupByName(tableName))
                     .isEmpty();
         }
 
