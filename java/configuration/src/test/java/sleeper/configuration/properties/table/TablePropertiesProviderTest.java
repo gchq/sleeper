@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIndex;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,7 +42,8 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class TablePropertiesProviderTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore store = InMemoryTableProperties.getStore();
+    private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final TablePropertiesStore store = InMemoryTableProperties.getStore(tableIndex);
     private final TableProperties tableProperties = createValidTableProperties();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final String tableName = tableProperties.get(TABLE_NAME);
@@ -70,6 +73,90 @@ public class TablePropertiesProviderTest {
         }
 
         @Test
+        void shouldLoadByFullIdentifier() {
+            // Given
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.get(tableProperties.getId()))
+                    .isEqualTo(tableProperties);
+        }
+
+        @Test
+        void shouldLoadByFullIdentifierEvenWhenNotInIndex() {
+            // Given
+            store.save(tableProperties);
+            tableIndex.delete(tableProperties.getId());
+
+            // When / Then
+            assertThat(provider.get(tableProperties.getId()))
+                    .isEqualTo(tableProperties);
+        }
+
+        @Test
+        void shouldLoadAllTables() {
+            // Given
+            TableProperties table1 = createValidTableProperties();
+            TableProperties table2 = createValidTableProperties();
+            table1.set(TABLE_NAME, "table-1");
+            table2.set(TABLE_NAME, "table-2");
+            store.save(table1);
+            store.save(table2);
+
+            // When / Then
+            assertThat(provider.streamAllTables())
+                    .containsExactly(table1, table2);
+            assertThat(provider.streamAllTableIds())
+                    .containsExactly(table1.getId(), table2.getId());
+        }
+
+        @Test
+        void shouldThrowExceptionWhenTableDoesNotExistLoadingByName() {
+            // When / Then
+            assertThatThrownBy(() -> provider.getByName(tableName))
+                    .isInstanceOf(NoSuchElementException.class);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenTableDoesNotExistLoadingById() {
+            // When / Then
+            assertThatThrownBy(() -> provider.getById(tableId))
+                    .isInstanceOf(NoSuchElementException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Validate properties")
+    class ValidateProperties {
+
+        @Test
+        void shouldThrowExceptionWhenPropertyIsInvalidLoadingByName() {
+            // Given
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThatThrownBy(() -> provider.getByName(tableName))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        void shouldThrowExceptionWhenPropertyIsInvalidLoadingById() {
+            // Given
+            tableProperties.set(COMPRESSION_CODEC, "abc");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThatThrownBy(() -> provider.getById(tableId))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Look up table ID")
+    class LookupId {
+
+        @Test
         void shouldLookupByName() {
             // Given
             store.save(tableProperties);
@@ -80,14 +167,27 @@ public class TablePropertiesProviderTest {
         }
 
         @Test
-        void shouldLoadByFullIdentifier() {
+        void shouldReportTableDoesNotExist() {
+            // When / Then
+            assertThat(provider.lookupByName(tableName))
+                    .isEmpty();
+        }
+
+        @Test
+        void shouldReportTableDoesNotExistWhenInStoreButNotIndex() {
             // Given
             store.save(tableProperties);
+            tableIndex.delete(tableProperties.getId());
 
             // When / Then
-            assertThat(provider.get(tableProperties.getId()))
-                    .isEqualTo(tableProperties);
+            assertThat(provider.lookupByName(tableName))
+                    .isEmpty();
         }
+    }
+
+    @Nested
+    @DisplayName("Cache properties")
+    class CacheProperties {
 
         @Test
         void shouldCacheWhenLookingUpByIdThenName() {
@@ -119,71 +219,6 @@ public class TablePropertiesProviderTest {
             // When / Then
             assertThat(provider.getById(tableId).getInt(ROW_GROUP_SIZE))
                     .isEqualTo(123);
-        }
-
-        @Test
-        void shouldReportTableDoesNotExistWhenNotInBucket() {
-            // When / Then
-            assertThat(provider.lookupByName(tableName))
-                    .isEmpty();
-        }
-
-        @Test
-        void shouldThrowExceptionWhenTableDoesNotExistLoadingByName() {
-            // When / Then
-            assertThatThrownBy(() -> provider.getByName(tableName))
-                    .isInstanceOf(NoSuchElementException.class);
-        }
-
-        @Test
-        void shouldThrowExceptionWhenTableDoesNotExistLoadingById() {
-            // When / Then
-            assertThatThrownBy(() -> provider.getById(tableId))
-                    .isInstanceOf(NoSuchElementException.class);
-        }
-
-        @Test
-        void shouldThrowExceptionWhenPropertyIsInvalidLoadingByName() {
-            // Given
-            tableProperties.set(COMPRESSION_CODEC, "abc");
-            store.save(tableProperties);
-
-            // When / Then
-            assertThatThrownBy(() -> provider.getByName(tableName))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-
-        @Test
-        void shouldThrowExceptionWhenPropertyIsInvalidLoadingById() {
-            // Given
-            tableProperties.set(COMPRESSION_CODEC, "abc");
-            store.save(tableProperties);
-
-            // When / Then
-            assertThatThrownBy(() -> provider.getById(tableId))
-                    .isInstanceOf(IllegalArgumentException.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("Load all tables")
-    class LoadAllTables {
-
-        @Test
-        void shouldLoadAllTables() {
-            // Given
-            TableProperties table1 = createValidTableProperties();
-            TableProperties table2 = createValidTableProperties();
-            table1.set(TABLE_NAME, "table-1");
-            table2.set(TABLE_NAME, "table-2");
-            store.save(table1);
-            store.save(table2);
-
-            // When / Then
-            assertThat(provider.streamAllTables())
-                    .containsExactly(table1, table2);
-            assertThat(provider.streamAllTableIds())
-                    .containsExactly(table1.getId(), table2.getId());
         }
 
         @Test

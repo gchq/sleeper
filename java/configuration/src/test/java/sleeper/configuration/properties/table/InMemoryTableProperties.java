@@ -18,6 +18,7 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIndex;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,11 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     public static TablePropertiesStore getStore() {
-        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(true));
+        return getStore(new InMemoryTableIndex());
+    }
+
+    public static TablePropertiesStore getStore(TableIndex tableIndex) {
+        return new TablePropertiesStore(tableIndex, new InMemoryTableProperties(true));
     }
 
     public static TablePropertiesStore getStoreReturningExactInstance() {

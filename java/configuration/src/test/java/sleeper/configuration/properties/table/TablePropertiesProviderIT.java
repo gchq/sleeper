@@ -37,7 +37,8 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         store.save(tableProperties);
 
         // When / Then
-        assertThat(provider.getByName(tableName)).isEqualTo(tableProperties);
+        assertThat(provider.getByName(tableName))
+                .isEqualTo(tableProperties);
     }
 
     @Test
@@ -46,7 +47,8 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         store.save(tableProperties);
 
         // When / Then
-        assertThat(provider.get(tableProperties.getId())).isEqualTo(tableProperties);
+        assertThat(provider.get(tableProperties.getId()))
+                .isEqualTo(tableProperties);
     }
 
     @Test
@@ -100,5 +102,17 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
                 .isInstanceOf(AmazonS3Exception.class);
+    }
+
+    @Test
+    void shouldLoadByFullIdentifierWhenNotInIndex() {
+        // Given
+        store.save(tableProperties);
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .delete(tableProperties.getId());
+
+        // When / Then
+        assertThat(provider.get(tableProperties.getId()))
+                .isEqualTo(tableProperties);
     }
 }
