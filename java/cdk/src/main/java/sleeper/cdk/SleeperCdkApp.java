@@ -49,6 +49,7 @@ import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
+import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 
@@ -77,6 +78,7 @@ public class SleeperCdkApp extends Stack {
     private CommonEmrBulkImportStack emrBulkImportCommonStack;
     private EmrBulkImportStack emrBulkImportStack;
     private EmrServerlessBulkImportStack emrServerlessBulkImportStack;
+    private EmrStudioStack emrStudioStack;
     private PersistentEmrBulkImportStack persistentEmrBulkImportStack;
     private EksBulkImportStack eksBulkImportStack;
     private IngestStatusStoreStack ingestStatusStoreStack;
@@ -155,6 +157,11 @@ public class SleeperCdkApp extends Stack {
                     coreStacks,
                     ingestStatusStoreStack.getResources()
             );
+
+            // Stack to created EMR studio to be used to access EMR Serverless
+            if (optionalStacks.contains(EmrStudioStack.class.getSimpleName())) {
+                emrStudioStack = new EmrStudioStack(this, "EmrStudio", instanceProperties);
+            }
         }
 
         // Stack to run bulk import jobs via EMR (one cluster per bulk import job)
@@ -274,6 +281,10 @@ public class SleeperCdkApp extends Stack {
 
     public EmrServerlessBulkImportStack getEmrServerlessBulkImportStack() {
         return emrServerlessBulkImportStack;
+    }
+
+    public EmrStudioStack gEmrStudioStack() {
+        return emrStudioStack;
     }
 
     public EmrBulkImportStack getEmrBulkImportStack() {
