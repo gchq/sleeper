@@ -52,6 +52,11 @@ public class TablePropertiesStore {
                 .map(this::loadProperties);
     }
 
+    public Optional<TableProperties> loadById(String tableId) {
+        return tableIndex.getTableByUniqueId(tableId)
+                .map(this::loadProperties);
+    }
+
     public Optional<TableProperties> loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(client::loadProperties);

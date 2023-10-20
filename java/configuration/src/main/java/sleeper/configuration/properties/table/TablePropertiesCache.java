@@ -22,26 +22,41 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesCache {
     private final Map<String, TableProperties> propertiesCacheByTableName = new HashMap<>();
+    private final Map<String, TableProperties> propertiesCacheByTableId = new HashMap<>();
 
     public Optional<TableProperties> getByName(String tableName) {
         return Optional.ofNullable(propertiesCacheByTableName.get(tableName));
     }
 
+    public Optional<TableProperties> getById(String tableId) {
+        return Optional.ofNullable(propertiesCacheByTableId.get(tableId));
+    }
+
     public Optional<TableProperties> get(TableId tableId) {
-        return getByName(tableId.getTableName());
+        return getByName(tableId.getTableUniqueId());
     }
 
     public void add(TableProperties properties) {
-        String tableName = properties.get(TABLE_NAME);
-        propertiesCacheByTableName.put(tableName, properties);
+        propertiesCacheByTableName.put(properties.get(TABLE_NAME), properties);
+        propertiesCacheByTableId.put(properties.get(TABLE_ID), properties);
     }
 
     public void removeByName(String tableName) {
-        propertiesCacheByTableName.remove(tableName);
+        getByName(tableName).ifPresent(this::remove);
+    }
+
+    public void removeById(String tableId) {
+        getById(tableId).ifPresent(this::remove);
+    }
+
+    private void remove(TableProperties properties) {
+        propertiesCacheByTableName.remove(properties.get(TABLE_NAME));
+        propertiesCacheByTableId.remove(properties.get(TABLE_ID));
     }
 
     public void clear() {

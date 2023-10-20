@@ -19,31 +19,44 @@ package sleeper.configuration.properties.table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.table.TableId;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 public class TablePropertiesExpiry {
     private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
 
     private final int timeoutInMins;
-    private final Supplier<Instant> timeSupplier;
-    private final Map<String, Instant> expireTimeByTableName = new HashMap<>();
+    private final Map<String, Instant> expiryByTableName = new HashMap<>();
+    private final Map<String, Instant> expiryByTableId = new HashMap<>();
 
-    public TablePropertiesExpiry(int timeoutInMins, Supplier<Instant> timeSupplier) {
+    public TablePropertiesExpiry(int timeoutInMins) {
         this.timeoutInMins = timeoutInMins;
-        this.timeSupplier = timeSupplier;
     }
 
-    public boolean isExpired(String tableName) {
-        Instant currentTime = timeSupplier.get();
-        if (expireTimeByTableName.containsKey(tableName) && currentTime.isAfter(expireTimeByTableName.get(tableName))) {
-            LOGGER.info("Table properties provider expiry time reached for table {}, clearing cache.", tableName);
+    public boolean isExpiredByName(String tableName, Instant currentTime) {
+        if (expiryByTableName.containsKey(tableName) && currentTime.isAfter(expiryByTableName.get(tableName))) {
+            LOGGER.info("Properties expiry time reached for table name {}", tableName);
             return true;
         }
-        expireTimeByTableName.put(tableName, currentTime.plus(Duration.ofMinutes(timeoutInMins)));
         return false;
+    }
+
+    public boolean isExpiredById(String tableId, Instant currentTime) {
+        if (expiryByTableId.containsKey(tableId) && currentTime.isAfter(expiryByTableId.get(tableId))) {
+            LOGGER.info("Properties expiry time reached for table ID {}", tableId);
+            return true;
+        }
+        return false;
+    }
+
+    public void setExpiryFromCurrentTime(TableId tableId, Instant currentTime) {
+        Instant expiry = currentTime.plus(Duration.ofMinutes(timeoutInMins));
+        LOGGER.info("Setting properties expiry time for table {}", tableId);
+        expiryByTableName.put(tableId.getTableName(), expiry);
+        expiryByTableId.put(tableId.getTableUniqueId(), expiry);
     }
 }

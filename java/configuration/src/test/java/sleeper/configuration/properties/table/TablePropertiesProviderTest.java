@@ -32,6 +32,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -54,6 +55,16 @@ public class TablePropertiesProviderTest {
 
             // When / Then
             assertThat(provider.getByName(tableName)).isEqualTo(tableProperties);
+        }
+
+        @Test
+        void shouldLoadById() {
+            // Given
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(provider.getById(tableProperties.get(TABLE_ID)))
+                    .isEqualTo(tableProperties);
         }
 
         @Test

@@ -33,6 +33,7 @@ public class TablePropertiesProvider {
     protected final TablePropertiesStore propertiesStore;
     private final TablePropertiesCache cache;
     private final TablePropertiesExpiry expiry;
+    private final Supplier<Instant> timeSupplier;
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
         this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
@@ -50,23 +51,34 @@ public class TablePropertiesProvider {
                                       int timeoutInMins, Supplier<Instant> timeSupplier) {
         this.propertiesStore = propertiesStore;
         this.cache = new TablePropertiesCache();
-        this.expiry = new TablePropertiesExpiry(timeoutInMins, timeSupplier);
+        this.expiry = new TablePropertiesExpiry(timeoutInMins);
+        this.timeSupplier = timeSupplier;
     }
 
     public TableProperties getByName(String tableName) {
-        if (expiry.isExpired(tableName)) {
-            cache.removeByName(tableName);
-        }
-        return cache.getByName(tableName)
-                .orElseGet(() -> {
-                    TableProperties properties = propertiesStore.loadByName(tableName).orElseThrow();
-                    cache.add(properties);
-                    return properties;
-                });
+        return get(new TableNameCacheRef(tableName));
+    }
+
+    public TableProperties getById(String tableId) {
+        return get(new TableIdCacheRef(tableId));
     }
 
     public TableProperties get(TableId tableId) {
-        return getByName(tableId.getTableName());
+        return getById(tableId.getTableUniqueId());
+    }
+
+    private TableProperties get(CacheRef ref) {
+        Instant currentTime = timeSupplier.get();
+        if (ref.isExpired(currentTime)) {
+            ref.remove();
+        }
+        return ref.getCached()
+                .orElseGet(() -> {
+                    TableProperties properties = ref.load().orElseThrow();
+                    cache.add(properties);
+                    expiry.setExpiryFromCurrentTime(properties.getId(), currentTime);
+                    return properties;
+                });
     }
 
     public Optional<TableId> lookupByName(String tableName) {
@@ -92,5 +104,72 @@ public class TablePropertiesProvider {
 
     public void clearCache() {
         cache.clear();
+    }
+
+    interface CacheRef {
+        boolean isExpired(Instant currentTime);
+
+
+        void remove();
+
+        Optional<TableProperties> getCached();
+
+        Optional<TableProperties> load();
+    }
+
+    class TableNameCacheRef implements CacheRef {
+        private final String tableName;
+
+        public TableNameCacheRef(String tableName) {
+            this.tableName = tableName;
+        }
+
+        @Override
+        public boolean isExpired(Instant currentTime) {
+            return expiry.isExpiredByName(tableName, currentTime);
+        }
+
+        @Override
+        public void remove() {
+            cache.removeByName(tableName);
+        }
+
+        @Override
+        public Optional<TableProperties> getCached() {
+            return cache.getByName(tableName);
+        }
+
+        @Override
+        public Optional<TableProperties> load() {
+            return propertiesStore.loadByName(tableName);
+        }
+    }
+
+    class TableIdCacheRef implements CacheRef {
+        private final String tableId;
+
+        public TableIdCacheRef(String tableId) {
+            this.tableId = tableId;
+        }
+
+        @Override
+        public boolean isExpired(Instant currentTime) {
+            return expiry.isExpiredById(tableId, currentTime);
+        }
+
+        @Override
+        public void remove() {
+            cache.removeById(tableId);
+        }
+
+        @Override
+        public Optional<TableProperties> getCached() {
+            return cache.getById(tableId);
+        }
+
+        @Override
+        public Optional<TableProperties> load() {
+            return propertiesStore.loadById(tableId);
+        }
     }
 }
