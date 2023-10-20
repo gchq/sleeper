@@ -185,6 +185,10 @@ When you submit your JSON job via the SQS Queue, an EMR Serverless job should ap
 the EMR Studio part of the AWS console with your desired 
 configuration. Once the job starts (around 2 minutes), you will be able to follow the links in EMR Studio to access your Spark UI. 
 This will allow you to monitor your job and view logs from the Spark executors and driver. You can also access previous job Spark UI's from EMR Studio. 
+
+It is possible to get Sleeper to deploy EMR Studio by enabling the optional stack `EmrStudioStack`. 
+Note if EMR Serverless is not enabled then EMR Studio won't be deployed even if added to the optional stacks.
+
 After your job finishes the application will auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
 
 The following can be edited in the Sleeper Admin console. It it also possible to set these on a per job basis by setting `sparkConf`
