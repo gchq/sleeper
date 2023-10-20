@@ -78,7 +78,7 @@ sleeper.stack.tag.name=DeploymentStack
 sleeper.retain.infra.after.destroy=true
 
 # The optional stacks to deploy.
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,DashboardStack
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
