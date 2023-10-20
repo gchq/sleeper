@@ -39,12 +39,13 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     @Override
     public TableProperties loadProperties(TableId tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
+                .map(TableProperties::copyOf)
                 .orElseThrow();
     }
 
     @Override
     public void saveProperties(TableProperties tableProperties) {
-        propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
+        propertiesByTableId.put(tableProperties.get(TABLE_ID), TableProperties.copyOf(tableProperties));
     }
 
     @Override
