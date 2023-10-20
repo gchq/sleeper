@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -65,25 +64,29 @@ public class TablePropertiesProvider {
     }
 
     public TableProperties getByName(String tableName) {
-        return get(tableName, cacheByName, propertiesStore::loadByName);
+        return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName).orElseThrow());
     }
 
     public TableProperties getById(String tableId) {
-        return get(tableId, cacheById, propertiesStore::loadById);
+        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId).orElseThrow());
+    }
+
+    public TableProperties get(TableId tableId) {
+        return get(tableId.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(tableId));
     }
 
     private TableProperties get(String identifier,
                                 Map<String, CacheEntry> cache,
-                                Function<String, Optional<TableProperties>> loadProperties) {
+                                Supplier<TableProperties> loadProperties) {
         Instant currentTime = timeSupplier.get();
         CacheEntry currentEntry = cache.get(identifier);
         TableProperties properties;
         if (currentEntry == null) {
-            properties = loadProperties.apply(identifier).orElseThrow();
+            properties = loadProperties.get();
             LOGGER.info("Cache miss, loaded properties for table {}", properties.getId());
             cache(properties, currentTime);
         } else if (currentEntry.isExpired(currentTime)) {
-            properties = loadProperties.apply(identifier).orElseThrow();
+            properties = loadProperties.get();
             LOGGER.info("Expiry time reached, reloaded properties for table {}", properties.getId());
             cache(properties, currentTime);
         } else {
@@ -99,10 +102,6 @@ public class TablePropertiesProvider {
         CacheEntry entry = new CacheEntry(properties, expiryTime);
         cacheById.put(properties.get(TABLE_ID), entry);
         cacheByName.put(properties.get(TABLE_NAME), entry);
-    }
-
-    public TableProperties get(TableId tableId) {
-        return getById(tableId.getTableUniqueId());
     }
 
     public Optional<TableId> lookupByName(String tableName) {
