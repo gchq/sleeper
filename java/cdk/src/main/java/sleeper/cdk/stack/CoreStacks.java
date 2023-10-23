@@ -22,16 +22,18 @@ public class CoreStacks {
 
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
-    private final IngestPermissionsStack ingestPermissionsStack;
+    private final IngestSourceBucketsStack sourceBucketsStack;
+    private final ManagedPoliciesStack policiesStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
 
     public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
-                      IngestPermissionsStack ingestPermissionsStack,
+                      IngestSourceBucketsStack sourceBucketsStack, ManagedPoliciesStack policiesStack,
                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
-        this.ingestPermissionsStack = ingestPermissionsStack;
+        this.sourceBucketsStack = sourceBucketsStack;
+        this.policiesStack = policiesStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
     }
@@ -73,7 +75,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         dataStack.grantReadWrite(grantee);
-        ingestPermissionsStack.grantReadIngestSources(grantee);
+        sourceBucketsStack.grantReadIngestSources(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
@@ -104,10 +106,10 @@ public class CoreStacks {
     }
 
     public void grantReadIngestSources(IGrantable grantee) {
-        ingestPermissionsStack.grantReadIngestSources(grantee);
+        sourceBucketsStack.grantReadIngestSources(grantee);
     }
 
     public IGrantable getIngestPolicy() {
-        return ingestPermissionsStack.getIngestPolicy();
+        return policiesStack.getIngestPolicy();
     }
 }

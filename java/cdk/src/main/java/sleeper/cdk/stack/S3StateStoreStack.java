@@ -40,7 +40,7 @@ public class S3StateStoreStack extends NestedStack {
     private final TableDataStack dataStack;
 
     public S3StateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
-                             TableDataStack dataStack, IngestPermissionsStack ingestPermissionsStack) {
+                             TableDataStack dataStack, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -65,7 +65,7 @@ public class S3StateStoreStack extends NestedStack {
                 .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-        revisionTable.grantReadWriteData(ingestPermissionsStack.getIngestPolicy());
+        revisionTable.grantReadWriteData(policiesStack.getIngestPolicy());
     }
 
     public void grantReadWrite(IGrantable grantee) {

@@ -41,7 +41,7 @@ public class TableIndexStack extends NestedStack {
     private final ITable indexByIdDynamoTable;
 
     public TableIndexStack(Construct scope, String id, InstanceProperties instanceProperties,
-                           IngestPermissionsStack ingestPermissionsStack) {
+                           ManagedPoliciesStack policiesStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -72,8 +72,8 @@ public class TableIndexStack extends NestedStack {
                 .build();
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
 
-        indexByNameDynamoTable.grantReadData(ingestPermissionsStack.getIngestPolicy());
-        indexByIdDynamoTable.grantReadData(ingestPermissionsStack.getIngestPolicy());
+        indexByNameDynamoTable.grantReadData(policiesStack.getIngestPolicy());
+        indexByIdDynamoTable.grantReadData(policiesStack.getIngestPolicy());
     }
 
     public void grantRead(IGrantable grantee) {
