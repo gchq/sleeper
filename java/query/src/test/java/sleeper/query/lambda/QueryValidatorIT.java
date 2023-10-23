@@ -31,6 +31,10 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.type.LongType;
 import sleeper.query.model.Query;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
@@ -69,13 +73,13 @@ public class QueryValidatorIT {
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoDBClient).create();
     }
 
+    private final TableProperties tableProperties = createTable("table-1");
+    private final QueryValidator queryValidator = new QueryValidator(new FixedTablePropertiesProvider(tableProperties),
+            queryTracker, () -> "invalid-query-id");
+
     @Nested
     @DisplayName("Failed to deserialise")
     class FailedToDeserialise {
-        TableProperties tableProperties = createTable("table-1");
-        QueryValidator queryValidator = new QueryValidator(new FixedTablePropertiesProvider(tableProperties),
-                queryTracker, () -> "invalid-query-id");
-
         @Test
         void shouldReportQueryFailedWhenJsonInvalid() {
             // Given
@@ -148,6 +152,28 @@ public class QueryValidatorIT {
                             .errorMessage("Unknown query type: invalid-query-type")
                             .build());
         }
+    }
+
+    @Test
+    void shouldSuccessfullyDeserialiseAndValidateQuery() {
+        // Given
+        String json = "{" +
+                "  \"queryId\": \"my-query\"," +
+                "  \"type\": \"Query\"," +
+                "  \"resultsPublisherConfig\": {}," +
+                "  \"tableName\": \"table-1\"," +
+                "  \"keys\": [{" +
+                "    \"key\": 123" +
+                "  }]" +
+                "}";
+
+        // When
+        Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+
+        // Then
+        assertThat(query).get().isEqualTo(new Query.Builder("table-1", "my-query",
+                new Region(new Range(new Field("key", new LongType()), 123, 123))).build());
+        assertThat(queryTracker.getFailedQueries()).isEmpty();
     }
 
     private static InstanceProperties createInstanceProperties() {

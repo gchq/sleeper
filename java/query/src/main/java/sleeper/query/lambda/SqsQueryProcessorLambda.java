@@ -24,14 +24,12 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -55,6 +53,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonDynamoDB dynamoClient;
     private QuerySerDe serde;
     private SqsQueryProcessor processor;
+    private QueryValidator queryValidator;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
@@ -66,6 +65,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
         updateProperties(configBucket);
+        this.queryValidator = new QueryValidator(instanceProperties, s3Client, dynamoClient);
     }
 
     @Override
@@ -78,15 +78,10 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
 
         for (SQSEvent.SQSMessage message : event.getRecords()) {
             LOGGER.info("Received message with body {}", message.getBody());
-            Query query;
-            try {
-                query = serde.fromJson(message.getBody());
-                LOGGER.info("Deserialised message to query {}", query);
-            } catch (JsonParseException e) {
-                LOGGER.error("JSONParseException deserialsing query from JSON {}", message.getBody());
-                continue;
-            }
-            processor.processQuery(query);
+            event.getRecords().stream()
+                    .map(SQSEvent.SQSMessage::getBody)
+                    .flatMap(body -> queryValidator.deserialiseAndValidate(body).stream())
+                    .forEach(processor::processQuery);
         }
         return null;
     }

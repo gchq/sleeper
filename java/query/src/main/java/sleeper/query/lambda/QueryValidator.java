@@ -16,10 +16,13 @@
 
 package sleeper.query.lambda;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
@@ -27,6 +30,7 @@ import sleeper.query.tracker.DynamoDBQueryTracker;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 public class QueryValidator {
@@ -34,6 +38,16 @@ public class QueryValidator {
     private final DynamoDBQueryTracker queryTracker;
     private final QuerySerDe querySerDe;
     private final Supplier<String> invalidQueryIdSupplier;
+
+    public QueryValidator(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
+        this(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB),
+                new DynamoDBQueryTracker(instanceProperties, dynamoDB));
+    }
+
+    public QueryValidator(TablePropertiesProvider tablePropertiesProvider,
+                          DynamoDBQueryTracker queryTracker) {
+        this(tablePropertiesProvider, queryTracker, () -> UUID.randomUUID().toString());
+    }
 
     public QueryValidator(TablePropertiesProvider tablePropertiesProvider,
                           DynamoDBQueryTracker queryTracker,
@@ -48,6 +62,7 @@ public class QueryValidator {
         try {
             query = querySerDe.fromJson(message);
             LOGGER.info("Deserialised message to query {}", query);
+            return Optional.of(query);
         } catch (JsonParseException e) {
             LOGGER.error("JSONParseException deserialsing query from JSON {}", message, e);
             queryTracker.queryFailed(invalidQuery(), e);
@@ -57,7 +72,6 @@ public class QueryValidator {
             queryTracker.queryFailed(invalidQuery(), e);
             return Optional.empty();
         }
-        return Optional.empty();
     }
 
     private Query invalidQuery() {
