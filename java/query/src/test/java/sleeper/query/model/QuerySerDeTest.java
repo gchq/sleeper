@@ -672,7 +672,7 @@ public class QuerySerDeTest {
     public void shouldThrowExceptionWithInvalidQueryType(boolean useTablePropertiesProvider) {
         // Given
         Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-        String tableName = UUID.randomUUID().toString();
+        String tableName = "test-table";
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         String queryJson = "{\n" +
@@ -689,6 +689,7 @@ public class QuerySerDeTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Unknown query type: invalid-query-type");
     }
+
     private static TablePropertiesProvider createFixedTablePropertiesProvider(String tableName, Schema schema) {
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(TABLE_NAME, tableName);
