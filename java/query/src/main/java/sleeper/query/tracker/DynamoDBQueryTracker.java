@@ -160,7 +160,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
         valueUpdate.put(LAST_KNOWN_STATE, new AttributeValueUpdate(
                 new AttributeValue(state.name()), AttributeAction.PUT));
-        if (!Objects.nonNull(errorMessage)) {
+        if (Objects.nonNull(errorMessage)) {
             valueUpdate.put(ERROR_MESSAGE, new AttributeValueUpdate(
                     new AttributeValue().withS(errorMessage), AttributeAction.PUT));
         }
