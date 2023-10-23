@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.clients.util.CommandFailedException;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -177,6 +179,30 @@ public class PythonApiIT {
                             "row-0000000000000000020", true)
                     .results())
                     .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.rangeClosed(10, 20)));
+        }
+
+        @Test
+        void shouldFailToRunRangeKeyQueryWithNonExistentTable() {
+            // When/Then
+            assertThatThrownBy(() -> sleeper.pythonApi()
+                    .query(tempDir).range("key", "not-a-table",
+                            "row-0000000000000000010",
+                            "row-0000000000000000020")
+                    .results())
+                    .isInstanceOf(CommandFailedException.class)
+                    .hasMessageContaining("Query failed");
+        }
+
+        @Test
+        void shouldFailToRunRangeKeyQueryWithNonExistentKey() {
+            // When/Then
+            assertThatThrownBy(() -> sleeper.pythonApi()
+                    .query(tempDir).range("not-a-key",
+                            "row-0000000000000000010",
+                            "row-0000000000000000020")
+                    .results())
+                    .isInstanceOf(CommandFailedException.class)
+                    .hasMessageContaining("Query failed");
         }
     }
 }
