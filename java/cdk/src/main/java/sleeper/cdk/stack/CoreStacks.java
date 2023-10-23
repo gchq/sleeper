@@ -22,13 +22,16 @@ public class CoreStacks {
 
     private final ConfigBucketStack configBucketStack;
     private final TableIndexStack tableIndexStack;
+    private final IngestPermissionsStack ingestPermissionsStack;
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
 
     public CoreStacks(ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
+                      IngestPermissionsStack ingestPermissionsStack,
                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
+        this.ingestPermissionsStack = ingestPermissionsStack;
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
     }
@@ -97,5 +100,13 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadWritePartitions(grantee);
         dataStack.grantRead(grantee);
+    }
+
+    public void grantReadIngestSources(IGrantable grantee) {
+        ingestPermissionsStack.grantReadIngestSources(grantee);
+    }
+
+    public IGrantable getIngestPolicy() {
+        return ingestPermissionsStack.getIngestPolicy();
     }
 }

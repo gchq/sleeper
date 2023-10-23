@@ -17,6 +17,7 @@
 package sleeper.cdk.stack;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.Role;
@@ -52,8 +53,8 @@ public class IngestPermissionsStack extends NestedStack {
                 .forEach(role -> role.addManagedPolicy(ingestPolicy));
     }
 
-    public List<IBucket> getSourceBuckets() {
-        return sourceBuckets;
+    public void grantReadIngestSources(IGrantable grantee) {
+        sourceBuckets.forEach(bucket -> bucket.grantRead(grantee));
     }
 
     public ManagedPolicy getIngestPolicy() {

@@ -130,6 +130,7 @@ public class SleeperCdkApp extends Stack {
         coreStacks = new CoreStacks(
                 new ConfigBucketStack(this, "Configuration", instanceProperties),
                 new TableIndexStack(this, "TableIndex", instanceProperties),
+                new IngestPermissionsStack(this, "IngestPermissions", instanceProperties),
                 stateStoreStacks, dataStack);
         new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
 
@@ -236,8 +237,6 @@ public class SleeperCdkApp extends Stack {
                     coreStacks);
         }
 
-        IngestPermissionsStack ingestPermissionsStack = new IngestPermissionsStack(this, "IngestSources", instanceProperties);
-
         // Stack for ingest jobs
         if (optionalStacks.contains(IngestStack.class.getSimpleName())) {
             ingestStack = new IngestStack(this,
@@ -245,7 +244,6 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     coreStacks,
                     topicStack.getTopic(),
-                    ingestPermissionsStack,
                     ingestStatusStoreStack);
         }
 
