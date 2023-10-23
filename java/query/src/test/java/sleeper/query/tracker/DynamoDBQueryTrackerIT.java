@@ -255,7 +255,7 @@ public class DynamoDBQueryTrackerIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                 .containsExactly(TrackedQuery.builder()
                         .queryId("completed-query-that-errored")
-                        .lastKnownState(FAILED)
+                        .lastKnownState(PARTIALLY_FAILED)
                         .recordCount(100L)
                         .errorMessage("Query has failed").build());
     }
@@ -289,8 +289,8 @@ public class DynamoDBQueryTrackerIT {
                             queryQueued(query1),
                             queryInProgress(query2),
                             queryCompleted(query3, 456L),
-                            queryFailed(query4),
-                            queryPartiallyFailed(query5, 123L));
+                            queryFailed(query4, "Failed"),
+                            queryPartiallyFailed(query5, 123L, "Partially failed"));
         }
 
         @Test
@@ -323,8 +323,8 @@ public class DynamoDBQueryTrackerIT {
             assertThat(queryTracker.getFailedQueries())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("expiryDate", "lastUpdateTime")
                     .containsExactlyInAnyOrder(
-                            queryFailed(query4),
-                            queryPartiallyFailed(query5, 123L));
+                            queryFailed(query4, "Failed"),
+                            queryPartiallyFailed(query5, 123L, "Partially failed"));
         }
     }
 
@@ -340,12 +340,12 @@ public class DynamoDBQueryTrackerIT {
         return TrackedQueryTestHelper.queryCompleted(query.getQueryId(), Instant.now(), records);
     }
 
-    private TrackedQuery queryFailed(Query query) {
-        return TrackedQueryTestHelper.queryFailed(query.getQueryId(), Instant.now());
+    private TrackedQuery queryFailed(Query query, String errorMessage) {
+        return TrackedQueryTestHelper.queryFailed(query.getQueryId(), Instant.now(), errorMessage);
     }
 
-    private TrackedQuery queryPartiallyFailed(Query query, long records) {
-        return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), records);
+    private TrackedQuery queryPartiallyFailed(Query query, long records, String errorMessage) {
+        return TrackedQueryTestHelper.queryPartiallyFailed(query.getQueryId(), Instant.now(), records, errorMessage);
     }
 
     private Query createQueryWithId(String id) {

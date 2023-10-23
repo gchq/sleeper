@@ -39,6 +39,7 @@ import sleeper.query.tracker.exception.QueryTrackerException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
@@ -159,7 +160,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
 
         valueUpdate.put(LAST_KNOWN_STATE, new AttributeValueUpdate(
                 new AttributeValue(state.name()), AttributeAction.PUT));
-        if (!errorMessage.isEmpty()) {
+        if (!Objects.nonNull(errorMessage)) {
             valueUpdate.put(ERROR_MESSAGE, new AttributeValueUpdate(
                     new AttributeValue().withS(errorMessage), AttributeAction.PUT));
         }
@@ -256,7 +257,10 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).getN());
         QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).getS());
         String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).getS();
-        String errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).getS();
+        String errorMessage = "";
+        if (stringAttributeValueMap.containsKey(ERROR_MESSAGE)) {
+            errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).getS();
+        }
 
         return TrackedQuery.builder()
                 .queryId(id).subQueryId(subQueryId)
