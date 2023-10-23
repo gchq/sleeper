@@ -110,6 +110,7 @@ public class IngestStack extends NestedStack {
             BuiltJars jars,
             CoreStacks coreStacks,
             Topic topic,
+            IngestPermissionsStack ingestPermissionsStack,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         this.instanceProperties = instanceProperties;
@@ -128,10 +129,10 @@ public class IngestStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(topic);
+        sqsQueueForIngestJobs(ingestPermissionsStack, topic);
 
         // ECS cluster for ingest tasks
-        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
+        ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestPermissionsStack, ingestJobQueue);
 
         // Lambda to create ingest tasks
         lambdaToCreateIngestTasks(coreStacks, ingestJobQueue, taskCreatorJar);
@@ -165,7 +166,7 @@ public class IngestStack extends NestedStack {
                 String.valueOf(index.getAndIncrement()), id));
     }
 
-    private Queue sqsQueueForIngestJobs(Topic topic) {
+    private Queue sqsQueueForIngestJobs(IngestPermissionsStack ingestPermissionsStack, Topic topic) {
         // Create queue for ingest job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestJobDLQ");
 
@@ -188,8 +189,7 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_JOB_QUEUE_ARN, ingestJobQueue.getQueueArn());
         instanceProperties.set(INGEST_JOB_DLQ_URL, ingestJobDeadLetterQueue.getQueue().getQueueUrl());
         instanceProperties.set(INGEST_JOB_DLQ_ARN, ingestJobDeadLetterQueue.getQueue().getQueueArn());
-        addIngestSourceRoleReferences(this, "IngestSourceRole", instanceProperties)
-                .forEach(ingestJobQueue::grantSendMessages);
+        ingestJobQueue.grantSendMessages(ingestPermissionsStack.getIngestPolicy());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         Alarm ingestAlarm = Alarm.Builder
@@ -229,6 +229,7 @@ public class IngestStack extends NestedStack {
     private Cluster ecsClusterForIngestTasks(
             IBucket jarsBucket,
             CoreStacks coreStacks,
+            IngestPermissionsStack ingestPermissionsStack,
             Queue ingestJobQueue) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
@@ -277,7 +278,7 @@ public class IngestStack extends NestedStack {
                 .build());
 
         // If a source bucket for ingest was specified, grant read access to it.
-        addIngestSourceBucketReferences(this, "SourceBucket", instanceProperties)
+        ingestPermissionsStack.getSourceBuckets()
                 .forEach(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()

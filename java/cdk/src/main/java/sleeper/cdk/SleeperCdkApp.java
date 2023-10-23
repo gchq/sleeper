@@ -32,6 +32,7 @@ import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
+import sleeper.cdk.stack.IngestPermissionsStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
@@ -235,6 +236,8 @@ public class SleeperCdkApp extends Stack {
                     coreStacks);
         }
 
+        IngestPermissionsStack ingestPermissionsStack = new IngestPermissionsStack(this, "IngestSources", instanceProperties);
+
         // Stack for ingest jobs
         if (optionalStacks.contains(IngestStack.class.getSimpleName())) {
             ingestStack = new IngestStack(this,
@@ -242,6 +245,7 @@ public class SleeperCdkApp extends Stack {
                     instanceProperties, jars,
                     coreStacks,
                     topicStack.getTopic(),
+                    ingestPermissionsStack,
                     ingestStatusStoreStack);
         }
 
