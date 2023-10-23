@@ -98,7 +98,7 @@ public class SqsQueryProcessor {
         CloseableIterator<Record> results;
         try {
             queryTrackers.queryInProgress(query);
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
+            TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
             if (query instanceof LeafPartitionQuery) {
                 results = processLeafPartitionQuery((LeafPartitionQuery) query);
             } else {
@@ -116,7 +116,7 @@ public class SqsQueryProcessor {
     private CloseableIterator<Record> processRangeQuery(Query query, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
         // Split query over leaf partitions
         if (!queryExecutorCache.containsKey(query.getTableName())) {
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(query.getTableName());
+            TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(query.getTableName(), tableProperties);
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
@@ -151,7 +151,7 @@ public class SqsQueryProcessor {
     }
 
     private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery) throws QueryException {
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(leafPartitionQuery.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(leafPartitionQuery.getTableName());
         Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
         return leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
@@ -166,7 +166,7 @@ public class SqsQueryProcessor {
     }
 
     private void publishResults(CloseableIterator<Record> results, Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) {
-        Schema schema = tablePropertiesProvider.getTableProperties(query.getTableName()).getSchema();
+        Schema schema = tablePropertiesProvider.getByName(query.getTableName()).getSchema();
 
         try {
             ResultsOutputInfo outputInfo;

@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableIndex store = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+    private final TableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
     private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @BeforeEach
@@ -50,7 +50,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldCreateATable() {
             TableId tableId = createTable("test-table");
 
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .containsExactly(tableId);
         }
 
@@ -71,7 +71,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldGetTableByName() {
             TableId tableId = createTable("test-table");
 
-            assertThat(store.getTableByName("test-table"))
+            assertThat(index.getTableByName("test-table"))
                     .contains(tableId);
         }
 
@@ -79,7 +79,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldGetNoTableByName() {
             createTable("existing-table");
 
-            assertThat(store.getTableByName("not-a-table"))
+            assertThat(index.getTableByName("not-a-table"))
                     .isEmpty();
         }
 
@@ -87,7 +87,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldGetTableById() {
             TableId tableId = createTable("test-table");
 
-            assertThat(store.getTableByUniqueId(tableId.getTableUniqueId()))
+            assertThat(index.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
         }
 
@@ -95,7 +95,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldGetNoTableById() {
             createTable("existing-table");
 
-            assertThat(store.getTableByUniqueId("not-a-table"))
+            assertThat(index.getTableByUniqueId("not-a-table"))
                     .isEmpty();
         }
     }
@@ -111,7 +111,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             createTable("this-table");
             createTable("other-table");
 
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .extracting(TableId::getTableName)
                     .containsExactly(
                             "a-table",
@@ -125,13 +125,13 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             TableId table1 = createTable("first-table");
             TableId table2 = createTable("second-table");
 
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .containsExactly(table1, table2);
         }
 
         @Test
         void shouldGetNoTables() {
-            assertThat(store.streamAllTables()).isEmpty();
+            assertThat(index.streamAllTables()).isEmpty();
         }
     }
 
@@ -143,24 +143,24 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void deleteTableNameReference() {
             TableId tableId = createTable("test-table");
 
-            store.delete(tableId);
+            index.delete(tableId);
 
-            assertThat(store.getTableByName("test-table")).isEmpty();
+            assertThat(index.getTableByName("test-table")).isEmpty();
         }
 
         @Test
         void deleteTableIdReference() {
             TableId tableId = createTable("test-table");
 
-            store.delete(tableId);
+            index.delete(tableId);
 
-            assertThat(store.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
+            assertThat(index.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
         }
     }
 
     private TableId createTable(String tableName) {
         TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
-        store.create(tableId);
+        index.create(tableId);
         return tableId;
     }
 }

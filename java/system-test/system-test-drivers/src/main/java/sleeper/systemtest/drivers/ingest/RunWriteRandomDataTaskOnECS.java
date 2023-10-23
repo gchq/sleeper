@@ -132,7 +132,7 @@ public class RunWriteRandomDataTaskOnECS {
         AmazonECS ecsClient = AmazonECSClientBuilder.defaultClient();
         SystemTestProperties systemTestProperties = new SystemTestProperties();
         systemTestProperties.loadFromS3GivenInstanceId(s3Client, args[0]);
-        TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getTableProperties(args[1]);
+        TableProperties tableProperties = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient).getByName(args[1]);
         RunWriteRandomDataTaskOnECS runWriteRandomDataTaskOnECS = new RunWriteRandomDataTaskOnECS(systemTestProperties, tableProperties, ecsClient);
         List<RunTaskResult> results = runWriteRandomDataTaskOnECS.run();
         if (args.length > 2) {

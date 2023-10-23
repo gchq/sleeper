@@ -63,7 +63,7 @@ public class GarbageCollector {
 
         for (TableId tableId : tables) {
             LOGGER.info("Obtaining StateStore for table {}", tableId);
-            StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getTableProperties(tableId));
+            StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.get(tableId));
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
             Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();

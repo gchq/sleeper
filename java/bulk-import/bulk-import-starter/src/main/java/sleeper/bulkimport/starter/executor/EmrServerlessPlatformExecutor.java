@@ -65,7 +65,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     public void runJobOnPlatform(BulkImportArguments arguments) {
         BulkImportJob bulkImportJob = arguments.getBulkImportJob();
         TableProperties tableProperties = tablePropertiesProvider
-                .getTableProperties(bulkImportJob.getTableName());
+                .getByName(bulkImportJob.getTableName());
         BulkImportPlatformSpec platformSpec = new BulkImportPlatformSpec(tableProperties,
                 bulkImportJob);
         String bulkImportBucket = instanceProperties.get(BULK_IMPORT_BUCKET);

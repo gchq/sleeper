@@ -16,187 +16,103 @@
 
 package sleeper.configuration.properties.table;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
-import java.util.List;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
-import static sleeper.configuration.properties.table.TableProperty.ROW_GROUP_SIZE;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesProviderIT extends TablePropertiesITBase {
 
     private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
 
-    private TablePropertiesProvider providerWithTimes(Instant... times) {
-        return new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient,
-                List.of(times).iterator()::next);
+    @Test
+    void shouldLoadByName() {
+        // Given
+        store.save(tableProperties);
+
+        // When / Then
+        assertThat(provider.getByName(tableName))
+                .isEqualTo(tableProperties);
     }
 
-    @Nested
-    @DisplayName("Load table properties")
-    class LoadProperties {
+    @Test
+    void shouldLoadByFullIdentifier() {
+        // Given
+        store.save(tableProperties);
 
-        @Test
-        void shouldLoadByName() {
-            // Given
-            store.save(tableProperties);
-
-            // When / Then
-            assertThat(provider.getTableProperties(tableName)).isEqualTo(tableProperties);
-            assertThat(provider.getTablePropertiesIfExists(tableName)).contains(tableProperties);
-        }
-
-        @Test
-        void shouldLoadByFullIdentifier() {
-            // Given
-            store.save(tableProperties);
-
-            // When / Then
-            assertThat(provider.getTableProperties(tableProperties.getId())).isEqualTo(tableProperties);
-        }
-
-        @Test
-        void shouldReportTableDoesNotExistWhenNotInBucket() {
-            // When / Then
-            assertThat(provider.getTablePropertiesIfExists(tableName))
-                    .isEmpty();
-        }
+        // When / Then
+        assertThat(provider.get(tableProperties.getId()))
+                .isEqualTo(tableProperties);
     }
 
-    @Nested
-    @DisplayName("Load all tables")
-    class LoadAllTables {
+    @Test
+    void shouldLoadAllTables() {
+        // Given
+        TableProperties table1 = createValidTableProperties();
+        TableProperties table2 = createValidTableProperties();
+        table1.set(TABLE_NAME, "table-1");
+        table2.set(TABLE_NAME, "table-2");
+        store.save(table1);
+        store.save(table2);
 
-        @Test
-        void shouldLoadAllTables() {
-            // Given
-            TableProperties table1 = createValidTableProperties();
-            TableProperties table2 = createValidTableProperties();
-            table1.set(TABLE_NAME, "table-1");
-            table2.set(TABLE_NAME, "table-2");
-            store.save(table1);
-            store.save(table2);
-
-            // When / Then
-            assertThat(provider.streamAllTables())
-                    .containsExactly(table1, table2);
-            assertThat(provider.streamAllTableIds())
-                    .containsExactly(table1.getId(), table2.getId());
-        }
-
-        @Test
-        void shouldCachePropertiesAfterLoadingAllTables() {
-            // Given
-            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
-            store.save(tableProperties);
-
-            provider.streamAllTables().forEach(properties -> {
-            });
-
-            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
-            store.save(tableProperties);
-
-            // When / Then
-            assertThat(provider.getTableProperties(tableName).getInt(ROW_GROUP_SIZE))
-                    .isEqualTo(123);
-        }
-
-        @Test
-        void shouldRetrieveFromCacheWhenLoadingAllTables() {
-            // Given
-            tableProperties.setNumber(ROW_GROUP_SIZE, 123);
-            store.save(tableProperties);
-
-            provider.getTableProperties(tableName);
-
-            tableProperties.setNumber(ROW_GROUP_SIZE, 456);
-            store.save(tableProperties);
-
-            // When / Then
-            assertThat(provider.streamAllTables()
-                    .map(properties -> properties.getInt(ROW_GROUP_SIZE)))
-                    .contains(123);
-        }
+        // When / Then
+        assertThat(provider.streamAllTables())
+                .containsExactly(table1, table2);
+        assertThat(provider.streamAllTableIds())
+                .containsExactly(table1.getId(), table2.getId());
     }
 
-    @Nested
-    @DisplayName("Expire cached properties on a timeout")
-    class ExpireCacheOnTimeout {
+    @Test
+    void shouldReportTableDoesNotExistWhenNotInBucket() {
+        // When / Then
+        assertThat(provider.lookupByName(tableName))
+                .isEmpty();
+    }
 
-        @Test
-        void shouldReloadPropertiesFromS3WhenTimeoutReachedForTable() {
-            // Given
-            tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
-            store.save(tableProperties);
-            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
-            TablePropertiesProvider provider = providerWithTimes(
-                    Instant.parse("2023-10-09T17:11:00Z"),
-                    Instant.parse("2023-10-09T17:15:00Z"));
+    @Test
+    void shouldThrowExceptionWhenTableDoesNotExist() {
+        // When / Then
+        assertThatThrownBy(() -> provider.getByName(tableName))
+                .isInstanceOf(NoSuchElementException.class);
+    }
 
-            // When
-            provider.getTableProperties(tableName); // Populate cache
-            tableProperties.setNumber(ROW_GROUP_SIZE, 456L);
-            store.save(tableProperties);
+    @Test
+    void shouldReportTableExistsWhenInIndexButNotConfigBucket() {
+        // Given
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .create(tableProperties.getId());
 
-            // Then
-            assertThat(provider.getTableProperties(tableName).getLong(ROW_GROUP_SIZE))
-                    .isEqualTo(456L);
-        }
+        // When / Then
+        assertThat(provider.lookupByName(tableName))
+                .contains(tableProperties.getId());
+    }
 
-        @Test
-        void shouldNotReloadPropertiesFromS3WhenTimeoutHasNotBeenReachedForTable() {
-            // Given
-            tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
-            store.save(tableProperties);
-            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
-            TablePropertiesProvider provider = providerWithTimes(
-                    Instant.parse("2023-10-09T17:11:00Z"),
-                    Instant.parse("2023-10-09T17:12:00Z"));
+    @Test
+    void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
+        // Given
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .create(tableProperties.getId());
 
-            // When
-            provider.getTableProperties(tableName); // Populate cache
-            tableProperties.setNumber(ROW_GROUP_SIZE, 456L);
-            store.save(tableProperties);
+        // When / Then
+        assertThatThrownBy(() -> provider.getByName(tableName))
+                .isInstanceOf(AmazonS3Exception.class);
+    }
 
-            // Then
-            assertThat(provider.getTableProperties(tableName).getLong(ROW_GROUP_SIZE))
-                    .isEqualTo(123L);
-        }
+    @Test
+    void shouldLoadByFullIdentifierWhenNotInIndex() {
+        // Given
+        store.save(tableProperties);
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .delete(tableProperties.getId());
 
-        @Test
-        void shouldNotReloadPropertiesFromS3WhenTimeoutHasBeenReachedForOtherTable() {
-            // Given
-            TableProperties tableProperties1 = createValidTableProperties();
-            TableProperties tableProperties2 = createValidTableProperties();
-            tableProperties1.setNumber(ROW_GROUP_SIZE, 123L);
-            tableProperties2.setNumber(ROW_GROUP_SIZE, 123L);
-            store.save(tableProperties1);
-            store.save(tableProperties2);
-            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
-            TablePropertiesProvider provider = providerWithTimes(
-                    Instant.parse("2023-10-09T17:11:00Z"),
-                    Instant.parse("2023-10-09T17:14:00Z"),
-                    Instant.parse("2023-10-09T17:15:00Z"),
-                    Instant.parse("2023-10-09T17:15:00Z"));
-
-            // When
-            provider.getTableProperties(tableProperties1.get(TABLE_NAME)); // Populate cache
-            provider.getTableProperties(tableProperties2.get(TABLE_NAME)); // Populate cache
-            tableProperties1.setNumber(ROW_GROUP_SIZE, 456L);
-            tableProperties2.setNumber(ROW_GROUP_SIZE, 456L);
-            store.save(tableProperties1);
-            store.save(tableProperties2);
-
-            // Then
-            assertThat(provider.getTableProperties(tableProperties1.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
-                    .isEqualTo(456L);
-            assertThat(provider.getTableProperties(tableProperties2.get(TABLE_NAME)).getLong(ROW_GROUP_SIZE))
-                    .isEqualTo(123L);
-        }
+        // When / Then
+        assertThat(provider.get(tableProperties.getId()))
+                .isEqualTo(tableProperties);
     }
 }

@@ -133,7 +133,7 @@ public class QuerySerDe {
         }
 
         public QueryJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
-            this(tableName -> tablePropertiesProvider.getTableProperties(tableName).getSchema());
+            this(tableName -> tablePropertiesProvider.getByName(tableName).getSchema());
         }
 
         public QueryJsonSerDe(Map<String, Schema> tableNameToSchemaMap) {
