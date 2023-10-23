@@ -257,7 +257,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
         Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).getN());
         QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).getS());
         String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).getS();
-        String errorMessage = "";
+        String errorMessage = null;
         if (stringAttributeValueMap.containsKey(ERROR_MESSAGE)) {
             errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).getS();
         }
