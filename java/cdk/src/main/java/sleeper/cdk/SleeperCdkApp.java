@@ -123,14 +123,16 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties);
+        IngestPermissionsStack ingestPermissionsStack = new IngestPermissionsStack(this,
+                "IngestPermissions", instanceProperties);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, ingestPermissionsStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
-                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
-                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
+                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties, ingestPermissionsStack),
+                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack, ingestPermissionsStack));
         coreStacks = new CoreStacks(
-                new ConfigBucketStack(this, "Configuration", instanceProperties),
-                new TableIndexStack(this, "TableIndex", instanceProperties),
-                new IngestPermissionsStack(this, "IngestPermissions", instanceProperties),
+                new ConfigBucketStack(this, "Configuration", instanceProperties, ingestPermissionsStack),
+                new TableIndexStack(this, "TableIndex", instanceProperties, ingestPermissionsStack),
+                ingestPermissionsStack,
                 stateStoreStacks, dataStack);
         new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
 

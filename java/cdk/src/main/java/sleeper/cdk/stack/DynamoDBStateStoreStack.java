@@ -29,7 +29,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -41,7 +40,8 @@ public class DynamoDBStateStoreStack extends NestedStack {
     private final Table readyForGCFileInfoTable;
     private final Table partitionTable;
 
-    public DynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public DynamoDBStateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
+                                   IngestPermissionsStack ingestPermissionsStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -108,11 +108,8 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());
-        addIngestSourceRoleReferences(this, "DynamoDBTableWriterForIngest", instanceProperties)
-                .forEach(role -> {
-                    grantReadPartitionMetadata(role);
-                    grantReadWriteActiveFileMetadata(role);
-                });
+        partitionTable.grantReadData(ingestPermissionsStack.getIngestPolicy());
+        activeFileInfoTable.grantReadWriteData(ingestPermissionsStack.getIngestPolicy());
     }
 
     public void grantReadActiveFileMetadata(IGrantable grantee) {

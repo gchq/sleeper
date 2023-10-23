@@ -84,7 +84,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -116,8 +115,6 @@ public final class EksBulkImportStack extends NestedStack {
             TopicStack errorsTopicStack,
             IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
-
-        List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
 
         String instanceId = instanceProperties.get(ID);
 
@@ -176,8 +173,8 @@ public final class EksBulkImportStack extends NestedStack {
         configureJobStarterFunction(bulkImportJobStarter);
 
         importBucketStack.getImportBucket().grantReadWrite(bulkImportJobStarter);
-        ingestSourceBuckets.forEach(bucket -> bucket.grantRead(bulkImportJobStarter));
         statusStoreStack.getResources().grantWriteJobEvent(bulkImportJobStarter.getRole());
+        coreStacks.grantReadIngestSources(bulkImportJobStarter);
         coreStacks.grantReadConfigAndPartitions(bulkImportJobStarter);
 
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
@@ -239,7 +236,6 @@ public final class EksBulkImportStack extends NestedStack {
 
         importBucketStack.getImportBucket().grantReadWrite(sparkServiceAccount);
         stateMachine.grantStartExecution(bulkImportJobStarter);
-        ingestSourceBuckets.forEach(bucket -> bucket.grantRead(sparkServiceAccount));
         statusStoreStack.getResources().grantWriteJobEvent(sparkServiceAccount);
 
         Utils.addStackTagIfSet(this, instanceProperties);

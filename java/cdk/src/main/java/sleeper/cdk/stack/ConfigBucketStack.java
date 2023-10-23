@@ -29,7 +29,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Locale;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -41,7 +40,8 @@ public class ConfigBucketStack extends NestedStack {
 
     private final IBucket configBucket;
 
-    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties,
+                             IngestPermissionsStack ingestPermissionsStack) {
         super(scope, id);
 
         configBucket = Bucket.Builder.create(this, "ConfigBucket")
@@ -54,8 +54,7 @@ public class ConfigBucketStack extends NestedStack {
                 .build();
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        addIngestSourceRoleReferences(this, "ConfigReaderForIngest", instanceProperties)
-                .forEach(configBucket::grantRead);
+        configBucket.grantRead(ingestPermissionsStack.getIngestPolicy());
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }

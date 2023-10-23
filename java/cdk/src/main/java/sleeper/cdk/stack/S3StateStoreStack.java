@@ -31,7 +31,6 @@ import sleeper.statestore.s3.S3StateStore;
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
@@ -40,10 +39,8 @@ public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
     private final TableDataStack dataStack;
 
-    public S3StateStoreStack(Construct scope,
-                             String id,
-                             InstanceProperties instanceProperties,
-                             TableDataStack dataStack) {
+    public S3StateStoreStack(Construct scope, String id, InstanceProperties instanceProperties,
+                             TableDataStack dataStack, IngestPermissionsStack ingestPermissionsStack) {
         super(scope, id);
         this.dataStack = dataStack;
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -68,8 +65,7 @@ public class S3StateStoreStack extends NestedStack {
                 .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
-        addIngestSourceRoleReferences(this, "S3TableWriterForIngest", instanceProperties)
-                .forEach(revisionTable::grantReadWriteData);
+        revisionTable.grantReadWriteData(ingestPermissionsStack.getIngestPolicy());
     }
 
     public void grantReadWrite(IGrantable grantee) {

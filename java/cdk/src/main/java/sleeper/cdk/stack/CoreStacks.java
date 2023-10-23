@@ -73,6 +73,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
         dataStack.grantReadWrite(grantee);
+        ingestPermissionsStack.grantReadIngestSources(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
