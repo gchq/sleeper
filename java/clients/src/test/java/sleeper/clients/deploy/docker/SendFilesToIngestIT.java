@@ -24,7 +24,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.clients.docker.SendFilesToIngest;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobSerDe;
 
@@ -48,8 +47,6 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         DeployDockerInstance.deploy("test-instance-4", s3Client, dynamoDB, sqsClient);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-4");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3Client, "system-test");
 
         Path filePath = tempDir.resolve("test-file.parquet");
         Files.writeString(filePath, "abc");

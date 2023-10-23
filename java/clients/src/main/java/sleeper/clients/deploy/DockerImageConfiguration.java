@@ -61,4 +61,11 @@ public class DockerImageConfiguration {
     public Optional<StackDockerImage> getStackImage(String stack) {
         return Optional.ofNullable(imageByStack.get(stack));
     }
+
+    public Optional<String> getInstanceIdFromRepoName(String repositoryName) {
+        return imageByStack.values().stream()
+                .filter(image -> repositoryName.endsWith("/" + image.getImageName()))
+                .map(image -> repositoryName.substring(0, repositoryName.indexOf("/")))
+                .findFirst();
+    }
 }

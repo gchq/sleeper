@@ -43,14 +43,13 @@ public class PauseSystem {
         amazonS3.shutdown();
         AmazonCloudWatchEvents cwClient = AmazonCloudWatchEventsClientBuilder.defaultClient();
         pause(cwClient, instanceProperties);
+        cwClient.shutdown();
     }
 
     public static void pause(AmazonCloudWatchEvents cwClient, InstanceProperties instanceProperties) {
 
         SleeperScheduleRule.getCloudWatchRules(instanceProperties)
                 .forEach(rules -> disableRule(cwClient, rules));
-
-        cwClient.shutdown();
     }
 
     private static void disableRule(AmazonCloudWatchEvents cwClient,

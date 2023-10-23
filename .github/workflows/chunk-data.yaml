@@ -10,7 +10,6 @@ on:
       - 'java/pom.xml'
       - 'java/metrics/**'
       - 'java/garbage-collector/**'
-      - 'java/tables/**'
       - 'java/statestore/**'
       - 'java/dynamodb-tools/**'
       - 'java/parquet/**'

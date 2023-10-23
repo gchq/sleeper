@@ -20,6 +20,8 @@ import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.http.HttpMethodName;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.gson.Gson;
@@ -51,14 +53,14 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
     private final String apiUrl;
     private final QuerySerDe querySerDe;
 
-    protected QueryWebSocketClient(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        super(s3Client, instanceProperties);
+    protected QueryWebSocketClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties) {
+        super(s3Client, dynamoDBClient, instanceProperties);
 
         this.apiUrl = instanceProperties.get(CdkDefinedInstanceProperty.QUERY_WEBSOCKET_API_URL);
         if (this.apiUrl == null) {
             throw new IllegalArgumentException("Use of this query client requires the WebSocket API to have been deployed as part of your Sleeper instance!");
         }
-        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
     }
 
     @Override
@@ -231,9 +233,10 @@ public class QueryWebSocketClient extends QueryCommandLineClient {
         }
 
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        QueryWebSocketClient client = new QueryWebSocketClient(amazonS3, instanceProperties);
+        QueryWebSocketClient client = new QueryWebSocketClient(amazonS3, dynamoDBClient, instanceProperties);
         client.run();
     }
 }

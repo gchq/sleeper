@@ -17,7 +17,6 @@ on:
       - 'java/ingest/ingest-batcher-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/sketches/**'
-      - 'java/tables/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/common-job/**'
       - 'java/ingest/ingest-core/**'

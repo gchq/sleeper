@@ -15,6 +15,8 @@
  */
 package sleeper.clients.status.report;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -105,9 +107,10 @@ public class DeadLettersStatusReport {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }
         AmazonS3 amazonS3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, args[0]);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDB);
 
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         DeadLettersStatusReport statusReport = new DeadLettersStatusReport(sqsClient, instanceProperties, tablePropertiesProvider);
@@ -115,5 +118,6 @@ public class DeadLettersStatusReport {
 
         sqsClient.shutdown();
         amazonS3.shutdown();
+        dynamoDB.shutdown();
     }
 }

@@ -27,6 +27,8 @@ import com.amazonaws.athena.connector.lambda.data.writers.extractors.VarCharExtr
 import com.amazonaws.athena.connector.lambda.handlers.RecordHandler;
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.services.athena.AmazonAthena;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
@@ -64,21 +66,22 @@ public abstract class SleeperRecordHandler extends RecordHandler {
     private final InstanceProperties instanceProperties;
 
     public SleeperRecordHandler() {
-        this(AmazonS3ClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
+        this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(),
+                System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
     }
 
-    public SleeperRecordHandler(AmazonS3 s3Client, String configBucket) {
+    public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket) {
         super(SOURCE_TYPE);
         this.instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
     }
 
-    public SleeperRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
+    public SleeperRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
         super(s3Client, secretsManager, athena, SOURCE_TYPE);
         this.instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
     }
 
     /**

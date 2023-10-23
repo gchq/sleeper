@@ -31,8 +31,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableId;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +59,6 @@ public class CreateJobs {
     private final JobSender jobSender;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final TableLister tableLister;
     private final CompactionJobStatusStore jobStatusStore;
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -67,11 +66,10 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       AmazonSQS sqsClient,
-                      TableLister tableLister,
                       CompactionJobStatusStore jobStatusStore) {
         this(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, tablePropertiesProvider, sqsClient)::send,
-                tableLister, jobStatusStore);
+                jobStatusStore);
     }
 
     public CreateJobs(ObjectFactory objectFactory,
@@ -79,29 +77,27 @@ public class CreateJobs {
                       TablePropertiesProvider tablePropertiesProvider,
                       StateStoreProvider stateStoreProvider,
                       JobSender jobSender,
-                      TableLister tableLister,
                       CompactionJobStatusStore jobStatusStore) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.tableLister = tableLister;
         this.jobStatusStore = jobStatusStore;
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<String> tables = tableLister.listTables();
+        List<TableId> tables = tablePropertiesProvider.listTableIds();
         LOGGER.info("Found {} tables", tables.size());
-        for (String table : tables) {
+        for (TableId table : tables) {
             createJobsForTable(table);
         }
     }
 
-    public void createJobsForTable(String tableName) throws StateStoreException, IOException, ObjectFactoryException {
-        LOGGER.debug("Creating jobs for table {}", tableName);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
-        StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
+    public void createJobsForTable(TableId tableId) throws StateStoreException, IOException, ObjectFactoryException {
+        LOGGER.debug("Creating jobs for table {}", tableId);
+        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableId);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
 
@@ -111,8 +107,8 @@ public class CreateJobs {
         // of efficiency and to ensure consistency.
         List<FileInfo> activeFileInfosWithNoJobId = activeFiles.stream().filter(f -> null == f.getJobId()).collect(Collectors.toList());
         List<FileInfo> activeFileInfosWithJobId = activeFiles.stream().filter(f -> null != f.getJobId()).collect(Collectors.toList());
-        LOGGER.debug("Found {} active files with no job id in table {}", activeFileInfosWithNoJobId.size(), tableName);
-        LOGGER.debug("Found {} active files with a job id in table {}", activeFileInfosWithJobId.size(), tableName);
+        LOGGER.debug("Found {} active files with no job id in table {}", activeFileInfosWithNoJobId.size(), tableId);
+        LOGGER.debug("Found {} active files with a job id in table {}", activeFileInfosWithJobId.size(), tableId);
 
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
@@ -120,7 +116,7 @@ public class CreateJobs {
         compactionStrategy.init(instanceProperties, tableProperties);
 
         List<CompactionJob> compactionJobs = compactionStrategy.createCompactionJobs(activeFileInfosWithJobId, activeFileInfosWithNoJobId, allPartitions);
-        LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableName);
+        LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), tableId);
 
         for (CompactionJob compactionJob : compactionJobs) {
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the

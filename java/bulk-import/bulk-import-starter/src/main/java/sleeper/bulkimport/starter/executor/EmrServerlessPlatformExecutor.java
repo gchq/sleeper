@@ -15,7 +15,6 @@
  */
 package sleeper.bulkimport.starter.executor;
 
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 import software.amazon.awssdk.services.emrserverless.model.ConfigurationOverrides;
 import software.amazon.awssdk.services.emrserverless.model.JobDriver;
@@ -55,14 +54,8 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
-            InstanceProperties instanceProperties) {
-        this(emrClient, instanceProperties, new TablePropertiesProvider(
-                AmazonS3ClientBuilder.defaultClient(), instanceProperties));
-    }
-
-    public EmrServerlessPlatformExecutor(EmrServerlessClient emrClient,
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider) {
+                                         InstanceProperties instanceProperties,
+                                         TablePropertiesProvider tablePropertiesProvider) {
         this.emrClient = emrClient;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -112,20 +105,20 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
     }
 
     private String constructSparkArgs(String taskId, BulkImportArguments arguments,
-            BulkImportJob bulkImportJob, BulkImportPlatformSpec platformSpec) {
+                                      BulkImportJob bulkImportJob, BulkImportPlatformSpec platformSpec) {
         Map<String, String> instancePropertiesSparkConf = ConfigurationUtils
                 .getSparkServerlessConfigurationFromInstanceProperties(instanceProperties,
                         EmrInstanceArchitecture.X86_64);
 
-        Map<String, String> jobSparkArgs =  arguments.getBulkImportJob().getSparkConf();
+        Map<String, String> jobSparkArgs = arguments.getBulkImportJob().getSparkConf();
         if (jobSparkArgs != null) {
             jobSparkArgs = arguments.getBulkImportJob().getSparkConf().entrySet()
-                .stream().filter(prop -> prop.getKey().contains("sleeper.bulk.import.emr.serverless.spark"))
-                .map(i -> {
-                    return Map.entry(i.getKey().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
-                    i.getValue());
-                })
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+                    .stream().filter(prop -> prop.getKey().contains("sleeper.bulk.import.emr.serverless.spark"))
+                    .map(i -> {
+                        return Map.entry(i.getKey().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
+                                i.getValue());
+                    })
+                    .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
             Map<String, String> sparkConf = Stream
                     .of(instancePropertiesSparkConf, jobSparkArgs)

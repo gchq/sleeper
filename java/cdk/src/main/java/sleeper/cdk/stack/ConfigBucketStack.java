@@ -17,9 +17,11 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
@@ -35,12 +37,14 @@ import static sleeper.configuration.properties.instance.CommonProperty.ID;
  * This configuration stack deploys the config bucket used to store the Sleeper
  * properties.
  */
-public class ConfigurationStack extends NestedStack {
+public class ConfigBucketStack extends NestedStack {
 
-    public ConfigurationStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    private final IBucket configBucket;
+
+    public ConfigBucketStack(Construct scope, String id, InstanceProperties instanceProperties) {
         super(scope, id);
 
-        Bucket configBucket = Bucket.Builder.create(this, "ConfigBucket")
+        configBucket = Bucket.Builder.create(this, "ConfigBucket")
                 .bucketName(String.join("-", "sleeper", instanceProperties.get(ID), "config").toLowerCase(Locale.ROOT))
                 .versioned(false)
                 .encryption(BucketEncryption.S3_MANAGED)
@@ -48,11 +52,19 @@ public class ConfigurationStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .autoDeleteObjects(true)
                 .build();
-
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
+
         addIngestSourceRoleReferences(this, "ConfigReaderForIngest", instanceProperties)
                 .forEach(configBucket::grantRead);
 
         Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    public void grantRead(IGrantable grantee) {
+        configBucket.grantRead(grantee);
+    }
+
+    public void grantWrite(IGrantable grantee) {
+        configBucket.grantWrite(grantee);
     }
 }

@@ -21,6 +21,7 @@ import software.amazon.awscdk.NestedStack;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
@@ -42,7 +43,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 /**
@@ -113,9 +114,8 @@ public class SleeperSystemTest {
         return instance.getTableProperties();
     }
 
-    public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
-        tablePropertiesConsumer.accept(instance.getTableProperties());
-        instance.getTableProperties().saveToS3(clients.getS3());
+    public void updateTableProperties(Map<TableProperty, String> values) {
+        instance.updateTableProperties(values);
     }
 
     public SystemTestSourceFiles sourceFiles() {

@@ -26,7 +26,7 @@ chunks:
   data:
     name: Data
     workflow: chunk-data.yaml
-    modules: [ tables, garbage-collector, metrics ]
+    modules: [ garbage-collector, metrics ]
   ingest-common:
     name: Ingest Common
     workflow: chunk-ingest-common.yaml

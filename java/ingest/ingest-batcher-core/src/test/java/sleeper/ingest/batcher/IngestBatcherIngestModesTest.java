@@ -17,6 +17,7 @@ package sleeper.ingest.batcher;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.properties.SleeperPropertiesInvalidException;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.validation.BatchIngestMode;
 import sleeper.ingest.job.IngestJob;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
@@ -137,15 +139,12 @@ class IngestBatcherIngestModesTest extends IngestBatcherTestBase {
     }
 
     @Test
-    void shouldConsumeFilesAndRequireResubmissionIfQueueModeIsNotValid() {
+    void shouldFailBatchingIfIngestModeIsNotValid() {
         tableProperties.set(INGEST_BATCHER_INGEST_MODE, "invalid");
         addFileToStore("test-bucket/ingest.parquet");
 
-        // When
-        batchFilesWithJobIds("test-job");
-
-        // Then
-        assertThat(queues.getMessagesByQueueUrl()).isEmpty();
-        assertThat(store.getPendingFilesOldestFirst()).isEmpty();
+        // When / Then
+        assertThatThrownBy(() -> batchFilesWithJobIds("test-job"))
+                .isInstanceOf(SleeperPropertiesInvalidException.class);
     }
 }

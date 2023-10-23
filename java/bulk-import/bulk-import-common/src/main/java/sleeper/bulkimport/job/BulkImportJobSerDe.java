@@ -36,6 +36,6 @@ public class BulkImportJobSerDe {
     }
 
     public BulkImportJob fromJson(String jsonStr) {
-        return gson.fromJson(jsonStr, BulkImportJob.class).validate();
+        return gson.fromJson(jsonStr, BulkImportJob.class);
     }
 }

@@ -110,7 +110,7 @@ public class IngestBatcherTestBase {
     protected void batchFilesWithJobIds(List<String> jobIds, Consumer<IngestBatcher.Builder> config) {
         IngestBatcher.Builder builder = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(List.of(tableProperties)))
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .jobIdSupplier(jobIdSupplier(jobIds))
                 .timeSupplier(timeSupplier(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(20))))
                 .store(store).queueClient(queues);

@@ -19,7 +19,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -28,7 +27,10 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.testutil.ToStringPrintStream;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
@@ -57,17 +59,13 @@ public class PartitionsStatusReportIT {
             DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    private final AmazonS3 s3 = createS3Client();
-    private final AmazonDynamoDB dynamoDB = createDynamoClient();
-    private final InstanceProperties instanceProperties = createTestInstanceProperties(s3);
+    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstance();
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
-
-    @BeforeEach
-    void setUp() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
-    }
 
     @Test
     void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
@@ -88,19 +86,21 @@ public class PartitionsStatusReportIT {
         return out.toString();
     }
 
-    private static AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    private static AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
     private StateStore stateStore() {
         return new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDB);
     }
 
+    private InstanceProperties createTestInstance() {
+        InstanceProperties properties = createTestInstanceProperties(s3);
+        DynamoDBTableIndexCreator.create(dynamoDB, properties);
+        new DynamoDBStateStoreCreator(properties, dynamoDB).create();
+        return properties;
+    }
+
     private TableProperties createTestTable(Consumer<TableProperties> tableConfig) {
-        return createTestTableProperties(instanceProperties, schema, s3, tableConfig);
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableConfig.accept(tableProperties);
+        tablePropertiesStore.save(tableProperties);
+        return tableProperties;
     }
 }

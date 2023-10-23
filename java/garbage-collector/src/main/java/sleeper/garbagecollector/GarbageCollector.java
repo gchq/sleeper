@@ -24,8 +24,8 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableId;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -41,18 +41,15 @@ public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
 
     private final Configuration conf;
-    private final TableLister tableLister;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final int garbageCollectorBatchSize;
 
     public GarbageCollector(Configuration conf,
-                            TableLister tableLister,
                             TablePropertiesProvider tablePropertiesProvider,
                             StateStoreProvider stateStoreProvider,
                             int garbageCollectorBatchSize) {
         this.conf = conf;
-        this.tableLister = tableLister;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.garbageCollectorBatchSize = garbageCollectorBatchSize;
@@ -61,12 +58,12 @@ public class GarbageCollector {
     public void run() throws StateStoreException, IOException {
         long startTimeEpochSecs = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
         int totalDeleted = 0;
-        List<String> tables = tableLister.listTables();
+        List<TableId> tables = tablePropertiesProvider.listTableIds();
         LOGGER.info("Obtained list of {} tables", tables.size());
 
-        for (String tableName : tables) {
-            LOGGER.info("Obtaining StateStore for table {}", tableName);
-            StateStore stateStore = stateStoreProvider.getStateStore(tableName, tablePropertiesProvider);
+        for (TableId tableId : tables) {
+            LOGGER.info("Obtaining StateStore for table {}", tableId);
+            StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getTableProperties(tableId));
 
             LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
             Iterator<FileInfo> readyForGC = stateStore.getReadyForGCFiles();
@@ -77,7 +74,7 @@ public class GarbageCollector {
                 deleteFileAndUpdateStateStore(fileInfo, stateStore, conf);
                 numberDeleted++;
             }
-            LOGGER.info("{} files deleted for table {}", numberDeleted, tableName);
+            LOGGER.info("{} files deleted for table {}", numberDeleted, tableId);
             totalDeleted += numberDeleted;
         }
         long endTimeEpochSecs = LocalDateTime.now()

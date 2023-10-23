@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.table.index.dynamodb;
+package sleeper.configuration.table.index;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
@@ -36,6 +36,14 @@ class DynamoDBTableIdFormat {
         return Map.of(
                 TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()),
                 TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
+    }
+
+    public static Map<String, AttributeValue> getIdKey(TableId id) {
+        return Map.of(TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()));
+    }
+
+    public static Map<String, AttributeValue> getNameKey(TableId id) {
+        return Map.of(TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
     }
 
     public static TableId readItem(Map<String, AttributeValue> item) {

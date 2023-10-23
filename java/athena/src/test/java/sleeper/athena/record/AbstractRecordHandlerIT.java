@@ -23,6 +23,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
@@ -76,6 +77,8 @@ public abstract class AbstractRecordHandlerIT {
     protected static final String SPILL_BUCKET_NAME = "spillbucket";
     protected static final String MIN_VALUE = Integer.toString(Integer.MIN_VALUE);
 
+    protected final AmazonS3 s3Client = createS3Client();
+    protected final AmazonDynamoDB dynamoClient = createDynamoClient();
     private InstanceProperties instanceProperties;
 
     @BeforeAll
@@ -87,8 +90,14 @@ public abstract class AbstractRecordHandlerIT {
 
     @BeforeEach
     public void createInstance() throws IOException {
-        this.instanceProperties = TestUtils.createInstance(createS3Client(), createDynamoClient(),
+        this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
+    }
+
+    @AfterEach
+    void tearDown() {
+        s3Client.shutdown();
+        dynamoClient.shutdown();
     }
 
     protected InstanceProperties getInstanceProperties() {
@@ -105,19 +114,19 @@ public abstract class AbstractRecordHandlerIT {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(dynamoClient, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
         return TestUtils.createTable(instanceProperties, SCHEMA,
-                createDynamoClient(), createS3Client(), initialSplits);
+                dynamoClient, s3Client, initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
         return TestUtils.createTable(instanceProperties, schema,
-                createDynamoClient(), createS3Client(), initialSplits);
+                dynamoClient, s3Client, initialSplits);
     }
 
     protected static AmazonDynamoDB createDynamoClient() {

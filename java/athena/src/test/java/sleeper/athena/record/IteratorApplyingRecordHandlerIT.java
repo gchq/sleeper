@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.athena.TestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
@@ -79,7 +80,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -88,7 +89,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -137,7 +139,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -146,7 +148,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -198,7 +201,7 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -207,7 +210,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -260,7 +264,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         // When
         List<String> partition2016Files = new ArrayList<>();
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                s3Client, dynamoClient, instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -307,7 +312,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
         // When
         List<String> emptyFiles = new ArrayList<>();
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -347,9 +353,9 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
 
         // When
         tableProperties.set(ITERATOR_CLASS_NAME, CountAggregator.class.getName());
-        tableProperties.saveToS3(createS3Client());
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         List<String> partition2018Files = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -358,7 +364,8 @@ public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(createS3Client(),
+        IteratorApplyingRecordHandler sleeperRecordHandler = new IteratorApplyingRecordHandler(
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 

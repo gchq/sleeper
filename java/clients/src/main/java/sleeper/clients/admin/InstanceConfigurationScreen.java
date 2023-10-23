@@ -107,13 +107,13 @@ public class InstanceConfigurationScreen {
     private WithProperties<TableProperties> withTableProperties(
             InstanceProperties instanceProperties, TableProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile,
-                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
+                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties));
     }
 
     private WithProperties<TableProperties> withGroupedTableProperties(
             InstanceProperties instanceProperties, TableProperties properties, PropertyGroup group) {
         return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group),
-                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
+                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties));
     }
 
     private Optional<InstanceProperties> tryLoadInstanceProperties(String instanceId) {

@@ -14,7 +14,6 @@ on:
       - 'java/ingest/ingest-runner/**'
       - 'java/common-job/**'
       - 'java/sketches/**'
-      - 'java/tables/**'
       - 'java/ingest/ingest-status-store/**'
       - 'java/ingest/ingest-core/**'
       - 'java/statestore/**'

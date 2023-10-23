@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.datageneration;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -58,10 +59,12 @@ public class IngestRandomData {
         } else {
             throw new RuntimeException("Wrong number of arguments detected. Usage: IngestRandomData <S3 bucket> <Table name> <optional system test bucket>");
         }
-        TableProperties tableProperties = new TablePropertiesProvider(s3Client, instanceProperties)
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        TableProperties tableProperties = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient)
                 .getTableProperties(args[1]);
 
         s3Client.shutdown();
+        dynamoClient.shutdown();
 
         String ingestMode = systemTestProperties.get(INGEST_MODE);
         if (IngestMode.QUEUE.name().equalsIgnoreCase(ingestMode) || IngestMode.BULK_IMPORT_QUEUE.name().equalsIgnoreCase(ingestMode)) {

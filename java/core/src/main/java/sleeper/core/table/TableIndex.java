@@ -20,11 +20,13 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public interface TableIndex {
-    TableId createTable(String tableName) throws TableAlreadyExistsException;
+    void create(TableId tableId) throws TableAlreadyExistsException;
 
     Stream<TableId> streamAllTables();
 
     Optional<TableId> getTableByName(String tableName);
 
     Optional<TableId> getTableByUniqueId(String tableUniqueId);
+
+    void delete(TableId tableId);
 }

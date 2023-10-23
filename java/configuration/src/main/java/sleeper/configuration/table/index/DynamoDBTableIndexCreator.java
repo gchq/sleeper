@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.table.index.dynamodb;
+package sleeper.configuration.table.index;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
@@ -30,8 +30,8 @@ import java.util.Objects;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
-import static sleeper.table.index.dynamodb.DynamoDBTableIdFormat.TABLE_ID_FIELD;
-import static sleeper.table.index.dynamodb.DynamoDBTableIdFormat.TABLE_NAME_FIELD;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.TABLE_ID_FIELD;
+import static sleeper.configuration.table.index.DynamoDBTableIdFormat.TABLE_NAME_FIELD;
 
 public class DynamoDBTableIndexCreator {
     private final InstanceProperties instanceProperties;

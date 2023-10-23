@@ -33,6 +33,7 @@ import sleeper.bulkimport.starter.executor.PlatformExecutor;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.statestore.StateStoreProvider;
@@ -40,13 +41,10 @@ import sleeper.utils.HadoopConfigurationProvider;
 import sleeper.utils.HadoopPathUtils;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.ingest.job.IngestJobValidationUtils.deserialiseAndValidate;
 
 /**
  * The {@link BulkImportStarterLambda} consumes {@link BulkImportJob} messages from SQS and starts executes them using
@@ -57,27 +55,25 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     private final PropertiesReloader propertiesReloader;
     private final BulkImportExecutor executor;
-    private final Configuration hadoopConfig;
-    private final InstanceProperties instanceProperties;
     private final IngestJobStatusStore ingestJobStatusStore;
-    private final Supplier<String> invalidJobIdSupplier;
-    private final Supplier<Instant> timeSupplier;
+    private final IngestJobMessageHandler<BulkImportJob> ingestJobMessageHandler;
 
     public BulkImportStarterLambda() {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamo = AmazonDynamoDBClientBuilder.defaultClient();
-        instanceProperties = loadInstanceProperties(s3);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+        InstanceProperties instanceProperties = loadInstanceProperties(s3);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamo);
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
-        hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+        Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new StateStoreProvider(dynamo, instanceProperties, hadoopConfig),
                 ingestJobStatusStore, s3, platformExecutor, Instant::now);
-        invalidJobIdSupplier = () -> UUID.randomUUID().toString();
-        timeSupplier = Instant::now;
         propertiesReloader = PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
+        ingestJobMessageHandler = messageHandler(
+                instanceProperties, hadoopConfig, ingestJobStatusStore,
+                () -> UUID.randomUUID().toString(), Instant::now);
     }
 
     public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
@@ -86,14 +82,25 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     }
 
     public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
-                                   IngestJobStatusStore ingestJobStatusStore, Supplier<String> invalidJobIdSupplier, Supplier<Instant> timeSupplier) {
+                                   IngestJobStatusStore ingestJobStatusStore, Supplier<String> jobIdSupplier, Supplier<Instant> timeSupplier) {
         this.executor = executor;
-        this.instanceProperties = properties;
-        this.hadoopConfig = hadoopConfig;
         this.ingestJobStatusStore = ingestJobStatusStore;
-        this.invalidJobIdSupplier = invalidJobIdSupplier;
-        this.timeSupplier = timeSupplier;
         this.propertiesReloader = PropertiesReloader.neverReload();
+        this.ingestJobMessageHandler = messageHandler(
+                properties, hadoopConfig, ingestJobStatusStore,
+                jobIdSupplier, timeSupplier);
+    }
+
+    private static IngestJobMessageHandler<BulkImportJob> messageHandler(
+            InstanceProperties properties, Configuration hadoopConfig, IngestJobStatusStore ingestJobStatusStore,
+            Supplier<String> jobIdSupplier, Supplier<Instant> timeSupplier) {
+        return IngestJobMessageHandler.builder().ingestJobStatusStore(ingestJobStatusStore)
+                .deserialiser(new BulkImportJobSerDe()::fromJson)
+                .toIngestJob(BulkImportJob::toIngestJob)
+                .applyIngestJobChanges(BulkImportJob::applyIngestJobChanges)
+                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConfig, properties))
+                .jobIdSupplier(jobIdSupplier).timeSupplier(timeSupplier)
+                .build();
     }
 
     @Override
@@ -102,26 +109,9 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         propertiesReloader.reloadIfNeeded();
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
-                .map(message -> deserialiseAndValidate(message, new BulkImportJobSerDe()::fromJson,
-                        job -> job.toIngestJob().getValidationFailures(), ingestJobStatusStore,
-                        invalidJobIdSupplier, timeSupplier))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .map(this::expandDirectories)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(message -> ingestJobMessageHandler.deserialiseAndValidate(message).stream())
                 .forEach(executor::runJob);
         return null;
-    }
-
-    private Optional<BulkImportJob> expandDirectories(BulkImportJob job) {
-        BulkImportJob.Builder builder = job.toBuilder();
-        List<String> files = HadoopPathUtils.expandDirectories(job.getFiles(), hadoopConfig, instanceProperties);
-        if (files.isEmpty()) {
-            LOGGER.warn("Could not find files for job: {}", job);
-            return Optional.empty();
-        }
-        return Optional.of(builder.files(files).build());
     }
 
     private static InstanceProperties loadInstanceProperties(AmazonS3 s3Client) {
