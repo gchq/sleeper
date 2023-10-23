@@ -16,16 +16,11 @@
 
 package sleeper.clients.status.report.query;
 
-import sleeper.clients.status.report.compaction.job.CompactionJobStatusReporter;
-import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.testutil.ToStringPrintStream;
-import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.query.tracker.TrackedQuery;
 
-import java.io.PrintStream;
 import java.time.Instant;
 import java.util.List;
-import java.util.function.Function;
 
 import static sleeper.query.tracker.TrackedQueryTestHelper.queryCompleted;
 import static sleeper.query.tracker.TrackedQueryTestHelper.queryFailed;
@@ -35,13 +30,16 @@ import static sleeper.query.tracker.TrackedQueryTestHelper.queryQueued;
 import static sleeper.query.tracker.TrackedQueryTestHelper.subQueryInProgress;
 
 public class QueryTrackerReporterTestHelper {
+    private QueryTrackerReporterTestHelper() {
+    }
+
     public static List<TrackedQuery> mixedQueries() {
         return List.of(
                 queryQueued("test-query-1", Instant.parse("2023-09-28T18:50:00Z")),
                 queryInProgress("test-query-2", Instant.parse("2023-09-28T18:52:00Z")),
                 queryCompleted("test-query-3", Instant.parse("2023-09-28T18:54:00Z"), 456L),
-                queryPartiallyFailed("test-query-4", Instant.parse("2023-09-28T18:56:00Z"), 123L),
-                queryFailed("test-query-5", Instant.parse("2023-09-28T18:58:00Z"))
+                queryPartiallyFailed("test-query-4", Instant.parse("2023-09-28T18:56:00Z"), 123L, "Error: Query partially failed"),
+                queryFailed("test-query-5", Instant.parse("2023-09-28T18:58:00Z"), "Error: Query failed")
         );
     }
 
@@ -65,13 +63,5 @@ public class QueryTrackerReporterTestHelper {
         new JsonQueryTrackerReporter(output.getPrintStream())
                 .report(query, trackedQueries);
         return output.toString();
-    }
-
-    public String verboseReportString(Function<PrintStream, CompactionJobStatusReporter> getReporter, List<CompactionJobStatus> statusList,
-                                      JobQuery.Type queryType) {
-        ToStringPrintStream out = new ToStringPrintStream();
-        getReporter.apply(out.getPrintStream())
-                .report(statusList, queryType);
-        return out.toString();
     }
 }
