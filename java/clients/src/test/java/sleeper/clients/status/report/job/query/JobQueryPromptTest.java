@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.report.job.query;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.status.CompactionJobStatus;
@@ -29,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.status.report.job.query.JobQuery.Type;
 
-@Disabled("TODO")
 public class JobQueryPromptTest extends JobQueryTestBase {
 
     private static final String QUERY_TYPE_PROMPT = "All (a), Detailed (d), range (r), or unfinished (u) query? \n";
