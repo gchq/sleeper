@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -99,8 +98,19 @@ public class QuerySerDe {
         return array;
     }
 
-    private static List<Region> convertJsonArrayToRegions(Schema schema, JsonArray array,
-                                                          java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) {
+    private static JsonArray convertRegionsToJsonArray(
+            Schema schema, List<Region> regions, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context,
+            String tableName, String queryId) {
+        try {
+            return convertRegionsToJsonArray(schema, regions, typeOfSrc, context);
+        } catch (RegionJsonSerDe.KeyDoesNotExistException e) {
+            throw new QueryValidationException(queryId,
+                    "Key \"" + e.getKeyName() + "\" does not exist on table \"" + tableName + "\"");
+        }
+    }
+
+    private static List<Region> convertJsonArrayToRegions(
+            Schema schema, JsonArray array, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context) {
         RegionJsonSerDe regionJsonSerDe = new RegionJsonSerDe(schema);
         List<Region> regions = new ArrayList<>();
         Iterator<JsonElement> it = array.iterator();
@@ -108,6 +118,17 @@ public class QuerySerDe {
             regions.add(regionJsonSerDe.deserialize(it.next(), typeOfSrc, context));
         }
         return regions;
+    }
+
+    private static List<Region> convertJsonArrayToRegions(
+            Schema schema, JsonArray array, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context,
+            String tableName, String queryId) {
+        try {
+            return convertJsonArrayToRegions(schema, array, typeOfSrc, context);
+        } catch (RegionJsonSerDe.KeyDoesNotExistException e) {
+            throw new QueryValidationException(queryId,
+                    "Key \"" + e.getKeyName() + "\" does not exist on table \"" + tableName + "\"");
+        }
     }
 
     public String toJson(Query query) {
@@ -126,18 +147,27 @@ public class QuerySerDe {
     }
 
     public static class QueryJsonSerDe implements JsonSerializer<Query>, JsonDeserializer<Query> {
-        private final Function<String, Schema> tableNameToSchemaFunction;
+        private final SchemaLoader schemaLoader;
 
-        public QueryJsonSerDe(Function<String, Schema> tableNameToSchemaFunction) {
-            this.tableNameToSchemaFunction = tableNameToSchemaFunction;
+        public QueryJsonSerDe(SchemaLoader schemaLoader) {
+            this.schemaLoader = schemaLoader;
         }
 
         public QueryJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
-            this(tableName -> tablePropertiesProvider.getTableProperties(tableName).getSchema());
+            this((queryId, tableName) -> {
+                return tablePropertiesProvider.getTablePropertiesIfExists(tableName)
+                        .orElseThrow(() -> new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist"))
+                        .getSchema();
+            });
         }
 
         public QueryJsonSerDe(Map<String, Schema> tableNameToSchemaMap) {
-            this(tableNameToSchemaMap::get);
+            this((queryId, tableName) -> {
+                if (!tableNameToSchemaMap.containsKey(tableName)) {
+                    throw new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist");
+                }
+                return tableNameToSchemaMap.get(tableName);
+            });
         }
 
         @Override
@@ -177,7 +207,7 @@ public class QuerySerDe {
                 json.add(STATUS_REPORT_DESTINATIONS, statusReportDestinations);
             }
 
-            Schema schema = tableNameToSchemaFunction.apply(query.getTableName());
+            Schema schema = schemaLoader.getTableForQuery(query.getQueryId(), query.getTableName());
 
             if (query instanceof LeafPartitionQuery) {
                 json.addProperty(QUERY_TYPE, LEAF_PARTITION_QUERY);
@@ -193,12 +223,14 @@ public class QuerySerDe {
                     fileArray.add(file);
                 }
                 json.add(FILES, fileArray);
-                json.add(REGIONS, convertRegionsToJsonArray(schema, leafPartitionQuery.getRegions(), typeOfSrc, context));
+                json.add(REGIONS, convertRegionsToJsonArray(schema, leafPartitionQuery.getRegions(), typeOfSrc, context,
+                        query.getTableName(), query.getQueryId()));
 
                 json.addProperty(LEAF_PARTITION_ID, leafPartitionQuery.getLeafPartitionId());
             } else {
                 json.addProperty(QUERY_TYPE, QUERY);
-                json.add(REGIONS, convertRegionsToJsonArray(schema, query.getRegions(), typeOfSrc, context));
+                json.add(REGIONS, convertRegionsToJsonArray(schema, query.getRegions(), typeOfSrc, context,
+                        query.getTableName(), query.getQueryId()));
             }
 
             return json;
@@ -262,7 +294,7 @@ public class QuerySerDe {
                 }
             }
 
-            Schema schema = tableNameToSchemaFunction.apply(tableName);
+            Schema schema = schemaLoader.getTableForQuery(queryId, tableName);
 
             switch (type) {
                 case LEAF_PARTITION_QUERY:
@@ -276,7 +308,8 @@ public class QuerySerDe {
                     for (int i = 0; i < filesArray.size(); i++) {
                         files.add(filesArray.get(i).getAsString());
                     }
-                    List<Region> regions = convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS), typeOfSrc, context);
+                    List<Region> regions = convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS),
+                            typeOfSrc, context, tableName, queryId);
                     String leafPartitionId = jsonObject.get(LEAF_PARTITION_ID).getAsString();
 
                     return new LeafPartitionQuery.Builder(tableName, queryId, subQueryId, regions, leafPartitionId, partitionRegion, files)
@@ -289,7 +322,8 @@ public class QuerySerDe {
                 case QUERY:
                     List<Region> ranges = new ArrayList<>();
                     if (jsonObject.has(REGIONS)) {
-                        ranges.addAll(convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS), typeOfSrc, context));
+                        ranges.addAll(convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS),
+                                typeOfSrc, context, tableName, queryId));
                     }
                     return new Query.Builder(tableName, queryId, ranges)
                             .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
@@ -302,5 +336,9 @@ public class QuerySerDe {
                     throw new IllegalArgumentException("Unknown query type: " + type);
             }
         }
+    }
+
+    interface SchemaLoader {
+        Schema getTableForQuery(String tableName, String queryId) throws QueryValidationException;
     }
 }

@@ -154,6 +154,74 @@ public class QueryValidatorIT {
         }
     }
 
+    @Nested
+    @DisplayName("Failed to validate")
+    class FailedToValidate {
+        @Test
+        void shouldReportQueryFailedWhenTableDoesNotExist() {
+            // Given
+            String json = "{" +
+                    "  \"queryId\": \"my-query\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"resultsPublisherConfig\": {}," +
+                    "  \"tableName\": \"not-a-table\"," +
+                    "  \"regions\": [{" +
+                    "    \"key\": {" +
+                    "        \"min\": \"123\"," +
+                    "        \"minInclusive\": true," +
+                    "        \"max\": \"456\"," +
+                    "        \"maxInclusive\": false" +
+                    "      }" +
+                    "  }]" +
+                    "}";
+
+            // When
+            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("my-query")
+                            .lastKnownState(QueryState.FAILED)
+                            .errorMessage("Table \"not-a-table\" does not exist")
+                            .build());
+        }
+
+        @Test
+        void shouldReportQueryFailedWhenKeyDoesNotExist() {
+            // Given
+            String json = "{" +
+                    "  \"queryId\": \"my-query\"," +
+                    "  \"type\": \"Query\"," +
+                    "  \"resultsPublisherConfig\": {}," +
+                    "  \"tableName\": \"table-1\"," +
+                    "  \"regions\": [{" +
+                    "    \"not-a-key\": {" +
+                    "        \"min\": \"123\"," +
+                    "        \"minInclusive\": true," +
+                    "        \"max\": \"456\"," +
+                    "        \"maxInclusive\": false" +
+                    "      }" +
+                    "  }]" +
+                    "}";
+
+            // When
+            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+
+            // Then
+            assertThat(query).isNotPresent();
+            assertThat(queryTracker.getFailedQueries())
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
+                    .containsExactly(TrackedQuery.builder()
+                            .queryId("my-query")
+                            .lastKnownState(QueryState.FAILED)
+                            .errorMessage("Key \"not-a-key\" does not exist on table \"table-1\"")
+                            .build());
+        }
+    }
+
     @Test
     void shouldSuccessfullyDeserialiseAndValidateQuery() {
         // Given

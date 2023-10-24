@@ -26,6 +26,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
+import sleeper.query.model.QueryValidationException;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 
 import java.util.List;
@@ -64,17 +65,25 @@ public class QueryValidator {
             LOGGER.info("Deserialised message to query {}", query);
             return Optional.of(query);
         } catch (JsonParseException e) {
-            LOGGER.error("JSONParseException deserialsing query from JSON {}", message, e);
+            LOGGER.error("JSONParseException deserialising query from JSON {}", message, e);
             queryTracker.queryFailed(invalidQuery(), e);
             return Optional.empty();
         } catch (IllegalArgumentException e) {
-            LOGGER.error("IllegalArgumentException deserialsing query from JSON {}", message, e);
+            LOGGER.error("IllegalArgumentException deserialising query from JSON {}", message, e);
             queryTracker.queryFailed(invalidQuery(), e);
+            return Optional.empty();
+        } catch (QueryValidationException e) {
+            LOGGER.error("QueryValidationException deserialising query from JSON {}", message, e);
+            queryTracker.queryFailed(invalidQuery(e.getQueryId()), e);
             return Optional.empty();
         }
     }
 
     private Query invalidQuery() {
-        return new Query.Builder(null, invalidQueryIdSupplier.get(), List.of()).build();
+        return invalidQuery(invalidQueryIdSupplier.get());
+    }
+
+    private Query invalidQuery(String queryId) {
+        return new Query.Builder(null, queryId, List.of()).build();
     }
 }

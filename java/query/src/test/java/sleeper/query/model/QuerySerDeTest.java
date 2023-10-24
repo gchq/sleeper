@@ -598,7 +598,7 @@ public class QuerySerDeTest {
 
         // When / Then
         assertThatThrownBy(() -> querySerDe.toJson(query))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(QueryValidationException.class);
     }
 
     @ParameterizedTest()

@@ -140,7 +140,7 @@ public class RegionSerDe {
                     .map(Field::getType)
                     .findFirst();
             if (!optional.isPresent()) {
-                throw new JsonParseException("Cannot find type of field " + range.getFieldName() + " in schema");
+                throw new KeyDoesNotExistException(range.getFieldName());
             }
             PrimitiveType type = (PrimitiveType) optional.get();
 
@@ -207,7 +207,7 @@ public class RegionSerDe {
                     .map(Field::getType)
                     .findFirst();
             if (!optional.isPresent()) {
-                throw new JsonParseException("Cannot find type of field " + fieldName + " in schema");
+                throw new KeyDoesNotExistException(fieldName);
             }
 
             Object object;
@@ -235,6 +235,19 @@ public class RegionSerDe {
                 throw new JsonParseException("Unknown primitive type: " + type);
             }
             return object;
+        }
+
+        public class KeyDoesNotExistException extends JsonParseException {
+            private String keyName;
+
+            public KeyDoesNotExistException(String keyName) {
+                super("Key \"" + keyName + "\" does not exist");
+                this.keyName = keyName;
+            }
+
+            public String getKeyName() {
+                return keyName;
+            }
         }
     }
 }
