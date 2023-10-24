@@ -22,8 +22,6 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.DelegatingStateStore;
 
-import java.time.Instant;
-
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
@@ -56,14 +54,5 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                         .sleeperTableName(tableProperties.get(TableProperty.TABLE_NAME))
                         .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
                         .build());
-    }
-
-    /**
-     * Used to set the current time. Should only be called during tests.
-     *
-     * @param now Time to set to be the current time
-     */
-    public void fixTime(Instant now) {
-        fileInfoStore.fixTime(now);
     }
 }

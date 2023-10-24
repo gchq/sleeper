@@ -22,9 +22,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.statestore.DelegatingStateStore;
-import sleeper.core.statestore.StateStoreException;
-
-import java.time.Instant;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
@@ -77,19 +74,11 @@ public class S3StateStore extends DelegatingStateStore {
                 + "statestore";
     }
 
-    public void setInitialFileInfos() throws StateStoreException {
-        fileInfoStore.initialise();
-    }
-
     protected static String getZeroPaddedLong(long number) {
         StringBuilder versionString = new StringBuilder("" + number);
         while (versionString.length() < 12) {
             versionString.insert(0, "0");
         }
         return versionString.toString();
-    }
-
-    public void fixTime(Instant now) {
-        ((S3FileInfoStore) fileInfoStore).fixTime(now);
     }
 }
