@@ -285,7 +285,7 @@ public class ReinitialiseTableIT {
             assertThat(s3StateStore.getAllPartitions()).hasSize(1);
             assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
 
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
 
 
@@ -312,7 +312,7 @@ public class ReinitialiseTableIT {
                     .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                     .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
 
 
@@ -339,7 +339,7 @@ public class ReinitialiseTableIT {
                     .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
                     .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
 
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
         }
     }
 
@@ -370,23 +370,33 @@ public class ReinitialiseTableIT {
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
         String tableName = tableProperties.get(TABLE_NAME);
-        ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET));
-        ListObjectsV2Result result = s3Client.listObjectsV2(req);
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3_STATE_STORE_CLASS)) {
-            assertThat(result.getObjectSummaries().stream()
-                    .map(S3ObjectSummary::getKey)
-                    .filter(key -> key.startsWith(s3StateStorePath)))
-                    .hasSize(2);
-            assertThat(result.getKeyCount()).isEqualTo(5);
-        } else {
-            assertThat(result.getKeyCount()).isEqualTo(3);
-        }
-        assertThat(result.getObjectSummaries())
+        assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
+                .getObjectSummaries())
                 .extracting(S3ObjectSummary::getKey)
-                .contains(
+                .containsExactlyInAnyOrder(
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
                         tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+    }
+
+    private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore() {
+        String tableName = tableProperties.get(TABLE_NAME);
+        assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
+                .getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .hasSize(5)
+                .contains(
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                        tableName + "/" + FILE_SHOULD_NOT_BE_DELETED_3)
+                .satisfies(keys -> {
+                    assertThat(keys)
+                            .filteredOn(key -> key.startsWith(s3StateStorePath + "/files"))
+                            .hasSize(1);
+                    assertThat(keys)
+                            .filteredOn(key -> key.startsWith(s3StateStorePath + "/partitions"))
+                            .hasSize(1);
+                });
     }
 
     private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
