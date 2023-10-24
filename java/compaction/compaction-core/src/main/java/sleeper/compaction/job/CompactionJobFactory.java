@@ -26,7 +26,6 @@ import sleeper.core.statestore.FileInfo;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -45,23 +44,12 @@ public class CompactionJobFactory {
     private final String iteratorConfig;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        this(withTableName(tableProperties.get(TABLE_NAME))
-                .outputFilePrefix(instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME))
-                .iteratorClassName(tableProperties.get(ITERATOR_CLASS_NAME))
-                .iteratorConfig(tableProperties.get(ITERATOR_CONFIG)));
-    }
-
-    private CompactionJobFactory(Builder builder) {
-        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
-        outputFilePrefix = Objects.requireNonNull(builder.outputFilePrefix, "outputFilePrefix must not be null");
-        iteratorClassName = builder.iteratorClassName;
-        iteratorConfig = builder.iteratorConfig;
+        tableName = tableProperties.get(TABLE_NAME);
+        outputFilePrefix = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME);
+        iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
+        iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
         LOGGER.info("Initialised CompactionFactory with table name {}, filename prefix {}",
                 this.tableName, this.outputFilePrefix);
-    }
-
-    public static Builder withTableName(String tableName) {
-        return new Builder().tableName(tableName);
     }
 
     public CompactionJob createSplittingCompactionJob(
@@ -130,39 +118,5 @@ public class CompactionJobFactory {
 
     private String outputFileForPartitionAndJob(String partitionId, String jobId) {
         return TableUtils.constructPartitionParquetFilePath(outputFilePrefix, partitionId, jobId);
-    }
-
-    public static final class Builder {
-        private String tableName;
-        private String outputFilePrefix;
-        private String iteratorClassName;
-        private String iteratorConfig;
-
-        private Builder() {
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
-            return this;
-        }
-
-        public Builder outputFilePrefix(String outputFilePrefix) {
-            this.outputFilePrefix = outputFilePrefix;
-            return this;
-        }
-
-        public Builder iteratorClassName(String iteratorClassName) {
-            this.iteratorClassName = iteratorClassName;
-            return this;
-        }
-
-        public Builder iteratorConfig(String iteratorConfig) {
-            this.iteratorConfig = iteratorConfig;
-            return this;
-        }
-
-        public CompactionJobFactory build() {
-            return new CompactionJobFactory(this);
-        }
     }
 }
