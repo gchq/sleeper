@@ -56,12 +56,6 @@ public class CompactionJobTestDataHelper {
         this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private CompactionJobTestDataHelper(String tableName) {
-        this.jobFactory = CompactionJobFactory.withTableName(tableName)
-                .outputFilePrefix("test-fs")
-                .build();
-    }
-
     private CompactionJobTestDataHelper(InstanceProperties instanceProperties, TableProperties tableProperties) {
         this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
