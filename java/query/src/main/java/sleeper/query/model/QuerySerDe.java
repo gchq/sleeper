@@ -30,6 +30,7 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
+import sleeper.core.range.RegionSerDe;
 import sleeper.core.range.RegionSerDe.RegionJsonSerDe;
 import sleeper.core.schema.Schema;
 
@@ -38,7 +39,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 /**
@@ -100,7 +101,7 @@ public class QuerySerDe {
             String tableName, String queryId) {
         try {
             return convertRegionsToJsonArray(schema, regions, typeOfSrc, context);
-        } catch (RegionJsonSerDe.KeyDoesNotExistException e) {
+        } catch (RegionSerDe.KeyDoesNotExistException e) {
             throw new QueryValidationException(queryId,
                     "Key \"" + e.getKeyName() + "\" does not exist on table \"" + tableName + "\"");
         }
@@ -122,7 +123,7 @@ public class QuerySerDe {
             String tableName, String queryId) {
         try {
             return convertJsonArrayToRegions(schema, array, typeOfSrc, context);
-        } catch (RegionJsonSerDe.KeyDoesNotExistException e) {
+        } catch (RegionSerDe.KeyDoesNotExistException e) {
             throw new QueryValidationException(queryId,
                     "Key \"" + e.getKeyName() + "\" does not exist on table \"" + tableName + "\"");
         }
@@ -155,9 +156,11 @@ public class QuerySerDe {
                 if (tableName == null) {
                     throw new QueryValidationException(queryId, "Table must not be null");
                 }
-                return Optional.of(tablePropertiesProvider.getByName(tableName))
-                        .orElseThrow(() -> new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist"))
-                        .getSchema();
+                try {
+                    return tablePropertiesProvider.getByName(tableName).getSchema();
+                } catch (NoSuchElementException e) {
+                    throw new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist");
+                }
             });
         }
 

@@ -236,18 +236,18 @@ public class RegionSerDe {
             }
             return object;
         }
+    }
 
-        public class KeyDoesNotExistException extends JsonParseException {
-            private String keyName;
+    public static class KeyDoesNotExistException extends JsonParseException {
+        private String keyName;
 
-            public KeyDoesNotExistException(String keyName) {
-                super("Key \"" + keyName + "\" does not exist");
-                this.keyName = keyName;
-            }
+        public KeyDoesNotExistException(String keyName) {
+            super("Key \"" + keyName + "\" does not exist");
+            this.keyName = keyName;
+        }
 
-            public String getKeyName() {
-                return keyName;
-            }
+        public String getKeyName() {
+            return keyName;
         }
     }
 }
