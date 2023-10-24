@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLE
  * fails then the update is retried.
  */
 public class S3StateStore extends DelegatingStateStore {
-    public static final String TABLE_NAME = "TABLE_NAME";
+    public static final String TABLE_ID = "TABLE_ID";
     public static final String REVISION_ID_KEY = "REVISION_ID_KEY";
     public static final String CURRENT_PARTITIONS_REVISION_ID_KEY = "CURRENT_PARTITIONS_REVISION_ID_KEY";
     public static final String CURRENT_FILES_REVISION_ID_KEY = "CURRENT_FILES_REVISION_ID_KEY";
@@ -64,13 +64,13 @@ public class S3StateStore extends DelegatingStateStore {
     private static S3RevisionUtils s3RevisionUtils(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties, TableProperties tableProperties) {
         return new S3RevisionUtils(dynamoDB,
-                instanceProperties.get(REVISION_TABLENAME), tableProperties.get(TableProperty.TABLE_NAME));
+                instanceProperties.get(REVISION_TABLENAME), tableProperties.get(TableProperty.TABLE_ID));
     }
 
     private static String stateStorePath(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TableProperty.TABLE_NAME) + "/"
+                + tableProperties.get(TableProperty.TABLE_ID) + "/"
                 + "statestore";
     }
 

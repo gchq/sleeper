@@ -42,10 +42,10 @@ public class S3StateStoreCreator {
     public void create() {
         String tableName = instanceProperties.get(REVISION_TABLENAME);
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(S3StateStore.TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(S3StateStore.TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(S3StateStore.REVISION_ID_KEY, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(S3StateStore.TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(S3StateStore.TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(S3StateStore.REVISION_ID_KEY, KeyType.RANGE));
         CreateTableRequest request = new CreateTableRequest()
                 .withTableName(tableName)
