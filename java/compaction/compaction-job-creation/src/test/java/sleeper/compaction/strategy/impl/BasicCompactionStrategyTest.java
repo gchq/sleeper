@@ -16,6 +16,7 @@
 package sleeper.compaction.strategy.impl;
 
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -38,27 +39,34 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicCompactionStrategyTest {
+
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     private CompactionJob.Builder jobForTable() {
         return CompactionJob.builder()
                 .tableName("table");
     }
 
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(CONFIG_BUCKET, "bucket");
+        instanceProperties.set(DATA_BUCKET, "databucket");
+        tableProperties.set(TABLE_NAME, "table");
+    }
+
     @Test
     public void shouldCreateOneJobWhenOneLeafPartitionAndOnlyTwoFiles() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "config");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -108,11 +116,6 @@ public class BasicCompactionStrategyTest {
     @Test
     public void shouldCreateCorrectJobsWhenOneLeafPartitionAndLotsOfFiles() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "config");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "10");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -161,11 +164,6 @@ public class BasicCompactionStrategyTest {
     @Test
     public void shouldCreateNoJobsWhenNotEnoughFiles() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "bucket");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -204,11 +202,6 @@ public class BasicCompactionStrategyTest {
     public void shouldCreateJobsWhenMultiplePartitions() {
         // Given - 3 partitions (root and 2 children) - the child partition called "left" has files for 2 compaction
         // jobs, the "right" child partition only has files for 1 compaction job
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "bucket");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
         basicCompactionStrategy.init(instanceProperties, tableProperties);
@@ -325,11 +318,6 @@ public class BasicCompactionStrategyTest {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "bucket");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "2");
         tableProperties.setSchema(schema);
         BasicCompactionStrategy basicCompactionStrategy = new BasicCompactionStrategy();
