@@ -46,6 +46,11 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicCompactionStrategyTest {
 
+    private CompactionJob.Builder jobForTable() {
+        return CompactionJob.builder()
+                .tableName("table");
+    }
+
     @Test
     public void shouldCreateOneJobWhenOneLeafPartitionAndOnlyTwoFiles() {
         // Given
@@ -86,8 +91,7 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(1);
-        CompactionJob expectedCompactionJob = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob expectedCompactionJob = jobForTable()
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId(partition.getId())
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
@@ -140,8 +144,7 @@ public class BasicCompactionStrategyTest {
             for (int j = 99 - i * 10; j > 99 - (i + 1) * 10; j--) {
                 inputFiles.add("file-" + j);
             }
-            return CompactionJob.builder()
-                    .tableName("table")
+            return jobForTable()
                     .jobId(compactionJobs.get(i).getId()) // Job id is a UUID so we don't know what it will be
                     .partitionId(partition.getId())
                     .inputFiles(inputFiles)
@@ -280,8 +283,7 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(3);
-        CompactionJob expectedCompactionJob1 = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob expectedCompactionJob1 = jobForTable()
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("left")
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
@@ -292,8 +294,7 @@ public class BasicCompactionStrategyTest {
                 .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
-        CompactionJob expectedCompactionJob2 = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob expectedCompactionJob2 = jobForTable()
                 .jobId(compactionJobs.get(1).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("left")
                 .inputFiles(Arrays.asList(fileInfo3.getFilename(), fileInfo4.getFilename()))
@@ -304,8 +305,7 @@ public class BasicCompactionStrategyTest {
                 .dimension(-1)
                 .iteratorClassName(null)
                 .iteratorConfig(null).build();
-        CompactionJob expectedCompactionJob3 = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob expectedCompactionJob3 = jobForTable()
                 .jobId(compactionJobs.get(2).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("right")
                 .inputFiles(Arrays.asList(fileInfo5.getFilename(), fileInfo6.getFilename()))
@@ -384,8 +384,7 @@ public class BasicCompactionStrategyTest {
 
         // Then
         assertThat(compactionJobs).hasSize(1);
-        CompactionJob expectedCompactionJob = CompactionJob.builder()
-                .tableName("table")
+        CompactionJob expectedCompactionJob = jobForTable()
                 .jobId(compactionJobs.get(0).getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId("root")
                 .inputFiles(Arrays.asList(fileInfo1.getFilename(), fileInfo2.getFilename()))
