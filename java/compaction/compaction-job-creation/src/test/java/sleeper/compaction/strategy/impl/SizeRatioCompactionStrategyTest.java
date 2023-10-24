@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.strategy.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
@@ -32,23 +33,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SIZE_RATIO_COMPACTION_STRATEGY_RATIO;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SizeRatioCompactionStrategyTest {
+
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(DATA_BUCKET, "databucket");
+        tableProperties.set(TABLE_NAME, "table");
+        tableProperties.set(TABLE_ID, "table-id");
+    }
 
     @Test
     public void shouldCreateOneJobWhenOneLeafPartitionAndFilesMeetCriteria() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "config");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
@@ -83,11 +92,6 @@ public class SizeRatioCompactionStrategyTest {
     @Test
     public void shouldCreateNoJobsWhenOneLeafPartitionAndFilesDoNotMeetCriteria() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "config");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "11");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
@@ -120,11 +124,6 @@ public class SizeRatioCompactionStrategyTest {
     @Test
     public void shouldCreateMultipleJobsWhenMoreThanBatchFilesMeetCriteria() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "config");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
         sizeRatioCompactionStrategy.init(instanceProperties, tableProperties);
@@ -177,11 +176,6 @@ public class SizeRatioCompactionStrategyTest {
     @Test
     public void shouldCreateJobWithLessThanBatchSizeNumberOfFiles() {
         // Given
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(CONFIG_BUCKET, "config");
-        instanceProperties.set(DATA_BUCKET, "databucket");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.set(TABLE_NAME, "table");
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tableProperties.set(SIZE_RATIO_COMPACTION_STRATEGY_RATIO, "2");
         SizeRatioCompactionStrategy sizeRatioCompactionStrategy = new SizeRatioCompactionStrategy();
@@ -242,7 +236,7 @@ public class SizeRatioCompactionStrategyTest {
 
     private void checkJob(CompactionJob job, List<String> files, String partitionId, String fileSystem) {
         CompactionJob expectedCompactionJob = CompactionJob.builder()
-                .tableName("table")
+                .tableName("table").tableId("table-id")
                 .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId(partitionId)
                 .inputFiles(new ArrayList<>(files))

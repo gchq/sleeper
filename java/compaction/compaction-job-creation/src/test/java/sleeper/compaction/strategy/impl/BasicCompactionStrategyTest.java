@@ -45,6 +45,7 @@ import static sleeper.configuration.properties.instance.CdkDefinedInstanceProper
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class BasicCompactionStrategyTest {
@@ -54,7 +55,7 @@ public class BasicCompactionStrategyTest {
 
     private CompactionJob.Builder jobForTable() {
         return CompactionJob.builder()
-                .tableName("table");
+                .tableName("table").tableId("table-id");
     }
 
     @BeforeEach
@@ -62,6 +63,7 @@ public class BasicCompactionStrategyTest {
         instanceProperties.set(CONFIG_BUCKET, "bucket");
         instanceProperties.set(DATA_BUCKET, "databucket");
         tableProperties.set(TABLE_NAME, "table");
+        tableProperties.set(TABLE_ID, "table-id");
     }
 
     @Test

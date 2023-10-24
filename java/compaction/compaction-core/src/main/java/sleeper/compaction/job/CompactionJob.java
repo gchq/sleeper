@@ -67,6 +67,10 @@ public class CompactionJob {
         return tableName;
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
     public String getId() {
         return jobId;
     }

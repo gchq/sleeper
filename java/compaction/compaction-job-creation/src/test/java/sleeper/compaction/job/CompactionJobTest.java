@@ -27,7 +27,7 @@ public class CompactionJobTest {
 
     private CompactionJob.Builder jobForTable() {
         return CompactionJob.builder()
-                .tableName("table");
+                .tableName("table").tableId("table-id");
     }
 
     @Test
