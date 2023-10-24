@@ -46,7 +46,13 @@ public class LeafPartitionQuery extends Query {
             String leafPartitionId,
             Region partitionRegion,
             List<String> files) {
-        super(tableName, queryId, regions);
+        super(tableName, queryId, regions,
+                SubQueryDetails.builder()
+                        .subQueryId(subQueryId)
+                        .leafPartitionId(leafPartitionId)
+                        .partitionRegion(partitionRegion)
+                        .files(files)
+                        .build());
         this.subQueryId = subQueryId;
         this.leafPartitionId = leafPartitionId;
         this.partitionRegion = partitionRegion;

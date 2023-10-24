@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A {@link Query} is a request for records with rowkeys that fall within one of
@@ -31,6 +32,7 @@ public class Query {
     protected final String tableName;
     protected final String queryId;
     protected final List<Region> regions;
+    private final SubQueryDetails subQueryDetails;
     protected String queryTimeIteratorClassName;
     protected String queryTimeIteratorConfig;
     protected Map<String, String> resultsPublisherConfig;
@@ -38,9 +40,14 @@ public class Query {
     protected List<String> requestedValueFields;
 
     public Query(String tableName, String queryId, List<Region> regions) {
+        this(tableName, queryId, regions, null);
+    }
+
+    protected Query(String tableName, String queryId, List<Region> regions, SubQueryDetails subQueryDetails) {
         this.tableName = tableName;
         this.queryId = queryId;
         this.regions = regions;
+        this.subQueryDetails = subQueryDetails;
         this.resultsPublisherConfig = Collections.emptyMap();
         this.statusReportDestinations = Collections.emptyList();
     }
@@ -51,6 +58,10 @@ public class Query {
 
     public List<Region> getRegions() {
         return regions;
+    }
+
+    public Optional<SubQueryDetails> getSubQueryDetails() {
+        return Optional.ofNullable(subQueryDetails);
     }
 
     public void setQueryTimeIteratorClassName(String queryTimeIteratorClassName) {
