@@ -33,6 +33,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+
 public class CompactionJobTestDataHelper {
 
     public static final String KEY_FIELD = "key";
@@ -47,7 +51,9 @@ public class CompactionJobTestDataHelper {
     private FileInfoFactory fileFactory;
 
     public CompactionJobTestDataHelper() {
-        this("test-table");
+        InstanceProperties instanceProperties = createTestInstanceProperties();
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
     private CompactionJobTestDataHelper(String tableName) {
