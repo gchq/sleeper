@@ -53,6 +53,10 @@ public class ManagedPoliciesStack extends NestedStack {
     // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
     //          the IAM policy. This means the resulting ID must be unique within your AWS account. This is a bug in
     //          the CDK.
+    //          The result is that in order to have more than one instance of Sleeper deployed to the same AWS account,
+    //          we include the instance ID in the CDK logical IDs for the ingest source roles.
+    //          This should not be necessary with a managed policy, but when you use the CDK's grantX methods directly,
+    //          it adds separate policies against the roles. That may still be desirable in the future.
     private static List<IRole> addIngestSourceRoleReferences(Construct scope, InstanceProperties instanceProperties) {
         AtomicInteger index = new AtomicInteger(1);
         return instanceProperties.getList(INGEST_SOURCE_ROLE).stream()
