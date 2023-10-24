@@ -56,12 +56,12 @@ public class CompactionJobTestDataHelper {
         this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private CompactionJobTestDataHelper(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    private CompactionJobTestDataHelper(CompactionJobFactory compactionJobFactory) {
+        this.jobFactory = compactionJobFactory;
     }
 
     public static CompactionJobTestDataHelper forTable(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        return new CompactionJobTestDataHelper(instanceProperties, tableProperties);
+        return new CompactionJobTestDataHelper(new CompactionJobFactory(instanceProperties, tableProperties));
     }
 
     public Partition singlePartition() {
