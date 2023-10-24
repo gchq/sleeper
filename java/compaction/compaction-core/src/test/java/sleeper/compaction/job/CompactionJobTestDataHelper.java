@@ -15,19 +15,19 @@
  */
 package sleeper.compaction.job;
 
+import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.range.Range;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoFactory;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -56,8 +56,12 @@ public class CompactionJobTestDataHelper {
                 .build();
     }
 
-    public static CompactionJobTestDataHelper forTable(String tableName) {
-        return new CompactionJobTestDataHelper(tableName);
+    private CompactionJobTestDataHelper(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        this.jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    public static CompactionJobTestDataHelper forTable(InstanceProperties instanceProperties, TableProperties tableProperties) {
+        return new CompactionJobTestDataHelper(instanceProperties, tableProperties);
     }
 
     public Partition singlePartition() {
@@ -69,20 +73,6 @@ public class CompactionJobTestDataHelper {
             throw new IllegalStateException("Partition tree already initialised");
         }
         setPartitions(createPartitions(config));
-    }
-
-    public void reportStartedJob(Instant startTime, CompactionJobStatusStore statusStore) {
-        CompactionJob job = singleFileCompaction();
-        statusStore.jobCreated(job);
-        statusStore.jobStarted(job, startTime, DEFAULT_TASK_ID);
-    }
-
-    public CompactionJob reportFinishedJob(RecordsProcessedSummary summary, CompactionJobStatusStore statusStore) {
-        CompactionJob job = singleFileCompaction();
-        statusStore.jobCreated(job);
-        statusStore.jobStarted(job, summary.getStartTime(), DEFAULT_TASK_ID);
-        statusStore.jobFinished(job, summary, DEFAULT_TASK_ID);
-        return job;
     }
 
     public CompactionJob singleFileCompaction() {
