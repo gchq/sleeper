@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.deploy.PopulateInstanceProperties;
 import sleeper.clients.deploy.PopulateTableProperties;
@@ -34,6 +35,9 @@ import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.statestore.StateStoreFactory;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
@@ -67,10 +71,17 @@ public class DeployDockerInstance {
         TableProperties tableProperties = generateTableProperties(instanceProperties);
 
         ConfigurationDockerStack.from(instanceProperties, s3Client).deploy();
-        TableDockerStack.from(instanceProperties, tableProperties, s3Client, dynamoDB).deploy();
+        TableDockerStack.from(instanceProperties, s3Client, dynamoDB).deploy();
 
         instanceProperties.saveToS3(s3Client);
         S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB).save(tableProperties);
+        try {
+            StateStore stateStore = new StateStoreFactory(dynamoDB, instanceProperties, new Configuration())
+                    .getStateStore(tableProperties);
+            stateStore.initialise();
+        } catch (StateStoreException e) {
+            throw new RuntimeException(e);
+        }
 
         IngestDockerStack.from(instanceProperties, s3Client, dynamoDB, sqsClient).deploy();
     }
