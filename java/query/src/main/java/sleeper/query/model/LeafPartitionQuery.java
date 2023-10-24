@@ -18,7 +18,6 @@ package sleeper.query.model;
 import sleeper.core.range.Region;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,10 +32,7 @@ import java.util.Objects;
  * and within the regions specified.
  */
 public class LeafPartitionQuery extends Query {
-    private final String subQueryId;
-    private final String leafPartitionId;
-    private final Region partitionRegion;
-    private final List<String> files;
+    private final SubQueryDetails subQueryDetails;
 
     public LeafPartitionQuery(
             String tableName,
@@ -46,33 +42,29 @@ public class LeafPartitionQuery extends Query {
             String leafPartitionId,
             Region partitionRegion,
             List<String> files) {
-        super(tableName, queryId, regions,
-                SubQueryDetails.builder()
-                        .subQueryId(subQueryId)
-                        .leafPartitionId(leafPartitionId)
-                        .partitionRegion(partitionRegion)
-                        .files(files)
-                        .build());
-        this.subQueryId = subQueryId;
-        this.leafPartitionId = leafPartitionId;
-        this.partitionRegion = partitionRegion;
-        this.files = files;
+        super(tableName, queryId, regions);
+        subQueryDetails = SubQueryDetails.builder()
+                .subQueryId(subQueryId)
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(files)
+                .build();
     }
 
     public String getSubQueryId() {
-        return subQueryId;
+        return subQueryDetails.getSubQueryId();
     }
 
     public String getLeafPartitionId() {
-        return leafPartitionId;
+        return subQueryDetails.getLeafPartitionId();
     }
 
     public Region getPartitionRegion() {
-        return partitionRegion;
+        return subQueryDetails.getPartitionRegion();
     }
 
     public List<String> getFiles() {
-        return files;
+        return subQueryDetails.getFiles();
     }
 
     @Override
@@ -86,20 +78,14 @@ public class LeafPartitionQuery extends Query {
                 + ", resultsPublisherConfig=" + resultsPublisherConfig
                 + ", statusReportDestinations=" + statusReportDestinations
                 + ", requestedValueFields=" + requestedValueFields
-                + ", subQueryId=" + subQueryId
-                + ", leafPartitionId=" + leafPartitionId
-                + ", partitionRegion=" + partitionRegion
-                + ", files=" + files + '}';
+                + ", subQueryDetails=" + subQueryDetails + '}';
     }
 
     @Override
     public int hashCode() {
         int hash = 7;
         hash = 71 * hash + super.hashCode();
-        hash = 71 * hash + Objects.hashCode(this.subQueryId);
-        hash = 71 * hash + Objects.hashCode(this.leafPartitionId);
-        hash = 71 * hash + Objects.hashCode(this.partitionRegion);
-        hash = 71 * hash + Objects.hashCode(new HashSet<>(this.files));
+        hash = 71 * hash + subQueryDetails.hashCode();
         return hash;
     }
 
@@ -118,19 +104,7 @@ public class LeafPartitionQuery extends Query {
         if (!super.equals(other)) {
             return false;
         }
-        if (!Objects.equals(this.subQueryId, other.subQueryId)) {
-            return false;
-        }
-        if (!Objects.equals(this.leafPartitionId, other.leafPartitionId)) {
-            return false;
-        }
-        if (!Objects.equals(this.partitionRegion, other.partitionRegion)) {
-            return false;
-        }
-        if (!Objects.equals(new HashSet<>(this.files), new HashSet<>(other.files))) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.subQueryDetails, other.subQueryDetails);
     }
 
     public static class Builder {
