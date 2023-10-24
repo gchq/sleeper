@@ -29,6 +29,7 @@ import java.util.Objects;
  */
 public class CompactionJob {
     private final String tableName;
+    private final String tableId;
     private final String jobId;
     private final List<String> inputFiles;
     private final String outputFile;
@@ -43,6 +44,7 @@ public class CompactionJob {
 
     private CompactionJob(Builder builder) {
         tableName = builder.tableName;
+        tableId = builder.tableId;
         jobId = builder.jobId;
         inputFiles = builder.inputFiles;
         outputFile = builder.outputFile;
@@ -135,54 +137,37 @@ public class CompactionJob {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CompactionJob compactionJob = (CompactionJob) o;
-        return isSplittingJob == compactionJob.isSplittingJob &&
-                Objects.equals(splitPoint, compactionJob.splitPoint) &&
-                Objects.equals(dimension, compactionJob.dimension) &&
-                Objects.equals(tableName, compactionJob.tableName) &&
-                Objects.equals(jobId, compactionJob.jobId) &&
-                Objects.equals(inputFiles, compactionJob.inputFiles) &&
-                Objects.equals(outputFile, compactionJob.outputFile) &&
-                Objects.equals(outputFiles, compactionJob.outputFiles) &&
-                Objects.equals(partitionId, compactionJob.partitionId) &&
-                Objects.equals(iteratorClassName, compactionJob.iteratorClassName) &&
-                Objects.equals(iteratorConfig, compactionJob.iteratorConfig);
+        CompactionJob that = (CompactionJob) o;
+        return isSplittingJob == that.isSplittingJob && dimension == that.dimension && Objects.equals(tableName, that.tableName) && Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId) && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile) && Objects.equals(outputFiles, that.outputFiles) && Objects.equals(childPartitions, that.childPartitions) && Objects.equals(partitionId, that.partitionId) && Objects.equals(splitPoint, that.splitPoint) && Objects.equals(iteratorClassName, that.iteratorClassName) && Objects.equals(iteratorConfig, that.iteratorConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isSplittingJob,
-                splitPoint,
-                dimension,
-                tableName,
-                jobId,
-                inputFiles,
-                outputFile,
-                outputFiles,
-                partitionId,
-                iteratorClassName,
-                iteratorConfig);
+        return Objects.hash(tableName, tableId, jobId, inputFiles, outputFile, outputFiles, childPartitions, partitionId, isSplittingJob, splitPoint, dimension, iteratorClassName, iteratorConfig);
     }
 
     @Override
     public String toString() {
         return "CompactionJob{" +
                 "tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", jobId='" + jobId + '\'' +
                 ", inputFiles=" + inputFiles +
                 ", outputFile='" + outputFile + '\'' +
                 ", outputFiles=" + outputFiles +
+                ", childPartitions=" + childPartitions +
                 ", partitionId='" + partitionId + '\'' +
                 ", isSplittingJob=" + isSplittingJob +
                 ", splitPoint=" + splitPoint +
                 ", dimension=" + dimension +
-                ", iteratorClassName=" + iteratorClassName +
-                ", iteratorConfig=" + iteratorConfig +
+                ", iteratorClassName='" + iteratorClassName + '\'' +
+                ", iteratorConfig='" + iteratorConfig + '\'' +
                 '}';
     }
 
     public static final class Builder {
         private String tableName;
+        private String tableId;
         private String jobId;
         private List<String> inputFiles;
         private String outputFile;
@@ -200,6 +185,11 @@ public class CompactionJob {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
