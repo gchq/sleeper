@@ -75,7 +75,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
                 SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                         .fromJson(serialisedJob);
                 LOGGER.info("Received partition splitting job {}", job);
-                TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
+                TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
                 splitPartition.splitPartition(job.getPartition(), job.getFileNames());

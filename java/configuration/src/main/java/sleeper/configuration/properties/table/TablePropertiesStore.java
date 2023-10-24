@@ -52,6 +52,11 @@ public class TablePropertiesStore {
                 .map(this::loadProperties);
     }
 
+    public Optional<TableProperties> loadById(String tableId) {
+        return tableIndex.getTableByUniqueId(tableId)
+                .map(this::loadProperties);
+    }
+
     public Optional<TableProperties> loadByNameNoValidation(String tableName) {
         return tableIndex.getTableByName(tableName)
                 .map(client::loadProperties);
@@ -71,6 +76,10 @@ public class TablePropertiesStore {
 
     public List<TableId> listTableIds() {
         return streamAllTableIds().collect(Collectors.toUnmodifiableList());
+    }
+
+    public Optional<TableId> lookupByName(String tableName) {
+        return tableIndex.getTableByName(tableName);
     }
 
     public void createTable(TableProperties tableProperties) {

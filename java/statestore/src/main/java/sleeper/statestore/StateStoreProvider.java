@@ -45,7 +45,7 @@ public class StateStoreProvider {
     }
 
     public StateStore getStateStore(String tableName, TablePropertiesProvider tablePropertiesProvider) {
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         return getStateStore(tableProperties);
     }
 

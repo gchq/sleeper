@@ -93,7 +93,7 @@ public class IngestBatcher {
         long totalBytes = totalBytes(inputFiles);
         LOGGER.info("Attempting to batch {} files of total size {} for table {}",
                 inputFiles.size(), formatBytes(totalBytes), tableName);
-        TableProperties properties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties properties = tablePropertiesProvider.getByName(tableName);
         if (shouldCreateBatches(properties, inputFiles, time)) {
             BatchIngestMode batchIngestMode = batchIngestMode(properties).orElse(null);
             LOGGER.info("Creating batches for {} files with total size of {} for table {}",

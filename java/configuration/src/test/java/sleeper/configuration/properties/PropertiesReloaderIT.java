@@ -109,14 +109,14 @@ public class PropertiesReloaderIT {
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
         TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        provider.getTableProperties(tableName);
+        provider.getByName(tableName);
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
         // When
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(provider.getTableProperties(tableName)
+        assertThat(provider.getByName(tableName)
                 .getInt(PARTITION_SPLIT_THRESHOLD))
                 .isEqualTo(456);
     }
@@ -130,7 +130,7 @@ public class PropertiesReloaderIT {
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
         TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        provider.getTableProperties(tableName);
+        provider.getByName(tableName);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
@@ -139,7 +139,7 @@ public class PropertiesReloaderIT {
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(provider.getTableProperties(tableName)
+        assertThat(provider.getByName(tableName)
                 .getInt(PARTITION_SPLIT_THRESHOLD))
                 .isEqualTo(123);
     }

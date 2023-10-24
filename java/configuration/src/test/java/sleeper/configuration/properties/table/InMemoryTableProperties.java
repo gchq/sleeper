@@ -18,8 +18,10 @@ package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableId;
+import sleeper.core.table.TableIndex;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,27 +30,52 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 public class InMemoryTableProperties implements TablePropertiesStore.Client {
 
     private final Map<String, TableProperties> propertiesByTableId = new HashMap<>();
+    private final boolean defensiveCopy;
 
-    private InMemoryTableProperties() {
+    private InMemoryTableProperties(boolean defensiveCopy) {
+        this.defensiveCopy = defensiveCopy;
     }
 
     public static TablePropertiesStore getStore() {
-        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties());
+        return getStore(new InMemoryTableIndex());
+    }
+
+    public static TablePropertiesStore getStore(TableIndex tableIndex) {
+        return new TablePropertiesStore(tableIndex, new InMemoryTableProperties(true));
+    }
+
+    public static TablePropertiesStore getStoreReturningExactInstance() {
+        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(false));
+    }
+
+    public static TablePropertiesStore getStoreReturningExactInstances(List<TableProperties> properties) {
+        TablePropertiesStore store = getStoreReturningExactInstance();
+        properties.forEach(store::save);
+        return store;
     }
 
     @Override
     public TableProperties loadProperties(TableId tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
+                .map(this::copyIfSet)
                 .orElseThrow();
     }
 
     @Override
     public void saveProperties(TableProperties tableProperties) {
-        propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
+        propertiesByTableId.put(tableProperties.get(TABLE_ID), copyIfSet(tableProperties));
     }
 
     @Override
     public void deleteProperties(TableId tableId) {
         propertiesByTableId.remove(tableId.getTableUniqueId());
+    }
+
+    private TableProperties copyIfSet(TableProperties properties) {
+        if (defensiveCopy) {
+            return TableProperties.copyOf(properties);
+        } else {
+            return properties;
+        }
     }
 }

@@ -82,7 +82,7 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
 
         // Load table information
         LOGGER.info("Loading table properties and schema for table {}", job.getTableName());
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Schema schema = tableProperties.getSchema();
         StructType convertedSchema = new StructTypeFactory().getStructType(schema);
 

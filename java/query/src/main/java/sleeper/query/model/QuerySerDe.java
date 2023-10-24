@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -155,7 +156,7 @@ public class QuerySerDe {
 
         public QueryJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
             this((queryId, tableName) -> {
-                return tablePropertiesProvider.getTablePropertiesIfExists(tableName)
+                return Optional.of(tablePropertiesProvider.getByName(tableName))
                         .orElseThrow(() -> new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist"))
                         .getSchema();
             });

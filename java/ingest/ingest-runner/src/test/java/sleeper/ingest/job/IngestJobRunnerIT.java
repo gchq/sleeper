@@ -429,7 +429,7 @@ class IngestJobRunnerIT {
             List<String> files) throws Exception {
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(tableName), stateStore);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getByName(tableName), stateStore);
         new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,

@@ -96,7 +96,7 @@ public class CreateJobs {
 
     public void createJobsForTable(TableId tableId) throws StateStoreException, IOException, ObjectFactoryException {
         LOGGER.debug("Creating jobs for table {}", tableId);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableId);
+        TableProperties tableProperties = tablePropertiesProvider.get(tableId);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();

@@ -45,7 +45,7 @@ public class DynamoDBIngestRequestFormat {
 
     public static Map<String, AttributeValue> createRecord(
             TablePropertiesProvider tablePropertiesProvider, FileIngestRequest fileIngestRequest) {
-        TableProperties properties = tablePropertiesProvider.getTableProperties(fileIngestRequest.getTableName());
+        TableProperties properties = tablePropertiesProvider.getByName(fileIngestRequest.getTableName());
         return new DynamoDBRecordBuilder()
                 .string(FILE_PATH, fileIngestRequest.getTableName() + "/" + fileIngestRequest.getFile())
                 .number(FILE_SIZE, fileIngestRequest.getFileSizeBytes())

@@ -85,7 +85,7 @@ public class EmrServerlessPlatformExecutorIT {
                 .bulkImportJob(job).jobRunId("run-id")
                 .build();
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
-        when(tableProperties.getTableProperties(anyString())).thenReturn(createTestTableProperties(properties, null));
+        when(tableProperties.getByName(anyString())).thenReturn(createTestTableProperties(properties, null));
 
         new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties, tableProperties)
                 .runJobOnPlatform(arguments);
@@ -117,7 +117,7 @@ public class EmrServerlessPlatformExecutorIT {
                 .bulkImportJob(job).jobRunId("run-id")
                 .build();
         stubFor(post("/applications/application-id/jobruns").willReturn(aResponse().withStatus(200)));
-        when(tableProperties.getTableProperties(anyString())).thenReturn(createTestTableProperties(properties, null));
+        when(tableProperties.getByName(anyString())).thenReturn(createTestTableProperties(properties, null));
 
         new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), properties, tableProperties)
                 .runJobOnPlatform(arguments);

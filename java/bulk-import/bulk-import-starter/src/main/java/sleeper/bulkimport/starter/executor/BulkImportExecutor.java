@@ -128,7 +128,7 @@ public class BulkImportExecutor {
 
     private boolean doesTableExist(String tableName) {
         try {
-            if (tablePropertiesProvider.getTableProperties(tableName) != null) {
+            if (tablePropertiesProvider.getByName(tableName) != null) {
                 return true;
             }
         } catch (RuntimeException ep) {
@@ -138,7 +138,7 @@ public class BulkImportExecutor {
     }
 
     private boolean hasMinimumPartitions(BulkImportJob bulkImportJob) {
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(bulkImportJob.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(bulkImportJob.getTableName());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         return CheckLeafPartitionCount.hasMinimumPartitions(tableProperties, stateStore, bulkImportJob);
     }

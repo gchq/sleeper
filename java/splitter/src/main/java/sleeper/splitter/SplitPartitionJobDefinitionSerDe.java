@@ -91,7 +91,7 @@ public class SplitPartitionJobDefinitionSerDe {
             }
             json.add(FILE_NAMES, fileNames);
 
-            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getTableProperties(job.getTableName()).getSchema());
+            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getByName(job.getTableName()).getSchema());
             JsonElement jsonPartition = partitionJsonSerDe.serialize(job.getPartition(), typeOfSrc, context);
             json.add(PARTITION, jsonPartition);
             return json;
@@ -113,7 +113,7 @@ public class SplitPartitionJobDefinitionSerDe {
                 fileNames.add(it.next().getAsString());
             }
 
-            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getTableProperties(tableName).getSchema());
+            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getByName(tableName).getSchema());
             JsonElement jsonPartition = json.get(PARTITION);
             Partition partition = partitionJsonSerDe.deserialize(jsonPartition, typeOfT, context);
 
