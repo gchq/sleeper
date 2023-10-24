@@ -162,8 +162,13 @@ public class QueryValidatorIT {
                 "  \"type\": \"Query\"," +
                 "  \"resultsPublisherConfig\": {}," +
                 "  \"tableName\": \"table-1\"," +
-                "  \"keys\": [{" +
-                "    \"key\": 123" +
+                "  \"regions\": [{" +
+                "    \"key\": {" +
+                "        \"min\": \"123\"," +
+                "        \"minInclusive\": true," +
+                "        \"max\": \"456\"," +
+                "        \"maxInclusive\": false" +
+                "      }" +
                 "  }]" +
                 "}";
 
@@ -172,7 +177,7 @@ public class QueryValidatorIT {
 
         // Then
         assertThat(query).get().isEqualTo(new Query.Builder("table-1", "my-query",
-                new Region(new Range(new Field("key", new LongType()), 123, 123))).build());
+                new Region(new Range(new Field("key", new LongType()), 123L, 456L))).build());
         assertThat(queryTracker.getFailedQueries()).isEmpty();
     }
 
