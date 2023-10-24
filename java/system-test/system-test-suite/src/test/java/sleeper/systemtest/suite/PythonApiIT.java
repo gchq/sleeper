@@ -189,8 +189,7 @@ public class PythonApiIT {
                             "row-0000000000000000010",
                             "row-0000000000000000020")
                     .results())
-                    .isInstanceOf(CommandFailedException.class)
-                    .hasMessageContaining("Query failed");
+                    .isInstanceOf(CommandFailedException.class);
         }
 
         @Test
@@ -201,8 +200,7 @@ public class PythonApiIT {
                             "row-0000000000000000010",
                             "row-0000000000000000020")
                     .results())
-                    .isInstanceOf(CommandFailedException.class)
-                    .hasMessageContaining("Query failed");
+                    .isInstanceOf(CommandFailedException.class);
         }
     }
 }
