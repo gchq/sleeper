@@ -598,7 +598,8 @@ public class QuerySerDeTest {
 
         // When / Then
         assertThatThrownBy(() -> querySerDe.toJson(query))
-                .isInstanceOf(QueryValidationException.class);
+                .isInstanceOf(QueryValidationException.class)
+                .hasMessage("Table must not be null");
     }
 
     @ParameterizedTest()

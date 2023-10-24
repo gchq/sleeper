@@ -60,10 +60,6 @@ public class QuerySerDe {
     public static final String PARTITION_REGION = "partitionRegion";
     public static final String REGIONS = "regions";
     public static final String LEAF_PARTITION_ID = "leafPartitionId";
-    public static final String RANGE_MIN = "min";
-    public static final String RANGE_MAX = "max";
-    public static final String MIN_INCLUSIVE = "minInclusive";
-    public static final String MAX_INCLUSIVE = "maxInclusive";
 
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
@@ -156,6 +152,9 @@ public class QuerySerDe {
 
         public QueryJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
             this((queryId, tableName) -> {
+                if (tableName == null) {
+                    throw new QueryValidationException(queryId, "Table must not be null");
+                }
                 return Optional.of(tablePropertiesProvider.getByName(tableName))
                         .orElseThrow(() -> new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist"))
                         .getSchema();
@@ -164,6 +163,9 @@ public class QuerySerDe {
 
         public QueryJsonSerDe(Map<String, Schema> tableNameToSchemaMap) {
             this((queryId, tableName) -> {
+                if (tableName == null) {
+                    throw new QueryValidationException(queryId, "Table must not be null");
+                }
                 if (!tableNameToSchemaMap.containsKey(tableName)) {
                     throw new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist");
                 }
