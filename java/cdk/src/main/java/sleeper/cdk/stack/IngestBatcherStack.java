@@ -56,7 +56,6 @@ import java.util.stream.Stream;
 
 import static sleeper.cdk.Utils.removalPolicy;
 import static sleeper.cdk.Utils.shouldDeployPaused;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB;
 import static sleeper.configuration.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS;
@@ -129,7 +128,6 @@ public class IngestBatcherStack extends NestedStack {
 
         // Lambdas to receive submitted files and create batches
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
-        List<IBucket> ingestSourceBuckets = addIngestSourceBucketReferences(this, "IngestBucket", instanceProperties);
         LambdaCode submitterJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_SUBMITTER, jarsBucket);
         LambdaCode jobCreatorJar = jars.lambdaCode(BuiltJar.INGEST_BATCHER_JOB_CREATOR, jarsBucket);
 
@@ -155,7 +153,7 @@ public class IngestBatcherStack extends NestedStack {
         ingestRequestsTable.grantReadWriteData(submitterLambda);
         submitQueue.grantConsumeMessages(submitterLambda);
         coreStacks.grantReadTablesConfig(submitterLambda);
-        ingestSourceBuckets.forEach(bucket -> bucket.grantRead(submitterLambda));
+        coreStacks.grantReadIngestSources(submitterLambda);
 
         IFunction jobCreatorLambda = jobCreatorJar.buildFunction(this, "IngestBatcherJobCreationLambda", builder -> builder
                 .functionName(jobCreatorName)
