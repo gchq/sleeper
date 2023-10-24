@@ -39,13 +39,14 @@ public class DynamoDBStateStore extends DelegatingStateStore {
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
     public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
     public static final String TABLE_NAME = "TableName";
+    public static final String TABLE_ID = "TableId";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
         super(DynamoDBFileInfoStore.builder()
                         .dynamoDB(dynamoDB)
                         .activeTableName(instanceProperties.get(ACTIVE_FILEINFO_TABLENAME))
                         .readyForGCTableName(instanceProperties.get(READY_FOR_GC_FILEINFO_TABLENAME))
-                        .sleeperTableName(tableProperties.get(TableProperty.TABLE_NAME))
+                        .sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
                         .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
                         .garbageCollectorDelayBeforeDeletionInMinutes(tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION))
                         .build(),
@@ -63,6 +64,6 @@ public class DynamoDBStateStore extends DelegatingStateStore {
      * @param now Time to set to be the current time
      */
     public void fixTime(Instant now) {
-        ((DynamoDBFileInfoStore) fileInfoStore).fixTime(now);
+        fileInfoStore.fixTime(now);
     }
 }

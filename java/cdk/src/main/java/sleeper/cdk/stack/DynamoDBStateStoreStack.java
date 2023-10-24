@@ -48,7 +48,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         // DynamoDB table for active file information
         Attribute partitionKeyActiveFileInfoTable = Attribute.builder()
-                .name(DynamoDBStateStore.TABLE_NAME)
+                .name(DynamoDBStateStore.TABLE_ID)
                 .type(AttributeType.STRING)
                 .build();
         Attribute sortKeyActiveFileInfoTable = Attribute.builder()
@@ -69,7 +69,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         // DynamoDB table for ready for GC file information
         Attribute partitionKeyReadyForGCFileInfoTable = Attribute.builder()
-                .name(DynamoDBStateStore.TABLE_NAME)
+                .name(DynamoDBStateStore.TABLE_ID)
                 .type(AttributeType.STRING)
                 .build();
         Attribute sortKeyReadyForGCFileInfoTable = Attribute.builder()
