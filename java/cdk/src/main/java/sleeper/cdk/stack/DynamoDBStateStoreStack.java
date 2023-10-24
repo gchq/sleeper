@@ -90,7 +90,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
 
         // DynamoDB table for partition information
         Attribute partitionKeyPartitionTable = Attribute.builder()
-                .name(DynamoDBStateStore.TABLE_NAME)
+                .name(DynamoDBStateStore.TABLE_ID)
                 .type(AttributeType.STRING)
                 .build();
         Attribute sortKeyPartitionTable = Attribute.builder()

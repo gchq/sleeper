@@ -36,7 +36,6 @@ public class DynamoDBStateStore extends DelegatingStateStore {
     public static final String FILE_NAME = DynamoDBFileInfoFormat.FILENAME;
     public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
     public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileInfoFormat.PARTITION_ID_AND_FILENAME;
-    public static final String TABLE_NAME = "TableName";
     public static final String TABLE_ID = "TableId";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
@@ -51,7 +50,7 @@ public class DynamoDBStateStore extends DelegatingStateStore {
                 DynamoDBPartitionStore.builder()
                         .dynamoDB(dynamoDB).schema(tableProperties.getSchema())
                         .dynamoTableName(instanceProperties.get(PARTITION_TABLENAME))
-                        .sleeperTableName(tableProperties.get(TableProperty.TABLE_NAME))
+                        .sleeperTableId(tableProperties.get(TableProperty.TABLE_ID))
                         .stronglyConsistentReads(tableProperties.getBoolean(DYNAMODB_STRONGLY_CONSISTENT_READS))
                         .build());
     }

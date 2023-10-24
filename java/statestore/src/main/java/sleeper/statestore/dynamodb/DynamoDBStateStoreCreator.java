@@ -34,7 +34,6 @@ import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID_AND_FILENAME;
 import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_ID;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_NAME;
 
 /**
  * Creates the tables necessary for a {@link DynamoDBStateStore}. Mainly used
@@ -74,10 +73,10 @@ public class DynamoDBStateStoreCreator {
 
     public void createPartitionInfoTable() {
         List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_NAME, ScalarAttributeType.S),
+                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
                 new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
         List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(TABLE_NAME, KeyType.HASH),
+                new KeySchemaElement(TABLE_ID, KeyType.HASH),
                 new KeySchemaElement(PARTITION_ID, KeyType.RANGE));
         initialiseTable(instanceProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
     }
