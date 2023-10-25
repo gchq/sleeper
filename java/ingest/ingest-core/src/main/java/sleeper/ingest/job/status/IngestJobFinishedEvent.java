@@ -46,8 +46,12 @@ public class IngestJobFinishedEvent {
         return builder().job(job).summary(summary);
     }
 
-    public IngestJob getJob() {
-        return job;
+    public String getJobId() {
+        return job.getId();
+    }
+
+    public String getTableName() {
+        return job.getTableName();
     }
 
     public RecordsProcessedSummary getSummary() {

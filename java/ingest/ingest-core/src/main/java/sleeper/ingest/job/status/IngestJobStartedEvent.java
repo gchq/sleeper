@@ -58,8 +58,16 @@ public class IngestJobStartedEvent {
                 .startOfRun(false);
     }
 
-    public IngestJob getJob() {
-        return job;
+    public String getJobId() {
+        return job.getId();
+    }
+
+    public String getTableName() {
+        return job.getTableName();
+    }
+
+    public int getFileCount() {
+        return job.getFileCount();
     }
 
     public String getJobRunId() {

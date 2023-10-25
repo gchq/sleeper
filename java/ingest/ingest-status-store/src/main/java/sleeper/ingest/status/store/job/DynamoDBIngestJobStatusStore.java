@@ -75,9 +75,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             PutItemResult result = putItem(format.createJobValidatedRecord(event));
             LOGGER.info("Put validated event for job {} to table {}, capacity consumed = {}",
-                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobValidated for job " + event.getJob().getId(), e);
+            throw new IngestStatusStoreException("Failed putItem in jobValidated for job " + event.getJobId(), e);
         }
     }
 
@@ -86,9 +86,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             PutItemResult result = putItem(format.createJobStartedRecord(event));
             LOGGER.info("Put started event for job {} to table {}, capacity consumed = {}",
-                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobStarted for job " + event.getJob().getId(), e);
+            throw new IngestStatusStoreException("Failed putItem in jobStarted for job " + event.getJobId(), e);
         }
     }
 
@@ -97,9 +97,9 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
         try {
             PutItemResult result = putItem(format.createJobFinishedRecord(event));
             LOGGER.info("Put finished event for job {} to table {}, capacity consumed = {}",
-                    event.getJob().getId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
+                    event.getJobId(), statusTableName, result.getConsumedCapacity().getCapacityUnits());
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in jobFinished for job " + event.getJob().getId(), e);
+            throw new IngestStatusStoreException("Failed putItem in jobFinished for job " + event.getJobId(), e);
         }
     }
 

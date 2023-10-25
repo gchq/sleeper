@@ -18,7 +18,6 @@ package sleeper.ingest.job.status;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.ingest.job.IngestJob;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,10 +36,10 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
-        tableNameToJobs.computeIfAbsent(event.getJob().getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(event.getJob().getId(), jobId -> new ArrayList<>())
+        tableNameToJobs.computeIfAbsent(event.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
-                        .jobId(event.getJob().getId())
+                        .jobId(event.getJobId())
                         .statusUpdate(validatedStatus(event))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
@@ -65,13 +64,12 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobStarted(IngestJobStartedEvent event) {
-        IngestJob job = event.getJob();
-        tableNameToJobs.computeIfAbsent(job.getTableName(), tableName -> new TableJobs())
-                .jobIdToUpdateRecords.computeIfAbsent(job.getId(), jobId -> new ArrayList<>())
+        tableNameToJobs.computeIfAbsent(event.getTableName(), tableName -> new TableJobs())
+                .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
-                        .jobId(job.getId())
+                        .jobId(event.getJobId())
                         .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
-                                .inputFileCount(job.getFiles().size())
+                                .inputFileCount(event.getFileCount())
                                 .startTime(event.getStartTime())
                                 .updateTime(defaultUpdateTime(event.getStartTime()))
                                 .build())
@@ -82,13 +80,12 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
-        IngestJob job = event.getJob();
         RecordsProcessedSummary summary = event.getSummary();
-        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(job.getTableName())
-                .map(jobs -> jobs.jobIdToUpdateRecords.get(job.getId()))
-                .orElseThrow(() -> new IllegalStateException("Job not started: " + job.getId()));
+        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(event.getTableName())
+                .map(jobs -> jobs.jobIdToUpdateRecords.get(event.getJobId()))
+                .orElseThrow(() -> new IllegalStateException("Job not started: " + event.getJobId()));
         jobRecords.add(ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId())
+                .jobId(event.getJobId())
                 .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary))
                 .jobRunId(event.getJobRunId())
                 .taskId(event.getTaskId())

@@ -68,6 +68,18 @@ public class IngestJobValidatedEvent {
         return job;
     }
 
+    public String getJobId() {
+        return job.getId();
+    }
+
+    public String getTableName() {
+        return job.getTableName();
+    }
+
+    public int getFileCount() {
+        return job.getFileCount();
+    }
+
     public String getJobRunId() {
         return jobRunId;
     }

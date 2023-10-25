@@ -27,7 +27,6 @@ import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobAcceptedStatus;
 import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobRejectedStatus;
@@ -84,32 +83,38 @@ public class DynamoDBIngestJobStatusFormat {
     }
 
     public Map<String, AttributeValue> createJobValidatedRecord(IngestJobValidatedEvent event) {
-        return createJobRecord(event.getJob(), UPDATE_TYPE_VALIDATED)
+        return createRecord(UPDATE_TYPE_VALIDATED)
+                .string(JOB_ID, event.getJobId())
+                .string(TABLE_NAME, event.getTableName())
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
                 .bool(VALIDATION_RESULT, event.isAccepted())
                 .list(VALIDATION_REASONS, event.getReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
                 .string(JSON_MESSAGE, event.getJsonMessage())
-                .number(INPUT_FILES_COUNT, event.getJob().getFileCount())
+                .number(INPUT_FILES_COUNT, event.getFileCount())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .build();
     }
 
     public Map<String, AttributeValue> createJobStartedRecord(IngestJobStartedEvent event) {
-        return createJobRecord(event.getJob(), UPDATE_TYPE_STARTED)
+        return createRecord(UPDATE_TYPE_STARTED)
+                .string(JOB_ID, event.getJobId())
+                .string(TABLE_NAME, event.getTableName())
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(INPUT_FILES_COUNT, event.getJob().getFileCount())
+                .number(INPUT_FILES_COUNT, event.getFileCount())
                 .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
 
     public Map<String, AttributeValue> createJobFinishedRecord(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
-        return createJobRecord(event.getJob(), UPDATE_TYPE_FINISHED)
+        return createRecord(UPDATE_TYPE_FINISHED)
+                .string(JOB_ID, event.getJobId())
+                .string(TABLE_NAME, event.getTableName())
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -119,11 +124,9 @@ public class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    private DynamoDBRecordBuilder createJobRecord(IngestJob job, String updateType) {
+    private DynamoDBRecordBuilder createRecord(String updateType) {
         Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
-                .string(JOB_ID, job.getId())
-                .string(TABLE_NAME, job.getTableName())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)
                 .number(EXPIRY_DATE, timeNow.getEpochSecond() + timeToLiveInSeconds);
