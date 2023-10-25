@@ -25,6 +25,7 @@ import sleeper.compaction.job.status.CompactionJobCreatedStatus;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.table.TableId;
 
 import java.time.Instant;
 
@@ -35,7 +36,6 @@ import static sleeper.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionStatus;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
@@ -47,7 +47,7 @@ class CompactionJobStatusStoreInMemoryTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final String tableId = tableProperties.get(TABLE_ID);
+    private final TableId tableId = tableProperties.getId();
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     private final CompactionJobStatusStoreInMemory store = new CompactionJobStatusStoreInMemory();
 
@@ -177,7 +177,8 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetNoJobs() {
-            assertThat(store.getAllJobs("no-jobs-table-id")).isEmpty();
+            assertThat(store.getAllJobs(TableId.uniqueIdAndName("no-jobs-id", "no-jobs-table")))
+                    .isEmpty();
         }
     }
 

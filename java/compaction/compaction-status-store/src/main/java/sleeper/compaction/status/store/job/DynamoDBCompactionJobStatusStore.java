@@ -34,6 +34,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.table.TableId;
 
 import java.time.Instant;
 import java.util.Map;
@@ -126,16 +127,16 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(TableId tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, createScanRequestByTableId(tableId)));
     }
 
-    private ScanRequest createScanRequestByTableId(String tableId) {
+    private ScanRequest createScanRequestByTableId(TableId tableId) {
         return new ScanRequest()
                 .withTableName(statusTableName)
                 .addScanFilterEntry(DynamoDBCompactionJobStatusFormat.TABLE_ID, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableId))
+                        .withAttributeValueList(createStringAttribute(tableId.getTableUniqueId()))
                         .withComparisonOperator(ComparisonOperator.EQ));
     }
 }

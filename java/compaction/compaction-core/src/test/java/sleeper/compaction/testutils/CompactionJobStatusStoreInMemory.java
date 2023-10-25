@@ -23,6 +23,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.table.TableId;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -92,7 +93,7 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(TableId tableId) {
         return CompactionJobStatus.streamFrom(streamRecordsByTableId(tableId));
     }
 
@@ -102,14 +103,14 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
                 .add(record);
     }
 
-    private Stream<ProcessStatusUpdateRecord> streamRecordsByTableId(String tableId) {
+    private Stream<ProcessStatusUpdateRecord> streamRecordsByTableId(TableId tableId) {
         return jobsByTableId(tableId)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
     }
 
-    private Optional<TableJobs> jobsByTableId(String tableId) {
-        return Optional.ofNullable(tableIdToJobs.get(tableId));
+    private Optional<TableJobs> jobsByTableId(TableId tableId) {
+        return Optional.ofNullable(tableIdToJobs.get(tableId.getTableUniqueId()));
     }
 
     private static class TableJobs {
