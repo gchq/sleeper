@@ -38,7 +38,6 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class CompactionJobSerDeTest {
 
@@ -56,7 +55,6 @@ public class CompactionJobSerDeTest {
 
     private CompactionJob.Builder jobForTable() {
         return CompactionJob.builder()
-                .tableName(tableProperties.get(TABLE_NAME))
                 .tableId(tableProperties.get(TABLE_ID));
     }
 

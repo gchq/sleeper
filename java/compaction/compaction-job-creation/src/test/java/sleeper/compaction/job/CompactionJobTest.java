@@ -26,8 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class CompactionJobTest {
 
     private CompactionJob.Builder jobForTable() {
-        return CompactionJob.builder()
-                .tableName("table").tableId("table-id");
+        return CompactionJob.builder().tableId("table-id");
     }
 
     @Test

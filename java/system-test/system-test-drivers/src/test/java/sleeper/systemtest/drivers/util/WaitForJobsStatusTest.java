@@ -106,7 +106,7 @@ public class WaitForJobsStatusTest {
 
     private CompactionJob compactionJob(String id, String... files) {
         return CompactionJob.builder()
-                .tableName("test-table").tableId("test-table-id")
+                .tableId("test-table-id")
                 .jobId(id)
                 .inputFiles(List.of(files))
                 .outputFile(id + "/outputFile")

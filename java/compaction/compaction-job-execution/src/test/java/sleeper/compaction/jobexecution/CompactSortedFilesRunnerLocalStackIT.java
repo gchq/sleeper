@@ -76,7 +76,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYST
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -95,7 +94,6 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
-    private final String tableName = tableProperties.get(TABLE_NAME);
     private final String tableId = tableProperties.get(TABLE_ID);
 
     private InstanceProperties createInstance() {
@@ -221,7 +219,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
         stateStore().addFiles(Arrays.asList(fileInfo1, fileInfo2, fileInfo3, fileInfo4));
         // - Create two compaction jobs and put on queue
         CompactionJob compactionJob1 = CompactionJob.builder()
-                .tableName(tableName).tableId(tableId)
+                .tableId(tableId)
                 .jobId("job1")
                 .partitionId("root")
                 .dimension(0)
@@ -229,7 +227,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
                 .isSplittingJob(false)
                 .outputFile(folderName + "/output1.parquet").build();
         CompactionJob compactionJob2 = CompactionJob.builder()
-                .tableName(tableName).tableId(tableId)
+                .tableId(tableId)
                 .jobId("job2")
                 .partitionId("root")
                 .dimension(0)

@@ -236,7 +236,7 @@ public class SizeRatioCompactionStrategyTest {
 
     private void checkJob(CompactionJob job, List<String> files, String partitionId, String fileSystem) {
         CompactionJob expectedCompactionJob = CompactionJob.builder()
-                .tableName("table").tableId("table-id")
+                .tableId("table-id")
                 .jobId(job.getId()) // Job id is a UUID so we don't know what it will be
                 .partitionId(partitionId)
                 .inputFiles(new ArrayList<>(files))

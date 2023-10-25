@@ -54,8 +54,7 @@ public class BasicCompactionStrategyTest {
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
 
     private CompactionJob.Builder jobForTable() {
-        return CompactionJob.builder()
-                .tableName("table").tableId("table-id");
+        return CompactionJob.builder().tableId("table-id");
     }
 
     @BeforeEach

@@ -47,7 +47,6 @@ public class CompactionJobSerDe {
     public String serialiseToString(CompactionJob compactionJob) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        dos.writeUTF(compactionJob.getTableName());
         dos.writeUTF(compactionJob.getTableId());
         dos.writeUTF(compactionJob.getId());
         dos.writeUTF(compactionJob.getPartitionId());
@@ -103,10 +102,9 @@ public class CompactionJobSerDe {
         byte[] bytes = Base64.decodeBase64(serialisedJob);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         DataInputStream dis = new DataInputStream(bais);
-        String tableName = dis.readUTF();
         String tableId = dis.readUTF();
         CompactionJob.Builder compactionJobBuilder = CompactionJob.builder()
-                .tableName(tableName).tableId(tableId)
+                .tableId(tableId)
                 .jobId(dis.readUTF())
                 .partitionId(dis.readUTF());
         int numInputFiles = dis.readInt();

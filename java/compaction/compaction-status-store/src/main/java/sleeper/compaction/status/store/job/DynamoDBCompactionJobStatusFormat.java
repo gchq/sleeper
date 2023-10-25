@@ -50,7 +50,6 @@ public class DynamoDBCompactionJobStatusFormat {
     public static final String JOB_ID = "JobId";
     public static final String UPDATE_TIME = "UpdateTime";
     public static final String UPDATE_TYPE = "UpdateType";
-    public static final String TABLE_NAME = "TableName";
     public static final String TABLE_ID = "TableId";
     public static final String PARTITION_ID = "PartitionId";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
@@ -105,7 +104,6 @@ public class DynamoDBCompactionJobStatusFormat {
         Instant timeNow = getTimeNow.get();
         return new DynamoDBRecordBuilder()
                 .string(JOB_ID, job.getId())
-                .string(TABLE_NAME, job.getTableName())
                 .string(TABLE_ID, job.getTableId())
                 .number(UPDATE_TIME, timeNow.toEpochMilli())
                 .string(UPDATE_TYPE, updateType)

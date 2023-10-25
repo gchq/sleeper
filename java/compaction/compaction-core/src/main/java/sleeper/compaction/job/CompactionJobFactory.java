@@ -39,20 +39,18 @@ import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 public class CompactionJobFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobFactory.class);
 
-    private final String tableName;
     private final String tableId;
     private final String outputFilePrefix;
     private final String iteratorClassName;
     private final String iteratorConfig;
 
     public CompactionJobFactory(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        tableName = tableProperties.get(TABLE_NAME);
         tableId = tableProperties.get(TABLE_ID);
         outputFilePrefix = instanceProperties.get(FILE_SYSTEM) + instanceProperties.get(DATA_BUCKET) + "/" + tableProperties.get(TABLE_NAME);
         iteratorClassName = tableProperties.get(ITERATOR_CLASS_NAME);
         iteratorConfig = tableProperties.get(ITERATOR_CONFIG);
-        LOGGER.info("Initialised CompactionFactory with table name {}, filename prefix {}",
-                this.tableName, this.outputFilePrefix);
+        LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
+                tableProperties.getId(), this.outputFilePrefix);
     }
 
     public CompactionJob createSplittingCompactionJob(
@@ -66,7 +64,7 @@ public class CompactionJobFactory {
         String leftOutputFile = outputFileForPartitionAndJob(leftPartitionId, jobId);
         String rightOutputFile = outputFileForPartitionAndJob(rightPartitionId, jobId);
         CompactionJob compactionJob = CompactionJob.builder()
-                .tableName(tableName).tableId(tableId)
+                .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(true)
                 .inputFiles(jobFiles)
@@ -108,7 +106,7 @@ public class CompactionJobFactory {
                 .map(FileInfo::getFilename)
                 .collect(Collectors.toList());
         return CompactionJob.builder()
-                .tableName(tableName).tableId(tableId)
+                .tableId(tableId)
                 .jobId(jobId)
                 .isSplittingJob(false)
                 .dimension(-1)
