@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,17 +37,12 @@ public class NightlyTestOutput {
 
     private static final PathMatcher LOG_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.log");
     private static final PathMatcher STATUS_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.status");
+    private static final PathMatcher SITE_FILE_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**-site.zip");
 
     private final List<TestResult> tests;
-    private final Path siteFile;
 
     public NightlyTestOutput(List<TestResult> tests) {
-        this(tests, null);
-    }
-
-    public NightlyTestOutput(List<TestResult> tests, Path siteFile) {
         this.tests = Objects.requireNonNull(tests, "tests must not be null");
-        this.siteFile = siteFile;
     }
 
     public void uploadToS3(AmazonS3 s3Client, String bucketName, NightlyTestTimestamp timestamp) {
@@ -60,14 +54,7 @@ public class NightlyTestOutput {
     }
 
     public Stream<Path> filesToUpload() {
-        return Stream.concat(
-                streamLogFiles(),
-                Optional.ofNullable(siteFile).filter(Files::exists).stream());
-    }
-
-    private Stream<Path> streamLogFiles() {
-        return tests.stream()
-                .flatMap(TestResult::streamLogFiles);
+        return tests.stream().flatMap(TestResult::filesToUpload);
     }
 
     public List<TestResult> getTests() {
@@ -77,19 +64,17 @@ public class NightlyTestOutput {
     public static NightlyTestOutput from(Path directory) throws IOException {
         List<Path> logFiles = new ArrayList<>();
         List<Path> statusFiles = new ArrayList<>();
+        List<Path> siteFiles = new ArrayList<>();
         forEachFileIn(directory, file -> {
             if (LOG_FILE_MATCHER.matches(file)) {
                 logFiles.add(file);
             } else if (STATUS_FILE_MATCHER.matches(file)) {
                 statusFiles.add(file);
+            } else if (SITE_FILE_MATCHER.matches(file)) {
+                siteFiles.add(file);
             }
         });
-        Path sitePath = directory.resolve("site.zip");
-        if (Files.exists(sitePath)) {
-            return fromLogAndStatusFiles(directory, logFiles, statusFiles, sitePath);
-        } else {
-            return fromLogAndStatusFiles(directory, logFiles, statusFiles, null);
-        }
+        return fromLogAndStatusFiles(directory, logFiles, statusFiles, siteFiles);
     }
 
     private static void forEachFileIn(Path directory, Consumer<Path> action) throws IOException {
@@ -99,20 +84,24 @@ public class NightlyTestOutput {
     }
 
     private static NightlyTestOutput fromLogAndStatusFiles(
-            Path directory, List<Path> logFiles, List<Path> statusFiles, Path siteFile) throws IOException {
+            Path directory, List<Path> logFiles, List<Path> statusFiles, List<Path> siteFiles) throws IOException {
         Map<String, TestResult.Builder> resultByTestName = new HashMap<>();
         for (Path logFile : logFiles) {
-            getResultBuilder(logFile, resultByTestName)
+            getResultBuilder(readTestName(logFile), resultByTestName)
                     .logFile(logFile);
         }
         for (Path statusFile : statusFiles) {
-            readStatusFile(statusFile, getResultBuilder(statusFile, resultByTestName));
+            readStatusFile(statusFile, getResultBuilder(readTestName(statusFile), resultByTestName));
+        }
+        for (Path siteFile : siteFiles) {
+            getResultBuilder(readSiteTestName(siteFile), resultByTestName)
+                    .siteFile(siteFile);
         }
         loadReportFiles(directory, resultByTestName);
         return new NightlyTestOutput(resultByTestName.values().stream()
                 .map(TestResult.Builder::build)
                 .sorted(Comparator.comparing(TestResult::getTestName))
-                .collect(Collectors.toList()), siteFile);
+                .collect(Collectors.toList()));
     }
 
     private static void loadReportFiles(Path directory, Map<String, TestResult.Builder> resultByTestName) throws IOException {
@@ -130,9 +119,9 @@ public class NightlyTestOutput {
     }
 
     private static TestResult.Builder getResultBuilder(
-            Path file, Map<String, TestResult.Builder> resultByTestName) {
-        return resultByTestName.computeIfAbsent(
-                readTestName(file), testName -> TestResult.builder().testName(testName));
+            String testName, Map<String, TestResult.Builder> resultByTestName) {
+        return resultByTestName.computeIfAbsent(testName,
+                name -> TestResult.builder().testName(name));
     }
 
     private static void readStatusFile(Path statusFile, TestResult.Builder builder) throws IOException {
@@ -151,31 +140,33 @@ public class NightlyTestOutput {
         return fullFilename.substring(0, fullFilename.indexOf('.'));
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    private static String readSiteTestName(Path file) {
+        String fullFilename = file.getFileName().toString();
+        return fullFilename.substring(0, fullFilename.lastIndexOf('-'));
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-
-        NightlyTestOutput that = (NightlyTestOutput) o;
-
-        return tests.equals(that.tests)
-                && Objects.equals(siteFile, that.siteFile);
+        NightlyTestOutput that = (NightlyTestOutput) object;
+        return Objects.equals(tests, that.tests);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tests, siteFile);
+        return Objects.hash(tests);
     }
 
     @Override
     public String toString() {
         return "NightlyTestOutput{" +
                 "tests=" + tests +
-                ", siteFile=" + siteFile +
                 '}';
     }
 }

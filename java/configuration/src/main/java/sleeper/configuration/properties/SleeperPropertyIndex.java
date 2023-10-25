@@ -31,16 +31,17 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
     private final Map<PropertyGroup, List<T>> byGroup = new HashMap<>();
     private final List<T> all = new ArrayList<>();
     private final List<T> userDefined = new ArrayList<>();
-    private final List<T> systemDefined = new ArrayList<>();
+    private final List<T> cdkDefined = new ArrayList<>();
 
     public void add(T property) {
         allMap.put(property.getPropertyName(), property);
         all.add(property);
         byGroup.computeIfAbsent(property.getPropertyGroup(), group -> new ArrayList<>())
                 .add(property);
-        if (property.isSystemDefined()) {
-            systemDefined.add(property);
-        } else {
+        if (property.isSetByCdk()) {
+            cdkDefined.add(property);
+        }
+        if (property.isUserDefined()) {
             userDefined.add(property);
         }
     }
@@ -57,8 +58,8 @@ public class SleeperPropertyIndex<T extends SleeperProperty> {
         return Collections.unmodifiableList(userDefined);
     }
 
-    public List<T> getSystemDefined() {
-        return Collections.unmodifiableList(systemDefined);
+    public List<T> getCdkDefined() {
+        return Collections.unmodifiableList(cdkDefined);
     }
 
     public Optional<T> getByName(String propertyName) {

@@ -34,9 +34,8 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.Utils;
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
 import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.SleeperVersion;
@@ -48,12 +47,11 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.Locale;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_BUCKET_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_CLUSTER_NAME;
 import static sleeper.systemtest.configuration.SystemTestProperty.SYSTEM_TEST_ID;
@@ -87,19 +85,13 @@ public class SystemTestClusterStack extends NestedStack {
     public SystemTestClusterStack(Construct scope,
                                   String id,
                                   SystemTestProperties properties,
-                                  StateStoreStacks stateStoreStacks,
-                                  TableDataStack dataStack,
+                                  CoreStacks coreStacks,
                                   IngestStack ingestStack,
                                   EmrBulkImportStack emrBulkImportStack) {
         super(scope, id);
         createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties);
 
-        addIngestSourceBucketReferences(this, "IngestBucket", properties)
-                .forEach(bucket -> bucket.grantReadWrite(taskRole));
-        Bucket.fromBucketName(this, "ConfigBucket", properties.get(CONFIG_BUCKET)).grantRead(taskRole);
-
-        dataStack.getDataBucket().grantReadWrite(taskRole);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(taskRole);
+        coreStacks.grantIngest(taskRole);
         if (null != ingestStack) {
             ingestStack.getIngestJobQueue().grantSendMessages(taskRole);
         }

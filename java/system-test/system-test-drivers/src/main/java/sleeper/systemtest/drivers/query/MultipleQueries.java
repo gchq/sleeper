@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
  * Submits random queries to the query queue.
@@ -79,10 +79,10 @@ public class MultipleQueries {
     }
 
     public void run() {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, systemTestProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(systemTestProperties, s3Client, dynamoClient);
         QueryLambdaClient queryLambdaClient = new QueryLambdaClient(s3Client, dynamoClient, sqsClient, systemTestProperties);
 
-        Schema schema = tablePropertiesProvider.getTableProperties(tableName).getSchema();
+        Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
         RangeFactory rangeFactory = new RangeFactory(schema);
         Supplier<Key> keySupplier = RandomRecordSupplier.getSupplier(schema.getRowKeyTypes(),
                 new RandomRecordSupplierConfig(systemTestProperties));

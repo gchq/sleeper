@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.batcher.submitter;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -35,7 +36,7 @@ import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import java.time.Instant;
 import java.util.List;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.util.NumberFormatUtils.formatBytes;
 
 public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Void> {
@@ -52,13 +53,13 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
             throw new IllegalArgumentException("Couldn't get S3 bucket from environment variable");
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        this.store = new DynamoDBIngestBatcherStore(AmazonDynamoDBClientBuilder.defaultClient(),
-                instanceProperties, tablePropertiesProvider);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        this.store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider);
         this.configuration = new Configuration();
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
@@ -90,8 +91,8 @@ public class IngestBatcherSubmitterLambda implements RequestHandler<SQSEvent, Vo
         }
         // Table properties are needed to set the expiry time on DynamoDB records in the store.
         // To avoid that failing, we can discard the message here if the table does not exist.
-        if (requests.size() > 0 &&
-                tablePropertiesProvider.getTablePropertiesIfExists(requests.get(0).getTableName()).isEmpty()) {
+        if (!requests.isEmpty() &&
+                tablePropertiesProvider.lookupByName(requests.get(0).getTableName()).isEmpty()) {
             LOGGER.warn("Table does not exist for ingest request: {}", json);
             return;
         }

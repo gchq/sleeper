@@ -15,48 +15,136 @@
  */
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableId;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static sleeper.configuration.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesProvider {
-    private final Map<String, TableProperties> tableNameToPropertiesCache;
-    private final Function<String, TableProperties> getTableProperties;
+    private static final Logger LOGGER = LoggerFactory.getLogger(TablePropertiesProvider.class);
+    private final TablePropertiesStore propertiesStore;
+    private final Duration cacheTimeout;
+    private final Supplier<Instant> timeSupplier;
+    private final Map<String, CacheEntry> cacheById = new HashMap<>();
+    private final Map<String, CacheEntry> cacheByName = new HashMap<>();
 
-    public TablePropertiesProvider(AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        this(tableName -> getTablePropertiesFromS3(s3Client, instanceProperties, tableName));
+    public TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient) {
+        this(instanceProperties, s3Client, dynamoDBClient, Instant::now);
     }
 
-    protected TablePropertiesProvider(Function<String, TableProperties> getTableProperties) {
-        this.getTableProperties = getTableProperties;
-        this.tableNameToPropertiesCache = new HashMap<>();
+    protected TablePropertiesProvider(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Supplier<Instant> timeSupplier) {
+        this(instanceProperties, S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient), timeSupplier);
     }
 
-    public TableProperties getTableProperties(String tableName) {
-        return tableNameToPropertiesCache.computeIfAbsent(tableName, getTableProperties);
+    public TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore, Supplier<Instant> timeSupplier) {
+        this(propertiesStore, Duration.ofMinutes(instanceProperties.getInt(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS)), timeSupplier);
     }
 
-    public Optional<TableProperties> getTablePropertiesIfExists(String tableName) {
-        try {
-            return Optional.of(getTableProperties(tableName));
-        } catch (RuntimeException e) {
-            return Optional.empty();
+    protected TablePropertiesProvider(TablePropertiesStore propertiesStore,
+                                      Duration cacheTimeout, Supplier<Instant> timeSupplier) {
+        this.propertiesStore = propertiesStore;
+        this.cacheTimeout = cacheTimeout;
+        this.timeSupplier = timeSupplier;
+    }
+
+    public TableProperties getByName(String tableName) {
+        return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName).orElseThrow());
+    }
+
+    public TableProperties getById(String tableId) {
+        return get(tableId, cacheById, () -> propertiesStore.loadById(tableId).orElseThrow());
+    }
+
+    public TableProperties get(TableId tableId) {
+        return get(tableId.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(tableId));
+    }
+
+    private TableProperties get(String identifier,
+                                Map<String, CacheEntry> cache,
+                                Supplier<TableProperties> loadProperties) {
+        Instant currentTime = timeSupplier.get();
+        CacheEntry currentEntry = cache.get(identifier);
+        TableProperties properties;
+        if (currentEntry == null) {
+            properties = loadProperties.get();
+            LOGGER.info("Cache miss, loaded properties for table {}", properties.getId());
+            cache(properties, currentTime);
+        } else if (currentEntry.isExpired(currentTime)) {
+            properties = loadProperties.get();
+            LOGGER.info("Expiry time reached, reloaded properties for table {}", properties.getId());
+            cache(properties, currentTime);
+        } else {
+            properties = currentEntry.getTableProperties();
+            LOGGER.info("Cache hit for table {}", properties.getId());
         }
+        return properties;
     }
 
-    private static TableProperties getTablePropertiesFromS3(
-            AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3Client, tableName);
-        return tableProperties;
+    private void cache(TableProperties properties, Instant currentTime) {
+        Instant expiryTime = currentTime.plus(cacheTimeout);
+        LOGGER.info("Setting expiry time: {}", expiryTime);
+        CacheEntry entry = new CacheEntry(properties, expiryTime);
+        cacheById.put(properties.get(TABLE_ID), entry);
+        cacheByName.put(properties.get(TABLE_NAME), entry);
+    }
+
+    public Optional<TableId> lookupByName(String tableName) {
+        return propertiesStore.lookupByName(tableName);
+    }
+
+    public Stream<TableId> streamAllTableIds() {
+        return propertiesStore.streamAllTableIds();
+    }
+
+    public Stream<TableProperties> streamAllTables() {
+        return propertiesStore.streamAllTableIds()
+                .map(id -> getByName(id.getTableName()));
+    }
+
+    public List<String> listTableNames() {
+        return propertiesStore.listTableNames();
+    }
+
+    public List<TableId> listTableIds() {
+        return propertiesStore.listTableIds();
     }
 
     public void clearCache() {
-        tableNameToPropertiesCache.clear();
+        cacheByName.clear();
+        cacheById.clear();
+    }
+
+    private static class CacheEntry {
+        private final TableProperties tableProperties;
+        private final Instant expiryTime;
+
+        CacheEntry(TableProperties tableProperties, Instant expiryTime) {
+            this.tableProperties = tableProperties;
+            this.expiryTime = expiryTime;
+        }
+
+        TableProperties getTableProperties() {
+            return tableProperties;
+        }
+
+        boolean isExpired(Instant currentTime) {
+            return currentTime.isAfter(expiryTime);
+        }
     }
 }

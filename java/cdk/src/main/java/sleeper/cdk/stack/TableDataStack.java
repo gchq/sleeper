@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.s3.BlockPublicAccess;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.BucketEncryption;
@@ -29,15 +30,15 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 
 public class TableDataStack extends NestedStack {
 
     private final IBucket dataBucket;
 
-    public TableDataStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public TableDataStack(Construct scope, String id, InstanceProperties instanceProperties,
+                          ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -54,11 +55,23 @@ public class TableDataStack extends NestedStack {
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());
 
-        addIngestSourceRoleReferences(this, "DataWriterForIngest", instanceProperties)
-                .forEach(dataBucket::grantReadWrite);
+        dataBucket.grantReadWrite(policiesStack.getIngestPolicy());
     }
 
     public IBucket getDataBucket() {
         return dataBucket;
+    }
+
+    public void grantRead(IGrantable grantee) {
+        dataBucket.grantRead(grantee);
+    }
+
+    public void grantReadWrite(IGrantable grantee) {
+        dataBucket.grantReadWrite(grantee);
+    }
+
+    public void grantReadDelete(IGrantable grantee) {
+        dataBucket.grantRead(grantee);
+        dataBucket.grantDelete(grantee);
     }
 }

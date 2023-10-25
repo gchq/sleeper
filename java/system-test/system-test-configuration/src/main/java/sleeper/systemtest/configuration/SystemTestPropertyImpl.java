@@ -30,8 +30,8 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     private final String defaultValue;
     private final Predicate<String> validationPredicate;
     private final String description;
-    private final boolean runCDKDeployWhenChanged;
-    private final boolean systemDefined;
+    private final boolean runCdkDeployWhenChanged;
+    private final boolean setByCdk;
     private final boolean editable;
 
     private SystemTestPropertyImpl(Builder builder) {
@@ -39,8 +39,8 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         defaultValue = builder.defaultValue;
         validationPredicate = Objects.requireNonNull(builder.validationPredicate, "validationPredicate must not be null");
         description = Objects.requireNonNull(builder.description, "description must not be null");
-        runCDKDeployWhenChanged = builder.runCDKDeployWhenChanged;
-        systemDefined = builder.systemDefined;
+        runCdkDeployWhenChanged = builder.runCdkDeployWhenChanged;
+        setByCdk = builder.setByCdk;
         editable = builder.editable;
     }
 
@@ -78,18 +78,18 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
-        return runCDKDeployWhenChanged;
+    public boolean isRunCdkDeployWhenChanged() {
+        return runCdkDeployWhenChanged;
     }
 
     @Override
-    public boolean isSystemDefined() {
-        return systemDefined;
+    public boolean isSetByCdk() {
+        return setByCdk;
     }
 
     @Override
     public boolean isEditable() {
-        return editable && !systemDefined;
+        return editable && !setByCdk;
     }
 
     public String toString() {
@@ -101,8 +101,8 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
         private String defaultValue;
         private Predicate<String> validationPredicate = s -> true;
         private String description;
-        private boolean runCDKDeployWhenChanged;
-        private boolean systemDefined;
+        private boolean runCdkDeployWhenChanged;
+        private boolean setByCdk;
         private boolean editable;
         private Consumer<SystemTestProperty> addToIndex;
 
@@ -129,13 +129,13 @@ public class SystemTestPropertyImpl implements SystemTestProperty {
             return this;
         }
 
-        public Builder runCDKDeployWhenChanged(boolean runCDKDeployWhenChanged) {
-            this.runCDKDeployWhenChanged = runCDKDeployWhenChanged;
+        public Builder runCdkDeployWhenChanged(boolean runCdkDeployWhenChanged) {
+            this.runCdkDeployWhenChanged = runCdkDeployWhenChanged;
             return this;
         }
 
-        public Builder systemDefined(boolean systemDefined) {
-            this.systemDefined = systemDefined;
+        public Builder setByCdk(boolean setByCdk) {
+            this.setByCdk = setByCdk;
             return this;
         }
 

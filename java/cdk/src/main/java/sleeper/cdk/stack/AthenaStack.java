@@ -53,20 +53,17 @@ import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
     public AthenaStack(Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars,
-                       StateStoreStacks stateStoreStacks, TableDataStack dataStack) {
+                       CoreStacks coreStacks) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
         int logRetentionDays = instanceProperties.getInt(LOG_RETENTION_IN_DAYS);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode jarCode = jars.lambdaCode(BuiltJar.ATHENA, jarsBucket);
-
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         String bucketName = Utils.truncateTo64Characters(String.join("-", "sleeper",
                 instanceProperties.get(ID).toLowerCase(Locale.ROOT), "spill-bucket"));
@@ -125,9 +122,7 @@ public class AthenaStack extends NestedStack {
 
             jarsBucket.grantRead(handler);
 
-            stateStoreStacks.grantReadActiveFilesAndPartitions(handler);
-            dataStack.getDataBucket().grantRead(handler);
-            configBucket.grantRead(handler);
+            coreStacks.grantReadTablesAndData(handler);
             spillBucket.grantReadWrite(handler);
             spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
 

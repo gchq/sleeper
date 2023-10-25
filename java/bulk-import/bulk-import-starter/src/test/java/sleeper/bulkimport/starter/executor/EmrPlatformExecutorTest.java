@@ -60,9 +60,11 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_EMR_INITIAL_EXECUTOR_CAPACITY;
@@ -80,8 +82,8 @@ class EmrPlatformExecutorTest {
     private final AmazonElasticMapReduce emr = mock(AmazonElasticMapReduce.class);
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
     private final AmazonS3 amazonS3 = mock(AmazonS3.class);
-    private final InstanceProperties instanceProperties = new InstanceProperties();
-    private final TableProperties tableProperties = new TableProperties(instanceProperties);
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final WriteToMemoryIngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
     @BeforeEach
@@ -462,7 +464,7 @@ class EmrPlatformExecutorTest {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new FixedStateStoreProvider(tableProperties,
-                        inMemoryStateStoreWithFixedSinglePartition(schemaWithKey("key"))),
+                        inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema())),
                 ingestJobStatusStore, amazonS3,
                 new EmrPlatformExecutor(emr, instanceProperties, tablePropertiesProvider, configuration),
                 validationTimeSupplier);

@@ -23,7 +23,9 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
@@ -45,11 +47,11 @@ import java.util.List;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.configuration.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 
 public class TestUtils {
@@ -68,32 +70,27 @@ public class TestUtils {
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
-
-        s3Client.shutdown();
-        dynamoDB.shutdown();
 
         return instanceProperties;
     }
 
     public static TableProperties createTable(InstanceProperties instance, Schema schema, AmazonDynamoDB dynamoDB, AmazonS3 s3Client, Object... splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instance, schema);
+        S3TableProperties.getStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         try {
             DynamoDBStateStore stateStore = new DynamoDBStateStore(instance, tableProperties, dynamoDB);
             stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
         } catch (StateStoreException e) {
             throw new RuntimeException(e);
-        } finally {
-            dynamoDB.shutdown();
         }
 
-        tableProperties.saveToS3(s3Client);
-        s3Client.shutdown();
         return tableProperties;
     }
 
-    public static void ingestData(AmazonDynamoDB dynamoClient, AmazonS3 s3Client, String dataDir, InstanceProperties instanceProperties,
+    public static void ingestData(AmazonDynamoDB dynamoClient, String dataDir, InstanceProperties instanceProperties,
                                   TableProperties table) {
         try {
             IngestFactory factory = IngestFactory.builder()
@@ -106,9 +103,6 @@ public class TestUtils {
             factory.ingestFromRecordIterator(table, generateTimeSeriesData().iterator());
         } catch (IOException | StateStoreException | IteratorException e) {
             throw new RuntimeException("Failed to Ingest data", e);
-        } finally {
-            dynamoClient.shutdown();
-            s3Client.shutdown();
         }
     }
 

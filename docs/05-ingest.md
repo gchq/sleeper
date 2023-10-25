@@ -165,7 +165,7 @@ These can all be deployed independently of each other. Each stack has its own qu
 
 The EMR Serverless stack creates an EMR Serverless application that only runs when there are jobs to process. 
 When you want to run a job the application is started by EMR Serverless. After 15 minutes of inactivity the application 
-is shutdown ready to be started when needed. 
+is shutdown ready to be started when needed. This can be overridden by changing the value of `sleeper.bulk.import.emr.serverless.autostop.timeout`
 
 A simple example of the message to send is:
 
@@ -185,6 +185,10 @@ When you submit your JSON job via the SQS Queue, an EMR Serverless job should ap
 the EMR Studio part of the AWS console with your desired 
 configuration. Once the job starts (around 2 minutes), you will be able to follow the links in EMR Studio to access your Spark UI. 
 This will allow you to monitor your job and view logs from the Spark executors and driver. You can also access previous job Spark UI's from EMR Studio. 
+
+It is possible to get Sleeper to deploy EMR Studio by enabling the optional stack `EmrStudioStack`. 
+Note if EMR Serverless is not enabled then EMR Studio won't be deployed even if added to the optional stacks.
+
 After your job finishes the application will auto shutdown after 15 minutes. When in the stopped state it takes seconds for the application to start when a new job is received.
 
 The following can be edited in the Sleeper Admin console. It it also possible to set these on a per job basis by setting `sparkConf`
@@ -205,7 +209,7 @@ An example for overriding at the job level is:
   }
 }
 ```
-All Available Properties 
+##### All Available Properties 
 
 ```properties
 # The following properties are used to define the custom Spark image used that has Java 11 installed
@@ -235,6 +239,36 @@ sleeper.bulk.import.emr.serverless.spark.speculation=false
 sleeper.bulk.import.emr.serverless.spark.speculation.quantile=0.75
 sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec=lz4
 ```
+
+##### Pre-initialised Capacity
+EMR Serverless can be configured to have a pre-initialised capacity where resources are ready to process jobs. 
+This does incur an additional cost when the Application is not in the CREATED or STOPPED states. 
+
+Spark adds a 10% memory overhead to the drivers and executors which needs to be factored in to the resource requested. 
+
+See [here](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html)
+for more information. 
+
+By default the pre-initialised capacity is disabled. 
+
+To enable it set `sleeper.bulk.import.emr.serverless.initial.capacity.enabled`
+
+The configuration properties for pre-initialised capacity are:
+
+```properties
+sleeper.bulk.import.emr.serverless.initial.capacity.enabled=false
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.count=25
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.cores=4vCPU
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.memory=18GB
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.disk=200GB
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.count=2
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.cores=4vCPU
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.memory=18GB
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
+```
+When pre-initialised capacity is turned on it is recommend to ensure that auto stop is also enabled by setting `sleeper.bulk.import.emr.serverless.autostop.enabled`.
+
+This is to release the resources once jobs have finished thus reducing the overall cost of using EMR Serverless. 
 
 More information about EMR Serverless can be found [here](https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/emr-serverless.html).
 

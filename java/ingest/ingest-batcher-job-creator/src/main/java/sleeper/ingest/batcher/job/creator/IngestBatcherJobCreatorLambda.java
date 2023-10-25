@@ -35,7 +35,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function to create jobs with the {@link IngestBatcher}.
@@ -76,7 +76,7 @@ public class IngestBatcherJobCreatorLambda {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, configBucket);
         LOGGER.info("Loaded instance properties from bucket {}", configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB);
         IngestBatcher batcher = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
                 .tablePropertiesProvider(tablePropertiesProvider)

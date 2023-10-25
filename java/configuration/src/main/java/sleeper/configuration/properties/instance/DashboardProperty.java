@@ -28,7 +28,7 @@ public interface DashboardProperty {
             .defaultValue("5")
             .validationPredicate(Utils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.DASHBOARD)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

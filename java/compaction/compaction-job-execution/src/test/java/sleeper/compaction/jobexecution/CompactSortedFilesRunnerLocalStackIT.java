@@ -46,8 +46,11 @@ import sleeper.compaction.task.CompactionTaskType;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.PropertiesReloader;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -67,9 +70,9 @@ import java.util.UUID;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -87,7 +90,8 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, null);
-    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableName = tableProperties.get(TABLE_NAME);
@@ -99,6 +103,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3);
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDB).create();
 
         return instanceProperties;
@@ -114,7 +119,7 @@ public class CompactSortedFilesRunnerLocalStackIT {
     private TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        tableProperties.saveToS3(s3);
+        tablePropertiesStore.save(tableProperties);
         try {
             stateStoreProvider.getStateStore(tableProperties).initialise();
         } catch (StateStoreException e) {
@@ -151,31 +156,27 @@ public class CompactSortedFilesRunnerLocalStackIT {
         String file3 = folderName + "/file3.parquet";
         String file4 = folderName + "/file4.parquet";
         FileInfo fileInfo1 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file1)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo2 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file2)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo3 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file3)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         FileInfo fileInfo4 = FileInfo.builder()
-                .rowKeyTypes(new LongType())
                 .filename(file4)
                 .fileStatus(FileInfo.FileStatus.ACTIVE)
-                .partitionId("1")
+                .partitionId("root")
                 .numberOfRecords(100L)
                 .build();
         ParquetWriter<Record> writer1 = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(file1), schema);

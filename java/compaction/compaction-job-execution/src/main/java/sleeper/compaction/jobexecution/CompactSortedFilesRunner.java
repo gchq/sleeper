@@ -60,11 +60,11 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.SPLITTING_COMPACTION_JOB_QUEUE_URL;
 
 /**
  * Retrieves compaction {@link CompactionJob}s from an SQS queue, and executes
@@ -220,7 +220,7 @@ public class CompactSortedFilesRunner {
                 compactionJob.getId(), keepAliveFrequency);
 
         propertiesReloader.reloadIfNeeded();
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(compactionJob.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(compactionJob.getTableName());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         CompactSortedFiles compactSortedFiles = new CompactSortedFiles(instanceProperties, tableProperties, objectFactory,
                 compactionJob, stateStore, jobStatusStore, taskId);
@@ -254,7 +254,7 @@ public class CompactSortedFilesRunner {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3(s3Client, s3Bucket);
 
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         PropertiesReloader propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));

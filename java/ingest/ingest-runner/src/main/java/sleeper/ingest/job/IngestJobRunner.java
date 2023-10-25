@@ -84,7 +84,7 @@ public class IngestJobRunner implements IngestJobHandler {
     @Override
     public IngestResult ingest(IngestJob job) throws IteratorException, StateStoreException, IOException {
         propertiesReloader.reloadIfNeeded();
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
+        TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         Schema schema = tableProperties.getSchema();
 
         // Create list of all files to be read

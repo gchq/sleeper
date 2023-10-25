@@ -34,9 +34,9 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.QueryProperty.QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda that is triggered when a serialised query arrives on an SQS queue. A processor executes the request using a
@@ -107,7 +107,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             throw new RuntimeException("Error: can't find S3 bucket from environment variable");
         }
         instanceProperties = loadInstanceProperties(s3Client, configBucket);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         serde = new QuerySerDe(tablePropertiesProvider);
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)

@@ -69,7 +69,7 @@ public class CompactionJobSerDe {
         }
         if (compactionJob.isSplittingJob()) {
             dos.writeInt(compactionJob.getDimension());
-            Schema schema = tablePropertiesProvider.getTableProperties(compactionJob.getTableName()).getSchema();
+            Schema schema = tablePropertiesProvider.getByName(compactionJob.getTableName()).getSchema();
             PrimitiveType type = (PrimitiveType) schema.getRowKeyFields().get(compactionJob.getDimension()).getType();
             if (type instanceof IntType) {
                 dos.writeInt((int) compactionJob.getSplitPoint());
@@ -121,7 +121,7 @@ public class CompactionJobSerDe {
         if (isSplittingJob) {
             int dimension = dis.readInt();
             compactionJobBuilder.dimension(dimension);
-            Schema schema = tablePropertiesProvider.getTableProperties(tableName).getSchema();
+            Schema schema = tablePropertiesProvider.getByName(tableName).getSchema();
             PrimitiveType type = (PrimitiveType) schema.getRowKeyFields().get(dimension).getType();
             if (type instanceof IntType) {
                 compactionJobBuilder.splitPoint(dis.readInt());

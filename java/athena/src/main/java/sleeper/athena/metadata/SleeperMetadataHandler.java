@@ -68,8 +68,8 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.table.TableId;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 
 import java.util.List;
 import java.util.Map;
@@ -77,8 +77,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.athena.connector.lambda.metadata.ListTablesRequest.UNLIMITED_PAGE_SIZE_VALUE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * The {@link SleeperMetadataHandler} deals with requests about the layout for a Sleeper instance. It provides information
@@ -91,10 +91,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     public static final String SOURCE_TYPE = "Sleeper";
     public static final String RELEVANT_FILES_FIELD = "_SleeperRelevantFiles";
-    private AmazonS3 s3Client;
-    private InstanceProperties instanceProperties;
-    private TablePropertiesProvider tablePropertiesProvider;
-    private StateStoreProvider stateStoreProvider;
+    private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
+    private final StateStoreProvider stateStoreProvider;
 
     public SleeperMetadataHandler() {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), System.getenv(CONFIG_BUCKET.toEnvironmentVariable()));
@@ -102,10 +101,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
 
     public SleeperMetadataHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, String configBucket) {
         super(SOURCE_TYPE);
-        this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 
@@ -118,10 +116,9 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
                                   String spillBucket,
                                   String spillPrefix) {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
-        this.s3Client = s3Client;
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
 
@@ -158,7 +155,8 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         int pageSize = listTablesRequest.getPageSize();
         String schemaName = listTablesRequest.getSchemaName();
 
-        List<TableName> tables = getTableNames().stream()
+        List<TableName> tables = tablePropertiesProvider.streamAllTableIds()
+                .map(TableId::getTableName)
                 .sorted()
                 .map(t -> new TableName(schemaName, t))
                 .collect(Collectors.toList());
@@ -209,7 +207,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     public GetTableResponse doGetTable(BlockAllocator blockAllocator, GetTableRequest getTableRequest) {
         LOGGER.info("Received Get Table Request: {}", getTableRequest);
         String tableName = getTableRequest.getTableName().getTableName();
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         Schema schema = tableProperties.getSchema();
         org.apache.arrow.vector.types.pojo.Schema arrowSchema = toArrowSchema(schema);
 
@@ -388,7 +386,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      * @return the table properties
      */
     protected TableProperties getTableProperties(String tableName) {
-        return tablePropertiesProvider.getTableProperties(tableName);
+        return tablePropertiesProvider.getByName(tableName);
     }
 
     /**
@@ -468,10 +466,6 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
             }
         }
         return match;
-    }
-
-    private List<String> getTableNames() {
-        return new TableLister(s3Client, instanceProperties).listTables();
     }
 
     private org.apache.arrow.vector.types.pojo.Schema toArrowSchema(Schema schema) {

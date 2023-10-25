@@ -39,7 +39,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -71,10 +74,10 @@ import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -105,30 +108,28 @@ public class ReinitialiseTableIT {
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
             .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
 
-    private static AmazonDynamoDB dynamoDBClient;
-    private static AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
+
+    @TempDir
+    public Path tempDir;
 
     @BeforeEach
     public void beforeEach() {
-        dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-        s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
     }
 
     @AfterEach
     public void afterEach() {
         s3Client.shutdown();
         dynamoDBClient.shutdown();
-        dynamoDBClient = null;
-        s3Client = null;
     }
-
-    @TempDir
-    public Path tempDir;
 
     @Test
     public void shouldThrowExceptionIfInstanceIdIsEmpty() {
@@ -159,9 +160,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldDeleteActiveAndGCFilesByDefault() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
 
             // When
@@ -178,9 +178,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
 
             // When
@@ -197,9 +196,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
             String splitPointsFileName = createSplitPointsFile(false);
 
@@ -222,9 +220,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             DynamoDBStateStore dynamoStateStore = setupDynamoStateStore(tableProperties);
             String splitPointsFileName = createSplitPointsFile(true);
 
@@ -256,9 +253,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldDeleteFilesInfoAndObjectsInPartitionsByDefault() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             S3StateStore s3StateStore = setupS3StateStore(tableProperties);
 
             // When
@@ -279,9 +275,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             S3StateStore s3StateStore = setupS3StateStore(tableProperties);
 
             // When
@@ -305,9 +300,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             S3StateStore s3StateStore = setupS3StateStore(tableProperties);
             String splitPointsFileName = createSplitPointsFile(false);
 
@@ -337,9 +331,8 @@ public class ReinitialiseTableIT {
         @Test
         public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
             // Given
-            instanceProperties.saveToS3(s3Client);
-            tableProperties.saveToS3(s3Client);
-            setupS3buckets();
+            saveProperties();
+            saveTableDataFiles();
             S3StateStore s3StateStore = setupS3StateStore(tableProperties);
             String splitPointsFileName = createSplitPointsFile(true);
 
@@ -465,7 +458,12 @@ public class ReinitialiseTableIT {
                 .run();
     }
 
-    private void setupS3buckets() {
+    private void saveProperties() {
+        instanceProperties.saveToS3(s3Client);
+        tablePropertiesStore.save(tableProperties);
+    }
+
+    private void saveTableDataFiles() {
         String dataBucket = instanceProperties.get(DATA_BUCKET);
         String tableName = tableProperties.get(TABLE_NAME);
 
@@ -566,7 +564,6 @@ public class ReinitialiseTableIT {
 
     private FileInfo createFileInfo(String filename, FileInfo.FileStatus fileStatus, String partitionId) {
         return FileInfo.builder()
-                .rowKeyTypes(new StringType())
                 .filename(filename)
                 .fileStatus(fileStatus)
                 .partitionId(partitionId)

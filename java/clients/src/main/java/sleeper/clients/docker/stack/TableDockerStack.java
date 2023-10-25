@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
@@ -30,11 +31,13 @@ import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 
 public class TableDockerStack implements DockerStack {
     private final InstanceProperties instanceProperties;
@@ -66,6 +69,9 @@ public class TableDockerStack implements DockerStack {
         String dataBucket = String.join("-", "sleeper", instanceId, "table-data");
         instanceProperties.set(DATA_BUCKET, dataBucket);
         s3Client.createBucket(dataBucket);
+        instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-name"));
+        instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-id"));
+        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         instanceProperties.set(ACTIVE_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "active-files"));
         instanceProperties.set(READY_FOR_GC_FILEINFO_TABLENAME, String.join("-", "sleeper", instanceId, "gc-files"));
         instanceProperties.set(PARTITION_TABLENAME, String.join("-", "sleeper", instanceId, "partitions"));

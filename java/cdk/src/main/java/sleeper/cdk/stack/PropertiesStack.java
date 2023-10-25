@@ -36,7 +36,6 @@ import java.util.Locale;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * The properties stack writes the Sleeper properties to S3 using a custom resource.
@@ -46,11 +45,9 @@ public class PropertiesStack extends NestedStack {
     public PropertiesStack(Construct scope,
                            String id,
                            InstanceProperties instanceProperties,
-                           BuiltJars jars) {
+                           BuiltJars jars,
+                           CoreStacks coreStacks) {
         super(scope, id);
-
-        // Config bucket
-        IBucket configBucket = Bucket.fromBucketName(this, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET));
 
         // Jars bucket
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -71,7 +68,7 @@ public class PropertiesStack extends NestedStack {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .runtime(Runtime.JAVA_11));
 
-        configBucket.grantWrite(propertiesWriterLambda);
+        coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)

@@ -41,9 +41,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 
 /**
  * Runs queries by sending them to an SQS queue which will trigger a lambda to
@@ -56,12 +56,12 @@ public class QueryLambdaClient extends QueryCommandLineClient {
     private final String queryQueueUrl;
     private final QuerySerDe querySerDe;
 
-    public QueryLambdaClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        super(s3Client, instanceProperties);
+    public QueryLambdaClient(AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, AmazonSQS sqsClient, InstanceProperties instanceProperties) {
+        super(s3Client, dynamoDBClient, instanceProperties);
         this.sqsClient = sqsClient;
-        this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDB);
+        this.queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
         this.queryQueueUrl = instanceProperties.get(QUERY_QUEUE_URL);
-        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        this.querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient));
     }
 
     @Override

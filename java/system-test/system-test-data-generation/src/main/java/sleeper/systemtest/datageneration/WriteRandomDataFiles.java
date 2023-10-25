@@ -45,10 +45,7 @@ public class WriteRandomDataFiles {
 
         String dir = instanceProperties.getList(INGEST_SOURCE_BUCKET).get(0) + "/ingest/" + UUID.randomUUID();
 
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.aws.credentials.provider", "com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper");
-        conf.set("fs.s3a.fast.upload", "true");
-        conf.set("fs.s3a.bucket.probe", "0");
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForECS(instanceProperties);
 
         writeToPath(dir, "s3a://", tableProperties, recordIterator, conf);
         return dir;

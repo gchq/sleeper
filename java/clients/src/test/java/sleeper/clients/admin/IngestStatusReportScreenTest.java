@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelper;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatus;
@@ -213,7 +213,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
 
         private InstanceProperties createInstancePropertiesWithJobQueueUrl() {
             InstanceProperties properties = createValidInstanceProperties();
-            properties.set(SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL, INGEST_JOB_QUEUE_URL);
+            properties.set(CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL, INGEST_JOB_QUEUE_URL);
             return properties;
         }
     }

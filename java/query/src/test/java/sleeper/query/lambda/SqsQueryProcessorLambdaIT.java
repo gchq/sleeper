@@ -57,8 +57,10 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorException;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -115,14 +117,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -570,7 +572,7 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -665,7 +667,7 @@ public class SqsQueryProcessorLambdaIT {
     }
 
     private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(s3Client, instanceProperties));
+        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
         SQSEvent event = new SQSEvent();
         SQSMessage sqsMessage = new SQSMessage();
@@ -724,7 +726,7 @@ public class SqsQueryProcessorLambdaIT {
 
     private TableProperties createTimeSeriesTable(InstanceProperties instanceProperties, List<Object> splitPoints) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-        tableProperties.saveToS3(s3Client);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
 
         StateStore stateStore = new StateStoreProvider(dynamoClient, instanceProperties, null).getStateStore(tableProperties);
         try {
@@ -761,6 +763,7 @@ public class SqsQueryProcessorLambdaIT {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         instanceProperties.saveToS3(s3Client);
 
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;

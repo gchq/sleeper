@@ -48,7 +48,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
@@ -89,7 +89,7 @@ public class BulkImportJobDriver {
                                            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration conf,
                                            IngestJobStatusStore statusStore,
                                            Supplier<Instant> getTime) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoClient, instanceProperties, conf);
         return new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 jobRunner, instanceProperties, tablePropertiesProvider, stateStoreProvider),

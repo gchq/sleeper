@@ -27,14 +27,14 @@ public interface CommonProperty {
     UserDefinedInstanceProperty ID = Index.propertyBuilder("sleeper.id")
             .description("A string to uniquely identify this deployment. This should be no longer than 20 chars. " +
                     "It should be globally unique as it will be used to name AWS resources such as S3 buckets.")
-            .validationPredicate(Objects::nonNull)
+            .validationPredicate(value -> Utils.isNonNullNonEmptyStringWithMaxLength(value, 20))
             .propertyGroup(InstancePropertyGroup.COMMON)
             .editable(false).build();
     UserDefinedInstanceProperty JARS_BUCKET = Index.propertyBuilder("sleeper.jars.bucket")
             .description("The S3 bucket containing the jar files of the Sleeper components.")
             .validationPredicate(Objects::nonNull)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty USER_JARS = Index.propertyBuilder("sleeper.userjars")
             .description("A comma-separated list of the jars containing application specific iterator code. " +
                     "These jars are assumed to be in the bucket given by sleeper.jars.bucket, e.g. if that " +
@@ -45,27 +45,27 @@ public interface CommonProperty {
     UserDefinedInstanceProperty TAGS = Index.propertyBuilder("sleeper.tags")
             .description("A list of tags for the project.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true)
+            .runCdkDeployWhenChanged(true)
             .includedInTemplate(false).build();
     UserDefinedInstanceProperty STACK_TAG_NAME = Index.propertyBuilder("sleeper.stack.tag.name")
             .description("A name for a tag to identify the stack that deployed a resource. This will be set for all AWS resources, to the ID of " +
                     "the CDK stack that they are deployed under. This can be used to organise the cost explorer for billing.")
             .defaultValue("DeploymentStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty RETAIN_INFRA_AFTER_DESTROY = Index.propertyBuilder("sleeper.retain.infra.after.destroy")
             .description("Whether to keep the sleeper table bucket, Dynamo tables, query results bucket, etc., " +
                     "when the instance is destroyed.")
             .defaultValue("true")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true)
+            .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty OPTIONAL_STACKS = Index.propertyBuilder("sleeper.optional.stacks")
             .description("The optional stacks to deploy.")
-            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,DashboardStack")
+            .defaultValue("CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true)
+            .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty ACCOUNT = Index.propertyBuilder("sleeper.account")
             .description("The AWS account number. This is the AWS account that the instance will be deployed to.")
@@ -100,14 +100,14 @@ public interface CommonProperty {
     UserDefinedInstanceProperty EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION = Index.propertyBuilder("sleeper.errors.email")
             .description("An email address used by the TopicStack to publish SNS notifications of errors.")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true)
+            .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
     UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.queue.visibility.timeout.seconds")
             .description("The visibility timeout on the queues used in ingest, query, etc.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = Index.propertyBuilder("sleeper.log.retention.days")
             .description("The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are retained.\n" +
                     "See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.\n" +
@@ -115,13 +115,21 @@ public interface CommonProperty {
             .defaultValue("30")
             .validationPredicate(Utils::isValidLogRetention)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = Index.propertyBuilder("sleeper.s3.max-connections")
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty MAXIMUM_CONNECTIONS_TO_S3 = Index.propertyBuilder("sleeper.fs.s3a.max-connections")
             .description("Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the " +
                     "maximum number of http connections to S3.\n" +
                     "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
             .defaultValue("25")
             .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON).build();
+    UserDefinedInstanceProperty S3_UPLOAD_BLOCK_SIZE = Index.propertyBuilder("sleeper.fs.s3a.upload.block.size")
+            .description("Used to set the value of fs.s3a.block.size on the Hadoop configuration. Uploads to S3 " +
+                    "happen in blocks, and this sets the size of blocks. If a larger value is used, then more data " +
+                    "is buffered before the upload begins.\n" +
+                    "See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html")
+            .defaultValue("32M")
+            .validationPredicate(Utils::isValidHadoopLongBytes)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FARGATE_VERSION = Index.propertyBuilder("sleeper.fargate.version")
             .description("The version of Fargate to use.")
@@ -131,20 +139,20 @@ public interface CommonProperty {
             .description("The amount of memory for the lambda that creates ECS tasks to execute compaction and ingest jobs.")
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.task.runner.timeout.seconds")
             .description("The timeout in seconds for the lambda that creates ECS tasks to execute compaction jobs and ingest jobs.\n" +
                     "This must be >0 and <= 900.")
             .defaultValue("900")
             .validationPredicate(Utils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty METRICS_NAMESPACE = Index.propertyBuilder("sleeper.metrics.namespace")
             .description("The namespaces for the metrics used in the metrics stack.")
             .defaultValue("Sleeper")
             .validationPredicate(Utils::isNonNullNonEmptyString)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty FORCE_RELOAD_PROPERTIES = Index.propertyBuilder("sleeper.properties.force.reload")
             .description("If true, properties will be reloaded every time a long running job is started or a lambda is run. " +
                     "This will mainly be used in test scenarios to ensure properties are up to date.")
@@ -165,14 +173,29 @@ public interface CommonProperty {
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.metadata.s3.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the S3 state store. " +
                     "This is set on the revision DynamoDB table.")
             .defaultValue("false")
             .validationPredicate(Utils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCDKDeployWhenChanged(true).build();
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
+            .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
+                    "This is set on the DynamoDB tables.")
+            .defaultValue("false")
+            .validationPredicate(Utils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .runCdkDeployWhenChanged(true).build();
+
+    UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index.propertyBuilder("sleeper.table.properties.provider.timeout.minutes")
+            .description("The timeout in minutes for when the table properties provider cache should be cleared, " +
+                    "forcing table properties to be reloaded from S3.")
+            .defaultValue("60")
+            .validationPredicate(Utils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

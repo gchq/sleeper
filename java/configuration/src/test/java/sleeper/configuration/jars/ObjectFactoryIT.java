@@ -49,11 +49,11 @@ import java.util.jar.Manifest;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.USER_JARS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -72,7 +72,7 @@ public class ObjectFactoryIT {
 
     private InstanceProperties createInstanceProperties(AmazonS3 s3Client) {
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
+        instanceProperties.set(ID, UUID.randomUUID().toString().substring(0, 18));
         instanceProperties.set(CONFIG_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(JARS_BUCKET, UUID.randomUUID().toString());
         instanceProperties.set(FILE_SYSTEM, "");

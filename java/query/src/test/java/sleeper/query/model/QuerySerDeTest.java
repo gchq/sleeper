@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Range.RangeFactory;
@@ -59,8 +60,7 @@ public class QuerySerDeTest {
 
     private QuerySerDe generateQuerySerDe(String tableName, Schema schema, boolean useTablePropertiesProvider) {
         if (useTablePropertiesProvider) {
-            TestPropertiesProvider testPropertiesProvider = new TestPropertiesProvider(tableName, schema);
-            return new QuerySerDe(testPropertiesProvider);
+            return new QuerySerDe(createFixedTablePropertiesProvider(tableName, schema));
         }
         return new QuerySerDe(Collections.singletonMap(tableName, schema));
     }
@@ -596,20 +596,9 @@ public class QuerySerDeTest {
         Query query = new Query.Builder(null, "id", region).build();
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
-        // When & Then
-        if (useTablePropertiesProvider) {
-            // When the QuerySerDe is created from a TablePropertiesProvider,
-            // the TablePropertiesProvider will return TableProperties for a table with a null name.
-            String json = querySerDe.toJson(query);
-            assertThatThrownBy(() -> querySerDe.fromJson(json))
-                    .isInstanceOf(JsonParseException.class)
-                    .hasMessage("tableName field must be provided");
-        } else {
-            // When the QuerySerDe is created from a Map, a NullPointerException is thrown
-            // when retrieving a table with a null name.
-            assertThatThrownBy(() -> querySerDe.toJson(query))
-                    .isInstanceOf(NullPointerException.class);
-        }
+        // When / Then
+        assertThatThrownBy(() -> querySerDe.toJson(query))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @ParameterizedTest()
@@ -634,19 +623,10 @@ public class QuerySerDeTest {
                 .hasMessage("tableName field must be provided");
     }
 
-    private static class TestPropertiesProvider extends TablePropertiesProvider {
-        private final TableProperties tableProperties;
-
-        TestPropertiesProvider(final String tableName, final Schema schema) {
-            super(null, null);
-            this.tableProperties = new TableProperties(new InstanceProperties());
-            tableProperties.set(TABLE_NAME, tableName);
-            tableProperties.setSchema(schema);
-        }
-
-        @Override
-        public TableProperties getTableProperties(final String tableName) {
-            return tableProperties;
-        }
+    private static TablePropertiesProvider createFixedTablePropertiesProvider(String tableName, Schema schema) {
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.setSchema(schema);
+        return new FixedTablePropertiesProvider(tableProperties);
     }
 }

@@ -40,7 +40,7 @@ public class DummySleeperProperty implements SleeperProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
+    public boolean isRunCdkDeployWhenChanged() {
         return false;
     }
 }

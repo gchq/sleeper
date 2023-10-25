@@ -17,6 +17,7 @@ package sleeper.athena.record;
 
 import com.amazonaws.athena.connector.lambda.records.ReadRecordsRequest;
 import com.amazonaws.services.athena.AmazonAthena;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.secretsmanager.AWSSecretsManager;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -50,8 +51,8 @@ public class SimpleRecordHandler extends SleeperRecordHandler {
         super();
     }
 
-    public SimpleRecordHandler(AmazonS3 s3Client, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
-        super(s3Client, configBucket, secretsManager, athena);
+    public SimpleRecordHandler(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, String configBucket, AWSSecretsManager secretsManager, AmazonAthena athena) {
+        super(s3Client, dynamoDB, configBucket, secretsManager, athena);
     }
 
     /**

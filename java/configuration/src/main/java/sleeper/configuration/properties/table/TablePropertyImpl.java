@@ -33,9 +33,9 @@ class TablePropertyImpl implements TableProperty {
     private final SleeperProperty defaultProperty;
     private final String description;
     private final PropertyGroup propertyGroup;
-    private final boolean systemDefined;
     private final boolean editable;
     private final boolean includedInTemplate;
+    private final boolean setBySleeper;
 
     private TablePropertyImpl(Builder builder) {
         propertyName = Objects.requireNonNull(builder.propertyName, "propertyName must not be null");
@@ -44,9 +44,9 @@ class TablePropertyImpl implements TableProperty {
         defaultProperty = builder.defaultProperty;
         description = Objects.requireNonNull(builder.description, "description must not be null");
         propertyGroup = Objects.requireNonNull(builder.propertyGroup, "propertyGroup must not be null");
-        systemDefined = builder.systemDefined;
         editable = builder.editable;
         includedInTemplate = builder.includedInTemplate;
+        setBySleeper = builder.setBySleeper;
     }
 
     static Builder builder() {
@@ -88,18 +88,18 @@ class TablePropertyImpl implements TableProperty {
     }
 
     @Override
-    public boolean isRunCDKDeployWhenChanged() {
+    public boolean isRunCdkDeployWhenChanged() {
         return false;
     }
 
     @Override
-    public boolean isSystemDefined() {
-        return systemDefined;
+    public boolean isEditable() {
+        return editable && !setBySleeper;
     }
 
     @Override
-    public boolean isEditable() {
-        return editable && !systemDefined;
+    public boolean isUserDefined() {
+        return !setBySleeper;
     }
 
     @Override
@@ -119,9 +119,9 @@ class TablePropertyImpl implements TableProperty {
         private String description;
         private PropertyGroup propertyGroup;
         private Consumer<TableProperty> addToIndex;
-        private boolean systemDefined;
         private boolean editable = true;
         private boolean includedInTemplate = true;
+        private boolean setBySleeper;
 
         private Builder() {
         }
@@ -162,6 +162,11 @@ class TablePropertyImpl implements TableProperty {
             return this;
         }
 
+        public Builder setBySleeper(boolean setBySleeper) {
+            this.setBySleeper = setBySleeper;
+            return this;
+        }
+
         public Builder propertyGroup(PropertyGroup propertyGroup) {
             this.propertyGroup = propertyGroup;
             return this;
@@ -169,11 +174,6 @@ class TablePropertyImpl implements TableProperty {
 
         public Builder addToIndex(Consumer<TableProperty> addToIndex) {
             this.addToIndex = addToIndex;
-            return this;
-        }
-
-        public Builder systemDefined(boolean systemDefined) {
-            this.systemDefined = systemDefined;
             return this;
         }
 

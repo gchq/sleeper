@@ -27,20 +27,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import static sleeper.configuration.properties.instance.PartitionSplittingProperty.MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_SPLITTING_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * This is triggered via a periodic Cloudwatch rule. It runs
@@ -48,7 +44,6 @@ import static sleeper.configuration.properties.instance.SystemDefinedInstancePro
  */
 @SuppressWarnings("unused")
 public class FindPartitionsToSplitLambda {
-    private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
@@ -57,7 +52,7 @@ public class FindPartitionsToSplitLambda {
     private final TablePropertiesProvider tablePropertiesProvider;
 
     public FindPartitionsToSplitLambda() {
-        this.s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         if (null == s3Bucket) {
             throw new RuntimeException("Couldn't get S3 bucket from environment variable");
@@ -67,17 +62,15 @@ public class FindPartitionsToSplitLambda {
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
     }
 
     public void eventHandler(ScheduledEvent event, Context context) {
         LOGGER.info("FindPartitionsToSplitLambda triggered at {}", event.getTime());
-        new TableLister(s3Client, instanceProperties).listTables().stream().map(tableName -> {
-            TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        tablePropertiesProvider.streamAllTables().map(tableProperties -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-            return new FindPartitionsToSplit(tableName, tablePropertiesProvider, stateStore,
-                    instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB),
-                    sqsClient, instanceProperties.get(PARTITION_SPLITTING_QUEUE_URL));
+            return new FindPartitionsToSplit(
+                    instanceProperties, tableProperties, tablePropertiesProvider, stateStore, sqsClient);
         }).forEach(partitionsFinder -> {
             try {
                 partitionsFinder.run();

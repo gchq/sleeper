@@ -71,11 +71,11 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_RECORD_BATCH_TYPE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.statestore.inmemory.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
@@ -94,7 +94,7 @@ class IngestJobRunnerIT {
     protected final S3AsyncClient s3Async = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     protected final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
 
-    private final String instanceId = UUID.randomUUID().toString();
+    private final String instanceId = UUID.randomUUID().toString().substring(0, 18);
     private final String tableName = UUID.randomUUID().toString();
     private final String ingestDataBucketName = tableName + "-ingestdata";
     private final String tableDataBucketName = tableName + "-tabledata";
@@ -429,7 +429,7 @@ class IngestJobRunnerIT {
             List<String> files) throws Exception {
         InstanceProperties instanceProperties = getInstanceProperties(fileSystemPrefix, recordBatchType, partitionFileWriterType);
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(createTable(recordListAndSchema.sleeperSchema, fileSystemPrefix, recordBatchType, partitionFileWriterType));
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getTableProperties(tableName), stateStore);
+        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tablePropertiesProvider.getByName(tableName), stateStore);
         new IngestJobRunner(
                 new ObjectFactory(instanceProperties, null, createTempDirectory(temporaryFolder, null).toString()),
                 instanceProperties,

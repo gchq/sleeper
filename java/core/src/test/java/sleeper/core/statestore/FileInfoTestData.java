@@ -15,10 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
-
 import java.time.Instant;
 
 public class FileInfoTestData {
@@ -27,17 +23,12 @@ public class FileInfoTestData {
 
     public static final long DEFAULT_NUMBER_OF_RECORDS = 100L;
 
-    private static final Schema DEFAULT_SCHEMA = Schema.builder()
-            .rowKeyFields(new Field("key", new StringType()))
-            .build();
-
     public static FileInfo defaultFileOnRootPartition(String filename) {
         return defaultFileOnRootPartitionWithRecords(filename, DEFAULT_NUMBER_OF_RECORDS);
     }
 
     public static FileInfo defaultFileOnRootPartitionWithRecords(String filename, long records) {
         return FileInfo.builder()
-                .rowKeyTypes(DEFAULT_SCHEMA.getRowKeyTypes())
                 .filename(filename).partitionId("root")
                 .numberOfRecords(records).fileStatus(FileInfo.FileStatus.ACTIVE)
                 .lastStateStoreUpdateTime(Instant.parse("2022-12-08T11:03:00.001Z"))

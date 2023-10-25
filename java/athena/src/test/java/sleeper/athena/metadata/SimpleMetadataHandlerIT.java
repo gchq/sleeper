@@ -37,7 +37,7 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
 
@@ -45,7 +45,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
     public void shouldCreateSplitForEachFileInAPartition() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(createS3Client(), createDynamoClient(),
+        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(s3Client, dynamoClient,
                 instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
 
@@ -68,7 +68,7 @@ public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
     public void shouldOnlyCreateOneSplitForEachFileAcrossMultiplePartitions() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(createS3Client(), createDynamoClient(),
+        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(s3Client, dynamoClient,
                 instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
 

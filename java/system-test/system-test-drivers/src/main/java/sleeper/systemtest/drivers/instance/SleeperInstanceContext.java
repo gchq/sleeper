@@ -39,6 +39,7 @@ import sleeper.configuration.properties.SleeperProperties;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.configuration.properties.instance.UserDefinedInstanceProperty;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperty;
@@ -58,16 +59,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ECR_REPOSITORY_PREFIX;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -114,7 +117,7 @@ public class SleeperInstanceContext {
         ResetProperties.reset(configuration,
                 currentInstance.getInstanceProperties(),
                 currentInstance.getTableProperties(),
-                s3);
+                s3, dynamoDB);
     }
 
     public void reinitialise() {
@@ -144,6 +147,25 @@ public class SleeperInstanceContext {
 
     public TablePropertiesProvider getTablePropertiesProvider() {
         return currentInstance.getTablePropertiesProvider();
+    }
+
+    public void updateInstanceProperties(Map<UserDefinedInstanceProperty, String> values) {
+        InstanceProperties instanceProperties = getInstanceProperties();
+        values.forEach(instanceProperties::set);
+        instanceProperties.saveToS3(s3);
+    }
+
+    public void updateTableProperties(Map<TableProperty, String> values) {
+        TableProperties tableProperties = getTableProperties();
+        List<TableProperty> uneditableProperties = values.keySet().stream()
+                .filter(not(TableProperty::isEditable))
+                .collect(Collectors.toUnmodifiableList());
+        if (!uneditableProperties.isEmpty()) {
+            throw new IllegalArgumentException("Cannot edit properties: " + uneditableProperties);
+        }
+        values.forEach(tableProperties::set);
+        S3TableProperties.getStore(getInstanceProperties(), s3, dynamoDB)
+                .save(tableProperties);
     }
 
     public StateStoreProvider getStateStoreProvider() {
@@ -239,8 +261,8 @@ public class SleeperInstanceContext {
     private Instance loadInstance(String identifier, String instanceId, String tableName) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3, instanceProperties);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3, dynamoDB);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDB, instanceProperties, new Configuration());
         return new Instance(identifier,
                 instanceProperties, tableProperties,
@@ -359,7 +381,7 @@ public class SleeperInstanceContext {
             List<? extends P> userDefinedProperties, T deployProperties, T foundProperties) {
         boolean redeployNeeded = false;
         for (P property : userDefinedProperties) {
-            if (!property.isEditable() || !property.isRunCDKDeployWhenChanged()) {
+            if (!property.isEditable() || !property.isRunCdkDeployWhenChanged()) {
                 // Non-CDK properties get reset before every test in SleeperInstanceContext.resetProperties
                 continue;
             }

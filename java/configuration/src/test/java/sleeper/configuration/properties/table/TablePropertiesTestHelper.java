@@ -15,14 +15,13 @@
  */
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.AmazonS3;
-
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.TableIdGenerator;
 
 import java.util.UUID;
-import java.util.function.Consumer;
 
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TablePropertiesTestHelper {
@@ -30,27 +29,7 @@ public class TablePropertiesTestHelper {
     private TablePropertiesTestHelper() {
     }
 
-    public static TableProperties createTestTableProperties(
-            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3) {
-        return createTestTableProperties(instanceProperties, schema, s3, properties -> {
-        });
-    }
-
-    public static TableProperties createTestTableProperties(
-            InstanceProperties instanceProperties, Schema schema, AmazonS3 s3, Consumer<TableProperties> tableConfig) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableConfig.accept(tableProperties);
-        save(tableProperties, s3);
-        return tableProperties;
-    }
-
-    private static void save(TableProperties tableProperties, AmazonS3 s3) {
-        try {
-            tableProperties.saveToS3(s3);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to save table properties", e);
-        }
-    }
+    private static final TableIdGenerator TABLE_ID_GENERATOR = new TableIdGenerator();
 
     public static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
@@ -60,8 +39,10 @@ public class TablePropertiesTestHelper {
 
     public static TableProperties createTestTablePropertiesWithNoSchema(InstanceProperties instanceProperties) {
         String tableName = UUID.randomUUID().toString();
+        String tableId = TABLE_ID_GENERATOR.generateString();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
+        tableProperties.set(TABLE_ID, tableId);
         return tableProperties;
     }
 }

@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_INGEST_MODE;
 import static sleeper.configuration.properties.table.TableProperty.INGEST_BATCHER_MIN_JOB_FILES;
@@ -110,7 +110,7 @@ public class IngestBatcherTestBase {
     protected void batchFilesWithJobIds(List<String> jobIds, Consumer<IngestBatcher.Builder> config) {
         IngestBatcher.Builder builder = IngestBatcher.builder()
                 .instanceProperties(instanceProperties)
-                .tablePropertiesProvider(new FixedTablePropertiesProvider(List.of(tableProperties)))
+                .tablePropertiesProvider(new FixedTablePropertiesProvider(tableProperties))
                 .jobIdSupplier(jobIdSupplier(jobIds))
                 .timeSupplier(timeSupplier(FIRST_REQUEST_TIME.plus(Duration.ofSeconds(20))))
                 .store(store).queueClient(queues);

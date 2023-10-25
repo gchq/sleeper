@@ -38,21 +38,19 @@ import sleeper.cdk.Utils;
 import sleeper.cdk.jars.BuiltJar;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 public class CommonEmrBulkImportHelper {
 
@@ -60,34 +58,23 @@ public class CommonEmrBulkImportHelper {
     private final String shortId;
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
-    private final IBucket configBucket;
-    private final List<IBucket> ingestBuckets;
+    private final CoreStacks coreStacks;
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
+                                     CoreStacks coreStacks,
                                      IngestStatusStoreResources ingestStatusStoreResources) {
-        this(scope, shortId, instanceProperties, ingestStatusStoreResources,
-                Bucket.fromBucketName(scope, "ConfigBucket", instanceProperties.get(CONFIG_BUCKET)),
-                addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties));
-    }
-
-    public CommonEmrBulkImportHelper(Construct scope, String shortId,
-                                     InstanceProperties instanceProperties,
-                                     IngestStatusStoreResources ingestStatusStoreResources,
-                                     IBucket configBucket,
-                                     List<IBucket> ingestBuckets) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
+        this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
-        this.configBucket = configBucket;
-        this.ingestBuckets = ingestBuckets;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
     // will have its own queue. The shortId is used to ensure the names of
     // the queues are different.
-    public Queue createJobQueue(SystemDefinedInstanceProperty jobQueueUrl, SystemDefinedInstanceProperty jobQueueArn, ITopic errorsTopic) {
+    public Queue createJobQueue(CdkDefinedInstanceProperty jobQueueUrl, CdkDefinedInstanceProperty jobQueueArn, ITopic errorsTopic) {
         String instanceId = instanceProperties.get(ID);
         Queue queueForDLs = Queue.Builder
                 .create(scope, "BulkImport" + shortId + "JobDeadLetterQueue")
@@ -122,8 +109,7 @@ public class CommonEmrBulkImportHelper {
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
         instanceProperties.set(jobQueueArn, emrBulkImportJobQueue.getQueueArn());
-        addIngestSourceRoleReferences(scope, scope.getNode().getId() + "Writer", instanceProperties)
-                .forEach(emrBulkImportJobQueue::grantSendMessages);
+        emrBulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
 
         return emrBulkImportJobQueue;
     }
@@ -156,9 +142,9 @@ public class CommonEmrBulkImportHelper {
                 .logRetention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
-        configBucket.grantRead(function);
+        coreStacks.grantReadConfigAndPartitions(function);
         importBucket.grantReadWrite(function);
-        ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(function));
+        coreStacks.grantReadIngestSources(function);
         statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()

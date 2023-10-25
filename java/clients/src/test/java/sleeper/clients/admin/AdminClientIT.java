@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.EXIT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.MAIN_SCREEN;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.NO_INSTANCE_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.PROPERTY_SAVE_CHANGES_SCREEN;
@@ -35,8 +34,8 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_N
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
@@ -59,11 +58,9 @@ class AdminClientIT extends AdminClientITBase {
     void shouldPrintTableNamesReportWhenChosen() throws Exception {
         // Given
         InstanceProperties instanceProperties = createValidInstanceProperties();
-        instanceProperties.saveToS3(s3);
         TableProperties tableProperties1 = createValidTableProperties(instanceProperties, "test-table-1");
-        tableProperties1.saveToS3(s3);
         TableProperties tableProperties2 = createValidTableProperties(instanceProperties, "test-table-2");
-        tableProperties2.saveToS3(s3);
+        setInstanceProperties(instanceProperties, tableProperties1, tableProperties2);
 
         // When
         String output = runClient()
@@ -99,7 +96,7 @@ class AdminClientIT extends AdminClientITBase {
     void shouldEditAnInstanceProperty() throws Exception {
         // Given
         InstanceProperties before = createValidInstanceProperties();
-        InstanceProperties after = createValidInstanceProperties();
+        InstanceProperties after = InstanceProperties.copyOf(before);
         after.set(MAXIMUM_CONNECTIONS_TO_S3, "2");
 
         // When
@@ -124,7 +121,7 @@ class AdminClientIT extends AdminClientITBase {
         InstanceProperties instanceProperties = createValidInstanceProperties();
         TableProperties before = createValidTableProperties(instanceProperties);
         before.set(ITERATOR_CLASS_NAME, "BeforeIteratorClass");
-        TableProperties after = createValidTableProperties(instanceProperties);
+        TableProperties after = TableProperties.copyOf(before);
         after.set(ITERATOR_CLASS_NAME, "AfterIteratorClass");
 
         // When
@@ -138,20 +135,19 @@ class AdminClientIT extends AdminClientITBase {
                         PROMPT_SAVE_SUCCESSFUL_RETURN_TO_MAIN +
                         DISPLAY_MAIN_SCREEN);
 
-        TableProperties found = new TableProperties(instanceProperties);
-        found.loadFromS3(s3, before.get(TABLE_NAME));
+        TableProperties found = tablePropertiesStore.loadByName(before.get(TABLE_NAME)).orElseThrow();
         assertThat(found.get(ITERATOR_CLASS_NAME)).isEqualTo("AfterIteratorClass");
     }
 
     @Test
     void shouldFailAtStartupWhenInstanceDoesNotExist() throws Exception {
-
         // When
+        instanceId = "not-an-instance";
         String output = runClient().runGetOutput();
 
         // Then
-        assertThat(output).startsWith(NO_INSTANCE_SCREEN +
-                        "Cause: The specified key does not exist.")
+        assertThat(output).startsWith("Could not load properties for instance not-an-instance\n" +
+                        "Cause: The specified bucket does not exist")
                 .contains("Amazon S3");
     }
 }

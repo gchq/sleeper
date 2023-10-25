@@ -48,6 +48,7 @@ source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
 START_TIMESTAMP=$(record_time)
 START_TIME=$(recorded_time_str "$START_TIMESTAMP" "%Y%m%d-%H%M%S")
+START_TIME_SHORT=$(recorded_time_str "$START_TIMESTAMP" "%m%d%H%M")
 OUTPUT_DIR="/tmp/sleeper/${TEST_SUITE_NAME}Tests/$START_TIME"
 
 mkdir -p "$OUTPUT_DIR"
@@ -60,9 +61,10 @@ runMavenSystemTests() {
     SHORT_ID=$1
     TEST_NAME=$2
     EXTRA_MAVEN_PARAMS=$3
-    mkdir "$OUTPUT_DIR/$TEST_NAME"
+    TEST_OUTPUT_DIR="$OUTPUT_DIR/$TEST_NAME"
+    mkdir "$TEST_OUTPUT_DIR"
     ./maven/deployTest.sh "$SHORT_ID" "$VPC" "$SUBNETS" \
-      -Dsleeper.system.test.output.dir="$OUTPUT_DIR/$TEST_NAME" \
+      -Dsleeper.system.test.output.dir="$TEST_OUTPUT_DIR" \
       "$EXTRA_MAVEN_PARAMS" \
       &> "$OUTPUT_DIR/$TEST_NAME.log"
     EXIT_CODE=$?
@@ -70,19 +72,19 @@ runMavenSystemTests() {
     pushd "$MAVEN_DIR"
     mvn --batch-mode site site:stage -pl system-test/system-test-suite \
        -DskipTests=true \
-       -DstagingDirectory="$OUTPUT_DIR/site"
+       -DstagingDirectory="$TEST_OUTPUT_DIR/site"
     popd
-    pushd "$OUTPUT_DIR/site"
-    zip -r "../site.zip" "."
+    pushd "$TEST_OUTPUT_DIR/site"
+    zip -r "$OUTPUT_DIR/$TEST_NAME-site.zip" "."
     popd
-    rm -rf "$OUTPUT_DIR/site"
+    rm -rf "$TEST_OUTPUT_DIR/site"
     INSTANCE_IDS=()
-    read_instance_ids_to_array "$OUTPUT_DIR/$TEST_NAME/instanceIds.txt" INSTANCE_IDS
+    read_instance_ids_to_array "$TEST_OUTPUT_DIR/instanceIds.txt" INSTANCE_IDS
     ./maven/tearDown.sh "$SHORT_ID" "${INSTANCE_IDS[@]}" &> "$OUTPUT_DIR/$TEST_NAME.tearDown.log"
 }
 
-runMavenSystemTests "mvn-$START_TIME" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
-runMavenSystemTests "s3-$START_TIME" s3-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.s3.S3StateStore
+runMavenSystemTests "mvn-$START_TIME_SHORT" $TEST_SUITE_NAME $TEST_SUITE_PARAMS
+runMavenSystemTests "s3-$START_TIME_SHORT" s3-state-store -Dsleeper.system.test.force.statestore.classname=sleeper.statestore.s3.S3StateStore
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \

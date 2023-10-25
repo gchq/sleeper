@@ -33,8 +33,10 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.Record;
@@ -55,9 +57,9 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Objects.requireNonNull;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -134,13 +136,13 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
         TableProperties tableProperties = createTestTableProperties(instanceProperties, tableDefinition.schema);
         tableProperties.set(TABLE_NAME, tableDefinition.tableName);
-        tableProperties.saveToS3(this.s3Client);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 
     private TableProperties getTableProperties(String tableName) {
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
-        return tablePropertiesProvider.getTableProperties(tableName);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        return tablePropertiesProvider.getByName(tableName);
     }
 
     public StateStore getStateStore(String tableName) {
@@ -164,6 +166,7 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.saveToS3(s3Client);
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         this.tableDefinitions.forEach(tableDefinition -> {

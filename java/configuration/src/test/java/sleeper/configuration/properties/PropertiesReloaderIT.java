@@ -16,8 +16,11 @@
 
 package sleeper.configuration.properties;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -25,17 +28,21 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.schema.Schema;
 
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -46,78 +53,85 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class PropertiesReloaderIT {
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.getStore(instanceProperties, s3Client, dynamoClient);
+
+    @BeforeEach
+    void setUp() {
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+    }
 
     @Test
-    void shouldReloadInstancePropertiesIfForceReloadPropertiesSetToTrue() throws Exception {
+    void shouldReloadInstancePropertiesIfForceReloadPropertiesSetToTrue() {
         // Given
-        InstanceProperties propertiesBefore = createTestInstanceProperties(s3Client, properties -> {
-            properties.set(FORCE_RELOAD_PROPERTIES, "true");
-            properties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        });
-        updatePropertiesInS3(propertiesBefore, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, propertiesBefore);
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
+        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
+        instanceProperties.saveToS3(s3Client);
+        updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
+        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
         // When
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(propertiesBefore.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(26);
+        assertThat(instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(26);
     }
 
     @Test
-    void shouldNotReloadInstancePropertiesIfForceReloadPropertiesSetToFalse() throws Exception {
+    void shouldNotReloadInstancePropertiesIfForceReloadPropertiesSetToFalse() {
         // Given
-        InstanceProperties propertiesBefore = createTestInstanceProperties(s3Client, properties -> {
-            properties.set(FORCE_RELOAD_PROPERTIES, "false");
-            properties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
-        });
-        updatePropertiesInS3(propertiesBefore, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
-        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, propertiesBefore);
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
+        instanceProperties.set(MAXIMUM_CONNECTIONS_TO_S3, "42");
+        instanceProperties.saveToS3(s3Client);
+        updatePropertiesInS3(instanceProperties, properties -> properties.set(MAXIMUM_CONNECTIONS_TO_S3, "26"));
+        PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties);
 
         // When
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(propertiesBefore.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(42);
+        assertThat(instanceProperties.getInt(MAXIMUM_CONNECTIONS_TO_S3)).isEqualTo(42);
     }
 
     @Test
-    void shouldReloadTablePropertiesIfForceReloadPropertiesSetToTrue() throws Exception {
+    void shouldReloadTablePropertiesIfForceReloadPropertiesSetToTrue() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties(s3Client,
-                properties -> properties.set(FORCE_RELOAD_PROPERTIES, "true"));
-        String tableName = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client,
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "true");
+        instanceProperties.saveToS3(s3Client);
+        String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
-        updatePropertiesInS3(instanceProperties, tableName,
+        updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
-        provider.getTableProperties(tableName);
+        TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        provider.getByName(tableName);
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
         // When
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(provider.getTableProperties(tableName)
+        assertThat(provider.getByName(tableName)
                 .getInt(PARTITION_SPLIT_THRESHOLD))
                 .isEqualTo(456);
     }
 
     @Test
-    void shouldNotReloadTablePropertiesIfForceReloadPropertiesSetToFalse() throws Exception {
+    void shouldNotReloadTablePropertiesIfForceReloadPropertiesSetToFalse() {
         // Given
-        InstanceProperties instanceProperties = createTestInstanceProperties(s3Client,
-                properties -> properties.set(FORCE_RELOAD_PROPERTIES, "false"));
-        String tableName = createTestTableProperties(instanceProperties, schemaWithKey("key"), s3Client,
+        instanceProperties.set(FORCE_RELOAD_PROPERTIES, "false");
+        instanceProperties.saveToS3(s3Client);
+        String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
-        provider.getTableProperties(tableName);
-        updatePropertiesInS3(instanceProperties, tableName,
+        TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
+        provider.getByName(tableName);
+        updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
         PropertiesReloader reloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
@@ -125,27 +139,30 @@ public class PropertiesReloaderIT {
         reloader.reloadIfNeeded();
 
         // Then
-        assertThat(provider.getTableProperties(tableName)
+        assertThat(provider.getByName(tableName)
                 .getInt(PARTITION_SPLIT_THRESHOLD))
                 .isEqualTo(123);
     }
 
-    private InstanceProperties updatePropertiesInS3(
+    private void updatePropertiesInS3(
             InstanceProperties propertiesBefore, Consumer<InstanceProperties> extraProperties) {
         InstanceProperties propertiesAfter = new InstanceProperties();
         propertiesAfter.loadFromS3(s3Client, propertiesBefore.get(CONFIG_BUCKET));
         extraProperties.accept(propertiesAfter);
         propertiesAfter.saveToS3(s3Client);
-        return propertiesAfter;
     }
 
-    private TableProperties updatePropertiesInS3(
-            InstanceProperties instanceProperties, String tableName,
-            Consumer<TableProperties> extraProperties) {
-        TableProperties propertiesAfter = new TableProperties(instanceProperties);
-        propertiesAfter.loadFromS3(s3Client, tableName);
+    private void updatePropertiesInS3(String tableName,
+                                      Consumer<TableProperties> extraProperties) {
+        TableProperties propertiesAfter = tablePropertiesStore.loadByName(tableName).orElseThrow();
         extraProperties.accept(propertiesAfter);
-        propertiesAfter.saveToS3(s3Client);
-        return propertiesAfter;
+        tablePropertiesStore.save(propertiesAfter);
+    }
+
+    private TableProperties createTestTable(Schema schema, Consumer<TableProperties> tableConfig) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        tableConfig.accept(tableProperties);
+        tablePropertiesStore.save(tableProperties);
+        return tableProperties;
     }
 }

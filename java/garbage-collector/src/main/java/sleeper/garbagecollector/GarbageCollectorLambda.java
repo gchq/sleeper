@@ -29,14 +29,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda for executing the {@link GarbageCollector}.
@@ -60,13 +59,11 @@ public class GarbageCollectorLambda {
         instanceProperties.loadFromS3(s3Client, s3Bucket);
         LOGGER.debug("Loaded InstanceProperties from {}", s3Bucket);
 
-        TableLister tableLister = new TableLister(s3Client, instanceProperties);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
 
         this.garbageCollector = new GarbageCollector(conf,
-                tableLister,
                 tablePropertiesProvider,
                 stateStoreProvider,
                 instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));

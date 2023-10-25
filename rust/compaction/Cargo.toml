@@ -36,9 +36,9 @@ cxx = { version = "1.0.104" } # Exception handling for Rust
 libc = { version = "0.2.147" } # FFI type support
 log = { version = "0.4.19" } # Logging support
 itertools = { version = "0.11.0" } # kmerge
-arrow = { version = "47.0.0" } # Batch of reading from Parquet files
+arrow = { version = "48.0.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.28" } # Async processing
-parquet = { version = "47.0.0", features = [
+parquet = { version = "48.0.0", features = [
     "arrow",
     "async",
     "object_store",

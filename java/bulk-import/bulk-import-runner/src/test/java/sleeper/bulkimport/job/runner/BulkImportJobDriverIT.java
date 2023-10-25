@@ -40,7 +40,10 @@ import sleeper.bulkimport.job.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.job.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.job.runner.rdd.BulkImportJobRDDDriver;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TablePropertiesStore;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -82,9 +85,9 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -168,6 +171,7 @@ class BulkImportJobDriverIT {
         instanceProperties.set(FILE_SYSTEM, "file://");
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
 
@@ -176,12 +180,16 @@ class BulkImportJobDriverIT {
 
     public TableProperties createTable(InstanceProperties instanceProperties) {
         TableProperties tableProperties = createTableProperties(instanceProperties);
-        tableProperties.saveToS3(s3Client);
+        tablePropertiesStore(instanceProperties).save(tableProperties);
         return tableProperties;
     }
 
     public TableProperties createTableProperties(InstanceProperties instanceProperties) {
         return createTestTableProperties(instanceProperties, schema);
+    }
+
+    private TablePropertiesStore tablePropertiesStore(InstanceProperties instanceProperties) {
+        return S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient);
     }
 
     private static Schema getSchema() {
@@ -272,17 +280,17 @@ class BulkImportJobDriverIT {
         writer.close();
     }
 
-    private static StateStore initialiseStateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
+    private StateStore initialiseStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
         StateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;
     }
 
-    private static StateStore initialiseStateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
-        return initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.emptyList());
+    private StateStore initialiseStateStore(InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
+        return initialiseStateStore(instanceProperties, tableProperties, Collections.emptyList());
     }
 
-    private static StateStore initialiseS3StateStore(AmazonDynamoDB dynamoDBClient, InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
+    private StateStore initialiseS3StateStore(InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
         StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, new Configuration());
         stateStore.initialise();
         return stateStore;
@@ -311,7 +319,7 @@ class BulkImportJobDriverIT {
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
-        StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
+        StateStore stateStore = initialiseStateStore(instanceProperties, tableProperties);
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
@@ -359,7 +367,7 @@ class BulkImportJobDriverIT {
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
-        StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
+        StateStore stateStore = initialiseStateStore(instanceProperties, tableProperties);
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
@@ -407,7 +415,7 @@ class BulkImportJobDriverIT {
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
-        StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, Collections.singletonList(50));
+        StateStore stateStore = initialiseStateStore(instanceProperties, tableProperties, Collections.singletonList(50));
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
@@ -448,7 +456,7 @@ class BulkImportJobDriverIT {
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
-        StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
+        StateStore stateStore = initialiseStateStore(instanceProperties, tableProperties, getSplitPointsForLotsOfRecords());
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)
@@ -520,7 +528,7 @@ class BulkImportJobDriverIT {
             bufferedWriter.append("test");
         }
         //  - State store
-        StateStore stateStore = initialiseStateStore(dynamoDBClient, instanceProperties, tableProperties);
+        StateStore stateStore = initialiseStateStore(instanceProperties, tableProperties);
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(Lists.newArrayList(dataDir + "/import/"))
@@ -548,14 +556,14 @@ class BulkImportJobDriverIT {
         InstanceProperties instanceProperties = createInstanceProperties(s3Client, dataDir);
         TableProperties tableProperties = createTableProperties(instanceProperties);
         tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
-        tableProperties.saveToS3(s3Client);
+        tablePropertiesStore(instanceProperties).save(tableProperties);
         //  - Write some data to be imported
         List<Record> records = getRecords();
         writeRecordsToFile(records, dataDir + "/import/a.parquet");
         List<String> inputFiles = new ArrayList<>();
         inputFiles.add(dataDir + "/import/a.parquet");
         //  - State store
-        StateStore stateStore = initialiseS3StateStore(dynamoDBClient, instanceProperties, tableProperties);
+        StateStore stateStore = initialiseS3StateStore(instanceProperties, tableProperties);
 
         // When
         BulkImportJob job = BulkImportJob.builder().id("my-job").files(inputFiles)

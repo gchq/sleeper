@@ -25,12 +25,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.datageneration.GenerateNumberedValue.stringFromPrefixAndPadToSize;
 import static sleeper.systemtest.datageneration.GenerateNumberedValueOverrides.overrideField;
@@ -44,6 +46,9 @@ public class EmrPersistentBulkImportIT {
     @RegisterExtension
     public final ReportingExtension reporting = ReportingExtension.reportAlways(
             sleeper.reportsForExtension().ingestJobs());
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
+            BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach
     void setUp() throws InterruptedException {
@@ -59,8 +64,7 @@ public class EmrPersistentBulkImportIT {
     @Test
     void shouldBulkImport100Records() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(properties ->
-                properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
+        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                 .rootFirst("root")
                 .splitToNewChildren("root", "A", "B", "row-50")

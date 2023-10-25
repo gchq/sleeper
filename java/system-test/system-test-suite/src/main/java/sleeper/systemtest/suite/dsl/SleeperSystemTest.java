@@ -21,10 +21,12 @@ import software.amazon.awscdk.NestedStack;
 import sleeper.clients.deploy.DeployInstanceConfiguration;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
 import sleeper.systemtest.datageneration.RecordNumbers;
 import sleeper.systemtest.drivers.ingest.IngestSourceFilesDriver;
+import sleeper.systemtest.drivers.ingest.PurgeQueueDriver;
 import sleeper.systemtest.drivers.instance.OptionalStacksDriver;
 import sleeper.systemtest.drivers.instance.ReportingContext;
 import sleeper.systemtest.drivers.instance.SleeperInstanceContext;
@@ -41,7 +43,7 @@ import sleeper.systemtest.suite.fixtures.SystemTestClients;
 import sleeper.systemtest.suite.fixtures.SystemTestInstance;
 
 import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 /**
@@ -75,6 +77,7 @@ public class SleeperSystemTest {
             clients.getSts(), clients.getRegionProvider(), clients.getCloudFormation(), clients.getEcr());
     private final ReportingContext reportingContext = new ReportingContext(parameters);
     private final IngestSourceFilesDriver sourceFiles = new IngestSourceFilesDriver(systemTest, clients.getS3V2());
+    private final PurgeQueueDriver purgeQueueDriver = new PurgeQueueDriver(instance, clients.getSqs());
 
     private SleeperSystemTest() {
     }
@@ -111,9 +114,8 @@ public class SleeperSystemTest {
         return instance.getTableProperties();
     }
 
-    public void updateTableProperties(Consumer<TableProperties> tablePropertiesConsumer) {
-        tablePropertiesConsumer.accept(instance.getTableProperties());
-        instance.getTableProperties().saveToS3(clients.getS3());
+    public void updateTableProperties(Map<TableProperty, String> values) {
+        instance.updateTableProperties(values);
     }
 
     public SystemTestSourceFiles sourceFiles() {
@@ -129,7 +131,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestIngest ingest() {
-        return new SystemTestIngest(instance, clients, sourceFiles);
+        return new SystemTestIngest(instance, clients, sourceFiles, purgeQueueDriver);
     }
 
     public SystemTestQuery query() {

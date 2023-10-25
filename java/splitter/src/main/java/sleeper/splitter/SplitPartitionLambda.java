@@ -37,7 +37,7 @@ import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Triggered by an SQS event containing a {@link SplitPartitionJobDefinition}
@@ -61,7 +61,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
     }
@@ -75,7 +75,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, Void> {
                 SplitPartitionJobDefinition job = new SplitPartitionJobDefinitionSerDe(tablePropertiesProvider)
                         .fromJson(serialisedJob);
                 LOGGER.info("Received partition splitting job {}", job);
-                TableProperties tableProperties = tablePropertiesProvider.getTableProperties(job.getTableName());
+                TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
                 StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
                 SplitPartition splitPartition = new SplitPartition(stateStore, tableProperties.getSchema(), conf);
                 splitPartition.splitPartition(job.getPartition(), job.getFileNames());

@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
@@ -63,10 +63,12 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
+                s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -109,10 +111,12 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
+                s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -150,7 +154,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file2018 = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -160,7 +164,9 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
+                s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -202,7 +208,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -212,7 +218,9 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
+                s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -253,10 +261,12 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         String file = stateStore.getActiveFiles().get(0).getFilename();
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
+                s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);
@@ -296,7 +306,7 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
         TableProperties tableProperties = createTable(instanceProperties, 2018, 2019, 2020);
 
         // When
-        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, createDynamoClient());
+        DynamoDBStateStore stateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         Map<String, List<String>> partitionToActiveFilesMap = stateStore.getPartitionToActiveFilesMap();
         String file = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -308,7 +318,9 @@ public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
                 .findAny()
                 .orElseThrow(RuntimeException::new);
 
-        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(createS3Client(), instanceProperties.get(CONFIG_BUCKET),
+        SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
+                s3Client, dynamoClient,
+                instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
         String tableName = tableProperties.get(TABLE_NAME);

@@ -25,15 +25,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.properties.table.TableProperty;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @Tag("SystemTest")
@@ -52,7 +53,7 @@ public class PythonApiIT {
     class IngestFiles {
 
         @RegisterExtension
-        public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+        public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
                 sleeper.reportsForExtension().ingestTasksAndJobs());
 
         @Test
@@ -111,8 +112,7 @@ public class PythonApiIT {
         @Test
         void shouldBulkImportFilesFromS3() throws IOException, InterruptedException {
             // Given
-            sleeper.updateTableProperties(tableProperties ->
-                    tableProperties.set(TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
+            sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
             sleeper.sourceFiles()
                     .createWithNumberedRecords("file1.parquet", LongStream.range(0, 100))
                     .createWithNumberedRecords("file2.parquet", LongStream.range(100, 200));

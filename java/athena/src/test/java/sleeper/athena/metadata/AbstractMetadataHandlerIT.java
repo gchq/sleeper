@@ -64,6 +64,9 @@ public abstract class AbstractMetadataHandlerIT {
             .valueFields(new Field("count", new LongType()))
             .build();
 
+    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+
     @BeforeEach
     public void setUpCredentials() {
         // Annoyingly the MetadataHandler hard-codes the S3 client it uses to check the spill bucket. Therefore
@@ -78,29 +81,23 @@ public abstract class AbstractMetadataHandlerIT {
         System.clearProperty(ACCESS_KEY_SYSTEM_PROPERTY);
         System.clearProperty(SECRET_KEY_SYSTEM_PROPERTY);
         System.clearProperty(AWS_REGION_SYSTEM_PROPERTY);
-    }
-
-    protected AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    protected AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        s3Client.shutdown();
+        dynamoClient.shutdown();
     }
 
     protected InstanceProperties createInstance() throws IOException {
-        return TestUtils.createInstance(createS3Client(), createDynamoClient(),
+        return TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
         return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                createDynamoClient(), createS3Client(), 2018, 2019, 2020);
+                dynamoClient, s3Client, 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties);
-        TestUtils.ingestData(createDynamoClient(), createS3Client(), createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(dynamoClient, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

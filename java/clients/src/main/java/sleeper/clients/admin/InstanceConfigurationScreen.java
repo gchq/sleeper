@@ -16,6 +16,12 @@
 
 package sleeper.clients.admin;
 
+import sleeper.clients.admin.properties.AdminClientPropertiesStore;
+import sleeper.clients.admin.properties.PropertiesDiff;
+import sleeper.clients.admin.properties.PropertyGroupSelectHelper;
+import sleeper.clients.admin.properties.PropertyGroupWithCategory;
+import sleeper.clients.admin.properties.UpdatePropertiesRequest;
+import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.ChooseOne;
@@ -38,9 +44,9 @@ public class InstanceConfigurationScreen {
     private final PropertyGroupSelectHelper selectGroup;
     private final TableSelectHelper selectTable;
     private final AdminClientPropertiesStore store;
-    private final UpdatePropertiesWithNano editor;
+    private final UpdatePropertiesWithTextEditor editor;
 
-    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithNano editor) {
+    public InstanceConfigurationScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store, UpdatePropertiesWithTextEditor editor) {
         this.out = out;
         this.in = in;
         this.chooseOne = new ChooseOne(out, in);
@@ -101,13 +107,13 @@ public class InstanceConfigurationScreen {
     private WithProperties<TableProperties> withTableProperties(
             InstanceProperties instanceProperties, TableProperties properties) {
         return new WithProperties<>(properties, editor::openPropertiesFile,
-                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
+                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties));
     }
 
     private WithProperties<TableProperties> withGroupedTableProperties(
             InstanceProperties instanceProperties, TableProperties properties, PropertyGroup group) {
         return new WithProperties<>(properties, props -> editor.openPropertiesFile(props, group),
-                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties, diff));
+                (tableProperties, diff) -> store.saveTableProperties(instanceProperties, tableProperties));
     }
 
     private Optional<InstanceProperties> tryLoadInstanceProperties(String instanceId) {

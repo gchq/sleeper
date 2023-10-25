@@ -138,7 +138,7 @@ class TablePropertiesTest {
         assertThat(TableProperty.getAll().stream()
                 .filter(property -> property.getDefaultProperty() != null)
                 .filter(property -> property.getDefaultProperty()
-                        .isRunCDKDeployWhenChanged() != property.isRunCDKDeployWhenChanged()))
+                        .isRunCdkDeployWhenChanged() != property.isRunCdkDeployWhenChanged()))
                 .isEmpty();
     }
 

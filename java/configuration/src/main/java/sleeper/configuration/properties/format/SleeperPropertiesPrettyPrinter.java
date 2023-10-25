@@ -119,7 +119,7 @@ public class SleeperPropertiesPrettyPrinter<T extends SleeperProperty> {
     private void printProperty(SleeperProperties<T> properties, T property) {
         println();
         println(formatDescription(property));
-        if (property.isSystemDefined()) {
+        if (!property.isUserDefined()) {
             println("# (this property is system-defined and may not be edited)");
         }
         String value = properties.get(property);

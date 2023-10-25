@@ -31,6 +31,7 @@ import sleeper.clients.docker.DeployDockerInstance;
 import sleeper.clients.docker.TearDownDockerInstance;
 import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.record.Record;
@@ -43,11 +44,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILEINFO_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.READY_FOR_GC_FILEINFO_TABLENAME;
 import static sleeper.ingest.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 @Testcontainers
@@ -61,8 +62,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         // Then
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3Client, "system-test");
+        TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+                .loadByName("system-test").orElseThrow();
         assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
     }
 
@@ -72,8 +73,6 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
         DeployDockerInstance.deploy("test-instance-2", s3Client, dynamoDB, sqsClient);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-2");
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        tableProperties.loadFromS3(s3Client, "system-test");
 
         // When
         TearDownDockerInstance.tearDown("test-instance-2", s3Client, dynamoDB, sqsClient);
@@ -103,8 +102,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             DeployDockerInstance.deploy("test-instance-3", s3Client, dynamoDB, sqsClient);
             InstanceProperties instanceProperties = new InstanceProperties();
             instanceProperties.loadFromS3GivenInstanceId(s3Client, "test-instance-3");
-            TableProperties tableProperties = new TableProperties(instanceProperties);
-            tableProperties.loadFromS3(s3Client, "system-test");
+            TableProperties tableProperties = S3TableProperties.getStore(instanceProperties, s3Client, dynamoDB)
+                    .loadByName("system-test").orElseThrow();
 
             // When
             List<Record> records = List.of(

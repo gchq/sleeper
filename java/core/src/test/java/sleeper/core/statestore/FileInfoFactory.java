@@ -113,7 +113,6 @@ public class FileInfoFactory {
 
     private FileInfo fileForPartition(Partition partition, String filename, long records) {
         return FileInfo.builder()
-                .rowKeyTypes(partition.getRowKeyTypes())
                 .filename(filename)
                 .partitionId(partition.getId())
                 .numberOfRecords(records)

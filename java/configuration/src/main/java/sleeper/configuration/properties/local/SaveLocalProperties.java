@@ -16,10 +16,12 @@
 
 package sleeper.configuration.properties.local;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.properties.format.SleeperPropertiesPrettyPrinter;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import java.io.BufferedWriter;
@@ -37,10 +39,12 @@ public class SaveLocalProperties {
     private SaveLocalProperties() {
     }
 
-    public static InstanceProperties saveFromS3(AmazonS3 s3, String instanceId, Path directory) throws IOException {
+    public static InstanceProperties saveFromS3(AmazonS3 s3, AmazonDynamoDB dynamoDB, String instanceId, Path directory) throws IOException {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3, instanceId);
-        saveToDirectory(directory, instanceProperties, TableProperties.streamTablesFromS3(s3, instanceProperties));
+        saveToDirectory(directory, instanceProperties,
+                S3TableProperties.getStore(instanceProperties, s3, dynamoDB)
+                        .streamAllTables());
         return instanceProperties;
     }
 

@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 /**
  * A utility class to reinitialise a table by first deleting the table's contents
@@ -78,8 +78,8 @@ public class ReinitialiseTable {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.loadFromS3GivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider =
-                new TablePropertiesProvider(s3Client, instanceProperties);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
 
         Configuration conf = new Configuration();
         conf.set("fs.s3a.aws.credentials.provider", DefaultAWSCredentialsProviderChain.class.getName());

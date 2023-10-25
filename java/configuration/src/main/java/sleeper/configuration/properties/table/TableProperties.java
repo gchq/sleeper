@@ -15,9 +15,6 @@
  */
 package sleeper.configuration.properties.table;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -33,27 +30,22 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
+import sleeper.core.table.TableId;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.configuration.properties.table.TableProperty.SCHEMA;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class TableProperties extends SleeperProperties<TableProperty> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
-    public static final String TABLES_PREFIX = "tables";
     // Schema is cached for faster access
     private Schema schema;
     private final InstanceProperties instanceProperties; // Used for default properties
@@ -66,6 +58,11 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         super(properties);
         this.instanceProperties = instanceProperties;
         schema = loadSchema(properties);
+    }
+
+    public static TableProperties copyOf(TableProperties tableProperties) {
+        InstanceProperties instanceProperties = InstanceProperties.copyOf(tableProperties.instanceProperties);
+        return new TableProperties(instanceProperties, loadProperties(tableProperties.saveAsString()));
     }
 
     public static TableProperties loadAndValidate(InstanceProperties instanceProperties, Properties properties) {
@@ -132,24 +129,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         set(TableProperty.SCHEMA, new SchemaSerDe().toJson(schema));
     }
 
-    public void saveToS3(AmazonS3 s3Client) {
-        super.saveToS3(s3Client, instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + get(TableProperty.TABLE_NAME));
-        LOGGER.info("Saved table properties to bucket {}, key {}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + get(TABLE_NAME));
-    }
-
-    public void loadFromS3(AmazonS3 s3Client, String tableName) {
-        loadFromString(loadStringFromS3(s3Client, instanceProperties, tableName));
-    }
-
-    public static Properties loadPropertiesFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
-        return loadProperties(loadStringFromS3(s3Client, instanceProperties, tableName));
-    }
-
-    private static String loadStringFromS3(AmazonS3 s3Client, InstanceProperties instanceProperties, String tableName) {
-        LOGGER.info("Loading table properties from bucket {}, key {}/{}", instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX, tableName);
-        return s3Client.getObjectAsString(instanceProperties.get(CONFIG_BUCKET), TABLES_PREFIX + "/" + tableName);
-    }
-
     @Override
     public SleeperPropertyIndex<TableProperty> getPropertiesIndex() {
         return TableProperty.Index.INSTANCE;
@@ -160,29 +139,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
     }
 
-    public static Stream<TableProperties> streamTablesFromS3(AmazonS3 s3, InstanceProperties instanceProperties) {
-        Iterable<S3ObjectSummary> objects = S3Objects.withPrefix(
-                s3, instanceProperties.get(CONFIG_BUCKET), "tables/");
-        return StreamSupport.stream(objects.spliterator(), false)
-                .map(tableConfigObject -> {
-                    try {
-                        return loadTableFromS3(s3, instanceProperties, tableConfigObject);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                });
-    }
-
-    private static TableProperties loadTableFromS3(
-            AmazonS3 s3, InstanceProperties instanceProperties, S3ObjectSummary tableConfigObject) throws IOException {
-        TableProperties tableProperties = new TableProperties(instanceProperties);
-        try (InputStream in = s3.getObject(
-                        tableConfigObject.getBucketName(),
-                        tableConfigObject.getKey())
-                .getObjectContent()) {
-            tableProperties.load(in);
-        }
-        return tableProperties;
+    public TableId getId() {
+        return TableId.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
     }
 
     @Override

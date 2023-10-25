@@ -37,14 +37,13 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreProvider;
-import sleeper.table.job.TableLister;
 import sleeper.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * A lambda function for executing {@link CreateJobs}.
@@ -58,7 +57,6 @@ public class CreateJobsLambda {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final PropertiesReloader propertiesReloader;
     private final StateStoreProvider stateStoreProvider;
-    private final TableLister tableLister;
     private final CompactionJobStatusStore jobStatusStore;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateJobsLambda.class);
@@ -66,7 +64,6 @@ public class CreateJobsLambda {
     /**
      * No-args constructor used by Lambda service. Dynamo file table name will be obtained from an environment variable.
      *
-     * @throws IOException            if instance properties cannot be loaded from S3
      * @throws ObjectFactoryException if user jars cannot be loaded
      */
     public CreateJobsLambda() throws ObjectFactoryException {
@@ -80,11 +77,10 @@ public class CreateJobsLambda {
 
         this.dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.sqsClient = AmazonSQSClientBuilder.defaultClient();
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, conf);
-        this.tableLister = new TableLister(s3Client, instanceProperties);
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
@@ -105,11 +101,10 @@ public class CreateJobsLambda {
         this.dynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(endpointConfiguration)
                 .build();
-        this.tablePropertiesProvider = new TablePropertiesProvider(s3Client, instanceProperties);
+        this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.propertiesReloader = PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties,
                 HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties));
-        this.tableLister = new TableLister(s3Client, instanceProperties);
         this.jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
     }
 
@@ -118,7 +113,7 @@ public class CreateJobsLambda {
         LOGGER.info("CreateJobsLambda lambda triggered at {}", event.getTime());
         propertiesReloader.reloadIfNeeded();
 
-        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, tableLister, jobStatusStore);
+        CreateJobs createJobs = new CreateJobs(objectFactory, instanceProperties, tablePropertiesProvider, stateStoreProvider, sqsClient, jobStatusStore);
         try {
             createJobs.createJobs();
         } catch (StateStoreException | IOException | ObjectFactoryException e) {

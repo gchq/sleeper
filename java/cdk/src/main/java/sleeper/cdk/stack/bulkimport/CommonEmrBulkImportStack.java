@@ -40,12 +40,11 @@ import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
+import sleeper.configuration.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -53,15 +52,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_CLUSTER_ROLE_NAME;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_EC2_ROLE_NAME;
 
 public class CommonEmrBulkImportStack extends NestedStack {
     private final IRole ec2Role;
@@ -71,13 +69,12 @@ public class CommonEmrBulkImportStack extends NestedStack {
     public CommonEmrBulkImportStack(Construct scope,
                                     String id,
                                     InstanceProperties instanceProperties,
+                                    CoreStacks coreStacks,
                                     BulkImportBucketStack importBucketStack,
-                                    StateStoreStacks stateStoreStacks,
-                                    TableDataStack dataStack,
                                     IngestStatusStoreStack statusStoreStack) {
         super(scope, id);
         ec2Role = createEc2Role(this, instanceProperties,
-                importBucketStack.getImportBucket(), stateStoreStacks, dataStack);
+                importBucketStack.getImportBucket(), coreStacks);
         emrRole = createEmrRole(this, instanceProperties, ec2Role);
         securityConfiguration = createSecurityConfiguration(this, instanceProperties);
         IngestStatusStoreResources statusStore = statusStoreStack.getResources();
@@ -87,8 +84,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
 
     private static IRole createEc2Role(
             Construct scope, InstanceProperties instanceProperties, IBucket importBucket,
-            StateStoreStacks stateStoreStacks,
-            TableDataStack dataStack) {
+            CoreStacks coreStacks) {
 
         // The EC2 Role is the role assumed by the EC2 instances and is the one
         // we need to grant accesses to.
@@ -97,8 +93,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .description("The role assumed by the EC2 instances in EMR bulk import clusters")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
                 .build());
-        dataStack.getDataBucket().grantReadWrite(role);
-        stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(role);
+        coreStacks.grantIngest(role);
 
         // The role needs to be able to access the user's jars
         IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", instanceProperties.get(JARS_BUCKET));
@@ -138,9 +133,6 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .build());
 
         importBucket.grantReadWrite(role);
-
-        addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties)
-                .forEach(ingestBucket -> ingestBucket.grantRead(role));
         return role;
     }
 
@@ -221,7 +213,7 @@ public class CommonEmrBulkImportStack extends NestedStack {
                 .name(String.join("-", "sleeper", instanceProperties.get(ID), "EMRSecurityConfigurationProps"))
                 .securityConfiguration(jsonObject)
                 .build();
-        instanceProperties.set(SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SECURITY_CONF_NAME, securityConfigurationProps.getName());
         return new CfnSecurityConfiguration(scope, "EMRSecurityConfiguration", securityConfigurationProps);
     }
 

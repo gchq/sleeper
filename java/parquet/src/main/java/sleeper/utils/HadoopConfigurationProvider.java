@@ -24,6 +24,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 
 import static sleeper.configuration.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
+import static sleeper.configuration.properties.instance.CommonProperty.S3_UPLOAD_BLOCK_SIZE;
 import static sleeper.configuration.properties.instance.QueryProperty.MAXIMUM_CONNECTIONS_TO_S3_FOR_QUERIES;
 import static sleeper.configuration.properties.table.TableProperty.S3A_READAHEAD_RANGE;
 
@@ -55,6 +56,9 @@ public class HadoopConfigurationProvider {
     public static Configuration getConfigurationForECS(InstanceProperties instanceProperties) {
         Configuration conf = new Configuration();
         conf.set("fs.s3a.connection.maximum", instanceProperties.get(MAXIMUM_CONNECTIONS_TO_S3));
+        conf.set("fs.s3a.block.size", instanceProperties.get(S3_UPLOAD_BLOCK_SIZE));
+        conf.set("fs.s3a.bucket.probe", "0");
+        conf.set("fs.s3a.fast.upload", "true");
         if (System.getenv("AWS_ENDPOINT_URL") != null) {
             setLocalStackConfiguration(conf);
         } else {

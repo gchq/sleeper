@@ -58,8 +58,8 @@ public class PartitionsStatusReportArguments {
 
     public void runReport(AmazonS3 amazonS3, AmazonDynamoDB dynamoDBClient, PrintStream out) throws StateStoreException {
         InstanceProperties instanceProperties = ClientUtils.getInstanceProperties(amazonS3, instanceId);
-        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(amazonS3, instanceProperties);
-        TableProperties tableProperties = tablePropertiesProvider.getTableProperties(tableName);
+        TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, amazonS3, dynamoDBClient);
+        TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
         StateStoreProvider stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 

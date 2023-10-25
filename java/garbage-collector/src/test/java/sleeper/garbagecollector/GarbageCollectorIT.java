@@ -33,8 +33,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -49,7 +51,6 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.table.job.TableLister;
 
 import java.nio.file.Files;
 import java.time.Duration;
@@ -59,10 +60,10 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.configuration.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -80,16 +81,8 @@ public class GarbageCollectorIT {
 
     @TempDir
     public java.nio.file.Path tempDir;
-    private final AmazonS3 s3Client = createS3Client();
-    private final AmazonDynamoDB dynamoDBClient = createDynamoClient();
-
-    private AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
+    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
     @AfterEach
     void tearDown() {
@@ -126,7 +119,7 @@ public class GarbageCollectorIT {
 
             // When
             stateStore.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isFalse();
@@ -144,7 +137,7 @@ public class GarbageCollectorIT {
             createActiveFile(filePath.toString(), stateStore);
 
             // When
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -162,7 +155,7 @@ public class GarbageCollectorIT {
             createReadyForGCFile(filePath.toString(), stateStore);
 
             // When
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath)).isTrue();
@@ -186,7 +179,7 @@ public class GarbageCollectorIT {
 
             // When
             stateStore.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
@@ -211,7 +204,7 @@ public class GarbageCollectorIT {
 
             // When
             stateStore.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Stream.of(filePath1, filePath2, filePath3).filter(Files::exists))
@@ -259,7 +252,7 @@ public class GarbageCollectorIT {
             // When
             stateStore1.fixTime(currentTime);
             stateStore2.fixTime(currentTime);
-            createGarbageCollector(s3Client, instanceProperties, stateStoreProvider).run();
+            createGarbageCollector(instanceProperties, stateStoreProvider).run();
 
             // Then
             assertThat(Files.exists(filePath1)).isFalse();
@@ -293,7 +286,6 @@ public class GarbageCollectorIT {
     private void createFile(String filename, StateStore stateStore, FileInfo.FileStatus status) throws Exception {
         String partitionId = stateStore.getAllPartitions().get(0).getId();
         FileInfo fileInfo = FileInfo.builder()
-                .rowKeyTypes(new IntType())
                 .filename(filename)
                 .partitionId(partitionId)
                 .numberOfRecords(100L)
@@ -326,6 +318,7 @@ public class GarbageCollectorIT {
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
 
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
 
         extraProperties.accept(instanceProperties);
         return instanceProperties;
@@ -346,14 +339,13 @@ public class GarbageCollectorIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
         tableProperties.set(TABLE_NAME, tableName);
         extraProperties.accept(tableProperties);
-        tableProperties.saveToS3(s3Client);
+        S3TableProperties.getStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
         return tableProperties;
     }
 
-    private static GarbageCollector createGarbageCollector(
-            AmazonS3 s3Client, InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
-        return new GarbageCollector(new Configuration(), new TableLister(s3Client, instanceProperties),
-                new TablePropertiesProvider(s3Client, instanceProperties), stateStoreProvider,
+    private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, StateStoreProvider stateStoreProvider) {
+        return new GarbageCollector(new Configuration(),
+                new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient), stateStoreProvider,
                 instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE));
     }
 

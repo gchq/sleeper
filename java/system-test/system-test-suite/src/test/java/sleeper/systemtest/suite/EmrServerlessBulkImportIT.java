@@ -19,16 +19,18 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
 
 import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.configuration.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -36,6 +38,9 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class EmrServerlessBulkImportIT {
 
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
+    @RegisterExtension
+    public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
+            BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL, sleeper);
 
     @BeforeEach
     void setUp() {
@@ -45,7 +50,7 @@ public class EmrServerlessBulkImportIT {
     @Test
     void shouldBulkImportOneRecordWithEmrServerlessByQueue() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(properties -> properties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
+        sleeper.updateTableProperties(Map.of(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         Record record = new Record(Map.of(
                 "key", "some-id",
                 "timestamp", 1234L,

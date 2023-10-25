@@ -78,7 +78,7 @@ sleeper.stack.tag.name=DeploymentStack
 sleeper.retain.infra.after.destroy=true
 
 # The optional stacks to deploy.
-sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,DashboardStack
+sleeper.optional.stacks=CompactionStack,GarbageCollectorStack,IngestStack,PartitionSplittingStack,QueryStack,AthenaStack,EmrServerlessBulkImportStack,EmrStudioStack,DashboardStack
 
 # Whether to check that the VPC that the instance is deployed to has an S3 endpoint. If there is no S3
 # endpoint then the NAT costs can be very significant.
@@ -103,7 +103,13 @@ sleeper.log.retention.days=30
 # Used to set the value of fs.s3a.connection.maximum on the Hadoop configuration. This controls the
 # maximum number of http connections to S3.
 # See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
-sleeper.s3.max-connections=25
+sleeper.fs.s3a.max-connections=25
+
+# Used to set the value of fs.s3a.block.size on the Hadoop configuration. Uploads to S3 happen in
+# blocks, and this sets the size of blocks. If a larger value is used, then more data is buffered
+# before the upload begins.
+# See https://hadoop.apache.org/docs/stable/hadoop-aws/tools/hadoop-aws/performance.html
+sleeper.fs.s3a.upload.block.size=32M
 
 # The version of Fargate to use.
 sleeper.fargate.version=1.4.0
@@ -136,6 +142,14 @@ sleeper.metadata.dynamo.pointintimerecovery=false
 # This specifies whether point in time recovery is enabled for the S3 state store. This is set on the
 # revision DynamoDB table.
 sleeper.metadata.s3.dynamo.pointintimerecovery=false
+
+# This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
+# the DynamoDB tables.
+sleeper.tables.index.dynamo.pointintimerecovery=false
+
+# The timeout in minutes for when the table properties provider cache should be cleared, forcing table
+# properties to be reloaded from S3.
+sleeper.table.properties.provider.timeout.minutes=60
 
 
 ## The following properties relate to standard ingest.
@@ -328,13 +342,13 @@ sleeper.bulk.import.emr.spark.driver.memory=16g
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.spark.executor.instances=29
 
-# The memory overhead for an executor. Used to set spark.yarn.executor.memoryOverhead.
+# The memory overhead for an executor. Used to set spark.executor.memoryOverhead.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.spark.yarn.executor.memory.overhead=2g
+sleeper.bulk.import.emr.spark.executor.memory.overhead=2g
 
-# The memory overhead for the driver. Used to set spark.yarn.driver.memoryOverhead.
+# The memory overhead for the driver. Used to set spark.driver.memoryOverhead.
 # See https://spark.apache.org/docs/latest/configuration.html.
-sleeper.bulk.import.emr.spark.yarn.driver.memory.overhead=2g
+sleeper.bulk.import.emr.spark.driver.memory.overhead=2g
 
 # The default parallelism for Spark job. Used to set spark.default.parallelism.
 # See https://spark.apache.org/docs/latest/configuration.html.
@@ -444,6 +458,17 @@ sleeper.bulk.import.emr.serverless.architecture=X86_64
 # The version of EMR Serverless to use.
 sleeper.bulk.import.emr.serverless.release=emr-6.13.0
 
+# Set to true to allow an EMR Serverless Application to start automatically when a job is submitted.
+sleeper.bulk.import.emr.serverless.autostart.enabled=true
+
+# Set to true to allow an EMR Serverless Application to stop automatically when there are no jobs to
+# process.
+# Turning this off with pre-initialised capacity turned off is not recommended.
+sleeper.bulk.import.emr.serverless.autostop.enabled=true
+
+# The number of minutes of inactivity before EMR Serverless stops the application.
+sleeper.bulk.import.emr.serverless.autostop.timeout=15
+
 # The number of cores used by a Serverless executor. Used to set spark.executor.cores.
 # See https://spark.apache.org/docs/latest/configuration.html.
 sleeper.bulk.import.emr.serverless.spark.executor.cores=4
@@ -526,6 +551,42 @@ sleeper.bulk.import.emr.serverless.spark.speculation.quantile=0.75
 # The compression codec for map status results. Used to set spark.shuffle.mapStatus.compression.codec.
 # Stops "Decompression error: Version not supported" errors - only a value of "lz4" has been tested.
 sleeper.bulk.import.emr.serverless.spark.shuffle.mapStatus.compression.codec=lz4
+
+# Set to enable the pre-initialise capacity option for EMR Serverless application.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.enabled=false
+
+# The number of executors to pre-initialise.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.count=72
+
+# The amount of CPUs per executor for the pre-initialise capacity.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.cores=4vCPU
+
+# The amount of memory per executor for the pre-initialise capacity.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.memory=18GB
+
+# The amount of storage per executor for the pre-initialise capacity.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.executor.disk=200GB
+
+# The number of drivers to pre-initialise.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.count=5
+
+# The amount of CPUs per driver for the pre-initialise capacity.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.cores=4vCPU
+
+# The amount of memory per driver for the pre-initialise capacity.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.memory=18GB
+
+# The amount of storage per driver for the pre-initialise capacity.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/pre-init-capacity.html
+sleeper.bulk.import.emr.serverless.initial.capacity.driver.disk=20GB
 
 # (Non-persistent EMR mode only) The default EMR release label to be used when creating an EMR cluster
 # for bulk importing data using Spark running on EMR.

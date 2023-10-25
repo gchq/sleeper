@@ -45,6 +45,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.io.parquet.record.ParquetReaderIterator;
 import sleeper.io.parquet.record.ParquetRecordReader;
@@ -209,8 +210,7 @@ public class CompactSortedFiles {
                 compactionJob.getOutputFile(),
                 compactionJob.getPartitionId(),
                 recordsWritten,
-                stateStore,
-                schema.getRowKeyTypes());
+                stateStore);
         LOGGER.info("Compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
 
         return new RecordsProcessed(totalNumberOfRecordsRead, recordsWritten);
@@ -317,12 +317,9 @@ public class CompactSortedFiles {
         StoreUtils.updateStateStoreSuccess(compactionJob.getInputFiles(), compactionJob.getOutputFiles(),
                 compactionJob.getPartitionId(), compactionJob.getChildPartitions(),
                 new ImmutablePair<>(recordsWrittenToLeftFile, recordsWrittenToRightFile),
-                stateStore,
-                schema.getRowKeyTypes());
-        LOGGER.info("Compaction job {}: compaction finished at {}", compactionJob.getId(),
-                LocalDateTime.now());
-        return new RecordsProcessed(totalNumberOfRecordsRead,
-                recordsWrittenToLeftFile + recordsWrittenToRightFile);
+                stateStore);
+        LOGGER.info("Splitting compaction job {}: compaction committed to state store at {}", compactionJob.getId(), LocalDateTime.now());
+        return new RecordsProcessed(totalNumberOfRecordsRead, recordsWrittenToLeftFile + recordsWrittenToRightFile);
     }
 
     private List<CloseableIterator<Record>> createInputIterators(Configuration conf)

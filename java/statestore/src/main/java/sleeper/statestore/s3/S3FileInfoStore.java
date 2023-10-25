@@ -27,7 +27,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.FileInfoStore;
@@ -61,7 +60,6 @@ class S3FileInfoStore implements FileInfoStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3FileInfoStore.class);
     private static final Schema FILE_SCHEMA = initialiseFileInfoSchema();
 
-    private final List<PrimitiveType> rowKeyTypes;
     private final int garbageCollectorDelayBeforeDeletionInMinutes;
     private final String stateStorePath;
     private final Configuration conf;
@@ -70,7 +68,6 @@ class S3FileInfoStore implements FileInfoStore {
 
     private S3FileInfoStore(Builder builder) {
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
-        this.rowKeyTypes = builder.rowKeyTypes;
         this.garbageCollectorDelayBeforeDeletionInMinutes = builder.garbageCollectorDelayBeforeDeletionInMinutes;
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionUtils = Objects.requireNonNull(builder.s3RevisionUtils, "s3RevisionUtils must not be null");
@@ -379,7 +376,7 @@ class S3FileInfoStore implements FileInfoStore {
                 LOGGER.info("Attempt number {} to update files failed with conditional check failure, deleting file {} and retrying ({}) ",
                         numberAttempts, nextRevisionIdPath, e.getMessage());
                 Path path = new Path(nextRevisionIdPath);
-                path.getFileSystem(new Configuration()).delete(path, false);
+                path.getFileSystem(conf).delete(path, false);
                 LOGGER.info("Deleted file {}", path);
                 numberAttempts++;
                 sleep(numberAttempts);
@@ -485,7 +482,6 @@ class S3FileInfoStore implements FileInfoStore {
                 .lastStateStoreUpdateTime((Long) record.get("lastStateStoreUpdateTime"))
                 .numberOfRecords((Long) record.get("numberOfRecords"))
                 .jobId("null".equals(jobId) ? null : jobId)
-                .rowKeyTypes(rowKeyTypes)
                 .build();
     }
 
@@ -529,18 +525,12 @@ class S3FileInfoStore implements FileInfoStore {
     }
 
     static final class Builder {
-        private List<PrimitiveType> rowKeyTypes;
         private String stateStorePath;
         private int garbageCollectorDelayBeforeDeletionInMinutes;
         private Configuration conf;
         private S3RevisionUtils s3RevisionUtils;
 
         private Builder() {
-        }
-
-        Builder rowKeyTypes(List<PrimitiveType> rowKeyTypes) {
-            this.rowKeyTypes = rowKeyTypes;
-            return this;
         }
 
         Builder stateStorePath(String stateStorePath) {

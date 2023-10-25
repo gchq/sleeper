@@ -24,13 +24,13 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.REGION;
 import static sleeper.configuration.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.VERSION;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
@@ -54,7 +54,7 @@ public class UtilsTestHelper {
     }
 
     public static InstanceProperties createUserDefinedInstanceProperties() {
-        String id = UUID.randomUUID().toString();
+        String id = UUID.randomUUID().toString().substring(0, 18);
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(JARS_BUCKET, "test-bucket");

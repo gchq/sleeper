@@ -34,12 +34,16 @@ public interface SleeperProperty {
 
     PropertyGroup getPropertyGroup();
 
-    default boolean isSystemDefined() {
+    default boolean isSetByCdk() {
         return false;
     }
 
     default boolean isEditable() {
-        return !isSystemDefined();
+        return !isSetByCdk();
+    }
+
+    default boolean isUserDefined() {
+        return !isSetByCdk();
     }
 
     default Predicate<String> validationPredicate() {
@@ -59,7 +63,7 @@ public interface SleeperProperty {
     /**
      * @return True if the property can only be applied by running the CDK, and not just by saving it to S3
      */
-    boolean isRunCDKDeployWhenChanged();
+    boolean isRunCdkDeployWhenChanged();
 
     default boolean isIncludedInTemplate() {
         return false;

@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import static sleeper.configuration.properties.PropertiesUtils.loadProperties;
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
  * Contains all the properties needed to deploy an instance of Sleeper.
@@ -52,6 +52,10 @@ public class InstanceProperties extends SleeperProperties<InstanceProperty> {
     public InstanceProperties(Properties properties) {
         super(properties);
         tags = csvTagsToMap(get(TAGS));
+    }
+
+    public static InstanceProperties copyOf(InstanceProperties instanceProperties) {
+        return new InstanceProperties(loadProperties(instanceProperties.saveAsString()));
     }
 
     @Override

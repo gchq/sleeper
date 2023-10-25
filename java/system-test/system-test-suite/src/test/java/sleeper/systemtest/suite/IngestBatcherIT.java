@@ -28,6 +28,7 @@ import sleeper.systemtest.suite.dsl.ingest.SystemTestIngestBatcher;
 import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,7 +47,7 @@ public class IngestBatcherIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
 
     @RegisterExtension
-    public final ReportingExtension reporting = ReportingExtension.reportIfFailed(
+    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
             sleeper.reportsForExtension().ingestTasksAndJobs());
 
     @BeforeEach
@@ -58,12 +59,11 @@ public class IngestBatcherIT {
     @Test
     void shouldCreateTwoStandardIngestJobsWithMaxJobFilesOfThree() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(tableProperties -> {
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString());
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "3");
-        });
+        sleeper.updateTableProperties(Map.of(
+                INGEST_BATCHER_INGEST_MODE, STANDARD_INGEST.toString(),
+                INGEST_BATCHER_MIN_JOB_FILES, "1",
+                INGEST_BATCHER_MIN_JOB_SIZE, "1K",
+                INGEST_BATCHER_MAX_JOB_FILES, "3"));
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))
@@ -86,13 +86,12 @@ public class IngestBatcherIT {
     @Test
     void shouldCreateOneBulkImportJobWithMaxJobFilesOfTen() throws InterruptedException {
         // Given
-        sleeper.updateTableProperties(tableProperties -> {
-            tableProperties.set(INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString());
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_FILES, "1");
-            tableProperties.set(INGEST_BATCHER_MIN_JOB_SIZE, "1K");
-            tableProperties.set(INGEST_BATCHER_MAX_JOB_FILES, "10");
-            tableProperties.set(BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
-        });
+        sleeper.updateTableProperties(Map.of(
+                INGEST_BATCHER_INGEST_MODE, BULK_IMPORT_EMR_SERVERLESS.toString(),
+                INGEST_BATCHER_MIN_JOB_FILES, "1",
+                INGEST_BATCHER_MIN_JOB_SIZE, "1K",
+                INGEST_BATCHER_MAX_JOB_FILES, "10",
+                BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1"));
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 400));
         sleeper.sourceFiles()
                 .createWithNumberedRecords("file1.parquet", numbers.range(0, 100))

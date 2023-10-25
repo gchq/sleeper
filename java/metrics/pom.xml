@@ -45,9 +45,15 @@
         <!-- Sleeper dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>tables</artifactId>
+            <artifactId>configuration</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>configuration</artifactId>

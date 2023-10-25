@@ -16,45 +16,103 @@
 
 package sleeper.configuration.properties.table;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.configuration.properties.instance.SystemDefinedInstanceProperty;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
+
+import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
-class TablePropertiesProviderIT extends TablePropertiesS3TestBase {
+class TablePropertiesProviderIT extends TablePropertiesITBase {
+
+    private final TablePropertiesProvider provider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
 
     @Test
-    void shouldLoadFromS3() {
+    void shouldLoadByName() {
         // Given
-        TableProperties validProperties = createValidPropertiesWithTableNameAndBucket(
-                "test", "provider-load");
-        s3Client.createBucket("provider-load");
-        validProperties.saveToS3(s3Client);
+        store.save(tableProperties);
 
-        // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-load");
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
+        // When / Then
+        assertThat(provider.getByName(tableName))
+                .isEqualTo(tableProperties);
+    }
 
-        // Then
-        assertThat(provider.getTableProperties("test")).isEqualTo(validProperties);
-        assertThat(provider.getTablePropertiesIfExists("test")).contains(validProperties);
+    @Test
+    void shouldLoadByFullIdentifier() {
+        // Given
+        store.save(tableProperties);
+
+        // When / Then
+        assertThat(provider.get(tableProperties.getId()))
+                .isEqualTo(tableProperties);
+    }
+
+    @Test
+    void shouldLoadAllTables() {
+        // Given
+        TableProperties table1 = createValidTableProperties();
+        TableProperties table2 = createValidTableProperties();
+        table1.set(TABLE_NAME, "table-1");
+        table2.set(TABLE_NAME, "table-2");
+        store.save(table1);
+        store.save(table2);
+
+        // When / Then
+        assertThat(provider.streamAllTables())
+                .containsExactly(table1, table2);
+        assertThat(provider.streamAllTableIds())
+                .containsExactly(table1.getId(), table2.getId());
     }
 
     @Test
     void shouldReportTableDoesNotExistWhenNotInBucket() {
-        // Given
-        s3Client.createBucket("provider-no-table");
-
-        // When
-        InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(SystemDefinedInstanceProperty.CONFIG_BUCKET, "provider-no-table");
-        TablePropertiesProvider provider = new TablePropertiesProvider(s3Client, instanceProperties);
-
-        // Then
-        assertThat(provider.getTablePropertiesIfExists("test"))
+        // When / Then
+        assertThat(provider.lookupByName(tableName))
                 .isEmpty();
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTableDoesNotExist() {
+        // When / Then
+        assertThatThrownBy(() -> provider.getByName(tableName))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void shouldReportTableExistsWhenInIndexButNotConfigBucket() {
+        // Given
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .create(tableProperties.getId());
+
+        // When / Then
+        assertThat(provider.lookupByName(tableName))
+                .contains(tableProperties.getId());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
+        // Given
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .create(tableProperties.getId());
+
+        // When / Then
+        assertThatThrownBy(() -> provider.getByName(tableName))
+                .isInstanceOf(AmazonS3Exception.class);
+    }
+
+    @Test
+    void shouldLoadByFullIdentifierWhenNotInIndex() {
+        // Given
+        store.save(tableProperties);
+        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+                .delete(tableProperties.getId());
+
+        // When / Then
+        assertThat(provider.get(tableProperties.getId()))
+                .isEqualTo(tableProperties);
     }
 }

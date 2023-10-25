@@ -24,9 +24,9 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.UUID;
 
+import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
-import static sleeper.configuration.properties.instance.SystemDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class IngestStatusStoreTestUtils {
@@ -40,7 +40,7 @@ public class IngestStatusStoreTestUtils {
     public static InstanceProperties createInstanceProperties() {
 
         InstanceProperties instanceProperties = new InstanceProperties();
-        instanceProperties.set(ID, UUID.randomUUID().toString());
+        instanceProperties.set(ID, UUID.randomUUID().toString().substring(0, 18));
         instanceProperties.set(CONFIG_BUCKET, "test-bucket");
         instanceProperties.set(FILE_SYSTEM, "test-fs");
         return instanceProperties;
