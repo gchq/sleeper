@@ -22,14 +22,18 @@ import java.time.Instant;
 import java.util.Objects;
 
 public class IngestJobStartedEvent {
-    private final IngestJob job;
+    private final String jobId;
+    private final String tableName;
+    private final int fileCount;
     private final String jobRunId;
     private final String taskId;
     private final Instant startTime;
     private final boolean startOfRun;
 
     private IngestJobStartedEvent(Builder builder) {
-        job = Objects.requireNonNull(builder.job, "job must not be null");
+        jobId = builder.jobId;
+        tableName = builder.tableName;
+        fileCount = builder.fileCount;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
@@ -51,7 +55,7 @@ public class IngestJobStartedEvent {
                 .startOfRun(true);
     }
 
-    public static IngestJobStartedEvent.Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {
+    public static Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {
         return builder()
                 .job(job)
                 .startTime(startTime)
@@ -59,15 +63,15 @@ public class IngestJobStartedEvent {
     }
 
     public String getJobId() {
-        return job.getId();
+        return jobId;
     }
 
     public String getTableName() {
-        return job.getTableName();
+        return tableName;
     }
 
     public int getFileCount() {
-        return job.getFileCount();
+        return fileCount;
     }
 
     public String getJobRunId() {
@@ -95,18 +99,20 @@ public class IngestJobStartedEvent {
             return false;
         }
         IngestJobStartedEvent that = (IngestJobStartedEvent) o;
-        return startOfRun == that.startOfRun && Objects.equals(job, that.job) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId) && Objects.equals(startTime, that.startTime);
+        return fileCount == that.fileCount && startOfRun == that.startOfRun && Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId) && Objects.equals(startTime, that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(job, jobRunId, taskId, startTime, startOfRun);
+        return Objects.hash(jobId, tableName, fileCount, jobRunId, taskId, startTime, startOfRun);
     }
 
     @Override
     public String toString() {
         return "IngestJobStartedEvent{" +
-                "job=" + job +
+                "jobId='" + jobId + '\'' +
+                ", tableName='" + tableName + '\'' +
+                ", fileCount=" + fileCount +
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +
                 ", startTime=" + startTime +
@@ -115,7 +121,9 @@ public class IngestJobStartedEvent {
     }
 
     public static final class Builder {
-        private IngestJob job;
+        private String jobId;
+        private String tableName;
+        private int fileCount;
         private String jobRunId;
         private String taskId;
         private Instant startTime;
@@ -125,7 +133,23 @@ public class IngestJobStartedEvent {
         }
 
         public Builder job(IngestJob job) {
-            this.job = job;
+            return jobId(job.getId())
+                    .tableName(job.getTableName())
+                    .fileCount(job.getFileCount());
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder fileCount(int fileCount) {
+            this.fileCount = fileCount;
             return this;
         }
 
