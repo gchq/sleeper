@@ -547,8 +547,7 @@ pub async fn read_schema(
     src: &Url,
 ) -> Result<Arc<Schema>, ArrowError> {
     let builder = get_parquet_builder(store_factory, src).await?;
-    let stream = builder.build()?;
-    Ok(stream.schema().clone())
+    Ok(builder.schema().clone())
 }
 
 /// Checks all files match the schema.
