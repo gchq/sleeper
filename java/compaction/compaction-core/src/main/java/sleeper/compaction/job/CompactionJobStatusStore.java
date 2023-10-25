@@ -42,10 +42,6 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default Stream<CompactionJobStatus> streamAllJobs(String tableName) {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
-    }
-
     default Stream<CompactionJobStatus> streamAllJobsByTableId(String tableId) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
@@ -63,12 +59,6 @@ public interface CompactionJobStatusStore {
     default List<CompactionJobStatus> getJobsByTableIdAndTaskId(String tableId, String taskId) {
         return streamAllJobsByTableId(tableId)
                 .filter(job -> job.isTaskIdAssigned(taskId))
-                .collect(Collectors.toList());
-    }
-
-    default List<CompactionJobStatus> getJobsInTimePeriod(String tableName, Instant startTime, Instant endTime) {
-        return streamAllJobs(tableName)
-                .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }
 

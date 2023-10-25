@@ -47,6 +47,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.table.TableId;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
@@ -72,7 +73,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -185,8 +185,8 @@ public class SleeperInstanceContext {
         return getTableProperties().get(TABLE_NAME);
     }
 
-    public String getTableId() {
-        return getTableProperties().get(TABLE_ID);
+    public TableId getTableId() {
+        return getTableProperties().getId();
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {

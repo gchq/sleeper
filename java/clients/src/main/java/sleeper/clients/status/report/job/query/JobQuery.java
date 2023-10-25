@@ -46,7 +46,7 @@ public interface JobQuery {
             case DETAILED:
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:
-                return RangeJobsQuery.fromParameters(tableId.getTableName(), queryParameters, clock);
+                return RangeJobsQuery.fromParameters(tableId, queryParameters, clock);
             case REJECTED:
                 return new RejectedJobsQuery();
             default:

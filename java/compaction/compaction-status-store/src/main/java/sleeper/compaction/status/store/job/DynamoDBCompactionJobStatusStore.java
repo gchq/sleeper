@@ -126,23 +126,9 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobs(String tableName) {
-        return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
-                streamPagedItems(dynamoDB, createScanRequestByTable(tableName)));
-    }
-
-    @Override
     public Stream<CompactionJobStatus> streamAllJobsByTableId(String tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, createScanRequestByTableId(tableId)));
-    }
-
-    private ScanRequest createScanRequestByTable(String tableName) {
-        return new ScanRequest()
-                .withTableName(statusTableName)
-                .addScanFilterEntry(DynamoDBCompactionJobStatusFormat.TABLE_NAME, new Condition()
-                        .withAttributeValueList(createStringAttribute(tableName))
-                        .withComparisonOperator(ComparisonOperator.EQ));
     }
 
     private ScanRequest createScanRequestByTableId(String tableId) {

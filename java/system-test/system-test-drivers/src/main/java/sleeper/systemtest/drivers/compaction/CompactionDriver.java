@@ -89,7 +89,7 @@ public class CompactionDriver {
     }
 
     private Stream<String> allJobIds(CompactionJobStatusStore store) {
-        return store.getAllJobsByTableId(instance.getTableId()).stream().map(CompactionJobStatus::getJobId);
+        return store.getAllJobsByTableId(instance.getTableId().getTableUniqueId()).stream().map(CompactionJobStatus::getJobId);
     }
 
     public enum Type {

@@ -39,7 +39,7 @@ public class JobQueryPrompt {
             String jobIds = in.promptLine("Enter jobId to get detailed information about: ");
             return DetailedJobsQuery.fromParameters(jobIds);
         } else if (type.equalsIgnoreCase("r")) {
-            return RangeJobsQuery.prompt(tableId.getTableName(), in, clock);
+            return RangeJobsQuery.prompt(tableId, in, clock);
         } else if (extraQueries.containsKey(type)) {
             return extraQueries.get(type);
         } else {

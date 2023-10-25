@@ -88,7 +88,7 @@ public class JobQueryTest extends JobQueryTestBase {
         String queryParameters = "20221123115442,20221130115442";
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -103,7 +103,7 @@ public class JobQueryTest extends JobQueryTestBase {
         Type queryType = Type.RANGE;
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriod(TABLE_NAME, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);
