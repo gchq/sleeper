@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Objects;
 
 public class IngestJobValidatedEvent {
-    private final IngestJob job;
+    private final String jobId;
+    private final String tableName;
+    private final int fileCount;
     private final Instant validationTime;
     private final List<String> reasons;
     private final String jobRunId;
@@ -31,7 +33,9 @@ public class IngestJobValidatedEvent {
     private final String jsonMessage;
 
     private IngestJobValidatedEvent(Builder builder) {
-        job = Objects.requireNonNull(builder.job, "job must not be null");
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        fileCount = Objects.requireNonNull(builder.fileCount, "fileCount must not be null");
         validationTime = Objects.requireNonNull(builder.validationTime, "validationTime must not be null");
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
         jobRunId = builder.jobRunId;
@@ -78,20 +82,16 @@ public class IngestJobValidatedEvent {
         }
     }
 
-    public IngestJob getJob() {
-        return job;
-    }
-
     public String getJobId() {
-        return job.getId();
+        return jobId;
     }
 
     public String getTableName() {
-        return job.getTableName();
+        return tableName;
     }
 
     public int getFileCount() {
-        return job.getFileCount();
+        return fileCount;
     }
 
     public String getJobRunId() {
@@ -127,23 +127,20 @@ public class IngestJobValidatedEvent {
             return false;
         }
         IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
-        return Objects.equals(job, that.job)
-                && Objects.equals(validationTime, that.validationTime)
-                && Objects.equals(reasons, that.reasons)
-                && Objects.equals(jobRunId, that.jobRunId)
-                && Objects.equals(taskId, that.taskId)
-                && Objects.equals(jsonMessage, that.jsonMessage);
+        return fileCount == that.fileCount && Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName) && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId) && Objects.equals(jsonMessage, that.jsonMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(job, validationTime, reasons, jobRunId, taskId, jsonMessage);
+        return Objects.hash(jobId, tableName, fileCount, validationTime, reasons, jobRunId, taskId, jsonMessage);
     }
 
     @Override
     public String toString() {
         return "IngestJobValidatedEvent{" +
-                "job=" + job +
+                "jobId='" + jobId + '\'' +
+                ", tableName='" + tableName + '\'' +
+                ", fileCount=" + fileCount +
                 ", validationTime=" + validationTime +
                 ", reasons=" + reasons +
                 ", jobRunId='" + jobRunId + '\'' +
@@ -153,7 +150,9 @@ public class IngestJobValidatedEvent {
     }
 
     public static final class Builder {
-        private IngestJob job;
+        private String jobId;
+        private String tableName;
+        private int fileCount;
         private Instant validationTime;
         private List<String> reasons;
         private String jobRunId;
@@ -164,7 +163,23 @@ public class IngestJobValidatedEvent {
         }
 
         public Builder job(IngestJob job) {
-            this.job = job;
+            return jobId(job.getId())
+                    .tableName(job.getTableName())
+                    .fileCount(job.getFileCount());
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder fileCount(int fileCount) {
+            this.fileCount = fileCount;
             return this;
         }
 
