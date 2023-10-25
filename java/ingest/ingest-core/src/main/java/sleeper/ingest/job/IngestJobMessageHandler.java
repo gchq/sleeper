@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -77,10 +78,12 @@ public class IngestJobMessageHandler<T> {
             return Optional.empty();
         }
         IngestJob ingestJob = toIngestJob.apply(job);
+        IngestJob.Builder ingestJobBuilder = ingestJob.toBuilder();
         String jobId = ingestJob.getId();
         if (jobId == null || jobId.isBlank()) {
             jobId = jobIdSupplier.get();
             LOGGER.info("Null or blank id provided. Generated new id: {}", jobId);
+            ingestJobBuilder.id(jobId);
         }
 
         List<String> files = ingestJob.getFiles();
@@ -96,10 +99,14 @@ public class IngestJobMessageHandler<T> {
         if (!validationFailures.isEmpty()) {
             LOGGER.warn("Validation failed: {}", validationFailures);
             ingestJobStatusStore.jobValidated(
-                    ingestJobRejected(jobId, message, timeSupplier.get(),
-                            validationFailures.stream()
+                    refusedEventBuilder()
+                            .jobId(jobId)
+                            .tableName(ingestJob.getTableName())
+                            .jsonMessage(message)
+                            .reasons(validationFailures.stream()
                                     .map(failure -> "Model validation failed. " + failure)
-                                    .collect(Collectors.toList())));
+                                    .collect(Collectors.toUnmodifiableList()))
+                            .build());
             return Optional.empty();
         }
 
@@ -113,6 +120,11 @@ public class IngestJobMessageHandler<T> {
 
         LOGGER.info("No validation failures found");
         return Optional.of(applyIngestJobChanges.apply(job, ingestJob.toBuilder().id(jobId).files(expandedFiles).build()));
+    }
+
+    private IngestJobValidatedEvent.Builder refusedEventBuilder() {
+        return IngestJobValidatedEvent.builder()
+                .validationTime(timeSupplier.get());
     }
 
     public static final class Builder<T> {
