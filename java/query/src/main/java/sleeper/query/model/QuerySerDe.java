@@ -96,13 +96,11 @@ public class QuerySerDe {
     }
 
     private static JsonArray convertRegionsToJsonArray(
-            Schema schema, List<Region> regions, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context,
-            String tableName, String queryId) {
+            Schema schema, List<Region> regions, java.lang.reflect.Type typeOfSrc, JsonSerializationContext context, String queryId) {
         try {
             return convertRegionsToJsonArray(schema, regions, typeOfSrc, context);
         } catch (RegionSerDe.KeyDoesNotExistException e) {
-            throw new QueryValidationException(queryId,
-                    "Key \"" + e.getKeyName() + "\" does not exist on table \"" + tableName + "\"");
+            throw new QueryValidationException(queryId, e);
         }
     }
 
@@ -118,13 +116,11 @@ public class QuerySerDe {
     }
 
     private static List<Region> convertJsonArrayToRegions(
-            Schema schema, JsonArray array, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context,
-            String tableName, String queryId) {
+            Schema schema, JsonArray array, java.lang.reflect.Type typeOfSrc, JsonDeserializationContext context, String queryId) {
         try {
             return convertJsonArrayToRegions(schema, array, typeOfSrc, context);
         } catch (RegionSerDe.KeyDoesNotExistException e) {
-            throw new QueryValidationException(queryId,
-                    "Key \"" + e.getKeyName() + "\" does not exist on table \"" + tableName + "\"");
+            throw new QueryValidationException(queryId, e);
         }
     }
 
@@ -158,7 +154,7 @@ public class QuerySerDe {
                 try {
                     return tablePropertiesProvider.getByName(tableName).getSchema();
                 } catch (TablePropertiesProvider.TableNotFoundException e) {
-                    throw new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist");
+                    throw new QueryValidationException(queryId, e);
                 }
             });
         }
@@ -169,7 +165,7 @@ public class QuerySerDe {
                     throw new QueryValidationException(queryId, "Table must not be null");
                 }
                 if (!tableNameToSchemaMap.containsKey(tableName)) {
-                    throw new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist");
+                    throw new QueryValidationException(queryId, new TablePropertiesProvider.TableNotFoundException(tableName));
                 }
                 return tableNameToSchemaMap.get(tableName);
             });
@@ -229,13 +225,13 @@ public class QuerySerDe {
                 }
                 json.add(FILES, fileArray);
                 json.add(REGIONS, convertRegionsToJsonArray(schema, leafPartitionQuery.getRegions(), typeOfSrc, context,
-                        query.getTableName(), query.getQueryId()));
+                        query.getQueryId()));
 
                 json.addProperty(LEAF_PARTITION_ID, leafPartitionQuery.getLeafPartitionId());
             } else {
                 json.addProperty(QUERY_TYPE, QUERY);
                 json.add(REGIONS, convertRegionsToJsonArray(schema, query.getRegions(), typeOfSrc, context,
-                        query.getTableName(), query.getQueryId()));
+                        query.getQueryId()));
             }
 
             return json;
@@ -314,7 +310,7 @@ public class QuerySerDe {
                         files.add(filesArray.get(i).getAsString());
                     }
                     List<Region> regions = convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS),
-                            typeOfSrc, context, tableName, queryId);
+                            typeOfSrc, context, queryId);
                     String leafPartitionId = jsonObject.get(LEAF_PARTITION_ID).getAsString();
 
                     return new LeafPartitionQuery.Builder(tableName, queryId, subQueryId, regions, leafPartitionId, partitionRegion, files)
@@ -328,7 +324,7 @@ public class QuerySerDe {
                     List<Region> ranges = new ArrayList<>();
                     if (jsonObject.has(REGIONS)) {
                         ranges.addAll(convertJsonArrayToRegions(schema, jsonObject.getAsJsonArray(REGIONS),
-                                typeOfSrc, context, tableName, queryId));
+                                typeOfSrc, context, queryId));
                     }
                     return new Query.Builder(tableName, queryId, ranges)
                             .setQueryTimeIteratorClassName(queryTimeIteratorClassName)

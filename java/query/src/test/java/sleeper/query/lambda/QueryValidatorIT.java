@@ -185,7 +185,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Table \"not-a-table\" does not exist")
+                            .errorMessage("Query validation failed: Table with name \"not-a-table\" not found")
                             .build());
         }
 
@@ -217,7 +217,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Key \"not-a-key\" does not exist on table \"table-1\"")
+                            .errorMessage("Query validation failed: Key \"not-a-key\" does not exist")
                             .build());
         }
     }
