@@ -32,7 +32,7 @@ public class JobQueryPrompt {
         if ("".equals(type)) {
             return null;
         } else if (type.equalsIgnoreCase("a")) {
-            return new AllJobsQuery(tableId.getTableName());
+            return new AllJobsQuery(tableId);
         } else if (type.equalsIgnoreCase("u")) {
             return new UnfinishedJobsQuery(tableId.getTableName());
         } else if (type.equalsIgnoreCase("d")) {

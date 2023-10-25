@@ -72,6 +72,7 @@ import static sleeper.configuration.properties.instance.CommonProperty.TAGS;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.configuration.properties.table.TableProperty.TABLE_ID;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
 
 public class SleeperInstanceContext {
@@ -182,6 +183,10 @@ public class SleeperInstanceContext {
 
     public String getTableName() {
         return getTableProperties().get(TABLE_NAME);
+    }
+
+    public String getTableId() {
+        return getTableProperties().get(TABLE_ID);
     }
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {

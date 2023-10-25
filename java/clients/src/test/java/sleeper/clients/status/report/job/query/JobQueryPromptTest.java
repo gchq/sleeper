@@ -38,7 +38,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobsByTableId(tableId)).thenReturn(exampleStatusList);
         in.enterNextPrompt("a");
 
         // When
@@ -176,7 +176,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldRepeatQueryTypePromptWithInvalidQueryType() {
         // Given
-        when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobsByTableId(tableId)).thenReturn(exampleStatusList);
         in.enterNextPrompts("abc", "a");
 
         // When

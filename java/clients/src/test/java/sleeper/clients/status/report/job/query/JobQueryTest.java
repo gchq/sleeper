@@ -34,7 +34,7 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         Type queryType = Type.ALL;
-        when(statusStore.getAllJobs(TABLE_NAME)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobsByTableId(tableId)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);

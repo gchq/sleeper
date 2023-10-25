@@ -40,7 +40,7 @@ public interface JobQuery {
         }
         switch (queryType) {
             case ALL:
-                return new AllJobsQuery(tableId.getTableName());
+                return new AllJobsQuery(tableId);
             case UNFINISHED:
                 return new UnfinishedJobsQuery(tableId.getTableName());
             case DETAILED:
