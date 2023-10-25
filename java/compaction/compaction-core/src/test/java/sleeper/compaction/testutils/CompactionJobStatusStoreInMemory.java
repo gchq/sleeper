@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpdateTime;
@@ -43,25 +44,17 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
         fixedUpdateTime = now;
     }
 
-    private Instant getCreatedTime() {
+    private Instant getUpdateTimeOrDefault(Supplier<Instant> defaultTimeSupplier) {
         if (null != fixedUpdateTime) {
             return fixedUpdateTime;
         } else {
-            return Instant.now();
-        }
-    }
-
-    private Instant getUpdateTimeForEventTime(Instant eventTime) {
-        if (null != fixedUpdateTime) {
-            return fixedUpdateTime;
-        } else {
-            return defaultUpdateTime(eventTime);
+            return defaultTimeSupplier.get();
         }
     }
 
     @Override
     public void jobCreated(CompactionJob job) {
-        jobCreated(job, getCreatedTime());
+        jobCreated(job, getUpdateTimeOrDefault(Instant::now));
     }
 
     public void jobCreated(CompactionJob job, Instant createdTime) {
@@ -76,16 +69,17 @@ public class CompactionJobStatusStoreInMemory implements CompactionJobStatusStor
         add(job.getTableName(), ProcessStatusUpdateRecord.builder()
                 .jobId(job.getId()).taskId(taskId)
                 .statusUpdate(CompactionJobStartedStatus.startAndUpdateTime(
-                        startTime, getUpdateTimeForEventTime(startTime)))
+                        startTime, getUpdateTimeOrDefault(() -> defaultUpdateTime(startTime))))
                 .build());
     }
 
     @Override
     public void jobFinished(CompactionJob job, RecordsProcessedSummary summary, String taskId) {
+        Instant eventTime = summary.getFinishTime();
         add(job.getTableName(), ProcessStatusUpdateRecord.builder()
                 .jobId(job.getId()).taskId(taskId)
                 .statusUpdate(ProcessFinishedStatus.updateTimeAndSummary(
-                        getUpdateTimeForEventTime(summary.getFinishTime()), summary))
+                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary))
                 .build());
     }
 
