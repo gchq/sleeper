@@ -67,10 +67,10 @@ public class IngestJobValidatedEvent {
     public IngestJobValidatedStatus toStatusUpdate(Instant updateTime) {
         if (isAccepted()) {
             return IngestJobAcceptedStatus.from(
-                    job, validationTime, updateTime);
+                    getFileCount(), validationTime, updateTime);
         } else {
             return IngestJobRejectedStatus.builder()
-                    .job(job)
+                    .inputFileCount(getFileCount())
                     .validationTime(validationTime)
                     .updateTime(updateTime)
                     .reasons(reasons)
