@@ -40,26 +40,11 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(validatedStatus(event))
+                        .statusUpdate(event.toStatusUpdate(
+                                defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
-    }
-
-    private static IngestJobValidatedStatus validatedStatus(IngestJobValidatedEvent event) {
-        if (event.isAccepted()) {
-            return IngestJobAcceptedStatus.from(
-                    event.getJob(),
-                    event.getValidationTime(),
-                    defaultUpdateTime(event.getValidationTime()));
-        } else {
-            return IngestJobRejectedStatus.builder()
-                    .job(event.getJob())
-                    .validationTime(event.getValidationTime())
-                    .updateTime(defaultUpdateTime(event.getValidationTime()))
-                    .reasons(event.getReasons())
-                    .jsonMessage(event.getJsonMessage()).build();
-        }
     }
 
     @Override

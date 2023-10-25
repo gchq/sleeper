@@ -64,6 +64,20 @@ public class IngestJobValidatedEvent {
         return new Builder();
     }
 
+    public IngestJobValidatedStatus toStatusUpdate(Instant updateTime) {
+        if (isAccepted()) {
+            return IngestJobAcceptedStatus.from(
+                    job, validationTime, updateTime);
+        } else {
+            return IngestJobRejectedStatus.builder()
+                    .job(job)
+                    .validationTime(validationTime)
+                    .updateTime(updateTime)
+                    .reasons(reasons)
+                    .jsonMessage(jsonMessage).build();
+        }
+    }
+
     public IngestJob getJob() {
         return job;
     }
