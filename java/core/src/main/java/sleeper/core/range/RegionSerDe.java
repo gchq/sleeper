@@ -239,15 +239,9 @@ public class RegionSerDe {
     }
 
     public static class KeyDoesNotExistException extends JsonParseException {
-        private String keyName;
 
         public KeyDoesNotExistException(String keyName) {
-            super("Key \"" + keyName + "\" does not exist");
-            this.keyName = keyName;
-        }
-
-        public String getKeyName() {
-            return keyName;
+            super("Key \"" + keyName + "\" was not a row key field in the table schema");
         }
     }
 }

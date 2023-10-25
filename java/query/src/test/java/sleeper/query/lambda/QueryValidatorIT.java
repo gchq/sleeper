@@ -217,7 +217,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Query validation failed: Key \"not-a-key\" does not exist")
+                            .errorMessage("Query validation failed: Key \"not-a-key\" was not a row key field in the table schema")
                             .build());
         }
     }
