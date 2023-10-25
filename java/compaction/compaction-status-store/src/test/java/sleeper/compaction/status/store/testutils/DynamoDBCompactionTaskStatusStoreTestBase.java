@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 
@@ -44,7 +45,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
-    private final InstanceProperties instanceProperties = CompactionStatusStoreTestUtils.createInstanceProperties();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
     protected final CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
