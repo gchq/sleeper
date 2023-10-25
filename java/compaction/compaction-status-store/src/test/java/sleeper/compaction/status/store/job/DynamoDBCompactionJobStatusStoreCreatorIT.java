@@ -60,8 +60,8 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
-        assertThatThrownBy(() -> store.getAllJobsByTableId("some-table-id")).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getUnfinishedJobsByTableId("some-table-id")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getAllJobs("some-table-id")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getUnfinishedJobs("some-table-id")).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> store.getJob("some-job")).isInstanceOf(UnsupportedOperationException.class);
     }
 

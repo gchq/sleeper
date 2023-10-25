@@ -50,7 +50,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         store.jobStarted(job2, defaultStartTime(), "another-task");
 
         // Then
-        assertThat(store.getJobsByTableIdAndTaskId(tableId, searchingTaskId))
+        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobCreated(job1, ignoredUpdateTime(),
                         startedCompactionRun(searchingTaskId, defaultStartTime())));
@@ -75,7 +75,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         store.jobStarted(job, defaultStartTime(), taskId3);
 
         // Then
-        assertThat(store.getJobsByTableIdAndTaskId(tableId, searchingTaskId))
+        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(taskId3, defaultStartTime()),
@@ -86,6 +86,6 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
     @Test
     public void shouldReturnNoCompactionJobsByTaskId() {
         // When / Then
-        assertThat(store.getJobsByTableIdAndTaskId(tableId, "not-present")).isNullOrEmpty();
+        assertThat(store.getJobsByTaskId(tableId, "not-present")).isNullOrEmpty();
     }
 }

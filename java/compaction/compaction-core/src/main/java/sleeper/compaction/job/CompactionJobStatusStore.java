@@ -42,28 +42,28 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default Stream<CompactionJobStatus> streamAllJobsByTableId(String tableId) {
+    default Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default List<CompactionJobStatus> getAllJobsByTableId(String tableId) {
-        return streamAllJobsByTableId(tableId).collect(Collectors.toList());
+    default List<CompactionJobStatus> getAllJobs(String tableId) {
+        return streamAllJobs(tableId).collect(Collectors.toList());
     }
 
-    default List<CompactionJobStatus> getUnfinishedJobsByTableId(String tableId) {
-        return streamAllJobsByTableId(tableId)
+    default List<CompactionJobStatus> getUnfinishedJobs(String tableId) {
+        return streamAllJobs(tableId)
                 .filter(job -> !job.isFinished())
                 .collect(Collectors.toList());
     }
 
-    default List<CompactionJobStatus> getJobsByTableIdAndTaskId(String tableId, String taskId) {
-        return streamAllJobsByTableId(tableId)
+    default List<CompactionJobStatus> getJobsByTaskId(String tableId, String taskId) {
+        return streamAllJobs(tableId)
                 .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 
-    default List<CompactionJobStatus> getJobsInTimePeriodByTableId(String tableId, Instant startTime, Instant endTime) {
-        return streamAllJobsByTableId(tableId)
+    default List<CompactionJobStatus> getJobsInTimePeriod(String tableId, Instant startTime, Instant endTime) {
+        return streamAllJobs(tableId)
                 .filter(job -> job.isInPeriod(startTime, endTime))
                 .collect(Collectors.toList());
     }

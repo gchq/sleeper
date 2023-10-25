@@ -34,7 +34,7 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         Type queryType = Type.ALL;
-        when(statusStore.getAllJobsByTableId(tableId)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -47,7 +47,7 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         Type queryType = Type.UNFINISHED;
-        when(statusStore.getUnfinishedJobsByTableId(tableId)).thenReturn(exampleStatusList);
+        when(statusStore.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -88,7 +88,7 @@ public class JobQueryTest extends JobQueryTestBase {
         String queryParameters = "20221123115442,20221130115442";
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -103,7 +103,7 @@ public class JobQueryTest extends JobQueryTestBase {
         Type queryType = Type.RANGE;
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);

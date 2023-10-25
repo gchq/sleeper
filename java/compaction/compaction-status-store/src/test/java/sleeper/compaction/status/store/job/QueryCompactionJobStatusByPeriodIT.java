@@ -50,7 +50,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getJobsInTimePeriodByTableId(tableId, epochStart, farFuture))
+        assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()),
@@ -72,7 +72,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // Then
         Instant periodStart = Instant.now().minus(Period.ofDays(2));
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
-        assertThat(store.getJobsInTimePeriodByTableId(tableId, periodStart, periodEnd)).isEmpty();
+        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd)).isEmpty();
     }
 
     @Test
@@ -94,7 +94,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getJobsInTimePeriodByTableId(tableId, epochStart, farFuture))
+        assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
     }
@@ -118,7 +118,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         store.jobFinished(job, defaultSummary(), DEFAULT_TASK_ID);
 
         // Then
-        assertThat(store.getJobsInTimePeriodByTableId(tableId, periodStart, periodEnd))
+        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedStatusWithDefaults(job));
     }
@@ -142,7 +142,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then
-        assertThat(store.getJobsInTimePeriodByTableId(tableId, periodStart, periodEnd))
+        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedStatusWithDefaults(job));
     }

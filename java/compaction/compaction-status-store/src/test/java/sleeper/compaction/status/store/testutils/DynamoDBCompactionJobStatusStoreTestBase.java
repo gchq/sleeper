@@ -143,6 +143,6 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected List<CompactionJobStatus> getAllJobStatuses() {
-        return store.getAllJobsByTableId(tableId);
+        return store.getAllJobs(tableId);
     }
 }

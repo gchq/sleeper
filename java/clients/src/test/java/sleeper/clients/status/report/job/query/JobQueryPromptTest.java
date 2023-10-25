@@ -38,7 +38,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
-        when(statusStore.getAllJobsByTableId(tableId)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobs(tableId)).thenReturn(exampleStatusList);
         in.enterNextPrompt("a");
 
         // When
@@ -52,7 +52,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
-        when(statusStore.getUnfinishedJobsByTableId(tableId)).thenReturn(exampleStatusList);
+        when(statusStore.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
         in.enterNextPrompt("u");
 
         // When
@@ -98,7 +98,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         // Given
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
         in.enterNextPrompts("r", "20221123115442", "20221130115442");
 
         // When
@@ -114,7 +114,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         // Given
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
         in.enterNextPrompts("r", "20221123115442", "");
 
         // When
@@ -130,7 +130,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         // Given
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
         in.enterNextPrompts("r", "", "20221130115442");
 
         // When
@@ -146,7 +146,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         // Given
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
         in.enterNextPrompts("r", "abc", "20221123115442", "20221130115442");
 
         // When
@@ -162,7 +162,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
         // Given
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriodByTableId(tableId, start, end)).thenReturn(exampleStatusList);
+        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
         in.enterNextPrompts("r", "20221123115442", "abc", "20221130115442");
 
         // When
@@ -176,7 +176,7 @@ public class JobQueryPromptTest extends JobQueryTestBase {
     @Test
     public void shouldRepeatQueryTypePromptWithInvalidQueryType() {
         // Given
-        when(statusStore.getAllJobsByTableId(tableId)).thenReturn(exampleStatusList);
+        when(statusStore.getAllJobs(tableId)).thenReturn(exampleStatusList);
         in.enterNextPrompts("abc", "a");
 
         // When

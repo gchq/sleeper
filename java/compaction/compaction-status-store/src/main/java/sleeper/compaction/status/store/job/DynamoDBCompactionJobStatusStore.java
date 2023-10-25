@@ -126,7 +126,7 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public Stream<CompactionJobStatus> streamAllJobsByTableId(String tableId) {
+    public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         return DynamoDBCompactionJobStatusFormat.streamJobStatuses(
                 streamPagedItems(dynamoDB, createScanRequestByTableId(tableId)));
     }

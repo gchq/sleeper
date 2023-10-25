@@ -50,7 +50,7 @@ public class RangeJobsQuery implements JobQuery {
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getJobsInTimePeriodByTableId(tableId.getTableUniqueId(), start, end);
+        return statusStore.getJobsInTimePeriod(tableId.getTableUniqueId(), start, end);
     }
 
     @Override

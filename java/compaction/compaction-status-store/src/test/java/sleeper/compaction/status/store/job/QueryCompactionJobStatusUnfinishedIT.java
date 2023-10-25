@@ -48,7 +48,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobCreated(job2);
 
         // Then
-        assertThat(store.getUnfinishedJobsByTableId(tableId))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         jobCreated(job2, ignoredUpdateTime()),
@@ -74,7 +74,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobFinished(job2, defaultSummary(), DEFAULT_TASK_ID);
 
         // Then
-        assertThat(store.getUnfinishedJobsByTableId(tableId))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobCreated(job1, ignoredUpdateTime()));
     }
@@ -96,7 +96,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobCreated(job2);
 
         // Then
-        assertThat(store.getUnfinishedJobsByTableId(tableId))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobCreated(job1, ignoredUpdateTime()));
     }
@@ -118,7 +118,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         store.jobStarted(job, defaultStartTime(), DEFAULT_TASK_ID);
 
         // Then
-        assertThat(store.getUnfinishedJobsByTableId(tableId))
+        assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(jobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()),

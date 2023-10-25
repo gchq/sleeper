@@ -50,7 +50,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         store.jobCreated(job3);
 
         // Then
-        assertThat(store.getAllJobsByTableId(tableId))
+        assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         CompactionJobStatusTestData.jobCreated(job3, ignoredUpdateTime()),
@@ -75,7 +75,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         store.jobCreated(job2);
 
         // Then
-        assertThat(store.getAllJobsByTableId(tableId))
+        assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
     }
@@ -84,6 +84,6 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
     public void shouldReturnNoCompactionJobs() {
 
         // When / Then
-        assertThat(store.getAllJobsByTableId(tableId)).isEmpty();
+        assertThat(store.getAllJobs(tableId)).isEmpty();
     }
 }

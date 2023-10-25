@@ -62,7 +62,7 @@ class CompactionJobStatusStoreInMemoryTest {
             CompactionJob job = addCreatedJob(storeTime);
 
             // When / Then
-            assertThat(store.streamAllJobsByTableId(tableId))
+            assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobCreated(job, storeTime));
         }
 
@@ -75,7 +75,7 @@ class CompactionJobStatusStoreInMemoryTest {
             CompactionJob job = addStartedJob(createdTime, startedTime, taskId);
 
             // When / Then
-            assertThat(store.streamAllJobsByTableId(tableId))
+            assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId, startedCompactionStatus(startedTime)))));
@@ -92,7 +92,7 @@ class CompactionJobStatusStoreInMemoryTest {
                     summary(startedTime, finishedTime, 100, 100), taskId);
 
             // When / Then
-            assertThat(store.streamAllJobsByTableId(tableId))
+            assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
@@ -115,7 +115,7 @@ class CompactionJobStatusStoreInMemoryTest {
             store.jobFinished(job, summary, taskId);
 
             // When / Then
-            assertThat(store.streamAllJobsByTableId(tableId))
+            assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
@@ -168,7 +168,7 @@ class CompactionJobStatusStoreInMemoryTest {
             CompactionJob job3 = addCreatedJob(time3);
 
             // When / Then
-            assertThat(store.getAllJobsByTableId(tableId))
+            assertThat(store.getAllJobs(tableId))
                     .containsExactly(
                             jobCreated(job3, time3),
                             jobCreated(job2, time2),
@@ -177,7 +177,7 @@ class CompactionJobStatusStoreInMemoryTest {
 
         @Test
         void shouldGetNoJobs() {
-            assertThat(store.getAllJobsByTableId("no-jobs-table-id")).isEmpty();
+            assertThat(store.getAllJobs("no-jobs-table-id")).isEmpty();
         }
     }
 
@@ -199,7 +199,7 @@ class CompactionJobStatusStoreInMemoryTest {
             addFinishedJob(createdTime2, summary(startedTime2, finishedTime2, 100, 100), taskId2);
 
             // When / Then
-            assertThat(store.getUnfinishedJobsByTableId(tableId))
+            assertThat(store.getUnfinishedJobs(tableId))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -215,12 +215,12 @@ class CompactionJobStatusStoreInMemoryTest {
                             100, 100), "test-task");
 
             // When / Then
-            assertThat(store.getUnfinishedJobsByTableId(tableId)).isEmpty();
+            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getUnfinishedJobsByTableId(tableId)).isEmpty();
+            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
         }
     }
 
@@ -241,7 +241,7 @@ class CompactionJobStatusStoreInMemoryTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsByTableIdAndTaskId(tableId, taskId1))
+            assertThat(store.getJobsByTaskId(tableId, taskId1))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -257,12 +257,12 @@ class CompactionJobStatusStoreInMemoryTest {
                             100, 100), "test-task");
 
             // When / Then
-            assertThat(store.getJobsByTableIdAndTaskId(tableId, "other-task")).isEmpty();
+            assertThat(store.getJobsByTaskId(tableId, "other-task")).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsByTableIdAndTaskId(tableId, "some-task")).isEmpty();
+            assertThat(store.getJobsByTaskId(tableId, "some-task")).isEmpty();
         }
     }
 
@@ -283,7 +283,7 @@ class CompactionJobStatusStoreInMemoryTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsInTimePeriodByTableId(tableId,
+            assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
                     .containsExactly(
@@ -301,14 +301,14 @@ class CompactionJobStatusStoreInMemoryTest {
                             100, 100), "test-task");
 
             // When / Then
-            assertThat(store.getJobsInTimePeriodByTableId(tableId,
+            assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsInTimePeriodByTableId(tableId,
+            assertThat(store.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
