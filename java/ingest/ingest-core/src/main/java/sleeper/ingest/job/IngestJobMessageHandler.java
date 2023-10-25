@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -82,7 +83,16 @@ public class IngestJobMessageHandler<T> {
             LOGGER.info("Null or blank id provided. Generated new id: {}", jobId);
         }
 
-        List<String> validationFailures = ingestJob.getValidationFailures();
+        List<String> files = ingestJob.getFiles();
+        List<String> validationFailures = new ArrayList<>();
+        if (files == null) {
+            validationFailures.add("Missing property \"files\"");
+        } else if (files.contains(null)) {
+            validationFailures.add("One of the files was null");
+        }
+        if (ingestJob.getTableName() == null) {
+            validationFailures.add("Missing property \"tableName\"");
+        }
         if (!validationFailures.isEmpty()) {
             LOGGER.warn("Validation failed: {}", validationFailures);
             ingestJobStatusStore.jobValidated(
@@ -93,8 +103,8 @@ public class IngestJobMessageHandler<T> {
             return Optional.empty();
         }
 
-        List<String> files = expandDirectories.apply(ingestJob.getFiles());
-        if (files.isEmpty()) {
+        List<String> expandedFiles = expandDirectories.apply(files);
+        if (expandedFiles.isEmpty()) {
             LOGGER.warn("Could not find one or more files for job: {}", job);
             ingestJobStatusStore.jobValidated(
                     ingestJobRejected(jobId, message, timeSupplier.get(), "Could not find one or more files"));
@@ -102,7 +112,7 @@ public class IngestJobMessageHandler<T> {
         }
 
         LOGGER.info("No validation failures found");
-        return Optional.of(applyIngestJobChanges.apply(job, ingestJob.toBuilder().id(jobId).files(files).build()));
+        return Optional.of(applyIngestJobChanges.apply(job, ingestJob.toBuilder().id(jobId).files(expandedFiles).build()));
     }
 
     public static final class Builder<T> {

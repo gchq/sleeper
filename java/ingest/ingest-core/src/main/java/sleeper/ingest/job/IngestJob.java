@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.job;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -34,19 +33,6 @@ public class IngestJob {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public List<String> getValidationFailures() {
-        List<String> validationFailures = new ArrayList<>();
-        if (files == null) {
-            validationFailures.add("Missing property \"files\"");
-        } else if (files.contains(null)) {
-            validationFailures.add("One of the files was null");
-        }
-        if (tableName == null) {
-            validationFailures.add("Missing property \"tableName\"");
-        }
-        return validationFailures;
     }
 
     public String getTableName() {
