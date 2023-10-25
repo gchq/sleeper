@@ -50,35 +50,13 @@ public interface CompactionJobStatusStore {
         throw new UnsupportedOperationException("Instance has no compaction job status store");
     }
 
-    default List<CompactionJobStatus> getAllJobs(String tableName) {
-        return streamAllJobs(tableName).collect(Collectors.toList());
-    }
-
     default List<CompactionJobStatus> getAllJobsByTableId(String tableId) {
         return streamAllJobsByTableId(tableId).collect(Collectors.toList());
-    }
-
-    default List<CompactionJobStatus> getUnfinishedJobs(String tableName) {
-        return streamAllJobs(tableName)
-                .filter(job -> !job.isFinished())
-                .collect(Collectors.toList());
     }
 
     default List<CompactionJobStatus> getUnfinishedJobsByTableId(String tableId) {
         return streamAllJobsByTableId(tableId)
                 .filter(job -> !job.isFinished())
-                .collect(Collectors.toList());
-    }
-
-    default List<CompactionJobStatus> getUnstartedJobs(String tableName) {
-        return streamAllJobs(tableName)
-                .filter(job -> !job.isStarted())
-                .collect(Collectors.toList());
-    }
-
-    default List<CompactionJobStatus> getJobsByTaskId(String tableName, String taskId) {
-        return streamAllJobs(tableName)
-                .filter(job -> job.isTaskIdAssigned(taskId))
                 .collect(Collectors.toList());
     }
 

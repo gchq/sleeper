@@ -42,7 +42,7 @@ public interface JobQuery {
             case ALL:
                 return new AllJobsQuery(tableId);
             case UNFINISHED:
-                return new UnfinishedJobsQuery(tableId.getTableName());
+                return new UnfinishedJobsQuery(tableId);
             case DETAILED:
                 return DetailedJobsQuery.fromParameters(queryParameters);
             case RANGE:

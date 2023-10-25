@@ -17,26 +17,27 @@ package sleeper.clients.status.report.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
+import sleeper.core.table.TableId;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.List;
 
 public class UnfinishedJobsQuery implements JobQuery {
-    private final String tableName;
+    private final TableId tableId;
 
-    public UnfinishedJobsQuery(String tableName) {
-        this.tableName = tableName;
+    public UnfinishedJobsQuery(TableId tableId) {
+        this.tableId = tableId;
     }
 
     @Override
     public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
-        return statusStore.getUnfinishedJobs(tableName);
+        return statusStore.getUnfinishedJobsByTableId(tableId.getTableUniqueId());
     }
 
     @Override
     public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getUnfinishedJobs(tableName);
+        return statusStore.getUnfinishedJobs(tableId.getTableName());
     }
 
     @Override
