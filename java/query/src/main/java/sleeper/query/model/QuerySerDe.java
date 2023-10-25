@@ -39,7 +39,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 /**
@@ -158,7 +157,7 @@ public class QuerySerDe {
                 }
                 try {
                     return tablePropertiesProvider.getByName(tableName).getSchema();
-                } catch (NoSuchElementException e) {
+                } catch (TablePropertiesProvider.TableNotFoundException e) {
                     throw new QueryValidationException(queryId, "Table \"" + tableName + "\" does not exist");
                 }
             });
