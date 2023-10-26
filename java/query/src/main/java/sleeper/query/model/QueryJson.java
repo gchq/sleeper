@@ -72,40 +72,6 @@ class QueryJson {
         }
     }
 
-    private static QueryJson from(LeafPartitionQuery query, RegionSerDe regionSerDe) {
-        return builder(query, regionSerDe)
-                .type("LeafPartitionQuery")
-                .subQueryId(query.getSubQueryId())
-                .leafPartitionId(query.getLeafPartitionId())
-                .partitionRegion(regionSerDe.toJsonTree(query.getPartitionRegion()))
-                .files(query.getFiles())
-                .build();
-    }
-
-    private static Builder builder(Query query, RegionSerDe regionSerDe) {
-        return builder()
-                .tableName(query.getTableName())
-                .queryId(query.getQueryId())
-                .regions(query.getRegions().stream()
-                        .map(regionSerDe::toJsonTree)
-                        .collect(Collectors.toUnmodifiableList()))
-                .requestedValueFields(query.getRequestedValueFields())
-                .queryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
-                .queryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
-                .resultsPublisherConfig(query.getResultsPublisherConfig())
-                .statusReportDestinations(query.getStatusReportDestinations());
-    }
-
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
-        return regionSerDe(schemaLoader, query.getQueryId(), query.getTableName());
-    }
-
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, String queryId, String tableName) {
-        return new RegionSerDe(schemaLoader.getSchema(tableName)
-                .orElseThrow(() -> new QueryValidationException(queryId,
-                        "Table could not be found with name: \"" + tableName + "\"")));
-    }
-
     Query toQuery(QuerySerDe.SchemaLoader schemaLoader) {
         if (type == null) {
             throw new JsonParseException("type field must be provided");
@@ -141,6 +107,44 @@ class QueryJson {
         }
     }
 
+    private static QueryJson from(LeafPartitionQuery query, RegionSerDe regionSerDe) {
+        return builder(query, regionSerDe)
+                .type("LeafPartitionQuery")
+                .subQueryId(query.getSubQueryId())
+                .leafPartitionId(query.getLeafPartitionId())
+                .partitionRegion(regionSerDe.toJsonTree(query.getPartitionRegion()))
+                .files(query.getFiles())
+                .build();
+    }
+
+    private static Builder builder(Query query, RegionSerDe regionSerDe) {
+        return builder()
+                .tableName(query.getTableName())
+                .queryId(query.getQueryId())
+                .regions(query.getRegions().stream()
+                        .map(regionSerDe::toJsonTree)
+                        .collect(Collectors.toUnmodifiableList()))
+                .requestedValueFields(query.getRequestedValueFields())
+                .queryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
+                .queryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
+                .resultsPublisherConfig(query.getResultsPublisherConfig())
+                .statusReportDestinations(query.getStatusReportDestinations());
+    }
+
+    private static Builder builder() {
+        return new Builder();
+    }
+
+    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
+        return regionSerDe(schemaLoader, query.getQueryId(), query.getTableName());
+    }
+
+    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, String queryId, String tableName) {
+        return new RegionSerDe(schemaLoader.getSchema(tableName)
+                .orElseThrow(() -> new QueryValidationException(queryId,
+                        "Table could not be found with name: \"" + tableName + "\"")));
+    }
+
     private List<Region> readRegions(RegionSerDe serDe) {
         if (regions == null) {
             return null;
@@ -156,10 +160,6 @@ class QueryJson {
 
     private List<Map<String, String>> readStatusReportDestinations() {
         return Objects.requireNonNullElseGet(statusReportDestinations, List::of);
-    }
-
-    private static Builder builder() {
-        return new Builder();
     }
 
     private static final class Builder {
