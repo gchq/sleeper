@@ -144,7 +144,7 @@ public class QuerySerDe {
     public static class QueryJsonSerDe implements JsonSerializer<Query>, JsonDeserializer<Query> {
         private final SchemaLoader schemaLoader;
 
-        public QueryJsonSerDe(SchemaLoader schemaLoader) {
+        private QueryJsonSerDe(SchemaLoader schemaLoader) {
             this.schemaLoader = schemaLoader;
         }
 
@@ -160,9 +160,7 @@ public class QuerySerDe {
         }
 
         public QueryJsonSerDe(Map<String, Schema> tableNameToSchemaMap) {
-            this((queryId, tableName) -> {
-                return Optional.ofNullable(tableNameToSchemaMap.get(tableName));
-            });
+            this((queryId, tableName) -> Optional.ofNullable(tableNameToSchemaMap.get(tableName)));
         }
 
         @Override
