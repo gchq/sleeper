@@ -51,7 +51,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
-public class QueryValidatorIT {
+public class QueryMessageHandlerIT {
     private static AmazonDynamoDB dynamoDBClient;
 
     @Container
@@ -71,7 +71,7 @@ public class QueryValidatorIT {
     }
 
     private final TableProperties tableProperties = createTable("table-1");
-    private final QueryValidator queryValidator = new QueryValidator(new FixedTablePropertiesProvider(tableProperties),
+    private final QueryMessageHandler queryMessageHandler = new QueryMessageHandler(new FixedTablePropertiesProvider(tableProperties),
             queryTracker, () -> "invalid-query-id");
 
     @Nested
@@ -83,7 +83,7 @@ public class QueryValidatorIT {
             String json = "{";
 
             // When
-            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+            Optional<Query> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -109,7 +109,7 @@ public class QueryValidatorIT {
                     "}";
 
             // When
-            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+            Optional<Query> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -137,7 +137,7 @@ public class QueryValidatorIT {
                     "}";
 
             // When
-            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+            Optional<Query> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -174,7 +174,7 @@ public class QueryValidatorIT {
                     "}";
 
             // When
-            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+            Optional<Query> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -207,7 +207,7 @@ public class QueryValidatorIT {
                     "}";
 
             // When
-            Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+            Optional<Query> query = queryMessageHandler.deserialiseAndValidate(json);
 
             // Then
             assertThat(query).isNotPresent();
@@ -241,7 +241,7 @@ public class QueryValidatorIT {
                 "}";
 
         // When
-        Optional<Query> query = queryValidator.deserialiseAndValidate(json);
+        Optional<Query> query = queryMessageHandler.deserialiseAndValidate(json);
 
         // Then
         assertThat(query).get().isEqualTo(new Query.Builder("table-1", "my-query",

@@ -16,18 +16,14 @@
 
 package sleeper.query.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.s3.AmazonS3;
 import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.QueryValidationException;
-import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.util.List;
@@ -35,25 +31,20 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-public class QueryValidator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(QueryValidator.class);
+public class QueryMessageHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueryMessageHandler.class);
     private final QueryStatusReportListener queryTracker;
     private final QuerySerDe querySerDe;
     private final Supplier<String> invalidQueryIdSupplier;
 
-    public QueryValidator(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoDB) {
-        this(new TablePropertiesProvider(instanceProperties, s3Client, dynamoDB),
-                new DynamoDBQueryTracker(instanceProperties, dynamoDB));
-    }
-
-    public QueryValidator(TablePropertiesProvider tablePropertiesProvider,
-                          QueryStatusReportListener queryTracker) {
+    public QueryMessageHandler(TablePropertiesProvider tablePropertiesProvider,
+                               QueryStatusReportListener queryTracker) {
         this(tablePropertiesProvider, queryTracker, () -> UUID.randomUUID().toString());
     }
 
-    public QueryValidator(TablePropertiesProvider tablePropertiesProvider,
-                          QueryStatusReportListener queryTracker,
-                          Supplier<String> invalidQueryIdSupplier) {
+    public QueryMessageHandler(TablePropertiesProvider tablePropertiesProvider,
+                               QueryStatusReportListener queryTracker,
+                               Supplier<String> invalidQueryIdSupplier) {
         this.queryTracker = queryTracker;
         this.invalidQueryIdSupplier = invalidQueryIdSupplier;
         this.querySerDe = new QuerySerDe(tablePropertiesProvider);

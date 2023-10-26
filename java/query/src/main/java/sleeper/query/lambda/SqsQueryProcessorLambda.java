@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
-import sleeper.query.model.QuerySerDe;
+import sleeper.query.tracker.DynamoDBQueryTracker;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
@@ -51,9 +51,8 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
     private final AmazonSQS sqsClient;
     private final AmazonS3 s3Client;
     private final AmazonDynamoDB dynamoClient;
-    private QuerySerDe serde;
+    private QueryMessageHandler messageHandler;
     private SqsQueryProcessor processor;
-    private QueryValidator queryValidator;
 
     public SqsQueryProcessorLambda() throws ObjectFactoryException {
         this(AmazonS3ClientBuilder.defaultClient(), AmazonSQSClientBuilder.defaultClient(),
@@ -65,7 +64,6 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         this.sqsClient = sqsClient;
         this.dynamoClient = dynamoClient;
         updateProperties(configBucket);
-        this.queryValidator = new QueryValidator(instanceProperties, s3Client, dynamoClient);
     }
 
     @Override
@@ -80,7 +78,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
             LOGGER.info("Received message with body {}", message.getBody());
             event.getRecords().stream()
                     .map(SQSEvent.SQSMessage::getBody)
-                    .flatMap(body -> queryValidator.deserialiseAndValidate(body).stream())
+                    .flatMap(body -> messageHandler.deserialiseAndValidate(body).stream())
                     .forEach(processor::processQuery);
         }
         return null;
@@ -103,7 +101,7 @@ public class SqsQueryProcessorLambda implements RequestHandler<SQSEvent, Void> {
         }
         instanceProperties = loadInstanceProperties(s3Client, configBucket);
         TablePropertiesProvider tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient);
-        serde = new QuerySerDe(tablePropertiesProvider);
+        messageHandler = new QueryMessageHandler(tablePropertiesProvider, new DynamoDBQueryTracker(instanceProperties, dynamoClient));
         processor = SqsQueryProcessor.builder()
                 .sqsClient(sqsClient).s3Client(s3Client).dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties).tablePropertiesProvider(tablePropertiesProvider)
