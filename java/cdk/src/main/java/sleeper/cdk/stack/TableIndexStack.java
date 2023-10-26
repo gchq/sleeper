@@ -30,7 +30,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
@@ -41,7 +40,8 @@ public class TableIndexStack extends NestedStack {
     private final ITable indexByNameDynamoTable;
     private final ITable indexByIdDynamoTable;
 
-    public TableIndexStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public TableIndexStack(Construct scope, String id, InstanceProperties instanceProperties,
+                           ManagedPoliciesStack policiesStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
@@ -72,11 +72,8 @@ public class TableIndexStack extends NestedStack {
                 .build();
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
 
-        addIngestSourceRoleReferences(this, "TableIndexReaderForIngest", instanceProperties)
-                .forEach(role -> {
-                    indexByNameDynamoTable.grantReadData(role);
-                    indexByIdDynamoTable.grantReadData(role);
-                });
+        indexByNameDynamoTable.grantReadData(policiesStack.getIngestPolicy());
+        indexByIdDynamoTable.grantReadData(policiesStack.getIngestPolicy());
     }
 
     public void grantRead(IGrantable grantee) {
