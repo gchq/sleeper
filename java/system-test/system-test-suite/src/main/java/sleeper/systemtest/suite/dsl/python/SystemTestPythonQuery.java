@@ -49,10 +49,18 @@ public class SystemTestPythonQuery {
         return this;
     }
 
-    public SystemTestPythonQuery range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusve)
+    public SystemTestPythonQuery range(String key, String table, Object min, Object max)
             throws IOException, InterruptedException {
         String queryId = UUID.randomUUID().toString();
-        pythonQueryDriver.range(queryId, key, min, minInclusive, max, maxInclusve);
+        pythonQueryDriver.range(queryId, key, table, min, max);
+        queryIds.add(queryId);
+        return this;
+    }
+
+    public SystemTestPythonQuery range(String key, Object min, boolean minInclusive, Object max, boolean maxInclusive)
+            throws IOException, InterruptedException {
+        String queryId = UUID.randomUUID().toString();
+        pythonQueryDriver.range(queryId, key, min, minInclusive, max, maxInclusive);
         queryIds.add(queryId);
         return this;
     }
