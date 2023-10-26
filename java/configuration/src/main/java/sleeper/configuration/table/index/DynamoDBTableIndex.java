@@ -144,4 +144,8 @@ public class DynamoDBTableIndex implements TableIndex {
         double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
         LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
     }
+
+    @Override
+    public void update(TableId tableId) {
+    }
 }

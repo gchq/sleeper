@@ -29,4 +29,6 @@ public interface TableIndex {
     Optional<TableId> getTableByUniqueId(String tableUniqueId);
 
     void delete(TableId tableId);
+
+    void update(TableId tableId);
 }

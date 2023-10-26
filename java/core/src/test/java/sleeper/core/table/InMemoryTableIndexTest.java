@@ -143,9 +143,34 @@ public class InMemoryTableIndexTest {
         }
     }
 
+    @Nested
+    @DisplayName("Update table")
+    class UpdateTable {
+        @Test
+        void shouldUpdateTableName() {
+            TableId tableId = createTable("old-name");
+
+            TableId newTableId = TableId.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
+            updateTable(newTableId);
+
+            assertThat(store.streamAllTables())
+                    .containsExactly(newTableId);
+            assertThat(store.getTableByName("new-name"))
+                    .contains(newTableId);
+            assertThat(store.getTableByName("old-name")).isEmpty();
+            assertThat(store.getTableByUniqueId(newTableId.getTableUniqueId()))
+                    .contains(newTableId);
+        }
+    }
+
     private TableId createTable(String tableName) {
         TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
         store.create(tableId);
+        return tableId;
+    }
+
+    private TableId updateTable(TableId tableId) {
+        store.update(tableId);
         return tableId;
     }
 }
