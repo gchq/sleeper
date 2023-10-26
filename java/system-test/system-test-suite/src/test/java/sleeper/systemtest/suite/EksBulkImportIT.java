@@ -26,6 +26,7 @@ import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
 import sleeper.systemtest.suite.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.fixtures.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.PurgeQueueExtension;
+import sleeper.systemtest.suite.testutil.ReportingExtension;
 
 import java.util.Map;
 import java.util.stream.LongStream;
@@ -41,6 +42,10 @@ import static sleeper.systemtest.suite.testutil.PartitionsTestHelper.partitionsB
 @Tag("SystemTest")
 public class EksBulkImportIT {
     private final SleeperSystemTest sleeper = SleeperSystemTest.getInstance();
+
+    @RegisterExtension
+    public final ReportingExtension reporting = ReportingExtension.reportIfTestFailed(
+            sleeper.reportsForExtension().ingestJobs());
     @RegisterExtension
     public final PurgeQueueExtension purgeQueue = PurgeQueueExtension.purgeIfTestFailed(
             BULK_IMPORT_EKS_JOB_QUEUE_URL, sleeper);
