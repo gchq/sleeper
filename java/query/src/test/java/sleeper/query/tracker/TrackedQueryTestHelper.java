@@ -37,13 +37,23 @@ public class TrackedQueryTestHelper {
     }
 
     public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long records) {
+        return queryPartiallyFailed(queryId, lastUpdateTime, records, "");
+    }
+
+    public static TrackedQuery queryPartiallyFailed(String queryId, Instant lastUpdateTime, long records, String errorMessage) {
         return queryWithState(queryId, lastUpdateTime, QueryState.PARTIALLY_FAILED)
                 .recordCount(records)
+                .errorMessage(errorMessage)
                 .build();
     }
 
     public static TrackedQuery queryFailed(String queryId, Instant lastUpdateTime) {
-        return queryWithState(queryId, lastUpdateTime, QueryState.FAILED).build();
+        return queryFailed(queryId, lastUpdateTime, "");
+    }
+
+    public static TrackedQuery queryFailed(String queryId, Instant lastUpdateTime, String errorMessage) {
+        return queryWithState(queryId, lastUpdateTime, QueryState.FAILED)
+                .errorMessage(errorMessage).build();
     }
 
     public static TrackedQuery subQueryInProgress(String queryId, String subQueryId, Instant lastUpdateTime) {

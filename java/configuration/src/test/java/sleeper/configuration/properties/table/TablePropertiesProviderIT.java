@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 
-import java.util.NoSuchElementException;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
@@ -79,7 +77,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldThrowExceptionWhenTableDoesNotExist() {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
-                .isInstanceOf(NoSuchElementException.class);
+                .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
     }
 
     @Test

@@ -48,8 +48,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.LOG_RETENTION_IN_DAYS;
@@ -61,27 +59,16 @@ public class CommonEmrBulkImportHelper {
     private final InstanceProperties instanceProperties;
     private final IngestStatusStoreResources statusStoreResources;
     private final CoreStacks coreStacks;
-    private final List<IBucket> ingestBuckets;
 
     public CommonEmrBulkImportHelper(Construct scope, String shortId,
                                      InstanceProperties instanceProperties,
                                      CoreStacks coreStacks,
                                      IngestStatusStoreResources ingestStatusStoreResources) {
-        this(scope, shortId, instanceProperties, coreStacks, ingestStatusStoreResources,
-                addIngestSourceBucketReferences(scope, "IngestBucket", instanceProperties));
-    }
-
-    public CommonEmrBulkImportHelper(Construct scope, String shortId,
-                                     InstanceProperties instanceProperties,
-                                     CoreStacks coreStacks,
-                                     IngestStatusStoreResources ingestStatusStoreResources,
-                                     List<IBucket> ingestBuckets) {
         this.scope = scope;
         this.shortId = shortId;
         this.instanceProperties = instanceProperties;
         this.coreStacks = coreStacks;
         this.statusStoreResources = ingestStatusStoreResources;
-        this.ingestBuckets = ingestBuckets;
     }
 
     // Queue for messages to trigger jobs - note that each concrete substack
@@ -122,8 +109,7 @@ public class CommonEmrBulkImportHelper {
 
         instanceProperties.set(jobQueueUrl, emrBulkImportJobQueue.getQueueUrl());
         instanceProperties.set(jobQueueArn, emrBulkImportJobQueue.getQueueArn());
-        addIngestSourceRoleReferences(scope, scope.getNode().getId() + "Writer", instanceProperties)
-                .forEach(emrBulkImportJobQueue::grantSendMessages);
+        emrBulkImportJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
 
         return emrBulkImportJobQueue;
     }
@@ -158,7 +144,7 @@ public class CommonEmrBulkImportHelper {
 
         coreStacks.grantReadConfigAndPartitions(function);
         importBucket.grantReadWrite(function);
-        ingestBuckets.forEach(ingestBucket -> ingestBucket.grantRead(function));
+        coreStacks.grantReadIngestSources(function);
         statusStoreResources.grantWriteJobEvent(function);
 
         function.addToRolePolicy(PolicyStatement.Builder.create()

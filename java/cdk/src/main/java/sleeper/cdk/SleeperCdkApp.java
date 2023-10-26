@@ -32,8 +32,10 @@ import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.IngestBatcherStack;
+import sleeper.cdk.stack.IngestSourceBucketsStack;
 import sleeper.cdk.stack.IngestStack;
 import sleeper.cdk.stack.IngestStatusStoreStack;
+import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.PropertiesStack;
 import sleeper.cdk.stack.QueryStack;
@@ -122,14 +124,16 @@ public class SleeperCdkApp extends Stack {
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
 
         // Stacks for tables
-        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties);
+        ManagedPoliciesStack policiesStack = new ManagedPoliciesStack(this, "Policies", instanceProperties);
+        TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, policiesStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
-                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
-                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack));
+                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties, policiesStack),
+                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack, policiesStack));
         coreStacks = new CoreStacks(
-                new ConfigBucketStack(this, "Configuration", instanceProperties),
-                new TableIndexStack(this, "TableIndex", instanceProperties),
-                stateStoreStacks, dataStack);
+                new ConfigBucketStack(this, "Configuration", instanceProperties, policiesStack),
+                new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack),
+                new IngestSourceBucketsStack(this, "SourceBuckets", instanceProperties),
+                policiesStack, stateStoreStacks, dataStack);
         new TableMetricsStack(this, "TableMetrics", instanceProperties, jars, coreStacks);
 
         // Stack for Athena analytics

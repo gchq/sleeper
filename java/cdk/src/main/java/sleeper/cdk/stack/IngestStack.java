@@ -41,7 +41,6 @@ import software.amazon.awscdk.services.iam.Effect;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyStatement;
-import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -59,13 +58,9 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-import static java.util.function.Predicate.not;
 import static sleeper.cdk.Utils.shouldDeployPaused;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLOUDWATCH_RULE;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
@@ -84,8 +79,6 @@ import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNN
 import static sleeper.configuration.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.configuration.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.configuration.properties.instance.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
-import static sleeper.configuration.properties.instance.IngestProperty.INGEST_SOURCE_ROLE;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.configuration.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
@@ -128,7 +121,7 @@ public class IngestStack extends NestedStack {
         LambdaCode taskCreatorJar = jars.lambdaCode(BuiltJar.INGEST_STARTER, jarsBucket);
 
         // SQS queue for ingest jobs
-        sqsQueueForIngestJobs(topic);
+        sqsQueueForIngestJobs(coreStacks, topic);
 
         // ECS cluster for ingest tasks
         ecsClusterForIngestTasks(jarsBucket, coreStacks, ingestJobQueue);
@@ -139,33 +132,7 @@ public class IngestStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    public static List<IBucket> addIngestSourceBucketReferences(Construct scope, String id, InstanceProperties instanceProperties) {
-        AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(INGEST_SOURCE_BUCKET).stream()
-                .filter(not(String::isEmpty))
-                .map(bucketName -> Bucket.fromBucketName(scope, id + index.getAndIncrement(), bucketName))
-                .collect(Collectors.toList());
-    }
-
-    // WARNING: When assigning grants to these roles, the ID of the role reference is incorrectly used as the name of
-    //          the IAM policy. This means the resulting ID must be unique within your AWS account. This is a bug in
-    //          the CDK.
-    public static List<IRole> addIngestSourceRoleReferences(Construct scope, String id, InstanceProperties instanceProperties) {
-        AtomicInteger index = new AtomicInteger(1);
-        return instanceProperties.getList(INGEST_SOURCE_ROLE).stream()
-                .filter(not(String::isEmpty))
-                .map(name -> Role.fromRoleName(scope, ingestSourceRoleReferenceId(id, instanceProperties, index), name))
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    private static String ingestSourceRoleReferenceId(
-            String id, InstanceProperties instanceProperties, AtomicInteger index) {
-        return Utils.truncateTo64Characters(String.join("-",
-                instanceProperties.get(ID).toLowerCase(Locale.ROOT),
-                String.valueOf(index.getAndIncrement()), id));
-    }
-
-    private Queue sqsQueueForIngestJobs(Topic topic) {
+    private Queue sqsQueueForIngestJobs(CoreStacks coreStacks, Topic topic) {
         // Create queue for ingest job definitions
         String dlQueueName = Utils.truncateTo64Characters(instanceProperties.get(ID) + "-IngestJobDLQ");
 
@@ -188,8 +155,7 @@ public class IngestStack extends NestedStack {
         instanceProperties.set(INGEST_JOB_QUEUE_ARN, ingestJobQueue.getQueueArn());
         instanceProperties.set(INGEST_JOB_DLQ_URL, ingestJobDeadLetterQueue.getQueue().getQueueUrl());
         instanceProperties.set(INGEST_JOB_DLQ_ARN, ingestJobDeadLetterQueue.getQueue().getQueueArn());
-        addIngestSourceRoleReferences(this, "IngestSourceRole", instanceProperties)
-                .forEach(ingestJobQueue::grantSendMessages);
+        ingestJobQueue.grantSendMessages(coreStacks.getIngestPolicy());
 
         // Add alarm to send message to SNS if there are any messages on the dead letter queue
         Alarm ingestAlarm = Alarm.Builder
@@ -275,10 +241,6 @@ public class IngestStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
                 .build());
-
-        // If a source bucket for ingest was specified, grant read access to it.
-        addIngestSourceBucketReferences(this, "SourceBucket", instanceProperties)
-                .forEach(bucket -> bucket.grantRead(taskDefinition.getTaskRole()));
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
