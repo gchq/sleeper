@@ -25,6 +25,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.QueryValidationException;
 import sleeper.query.tracker.QueryStatusReportListener;
+import sleeper.query.tracker.QueryStatusReportListeners;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,9 +52,8 @@ public class QueryMessageHandler {
     }
 
     public Optional<Query> deserialiseAndValidate(String message) {
-        Query query;
         try {
-            query = querySerDe.fromJson(message);
+            Query query = querySerDe.fromJson(message);
             LOGGER.info("Deserialised message to query {}", query);
             return Optional.of(query);
         } catch (JsonParseException e) {
@@ -62,7 +62,9 @@ public class QueryMessageHandler {
             return Optional.empty();
         } catch (QueryValidationException e) {
             LOGGER.error("QueryValidationException validating query from JSON {}", message, e);
-            queryTracker.queryFailed(invalidQuery(e.getQueryId()), e);
+            QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(e.getStatusReportDestinations());
+            queryTrackers.add(queryTracker);
+            queryTrackers.queryFailed(invalidQuery(e.getQueryId()), e);
             return Optional.empty();
         }
     }

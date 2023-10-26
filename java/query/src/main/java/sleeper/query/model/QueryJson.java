@@ -60,7 +60,7 @@ class QueryJson {
 
     static QueryJson from(Query query, QuerySerDe.SchemaLoader schemaLoader) {
         if (null == query.getTableName()) {
-            throw new QueryValidationException(query.getQueryId(), "Table must not be null");
+            throw new QueryValidationException(query.getQueryId(), query.getStatusReportDestinations(), "Table must not be null");
         }
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, query);
         if (query instanceof LeafPartitionQuery) {
@@ -77,12 +77,12 @@ class QueryJson {
             throw new JsonParseException("queryId field must be provided");
         }
         if (type == null) {
-            throw new QueryValidationException(queryId, "type field must be provided");
+            throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
         }
         if (tableName == null) {
-            throw new QueryValidationException(queryId, "tableName field must be provided");
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
         }
-        RegionSerDe regionSerDe = regionSerDe(schemaLoader, queryId, tableName);
+        RegionSerDe regionSerDe = regionSerDe(schemaLoader, queryId, statusReportDestinations, tableName);
         switch (type) {
             case "Query":
                 return new Query.Builder(tableName, queryId, readRegions(regionSerDe))
@@ -103,7 +103,7 @@ class QueryJson {
                         .setStatusReportDestinations(readStatusReportDestinations())
                         .build();
             default:
-                throw new QueryValidationException(queryId, "Unknown query type \"" + type + "\"");
+                throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }
     }
 
@@ -136,12 +136,12 @@ class QueryJson {
     }
 
     private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {
-        return regionSerDe(schemaLoader, query.getQueryId(), query.getTableName());
+        return regionSerDe(schemaLoader, query.getQueryId(), query.getStatusReportDestinations(), query.getTableName());
     }
 
-    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, String queryId, String tableName) {
+    private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, String queryId, List<Map<String, String>> statusReportDestinations, String tableName) {
         return new RegionSerDe(schemaLoader.getSchema(tableName)
-                .orElseThrow(() -> new QueryValidationException(queryId,
+                .orElseThrow(() -> new QueryValidationException(queryId, statusReportDestinations,
                         "Table could not be found with name: \"" + tableName + "\"")));
     }
 
@@ -154,7 +154,7 @@ class QueryJson {
                     .map(serDe::fromJsonTree)
                     .collect(Collectors.toUnmodifiableList());
         } catch (RegionSerDe.KeyDoesNotExistException e) {
-            throw new QueryValidationException(queryId, e);
+            throw new QueryValidationException(queryId, statusReportDestinations, e);
         }
     }
 
