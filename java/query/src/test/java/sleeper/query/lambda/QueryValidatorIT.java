@@ -23,18 +23,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.FixedTablePropertiesProvider;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
+import sleeper.dynamodb.tools.DynamoDBContainer;
 import sleeper.query.model.Query;
 import sleeper.query.tracker.DynamoDBQueryTracker;
 import sleeper.query.tracker.DynamoDBQueryTrackerCreator;
@@ -53,16 +52,14 @@ import static sleeper.dynamodb.tools.GenericContainerAwsV1ClientHelper.buildAwsV
 
 @Testcontainers
 public class QueryValidatorIT {
-    private static final int DYNAMO_PORT = 8000;
     private static AmazonDynamoDB dynamoDBClient;
 
     @Container
-    public static GenericContainer dynamoDb = new GenericContainer(CommonTestConstants.DYNAMODB_LOCAL_CONTAINER)
-            .withExposedPorts(DYNAMO_PORT);
+    public static DynamoDBContainer dynamoDb = new DynamoDBContainer();
 
     @BeforeAll
     public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(dynamoDb, dynamoDb.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
     }
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
@@ -97,7 +94,6 @@ public class QueryValidatorIT {
                             .lastKnownState(QueryState.FAILED)
                             .errorMessage("java.io.EOFException: End of input at line 1 column 2 path $.")
                             .build());
-
         }
 
         @Test
@@ -120,9 +116,10 @@ public class QueryValidatorIT {
             assertThat(queryTracker.getFailedQueries())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                     .containsExactly(TrackedQuery.builder()
-                            .queryId("invalid-query-id")
+                            .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("tableName field must be provided")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "tableName field must be provided")
                             .build());
         }
 
@@ -147,9 +144,10 @@ public class QueryValidatorIT {
             assertThat(queryTracker.getFailedQueries())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                     .containsExactly(TrackedQuery.builder()
-                            .queryId("invalid-query-id")
+                            .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Unknown query type: invalid-query-type")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Unknown query type \"invalid-query-type\"")
                             .build());
         }
     }
@@ -185,7 +183,8 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Table \"not-a-table\" does not exist")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Table could not be found with name: \"not-a-table\"")
                             .build());
         }
 
@@ -217,7 +216,8 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Key \"not-a-key\" does not exist on table \"table-1\"")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Key \"not-a-key\" was not a row key field in the table schema")
                             .build());
         }
     }

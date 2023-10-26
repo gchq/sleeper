@@ -28,6 +28,7 @@ import sleeper.query.model.Query;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.QueryValidationException;
 import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.tracker.QueryStatusReportListener;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,7 @@ import java.util.function.Supplier;
 
 public class QueryValidator {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryValidator.class);
-    private final DynamoDBQueryTracker queryTracker;
+    private final QueryStatusReportListener queryTracker;
     private final QuerySerDe querySerDe;
     private final Supplier<String> invalidQueryIdSupplier;
 
@@ -46,12 +47,12 @@ public class QueryValidator {
     }
 
     public QueryValidator(TablePropertiesProvider tablePropertiesProvider,
-                          DynamoDBQueryTracker queryTracker) {
+                          QueryStatusReportListener queryTracker) {
         this(tablePropertiesProvider, queryTracker, () -> UUID.randomUUID().toString());
     }
 
     public QueryValidator(TablePropertiesProvider tablePropertiesProvider,
-                          DynamoDBQueryTracker queryTracker,
+                          QueryStatusReportListener queryTracker,
                           Supplier<String> invalidQueryIdSupplier) {
         this.queryTracker = queryTracker;
         this.invalidQueryIdSupplier = invalidQueryIdSupplier;
@@ -68,12 +69,8 @@ public class QueryValidator {
             LOGGER.error("JSONParseException deserialising query from JSON {}", message, e);
             queryTracker.queryFailed(invalidQuery(), e);
             return Optional.empty();
-        } catch (IllegalArgumentException e) {
-            LOGGER.error("IllegalArgumentException deserialising query from JSON {}", message, e);
-            queryTracker.queryFailed(invalidQuery(), e);
-            return Optional.empty();
         } catch (QueryValidationException e) {
-            LOGGER.error("QueryValidationException deserialising query from JSON {}", message, e);
+            LOGGER.error("QueryValidationException validating query from JSON {}", message, e);
             queryTracker.queryFailed(invalidQuery(e.getQueryId()), e);
             return Optional.empty();
         }
