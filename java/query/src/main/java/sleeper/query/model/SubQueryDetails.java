@@ -18,6 +18,7 @@ package sleeper.query.model;
 
 import sleeper.core.range.Region;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,7 +64,7 @@ public class SubQueryDetails {
             return false;
         }
         SubQueryDetails that = (SubQueryDetails) object;
-        return Objects.equals(subQueryId, that.subQueryId) && Objects.equals(leafPartitionId, that.leafPartitionId) && Objects.equals(partitionRegion, that.partitionRegion) && Objects.equals(files, that.files);
+        return Objects.equals(subQueryId, that.subQueryId) && Objects.equals(leafPartitionId, that.leafPartitionId) && Objects.equals(partitionRegion, that.partitionRegion) && Objects.equals(new HashSet<>(files), new HashSet<>(that.files));
     }
 
     @Override
