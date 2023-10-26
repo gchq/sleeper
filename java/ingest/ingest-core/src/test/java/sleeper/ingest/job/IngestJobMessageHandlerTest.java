@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
@@ -205,6 +206,8 @@ public class IngestJobMessageHandlerTest {
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .isEmpty();
         }
 
         @Test
@@ -226,6 +229,8 @@ public class IngestJobMessageHandlerTest {
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Model validation failed. Missing property \"tableName\"")));
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .isEmpty();
         }
 
         @Test
@@ -242,11 +247,14 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Model validation failed. Missing property \"files\""));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"")));
+                    .containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .containsExactly(expected);
         }
 
         @Test
@@ -267,6 +275,8 @@ public class IngestJobMessageHandlerTest {
                             rejectedRun("test-job-id", json, validationTime,
                                     "Model validation failed. Missing property \"files\"",
                                     "Model validation failed. Missing property \"tableName\"")));
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .isEmpty();
         }
 
         @Test
@@ -284,11 +294,14 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("invalid-job-1",
+                    rejectedRun("invalid-job-1", json, validationTime,
+                            "Model validation failed. One of the files was null"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("invalid-job-1",
-                            rejectedRun("invalid-job-1", json, validationTime,
-                                    "Model validation failed. One of the files was null")));
+                    .containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs("system-test"))
+                    .containsExactly(expected);
         }
     }
 
