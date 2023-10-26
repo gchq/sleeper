@@ -51,8 +51,9 @@ public class IngestJobValidatedEvent {
     public static Builder ingestJobAccepted(IngestJob job, TableId tableId, Instant validationTime) {
         return builder()
                 .jobId(job.getId())
-                .tableName(job.getTableName())
+                .tableName(tableId.getTableName())
                 .tableId(tableId.getTableUniqueId())
+                .fileCount(job.getFileCount())
                 .validationTime(validationTime)
                 .reasons(List.of());
     }
