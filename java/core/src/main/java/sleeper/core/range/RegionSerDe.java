@@ -53,15 +53,13 @@ public class RegionSerDe {
     public static final String MAX_INCLUSIVE = "maxInclusive";
     public static final String STRINGS_BASE64_ENCODED = "stringsBase64Encoded";
 
-    private final Schema schema;
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
 
     public RegionSerDe(Schema schema) {
         try {
-            this.schema = schema;
             GsonBuilder builder = new GsonBuilder()
-                    .registerTypeAdapter(Class.forName(Region.class.getName()), new RegionJsonSerDe(this.schema))
+                    .registerTypeAdapter(Class.forName(Region.class.getName()), new RegionJsonSerDe(schema))
                     .serializeNulls();
             this.gson = builder.create();
             this.gsonPrettyPrinting = builder.setPrettyPrinting().create();
@@ -81,8 +79,16 @@ public class RegionSerDe {
         return toJson(region);
     }
 
+    public JsonElement toJsonTree(Region region) {
+        return gson.toJsonTree(region);
+    }
+
     public Region fromJson(String jsonSchema) {
         return gson.fromJson(jsonSchema, Region.class);
+    }
+
+    public Region fromJsonTree(JsonElement jsonElement) {
+        return gson.fromJson(jsonElement, Region.class);
     }
 
     public static class RegionJsonSerDe implements JsonSerializer<Region>, JsonDeserializer<Region> {
@@ -139,7 +145,7 @@ public class RegionSerDe {
                     .filter(f -> f.getName().equals(range.getFieldName()))
                     .map(Field::getType)
                     .findFirst();
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 throw new KeyDoesNotExistException(range.getFieldName());
             }
             PrimitiveType type = (PrimitiveType) optional.get();
@@ -206,7 +212,7 @@ public class RegionSerDe {
                     .filter(f -> f.getName().equals(fieldName))
                     .map(Field::getType)
                     .findFirst();
-            if (!optional.isPresent()) {
+            if (optional.isEmpty()) {
                 throw new KeyDoesNotExistException(fieldName);
             }
 
