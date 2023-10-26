@@ -125,21 +125,43 @@ public class InMemoryTableIndexTest {
     class DeleteTable {
 
         @Test
-        void deleteTableNameReference() {
+        void shouldDeleteTableNameReference() {
+            // Given
             TableId tableId = createTable("test-table");
 
+            // When
             store.delete(tableId);
 
+            // Then
             assertThat(store.getTableByName("test-table")).isEmpty();
         }
 
         @Test
-        void deleteTableIdReference() {
+        void shouldDeleteTableIdReference() {
+            // Given
             TableId tableId = createTable("test-table");
 
+            // When
             store.delete(tableId);
 
+            // Then
             assertThat(store.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
+        }
+
+        @Test
+        void shouldDeleteTableWhenTableNameHasBeenUpdated() {
+            // Given
+            TableId oldTableId = createTable("old-name");
+            TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
+            updateTable(newTableId);
+
+            // When
+            store.delete(oldTableId);
+
+            // Then
+            assertThat(store.getTableByUniqueId(oldTableId.getTableUniqueId())).isEmpty();
+            assertThat(store.getTableByName("old-name")).isEmpty();
+            assertThat(store.getTableByName("new-name")).isEmpty();
         }
     }
 

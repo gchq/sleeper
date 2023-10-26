@@ -57,8 +57,9 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public void delete(TableId tableId) {
-        indexByName.remove(tableId.getTableName());
-        indexById.remove(tableId.getTableUniqueId());
+        TableId latestId = indexById.get(tableId.getTableUniqueId());
+        indexByName.remove(latestId.getTableName());
+        indexById.remove(latestId.getTableUniqueId());
     }
 
     @Override
