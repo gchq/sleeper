@@ -16,6 +16,7 @@
 
 package sleeper.ingest.job.status;
 
+import sleeper.core.table.TableId;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
@@ -45,6 +46,15 @@ public class IngestJobValidatedEvent {
 
     public static Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
         return builder().job(job).validationTime(validationTime).reasons(List.of());
+    }
+
+    public static Builder ingestJobAccepted(IngestJob job, TableId tableId, Instant validationTime) {
+        return builder()
+                .jobId(job.getId())
+                .tableName(job.getTableName())
+                .tableId(tableId.getTableUniqueId())
+                .validationTime(validationTime)
+                .reasons(List.of());
     }
 
     public static IngestJobValidatedEvent ingestJobRejected(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
@@ -175,6 +185,10 @@ public class IngestJobValidatedEvent {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
             return this;
         }
 
