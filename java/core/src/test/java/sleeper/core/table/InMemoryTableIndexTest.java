@@ -163,6 +163,16 @@ public class InMemoryTableIndexTest {
             assertThat(store.getTableByName("old-name")).isEmpty();
             assertThat(store.getTableByName("new-name")).isEmpty();
         }
+
+        @Test
+        void shouldFailToDeleteTableThatDoesNotExist() {
+            // Given
+            TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
+
+            // When / Then
+            assertThatThrownBy(() -> store.delete(tableId))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
     }
 
     @Nested
