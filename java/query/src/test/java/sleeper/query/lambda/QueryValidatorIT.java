@@ -185,7 +185,7 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Query validation failed: Table with name \"not-a-table\" not found")
+                            .errorMessage("Query validation failed: Table could not be found with name: \"not-a-table\"")
                             .build());
         }
 

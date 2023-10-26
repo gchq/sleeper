@@ -28,6 +28,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 import sleeper.core.range.RegionSerDe;
@@ -39,6 +40,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -148,26 +150,18 @@ public class QuerySerDe {
 
         public QueryJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
             this((queryId, tableName) -> {
-                if (tableName == null) {
-                    throw new QueryValidationException(queryId, "Table must not be null");
-                }
                 try {
-                    return tablePropertiesProvider.getByName(tableName).getSchema();
+                    return Optional.of(tablePropertiesProvider.getByName(tableName))
+                            .map(TableProperties::getSchema);
                 } catch (TablePropertiesProvider.TableNotFoundException e) {
-                    throw new QueryValidationException(queryId, e);
+                    return Optional.empty();
                 }
             });
         }
 
         public QueryJsonSerDe(Map<String, Schema> tableNameToSchemaMap) {
             this((queryId, tableName) -> {
-                if (tableName == null) {
-                    throw new QueryValidationException(queryId, "Table must not be null");
-                }
-                if (!tableNameToSchemaMap.containsKey(tableName)) {
-                    throw new QueryValidationException(queryId, new TablePropertiesProvider.TableNotFoundException(tableName));
-                }
-                return tableNameToSchemaMap.get(tableName);
+                return Optional.ofNullable(tableNameToSchemaMap.get(tableName));
             });
         }
 
@@ -182,6 +176,9 @@ public class QuerySerDe {
                 json.add(REQUESTED_VALUE_FIELDS, requestedValueFields);
             }
 
+            if (null == query.getTableName()) {
+                throw new QueryValidationException(query.getQueryId(), "Table must not be null");
+            }
             json.addProperty(TABLE_NAME, query.getTableName());
             if (null != query.getQueryTimeIteratorClassName()) {
                 json.addProperty(QUERY_ITERATOR_CLASS_NAME, query.getQueryTimeIteratorClassName());
@@ -208,7 +205,7 @@ public class QuerySerDe {
                 json.add(STATUS_REPORT_DESTINATIONS, statusReportDestinations);
             }
 
-            Schema schema = schemaLoader.getTableForQuery(query.getQueryId(), query.getTableName());
+            Schema schema = getSchemaOrThrow(query.getTableName(), query.getQueryId());
 
             if (query instanceof LeafPartitionQuery) {
                 json.addProperty(QUERY_TYPE, LEAF_PARTITION_QUERY);
@@ -295,7 +292,7 @@ public class QuerySerDe {
                 }
             }
 
-            Schema schema = schemaLoader.getTableForQuery(queryId, tableName);
+            Schema schema = getSchemaOrThrow(tableName, queryId);
 
             switch (type) {
                 case LEAF_PARTITION_QUERY:
@@ -337,9 +334,15 @@ public class QuerySerDe {
                     throw new IllegalArgumentException("Unknown query type: " + type);
             }
         }
+
+        Schema getSchemaOrThrow(String tableName, String queryId) {
+            return schemaLoader.getTableForQuery(queryId, tableName)
+                    .orElseThrow(() -> new QueryValidationException(queryId,
+                            "Table could not be found with name: \"" + tableName + "\""));
+        }
     }
 
     interface SchemaLoader {
-        Schema getTableForQuery(String tableName, String queryId) throws QueryValidationException;
+        Optional<Schema> getTableForQuery(String tableName, String queryId) throws QueryValidationException;
     }
 }
