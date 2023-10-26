@@ -78,12 +78,10 @@ public class IngestJobMessageHandler<T> {
             return Optional.empty();
         }
         IngestJob ingestJob = toIngestJob.apply(job);
-        IngestJob.Builder ingestJobBuilder = ingestJob.toBuilder();
         String jobId = ingestJob.getId();
         if (jobId == null || jobId.isBlank()) {
             jobId = jobIdSupplier.get();
             LOGGER.info("Null or blank id provided. Generated new id: {}", jobId);
-            ingestJobBuilder.id(jobId);
         }
 
         List<String> files = ingestJob.getFiles();
