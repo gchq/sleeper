@@ -153,12 +153,14 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Could not find one or more files")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+                    .containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .containsExactly(expected);
         }
 
         @Test
@@ -177,12 +179,12 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
+            IngestJobStatus expected = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Could not find one or more files")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs()).containsExactly(expected);
+            assertThat(ingestJobStatusStore.getAllJobs("test-table")).containsExactly(expected);
         }
     }
 

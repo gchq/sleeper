@@ -114,7 +114,12 @@ public class IngestJobMessageHandler<T> {
         if (expandedFiles.isEmpty()) {
             LOGGER.warn("Could not find one or more files for job: {}", job);
             ingestJobStatusStore.jobValidated(
-                    ingestJobRejected(jobId, message, timeSupplier.get(), "Could not find one or more files"));
+                    refusedEventBuilder()
+                            .jobId(jobId)
+                            .tableName(ingestJob.getTableName())
+                            .jsonMessage(message)
+                            .reasons("Could not find one or more files")
+                            .build());
             return Optional.empty();
         }
 
