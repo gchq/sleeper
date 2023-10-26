@@ -25,13 +25,15 @@
     "subQueryId": "-",
     "lastUpdateTime": "2023-09-28T18:56:00Z",
     "lastKnownState": "PARTIALLY_FAILED",
-    "recordCount": 123
+    "recordCount": 123,
+    "errorMessage": "Error: Query partially failed"
   },
   {
     "queryId": "test-query-5",
     "subQueryId": "-",
     "lastUpdateTime": "2023-09-28T18:58:00Z",
     "lastKnownState": "FAILED",
-    "recordCount": 0
+    "recordCount": 0,
+    "errorMessage": "Error: Query failed"
   }
 ]

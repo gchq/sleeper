@@ -30,7 +30,6 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import java.util.Locale;
 
 import static sleeper.cdk.Utils.removalPolicy;
-import static sleeper.cdk.stack.IngestStack.addIngestSourceRoleReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 
@@ -38,7 +37,8 @@ public class TableDataStack extends NestedStack {
 
     private final IBucket dataBucket;
 
-    public TableDataStack(Construct scope, String id, InstanceProperties instanceProperties) {
+    public TableDataStack(Construct scope, String id, InstanceProperties instanceProperties,
+                          ManagedPoliciesStack policiesStack) {
         super(scope, id);
 
         String instanceId = instanceProperties.get(ID);
@@ -55,8 +55,7 @@ public class TableDataStack extends NestedStack {
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());
 
-        addIngestSourceRoleReferences(this, "DataWriterForIngest", instanceProperties)
-                .forEach(dataBucket::grantReadWrite);
+        dataBucket.grantReadWrite(policiesStack.getIngestPolicy());
     }
 
     public IBucket getDataBucket() {

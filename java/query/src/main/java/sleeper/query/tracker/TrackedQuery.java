@@ -15,12 +15,8 @@
  */
 package sleeper.query.tracker;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
-
 import java.time.Instant;
+import java.util.Objects;
 
 /**
  * A TrackedQuery contains information about a query including its id and current status.
@@ -32,6 +28,7 @@ public class TrackedQuery {
     private final Long expiryDate;
     private final QueryState lastKnownState;
     private final Long recordCount;
+    private final String errorMessage;
 
     private TrackedQuery(Builder builder) {
         queryId = builder.queryId;
@@ -40,6 +37,7 @@ public class TrackedQuery {
         expiryDate = builder.expiryDate;
         lastKnownState = builder.lastKnownState;
         recordCount = builder.recordCount;
+        errorMessage = builder.errorMessage;
     }
 
     public static Builder builder() {
@@ -70,6 +68,10 @@ public class TrackedQuery {
         return recordCount;
     }
 
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -79,39 +81,31 @@ public class TrackedQuery {
             return false;
         }
         TrackedQuery that = (TrackedQuery) o;
-
-        return new EqualsBuilder()
-                .append(queryId, that.queryId)
-                .append(subQueryId, that.subQueryId)
-                .append(lastUpdateTime, that.lastUpdateTime)
-                .append(expiryDate, that.expiryDate)
-                .append(lastKnownState, that.lastKnownState)
-                .append(recordCount, that.recordCount)
-                .isEquals();
+        return Objects.equals(queryId, that.queryId)
+                && Objects.equals(subQueryId, that.subQueryId)
+                && Objects.equals(lastUpdateTime, that.lastUpdateTime)
+                && Objects.equals(expiryDate, that.expiryDate)
+                && lastKnownState == that.lastKnownState
+                && Objects.equals(recordCount, that.recordCount)
+                && Objects.equals(errorMessage, that.errorMessage);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(queryId)
-                .append(subQueryId)
-                .append(lastUpdateTime)
-                .append(expiryDate)
-                .append(lastKnownState)
-                .append(recordCount)
-                .toHashCode();
+        return Objects.hash(queryId, subQueryId, lastUpdateTime, expiryDate, lastKnownState, recordCount, errorMessage);
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this, ToStringStyle.NO_CLASS_NAME_STYLE)
-                .append("queryId", queryId)
-                .append("subQueryId", subQueryId)
-                .append("lastUpdateTime", lastUpdateTime)
-                .append("expiryDate", expiryDate)
-                .append("lastKnownState", lastKnownState)
-                .append("recordCount", recordCount)
-                .toString();
+        return "TrackedQuery{" +
+                "queryId='" + queryId + '\'' +
+                ", subQueryId='" + subQueryId + '\'' +
+                ", lastUpdateTime=" + lastUpdateTime +
+                ", expiryDate=" + expiryDate +
+                ", lastKnownState=" + lastKnownState +
+                ", recordCount=" + recordCount +
+                ", errorMessage='" + errorMessage + '\'' +
+                '}';
     }
 
     public static final class Builder {
@@ -121,6 +115,7 @@ public class TrackedQuery {
         private Long expiryDate;
         private QueryState lastKnownState;
         private Long recordCount = 0L;
+        private String errorMessage;
 
         private Builder() {
         }
@@ -156,6 +151,11 @@ public class TrackedQuery {
 
         public Builder recordCount(Long recordCount) {
             this.recordCount = recordCount;
+            return this;
+        }
+
+        public Builder errorMessage(String errorMessage) {
+            this.errorMessage = errorMessage;
             return this;
         }
 

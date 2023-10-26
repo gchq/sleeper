@@ -105,8 +105,8 @@ public class StandardQueryTrackerReporterTest {
         void shouldRunReportWithFailedQueries() throws Exception {
             // Given
             List<TrackedQuery> failedQueries = List.of(
-                    queryPartiallyFailed("test-query-1", Instant.parse("2023-09-28T18:50:00Z"), 123L),
-                    queryFailed("test-query-2", Instant.parse("2023-09-28T18:52:00Z")));
+                    queryPartiallyFailed("test-query-1", Instant.parse("2023-09-28T18:50:00Z"), 123L, "Test failure 1"),
+                    queryFailed("test-query-2", Instant.parse("2023-09-28T18:52:00Z"), "Test failure 2"));
 
             // When/Then
             assertThat(getStandardReport(TrackerQuery.FAILED, failedQueries))
