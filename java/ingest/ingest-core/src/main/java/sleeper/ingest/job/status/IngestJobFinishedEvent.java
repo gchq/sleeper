@@ -22,13 +22,15 @@ import sleeper.ingest.job.IngestJob;
 import java.util.Objects;
 
 public class IngestJobFinishedEvent {
-    private final IngestJob job;
+    private final String jobId;
+    private final String tableName;
     private final RecordsProcessedSummary summary;
     private final String jobRunId;
     private final String taskId;
 
     private IngestJobFinishedEvent(Builder builder) {
-        job = Objects.requireNonNull(builder.job, "job must not be null");
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
@@ -47,11 +49,11 @@ public class IngestJobFinishedEvent {
     }
 
     public String getJobId() {
-        return job.getId();
+        return jobId;
     }
 
     public String getTableName() {
-        return job.getTableName();
+        return tableName;
     }
 
     public RecordsProcessedSummary getSummary() {
@@ -75,18 +77,19 @@ public class IngestJobFinishedEvent {
             return false;
         }
         IngestJobFinishedEvent that = (IngestJobFinishedEvent) o;
-        return Objects.equals(job, that.job) && Objects.equals(summary, that.summary) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
+        return Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName) && Objects.equals(summary, that.summary) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(job, summary, jobRunId, taskId);
+        return Objects.hash(jobId, tableName, summary, jobRunId, taskId);
     }
 
     @Override
     public String toString() {
         return "IngestJobFinishedEvent{" +
-                "job=" + job +
+                "jobId='" + jobId + '\'' +
+                ", tableName='" + tableName + '\'' +
                 ", summary=" + summary +
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +
@@ -94,7 +97,8 @@ public class IngestJobFinishedEvent {
     }
 
     public static final class Builder {
-        private IngestJob job;
+        private String jobId;
+        private String tableName;
         private RecordsProcessedSummary summary;
         private String jobRunId;
         private String taskId;
@@ -103,7 +107,17 @@ public class IngestJobFinishedEvent {
         }
 
         public Builder job(IngestJob job) {
-            this.job = job;
+            return jobId(job.getId())
+                    .tableName(job.getTableName());
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
             return this;
         }
 
