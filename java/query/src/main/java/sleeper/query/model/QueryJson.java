@@ -73,14 +73,14 @@ class QueryJson {
     }
 
     Query toQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        if (type == null) {
-            throw new JsonParseException("type field must be provided");
-        }
         if (queryId == null) {
             throw new JsonParseException("queryId field must be provided");
         }
+        if (type == null) {
+            throw new QueryValidationException(queryId, "type field must be provided");
+        }
         if (tableName == null) {
-            throw new JsonParseException("tableName field must be provided");
+            throw new QueryValidationException(queryId, "tableName field must be provided");
         }
         RegionSerDe regionSerDe = regionSerDe(schemaLoader, queryId, tableName);
         switch (type) {

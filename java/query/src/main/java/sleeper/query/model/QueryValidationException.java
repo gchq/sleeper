@@ -20,12 +20,12 @@ public class QueryValidationException extends RuntimeException {
     private final String queryId;
 
     public QueryValidationException(String queryId, String message) {
-        super("Query validation failed: " + message);
+        super("Query validation failed for query \"" + queryId + "\": " + message);
         this.queryId = queryId;
     }
 
     public QueryValidationException(String queryId, Exception cause) {
-        super("Query validation failed: " + cause.getMessage(), cause);
+        super("Query validation failed for query \"" + queryId + "\": " + cause.getMessage(), cause);
         this.queryId = queryId;
     }
 

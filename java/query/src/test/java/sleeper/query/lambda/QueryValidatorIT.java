@@ -119,9 +119,10 @@ public class QueryValidatorIT {
             assertThat(queryTracker.getFailedQueries())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                     .containsExactly(TrackedQuery.builder()
-                            .queryId("invalid-query-id")
+                            .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("tableName field must be provided")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "tableName field must be provided")
                             .build());
         }
 
@@ -148,7 +149,8 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Query validation failed: Unknown query type \"invalid-query-type\"")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Unknown query type \"invalid-query-type\"")
                             .build());
         }
     }
@@ -184,7 +186,8 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Query validation failed: Table could not be found with name: \"not-a-table\"")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Table could not be found with name: \"not-a-table\"")
                             .build());
         }
 
@@ -216,7 +219,8 @@ public class QueryValidatorIT {
                     .containsExactly(TrackedQuery.builder()
                             .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Query validation failed: Key \"not-a-key\" was not a row key field in the table schema")
+                            .errorMessage("Query validation failed for query \"my-query\": " +
+                                    "Key \"not-a-key\" was not a row key field in the table schema")
                             .build());
         }
     }
