@@ -114,7 +114,7 @@ public class TablePropertiesProviderTest {
         void shouldThrowExceptionWhenTableDoesNotExistLoadingByName() {
             // When / Then
             assertThatThrownBy(() -> provider.getByName(tableName))
-                    .isInstanceOf(NoSuchElementException.class);
+                    .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
         }
 
         @Test

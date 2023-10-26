@@ -9,11 +9,11 @@ Total queries completed: 1
 
 Total queries partially failed: 1
 Total queries failed: 1
-----------------------------------------------------------------------------------------
-| STATE            | QUERY_ID     | SUB_QUERY_ID | LAST_UPDATE_TIME     | RECORD_COUNT |
-| QUEUED           | test-query-1 | -            | 2023-09-28T18:50:00Z | 0            |
-| IN_PROGRESS      | test-query-2 | -            | 2023-09-28T18:52:00Z | 0            |
-| COMPLETED        | test-query-3 | -            | 2023-09-28T18:54:00Z | 456          |
-| PARTIALLY_FAILED | test-query-4 | -            | 2023-09-28T18:56:00Z | 123          |
-| FAILED           | test-query-5 | -            | 2023-09-28T18:58:00Z | 0            |
-----------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------
+| STATE            | QUERY_ID     | SUB_QUERY_ID | LAST_UPDATE_TIME     | RECORD_COUNT | ERRORS                        |
+| QUEUED           | test-query-1 | -            | 2023-09-28T18:50:00Z | 0            |                               |
+| IN_PROGRESS      | test-query-2 | -            | 2023-09-28T18:52:00Z | 0            |                               |
+| COMPLETED        | test-query-3 | -            | 2023-09-28T18:54:00Z | 456          |                               |
+| PARTIALLY_FAILED | test-query-4 | -            | 2023-09-28T18:56:00Z | 123          | Error: Query partially failed |
+| FAILED           | test-query-5 | -            | 2023-09-28T18:58:00Z | 0            | Error: Query failed           |
+------------------------------------------------------------------------------------------------------------------------

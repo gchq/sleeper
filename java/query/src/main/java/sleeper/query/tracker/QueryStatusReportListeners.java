@@ -38,7 +38,7 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
         }
 
         List<QueryStatusReportListener> listeners = destinationsConfig.stream()
-                .map(destinationConfig -> QueryStatusReportListener.fromConfig(destinationConfig))
+                .map(QueryStatusReportListener::fromConfig)
                 .collect(Collectors.toList());
         return new QueryStatusReportListeners(listeners);
     }
