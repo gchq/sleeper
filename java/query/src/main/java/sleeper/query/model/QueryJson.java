@@ -103,7 +103,7 @@ class QueryJson {
                         .setStatusReportDestinations(readStatusReportDestinations())
                         .build();
             default:
-                throw new IllegalArgumentException("Unknown query type: " + type);
+                throw new QueryValidationException(queryId, "Unknown query type \"" + type + "\"");
         }
     }
 

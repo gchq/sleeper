@@ -687,8 +687,8 @@ public class QuerySerDeTest {
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Unknown query type: invalid-query-type");
+                .isInstanceOf(QueryValidationException.class)
+                .hasMessage("Query validation failed: Unknown query type \"invalid-query-type\"");
     }
 
     private static TablePropertiesProvider createFixedTablePropertiesProvider(String tableName, Schema schema) {

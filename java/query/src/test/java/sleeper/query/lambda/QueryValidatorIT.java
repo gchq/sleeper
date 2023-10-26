@@ -97,7 +97,6 @@ public class QueryValidatorIT {
                             .lastKnownState(QueryState.FAILED)
                             .errorMessage("java.io.EOFException: End of input at line 1 column 2 path $.")
                             .build());
-
         }
 
         @Test
@@ -147,9 +146,9 @@ public class QueryValidatorIT {
             assertThat(queryTracker.getFailedQueries())
                     .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastUpdateTime", "expiryDate")
                     .containsExactly(TrackedQuery.builder()
-                            .queryId("invalid-query-id")
+                            .queryId("my-query")
                             .lastKnownState(QueryState.FAILED)
-                            .errorMessage("Unknown query type: invalid-query-type")
+                            .errorMessage("Query validation failed: Unknown query type \"invalid-query-type\"")
                             .build());
         }
     }
