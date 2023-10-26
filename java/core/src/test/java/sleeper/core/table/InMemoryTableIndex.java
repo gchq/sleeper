@@ -63,6 +63,9 @@ public class InMemoryTableIndex implements TableIndex {
 
     @Override
     public void update(TableId tableId) {
+        if (!indexById.containsKey(tableId.getTableUniqueId())) {
+            throw new TableNotFoundException(tableId.getTableUniqueId());
+        }
         TableId oldId = indexById.get(tableId.getTableUniqueId());
         indexByName.remove(oldId.getTableName());
         indexByName.put(tableId.getTableName(), tableId);

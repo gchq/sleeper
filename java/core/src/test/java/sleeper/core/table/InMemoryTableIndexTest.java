@@ -148,11 +148,14 @@ public class InMemoryTableIndexTest {
     class UpdateTable {
         @Test
         void shouldUpdateTableName() {
+            // Given
             TableId tableId = createTable("old-name");
 
+            // When
             TableId newTableId = TableId.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
             updateTable(newTableId);
 
+            // Then
             assertThat(store.streamAllTables())
                     .containsExactly(newTableId);
             assertThat(store.getTableByName("new-name"))
@@ -160,6 +163,17 @@ public class InMemoryTableIndexTest {
             assertThat(store.getTableByName("old-name")).isEmpty();
             assertThat(store.getTableByUniqueId(newTableId.getTableUniqueId()))
                     .contains(newTableId);
+        }
+
+        @Test
+        void shouldFailToUpdateTableIfTableDoesNotExist() {
+            // Given
+            TableId newTableId = TableId.uniqueIdAndName("not-a-table-id", "new-name");
+
+            // When/Then
+            assertThatThrownBy(() -> updateTable(newTableId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(store.streamAllTables()).isEmpty();
         }
     }
 
