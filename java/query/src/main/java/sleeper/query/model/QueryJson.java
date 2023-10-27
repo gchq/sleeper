@@ -72,26 +72,38 @@ class QueryJson {
         }
     }
 
+    static QueryJson from(SubQuery subQuery, QuerySerDe.SchemaLoader schemaLoader) {
+        if (null == subQuery.getTableName()) {
+            throw new QueryValidationException(subQuery.getQueryId(), subQuery.getStatusReportDestinations(), "Table must not be null");
+        }
+
+        RegionSerDe regionSerDe = regionSerDe(schemaLoader, subQuery.getParentQuery());
+        return builder(subQuery.getParentQuery(), regionSerDe)
+                .type("LeafPartitionQuery")
+                .subQueryId(subQuery.getSubQueryId())
+                .leafPartitionId(subQuery.getLeafPartitionId())
+                .partitionRegion(regionSerDe.toJsonTree(subQuery.getPartitionRegion()))
+                .files(subQuery.getFiles())
+                .build();
+    }
+
+    QueryOrSubQuery toQueryOrSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
+        if (isSubQuery()) {
+            return new QueryOrSubQuery(toSubQuery(schemaLoader));
+        } else {
+            return new QueryOrSubQuery(toQuery(schemaLoader));
+        }
+    }
+
     Query toQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        if (queryId == null) {
-            throw new JsonParseException("queryId field must be provided");
-        }
-        if (type == null) {
-            throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
-        }
-        if (tableName == null) {
-            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
-        }
-        RegionSerDe regionSerDe = regionSerDe(schemaLoader, queryId, statusReportDestinations, tableName);
+        validate();
+        return toQuery(regionSerDe(schemaLoader));
+    }
+
+    private Query toQuery(RegionSerDe regionSerDe) {
         switch (type) {
             case "Query":
-                return new Query.Builder(tableName, queryId, readRegions(regionSerDe))
-                        .setRequestedValueFields(requestedValueFields)
-                        .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
-                        .setQueryTimeIteratorConfig(queryTimeIteratorConfig)
-                        .setResultsPublisherConfig(resultsPublisherConfig)
-                        .setStatusReportDestinations(readStatusReportDestinations())
-                        .build();
+                return toParentQuery(regionSerDe);
             case "LeafPartitionQuery":
                 Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
                 return new LeafPartitionQuery.Builder(
@@ -104,6 +116,46 @@ class QueryJson {
                         .build();
             default:
                 throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
+        }
+    }
+
+    private Query toParentQuery(RegionSerDe regionSerDe) {
+        return new Query.Builder(tableName, queryId, readRegions(regionSerDe))
+                .setRequestedValueFields(requestedValueFields)
+                .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
+                .setQueryTimeIteratorConfig(queryTimeIteratorConfig)
+                .setResultsPublisherConfig(resultsPublisherConfig)
+                .setStatusReportDestinations(readStatusReportDestinations())
+                .build();
+    }
+
+    private boolean isSubQuery() {
+        return "LeafPartitionQuery".equals(type);
+    }
+
+    private SubQuery toSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
+        validate();
+        RegionSerDe regionSerDe = regionSerDe(schemaLoader);
+        Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
+        return SubQuery.builder()
+                .parentQuery(toParentQuery(regionSerDe))
+                .subQueryId(subQueryId)
+                .regions(readRegions(regionSerDe))
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(files)
+                .build();
+    }
+
+    private void validate() {
+        if (queryId == null) {
+            throw new JsonParseException("queryId field must be provided");
+        }
+        if (type == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "type field must be provided");
+        }
+        if (tableName == null) {
+            throw new QueryValidationException(queryId, statusReportDestinations, "tableName field must be provided");
         }
     }
 
@@ -133,6 +185,10 @@ class QueryJson {
 
     private static Builder builder() {
         return new Builder();
+    }
+
+    private RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader) {
+        return regionSerDe(schemaLoader, queryId, statusReportDestinations, tableName);
     }
 
     private static RegionSerDe regionSerDe(QuerySerDe.SchemaLoader schemaLoader, Query query) {

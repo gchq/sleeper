@@ -60,6 +60,10 @@ public class QuerySerDe {
         return gson.toJson(QueryJson.from(query, schemaLoader));
     }
 
+    public String toJson(SubQuery subQuery) {
+        return gson.toJson(QueryJson.from(subQuery, schemaLoader));
+    }
+
     public String toJson(Query query, boolean prettyPrint) {
         if (prettyPrint) {
             return gsonPrettyPrinting.toJson(QueryJson.from(query, schemaLoader));
@@ -67,9 +71,21 @@ public class QuerySerDe {
         return toJson(query);
     }
 
+    public String toJson(SubQuery subQuery, boolean prettyPrint) {
+        if (prettyPrint) {
+            return gsonPrettyPrinting.toJson(QueryJson.from(subQuery, schemaLoader));
+        }
+        return toJson(subQuery);
+    }
+
     public Query fromJson(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toQuery(schemaLoader);
+    }
+
+    public QueryOrSubQuery fromJsonOrSubQuery(String json) {
+        QueryJson queryJson = gson.fromJson(json, QueryJson.class);
+        return queryJson.toQueryOrSubQuery(schemaLoader);
     }
 
     interface SchemaLoader {
