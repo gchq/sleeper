@@ -20,8 +20,13 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
 import java.time.Duration;
@@ -30,20 +35,23 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
+import static sleeper.ingest.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class WaitForJobsStatusTest {
+
+    private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final TableId tableId = createTable("test-table");
+    private final String tableName = tableId.getTableName();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
         // Given
         IngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
-        IngestJob acceptedJob = createJobInDefaultTable("accepted-job", "test.parquet", "test2.parquet");
-        IngestJob startedJob = createJobInDefaultTable("started-job", "test3.parquet", "test4.parquet");
-        IngestJob finishedJob = createJobInDefaultTable("finished-job", "test3.parquet", "test4.parquet");
+        IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", tableName, "test.parquet", "test2.parquet");
+        IngestJob startedJob = createJobWithTableAndFiles("started-job", tableName, "test3.parquet", "test4.parquet");
+        IngestJob finishedJob = createJobWithTableAndFiles("finished-job", tableName, "test3.parquet", "test4.parquet");
         store.jobValidated(ingestJobAccepted(acceptedJob, Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
         store.jobValidated(ingestJobAccepted(startedJob, Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
         store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
@@ -112,5 +120,15 @@ public class WaitForJobsStatusTest {
                 .outputFile(id + "/outputFile")
                 .isSplittingJob(false)
                 .partitionId(id + "-partition").build();
+    }
+
+    private TableId createTable(String tableName) {
+        TableId tableId = TableId.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        tableIndex.create(tableId);
+        return tableId;
+    }
+
+    private IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
+        return IngestJobValidatedEvent.ingestJobAccepted(job, tableIndex.getTableByName(job.getTableName()).orElseThrow(), validationTime);
     }
 }
