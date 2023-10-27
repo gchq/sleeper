@@ -91,7 +91,7 @@ public class DynamoDBTableIndex implements TableIndex {
             LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
-            if ("ConditionalCheckFailed".equals(nameIndexReason.getCode())) {
+            if (isCheckFailed(nameIndexReason)) {
                 throw new TableAlreadyExistsException(tableId);
             } else {
                 throw e;
@@ -180,12 +180,22 @@ public class DynamoDBTableIndex implements TableIndex {
             LOGGER.debug("Updated table {}, capacity consumed = {}", newId, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameAlreadyExistsReason = e.getCancellationReasons().get(0);
-            if ("ConditionalCheckFailed".equals(nameAlreadyExistsReason.getCode())) {
+            CancellationReason idNotFoundReason = e.getCancellationReasons().get(1);
+            CancellationReason oldNameNotFoundReason = e.getCancellationReasons().get(2);
+            if (isCheckFailed(nameAlreadyExistsReason)) {
                 throw new TableAlreadyExistsException(getTableByName(newId.getTableName())
                         .orElseThrow(() -> TableNotFoundException.withTableName(newId.getTableName())));
+            } else if (isCheckFailed(idNotFoundReason)) {
+                throw TableNotFoundException.withTableId(newId.getTableUniqueId());
+            } else if (isCheckFailed(oldNameNotFoundReason)) {
+                throw TableNotFoundException.withTableName(oldId.getTableName());
             } else {
                 throw e;
             }
         }
+    }
+
+    private static boolean isCheckFailed(CancellationReason reason) {
+        return "ConditionalCheckFailed".equals(reason.getCode());
     }
 }
