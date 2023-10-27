@@ -17,7 +17,15 @@
 package sleeper.core.table;
 
 public class TableNotFoundException extends RuntimeException {
-    public TableNotFoundException(String tableId) {
-        super("Table not found with ID \"" + tableId + "\"");
+    private TableNotFoundException(String message) {
+        super(message);
+    }
+
+    public static TableNotFoundException withTableId(String tableId) {
+        return new TableNotFoundException("Table not found with ID \"" + tableId + "\"");
+    }
+
+    public static TableNotFoundException withTableName(String tableName) {
+        return new TableNotFoundException("Table not found with name \"" + tableName + "\"");
     }
 }

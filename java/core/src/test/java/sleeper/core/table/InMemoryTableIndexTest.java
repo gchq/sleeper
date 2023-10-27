@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InMemoryTableIndexTest {
 
-    private final TableIndex store = new InMemoryTableIndex();
+    private final TableIndex index = new InMemoryTableIndex();
     private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @Nested
@@ -35,7 +35,7 @@ public class InMemoryTableIndexTest {
         void shouldCreateATable() {
             TableId tableId = createTable("test-table");
 
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .containsExactly(tableId);
         }
 
@@ -56,7 +56,7 @@ public class InMemoryTableIndexTest {
         void shouldGetTableByName() {
             TableId tableId = createTable("test-table");
 
-            assertThat(store.getTableByName("test-table"))
+            assertThat(index.getTableByName("test-table"))
                     .contains(tableId);
         }
 
@@ -64,7 +64,7 @@ public class InMemoryTableIndexTest {
         void shouldGetNoTableByName() {
             createTable("existing-table");
 
-            assertThat(store.getTableByName("not-a-table"))
+            assertThat(index.getTableByName("not-a-table"))
                     .isEmpty();
         }
 
@@ -72,7 +72,7 @@ public class InMemoryTableIndexTest {
         void shouldGetTableById() {
             TableId tableId = createTable("test-table");
 
-            assertThat(store.getTableByUniqueId(tableId.getTableUniqueId()))
+            assertThat(index.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
         }
 
@@ -80,7 +80,7 @@ public class InMemoryTableIndexTest {
         void shouldGetNoTableById() {
             createTable("existing-table");
 
-            assertThat(store.getTableByUniqueId("not-a-table"))
+            assertThat(index.getTableByUniqueId("not-a-table"))
                     .isEmpty();
         }
     }
@@ -96,7 +96,7 @@ public class InMemoryTableIndexTest {
             createTable("this-table");
             createTable("other-table");
 
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .extracting(TableId::getTableName)
                     .containsExactly(
                             "a-table",
@@ -110,13 +110,13 @@ public class InMemoryTableIndexTest {
             TableId table1 = createTable("first-table");
             TableId table2 = createTable("second-table");
 
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .containsExactly(table1, table2);
         }
 
         @Test
         void shouldGetNoTables() {
-            assertThat(store.streamAllTables()).isEmpty();
+            assertThat(index.streamAllTables()).isEmpty();
         }
     }
 
@@ -130,10 +130,10 @@ public class InMemoryTableIndexTest {
             TableId tableId = createTable("test-table");
 
             // When
-            store.delete(tableId);
+            index.delete(tableId);
 
             // Then
-            assertThat(store.getTableByName("test-table")).isEmpty();
+            assertThat(index.getTableByName("test-table")).isEmpty();
         }
 
         @Test
@@ -142,10 +142,10 @@ public class InMemoryTableIndexTest {
             TableId tableId = createTable("test-table");
 
             // When
-            store.delete(tableId);
+            index.delete(tableId);
 
             // Then
-            assertThat(store.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
+            assertThat(index.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
         }
 
         @Test
@@ -153,15 +153,15 @@ public class InMemoryTableIndexTest {
             // Given
             TableId oldTableId = createTable("old-name");
             TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
-            updateTable(newTableId);
+            index.update(newTableId);
 
             // When
-            store.delete(oldTableId);
+            index.delete(oldTableId);
 
             // Then
-            assertThat(store.getTableByUniqueId(oldTableId.getTableUniqueId())).isEmpty();
-            assertThat(store.getTableByName("old-name")).isEmpty();
-            assertThat(store.getTableByName("new-name")).isEmpty();
+            assertThat(index.getTableByUniqueId(oldTableId.getTableUniqueId())).isEmpty();
+            assertThat(index.getTableByName("old-name")).isEmpty();
+            assertThat(index.getTableByName("new-name")).isEmpty();
         }
 
         @Test
@@ -170,7 +170,7 @@ public class InMemoryTableIndexTest {
             TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
 
             // When / Then
-            assertThatThrownBy(() -> store.delete(tableId))
+            assertThatThrownBy(() -> index.delete(tableId))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }
@@ -185,15 +185,15 @@ public class InMemoryTableIndexTest {
 
             // When
             TableId newTableId = TableId.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
-            updateTable(newTableId);
+            index.update(newTableId);
 
             // Then
-            assertThat(store.streamAllTables())
+            assertThat(index.streamAllTables())
                     .containsExactly(newTableId);
-            assertThat(store.getTableByName("new-name"))
+            assertThat(index.getTableByName("new-name"))
                     .contains(newTableId);
-            assertThat(store.getTableByName("old-name")).isEmpty();
-            assertThat(store.getTableByUniqueId(newTableId.getTableUniqueId()))
+            assertThat(index.getTableByName("old-name")).isEmpty();
+            assertThat(index.getTableByUniqueId(newTableId.getTableUniqueId()))
                     .contains(newTableId);
         }
 
@@ -203,20 +203,15 @@ public class InMemoryTableIndexTest {
             TableId newTableId = TableId.uniqueIdAndName("not-a-table-id", "new-name");
 
             // When/Then
-            assertThatThrownBy(() -> updateTable(newTableId))
+            assertThatThrownBy(() -> index.update(newTableId))
                     .isInstanceOf(TableNotFoundException.class);
-            assertThat(store.streamAllTables()).isEmpty();
+            assertThat(index.streamAllTables()).isEmpty();
         }
     }
 
     private TableId createTable(String tableName) {
         TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
-        store.create(tableId);
-        return tableId;
-    }
-
-    private TableId updateTable(TableId tableId) {
-        store.update(tableId);
+        index.create(tableId);
         return tableId;
     }
 }

@@ -39,6 +39,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.Comparator;
 import java.util.List;
@@ -147,5 +148,44 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public void update(TableId tableId) {
+        TableId oldId = getTableByUniqueId(tableId.getTableUniqueId())
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId.getTableUniqueId()));
+        update(oldId, tableId);
+    }
+
+    public void update(TableId oldId, TableId newId) {
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newId);
+        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTransactItems(
+                        new TransactWriteItem().withPut(new Put()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withItem(idItem)
+                                .withConditionExpression("attribute_not_exists(#tablename)")
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
+                        new TransactWriteItem().withPut(new Put()
+                                .withTableName(idIndexDynamoTableName)
+                                .withItem(idItem)
+                                .withConditionExpression("attribute_exists(#tableid)")
+                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))),
+                        new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withKey(DynamoDBTableIdFormat.getNameKey(oldId))
+                                .withConditionExpression("attribute_exists(#tablename)")
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Updated table {}, capacity consumed = {}", newId, totalCapacity);
+        } catch (TransactionCanceledException e) {
+            CancellationReason nameAlreadyExistsReason = e.getCancellationReasons().get(0);
+            if ("ConditionalCheckFailed".equals(nameAlreadyExistsReason.getCode())) {
+                throw new TableAlreadyExistsException(getTableByName(newId.getTableName())
+                        .orElseThrow(() -> TableNotFoundException.withTableName(newId.getTableName())));
+            } else {
+                throw e;
+            }
+        }
     }
 }
