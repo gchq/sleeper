@@ -17,6 +17,7 @@ package sleeper.query.model;
 
 import com.google.gson.JsonParseException;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -577,8 +578,35 @@ public class QuerySerDeTest {
         assertThat(deserialisedQuery).isEqualTo(query);
     }
 
-    // TODO test when subquery regions are different from parent query regions
-    //      (add subRegions field to QueryJson)
+    @Test
+    void shouldSerDeLeafPartitionQueryWithDifferentRegionsFromParent() {
+        // Given
+        Field field = new Field("key", new LongType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        String tableName = UUID.randomUUID().toString();
+        List<String> files = new ArrayList<>();
+        files.add("file1");
+        files.add("file2");
+        files.add("file3");
+        Region region1 = new Region(rangeFactory.createRange(field, -100L, true, -10L, true));
+        Region region2 = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, 0L, 1000L));
+        Query parentQuery = new Query.Builder(tableName, "id", List.of(region1, region2)).build();
+        SubQuery query = SubQuery.builder()
+                .parentQuery(parentQuery).regions(List.of(region2))
+                .subQueryId("subid").leafPartitionId("leaf")
+                .partitionRegion(partitionRegion).files(files)
+                .build();
+        QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, true);
+
+        // When
+        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
+                .getSubQuery().orElseThrow();
+
+        // Then
+        assertThat(deserialisedQuery).isEqualTo(query);
+    }
 
     @ParameterizedTest()
     @MethodSource("alternateTestParameters")

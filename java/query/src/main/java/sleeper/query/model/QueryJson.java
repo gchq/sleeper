@@ -32,6 +32,7 @@ class QueryJson {
     private final String queryId;
     private final String type;
     private final List<JsonElement> regions;
+    private final List<JsonElement> subQueryRegions;
     private final List<String> requestedValueFields;
     private final String queryTimeIteratorClassName;
     private final String queryTimeIteratorConfig;
@@ -47,6 +48,7 @@ class QueryJson {
         queryId = builder.queryId;
         type = builder.type;
         regions = builder.regions;
+        subQueryRegions = builder.subQueryRegions;
         requestedValueFields = builder.requestedValueFields;
         queryTimeIteratorClassName = builder.queryTimeIteratorClassName;
         queryTimeIteratorConfig = builder.queryTimeIteratorConfig;
@@ -81,6 +83,9 @@ class QueryJson {
         return builder(subQuery.getParentQuery(), regionSerDe)
                 .type("LeafPartitionQuery")
                 .subQueryId(subQuery.getSubQueryId())
+                .subQueryRegions(subQuery.getRegions().stream()
+                        .map(regionSerDe::toJsonTree)
+                        .collect(Collectors.toUnmodifiableList()))
                 .leafPartitionId(subQuery.getLeafPartitionId())
                 .partitionRegion(regionSerDe.toJsonTree(subQuery.getPartitionRegion()))
                 .files(subQuery.getFiles())
@@ -88,10 +93,15 @@ class QueryJson {
     }
 
     QueryOrSubQuery toQueryOrSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        if (isSubQuery()) {
-            return new QueryOrSubQuery(toSubQuery(schemaLoader));
-        } else {
-            return new QueryOrSubQuery(toQuery(schemaLoader));
+        validate();
+        RegionSerDe regionSerDe = regionSerDe(schemaLoader);
+        switch (type) {
+            case "Query":
+                return new QueryOrSubQuery(toParentQuery(regionSerDe));
+            case "LeafPartitionQuery":
+                return new QueryOrSubQuery(toSubQuery(regionSerDe));
+            default:
+                throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }
     }
 
@@ -107,7 +117,7 @@ class QueryJson {
             case "LeafPartitionQuery":
                 Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
                 return new LeafPartitionQuery.Builder(
-                        tableName, queryId, subQueryId, readRegions(regionSerDe), leafPartitionId, partitionRegion, files)
+                        tableName, queryId, subQueryId, readRegions(regions, regionSerDe), leafPartitionId, partitionRegion, files)
                         .setRequestedValueFields(requestedValueFields)
                         .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
                         .setQueryTimeIteratorConfig(queryTimeIteratorConfig)
@@ -120,7 +130,7 @@ class QueryJson {
     }
 
     private Query toParentQuery(RegionSerDe regionSerDe) {
-        return new Query.Builder(tableName, queryId, readRegions(regionSerDe))
+        return new Query.Builder(tableName, queryId, readRegions(regions, regionSerDe))
                 .setRequestedValueFields(requestedValueFields)
                 .setQueryTimeIteratorClassName(queryTimeIteratorClassName)
                 .setQueryTimeIteratorConfig(queryTimeIteratorConfig)
@@ -129,18 +139,12 @@ class QueryJson {
                 .build();
     }
 
-    private boolean isSubQuery() {
-        return "LeafPartitionQuery".equals(type);
-    }
-
-    private SubQuery toSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
-        validate();
-        RegionSerDe regionSerDe = regionSerDe(schemaLoader);
+    private SubQuery toSubQuery(RegionSerDe regionSerDe) {
         Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
         return SubQuery.builder()
                 .parentQuery(toParentQuery(regionSerDe))
                 .subQueryId(subQueryId)
-                .regions(readRegions(regionSerDe))
+                .regions(readRegions(subQueryRegions, regionSerDe))
                 .leafPartitionId(leafPartitionId)
                 .partitionRegion(partitionRegion)
                 .files(files)
@@ -162,6 +166,9 @@ class QueryJson {
     private static QueryJson from(LeafPartitionQuery query, RegionSerDe regionSerDe) {
         return builder(query, regionSerDe)
                 .type("LeafPartitionQuery")
+                .subQueryRegions(query.getRegions().stream()
+                        .map(regionSerDe::toJsonTree)
+                        .collect(Collectors.toUnmodifiableList()))
                 .subQueryId(query.getSubQueryId())
                 .leafPartitionId(query.getLeafPartitionId())
                 .partitionRegion(regionSerDe.toJsonTree(query.getPartitionRegion()))
@@ -201,7 +208,7 @@ class QueryJson {
                         "Table could not be found with name: \"" + tableName + "\"")));
     }
 
-    private List<Region> readRegions(RegionSerDe serDe) {
+    private List<Region> readRegions(List<JsonElement> regions, RegionSerDe serDe) {
         if (regions == null) {
             return null;
         }
@@ -223,6 +230,7 @@ class QueryJson {
         private String queryId;
         private String type;
         private List<JsonElement> regions;
+        private List<JsonElement> subQueryRegions;
         private List<String> requestedValueFields;
         private String queryTimeIteratorClassName;
         private String queryTimeIteratorConfig;
@@ -253,6 +261,11 @@ class QueryJson {
 
         public Builder regions(List<JsonElement> regions) {
             this.regions = regions;
+            return this;
+        }
+
+        public Builder subQueryRegions(List<JsonElement> subQueryRegions) {
+            this.subQueryRegions = subQueryRegions;
             return this;
         }
 
