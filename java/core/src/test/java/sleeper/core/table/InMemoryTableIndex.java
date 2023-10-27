@@ -18,6 +18,7 @@ package sleeper.core.table;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Stream;
@@ -61,6 +62,9 @@ public class InMemoryTableIndex implements TableIndex {
             throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
         }
         TableId latestId = indexById.get(tableId.getTableUniqueId());
+        if (!Objects.equals(latestId.getTableName(), tableId.getTableName())) {
+            throw TableNotFoundException.withTableName(tableId.getTableName());
+        }
         indexByName.remove(latestId.getTableName());
         indexById.remove(latestId.getTableUniqueId());
     }

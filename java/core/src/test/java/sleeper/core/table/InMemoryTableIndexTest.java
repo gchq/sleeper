@@ -149,19 +149,18 @@ public class InMemoryTableIndexTest {
         }
 
         @Test
-        void shouldDeleteTableWhenTableNameHasBeenUpdated() {
+        void shouldFailToDeleteTableWhenTableNameHasBeenUpdated() {
             // Given
             TableId oldTableId = createTable("old-name");
             TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
             index.update(newTableId);
 
-            // When
-            index.delete(oldTableId);
-
-            // Then
-            assertThat(index.getTableByUniqueId(oldTableId.getTableUniqueId())).isEmpty();
+            // When / Then
+            assertThatThrownBy(() -> index.delete(oldTableId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).contains(newTableId);
             assertThat(index.getTableByName("old-name")).isEmpty();
-            assertThat(index.getTableByName("new-name")).isEmpty();
+            assertThat(index.getTableByName("new-name")).contains(newTableId);
         }
 
         @Test
