@@ -156,6 +156,58 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
             assertThat(index.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
         }
+
+        @Test
+        void shouldDeleteTableWhenTableNameHasBeenUpdated() {
+            // Given
+            TableId oldTableId = createTable("old-name");
+            TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
+            index.update(newTableId);
+
+            // When
+            index.delete(oldTableId);
+
+            // Then
+            assertThat(index.getTableByUniqueId(oldTableId.getTableUniqueId())).isEmpty();
+            assertThat(index.getTableByName("old-name")).isEmpty();
+            assertThat(index.getTableByName("new-name")).isEmpty();
+        }
+
+        @Test
+        void shouldFailToDeleteTableThatDoesNotExist() {
+            // Given
+            TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
+
+            // When / Then
+            assertThatThrownBy(() -> index.delete(tableId))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailToDeleteTableIfTableRenamedAfterLoadingOldId() {
+            // Given
+            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
+            TableId renamedId = TableId.uniqueIdAndName("test-id", "changed-name");
+            index.create(oldId);
+            index.update(renamedId);
+
+            // When/Then
+            assertThatThrownBy(() -> index.deleteAfterLookup(oldId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).contains(renamedId);
+        }
+
+        @Test
+        void shouldFailToDeleteTableIfTableDeletedAndRecreatedAfterLoadingOldId() {
+            // Given
+            TableId oldId = TableId.uniqueIdAndName("test-id-1", "table-name");
+            TableId recreatedId = TableId.uniqueIdAndName("test-id-2", "table-name");
+            index.create(recreatedId);
+
+            // When/Then
+            assertThatThrownBy(() -> index.deleteAfterLookup(oldId))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
     }
 
     @Nested

@@ -131,19 +131,41 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public void delete(TableId tableId) {
+        TableId existingId = getTableByUniqueId(tableId.getTableUniqueId())
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId.getTableUniqueId()));
+        deleteAfterLookup(existingId);
+    }
+
+    public void deleteAfterLookup(TableId tableId) {
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(nameIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))),
+                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))
+                                .withConditionExpression("attribute_exists(#tablename)")
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(idIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))));
-        TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
-        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-        double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
+                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))
+                                .withConditionExpression("attribute_exists(#tableid)")
+                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
+        } catch (TransactionCanceledException e) {
+            CancellationReason nameNotFoundReason = e.getCancellationReasons().get(0);
+            CancellationReason idNotFoundReason = e.getCancellationReasons().get(1);
+            if (isCheckFailed(nameNotFoundReason)) {
+                throw TableNotFoundException.withTableName(tableId.getTableName());
+            } else if (isCheckFailed(idNotFoundReason)) {
+                throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Override
