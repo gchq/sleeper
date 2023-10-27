@@ -158,22 +158,6 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         }
 
         @Test
-        void shouldDeleteTableWhenTableNameHasBeenUpdated() {
-            // Given
-            TableId oldTableId = createTable("old-name");
-            TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
-            index.update(newTableId);
-
-            // When
-            index.delete(oldTableId);
-
-            // Then
-            assertThat(index.getTableByUniqueId(oldTableId.getTableUniqueId())).isEmpty();
-            assertThat(index.getTableByName("old-name")).isEmpty();
-            assertThat(index.getTableByName("new-name")).isEmpty();
-        }
-
-        @Test
         void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
             TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
@@ -192,7 +176,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             index.update(renamedId);
 
             // When/Then
-            assertThatThrownBy(() -> index.deleteAfterLookup(oldId))
+            assertThatThrownBy(() -> index.delete(oldId))
                     .isInstanceOf(TableNotFoundException.class);
             assertThat(index.streamAllTables()).contains(renamedId);
         }
@@ -205,7 +189,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             index.create(recreatedId);
 
             // When/Then
-            assertThatThrownBy(() -> index.deleteAfterLookup(oldId))
+            assertThatThrownBy(() -> index.delete(oldId))
                     .isInstanceOf(TableNotFoundException.class);
         }
     }

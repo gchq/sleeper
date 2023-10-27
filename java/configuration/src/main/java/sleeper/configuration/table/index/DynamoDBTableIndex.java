@@ -131,12 +131,6 @@ public class DynamoDBTableIndex implements TableIndex {
 
     @Override
     public void delete(TableId tableId) {
-        TableId existingId = getTableByUniqueId(tableId.getTableUniqueId())
-                .orElseThrow(() -> TableNotFoundException.withTableId(tableId.getTableUniqueId()));
-        deleteAfterLookup(existingId);
-    }
-
-    public void deleteAfterLookup(TableId tableId) {
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
