@@ -155,7 +155,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJob jobWithFiles(String... filenames) {
-        return jobWithTableAndFiles(tableName, filenames);
+        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableName, filenames);
     }
 
     protected IngestJob jobWithTableAndFiles(String tableName, String... filenames) {
