@@ -16,14 +16,12 @@
 
 package sleeper.configuration.properties.table;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
 
 import java.time.Instant;
@@ -257,28 +255,6 @@ public class TablePropertiesProviderTest {
             assertThat(provider.streamAllTables()
                     .map(properties -> properties.getInt(ROW_GROUP_SIZE)))
                     .contains(123);
-        }
-    }
-
-    @Nested
-    @DisplayName("Cache table IDs")
-    class CacheTableIds {
-        @Test
-        @Disabled("TODO")
-        void shouldUseCachedTableIdToLoadTableProperties() {
-            // Given
-            store.save(tableProperties);
-
-            // When
-            TableId oldTableId = provider.lookupByName(tableName).orElseThrow();
-            tableProperties.set(TABLE_NAME, "new-name");
-            TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
-            store.save(tableProperties);
-
-            // Then
-            assertThat(provider.lookupByName(tableName)).contains(oldTableId);
-            assertThat(provider.getByName(tableName)).isEqualTo(tableProperties);
-            assertThat(provider.get(newTableId)).isEqualTo(tableProperties);
         }
     }
 
