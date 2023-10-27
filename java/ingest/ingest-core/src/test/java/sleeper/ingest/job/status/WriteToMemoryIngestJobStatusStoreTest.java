@@ -22,6 +22,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Duration;
@@ -44,19 +48,20 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.finishedIngestRu
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.startedIngestRun;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class WriteToMemoryIngestJobStatusStoreTest {
 
     private final WriteToMemoryIngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
+    private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final TableId tableId = createTable("test-table");
+    private final String tableName = tableId.getTableName();
 
     @Nested
     @DisplayName("Get all jobs")
     class GetAllJobs {
         @Test
         public void shouldReturnOneStartedJobWithNoFiles() {
-            String tableName = "test-table";
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             IngestJob job = createJobWithTableAndFiles("test-job", tableName);
@@ -68,7 +73,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldReturnOneStartedJobWithFiles() {
-            String tableName = "test-table";
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             IngestJob job = createJobWithTableAndFiles("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
@@ -80,7 +84,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldReturnOneFinishedJobWithFiles() {
-            String tableName = "test-table";
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
@@ -96,7 +99,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldRefuseJobFinishedWhenNotStarted() {
-            String tableName = "test-table";
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
@@ -110,7 +112,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldReturnTwoRunsOnSameJob() {
-            String tableName = "test-table";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job", tableName, "test-file-1.parquet", "test-file-2.parquet");
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
@@ -133,7 +134,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldReturnTwoJobs() {
-            String tableName = "test-table";
             String taskId = "test-task";
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet", "test-file-2.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableName, "test-file-3.parquet");
@@ -157,8 +157,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         public void shouldReturnJobsWithCorrectTableName() {
             // Given
-            String tableName1 = "test-table-1";
-            String tableName2 = "test-table-2";
+            String tableName1 = createTable("test-table-1").getTableName();
+            String tableName2 = createTable("test-table-2").getTableName();
             String taskId = "test-task";
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName1, "test-file-1.parquet", "test-file-2.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableName2, "test-file-3.parquet");
@@ -189,8 +189,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         public void shouldReturnJobsWithSameIdOnDifferentTables() {
-            String tableName1 = "test-table-1";
-            String tableName2 = "test-table-2";
+            String tableName1 = createTable("test-table-1").getTableName();
+            String tableName2 = createTable("test-table-2").getTableName();
             String taskId = "test-task";
             IngestJob job1 = createJobWithTableAndFiles("test-job", tableName1, "test-file-1.parquet", "test-file-2.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job", tableName2, "test-file-3.parquet");
@@ -215,7 +215,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldGetInvalidJobsWithOneRejectedJob() {
             // Given
-            String tableName = "test-table";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
@@ -231,7 +230,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldGetOneInvalidJobWithOneRejectedJobAndOneAcceptedJob() {
             // Given
-            String tableName = "test-table";
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableName, "test-file-2.parquet");
 
@@ -250,8 +248,8 @@ public class WriteToMemoryIngestJobStatusStoreTest {
 
         @Test
         void shouldGetInvalidJobsAcrossMultipleTables() {
-            String tableName1 = "test-table-1";
-            String tableName2 = "test-table-2";
+            String tableName1 = createTable("test-table-1").getTableName();
+            String tableName2 = createTable("test-table-2").getTableName();
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName1, "test-file-1.parquet");
             IngestJob job2 = createJobWithTableAndFiles("test-job-2", tableName2, "test-file-2.parquet");
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
@@ -270,7 +268,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldNotGetJobThatWasRejectedThenAccepted() {
             // Given
-            String tableName = "test-table";
             IngestJob job1 = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
 
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
@@ -305,7 +302,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
-            String tableName = "test-table";
             String taskId = "some-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
@@ -321,7 +317,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
-            String tableName = "test-table";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
@@ -340,7 +335,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportJobWithOneValidationFailure() {
             // Given
-            String tableName = "test-table";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
@@ -356,7 +350,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportJobWithMultipleValidationFailures() {
             // Given
-            String tableName = "test-table";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
@@ -377,7 +370,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportAcceptedJob() {
             // Given
-            String tableName = "test-table";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
@@ -395,7 +387,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportStartedJob() {
             // Given
-            String tableName = "test-table";
             String jobRunId = "test-run";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
@@ -418,7 +409,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportFinishedJob() {
             // Given
-            String tableName = "test-table";
             String jobRunId = "test-run";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
@@ -443,7 +433,6 @@ public class WriteToMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportUnvalidatedFinishedJob() {
             // Given
-            String tableName = "test-table";
             String jobRunId = "test-run";
             String taskId = "test-task";
             IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
@@ -461,5 +450,15 @@ public class WriteToMemoryIngestJobStatusStoreTest {
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run", "test-run");
         }
+    }
+
+    private TableId createTable(String tableName) {
+        TableId tableId = TableId.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        tableIndex.create(tableId);
+        return tableId;
+    }
+
+    private IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
+        return IngestJobValidatedEvent.ingestJobAccepted(job, tableIndex.getTableByName(job.getTableName()).orElseThrow(), validationTime);
     }
 }
