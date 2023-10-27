@@ -25,6 +25,10 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIndex;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.IngestJobTestData;
@@ -32,6 +36,7 @@ import sleeper.ingest.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.job.status.IngestJobStartedEvent;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
+import sleeper.ingest.job.status.IngestJobValidatedEvent;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -67,6 +72,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+    private final TableIndex tableIndex = new InMemoryTableIndex();
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
@@ -74,6 +80,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     @BeforeEach
     public void setUp() {
         DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        tableIndex.create(tableProperties.getId());
     }
 
     @AfterEach
@@ -152,6 +159,19 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJob jobWithTableAndFiles(String tableName, String... filenames) {
+        createTable(tableName);
         return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableName, filenames);
+    }
+
+    private void createTable(String tableName) {
+        tableIndex.create(TableId.uniqueIdAndName(new TableIdGenerator().generateString(), tableName));
+    }
+
+    protected IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
+        return IngestJobValidatedEvent.ingestJobAccepted(job, tableId(job), validationTime);
+    }
+
+    private TableId tableId(IngestJob job) {
+        return tableIndex.getTableByName(job.getTableName()).orElseThrow();
     }
 }
