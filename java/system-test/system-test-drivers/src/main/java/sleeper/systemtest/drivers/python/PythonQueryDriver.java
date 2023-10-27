@@ -56,11 +56,16 @@ public class PythonQueryDriver {
                 "--outdir", outputDir.toString());
     }
 
-    public void range(String queryId, String key, Object min, Object max) throws IOException, InterruptedException {
+    public void range(String queryId, String key, Object min, Object max)
+            throws IOException, InterruptedException {
+        range(queryId, key, instance.getTableName(), min, max);
+    }
+
+    public void range(String queryId, String key, String tableName, Object min, Object max) throws IOException, InterruptedException {
         pythonRunner.run(
                 pythonDir.resolve("test/range_query.py").toString(),
                 "--instance", instance.getInstanceProperties().get(ID),
-                "--table", instance.getTableName(),
+                "--table", tableName,
                 "--queryid", queryId,
                 "--query", GSON.toJson(Map.of(key, List.of(min, max))),
                 "--outdir", outputDir.toString());

@@ -47,7 +47,6 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 
 import java.util.Locale;
 
-import static sleeper.cdk.stack.IngestStack.addIngestSourceBucketReferences;
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CommonProperty.JARS_BUCKET;
@@ -91,9 +90,6 @@ public class SystemTestClusterStack extends NestedStack {
                                   EmrBulkImportStack emrBulkImportStack) {
         super(scope, id);
         createSystemTestCluster(properties.testPropertiesOnly(), properties::set, properties);
-
-        addIngestSourceBucketReferences(this, "IngestBucket", properties)
-                .forEach(bucket -> bucket.grantReadWrite(taskRole));
 
         coreStacks.grantIngest(taskRole);
         if (null != ingestStack) {

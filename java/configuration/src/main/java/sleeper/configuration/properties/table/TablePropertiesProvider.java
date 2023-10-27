@@ -64,7 +64,8 @@ public class TablePropertiesProvider {
     }
 
     public TableProperties getByName(String tableName) {
-        return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName).orElseThrow());
+        return get(tableName, cacheByName, () -> propertiesStore.loadByName(tableName)
+                .orElseThrow(() -> new TableNotFoundException(tableName)));
     }
 
     public TableProperties getById(String tableId) {
@@ -145,6 +146,12 @@ public class TablePropertiesProvider {
 
         boolean isExpired(Instant currentTime) {
             return currentTime.isAfter(expiryTime);
+        }
+    }
+
+    public static class TableNotFoundException extends RuntimeException {
+        public TableNotFoundException(String tableName) {
+            super("Table with name \"" + tableName + "\" not found");
         }
     }
 }
