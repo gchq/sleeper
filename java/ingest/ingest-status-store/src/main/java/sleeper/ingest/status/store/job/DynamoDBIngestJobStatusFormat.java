@@ -59,8 +59,8 @@ public class DynamoDBIngestJobStatusFormat {
     public static final String VALIDATION_RESULT = "Result";
     public static final String VALIDATION_REASONS = "ValidationReasons";
     public static final String JSON_MESSAGE = "JsonMessage";
-
     public static final String TABLE_NAME = "TableName";
+    public static final String TABLE_ID = "TableId";
     public static final String INPUT_FILES_COUNT = "InputFilesCount";
     public static final String START_OF_RUN = "StartOfRun";
     public static final String START_TIME = "StartTime";
@@ -86,6 +86,7 @@ public class DynamoDBIngestJobStatusFormat {
         return createRecord(UPDATE_TYPE_VALIDATED)
                 .string(JOB_ID, event.getJobId())
                 .string(TABLE_NAME, event.getTableName())
+                .string(TABLE_ID, event.getTableId())
                 .number(VALIDATION_TIME, event.getValidationTime().toEpochMilli())
                 .bool(VALIDATION_RESULT, event.isAccepted())
                 .list(VALIDATION_REASONS, event.getReasons().stream()
@@ -102,6 +103,7 @@ public class DynamoDBIngestJobStatusFormat {
         return createRecord(UPDATE_TYPE_STARTED)
                 .string(JOB_ID, event.getJobId())
                 .string(TABLE_NAME, event.getTableName())
+                .string(TABLE_ID, event.getTableId())
                 .number(START_TIME, event.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
@@ -115,6 +117,7 @@ public class DynamoDBIngestJobStatusFormat {
         return createRecord(UPDATE_TYPE_FINISHED)
                 .string(JOB_ID, event.getJobId())
                 .string(TABLE_NAME, event.getTableName())
+                .string(TABLE_ID, event.getTableId())
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
