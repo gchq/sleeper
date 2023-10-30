@@ -36,8 +36,8 @@ public class IngestJobValidatedEvent {
 
     private IngestJobValidatedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
-        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        tableName = builder.tableName;
+        tableId = builder.tableId;
         fileCount = builder.fileCount;
         validationTime = Objects.requireNonNull(builder.validationTime, "validationTime must not be null");
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
