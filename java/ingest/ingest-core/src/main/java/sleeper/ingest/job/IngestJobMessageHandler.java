@@ -33,7 +33,6 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
@@ -96,34 +95,19 @@ public class IngestJobMessageHandler<T> {
         } else if (files.contains(null)) {
             validationFailures.add("One of the files was null");
         }
-        if (ingestJob.getTableName() == null && ingestJob.getTableId() == null) {
-            validationFailures.add("Missing property \"tableName\"");
+        Optional<TableIdentity> tableIdOpt = getTableId(ingestJob);
+        if (tableIdOpt.isEmpty()) {
+            validationFailures.add("Table not found");
         }
         if (!validationFailures.isEmpty()) {
             LOGGER.warn("Validation failed: {}", validationFailures);
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableName(ingestJob.getTableName())
-                            .tableId(ingestJob.getTableId())
+                            .tableName(tableIdOpt.map(TableIdentity::getTableName).orElse(null))
+                            .tableId(tableIdOpt.map(TableIdentity::getTableUniqueId).orElse(null))
                             .jsonMessage(message)
-                            .reasons(validationFailures.stream()
-                                    .map(failure -> "Model validation failed. " + failure)
-                                    .collect(Collectors.toUnmodifiableList()))
-                            .build());
-            return Optional.empty();
-        }
-
-        Optional<TableIdentity> tableIdOpt = getTableId(ingestJob);
-        if (tableIdOpt.isEmpty()) {
-            LOGGER.warn("Table not found for job: {}", job);
-            ingestJobStatusStore.jobValidated(
-                    refusedEventBuilder()
-                            .jobId(jobId)
-                            .tableName(ingestJob.getTableName())
-                            .tableId(ingestJob.getTableId())
-                            .jsonMessage(message)
-                            .reasons("Table not found")
+                            .reasons(validationFailures)
                             .build());
             return Optional.empty();
         }
@@ -156,8 +140,10 @@ public class IngestJobMessageHandler<T> {
     private Optional<TableIdentity> getTableId(IngestJob job) {
         if (job.getTableId() != null) {
             return tableIndex.getTableByUniqueId(job.getTableId());
-        } else {
+        } else if (job.getTableName() != null) {
             return tableIndex.getTableByName(job.getTableName());
+        } else {
+            return Optional.empty();
         }
     }
 

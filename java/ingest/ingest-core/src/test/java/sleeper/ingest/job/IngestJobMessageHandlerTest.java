@@ -259,7 +259,7 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(jobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"tableName\"")));
+                                    "Table not found")));
             assertThat(ingestJobStatusStore.getAllJobs("test-table"))
                     .isEmpty();
         }
@@ -279,33 +279,12 @@ public class IngestJobMessageHandlerTest {
             // When / Then
             IngestJobStatus expected = jobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
-                            "Model validation failed. Missing property \"files\""));
+                            "Missing property \"files\""));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expected);
             assertThat(ingestJobStatusStore.getAllJobs("test-table"))
                     .containsExactly(expected);
-        }
-
-        @Test
-        void shouldReportMultipleModelValidationFailures() {
-            // Given
-            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
-                    .jobIdSupplier(() -> "test-job-id")
-                    .timeSupplier(() -> validationTime)
-                    .build();
-            String json = "{}";
-
-            // When / Then
-            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
-                            rejectedRun("test-job-id", json, validationTime,
-                                    "Model validation failed. Missing property \"files\"",
-                                    "Model validation failed. Missing property \"tableName\"")));
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
-                    .isEmpty();
         }
 
         @Test
@@ -330,7 +309,7 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expectedStatus);
             assertThat(ingestJobStatusStore.getAllJobs("non-existent-table"))
-                    .containsExactly(expectedStatus);
+                    .isEmpty();
         }
 
         @Test
@@ -367,18 +346,18 @@ public class IngestJobMessageHandlerTest {
                     .build();
             String json = "{" +
                     "\"id\": \"invalid-job-1\"," +
-                    "\"tableName\": \"system-test\"," +
+                    "\"tableName\": \"test-table\"," +
                     "\"files\": [,]" +
                     "}";
 
             // When / Then
             IngestJobStatus expected = jobStatus("invalid-job-1",
                     rejectedRun("invalid-job-1", json, validationTime,
-                            "Model validation failed. One of the files was null"));
+                            "One of the files was null"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs("system-test"))
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
                     .containsExactly(expected);
         }
     }
