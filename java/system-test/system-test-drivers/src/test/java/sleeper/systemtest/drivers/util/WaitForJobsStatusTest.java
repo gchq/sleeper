@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.job.CompactionJob;
 import sleeper.compaction.testutils.CompactionJobStatusStoreInMemory;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJob;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -42,7 +42,7 @@ import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJob
 public class WaitForJobsStatusTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final TableId tableId = createTable("test-table");
+    private final TableIdentity tableId = createTable("test-table");
     private final String tableName = tableId.getTableName();
 
     @Test
@@ -122,8 +122,8 @@ public class WaitForJobsStatusTest {
                 .partitionId(id + "-partition").build();
     }
 
-    private TableId createTable(String tableName) {
-        TableId tableId = TableId.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+    private TableIdentity createTable(String tableName) {
+        TableIdentity tableId = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
         tableIndex.create(tableId);
         return tableId;
     }

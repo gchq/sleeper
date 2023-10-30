@@ -16,7 +16,7 @@
 
 package sleeper.ingest.job.status;
 
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.IngestJob;
 
 import java.time.Instant;
@@ -48,7 +48,7 @@ public class IngestJobValidatedEvent {
         return builder().job(job).validationTime(validationTime).reasons(List.of());
     }
 
-    public static Builder ingestJobAccepted(IngestJob job, TableId tableId, Instant validationTime) {
+    public static Builder ingestJobAccepted(IngestJob job, TableIdentity tableId, Instant validationTime) {
         return builder()
                 .jobId(job.getId())
                 .tableName(tableId.getTableName())

@@ -26,8 +26,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 import sleeper.ingest.job.IngestJob;
@@ -164,14 +164,14 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     private void createTable(String tableName) {
-        tableIndex.create(TableId.uniqueIdAndName(new TableIdGenerator().generateString(), tableName));
+        tableIndex.create(TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName));
     }
 
     protected IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
         return IngestJobValidatedEvent.ingestJobAccepted(job, tableId(job), validationTime);
     }
 
-    private TableId tableId(IngestJob job) {
+    private TableIdentity tableId(IngestJob job) {
         return tableIndex.getTableByName(job.getTableName()).orElseThrow();
     }
 }
