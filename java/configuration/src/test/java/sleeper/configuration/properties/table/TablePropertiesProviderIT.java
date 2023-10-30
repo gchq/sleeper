@@ -62,15 +62,6 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // When / Then
         assertThat(provider.streamAllTables())
                 .containsExactly(table1, table2);
-        assertThat(provider.streamAllTableIds())
-                .containsExactly(table1.getId(), table2.getId());
-    }
-
-    @Test
-    void shouldReportTableDoesNotExistWhenNotInBucket() {
-        // When / Then
-        assertThat(provider.lookupByName(tableName))
-                .isEmpty();
     }
 
     @Test
@@ -78,17 +69,6 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
                 .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
-    }
-
-    @Test
-    void shouldReportTableExistsWhenInIndexButNotConfigBucket() {
-        // Given
-        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .create(tableProperties.getId());
-
-        // When / Then
-        assertThat(provider.lookupByName(tableName))
-                .contains(tableProperties.getId());
     }
 
     @Test

@@ -33,7 +33,7 @@ public class InMemoryTableIndexTest {
     class CreateTable {
         @Test
         void shouldCreateATable() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             assertThat(index.streamAllTables())
                     .containsExactly(tableId);
@@ -54,7 +54,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableByName() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             assertThat(index.getTableByName("test-table"))
                     .contains(tableId);
@@ -70,7 +70,7 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableById() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             assertThat(index.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
@@ -97,7 +97,7 @@ public class InMemoryTableIndexTest {
             createTable("other-table");
 
             assertThat(index.streamAllTables())
-                    .extracting(TableId::getTableName)
+                    .extracting(TableIdentity::getTableName)
                     .containsExactly(
                             "a-table",
                             "other-table",
@@ -107,8 +107,8 @@ public class InMemoryTableIndexTest {
 
         @Test
         void shouldGetTableIds() {
-            TableId table1 = createTable("first-table");
-            TableId table2 = createTable("second-table");
+            TableIdentity table1 = createTable("first-table");
+            TableIdentity table2 = createTable("second-table");
 
             assertThat(index.streamAllTables())
                     .containsExactly(table1, table2);
@@ -127,7 +127,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldDeleteTableNameReference() {
             // Given
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             // When
             index.delete(tableId);
@@ -139,7 +139,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldDeleteTableIdReference() {
             // Given
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             // When
             index.delete(tableId);
@@ -151,8 +151,8 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToDeleteTableWhenTableNameHasBeenUpdated() {
             // Given
-            TableId oldTableId = createTable("old-name");
-            TableId newTableId = TableId.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
+            TableIdentity oldTableId = createTable("old-name");
+            TableIdentity newTableId = TableIdentity.uniqueIdAndName(oldTableId.getTableUniqueId(), "new-name");
             index.update(newTableId);
 
             // When / Then
@@ -166,7 +166,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
-            TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
+            TableIdentity tableId = TableIdentity.uniqueIdAndName("not-a-table-id", "not-a-table");
 
             // When / Then
             assertThatThrownBy(() -> index.delete(tableId))
@@ -180,10 +180,10 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldUpdateTableName() {
             // Given
-            TableId tableId = createTable("old-name");
+            TableIdentity tableId = createTable("old-name");
 
             // When
-            TableId newTableId = TableId.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
+            TableIdentity newTableId = TableIdentity.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
             index.update(newTableId);
 
             // Then
@@ -199,7 +199,7 @@ public class InMemoryTableIndexTest {
         @Test
         void shouldFailToUpdateTableIfTableDoesNotExist() {
             // Given
-            TableId newTableId = TableId.uniqueIdAndName("not-a-table-id", "new-name");
+            TableIdentity newTableId = TableIdentity.uniqueIdAndName("not-a-table-id", "new-name");
 
             // When/Then
             assertThatThrownBy(() -> index.update(newTableId))
@@ -208,8 +208,8 @@ public class InMemoryTableIndexTest {
         }
     }
 
-    private TableId createTable(String tableName) {
-        TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
+    private TableIdentity createTable(String tableName) {
+        TableIdentity tableId = TableIdentity.uniqueIdAndName(idGenerator.generateString(), tableName);
         index.create(tableId);
         return tableId;
     }
