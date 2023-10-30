@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -77,6 +77,19 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
             assertThat(store.loadByName(tableName)
                     .map(properties -> properties.getInt(PAGE_SIZE)))
                     .contains(456);
+        }
+
+        @Test
+        void shouldUpdateTableName() {
+            // Given
+            store.save(tableProperties);
+            tableProperties.set(TABLE_NAME, "renamed-table");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(store.loadByName("renamed-table")
+                    .map(properties -> properties.get(TABLE_NAME)))
+                    .contains("renamed-table");
         }
     }
 
@@ -160,7 +173,7 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
 
         @Test
         void shouldFindNoTableById() {
-            assertThatThrownBy(() -> store.loadProperties(TableId.uniqueIdAndName("not-an-id", "not-a-name")))
+            assertThatThrownBy(() -> store.loadProperties(TableIdentity.uniqueIdAndName("not-an-id", "not-a-name")))
                     .isInstanceOf(AmazonS3Exception.class);
         }
     }
