@@ -45,7 +45,11 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     public static TablePropertiesStore getStoreReturningExactInstance() {
-        return new TablePropertiesStore(new InMemoryTableIndex(), new InMemoryTableProperties(false));
+        return getStoreReturningExactInstance(new InMemoryTableIndex());
+    }
+
+    public static TablePropertiesStore getStoreReturningExactInstance(TableIndex tableIndex) {
+        return new TablePropertiesStore(tableIndex, new InMemoryTableProperties(false));
     }
 
     public static TablePropertiesStore getStoreReturningExactInstances(List<TableProperties> properties) {
