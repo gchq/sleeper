@@ -24,6 +24,7 @@ import java.util.Objects;
 public class IngestJobStartedEvent {
     private final String jobId;
     private final String tableName;
+    private final String tableId;
     private final int fileCount;
     private final String jobRunId;
     private final String taskId;
@@ -33,6 +34,7 @@ public class IngestJobStartedEvent {
     private IngestJobStartedEvent(Builder builder) {
         jobId = builder.jobId;
         tableName = builder.tableName;
+        tableId = builder.tableId;
         fileCount = builder.fileCount;
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
@@ -68,6 +70,10 @@ public class IngestJobStartedEvent {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public int getFileCount() {
@@ -123,6 +129,7 @@ public class IngestJobStartedEvent {
     public static final class Builder {
         private String jobId;
         private String tableName;
+        private String tableId;
         private int fileCount;
         private String jobRunId;
         private String taskId;
@@ -135,6 +142,7 @@ public class IngestJobStartedEvent {
         public Builder job(IngestJob job) {
             return jobId(job.getId())
                     .tableName(job.getTableName())
+                    .tableId(job.getTableId())
                     .fileCount(job.getFileCount());
         }
 
@@ -145,6 +153,11 @@ public class IngestJobStartedEvent {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
