@@ -27,6 +27,7 @@ import sleeper.ingest.job.status.IngestJobValidatedEvent;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -48,14 +49,14 @@ public class IngestJobMessageHandler<T> {
     private final Supplier<Instant> timeSupplier;
 
     private IngestJobMessageHandler(Builder<T> builder) {
-        tableIndex = builder.tableIndex;
-        ingestJobStatusStore = builder.ingestJobStatusStore;
-        deserialiser = builder.deserialiser;
-        toIngestJob = builder.toIngestJob;
-        applyIngestJobChanges = builder.applyIngestJobChanges;
-        expandDirectories = builder.expandDirectories;
-        jobIdSupplier = builder.jobIdSupplier;
-        timeSupplier = builder.timeSupplier;
+        tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
+        ingestJobStatusStore = Objects.requireNonNull(builder.ingestJobStatusStore, "ingestJobStatusStore must not be null");
+        deserialiser = Objects.requireNonNull(builder.deserialiser, "deserialiser must not be null");
+        toIngestJob = Objects.requireNonNull(builder.toIngestJob, "toIngestJob must not be null");
+        applyIngestJobChanges = Objects.requireNonNull(builder.applyIngestJobChanges, "applyIngestJobChanges must not be null");
+        expandDirectories = Objects.requireNonNull(builder.expandDirectories, "expandDirectories must not be null");
+        jobIdSupplier = Objects.requireNonNull(builder.jobIdSupplier, "jobIdSupplier must not be null");
+        timeSupplier = Objects.requireNonNull(builder.timeSupplier, "timeSupplier must not be null");
     }
 
     public static Builder<IngestJob> forIngestJob() {
