@@ -26,6 +26,7 @@ import java.util.Objects;
 public class IngestJobValidatedEvent {
     private final String jobId;
     private final String tableName;
+    private final String tableId;
     private final int fileCount;
     private final Instant validationTime;
     private final List<String> reasons;
@@ -35,7 +36,8 @@ public class IngestJobValidatedEvent {
 
     private IngestJobValidatedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        tableName = builder.tableName;
+        tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         fileCount = builder.fileCount;
         validationTime = Objects.requireNonNull(builder.validationTime, "validationTime must not be null");
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
@@ -101,6 +103,10 @@ public class IngestJobValidatedEvent {
         return tableName;
     }
 
+    public String getTableId() {
+        return tableId;
+    }
+
     public int getFileCount() {
         return fileCount;
     }
@@ -163,6 +169,7 @@ public class IngestJobValidatedEvent {
     public static final class Builder {
         private String jobId;
         private String tableName;
+        private String tableId;
         private int fileCount;
         private Instant validationTime;
         private List<String> reasons;
@@ -190,6 +197,7 @@ public class IngestJobValidatedEvent {
         }
 
         public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
