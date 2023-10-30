@@ -26,7 +26,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ import static sleeper.configuration.properties.table.TableProperty.PARTITION_SPL
  */
 public class FindPartitionsToSplit {
     private static final Logger LOGGER = LoggerFactory.getLogger(FindPartitionsToSplit.class);
-    private final TableId tableId;
+    private final TableIdentity tableId;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final TableProperties tableProperties;
     private final StateStore stateStore;
@@ -97,7 +97,7 @@ public class FindPartitionsToSplit {
 
     public static List<FindPartitionToSplitResult> getResults(
             TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
-        TableId tableId = tableProperties.getId();
+        TableIdentity tableId = tableProperties.getId();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", tableId, splitThreshold);
 
@@ -115,7 +115,7 @@ public class FindPartitionsToSplit {
     }
 
     private static Optional<FindPartitionToSplitResult> splitPartitionIfNecessary(
-            TableId tableId, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
+            TableIdentity tableId, long splitThreshold, Partition partition, List<FileInfo> activeFileInfos) {
         List<FileInfo> relevantFiles = getFilesInPartition(partition, activeFileInfos);
         PartitionSplitCheck check = PartitionSplitCheck.fromFilesInPartition(splitThreshold, relevantFiles);
         LOGGER.info("Number of records in partition {} of table {} is {}", partition.getId(), tableId, check.getNumberOfRecordsInPartition());

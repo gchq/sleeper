@@ -47,7 +47,7 @@ import sleeper.core.SleeperVersion;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 import sleeper.systemtest.datageneration.GenerateNumberedRecords;
 import sleeper.systemtest.datageneration.GenerateNumberedValueOverrides;
@@ -185,7 +185,7 @@ public class SleeperInstanceContext {
         return getTableProperties().get(TABLE_NAME);
     }
 
-    public TableId getTableId() {
+    public TableIdentity getTableId() {
         return getTableProperties().getId();
     }
 

@@ -17,7 +17,7 @@
 package sleeper.clients.status.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Clock;
 import java.util.Map;
@@ -27,7 +27,7 @@ public class JobQueryPrompt {
     private JobQueryPrompt() {
     }
 
-    public static JobQuery from(TableId tableId, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
+    public static JobQuery from(TableIdentity tableId, Clock clock, ConsoleInput in, Map<String, JobQuery> extraQueries) {
         String type = in.promptLine("All (a), Detailed (d), range (r), or unfinished (u) query? ");
         if ("".equals(type)) {
             return null;

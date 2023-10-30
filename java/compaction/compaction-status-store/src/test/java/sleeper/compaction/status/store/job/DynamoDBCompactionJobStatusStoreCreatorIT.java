@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,9 +61,9 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
-        assertThatThrownBy(() -> store.getAllJobs(TableId.uniqueIdAndName("some-id", "some-table")))
+        assertThatThrownBy(() -> store.getAllJobs(TableIdentity.uniqueIdAndName("some-id", "some-table")))
                 .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getUnfinishedJobs(TableId.uniqueIdAndName("some-id", "some-table")))
+        assertThatThrownBy(() -> store.getUnfinishedJobs(TableIdentity.uniqueIdAndName("some-id", "some-table")))
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> store.getJob("some-job"))
                 .isInstanceOf(UnsupportedOperationException.class);
