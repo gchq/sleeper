@@ -31,6 +31,9 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.CommonTestConstants;
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
 
@@ -45,6 +48,8 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {
+    private static final String TEST_TABLE = "test-table";
+    private static final String TEST_TABLE_ID = "test-table-id";
     private static final String TEST_BUCKET = "test-bucket";
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -52,9 +57,10 @@ public class IngestJobMessageHandlerIT {
     private final AmazonS3 s3Client = createS3Client();
     private final InstanceProperties properties = new InstanceProperties();
     private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
+    private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
-                    properties, createHadoopConfiguration(), ingestJobStatusStore)
+                    properties, createHadoopConfiguration(), tableIndex, ingestJobStatusStore)
             .jobIdSupplier(() -> "job-id")
             .timeSupplier(() -> validationTime)
             .build();
@@ -66,6 +72,7 @@ public class IngestJobMessageHandlerIT {
     @BeforeEach
     void setup() {
         s3Client.createBucket(TEST_BUCKET);
+        tableIndex.create(TableIdentity.uniqueIdAndName(TEST_TABLE_ID, TEST_TABLE));
     }
 
     @AfterEach
@@ -212,7 +219,7 @@ public class IngestJobMessageHandlerIT {
 
     private static IngestJob jobWithFiles(String... files) {
         return IngestJob.builder()
-                .id("id").tableName("test-table").files(List.of(files)).build();
+                .id("id").tableName(TEST_TABLE).files(List.of(files)).build();
     }
 
     private static Configuration createHadoopConfiguration() {

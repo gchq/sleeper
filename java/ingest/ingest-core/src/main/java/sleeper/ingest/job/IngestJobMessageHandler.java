@@ -19,6 +19,7 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
 
@@ -36,6 +37,7 @@ import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejecte
 
 public class IngestJobMessageHandler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
+    private final TableIndex tableIndex;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final Function<String, T> deserialiser;
     private final Function<T, IngestJob> toIngestJob;
@@ -45,6 +47,7 @@ public class IngestJobMessageHandler<T> {
     private final Supplier<Instant> timeSupplier;
 
     private IngestJobMessageHandler(Builder<T> builder) {
+        tableIndex = builder.tableIndex;
         ingestJobStatusStore = builder.ingestJobStatusStore;
         deserialiser = builder.deserialiser;
         toIngestJob = builder.toIngestJob;
@@ -131,6 +134,7 @@ public class IngestJobMessageHandler<T> {
     }
 
     public static final class Builder<T> {
+        private TableIndex tableIndex;
         private IngestJobStatusStore ingestJobStatusStore;
         private Function<String, T> deserialiser;
         private Function<T, IngestJob> toIngestJob;
@@ -140,6 +144,11 @@ public class IngestJobMessageHandler<T> {
         private Supplier<Instant> timeSupplier = Instant::now;
 
         private Builder() {
+        }
+
+        public Builder<T> tableIndex(TableIndex tableIndex) {
+            this.tableIndex = tableIndex;
+            return this;
         }
 
         public Builder<T> ingestJobStatusStore(IngestJobStatusStore ingestJobStatusStore) {

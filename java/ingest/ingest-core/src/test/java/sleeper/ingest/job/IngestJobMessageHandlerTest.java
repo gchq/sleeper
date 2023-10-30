@@ -20,6 +20,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.WriteToMemoryIngestJobStatusStore;
@@ -37,6 +39,9 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
 
+    private final TableIndex tableIndex = new InMemoryTableIndex();
+    private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+
     @Nested
     @DisplayName("Read job")
     class ReadJob {
@@ -44,8 +49,7 @@ public class IngestJobMessageHandlerTest {
         @Test
         void shouldReadJob() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore).build();
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler().build();
             String json = "{" +
                     "\"id\":\"test-job-id\"," +
                     "\"tableName\":\"test-table\"," +
@@ -66,8 +70,7 @@ public class IngestJobMessageHandlerTest {
         @Test
         void shouldGenerateId() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .build();
             String json = "{" +
@@ -89,8 +92,7 @@ public class IngestJobMessageHandlerTest {
         @Test
         void shouldGenerateIdWhenEmpty() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .build();
             String json = "{" +
@@ -118,8 +120,7 @@ public class IngestJobMessageHandlerTest {
         @Test
         void shouldExpandDirectories() {
             // Given
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(ingestJobStatusStore,
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir1", List.of("file1a.parquet", "file1b.parquet"),
                             "dir2", List.of("file2.parquet")))
                     .build();
@@ -141,8 +142,7 @@ public class IngestJobMessageHandlerTest {
         void shouldFailValidationWhenDirectoryIsEmpty() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(ingestJobStatusStore,
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -167,8 +167,7 @@ public class IngestJobMessageHandlerTest {
         void shouldFailValidationWhenDirectoryIsEmptyAndIdIsGenerated() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(ingestJobStatusStore,
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandlerWithDirectories(
                     Map.of("dir", List.of()))
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
@@ -195,8 +194,7 @@ public class IngestJobMessageHandlerTest {
         void shouldReportValidationFailureIfJsonInvalid() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -216,8 +214,7 @@ public class IngestJobMessageHandlerTest {
         void shouldReportModelValidationFailureIfTableNameNotProvided() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -239,8 +236,7 @@ public class IngestJobMessageHandlerTest {
         void shouldReportModelValidationFailureIfFilesNotProvided() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -263,8 +259,7 @@ public class IngestJobMessageHandlerTest {
         void shouldReportMultipleModelValidationFailures() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .jobIdSupplier(() -> "test-job-id")
                     .timeSupplier(() -> validationTime)
                     .build();
@@ -285,8 +280,7 @@ public class IngestJobMessageHandlerTest {
         void shouldReportValidationFailureIfFileIsNull() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
-            IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
-            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler(ingestJobStatusStore)
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
                     .timeSupplier(() -> validationTime)
                     .build();
             String json = "{" +
@@ -307,14 +301,14 @@ public class IngestJobMessageHandlerTest {
         }
     }
 
-    private IngestJobMessageHandler.Builder<IngestJob> messageHandler(IngestJobStatusStore ingestJobStatusStore) {
-        return messageHandlerWithDirectories(ingestJobStatusStore, Map.of());
+    private IngestJobMessageHandler.Builder<IngestJob> messageHandler() {
+        return messageHandlerWithDirectories(Map.of());
     }
 
-    private IngestJobMessageHandler.Builder<IngestJob> messageHandlerWithDirectories(
-            IngestJobStatusStore ingestJobStatusStore, Map<String, List<String>> directoryContents) {
+    private IngestJobMessageHandler.Builder<IngestJob> messageHandlerWithDirectories(Map<String, List<String>> directoryContents) {
 
         return IngestJobMessageHandler.forIngestJob()
+                .tableIndex(tableIndex)
                 .ingestJobStatusStore(ingestJobStatusStore)
                 .expandDirectories(files -> expandDirFiles(files, directoryContents));
     }
