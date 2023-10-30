@@ -16,11 +16,13 @@
 
 package sleeper.ingest.job;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -42,6 +44,11 @@ public class IngestJobMessageHandlerTest {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
 
+    @BeforeEach
+    void setUp() {
+        tableIndex.create(TableIdentity.uniqueIdAndName("test-table-id", "test-table"));
+    }
+
     @Nested
     @DisplayName("Read job")
     class ReadJob {
@@ -61,6 +68,7 @@ public class IngestJobMessageHandlerTest {
                     .contains(IngestJob.builder()
                             .id("test-job-id")
                             .tableName("test-table")
+                            .tableId("test-table-id")
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
@@ -83,6 +91,7 @@ public class IngestJobMessageHandlerTest {
                     .contains(IngestJob.builder()
                             .id("test-job-id")
                             .tableName("test-table")
+                            .tableId("test-table-id")
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
@@ -106,6 +115,29 @@ public class IngestJobMessageHandlerTest {
                     .contains(IngestJob.builder()
                             .id("test-job-id")
                             .tableName("test-table")
+                            .tableId("test-table-id")
+                            .files("file1.parquet", "file2.parquet")
+                            .build());
+            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
+            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+        }
+
+        @Test
+        void shouldReadJobByTableId() {
+            // Given
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler().build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableId\":\"test-table-id\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json))
+                    .contains(IngestJob.builder()
+                            .id("test-job-id")
+                            .tableName("test-table")
+                            .tableId("test-table-id")
                             .files("file1.parquet", "file2.parquet")
                             .build());
             assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
@@ -277,6 +309,56 @@ public class IngestJobMessageHandlerTest {
         }
 
         @Test
+        void shouldReportValidationFailureIfTableDoesNotExistByName() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
+                    .jobIdSupplier(() -> "test-job-id")
+                    .timeSupplier(() -> validationTime)
+                    .build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableName\":\"non-existent-table\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Table not found"));
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(expectedStatus);
+            assertThat(ingestJobStatusStore.getAllJobs("non-existent-table"))
+                    .containsExactly(expectedStatus);
+        }
+
+        @Test
+        void shouldReportValidationFailureIfTableDoesNotExistById() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
+                    .jobIdSupplier(() -> "test-job-id")
+                    .timeSupplier(() -> validationTime)
+                    .build();
+            String json = "{" +
+                    "\"id\":\"test-job-id\"," +
+                    "\"tableId\":\"non-existent-table\"," +
+                    "\"files\":[\"file1.parquet\",\"file2.parquet\"]" +
+                    "}";
+
+            // When / Then
+            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+                    rejectedRun("test-job-id", json, validationTime,
+                            "Table not found"));
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(expectedStatus);
+            assertThat(ingestJobStatusStore.getAllJobs("non-existent-table"))
+                    .isEmpty();
+        }
+
+        @Test
         void shouldReportValidationFailureIfFileIsNull() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
@@ -306,7 +388,6 @@ public class IngestJobMessageHandlerTest {
     }
 
     private IngestJobMessageHandler.Builder<IngestJob> messageHandlerWithDirectories(Map<String, List<String>> directoryContents) {
-
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
                 .ingestJobStatusStore(ingestJobStatusStore)

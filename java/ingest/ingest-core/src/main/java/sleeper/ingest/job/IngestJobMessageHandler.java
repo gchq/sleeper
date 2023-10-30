@@ -19,6 +19,7 @@ package sleeper.ingest.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.job.status.IngestJobValidatedEvent;
@@ -94,7 +95,7 @@ public class IngestJobMessageHandler<T> {
         } else if (files.contains(null)) {
             validationFailures.add("One of the files was null");
         }
-        if (ingestJob.getTableName() == null) {
+        if (ingestJob.getTableName() == null && ingestJob.getTableId() == null) {
             validationFailures.add("Missing property \"tableName\"");
         }
         if (!validationFailures.isEmpty()) {
@@ -103,6 +104,7 @@ public class IngestJobMessageHandler<T> {
                     refusedEventBuilder()
                             .jobId(jobId)
                             .tableName(ingestJob.getTableName())
+                            .tableId(ingestJob.getTableId())
                             .jsonMessage(message)
                             .reasons(validationFailures.stream()
                                     .map(failure -> "Model validation failed. " + failure)
@@ -111,13 +113,29 @@ public class IngestJobMessageHandler<T> {
             return Optional.empty();
         }
 
+        Optional<TableIdentity> tableIdOpt = getTableId(ingestJob);
+        if (tableIdOpt.isEmpty()) {
+            LOGGER.warn("Table not found for job: {}", job);
+            ingestJobStatusStore.jobValidated(
+                    refusedEventBuilder()
+                            .jobId(jobId)
+                            .tableName(ingestJob.getTableName())
+                            .tableId(ingestJob.getTableId())
+                            .jsonMessage(message)
+                            .reasons("Table not found")
+                            .build());
+            return Optional.empty();
+        }
+        TableIdentity tableId = tableIdOpt.get();
+
         List<String> expandedFiles = expandDirectories.apply(files);
         if (expandedFiles.isEmpty()) {
             LOGGER.warn("Could not find one or more files for job: {}", job);
             ingestJobStatusStore.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
-                            .tableName(ingestJob.getTableName())
+                            .tableName(tableId.getTableName())
+                            .tableId(tableId.getTableUniqueId())
                             .jsonMessage(message)
                             .reasons("Could not find one or more files")
                             .build());
@@ -125,7 +143,21 @@ public class IngestJobMessageHandler<T> {
         }
 
         LOGGER.info("No validation failures found");
-        return Optional.of(applyIngestJobChanges.apply(job, ingestJob.toBuilder().id(jobId).files(expandedFiles).build()));
+        return Optional.of(applyIngestJobChanges.apply(job,
+                ingestJob.toBuilder()
+                        .id(jobId)
+                        .tableName(tableId.getTableName())
+                        .tableId(tableId.getTableUniqueId())
+                        .files(expandedFiles)
+                        .build()));
+    }
+
+    private Optional<TableIdentity> getTableId(IngestJob job) {
+        if (job.getTableId() != null) {
+            return tableIndex.getTableByUniqueId(job.getTableId());
+        } else {
+            return tableIndex.getTableByName(job.getTableName());
+        }
     }
 
     private IngestJobValidatedEvent.Builder refusedEventBuilder() {
