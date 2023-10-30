@@ -27,7 +27,7 @@ import sleeper.compaction.job.status.CompactionJobStatus;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TableProperty;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -44,7 +44,7 @@ public class JobQueryTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTableProperties();
     protected static final String TABLE_NAME = "test-table";
-    protected final TableId tableId = tableProperties.getId();
+    protected final TableIdentity tableId = tableProperties.getId();
     protected final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();

@@ -29,7 +29,7 @@ import sleeper.clients.util.console.ConsoleOutput;
 import sleeper.clients.util.console.menu.MenuOption;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.job.common.QueueMessageCount;
 
 import java.util.Map;
@@ -88,7 +88,7 @@ public class IngestStatusReportScreen {
     private void chooseArgsForIngestJobStatusReport(InstanceProperties properties) throws InterruptedException {
         Optional<TableProperties> tableOpt = tableSelectHelper.chooseTableOrReturnToMain(properties);
         if (tableOpt.isPresent()) {
-            TableId tableId = tableOpt.get().getId();
+            TableIdentity tableId = tableOpt.get().getId();
             consoleHelper.chooseOptionUntilValid("Which query type would you like to use",
                     new MenuOption("All", () ->
                             runIngestJobStatusReport(properties, tableId, JobQuery.Type.ALL)),
@@ -113,12 +113,12 @@ public class IngestStatusReportScreen {
         ).run();
     }
 
-    private void runIngestJobStatusReport(InstanceProperties properties, TableId tableId,
+    private void runIngestJobStatusReport(InstanceProperties properties, TableIdentity tableId,
                                           JobQuery.Type queryType) {
         runIngestJobStatusReport(properties, tableId, queryType, "");
     }
 
-    private void runIngestJobStatusReport(InstanceProperties properties, TableId tableId,
+    private void runIngestJobStatusReport(InstanceProperties properties, TableIdentity tableId,
                                           JobQuery.Type queryType, String queryParameters) {
         new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), tableId, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),

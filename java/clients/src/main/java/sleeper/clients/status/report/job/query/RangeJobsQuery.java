@@ -18,7 +18,7 @@ package sleeper.clients.status.report.job.query;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
@@ -35,11 +35,11 @@ public class RangeJobsQuery implements JobQuery {
 
     public static final String DATE_FORMAT = "yyyyMMddHHmmss";
 
-    private final TableId tableId;
+    private final TableIdentity tableId;
     private final Instant start;
     private final Instant end;
 
-    public RangeJobsQuery(TableId tableId, Instant start, Instant end) {
+    public RangeJobsQuery(TableIdentity tableId, Instant start, Instant end) {
         if (start.isAfter(end)) {
             throw new IllegalArgumentException("Start of range provided is after end");
         }
@@ -63,7 +63,7 @@ public class RangeJobsQuery implements JobQuery {
         return Type.RANGE;
     }
 
-    public static JobQuery fromParameters(TableId tableId, String queryParameters, Clock clock) {
+    public static JobQuery fromParameters(TableIdentity tableId, String queryParameters, Clock clock) {
         if (queryParameters == null) {
             Instant end = clock.instant();
             Instant start = end.minus(Duration.ofHours(4));
@@ -76,7 +76,7 @@ public class RangeJobsQuery implements JobQuery {
         }
     }
 
-    public static JobQuery prompt(TableId tableId, ConsoleInput in, Clock clock) {
+    public static JobQuery prompt(TableIdentity tableId, ConsoleInput in, Clock clock) {
         Instant start = promptStart(in, clock);
         Instant end = promptEnd(in, clock);
         return new RangeJobsQuery(tableId, start, end);
