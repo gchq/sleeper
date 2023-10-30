@@ -247,7 +247,8 @@ public class BulkImportStarterLambdaIT {
                         .jobIdSupplier(() -> "test-job")
                         .build());
         BulkImportJob job = BulkImportJob.builder()
-                .tableName("test-table").files(List.of("test-bucket/test-1.parquet"))
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
+                .files(List.of("test-bucket/test-1.parquet"))
                 .build();
         SQSEvent event = getSqsEvent(job);
 
@@ -256,7 +257,8 @@ public class BulkImportStarterLambdaIT {
 
         // Then
         verify(executor, times(1)).runJob(BulkImportJob.builder()
-                .id("test-job").tableName("test-table")
+                .id("test-job")
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
                 .files(List.of("test-bucket/test-1.parquet"))
                 .build());
     }
@@ -281,7 +283,10 @@ public class BulkImportStarterLambdaIT {
 
     private static BulkImportJob jobWithFiles(String... files) {
         return BulkImportJob.builder()
-                .id("id").files(List.of(files)).tableName("test-table").build();
+                .id("id")
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
+                .files(List.of(files))
+                .build();
     }
 
     private static Configuration createHadoopConfiguration() {
