@@ -67,28 +67,10 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     }
 
     @Test
-    void shouldReportTableDoesNotExistWhenNotInBucket() {
-        // When / Then
-        assertThat(provider.lookupByName(tableName))
-                .isEmpty();
-    }
-
-    @Test
     void shouldThrowExceptionWhenTableDoesNotExist() {
         // When / Then
         assertThatThrownBy(() -> provider.getByName(tableName))
                 .isInstanceOf(TablePropertiesProvider.TableNotFoundException.class);
-    }
-
-    @Test
-    void shouldReportTableExistsWhenInIndexButNotConfigBucket() {
-        // Given
-        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
-                .create(tableProperties.getId());
-
-        // When / Then
-        assertThat(provider.lookupByName(tableName))
-                .contains(tableProperties.getId());
     }
 
     @Test

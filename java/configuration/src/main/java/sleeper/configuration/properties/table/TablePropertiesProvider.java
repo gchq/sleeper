@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -103,10 +102,6 @@ public class TablePropertiesProvider {
         CacheEntry entry = new CacheEntry(properties, expiryTime);
         cacheById.put(properties.get(TABLE_ID), entry);
         cacheByName.put(properties.get(TABLE_NAME), entry);
-    }
-
-    public Optional<TableIdentity> lookupByName(String tableName) {
-        return propertiesStore.lookupByName(tableName);
     }
 
     public Stream<TableIdentity> streamAllTableIds() {
