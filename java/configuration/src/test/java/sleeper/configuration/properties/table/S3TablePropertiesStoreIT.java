@@ -78,6 +78,19 @@ class S3TablePropertiesStoreIT extends TablePropertiesITBase {
                     .map(properties -> properties.getInt(PAGE_SIZE)))
                     .contains(456);
         }
+
+        @Test
+        void shouldUpdateTableName() {
+            // Given
+            store.save(tableProperties);
+            tableProperties.set(TABLE_NAME, "renamed-table");
+            store.save(tableProperties);
+
+            // When / Then
+            assertThat(store.loadByName("renamed-table")
+                    .map(properties -> properties.get(TABLE_NAME)))
+                    .contains("renamed-table");
+        }
     }
 
     @Nested

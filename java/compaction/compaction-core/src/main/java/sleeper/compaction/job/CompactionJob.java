@@ -128,20 +128,26 @@ public class CompactionJob {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        CompactionJob that = (CompactionJob) o;
-        return isSplittingJob == that.isSplittingJob && dimension == that.dimension && Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId) && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile) && Objects.equals(outputFiles, that.outputFiles) && Objects.equals(childPartitions, that.childPartitions) && Objects.equals(partitionId, that.partitionId) && Objects.equals(splitPoint, that.splitPoint) && Objects.equals(iteratorClassName, that.iteratorClassName) && Objects.equals(iteratorConfig, that.iteratorConfig);
+        CompactionJob that = (CompactionJob) object;
+        return isSplittingJob == that.isSplittingJob && dimension == that.dimension
+                && Objects.equals(tableId, that.tableId) && Objects.equals(jobId, that.jobId)
+                && Objects.equals(inputFiles, that.inputFiles) && Objects.equals(outputFile, that.outputFile)
+                && Objects.equals(outputFiles, that.outputFiles) && Objects.equals(childPartitions, that.childPartitions)
+                && Objects.equals(partitionId, that.partitionId) && Objects.equals(splitPoint, that.splitPoint)
+                && Objects.equals(iteratorClassName, that.iteratorClassName) && Objects.equals(iteratorConfig, that.iteratorConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, jobId, inputFiles, outputFile, outputFiles, childPartitions, partitionId, isSplittingJob, splitPoint, dimension, iteratorClassName, iteratorConfig);
+        return Objects.hash(tableId, jobId, inputFiles, outputFile, outputFiles, childPartitions, partitionId,
+                isSplittingJob, splitPoint, dimension, iteratorClassName, iteratorConfig);
     }
 
     @Override
