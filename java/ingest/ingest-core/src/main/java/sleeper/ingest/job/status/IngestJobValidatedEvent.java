@@ -136,20 +136,24 @@ public class IngestJobValidatedEvent {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        IngestJobValidatedEvent that = (IngestJobValidatedEvent) o;
-        return fileCount == that.fileCount && Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName) && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId) && Objects.equals(jsonMessage, that.jsonMessage);
+        IngestJobValidatedEvent that = (IngestJobValidatedEvent) object;
+        return fileCount == that.fileCount && Objects.equals(jobId, that.jobId)
+                && Objects.equals(tableName, that.tableName) && Objects.equals(tableId, that.tableId)
+                && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons)
+                && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId)
+                && Objects.equals(jsonMessage, that.jsonMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableName, fileCount, validationTime, reasons, jobRunId, taskId, jsonMessage);
+        return Objects.hash(jobId, tableName, tableId, fileCount, validationTime, reasons, jobRunId, taskId, jsonMessage);
     }
 
     @Override
@@ -157,6 +161,7 @@ public class IngestJobValidatedEvent {
         return "IngestJobValidatedEvent{" +
                 "jobId='" + jobId + '\'' +
                 ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", fileCount=" + fileCount +
                 ", validationTime=" + validationTime +
                 ", reasons=" + reasons +

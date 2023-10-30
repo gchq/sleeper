@@ -75,20 +75,22 @@ public class IngestJobFinishedEvent {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        IngestJobFinishedEvent that = (IngestJobFinishedEvent) o;
-        return Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName) && Objects.equals(summary, that.summary) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
+        IngestJobFinishedEvent that = (IngestJobFinishedEvent) object;
+        return Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName)
+                && Objects.equals(tableId, that.tableId) && Objects.equals(summary, that.summary)
+                && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableName, summary, jobRunId, taskId);
+        return Objects.hash(jobId, tableName, tableId, summary, jobRunId, taskId);
     }
 
     @Override
@@ -96,6 +98,7 @@ public class IngestJobFinishedEvent {
         return "IngestJobFinishedEvent{" +
                 "jobId='" + jobId + '\'' +
                 ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", summary=" + summary +
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +

@@ -97,20 +97,23 @@ public class IngestJobStartedEvent {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        IngestJobStartedEvent that = (IngestJobStartedEvent) o;
-        return fileCount == that.fileCount && startOfRun == that.startOfRun && Objects.equals(jobId, that.jobId) && Objects.equals(tableName, that.tableName) && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId) && Objects.equals(startTime, that.startTime);
+        IngestJobStartedEvent that = (IngestJobStartedEvent) object;
+        return fileCount == that.fileCount && startOfRun == that.startOfRun && Objects.equals(jobId, that.jobId)
+                && Objects.equals(tableName, that.tableName) && Objects.equals(tableId, that.tableId)
+                && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId)
+                && Objects.equals(startTime, that.startTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableName, fileCount, jobRunId, taskId, startTime, startOfRun);
+        return Objects.hash(jobId, tableName, tableId, fileCount, jobRunId, taskId, startTime, startOfRun);
     }
 
     @Override
@@ -118,6 +121,7 @@ public class IngestJobStartedEvent {
         return "IngestJobStartedEvent{" +
                 "jobId='" + jobId + '\'' +
                 ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", fileCount=" + fileCount +
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +
