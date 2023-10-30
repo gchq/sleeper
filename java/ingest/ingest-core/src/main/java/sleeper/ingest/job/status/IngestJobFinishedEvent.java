@@ -24,6 +24,7 @@ import java.util.Objects;
 public class IngestJobFinishedEvent {
     private final String jobId;
     private final String tableName;
+    private final String tableId;
     private final RecordsProcessedSummary summary;
     private final String jobRunId;
     private final String taskId;
@@ -31,6 +32,7 @@ public class IngestJobFinishedEvent {
     private IngestJobFinishedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableName = Objects.requireNonNull(builder.tableName, "tableName must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         jobRunId = builder.jobRunId;
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
@@ -54,6 +56,10 @@ public class IngestJobFinishedEvent {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public RecordsProcessedSummary getSummary() {
@@ -99,6 +105,7 @@ public class IngestJobFinishedEvent {
     public static final class Builder {
         private String jobId;
         private String tableName;
+        private String tableId;
         private RecordsProcessedSummary summary;
         private String jobRunId;
         private String taskId;
@@ -108,7 +115,8 @@ public class IngestJobFinishedEvent {
 
         public Builder job(IngestJob job) {
             return jobId(job.getId())
-                    .tableName(job.getTableName());
+                    .tableName(job.getTableName())
+                    .tableId(job.getTableId());
         }
 
         public Builder jobId(String jobId) {
@@ -118,6 +126,11 @@ public class IngestJobFinishedEvent {
 
         public Builder tableName(String tableName) {
             this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 
