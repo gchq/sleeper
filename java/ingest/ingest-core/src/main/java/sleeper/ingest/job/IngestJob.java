@@ -21,13 +21,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class IngestJob {
-    private final String tableName;
     private final String id;
+    private final String tableName;
+    private final String tableId;
     private final List<String> files;
 
     private IngestJob(Builder builder) {
-        tableName = builder.tableName;
         id = builder.id;
+        tableName = builder.tableName;
+        tableId = builder.tableId;
         files = builder.files;
     }
 
@@ -35,12 +37,16 @@ public class IngestJob {
         return new Builder();
     }
 
+    public String getId() {
+        return id;
+    }
+
     public String getTableName() {
         return tableName;
     }
 
-    public String getId() {
-        return id;
+    public String getTableId() {
+        return tableId;
     }
 
     public List<String> getFiles() {
@@ -56,22 +62,21 @@ public class IngestJob {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        IngestJob ingestJob = (IngestJob) o;
-        return Objects.equals(id, ingestJob.id) &&
-                Objects.equals(tableName, ingestJob.tableName) &&
-                Objects.equals(files, ingestJob.files);
+        IngestJob ingestJob = (IngestJob) object;
+        return Objects.equals(id, ingestJob.id) && Objects.equals(tableName, ingestJob.tableName)
+                && Objects.equals(tableId, ingestJob.tableId) && Objects.equals(files, ingestJob.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, tableName, files);
+        return Objects.hash(id, tableName, tableId, files);
     }
 
     @Override
@@ -79,16 +84,23 @@ public class IngestJob {
         return "IngestJob{" +
                 "id='" + id + '\'' +
                 ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
                 ", files=" + files +
                 '}';
     }
 
     public static final class Builder {
-        private String tableName;
         private String id;
+        private String tableName;
+        private String tableId;
         private List<String> files;
 
         private Builder() {
+        }
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
         }
 
         public Builder tableName(String tableName) {
@@ -96,8 +108,8 @@ public class IngestJob {
             return this;
         }
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
             return this;
         }
 

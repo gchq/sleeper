@@ -15,15 +15,12 @@
  */
 package sleeper.bulkimport.job;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import sleeper.ingest.job.IngestJob;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * POJO containing information needed to run a bulk import job.
@@ -31,21 +28,23 @@ import java.util.Map;
 public class BulkImportJob {
     private final String id;
     private final String tableName;
+    private final String tableId;
     private final List<String> files;
     private final String className;
     private final Map<String, String> platformSpec;
     private final Map<String, String> sparkConf;
 
     private BulkImportJob(Builder builder) {
-        this.id = builder.id;
-        this.tableName = builder.tableName;
-        this.files = builder.files;
-        this.className = builder.className;
-        this.platformSpec = builder.platformSpec;
-        this.sparkConf = builder.sparkConf;
+        id = builder.id;
+        tableName = builder.tableName;
+        tableId = builder.tableId;
+        files = builder.files;
+        className = builder.className;
+        platformSpec = builder.platformSpec;
+        sparkConf = builder.sparkConf;
     }
 
-    public static BulkImportJob.Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -55,6 +54,10 @@ public class BulkImportJob {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public String getTableId() {
+        return tableId;
     }
 
     public List<String> getFiles() {
@@ -78,68 +81,92 @@ public class BulkImportJob {
     }
 
     public BulkImportJob applyIngestJobChanges(IngestJob job) {
-        return toBuilder().id(job.getId()).files(job.getFiles()).tableName(job.getTableName()).build();
+        return toBuilder()
+                .id(job.getId())
+                .tableName(job.getTableName())
+                .tableId(job.getTableId())
+                .files(job.getFiles())
+                .build();
     }
 
     public Builder toBuilder() {
-        return builder().id(id).files(files).tableName(tableName)
+        return builder().id(id).files(files).tableName(tableName).tableId(tableId)
                 .className(className).platformSpec(platformSpec).sparkConf(sparkConf);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
-
-        BulkImportJob that = (BulkImportJob) o;
-
-        return new EqualsBuilder()
-                .append(files, that.files)
-                .append(id, that.id)
-                .append(tableName, that.tableName)
-                .append(className, that.className)
-                .append(sparkConf, that.sparkConf)
-                .append(platformSpec, that.platformSpec)
-                .isEquals();
+        BulkImportJob that = (BulkImportJob) object;
+        return Objects.equals(id, that.id) && Objects.equals(tableName, that.tableName)
+                && Objects.equals(tableId, that.tableId) && Objects.equals(files, that.files)
+                && Objects.equals(className, that.className) && Objects.equals(platformSpec, that.platformSpec)
+                && Objects.equals(sparkConf, that.sparkConf);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-                .append(files)
-                .append(id)
-                .append(tableName)
-                .append(className)
-                .append(sparkConf)
-                .append(platformSpec)
-                .toHashCode();
+        return Objects.hash(id, tableName, tableId, files, className, platformSpec, sparkConf);
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this)
-                .append("files", files)
-                .append("id", id)
-                .append("tableName", tableName)
-                .append("className", className)
-                .append("sparkConf", sparkConf)
-                .append("platformSpec", platformSpec)
-                .toString();
+        return "BulkImportJob{" +
+                "id='" + id + '\'' +
+                ", tableName='" + tableName + '\'' +
+                ", tableId='" + tableId + '\'' +
+                ", files=" + files +
+                ", className='" + className + '\'' +
+                ", platformSpec=" + platformSpec +
+                ", sparkConf=" + sparkConf +
+                '}';
     }
 
     public static final class Builder {
-        private Map<String, String> sparkConf;
-        private String className;
         private String id;
-        private List<String> files;
         private String tableName;
+        private String tableId;
+        private List<String> files;
+        private String className;
         private Map<String, String> platformSpec;
+        private Map<String, String> sparkConf;
 
         public Builder() {
+        }
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder tableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
+            return this;
+        }
+
+        public Builder files(List<String> files) {
+            this.files = files;
+            return this;
+        }
+
+        public Builder className(String className) {
+            this.className = className;
+            return this;
+        }
+
+        public Builder platformSpec(Map<String, String> platformSpec) {
+            this.platformSpec = platformSpec;
+            return this;
         }
 
         public Builder sparkConf(Map<String, String> sparkConf) {
@@ -153,31 +180,6 @@ public class BulkImportJob {
             }
             this.sparkConf.put(key, value);
 
-            return this;
-        }
-
-        public Builder tableName(String tableName) {
-            this.tableName = tableName;
-            return this;
-        }
-
-        public Builder className(String className) {
-            this.className = className;
-            return this;
-        }
-
-        public Builder id(String id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder files(List<String> files) {
-            this.files = files;
-            return this;
-        }
-
-        public Builder platformSpec(Map<String, String> platformSpec) {
-            this.platformSpec = platformSpec;
             return this;
         }
 
