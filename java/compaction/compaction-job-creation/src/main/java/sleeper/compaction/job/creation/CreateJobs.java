@@ -87,16 +87,17 @@ public class CreateJobs {
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<TableIdentity> tables = tablePropertiesProvider.listTableIds();
+        List<TableProperties> tables = tablePropertiesProvider.streamAllTables()
+                .collect(Collectors.toUnmodifiableList());
         LOGGER.info("Found {} tables", tables.size());
-        for (TableIdentity table : tables) {
+        for (TableProperties table : tables) {
             createJobsForTable(table);
         }
     }
 
-    public void createJobsForTable(TableIdentity tableId) throws StateStoreException, IOException, ObjectFactoryException {
+    public void createJobsForTable(TableProperties tableProperties) throws StateStoreException, IOException, ObjectFactoryException {
+        TableIdentity tableId = tableProperties.getId();
         LOGGER.debug("Creating jobs for table {}", tableId);
-        TableProperties tableProperties = tablePropertiesProvider.get(tableId);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
 
         List<Partition> allPartitions = stateStore.getAllPartitions();
