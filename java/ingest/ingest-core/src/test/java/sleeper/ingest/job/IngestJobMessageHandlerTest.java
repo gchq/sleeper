@@ -338,6 +338,27 @@ public class IngestJobMessageHandlerTest {
         }
 
         @Test
+        void shouldReportMultipleModelValidationFailures() {
+            // Given
+            Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
+            IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = messageHandler()
+                    .jobIdSupplier(() -> "test-job-id")
+                    .timeSupplier(() -> validationTime)
+                    .build();
+            String json = "{}";
+
+            // When / Then
+            assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
+            assertThat(ingestJobStatusStore.getInvalidJobs())
+                    .containsExactly(jobStatus("test-job-id",
+                            rejectedRun("test-job-id", json, validationTime,
+                                    "Missing property \"files\"",
+                                    "Table not found")));
+            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
+                    .isEmpty();
+        }
+
+        @Test
         void shouldReportValidationFailureIfFileIsNull() {
             // Given
             Instant validationTime = Instant.parse("2023-07-03T16:14:00Z");
