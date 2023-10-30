@@ -37,6 +37,7 @@ import sleeper.query.QueryException;
 import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrSubQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.ResultsOutputInfo;
@@ -91,14 +92,16 @@ public class SqsQueryProcessor {
         return new Builder();
     }
 
-    public void processQuery(Query query) {
-        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(query.getStatusReportDestinations());
+    public void processQuery(QueryOrSubQuery message) {
+        Query query = message.getThisQuery();
+        Query parentQuery = message.getParentQuery();
+        QueryStatusReportListeners queryTrackers = QueryStatusReportListeners.fromConfig(parentQuery.getStatusReportDestinations());
         queryTrackers.add(queryTracker);
 
         CloseableIterator<Record> results;
         try {
             queryTrackers.queryInProgress(query);
-            TableProperties tableProperties = tablePropertiesProvider.getByName(query.getTableName());
+            TableProperties tableProperties = tablePropertiesProvider.getByName(parentQuery.getTableName());
             if (query instanceof LeafPartitionQuery) {
                 results = processLeafPartitionQuery((LeafPartitionQuery) query);
             } else {

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.query.model.Query;
+import sleeper.query.model.QueryOrSubQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.QueryValidationException;
 import sleeper.query.tracker.QueryStatusReportListener;
@@ -51,9 +52,9 @@ public class QueryMessageHandler {
         this.querySerDe = new QuerySerDe(tablePropertiesProvider);
     }
 
-    public Optional<Query> deserialiseAndValidate(String message) {
+    public Optional<QueryOrSubQuery> deserialiseAndValidate(String message) {
         try {
-            Query query = querySerDe.fromJson(message);
+            QueryOrSubQuery query = querySerDe.fromJsonOrSubQuery(message);
             LOGGER.info("Deserialised message to query {}", query);
             return Optional.of(query);
         } catch (JsonParseException e) {

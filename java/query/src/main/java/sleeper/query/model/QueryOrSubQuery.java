@@ -42,6 +42,18 @@ public class QueryOrSubQuery {
         return Optional.ofNullable(subQuery);
     }
 
+    public Query getParentQuery() {
+        return getSubQuery()
+                .map(SubQuery::getParentQuery)
+                .orElse(query);
+    }
+
+    public Query getThisQuery() {
+        return getSubQuery()
+                .<Query>map(SubQuery::toLeafQuery)
+                .orElse(query);
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {

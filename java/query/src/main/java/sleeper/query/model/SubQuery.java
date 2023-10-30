@@ -80,6 +80,10 @@ public class SubQuery {
         return files;
     }
 
+    public LeafPartitionQuery toLeafQuery() {
+        return new LeafPartitionQuery(getTableName(), getQueryId(), subQueryId, regions, leafPartitionId, partitionRegion, files);
+    }
+
     @Override
     public boolean equals(Object object) {
         if (this == object) {
