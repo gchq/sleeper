@@ -92,14 +92,14 @@ class QueryJson {
                 .build();
     }
 
-    QueryOrSubQuery toQueryOrSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
+    QueryOrLeafQuery toQueryOrSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
         validate();
         RegionSerDe regionSerDe = regionSerDe(schemaLoader);
         switch (type) {
             case "Query":
-                return new QueryOrSubQuery(toParentQuery(regionSerDe));
+                return new QueryOrLeafQuery(toParentQuery(regionSerDe));
             case "LeafPartitionQuery":
-                return new QueryOrSubQuery(toSubQuery(regionSerDe));
+                return new QueryOrLeafQuery(toSubQuery(regionSerDe));
             default:
                 throw new QueryValidationException(queryId, statusReportDestinations, "Unknown query type \"" + type + "\"");
         }

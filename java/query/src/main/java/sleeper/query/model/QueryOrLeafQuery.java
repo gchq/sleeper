@@ -19,17 +19,17 @@ package sleeper.query.model;
 import java.util.Objects;
 import java.util.Optional;
 
-public class QueryOrSubQuery {
+public class QueryOrLeafQuery {
 
     private final Query query;
     private final SubQuery subQuery;
 
-    public QueryOrSubQuery(Query query) {
+    public QueryOrLeafQuery(Query query) {
         this.query = query;
         this.subQuery = null;
     }
 
-    public QueryOrSubQuery(SubQuery subQuery) {
+    public QueryOrLeafQuery(SubQuery subQuery) {
         this.query = null;
         this.subQuery = subQuery;
     }
@@ -62,7 +62,7 @@ public class QueryOrSubQuery {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        QueryOrSubQuery that = (QueryOrSubQuery) object;
+        QueryOrLeafQuery that = (QueryOrLeafQuery) object;
         return Objects.equals(query, that.query) && Objects.equals(subQuery, that.subQuery);
     }
 

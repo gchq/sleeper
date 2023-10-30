@@ -83,7 +83,7 @@ public class QuerySerDe {
         return queryJson.toQuery(schemaLoader);
     }
 
-    public QueryOrSubQuery fromJsonOrSubQuery(String json) {
+    public QueryOrLeafQuery fromJsonOrSubQuery(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
         return queryJson.toQueryOrSubQuery(schemaLoader);
     }
