@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.TableProperties;
 import sleeper.configuration.properties.table.TablePropertiesProvider;
+import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.key.Key;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
@@ -69,6 +70,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIdentity;
+import sleeper.core.table.TableIndex;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
@@ -92,6 +94,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
     public static final String SOURCE_TYPE = "Sleeper";
     public static final String RELEVANT_FILES_FIELD = "_SleeperRelevantFiles";
     private final InstanceProperties instanceProperties;
+    private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
 
@@ -103,6 +106,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         super(SOURCE_TYPE);
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
+        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
@@ -118,6 +122,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         super(encryptionKeyFactory, secretsManager, athena, SOURCE_TYPE, spillBucket, spillPrefix);
         this.instanceProperties = new InstanceProperties();
         this.instanceProperties.loadFromS3(s3Client, configBucket);
+        this.tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
         this.tablePropertiesProvider = new TablePropertiesProvider(instanceProperties, s3Client, dynamoDBClient);
         this.stateStoreProvider = new StateStoreProvider(dynamoDBClient, instanceProperties, new Configuration());
     }
@@ -155,7 +160,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         int pageSize = listTablesRequest.getPageSize();
         String schemaName = listTablesRequest.getSchemaName();
 
-        List<TableName> tables = tablePropertiesProvider.streamAllTableIds()
+        List<TableName> tables = tableIndex.streamAllTables()
                 .map(TableIdentity::getTableName)
                 .sorted()
                 .map(t -> new TableName(schemaName, t))
@@ -318,8 +323,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
      */
     private boolean isValid(Partition partition, List<Field> rowKeyFields, Map<String, ValueSet> valueSets) {
         // Iterate through the dimensions of the key
-        for (int i = 0; i < rowKeyFields.size(); i++) {
-            Field field = rowKeyFields.get(i);
+        for (Field field : rowKeyFields) {
             sleeper.core.range.Range range = partition.getRegion().getRange(field.getName());
             PrimitiveType type = (PrimitiveType) field.getType();
             ValueSet keyPredicate = valueSets.getOrDefault(field.getName(),

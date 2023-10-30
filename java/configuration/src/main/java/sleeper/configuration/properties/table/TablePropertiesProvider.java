@@ -104,10 +104,6 @@ public class TablePropertiesProvider {
         cacheByName.put(properties.get(TABLE_NAME), entry);
     }
 
-    public Stream<TableIdentity> streamAllTableIds() {
-        return propertiesStore.streamAllTableIds();
-    }
-
     public Stream<TableProperties> streamAllTables() {
         return propertiesStore.streamAllTableIds()
                 .map(id -> getByName(id.getTableName()));

@@ -62,8 +62,6 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
         // When / Then
         assertThat(provider.streamAllTables())
                 .containsExactly(table1, table2);
-        assertThat(provider.streamAllTableIds())
-                .containsExactly(table1.getId(), table2.getId());
     }
 
     @Test
