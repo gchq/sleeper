@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.WebSocketOutput;
 
@@ -56,8 +57,13 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
+    public void queryInProgress(SubQuery query) {
+        // Ignore
+    }
+
+    @Override
     public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
-        List<String> subQueryIds = subQueries.stream().map(subQuery -> subQuery.getSubQueryId()).collect(Collectors.toList());
+        List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
         Map<String, Object> data = new HashMap<>();
         data.put("queryIds", subQueryIds);
         this.sendStatusReport("subqueries", query, data);

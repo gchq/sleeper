@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.ArrayList;
@@ -64,6 +65,12 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
 
     @Override
     public void queryInProgress(Query query) {
+        LOGGER.info("Query InProgress: {}", query);
+        listeners.forEach(listener -> listener.queryInProgress(query));
+    }
+
+    @Override
+    public void queryInProgress(SubQuery query) {
         LOGGER.info("Query InProgress: {}", query);
         listeners.forEach(listener -> listener.queryInProgress(query));
     }

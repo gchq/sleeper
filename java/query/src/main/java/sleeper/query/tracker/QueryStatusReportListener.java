@@ -17,6 +17,7 @@ package sleeper.query.tracker;
 
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.List;
@@ -28,6 +29,8 @@ public interface QueryStatusReportListener {
     void queryQueued(Query query);
 
     void queryInProgress(Query query);
+
+    void queryInProgress(SubQuery subQuery);
 
     void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 

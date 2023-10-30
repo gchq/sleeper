@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
@@ -280,6 +281,11 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     @Override
     public void queryInProgress(Query query) {
         this.updateState(query, QueryState.IN_PROGRESS);
+    }
+
+    @Override
+    public void queryInProgress(SubQuery query) {
+        this.updateState(query.toLeafQuery(), QueryState.IN_PROGRESS);
     }
 
     @Override
