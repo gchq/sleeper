@@ -18,11 +18,13 @@ package sleeper.bulkimport.starter;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.bulkimport.job.BulkImportJob;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.table.InMemoryTableIndex;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.job.IngestJobMessageHandler;
 import sleeper.ingest.job.status.IngestJobStatusStore;
@@ -40,6 +42,11 @@ public class BulkImportStarterLambdaTest {
     BulkImportExecutor executor = mock(BulkImportExecutor.class);
     TableIndex tableIndex = new InMemoryTableIndex();
     IngestJobStatusStore ingestJobStatusStore = new WriteToMemoryIngestJobStatusStore();
+
+    @BeforeEach
+    void setUp() {
+        tableIndex.create(TableIdentity.uniqueIdAndName("test-table-id", "test-table"));
+    }
 
     @Test
     void shouldReportValidationFailureIfJsonInvalid() {
@@ -82,7 +89,7 @@ public class BulkImportStarterLambdaTest {
         assertThat(ingestJobStatusStore.getInvalidJobs())
                 .containsExactly(jobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
-                                "Model validation failed. Missing property \"tableName\"")));
+                                "Table not found")));
     }
 
     @Test
@@ -105,7 +112,7 @@ public class BulkImportStarterLambdaTest {
         assertThat(ingestJobStatusStore.getInvalidJobs())
                 .containsExactly(jobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
-                                "Model validation failed. Missing property \"files\"")));
+                                "Missing property \"files\"")));
     }
 
     @Test
@@ -126,13 +133,14 @@ public class BulkImportStarterLambdaTest {
         assertThat(ingestJobStatusStore.getInvalidJobs())
                 .containsExactly(jobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
-                                "Model validation failed. Missing property \"files\"",
-                                "Model validation failed. Missing property \"tableName\"")));
+                                "Missing property \"files\"",
+                                "Table not found")));
     }
 
     private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder() {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
-                .ingestJobStatusStore(ingestJobStatusStore);
+                .ingestJobStatusStore(ingestJobStatusStore)
+                .expandDirectories(files -> files);
     }
 }
