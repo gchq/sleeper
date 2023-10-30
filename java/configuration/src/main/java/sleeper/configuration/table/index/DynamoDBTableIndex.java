@@ -39,6 +39,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 
 import java.util.Comparator;
 import java.util.List;
@@ -90,7 +91,7 @@ public class DynamoDBTableIndex implements TableIndex {
             LOGGER.debug("Created table {}, capacity consumed = {}", tableId, totalCapacity);
         } catch (TransactionCanceledException e) {
             CancellationReason nameIndexReason = e.getCancellationReasons().get(0);
-            if ("ConditionalCheckFailed".equals(nameIndexReason.getCode())) {
+            if (isCheckFailed(nameIndexReason)) {
                 throw new TableAlreadyExistsException(tableId);
             } else {
                 throw e;
@@ -135,13 +136,82 @@ public class DynamoDBTableIndex implements TableIndex {
                 .withTransactItems(
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(nameIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))),
+                                .withKey(DynamoDBTableIdFormat.getNameKey(tableId))
+                                .withConditionExpression("attribute_exists(#tablename)")
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
                         new TransactWriteItem().withDelete(new Delete()
                                 .withTableName(idIndexDynamoTableName)
-                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))));
-        TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
-        List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
-        double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
-        LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
+                                .withKey(DynamoDBTableIdFormat.getIdKey(tableId))
+                                .withConditionExpression("attribute_exists(#tableid)")
+                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))));
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Deleted table {}, capacity consumed = {}", tableId, totalCapacity);
+        } catch (TransactionCanceledException e) {
+            CancellationReason nameNotFoundReason = e.getCancellationReasons().get(0);
+            CancellationReason idNotFoundReason = e.getCancellationReasons().get(1);
+            if (isCheckFailed(nameNotFoundReason)) {
+                throw TableNotFoundException.withTableName(tableId.getTableName());
+            } else if (isCheckFailed(idNotFoundReason)) {
+                throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void update(TableId tableId) {
+        TableId oldId = getTableByUniqueId(tableId.getTableUniqueId())
+                .orElseThrow(() -> TableNotFoundException.withTableId(tableId.getTableUniqueId()));
+        update(oldId, tableId);
+    }
+
+    public void update(TableId oldId, TableId newId) {
+        Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newId);
+        TransactWriteItemsRequest request = new TransactWriteItemsRequest()
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
+                .withTransactItems(
+                        new TransactWriteItem().withPut(new Put()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withItem(idItem)
+                                .withConditionExpression("attribute_not_exists(#tablename)")
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))),
+                        new TransactWriteItem().withPut(new Put()
+                                .withTableName(idIndexDynamoTableName)
+                                .withItem(idItem)
+                                .withConditionExpression("attribute_exists(#tableid)")
+                                .withExpressionAttributeNames(Map.of("#tableid", TABLE_ID_FIELD))),
+                        new TransactWriteItem().withDelete(new Delete()
+                                .withTableName(nameIndexDynamoTableName)
+                                .withKey(DynamoDBTableIdFormat.getNameKey(oldId))
+                                .withConditionExpression("attribute_exists(#tablename)")
+                                .withExpressionAttributeNames(Map.of("#tablename", TABLE_NAME_FIELD))));
+        try {
+            TransactWriteItemsResult result = dynamoDB.transactWriteItems(request);
+            List<ConsumedCapacity> consumedCapacity = result.getConsumedCapacity();
+            double totalCapacity = consumedCapacity.stream().mapToDouble(ConsumedCapacity::getCapacityUnits).sum();
+            LOGGER.debug("Updated table {}, capacity consumed = {}", newId, totalCapacity);
+        } catch (TransactionCanceledException e) {
+            CancellationReason nameAlreadyExistsReason = e.getCancellationReasons().get(0);
+            CancellationReason idNotFoundReason = e.getCancellationReasons().get(1);
+            CancellationReason oldNameNotFoundReason = e.getCancellationReasons().get(2);
+            if (isCheckFailed(nameAlreadyExistsReason)) {
+                throw new TableAlreadyExistsException(getTableByName(newId.getTableName())
+                        .orElseThrow(() -> TableNotFoundException.withTableName(newId.getTableName())));
+            } else if (isCheckFailed(idNotFoundReason)) {
+                throw TableNotFoundException.withTableId(newId.getTableUniqueId());
+            } else if (isCheckFailed(oldNameNotFoundReason)) {
+                throw TableNotFoundException.withTableName(oldId.getTableName());
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    private static boolean isCheckFailed(CancellationReason reason) {
+        return "ConditionalCheckFailed".equals(reason.getCode());
     }
 }

@@ -25,7 +25,7 @@ import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
-import sleeper.core.table.TableIndex;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +35,7 @@ import static sleeper.configuration.properties.InstancePropertiesTestHelper.crea
 public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+    private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
     private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @BeforeEach
@@ -155,6 +155,115 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             index.delete(tableId);
 
             assertThat(index.getTableByUniqueId(tableId.getTableUniqueId())).isEmpty();
+        }
+
+        @Test
+        void shouldFailToDeleteTableThatDoesNotExist() {
+            // Given
+            TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
+
+            // When / Then
+            assertThatThrownBy(() -> index.delete(tableId))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+
+        @Test
+        void shouldFailToDeleteTableIfTableRenamedAfterLoadingOldId() {
+            // Given
+            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
+            TableId renamedId = TableId.uniqueIdAndName("test-id", "changed-name");
+            index.create(oldId);
+            index.update(renamedId);
+
+            // When/Then
+            assertThatThrownBy(() -> index.delete(oldId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).contains(renamedId);
+        }
+
+        @Test
+        void shouldFailToDeleteTableIfTableDeletedAndRecreatedAfterLoadingOldId() {
+            // Given
+            TableId oldId = TableId.uniqueIdAndName("test-id-1", "table-name");
+            TableId recreatedId = TableId.uniqueIdAndName("test-id-2", "table-name");
+            index.create(recreatedId);
+
+            // When/Then
+            assertThatThrownBy(() -> index.delete(oldId))
+                    .isInstanceOf(TableNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Update table")
+    class UpdateTable {
+        @Test
+        void shouldUpdateTableName() {
+            // Given
+            TableId tableId = createTable("old-name");
+
+            // When
+            TableId newTableId = TableId.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
+            index.update(newTableId);
+
+            // Then
+            assertThat(index.streamAllTables())
+                    .containsExactly(newTableId);
+            assertThat(index.getTableByName("new-name"))
+                    .contains(newTableId);
+            assertThat(index.getTableByName("old-name")).isEmpty();
+            assertThat(index.getTableByUniqueId(newTableId.getTableUniqueId()))
+                    .contains(newTableId);
+        }
+
+        @Test
+        void shouldFailToUpdateTableIfTableDoesNotExist() {
+            // Given
+            TableId newTableId = TableId.uniqueIdAndName("not-a-table-id", "new-name");
+
+            // When/Then
+            assertThatThrownBy(() -> index.update(newTableId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToUpdateTableIfTableDeletedAfterLoadingOldId() {
+            // Given
+            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
+            TableId newId = TableId.uniqueIdAndName("test-id", "new-name");
+
+            // When/Then
+            assertThatThrownBy(() -> index.update(oldId, newId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).isEmpty();
+        }
+
+        @Test
+        void shouldFailToUpdateTableIfTableRenamedAfterLoadingOldId() {
+            // Given
+            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
+            TableId renamedId = TableId.uniqueIdAndName("test-id", "changed-name");
+            TableId newId = TableId.uniqueIdAndName("test-id", "new-name");
+            index.create(oldId);
+            index.update(renamedId);
+
+            // When/Then
+            assertThatThrownBy(() -> index.update(oldId, newId))
+                    .isInstanceOf(TableNotFoundException.class);
+            assertThat(index.streamAllTables()).contains(renamedId);
+        }
+
+        @Test
+        void shouldFailToUpdateTableIfTableWithSameNameAlreadyExists() {
+            // Given
+            createTable("test-name-1");
+            TableId tableId2 = createTable("test-name-2");
+
+            // When / Then
+            TableId newTableId = TableId.uniqueIdAndName(tableId2.getTableUniqueId(), "test-name-1");
+            assertThatThrownBy(() -> index.update(newTableId))
+                    .isInstanceOf(TableAlreadyExistsException.class);
         }
     }
 

@@ -22,6 +22,7 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -91,13 +92,25 @@ public class TablePropertiesStore {
     }
 
     public void save(TableProperties tableProperties) {
-        String tableName = tableProperties.get(TABLE_NAME);
-        Optional<TableId> existingId = tableIndex.getTableByName(tableName);
+        Optional<TableId> existingId = getExistingId(tableProperties);
         if (existingId.isPresent()) {
-            tableProperties.set(TABLE_ID, existingId.get().getTableUniqueId());
+            TableId id = existingId.get();
+            String tableName = tableProperties.get(TABLE_NAME);
+            if (!Objects.equals(id.getTableName(), tableName)) {
+                tableIndex.update(TableId.uniqueIdAndName(id.getTableUniqueId(), tableName));
+            }
+            tableProperties.set(TABLE_ID, id.getTableUniqueId());
             client.saveProperties(tableProperties);
         } else {
             createWhenNotInIndex(tableProperties);
+        }
+    }
+
+    private Optional<TableId> getExistingId(TableProperties tableProperties) {
+        if (tableProperties.isSet(TABLE_ID)) {
+            return tableIndex.getTableByUniqueId(tableProperties.get(TABLE_ID));
+        } else {
+            return tableIndex.getTableByName(tableProperties.get(TABLE_NAME));
         }
     }
 
