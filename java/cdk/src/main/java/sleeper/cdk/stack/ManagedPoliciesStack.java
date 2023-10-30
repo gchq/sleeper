@@ -43,7 +43,7 @@ public class ManagedPoliciesStack extends NestedStack {
 
         ingestPolicy = new ManagedPolicy(this, "IngestPolicy");
         addIngestSourceRoleReferences(this, instanceProperties)
-                .forEach(role -> role.addManagedPolicy(ingestPolicy));
+                .forEach(ingestPolicy::attachToRole);
     }
 
     public ManagedPolicy getIngestPolicy() {
