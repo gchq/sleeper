@@ -34,7 +34,7 @@ public class BulkImportJob {
     private final List<String> files;
     private final String className;
     private final Map<String, String> platformSpec;
-    private Map<String, String> sparkConf;
+    private final Map<String, String> sparkConf;
 
     private BulkImportJob(Builder builder) {
         this.id = builder.id;
@@ -73,17 +73,17 @@ public class BulkImportJob {
         return sparkConf;
     }
 
-    public void setSparkConf(Map<String, String> sparkConf) {
-        this.sparkConf = sparkConf;
-    }
-
     public IngestJob toIngestJob() {
         return IngestJob.builder().files(files).id(id).tableName(tableName).build();
     }
 
     public BulkImportJob applyIngestJobChanges(IngestJob job) {
-        return builder().id(job.getId()).files(job.getFiles()).tableName(job.getTableName())
-                .className(className).platformSpec(platformSpec).sparkConf(sparkConf).build();
+        return toBuilder().id(job.getId()).files(job.getFiles()).tableName(job.getTableName()).build();
+    }
+
+    public Builder toBuilder() {
+        return builder().id(id).files(files).tableName(tableName)
+                .className(className).platformSpec(platformSpec).sparkConf(sparkConf);
     }
 
     @Override

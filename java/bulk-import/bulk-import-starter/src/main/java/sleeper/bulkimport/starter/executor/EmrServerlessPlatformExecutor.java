@@ -112,12 +112,11 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
 
         Map<String, String> jobSparkArgs = arguments.getBulkImportJob().getSparkConf();
         if (jobSparkArgs != null) {
-            jobSparkArgs = arguments.getBulkImportJob().getSparkConf().entrySet()
+            jobSparkArgs = jobSparkArgs.entrySet()
                     .stream().filter(prop -> prop.getKey().contains("sleeper.bulk.import.emr.serverless.spark"))
-                    .map(i -> {
-                        return Map.entry(i.getKey().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
-                                i.getValue());
-                    })
+                    .map(i -> Map.entry(
+                            i.getKey().split("sleeper\\.bulk\\.import\\.emr\\.serverless\\.")[1],
+                            i.getValue()))
                     .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
             Map<String, String> sparkConf = Stream
@@ -125,9 +124,7 @@ public class EmrServerlessPlatformExecutor implements PlatformExecutor {
                     .flatMap(map -> map.entrySet().stream())
                     .collect(Collectors.toMap(Map.Entry::getKey,
                             Map.Entry::getValue, (m1, m2) -> m2, HashMap::new));
-            bulkImportJob.setSparkConf(sparkConf);
-        } else {
-            bulkImportJob.setSparkConf(instancePropertiesSparkConf);
+            bulkImportJob = bulkImportJob.toBuilder().sparkConf(sparkConf).build();
         }
 
         List<String> args = arguments.constructArgs(bulkImportJob, taskId);
