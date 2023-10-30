@@ -109,10 +109,6 @@ public class TablePropertiesProvider {
                 .map(id -> getByName(id.getTableName()));
     }
 
-    public List<String> listTableNames() {
-        return propertiesStore.listTableNames();
-    }
-
     public List<TableIdentity> listTableIds() {
         return propertiesStore.listTableIds();
     }
