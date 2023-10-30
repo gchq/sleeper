@@ -22,34 +22,34 @@ import java.util.Optional;
 public class QueryOrLeafQuery {
 
     private final Query query;
-    private final SubQuery subQuery;
+    private final SubQuery leafQuery;
 
     public QueryOrLeafQuery(Query query) {
         this.query = query;
-        this.subQuery = null;
+        this.leafQuery = null;
     }
 
-    public QueryOrLeafQuery(SubQuery subQuery) {
+    public QueryOrLeafQuery(SubQuery leafQuery) {
         this.query = null;
-        this.subQuery = subQuery;
+        this.leafQuery = leafQuery;
     }
 
     public Optional<Query> getQuery() {
         return Optional.ofNullable(query);
     }
 
-    public Optional<SubQuery> getSubQuery() {
-        return Optional.ofNullable(subQuery);
+    public Optional<SubQuery> getLeafQuery() {
+        return Optional.ofNullable(leafQuery);
     }
 
     public Query getParentQuery() {
-        return getSubQuery()
+        return getLeafQuery()
                 .map(SubQuery::getParentQuery)
                 .orElse(query);
     }
 
     public Query getThisQuery() {
-        return getSubQuery()
+        return getLeafQuery()
                 .<Query>map(SubQuery::toLeafQuery)
                 .orElse(query);
     }
@@ -63,18 +63,18 @@ public class QueryOrLeafQuery {
             return false;
         }
         QueryOrLeafQuery that = (QueryOrLeafQuery) object;
-        return Objects.equals(query, that.query) && Objects.equals(subQuery, that.subQuery);
+        return Objects.equals(query, that.query) && Objects.equals(leafQuery, that.leafQuery);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(query, subQuery);
+        return Objects.hash(query, leafQuery);
     }
 
     @Override
     public String toString() {
-        if (subQuery != null) {
-            return subQuery.toString();
+        if (leafQuery != null) {
+            return leafQuery.toString();
         } else {
             return String.valueOf(query);
         }

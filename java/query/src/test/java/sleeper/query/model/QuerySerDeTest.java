@@ -541,7 +541,7 @@ public class QuerySerDeTest {
         System.out.println(querySerDe.toJson(query));
 
         SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getSubQuery().orElseThrow();
+                .getLeafQuery().orElseThrow();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -572,7 +572,7 @@ public class QuerySerDeTest {
 
         // When
         SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getSubQuery().orElseThrow();
+                .getLeafQuery().orElseThrow();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -602,7 +602,7 @@ public class QuerySerDeTest {
 
         // When
         SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query))
-                .getSubQuery().orElseThrow();
+                .getLeafQuery().orElseThrow();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
