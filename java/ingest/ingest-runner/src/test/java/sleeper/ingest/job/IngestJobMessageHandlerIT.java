@@ -175,7 +175,7 @@ public class IngestJobMessageHandlerIT {
             // Given
             String json = "{" +
                     "\"id\": \"id\"," +
-                    "\"tableName\": \"system-test\"," +
+                    "\"tableName\": \"test-table\"," +
                     "\"files\": [" +
                     "    \"test-bucket/not-a-file\"" +
                     "]}";
@@ -196,7 +196,7 @@ public class IngestJobMessageHandlerIT {
             uploadFileToS3("test-file.parquet");
             String json = "{" +
                     "\"id\": \"id\"," +
-                    "\"tableName\": \"system-test\"," +
+                    "\"tableName\": \"test-table\"," +
                     "\"files\": [" +
                     "    \"test-bucket/test-file.parquet\"," +
                     "    \"test-bucket/not-a-file\"" +
@@ -219,7 +219,9 @@ public class IngestJobMessageHandlerIT {
 
     private static IngestJob jobWithFiles(String... files) {
         return IngestJob.builder()
-                .id("id").tableName(TEST_TABLE).files(List.of(files)).build();
+                .id("id")
+                .tableName(TEST_TABLE).tableId(TEST_TABLE_ID)
+                .files(List.of(files)).build();
     }
 
     private static Configuration createHadoopConfiguration() {
