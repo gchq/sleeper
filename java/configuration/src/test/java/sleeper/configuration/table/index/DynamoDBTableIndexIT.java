@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableId;
 import sleeper.core.table.TableIdGenerator;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
@@ -48,7 +48,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
     class CreateTable {
         @Test
         void shouldCreateATable() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             assertThat(index.streamAllTables())
                     .containsExactly(tableId);
@@ -69,7 +69,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTableByName() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             assertThat(index.getTableByName("test-table"))
                     .contains(tableId);
@@ -85,7 +85,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTableById() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             assertThat(index.getTableByUniqueId(tableId.getTableUniqueId()))
                     .contains(tableId);
@@ -112,7 +112,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
             createTable("other-table");
 
             assertThat(index.streamAllTables())
-                    .extracting(TableId::getTableName)
+                    .extracting(TableIdentity::getTableName)
                     .containsExactly(
                             "a-table",
                             "other-table",
@@ -122,8 +122,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void shouldGetTableIds() {
-            TableId table1 = createTable("first-table");
-            TableId table2 = createTable("second-table");
+            TableIdentity table1 = createTable("first-table");
+            TableIdentity table2 = createTable("second-table");
 
             assertThat(index.streamAllTables())
                     .containsExactly(table1, table2);
@@ -141,7 +141,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void deleteTableNameReference() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             index.delete(tableId);
 
@@ -150,7 +150,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
 
         @Test
         void deleteTableIdReference() {
-            TableId tableId = createTable("test-table");
+            TableIdentity tableId = createTable("test-table");
 
             index.delete(tableId);
 
@@ -160,7 +160,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToDeleteTableThatDoesNotExist() {
             // Given
-            TableId tableId = TableId.uniqueIdAndName("not-a-table-id", "not-a-table");
+            TableIdentity tableId = TableIdentity.uniqueIdAndName("not-a-table-id", "not-a-table");
 
             // When / Then
             assertThatThrownBy(() -> index.delete(tableId))
@@ -170,8 +170,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToDeleteTableIfTableRenamedAfterLoadingOldId() {
             // Given
-            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
-            TableId renamedId = TableId.uniqueIdAndName("test-id", "changed-name");
+            TableIdentity oldId = TableIdentity.uniqueIdAndName("test-id", "old-name");
+            TableIdentity renamedId = TableIdentity.uniqueIdAndName("test-id", "changed-name");
             index.create(oldId);
             index.update(renamedId);
 
@@ -184,8 +184,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToDeleteTableIfTableDeletedAndRecreatedAfterLoadingOldId() {
             // Given
-            TableId oldId = TableId.uniqueIdAndName("test-id-1", "table-name");
-            TableId recreatedId = TableId.uniqueIdAndName("test-id-2", "table-name");
+            TableIdentity oldId = TableIdentity.uniqueIdAndName("test-id-1", "table-name");
+            TableIdentity recreatedId = TableIdentity.uniqueIdAndName("test-id-2", "table-name");
             index.create(recreatedId);
 
             // When/Then
@@ -200,10 +200,10 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldUpdateTableName() {
             // Given
-            TableId tableId = createTable("old-name");
+            TableIdentity tableId = createTable("old-name");
 
             // When
-            TableId newTableId = TableId.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
+            TableIdentity newTableId = TableIdentity.uniqueIdAndName(tableId.getTableUniqueId(), "new-name");
             index.update(newTableId);
 
             // Then
@@ -219,7 +219,7 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToUpdateTableIfTableDoesNotExist() {
             // Given
-            TableId newTableId = TableId.uniqueIdAndName("not-a-table-id", "new-name");
+            TableIdentity newTableId = TableIdentity.uniqueIdAndName("not-a-table-id", "new-name");
 
             // When/Then
             assertThatThrownBy(() -> index.update(newTableId))
@@ -230,8 +230,8 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToUpdateTableIfTableDeletedAfterLoadingOldId() {
             // Given
-            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
-            TableId newId = TableId.uniqueIdAndName("test-id", "new-name");
+            TableIdentity oldId = TableIdentity.uniqueIdAndName("test-id", "old-name");
+            TableIdentity newId = TableIdentity.uniqueIdAndName("test-id", "new-name");
 
             // When/Then
             assertThatThrownBy(() -> index.update(oldId, newId))
@@ -242,9 +242,9 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         @Test
         void shouldFailToUpdateTableIfTableRenamedAfterLoadingOldId() {
             // Given
-            TableId oldId = TableId.uniqueIdAndName("test-id", "old-name");
-            TableId renamedId = TableId.uniqueIdAndName("test-id", "changed-name");
-            TableId newId = TableId.uniqueIdAndName("test-id", "new-name");
+            TableIdentity oldId = TableIdentity.uniqueIdAndName("test-id", "old-name");
+            TableIdentity renamedId = TableIdentity.uniqueIdAndName("test-id", "changed-name");
+            TableIdentity newId = TableIdentity.uniqueIdAndName("test-id", "new-name");
             index.create(oldId);
             index.update(renamedId);
 
@@ -258,17 +258,17 @@ public class DynamoDBTableIndexIT extends DynamoDBTestBase {
         void shouldFailToUpdateTableIfTableWithSameNameAlreadyExists() {
             // Given
             createTable("test-name-1");
-            TableId tableId2 = createTable("test-name-2");
+            TableIdentity tableId2 = createTable("test-name-2");
 
             // When / Then
-            TableId newTableId = TableId.uniqueIdAndName(tableId2.getTableUniqueId(), "test-name-1");
+            TableIdentity newTableId = TableIdentity.uniqueIdAndName(tableId2.getTableUniqueId(), "test-name-1");
             assertThatThrownBy(() -> index.update(newTableId))
                     .isInstanceOf(TableAlreadyExistsException.class);
         }
     }
 
-    private TableId createTable(String tableName) {
-        TableId tableId = TableId.uniqueIdAndName(idGenerator.generateString(), tableName);
+    private TableIdentity createTable(String tableName) {
+        TableIdentity tableId = TableIdentity.uniqueIdAndName(idGenerator.generateString(), tableName);
         index.create(tableId);
         return tableId;
     }

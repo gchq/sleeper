@@ -25,43 +25,43 @@ import java.util.stream.Stream;
 
 public class InMemoryTableIndex implements TableIndex {
 
-    private final Map<String, TableId> indexByName = new TreeMap<>();
-    private final Map<String, TableId> indexById = new HashMap<>();
+    private final Map<String, TableIdentity> indexByName = new TreeMap<>();
+    private final Map<String, TableIdentity> indexById = new HashMap<>();
 
     @Override
-    public void create(TableId tableId) throws TableAlreadyExistsException {
+    public void create(TableIdentity tableId) throws TableAlreadyExistsException {
         if (indexByName.containsKey(tableId.getTableName())) {
             throw new TableAlreadyExistsException(tableId);
         }
         save(tableId);
     }
 
-    public void save(TableId id) {
+    public void save(TableIdentity id) {
         indexByName.put(id.getTableName(), id);
         indexById.put(id.getTableUniqueId(), id);
     }
 
     @Override
-    public Stream<TableId> streamAllTables() {
+    public Stream<TableIdentity> streamAllTables() {
         return indexByName.values().stream();
     }
 
     @Override
-    public Optional<TableId> getTableByName(String tableName) {
+    public Optional<TableIdentity> getTableByName(String tableName) {
         return Optional.ofNullable(indexByName.get(tableName));
     }
 
     @Override
-    public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
+    public Optional<TableIdentity> getTableByUniqueId(String tableUniqueId) {
         return Optional.ofNullable(indexById.get(tableUniqueId));
     }
 
     @Override
-    public void delete(TableId tableId) {
+    public void delete(TableIdentity tableId) {
         if (!indexById.containsKey(tableId.getTableUniqueId())) {
             throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
         }
-        TableId latestId = indexById.get(tableId.getTableUniqueId());
+        TableIdentity latestId = indexById.get(tableId.getTableUniqueId());
         if (!Objects.equals(latestId.getTableName(), tableId.getTableName())) {
             throw TableNotFoundException.withTableName(tableId.getTableName());
         }
@@ -70,11 +70,11 @@ public class InMemoryTableIndex implements TableIndex {
     }
 
     @Override
-    public void update(TableId tableId) {
+    public void update(TableIdentity tableId) {
         if (!indexById.containsKey(tableId.getTableUniqueId())) {
             throw TableNotFoundException.withTableId(tableId.getTableUniqueId());
         }
-        TableId oldId = indexById.get(tableId.getTableUniqueId());
+        TableIdentity oldId = indexById.get(tableId.getTableUniqueId());
         indexByName.remove(oldId.getTableName());
         indexByName.put(tableId.getTableName(), tableId);
         indexById.put(tableId.getTableUniqueId(), tableId);

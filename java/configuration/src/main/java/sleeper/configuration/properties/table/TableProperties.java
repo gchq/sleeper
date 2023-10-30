@@ -30,7 +30,7 @@ import sleeper.configuration.properties.instance.InstanceProperty;
 import sleeper.configuration.properties.instance.SleeperProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.io.PrintWriter;
 import java.util.Objects;
@@ -139,8 +139,8 @@ public class TableProperties extends SleeperProperties<TableProperty> {
         return SleeperPropertiesPrettyPrinter.forTableProperties(writer);
     }
 
-    public TableId getId() {
-        return TableId.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
+    public TableIdentity getId() {
+        return TableIdentity.uniqueIdAndName(get(TABLE_ID), get(TABLE_NAME));
     }
 
     @Override

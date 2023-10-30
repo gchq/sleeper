@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -72,7 +72,7 @@ public class TablePropertiesProvider {
         return get(tableId, cacheById, () -> propertiesStore.loadById(tableId).orElseThrow());
     }
 
-    public TableProperties get(TableId tableId) {
+    public TableProperties get(TableIdentity tableId) {
         return get(tableId.getTableUniqueId(), cacheById, () -> propertiesStore.loadProperties(tableId));
     }
 
@@ -105,11 +105,11 @@ public class TablePropertiesProvider {
         cacheByName.put(properties.get(TABLE_NAME), entry);
     }
 
-    public Optional<TableId> lookupByName(String tableName) {
+    public Optional<TableIdentity> lookupByName(String tableName) {
         return propertiesStore.lookupByName(tableName);
     }
 
-    public Stream<TableId> streamAllTableIds() {
+    public Stream<TableIdentity> streamAllTableIds() {
         return propertiesStore.streamAllTableIds();
     }
 
@@ -122,7 +122,7 @@ public class TablePropertiesProvider {
         return propertiesStore.listTableNames();
     }
 
-    public List<TableId> listTableIds() {
+    public List<TableIdentity> listTableIds() {
         return propertiesStore.listTableIds();
     }
 

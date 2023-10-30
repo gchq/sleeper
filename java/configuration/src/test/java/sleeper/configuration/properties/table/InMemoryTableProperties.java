@@ -17,7 +17,7 @@
 package sleeper.configuration.properties.table;
 
 import sleeper.core.table.InMemoryTableIndex;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 
 import java.util.HashMap;
@@ -55,7 +55,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public TableProperties loadProperties(TableId tableId) {
+    public TableProperties loadProperties(TableIdentity tableId) {
         return Optional.ofNullable(propertiesByTableId.get(tableId.getTableUniqueId()))
                 .map(this::copyIfSet)
                 .orElseThrow();
@@ -67,7 +67,7 @@ public class InMemoryTableProperties implements TablePropertiesStore.Client {
     }
 
     @Override
-    public void deleteProperties(TableId tableId) {
+    public void deleteProperties(TableIdentity tableId) {
         propertiesByTableId.remove(tableId.getTableUniqueId());
     }
 

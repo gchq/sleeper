@@ -68,7 +68,7 @@ import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
 import java.util.List;
@@ -156,7 +156,7 @@ public abstract class SleeperMetadataHandler extends MetadataHandler {
         String schemaName = listTablesRequest.getSchemaName();
 
         List<TableName> tables = tablePropertiesProvider.streamAllTableIds()
-                .map(TableId::getTableName)
+                .map(TableIdentity::getTableName)
                 .sorted()
                 .map(t -> new TableName(schemaName, t))
                 .collect(Collectors.toList());

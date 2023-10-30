@@ -18,7 +18,7 @@ package sleeper.configuration.table.index;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 
 import java.util.Map;
 
@@ -32,22 +32,22 @@ class DynamoDBTableIdFormat {
     static final String TABLE_NAME_FIELD = "TableName";
     static final String TABLE_ID_FIELD = "TableId";
 
-    public static Map<String, AttributeValue> getItem(TableId id) {
+    public static Map<String, AttributeValue> getItem(TableIdentity id) {
         return Map.of(
                 TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()),
                 TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
     }
 
-    public static Map<String, AttributeValue> getIdKey(TableId id) {
+    public static Map<String, AttributeValue> getIdKey(TableIdentity id) {
         return Map.of(TABLE_ID_FIELD, createStringAttribute(id.getTableUniqueId()));
     }
 
-    public static Map<String, AttributeValue> getNameKey(TableId id) {
+    public static Map<String, AttributeValue> getNameKey(TableIdentity id) {
         return Map.of(TABLE_NAME_FIELD, createStringAttribute(id.getTableName()));
     }
 
-    public static TableId readItem(Map<String, AttributeValue> item) {
-        return TableId.uniqueIdAndName(
+    public static TableIdentity readItem(Map<String, AttributeValue> item) {
+        return TableIdentity.uniqueIdAndName(
                 getStringAttribute(item, TABLE_ID_FIELD),
                 getStringAttribute(item, TABLE_NAME_FIELD));
     }

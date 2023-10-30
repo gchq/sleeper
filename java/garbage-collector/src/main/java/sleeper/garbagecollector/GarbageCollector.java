@@ -24,7 +24,7 @@ import sleeper.configuration.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -58,10 +58,10 @@ public class GarbageCollector {
     public void run() throws StateStoreException, IOException {
         long startTimeEpochSecs = LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond();
         int totalDeleted = 0;
-        List<TableId> tables = tablePropertiesProvider.listTableIds();
+        List<TableIdentity> tables = tablePropertiesProvider.listTableIds();
         LOGGER.info("Obtained list of {} tables", tables.size());
 
-        for (TableId tableId : tables) {
+        for (TableIdentity tableId : tables) {
             LOGGER.info("Obtaining StateStore for table {}", tableId);
             StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.get(tableId));
 

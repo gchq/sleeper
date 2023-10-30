@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 
@@ -69,7 +69,7 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void create(TableId tableId) throws TableAlreadyExistsException {
+    public void create(TableIdentity tableId) throws TableAlreadyExistsException {
         Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(tableId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
@@ -100,17 +100,17 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public Stream<TableId> streamAllTables() {
+    public Stream<TableIdentity> streamAllTables() {
         return streamPagedItems(dynamoDB,
                 new ScanRequest()
                         .withTableName(nameIndexDynamoTableName)
                         .withConsistentRead(true))
                 .map(DynamoDBTableIdFormat::readItem)
-                .sorted(Comparator.comparing(TableId::getTableName));
+                .sorted(Comparator.comparing(TableIdentity::getTableName));
     }
 
     @Override
-    public Optional<TableId> getTableByName(String tableName) {
+    public Optional<TableIdentity> getTableByName(String tableName) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(nameIndexDynamoTableName)
                 .addKeyConditionsEntry(TABLE_NAME_FIELD, new Condition()
@@ -120,7 +120,7 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public Optional<TableId> getTableByUniqueId(String tableUniqueId) {
+    public Optional<TableIdentity> getTableByUniqueId(String tableUniqueId) {
         QueryResult result = dynamoDB.query(new QueryRequest()
                 .withTableName(idIndexDynamoTableName)
                 .addKeyConditionsEntry(TABLE_ID_FIELD, new Condition()
@@ -130,7 +130,7 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void delete(TableId tableId) {
+    public void delete(TableIdentity tableId) {
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)
                 .withTransactItems(
@@ -163,13 +163,13 @@ public class DynamoDBTableIndex implements TableIndex {
     }
 
     @Override
-    public void update(TableId tableId) {
-        TableId oldId = getTableByUniqueId(tableId.getTableUniqueId())
+    public void update(TableIdentity tableId) {
+        TableIdentity oldId = getTableByUniqueId(tableId.getTableUniqueId())
                 .orElseThrow(() -> TableNotFoundException.withTableId(tableId.getTableUniqueId()));
         update(oldId, tableId);
     }
 
-    public void update(TableId oldId, TableId newId) {
+    public void update(TableIdentity oldId, TableIdentity newId) {
         Map<String, AttributeValue> idItem = DynamoDBTableIdFormat.getItem(newId);
         TransactWriteItemsRequest request = new TransactWriteItemsRequest()
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL)

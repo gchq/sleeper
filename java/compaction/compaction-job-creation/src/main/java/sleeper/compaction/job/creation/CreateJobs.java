@@ -31,7 +31,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileInfo;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -87,14 +87,14 @@ public class CreateJobs {
     }
 
     public void createJobs() throws StateStoreException, IOException, ObjectFactoryException {
-        List<TableId> tables = tablePropertiesProvider.listTableIds();
+        List<TableIdentity> tables = tablePropertiesProvider.listTableIds();
         LOGGER.info("Found {} tables", tables.size());
-        for (TableId table : tables) {
+        for (TableIdentity table : tables) {
             createJobsForTable(table);
         }
     }
 
-    public void createJobsForTable(TableId tableId) throws StateStoreException, IOException, ObjectFactoryException {
+    public void createJobsForTable(TableIdentity tableId) throws StateStoreException, IOException, ObjectFactoryException {
         LOGGER.debug("Creating jobs for table {}", tableId);
         TableProperties tableProperties = tablePropertiesProvider.get(tableId);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
