@@ -16,29 +16,32 @@
 
 package sleeper.ingest.job;
 
-import java.util.Arrays;
+import sleeper.core.table.TableIdentity;
+
 import java.util.List;
 
 public class IngestJobTestData {
 
-    public static final String DEFAULT_TABLE_NAME = "test-table";
+    public static final TableIdentity DEFAULT_TABLE = TableIdentity.uniqueIdAndName("test-table-id", "test-table");
+    public static final String DEFAULT_TABLE_NAME = DEFAULT_TABLE.getTableName();
 
     private IngestJobTestData() {
     }
 
-    public static IngestJob createJobWithTableAndFiles(String jobId, String tableName, List<String> filenames) {
+    public static IngestJob createJobWithTableAndFiles(String jobId, TableIdentity table, List<String> filenames) {
         return IngestJob.builder()
                 .id(jobId)
                 .files(filenames)
-                .tableName(tableName)
+                .tableName(table.getTableName())
+                .tableId(table.getTableUniqueId())
                 .build();
     }
 
-    public static IngestJob createJobWithTableAndFiles(String jobId, String tableName, String... filenames) {
-        return createJobWithTableAndFiles(jobId, tableName, Arrays.asList(filenames));
+    public static IngestJob createJobWithTableAndFiles(String jobId, TableIdentity table, String... filenames) {
+        return createJobWithTableAndFiles(jobId, table, List.of(filenames));
     }
 
     public static IngestJob createJobInDefaultTable(String jobId, String... filenames) {
-        return createJobWithTableAndFiles(jobId, DEFAULT_TABLE_NAME, filenames);
+        return createJobWithTableAndFiles(jobId, DEFAULT_TABLE, filenames);
     }
 }

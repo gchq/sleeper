@@ -43,15 +43,14 @@ public class WaitForJobsStatusTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final TableIdentity tableId = createTable("test-table");
-    private final String tableName = tableId.getTableName();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
         // Given
         IngestJobStatusStore store = new WriteToMemoryIngestJobStatusStore();
-        IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", tableName, "test.parquet", "test2.parquet");
-        IngestJob startedJob = createJobWithTableAndFiles("started-job", tableName, "test3.parquet", "test4.parquet");
-        IngestJob finishedJob = createJobWithTableAndFiles("finished-job", tableName, "test3.parquet", "test4.parquet");
+        IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", tableId, "test.parquet", "test2.parquet");
+        IngestJob startedJob = createJobWithTableAndFiles("started-job", tableId, "test3.parquet", "test4.parquet");
+        IngestJob finishedJob = createJobWithTableAndFiles("finished-job", tableId, "test3.parquet", "test4.parquet");
         store.jobValidated(ingestJobAccepted(acceptedJob, Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
         store.jobValidated(ingestJobAccepted(startedJob, Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
         store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());

@@ -75,6 +75,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     private final TableIndex tableIndex = new InMemoryTableIndex();
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
+    protected final TableIdentity tableId = tableProperties.getId();
     protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
@@ -155,16 +156,18 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJob jobWithFiles(String... filenames) {
-        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableName, filenames);
+        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableId, filenames);
     }
 
     protected IngestJob jobWithTableAndFiles(String tableName, String... filenames) {
-        createTable(tableName);
-        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), tableName, filenames);
+        TableIdentity table = createTable(tableName);
+        return IngestJobTestData.createJobWithTableAndFiles(UUID.randomUUID().toString(), table, filenames);
     }
 
-    private void createTable(String tableName) {
-        tableIndex.create(TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName));
+    private TableIdentity createTable(String tableName) {
+        TableIdentity id = TableIdentity.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+        tableIndex.create(id);
+        return id;
     }
 
     protected IngestJobValidatedEvent.Builder ingestJobAccepted(IngestJob job, Instant validationTime) {

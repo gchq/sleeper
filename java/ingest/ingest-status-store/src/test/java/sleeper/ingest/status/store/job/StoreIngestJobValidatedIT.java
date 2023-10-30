@@ -31,16 +31,14 @@ import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunOnTas
 import static sleeper.ingest.job.status.IngestJobStatusTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.jobStatus;
 import static sleeper.ingest.job.status.IngestJobStatusTestData.rejectedRun;
-import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.ingest.job.status.IngestJobValidatedEvent.ingestJobRejected;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
     void shouldReportUnstartedJobWithNoValidationFailures() {
         // Given
-        String tableName = "test-table";
         String taskId = "some-task";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
@@ -55,9 +53,8 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     @Test
     void shouldReportStartedJobWithNoValidationFailures() {
         // Given
-        String tableName = "test-table";
         String taskId = "some-task";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
@@ -75,8 +72,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     @Test
     void shouldReportJobWithOneValidationFailure() {
         // Given
-        String tableName = "test-table";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
@@ -92,8 +88,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
     @Test
     void shouldReportJobWithMultipleValidationFailures() {
         // Given
-        String tableName = "test-table";
-        IngestJob job = createJobWithTableAndFiles("test-job-1", tableName, "test-file-1.parquet");
+        IngestJob job = createJobWithTableAndFiles("test-job-1", tableId, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
