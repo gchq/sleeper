@@ -34,7 +34,9 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileInfoFactory;
+import sleeper.core.table.TableId;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -47,12 +49,11 @@ import java.util.function.Consumer;
 import static sleeper.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createInstanceProperties;
-import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createSchema;
-import static sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils.createTableProperties;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
-import static sleeper.configuration.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.configuration.properties.table.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
@@ -61,12 +62,12 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
-    private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String jobStatusTableName = DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
-    private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
+    private final Schema schema = schemaWithKey("key", new StringType());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
-    protected final String tableName = tableProperties.get(TABLE_NAME);
+    protected final TableId tableId = tableProperties.getId();
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
     protected final CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
@@ -104,9 +105,8 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return new FileInfoFactory(schema, partitions, Instant.now());
     }
 
-    protected CompactionJobFactory jobFactoryForTable(String tableName) {
-        TableProperties tableProperties = createTableProperties(schema, instanceProperties);
-        tableProperties.set(TABLE_NAME, tableName);
+    protected CompactionJobFactory jobFactoryForOtherTable() {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
@@ -143,6 +143,6 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected List<CompactionJobStatus> getAllJobStatuses() {
-        return store.getAllJobs(tableName);
+        return store.getAllJobs(tableId);
     }
 }

@@ -21,18 +21,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.testutils.CompactionStatusStoreTestUtils;
 import sleeper.configuration.properties.instance.InstanceProperties;
+import sleeper.core.table.TableId;
 import sleeper.dynamodb.tools.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.configuration.properties.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.configuration.properties.instance.CommonProperty.ID;
 import static sleeper.configuration.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
-    private final InstanceProperties instanceProperties = CompactionStatusStoreTestUtils.createInstanceProperties();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String tableName = DynamoDBCompactionJobStatusStore.jobStatusTableName(instanceProperties.get(ID));
 
     @Test
@@ -60,9 +61,12 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
-        assertThatThrownBy(() -> store.getAllJobs("some-table")).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getUnfinishedJobs("some-table")).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getJob("some-job")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getAllJobs(TableId.uniqueIdAndName("some-id", "some-table")))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getUnfinishedJobs(TableId.uniqueIdAndName("some-id", "some-table")))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> store.getJob("some-job"))
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 
     @AfterEach

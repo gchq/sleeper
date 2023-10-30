@@ -30,7 +30,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestData.summary;
-import static sleeper.ingest.job.IngestJobTestData.DEFAULT_TABLE_NAME;
 import static sleeper.ingest.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
@@ -107,7 +106,7 @@ public class WaitForJobsStatusTest {
 
     private CompactionJob compactionJob(String id, String... files) {
         return CompactionJob.builder()
-                .tableName(DEFAULT_TABLE_NAME)
+                .tableId("test-table-id")
                 .jobId(id)
                 .inputFiles(List.of(files))
                 .outputFile(id + "/outputFile")
