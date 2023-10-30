@@ -17,16 +17,16 @@ package sleeper.clients.status.report.job.query;
 
 import sleeper.compaction.job.CompactionJobStatusStore;
 import sleeper.compaction.job.status.CompactionJobStatus;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.IngestJobStatus;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 
 import java.util.List;
 
 public class AllJobsQuery implements JobQuery {
-    private final TableId tableId;
+    private final TableIdentity tableId;
 
-    public AllJobsQuery(TableId tableId) {
+    public AllJobsQuery(TableIdentity tableId) {
         this.tableId = tableId;
     }
 

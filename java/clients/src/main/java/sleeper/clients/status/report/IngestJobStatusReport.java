@@ -37,7 +37,7 @@ import sleeper.clients.util.ClientUtils;
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.core.table.TableId;
+import sleeper.core.table.TableIdentity;
 import sleeper.ingest.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.job.common.QueueMessageCount;
@@ -68,7 +68,7 @@ public class IngestJobStatusReport {
 
     public IngestJobStatusReport(
             IngestJobStatusStore ingestJobStatusStore,
-            TableId tableId, JobQuery.Type queryType, String queryParameters,
+            TableIdentity tableId, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
         this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(tableId, queryType, queryParameters,
@@ -115,7 +115,7 @@ public class IngestJobStatusReport {
 
             AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
             DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
-            TableId tableId = tableIndex.getTableByName(tableName)
+            TableIdentity tableId = tableIndex.getTableByName(tableName)
                     .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
             IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
