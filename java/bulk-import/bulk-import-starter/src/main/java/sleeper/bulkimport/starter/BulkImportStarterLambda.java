@@ -55,7 +55,6 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
 
     private final PropertiesReloader propertiesReloader;
     private final BulkImportExecutor executor;
-    private final IngestJobStatusStore ingestJobStatusStore;
     private final IngestJobMessageHandler<BulkImportJob> ingestJobMessageHandler;
 
     public BulkImportStarterLambda() {
@@ -66,7 +65,7 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
+        IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new StateStoreProvider(dynamo, instanceProperties, hadoopConfig),
                 ingestJobStatusStore, s3, platformExecutor, Instant::now);
@@ -84,7 +83,6 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
     public BulkImportStarterLambda(BulkImportExecutor executor, InstanceProperties properties, Configuration hadoopConfig,
                                    IngestJobStatusStore ingestJobStatusStore, Supplier<String> jobIdSupplier, Supplier<Instant> timeSupplier) {
         this.executor = executor;
-        this.ingestJobStatusStore = ingestJobStatusStore;
         this.propertiesReloader = PropertiesReloader.neverReload();
         this.ingestJobMessageHandler = messageHandler(
                 properties, hadoopConfig, ingestJobStatusStore,
