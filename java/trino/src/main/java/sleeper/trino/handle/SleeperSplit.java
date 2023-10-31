@@ -25,8 +25,8 @@ import io.trino.spi.connector.ConnectorSplit;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.QuerySerDe;
 
 import java.util.List;
 import java.util.Objects;
@@ -72,7 +72,7 @@ public class SleeperSplit implements ConnectorSplit {
         SchemaSerDe schemaSerDe = new SchemaSerDe();
         this.sleeperSchema = schemaSerDe.fromJson(sleeperSchemaAsString);
         QuerySerDe querySerDe = new QuerySerDe(ImmutableMap.of(tableName, this.sleeperSchema));
-        this.leafPartitionQuery = querySerDe.fromJsonOrSubQuery(leafPartitionQueryAsString).asLeafQuery();
+        this.leafPartitionQuery = querySerDe.fromJsonOrLeafQuery(leafPartitionQueryAsString).asLeafQuery();
     }
 
     @JsonProperty

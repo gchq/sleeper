@@ -88,7 +88,7 @@ class QueryJson {
                 .build();
     }
 
-    QueryOrLeafQuery toQueryOrSubQuery(QuerySerDe.SchemaLoader schemaLoader) {
+    QueryOrLeafQuery toQueryOrLeafQuery(QuerySerDe.SchemaLoader schemaLoader) {
         validate();
         RegionSerDe regionSerDe = regionSerDe(schemaLoader);
         switch (type) {

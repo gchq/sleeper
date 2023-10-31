@@ -54,7 +54,7 @@ public class QueryMessageHandler {
 
     public Optional<QueryOrLeafQuery> deserialiseAndValidate(String message) {
         try {
-            QueryOrLeafQuery query = querySerDe.fromJsonOrSubQuery(message);
+            QueryOrLeafQuery query = querySerDe.fromJsonOrLeafQuery(message);
             LOGGER.info("Deserialised message to query {}", query);
             return Optional.of(query);
         } catch (JsonParseException e) {
