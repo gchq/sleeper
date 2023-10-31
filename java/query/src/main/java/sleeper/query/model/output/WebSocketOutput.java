@@ -29,9 +29,9 @@ import com.amazonaws.services.apigatewaymanagementapi.model.PostToConnectionRequ
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
-import sleeper.query.model.LeafPartitionQuery;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

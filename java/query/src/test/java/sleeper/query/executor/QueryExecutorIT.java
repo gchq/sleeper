@@ -48,8 +48,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.IngestFactory;
 import sleeper.query.QueryException;
-import sleeper.query.model.Query;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
 import sleeper.statestore.FixedStateStoreProvider;
 
 import java.io.IOException;

@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
-import sleeper.query.model.Query;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 

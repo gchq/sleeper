@@ -20,8 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.AttributeAction;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 
-import sleeper.query.model.Query;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.HashMap;

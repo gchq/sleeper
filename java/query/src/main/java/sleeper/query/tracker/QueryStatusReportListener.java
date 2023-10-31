@@ -15,8 +15,8 @@
  */
 package sleeper.query.tracker;
 
-import sleeper.query.model.Query;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.List;

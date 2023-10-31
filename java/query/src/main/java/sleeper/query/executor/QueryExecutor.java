@@ -31,8 +31,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
-import sleeper.query.model.Query;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
 import java.util.ArrayList;

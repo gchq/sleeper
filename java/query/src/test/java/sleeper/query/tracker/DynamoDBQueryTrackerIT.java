@@ -33,8 +33,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.dynamodb.tools.DynamoDBContainer;
-import sleeper.query.model.Query;
 import sleeper.query.model.LeafPartitionQuery;
+import sleeper.query.model.Query;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
