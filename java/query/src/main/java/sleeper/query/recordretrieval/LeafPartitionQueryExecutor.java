@@ -31,7 +31,6 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.SubQuery;
 import sleeper.query.utils.RangeQueryUtils;
 
@@ -45,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
- * Executes a {@link LeafPartitionQuery}.
+ * Executes a {@link SubQuery}.
  */
 public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);

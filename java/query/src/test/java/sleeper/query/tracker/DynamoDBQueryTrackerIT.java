@@ -34,13 +34,12 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,7 +69,7 @@ public class DynamoDBQueryTrackerIT {
         dynamoDBClient = buildAwsV1Client(dynamoDb, DYNAMO_PORT, AmazonDynamoDBClientBuilder.standard());
     }
 
-    private InstanceProperties instanceProperties = createInstanceProperties();
+    private final InstanceProperties instanceProperties = createInstanceProperties();
 
     @BeforeEach
     public void createDynamoTable() {
@@ -357,7 +356,7 @@ public class DynamoDBQueryTrackerIT {
         return new Query.Builder("myTable", id, region).build();
     }
 
-    private LeafPartitionQuery createSubQueryWithId(String parentId, String subId) {
+    private SubQuery createSubQueryWithId(String parentId, String subId) {
         Field field = new Field("field1", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -365,7 +364,15 @@ public class DynamoDBQueryTrackerIT {
         Region region = new Region(range);
         Range partitionRange = rangeFactory.createRange(field, 0, 1000);
         Region partitionRegion = new Region(partitionRange);
-        return new LeafPartitionQuery.Builder("myTable", parentId, subId, region, "leafId", partitionRegion, new ArrayList<>()).build();
+        Query query = new Query("myTable", parentId, List.of(region));
+        return SubQuery.builder()
+                .parentQuery(query)
+                .subQueryId(subId)
+                .regions(List.of(region))
+                .leafPartitionId("leafId")
+                .partitionRegion(partitionRegion)
+                .files(List.of())
+                .build();
     }
 
     private static InstanceProperties createInstanceProperties() {

@@ -25,7 +25,6 @@ import io.trino.spi.connector.ConnectorSplit;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
-import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.QuerySerDe;
 import sleeper.query.model.SubQuery;
 
@@ -34,7 +33,7 @@ import java.util.Objects;
 
 /**
  * This class holds a description of a single Trino split. In this implementation, each split holds one or more
- * range-scans over a single Sleeper leaf partition, as described in the {@link LeafPartitionQuery} class.
+ * range-scans over a single Sleeper leaf partition, as described in the {@link SubQuery} class.
  * <p>
  * Trino requires that class is serialisable into JSON, and this causes issues when fields such as the row keys are
  * defined as generic Objects. When these generic Objects are deserialised, the class information is not retained.
@@ -48,9 +47,9 @@ public class SleeperSplit implements ConnectorSplit {
     private final SubQuery leafPartitionQuery;
 
     /**
-     * Constructor to create a {@link SleeperSplit} directly from a {@link LeafPartitionQuery}.
+     * Constructor to create a {@link SleeperSplit} directly from a {@link SubQuery}.
      *
-     * @param leafPartitionQuery The {@link LeafPartitionQuery} to use to construct this split.
+     * @param leafPartitionQuery The {@link SubQuery} to use to construct this split.
      */
     public SleeperSplit(Schema sleeperSchema, SubQuery leafPartitionQuery) {
         this.sleeperSchema = sleeperSchema;
