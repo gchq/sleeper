@@ -32,6 +32,7 @@ import sleeper.clients.docker.stack.TableDockerStack;
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.configuration.properties.table.S3TableProperties;
 import sleeper.configuration.properties.table.TableProperties;
+import sleeper.configuration.properties.table.TableProperty;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -100,10 +101,12 @@ public class DeployDockerInstance {
     }
 
     private static TableProperties generateTableProperties(InstanceProperties instanceProperties) {
-        return PopulateTableProperties.builder()
+        TableProperties tableProperties = PopulateTableProperties.builder()
                 .tableName("system-test")
                 .instanceProperties(instanceProperties)
                 .schema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build())
                 .build().populate();
+        tableProperties.set(TableProperty.STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        return tableProperties;
     }
 }
