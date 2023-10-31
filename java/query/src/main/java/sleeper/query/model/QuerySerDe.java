@@ -80,7 +80,7 @@ public class QuerySerDe {
 
     public Query fromJson(String json) {
         QueryJson queryJson = gson.fromJson(json, QueryJson.class);
-        return queryJson.toQuery(schemaLoader);
+        return queryJson.toParentQuery(schemaLoader);
     }
 
     public QueryOrLeafQuery fromJsonOrSubQuery(String json) {

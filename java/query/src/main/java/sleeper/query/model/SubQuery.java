@@ -23,6 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * A query for records that are within the range of a leaf partition. The
+ * query contains information about which files should be read. Typically
+ * {@link SubQuery}s are created from a query for a set of regions.
+ * That query is broken down over leaf partitions into subqueries. Each
+ * subquery retrieves records from a leaf partition and restricts the records
+ * returned to those which are within the boundaries of the leaf partition
+ * and within the regions specified.
+ */
 public class SubQuery {
 
     private final Query parentQuery;
@@ -91,10 +100,6 @@ public class SubQuery {
 
     public List<String> getFiles() {
         return files;
-    }
-
-    public LeafPartitionQuery toLeafQuery() {
-        return new LeafPartitionQuery(getTableName(), getQueryId(), subQueryId, regions, leafPartitionId, partitionRegion, files);
     }
 
     public SubQuery withRequestedValueFields(List<String> requestedValueFields) {

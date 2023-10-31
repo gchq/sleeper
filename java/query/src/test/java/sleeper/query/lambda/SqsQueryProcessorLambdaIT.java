@@ -573,7 +573,6 @@ public class SqsQueryProcessorLambdaIT {
         TableProperties timeSeriesTable = this.createTimeSeriesTable(instanceProperties, 2000, 2020);
         this.loadData(instanceProperties, timeSeriesTable, dataDir, 2005, 2008);
         RangeFactory rangeFactory = new RangeFactory(SCHEMA);
-        QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String connectionId = "connection1";
         WireMockServer wireMockServer = new WireMockServer();
         UrlPattern url = urlEqualTo("/@connections/" + connectionId);
@@ -610,8 +609,7 @@ public class SqsQueryProcessorLambdaIT {
             do {
                 response = sqsClient.receiveMessage(request);
                 for (Message message : response.getMessages()) {
-                    Query subQuery = querySerDe.fromJson(message.getBody());
-                    this.processQuery(subQuery, instanceProperties);
+                    processQuery(message.getBody(), instanceProperties);
                 }
             } while (!response.getMessages().isEmpty());
 
@@ -670,11 +668,16 @@ public class SqsQueryProcessorLambdaIT {
     private void processQuery(Query query, InstanceProperties instanceProperties) throws ObjectFactoryException {
         QuerySerDe querySerDe = new QuerySerDe(new TablePropertiesProvider(instanceProperties, s3Client, dynamoClient));
         String jsonQuery = querySerDe.toJson(query);
+        processQuery(jsonQuery, instanceProperties);
+    }
+
+    private void processQuery(String jsonQuery, InstanceProperties instanceProperties) throws ObjectFactoryException {
         SQSEvent event = new SQSEvent();
         SQSMessage sqsMessage = new SQSMessage();
         sqsMessage.setBody(jsonQuery);
         event.setRecords(Lists.newArrayList(sqsMessage));
-        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
+        SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(
+                s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
         queryProcessorLambda.handleRequest(event, null);
     }
 
