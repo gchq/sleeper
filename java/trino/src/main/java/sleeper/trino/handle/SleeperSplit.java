@@ -26,14 +26,14 @@ import io.trino.spi.connector.ConnectorSplit;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.SchemaSerDe;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
  * This class holds a description of a single Trino split. In this implementation, each split holds one or more
- * range-scans over a single Sleeper leaf partition, as described in the {@link SubQuery} class.
+ * range-scans over a single Sleeper leaf partition, as described in the {@link LeafPartitionQuery} class.
  * <p>
  * Trino requires that class is serialisable into JSON, and this causes issues when fields such as the row keys are
  * defined as generic Objects. When these generic Objects are deserialised, the class information is not retained.
@@ -44,14 +44,14 @@ import java.util.Objects;
 public class SleeperSplit implements ConnectorSplit {
 
     private final Schema sleeperSchema;
-    private final SubQuery leafPartitionQuery;
+    private final LeafPartitionQuery leafPartitionQuery;
 
     /**
-     * Constructor to create a {@link SleeperSplit} directly from a {@link SubQuery}.
+     * Constructor to create a {@link SleeperSplit} directly from a {@link LeafPartitionQuery}.
      *
-     * @param leafPartitionQuery The {@link SubQuery} to use to construct this split.
+     * @param leafPartitionQuery The {@link LeafPartitionQuery} to use to construct this split.
      */
-    public SleeperSplit(Schema sleeperSchema, SubQuery leafPartitionQuery) {
+    public SleeperSplit(Schema sleeperSchema, LeafPartitionQuery leafPartitionQuery) {
         this.sleeperSchema = sleeperSchema;
         this.leafPartitionQuery = leafPartitionQuery;
     }
@@ -90,7 +90,7 @@ public class SleeperSplit implements ConnectorSplit {
         return schemaSerDe.toJson(getSleeperSchema());
     }
 
-    public SubQuery getLeafPartitionQuery() {
+    public LeafPartitionQuery getLeafPartitionQuery() {
         return leafPartitionQuery;
     }
 

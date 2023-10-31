@@ -26,13 +26,13 @@ import java.util.Objects;
 /**
  * A query for records that are within the range of a leaf partition. The
  * query contains information about which files should be read. Typically
- * {@link SubQuery}s are created from a query for a set of regions.
+ * {@link LeafPartitionQuery}s are created from a query for a set of regions.
  * That query is broken down over leaf partitions into subqueries. Each
  * subquery retrieves records from a leaf partition and restricts the records
  * returned to those which are within the boundaries of the leaf partition
  * and within the regions specified.
  */
-public class SubQuery {
+public class LeafPartitionQuery {
 
     private final Query parentQuery;
     private final String subQueryId;
@@ -41,7 +41,7 @@ public class SubQuery {
     private final Region partitionRegion;
     private final List<String> files;
 
-    private SubQuery(Builder builder) {
+    private LeafPartitionQuery(Builder builder) {
         parentQuery = builder.parentQuery;
         subQueryId = builder.subQueryId;
         regions = builder.regions;
@@ -102,7 +102,7 @@ public class SubQuery {
         return files;
     }
 
-    public SubQuery withRequestedValueFields(List<String> requestedValueFields) {
+    public LeafPartitionQuery withRequestedValueFields(List<String> requestedValueFields) {
         parentQuery.setRequestedValueFields(requestedValueFields);
         return this;
     }
@@ -115,7 +115,7 @@ public class SubQuery {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-        SubQuery subQuery = (SubQuery) object;
+        LeafPartitionQuery subQuery = (LeafPartitionQuery) object;
         return Objects.equals(parentQuery, subQuery.parentQuery)
                 && Objects.equals(subQueryId, subQuery.subQueryId)
                 && Objects.equals(regions, subQuery.regions)
@@ -182,8 +182,8 @@ public class SubQuery {
             return this;
         }
 
-        public SubQuery build() {
-            return new SubQuery(this);
+        public LeafPartitionQuery build() {
+            return new LeafPartitionQuery(this);
         }
     }
 }

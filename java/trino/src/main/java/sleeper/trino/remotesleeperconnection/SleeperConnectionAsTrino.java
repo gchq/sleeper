@@ -39,7 +39,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.impl.IngestCoordinator;
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.handle.SleeperColumnHandle;
 import sleeper.trino.handle.SleeperSplit;
@@ -253,7 +253,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
         List<String> columnNamesInOrder = outputSleeperColumnHandlesInOrder.stream()
                 .map(SleeperColumnHandle::getColumnName)
                 .collect(ImmutableList.toImmutableList());
-        SubQuery leafPartitionQuery = sleeperSplit.getLeafPartitionQuery()
+        LeafPartitionQuery leafPartitionQuery = sleeperSplit.getLeafPartitionQuery()
                 .withRequestedValueFields(columnNamesInOrder);
 
         // Stream the results, as Record objects, and then convert them into a List<Object>
@@ -320,7 +320,7 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
 
         // Split the query into leaf partition queries and return them.
         try {
-            List<SubQuery> leafPartitionQueryList = this.sleeperRawAwsConnection.splitIntoLeafPartitionQueries(
+            List<LeafPartitionQuery> leafPartitionQueryList = this.sleeperRawAwsConnection.splitIntoLeafPartitionQueries(
                     sleeperTransactionHandle.getTransactionStartInstant(),
                     sleeperQuery);
             return leafPartitionQueryList.stream()

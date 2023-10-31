@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.instance.InstanceProperties;
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
@@ -144,12 +144,12 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryInProgress(SubQuery query) {
+    public void queryInProgress(LeafPartitionQuery query) {
         updateState(DynamoDBQueryTrackerEntry.withSubQuery(query).state(QueryState.IN_PROGRESS).build());
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<SubQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
         subQueries.forEach(subQuery -> updateState(
                 DynamoDBQueryTrackerEntry.withSubQuery(subQuery).state(QueryState.QUEUED).build()));
     }
@@ -162,7 +162,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo) {
+    public void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo) {
         updateState(DynamoDBQueryTrackerEntry.withSubQuery(query)
                 .completed(outputInfo)
                 .build());
@@ -176,7 +176,7 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     @Override
-    public void queryFailed(SubQuery query, Exception e) {
+    public void queryFailed(LeafPartitionQuery query, Exception e) {
         updateState(DynamoDBQueryTrackerEntry.withSubQuery(query)
                 .failed(e)
                 .build());

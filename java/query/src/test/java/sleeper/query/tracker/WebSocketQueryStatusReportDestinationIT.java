@@ -31,7 +31,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.ResultsOutputLocation;
 
@@ -99,10 +99,10 @@ class WebSocketQueryStatusReportDestinationIT {
         Range partitionRange = config.getRangeFactory().createRange(SCHEMA.getRowKeyFields().get(0), "a", "b");
         Region partitionRegion = new Region(partitionRange);
         Query query = new Query.Builder("tableName", "q1", new Region(range)).build();
-        List<SubQuery> subQueries = List.of(
-                SubQuery.builder().parentQuery(query).subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
-                SubQuery.builder().parentQuery(query).subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
-                SubQuery.builder().parentQuery(query).subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of()).build());
+        List<LeafPartitionQuery> subQueries = List.of(
+                LeafPartitionQuery.builder().parentQuery(query).subQueryId("s1").regions(List.of(region)).leafPartitionId("leaf1").partitionRegion(partitionRegion).files(List.of()).build(),
+                LeafPartitionQuery.builder().parentQuery(query).subQueryId("s2").regions(List.of(region)).leafPartitionId("leaf2").partitionRegion(partitionRegion).files(List.of()).build(),
+                LeafPartitionQuery.builder().parentQuery(query).subQueryId("s3").regions(List.of(region)).leafPartitionId("leaf3").partitionRegion(partitionRegion).files(List.of()).build());
 
         // When
         config.getListener().subQueriesCreated(query, subQueries);

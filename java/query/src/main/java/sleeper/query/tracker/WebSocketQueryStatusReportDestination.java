@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.model.output.WebSocketOutput;
 
@@ -56,13 +56,13 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryInProgress(SubQuery query) {
+    public void queryInProgress(LeafPartitionQuery query) {
         // Ignore
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<SubQuery> subQueries) {
-        List<String> subQueryIds = subQueries.stream().map(SubQuery::getSubQueryId).collect(Collectors.toList());
+    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
+        List<String> subQueryIds = subQueries.stream().map(LeafPartitionQuery::getSubQueryId).collect(Collectors.toList());
         Map<String, Object> data = new HashMap<>();
         data.put("queryIds", subQueryIds);
         this.sendStatusReport("subqueries", getQueryId(query), data);
@@ -74,7 +74,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo) {
+    public void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo) {
         queryCompleted(getQueryId(query), outputInfo);
     }
 
@@ -99,7 +99,7 @@ public class WebSocketQueryStatusReportDestination extends WebSocketOutput imple
     }
 
     @Override
-    public void queryFailed(SubQuery query, Exception e) {
+    public void queryFailed(LeafPartitionQuery query, Exception e) {
         Map<String, Object> data = new HashMap<>();
         data.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
         sendStatusReport("error", getQueryId(query), data);

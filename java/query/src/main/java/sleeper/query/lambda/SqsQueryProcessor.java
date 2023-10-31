@@ -37,7 +37,7 @@ import sleeper.query.executor.QueryExecutor;
 import sleeper.query.model.Query;
 import sleeper.query.model.QueryOrLeafQuery;
 import sleeper.query.model.QuerySerDe;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.output.ResultsOutput;
 import sleeper.query.model.output.ResultsOutputConstants;
 import sleeper.query.model.output.ResultsOutputInfo;
@@ -101,7 +101,7 @@ public class SqsQueryProcessor {
         try {
             TableProperties tableProperties = tablePropertiesProvider.getByName(parentQuery.getTableName());
             if (query.isLeafQuery()) {
-                SubQuery leafQuery = query.asLeafQuery();
+                LeafPartitionQuery leafQuery = query.asLeafQuery();
                 queryTrackers.queryInProgress(leafQuery);
                 results = processLeafPartitionQuery(leafQuery);
             } else {
@@ -128,13 +128,13 @@ public class SqsQueryProcessor {
             queryExecutorCache.put(query.getTableName(), queryExecutor);
         }
         QueryExecutor queryExecutor = queryExecutorCache.get(query.getTableName());
-        List<SubQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
+        List<LeafPartitionQuery> subQueries = queryExecutor.splitIntoLeafPartitionQueries(query);
 
         if (subQueries.size() > 1) {
             // Put these subqueries back onto the queue so that they
             // can be processed independently
             String sqsQueryQueueURL = instanceProperties.get(QUERY_QUEUE_URL);
-            for (SubQuery subQuery : subQueries) {
+            for (LeafPartitionQuery subQuery : subQueries) {
                 String serialisedQuery = new QuerySerDe(tablePropertiesProvider).toJson(subQuery);
                 sqsClient.sendMessage(sqsQueryQueueURL, serialisedQuery);
             }
@@ -154,7 +154,7 @@ public class SqsQueryProcessor {
         }
     }
 
-    private CloseableIterator<Record> processLeafPartitionQuery(SubQuery leafPartitionQuery) throws QueryException {
+    private CloseableIterator<Record> processLeafPartitionQuery(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         TableProperties tableProperties = tablePropertiesProvider.getByName(leafPartitionQuery.getTableName());
         Configuration conf = getConfiguration(leafPartitionQuery.getTableName(), tableProperties);
         LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);

@@ -70,7 +70,7 @@ class QueryJson {
                 .build();
     }
 
-    static QueryJson from(SubQuery subQuery, QuerySerDe.SchemaLoader schemaLoader) {
+    static QueryJson from(LeafPartitionQuery subQuery, QuerySerDe.SchemaLoader schemaLoader) {
         if (null == subQuery.getTableName()) {
             throw new QueryValidationException(subQuery.getQueryId(), subQuery.getStatusReportDestinations(), "Table must not be null");
         }
@@ -116,9 +116,9 @@ class QueryJson {
                 .build();
     }
 
-    private SubQuery toSubQuery(RegionSerDe regionSerDe) {
+    private LeafPartitionQuery toSubQuery(RegionSerDe regionSerDe) {
         Region partitionRegion = regionSerDe.fromJsonTree(this.partitionRegion);
-        return SubQuery.builder()
+        return LeafPartitionQuery.builder()
                 .parentQuery(toParentQuery(regionSerDe))
                 .subQueryId(subQueryId)
                 .regions(readRegions(subQueryRegions, regionSerDe))

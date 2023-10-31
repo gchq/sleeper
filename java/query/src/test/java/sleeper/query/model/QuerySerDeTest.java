@@ -530,7 +530,7 @@ public class QuerySerDeTest {
         Region region = new Region(rangeFactory.createRange(field, new byte[]{0, 1, 2}, new byte[]{4}));
         Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
         Query parentQuery = new Query.Builder(tableName, "id", region).build();
-        SubQuery query = SubQuery.builder()
+        LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery)
                 .subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
@@ -540,7 +540,7 @@ public class QuerySerDeTest {
         // When
         System.out.println(querySerDe.toJson(query));
 
-        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
+        LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -562,7 +562,7 @@ public class QuerySerDeTest {
         Region region2 = new Region(rangeFactory.createRange(field, new byte[]{10}, true, new byte[]{20}, true));
         Region partitionRegion = new Region(rangeFactory.createRange(field, new byte[]{0}, new byte[]{100}));
         Query parentQuery = new Query.Builder(tableName, "id", List.of(region1, region2)).build();
-        SubQuery query = SubQuery.builder()
+        LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery)
                 .subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
@@ -570,7 +570,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, useTablePropertiesProvider);
 
         // When
-        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
+        LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);
@@ -591,7 +591,7 @@ public class QuerySerDeTest {
         Region region2 = new Region(rangeFactory.createRange(field, 10L, true, 100L, true));
         Region partitionRegion = new Region(rangeFactory.createRange(field, 0L, 1000L));
         Query parentQuery = new Query.Builder(tableName, "id", List.of(region1, region2)).build();
-        SubQuery query = SubQuery.builder()
+        LeafPartitionQuery query = LeafPartitionQuery.builder()
                 .parentQuery(parentQuery).regions(List.of(region2))
                 .subQueryId("subid").leafPartitionId("leaf")
                 .partitionRegion(partitionRegion).files(files)
@@ -599,7 +599,7 @@ public class QuerySerDeTest {
         QuerySerDe querySerDe = generateQuerySerDe(tableName, schema, true);
 
         // When
-        SubQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
+        LeafPartitionQuery deserialisedQuery = querySerDe.fromJsonOrSubQuery(querySerDe.toJson(query)).asLeafQuery();
 
         // Then
         assertThat(deserialisedQuery).isEqualTo(query);

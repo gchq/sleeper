@@ -16,7 +16,7 @@
 package sleeper.query.tracker;
 
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.List;
@@ -29,17 +29,17 @@ public interface QueryStatusReportListener {
 
     void queryInProgress(Query query);
 
-    void queryInProgress(SubQuery subQuery);
+    void queryInProgress(LeafPartitionQuery subQuery);
 
-    void subQueriesCreated(Query query, List<SubQuery> subQueries);
+    void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries);
 
     void queryCompleted(Query query, ResultsOutputInfo outputInfo);
 
-    void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo);
+    void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo);
 
     void queryFailed(Query query, Exception e);
 
-    void queryFailed(SubQuery query, Exception e);
+    void queryFailed(LeafPartitionQuery query, Exception e);
 
     static QueryStatusReportListener fromConfig(Map<String, String> destinationConfig) {
         if (!destinationConfig.containsKey(QueryStatusReportListener.DESTINATION)) {

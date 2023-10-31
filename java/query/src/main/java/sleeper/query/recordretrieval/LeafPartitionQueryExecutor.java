@@ -31,7 +31,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.utils.RangeQueryUtils;
 
 import java.util.HashMap;
@@ -44,7 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
- * Executes a {@link SubQuery}.
+ * Executes a {@link LeafPartitionQuery}.
  */
 public class LeafPartitionQueryExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(LeafPartitionQueryExecutor.class);
@@ -65,7 +65,7 @@ public class LeafPartitionQueryExecutor {
         this.tableProperties = tableProperties;
     }
 
-    public CloseableIterator<Record> getRecords(SubQuery leafPartitionQuery) throws QueryException {
+    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
         List<String> files = leafPartitionQuery.getFiles();
         Schema tableSchema = tableProperties.getSchema();
@@ -105,7 +105,7 @@ public class LeafPartitionQueryExecutor {
         }
     }
 
-    private Schema createSchemaForDataRead(SubQuery query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
+    private Schema createSchemaForDataRead(LeafPartitionQuery query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
         List<String> requestedValueFields = query.getRequestedValueFields();
         if (requestedValueFields == null) {
             return schema;

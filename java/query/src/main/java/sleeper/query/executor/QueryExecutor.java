@@ -32,7 +32,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
 import java.util.ArrayList;
@@ -116,7 +116,7 @@ public class QueryExecutor {
 
     /**
      * Executes a query. This method first splits up the query into one or more
-     * {@link SubQuery}s. For each of these a Supplier of CloseableIterator
+     * {@link LeafPartitionQuery}s. For each of these a Supplier of CloseableIterator
      * is created. This is done using suppliers to avoid the initialisation of
      * record retrievers until they are needed. In the case of Parquet files,
      * initialisation of the readers requires reading the footers of the file
@@ -130,32 +130,32 @@ public class QueryExecutor {
      * @throws QueryException if it errors.
      */
     public CloseableIterator<Record> execute(Query query) throws QueryException {
-        List<SubQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
+        List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
         List<Supplier<CloseableIterator<Record>>> iteratorSuppliers = createRecordIteratorSuppliers(leafPartitionQueries);
         return new ConcatenatingIterator(iteratorSuppliers);
     }
 
-    public CloseableIterator<Record> execute(SubQuery query) throws QueryException {
+    public CloseableIterator<Record> execute(LeafPartitionQuery query) throws QueryException {
         return new ConcatenatingIterator(createRecordIteratorSuppliers(List.of(query)));
     }
 
     /**
-     * Splits up a {@link Query} into multiple {@link SubQuery}s using the
+     * Splits up a {@link Query} into multiple {@link LeafPartitionQuery}s using the
      * {@code getRelevantLeafPartitions()} method. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
      *
      * @param query the query to be split up
-     * @return A list of {@link SubQuery}s
+     * @return A list of {@link LeafPartitionQuery}s
      */
-    public List<SubQuery> splitIntoLeafPartitionQueries(Query query) {
+    public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
         // that partition. Only leaf partitions that do overlap one of the ranges
         // from the query are contained in the map.
         Map<Partition, List<Region>> relevantLeafPartitions = getRelevantLeafPartitions(query);
         LOGGER.debug("There are {} relevant leaf partitions", relevantLeafPartitions.size());
 
-        List<SubQuery> leafPartitionQueriesList = new ArrayList<>();
+        List<LeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Map.Entry<Partition, List<Region>> entry : relevantLeafPartitions.entrySet()) {
             Partition partition = entry.getKey();
             List<Region> regions = entry.getValue();
@@ -172,7 +172,7 @@ public class QueryExecutor {
             // requested and to the range of that leaf partition, this ensures
             // that records are not returned twice if they are in a non-leaf
             // partition).
-            SubQuery leafQuery = SubQuery.builder()
+            LeafPartitionQuery leafQuery = LeafPartitionQuery.builder()
                     .parentQuery(query)
                     .subQueryId(UUID.randomUUID().toString())
                     .regions(regions)
@@ -187,10 +187,10 @@ public class QueryExecutor {
         return leafPartitionQueriesList;
     }
 
-    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<SubQuery> leafPartitionQueries) {
+    private List<Supplier<CloseableIterator<Record>>> createRecordIteratorSuppliers(List<LeafPartitionQuery> leafPartitionQueries) {
         List<Supplier<CloseableIterator<Record>>> iterators = new ArrayList<>();
 
-        for (SubQuery leafPartitionQuery : leafPartitionQueries) {
+        for (LeafPartitionQuery leafPartitionQuery : leafPartitionQueries) {
             iterators.add(() -> {
                 try {
                     LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, configuration, tableProperties);

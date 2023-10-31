@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.query.model.Query;
-import sleeper.query.model.SubQuery;
+import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 
 import java.util.ArrayList;
@@ -69,13 +69,13 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryInProgress(SubQuery query) {
+    public void queryInProgress(LeafPartitionQuery query) {
         LOGGER.info("Query InProgress: {}", query);
         listeners.forEach(listener -> listener.queryInProgress(query));
     }
 
     @Override
-    public void subQueriesCreated(Query query, List<SubQuery> subQueries) {
+    public void subQueriesCreated(Query query, List<LeafPartitionQuery> subQueries) {
         LOGGER.info("SubQueries Created: {}", subQueries);
         listeners.forEach(listener -> listener.subQueriesCreated(query, subQueries));
     }
@@ -87,7 +87,7 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryCompleted(SubQuery query, ResultsOutputInfo outputInfo) {
+    public void queryCompleted(LeafPartitionQuery query, ResultsOutputInfo outputInfo) {
         LOGGER.info("Query Completed: {} {}", query, outputInfo);
         listeners.forEach(listener -> listener.queryCompleted(query, outputInfo));
     }
@@ -99,7 +99,7 @@ public class QueryStatusReportListeners implements QueryStatusReportListener {
     }
 
     @Override
-    public void queryFailed(SubQuery query, Exception e) {
+    public void queryFailed(LeafPartitionQuery query, Exception e) {
         LOGGER.error("Query Failed: {}", query, e);
         listeners.forEach(listener -> listener.queryFailed(query, e));
     }
