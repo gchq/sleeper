@@ -33,11 +33,11 @@ import static sleeper.core.record.process.status.TestRunStatusUpdates.defaultUpd
 import static sleeper.ingest.job.status.IngestJobStatusType.REJECTED;
 
 public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
-    private final Map<String, TableJobs> tableNameToJobs = new HashMap<>();
+    private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
 
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
-        tableNameToJobs.computeIfAbsent(event.getTableName(), tableName -> new TableJobs())
+        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
@@ -50,7 +50,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
     @Override
     public void jobStarted(IngestJobStartedEvent event) {
-        tableNameToJobs.computeIfAbsent(event.getTableName(), tableName -> new TableJobs())
+        tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs())
                 .jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
@@ -67,7 +67,7 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
         RecordsProcessedSummary summary = event.getSummary();
-        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(event.getTableName())
+        List<ProcessStatusUpdateRecord> jobRecords = tableJobs(event.getTableId())
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(event.getJobId()))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + event.getJobId()));
         jobRecords.add(ProcessStatusUpdateRecord.builder()
@@ -79,8 +79,8 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     @Override
-    public List<IngestJobStatus> getAllJobs(String tableName) {
-        return IngestJobStatus.streamFrom(streamTableRecords(tableName))
+    public List<IngestJobStatus> getAllJobs(TableIdentity tableId) {
+        return IngestJobStatus.streamFrom(streamTableRecords(tableId))
                 .collect(Collectors.toList());
     }
 
@@ -99,22 +99,18 @@ public class WriteToMemoryIngestJobStatusStore implements IngestJobStatusStore {
     }
 
     public Stream<IngestJobStatus> streamAllJobs() {
-        return IngestJobStatus.streamFrom(tableNameToJobs.values().stream()
+        return IngestJobStatus.streamFrom(tableIdToJobs.values().stream()
                 .flatMap(TableJobs::streamAllRecords));
     }
 
     public Stream<ProcessStatusUpdateRecord> streamTableRecords(TableIdentity tableId) {
-        return streamTableRecords(tableId.getTableName());
-    }
-
-    public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableName) {
-        return tableJobs(tableName)
+        return tableJobs(tableId.getTableUniqueId())
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
     }
 
-    private Optional<TableJobs> tableJobs(String tableName) {
-        return Optional.ofNullable(tableNameToJobs.get(tableName));
+    private Optional<TableJobs> tableJobs(String tableId) {
+        return Optional.ofNullable(tableIdToJobs.get(tableId));
     }
 
     private static class TableJobs {

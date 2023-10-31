@@ -188,6 +188,7 @@ public class IngestJobValidatedEvent {
         public Builder job(IngestJob job) {
             return jobId(job.getId())
                     .tableName(job.getTableName())
+                    .tableId(job.getTableId())
                     .fileCount(job.getFileCount());
         }
 
