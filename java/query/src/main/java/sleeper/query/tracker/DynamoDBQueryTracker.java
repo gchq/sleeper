@@ -17,9 +17,7 @@ package sleeper.query.tracker;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeAction;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -37,10 +35,8 @@ import sleeper.query.model.SubQuery;
 import sleeper.query.model.output.ResultsOutputInfo;
 import sleeper.query.tracker.exception.QueryTrackerException;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static sleeper.configuration.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
@@ -143,30 +139,18 @@ public class DynamoDBQueryTracker implements QueryStatusReportListener, QueryTra
     }
 
     private void updateState(String queryId, String subQueryId, QueryState state, long recordCount, String errorMessage) {
-        Map<String, AttributeValue> key = new HashMap<>();
-        key.put(QUERY_ID, new AttributeValue(queryId));
-        key.put(SUB_QUERY_ID, new AttributeValue(subQueryId));
+        updateState(DynamoDBQueryTrackerEntry.builder()
+                .queryId(queryId)
+                .subQueryId(subQueryId)
+                .state(state)
+                .recordCount(recordCount)
+                .errorMessage(errorMessage)
+                .build());
+    }
 
-        Map<String, AttributeValueUpdate> valueUpdate = new HashMap<>();
-        long now = System.currentTimeMillis() / 1000;
-        long expiryDate = now + (3600 * 24 * queryTrackerTTL);
-        valueUpdate.put(LAST_UPDATE_TIME, new AttributeValueUpdate(
-                new AttributeValue().withN(String.valueOf(now)), AttributeAction.PUT));
-
-        valueUpdate.put(EXPIRY_DATE, new AttributeValueUpdate(
-                new AttributeValue().withN(String.valueOf(expiryDate)), AttributeAction.PUT));
-
-        valueUpdate.put(RECORD_COUNT, new AttributeValueUpdate(
-                new AttributeValue().withN(String.valueOf(recordCount)), AttributeAction.PUT));
-
-        valueUpdate.put(LAST_KNOWN_STATE, new AttributeValueUpdate(
-                new AttributeValue(state.name()), AttributeAction.PUT));
-        if (Objects.nonNull(errorMessage)) {
-            valueUpdate.put(ERROR_MESSAGE, new AttributeValueUpdate(
-                    new AttributeValue().withS(errorMessage), AttributeAction.PUT));
-        }
-
-        dynamoDB.updateItem(new UpdateItemRequest(trackerTableName, key, valueUpdate));
+    private void updateState(DynamoDBQueryTrackerEntry entry) {
+        dynamoDB.updateItem(new UpdateItemRequest(trackerTableName,
+                entry.getKey(), entry.getValueUpdate(queryTrackerTTL)));
     }
 
     private void updateState(String queryId, QueryState state, long recordCount, String errorMessage) {
