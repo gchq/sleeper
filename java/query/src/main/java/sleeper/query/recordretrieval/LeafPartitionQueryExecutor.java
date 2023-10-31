@@ -32,7 +32,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
-import sleeper.query.model.Query;
 import sleeper.query.model.SubQuery;
 import sleeper.query.utils.RangeQueryUtils;
 
@@ -68,10 +67,6 @@ public class LeafPartitionQueryExecutor {
     }
 
     public CloseableIterator<Record> getRecords(SubQuery leafPartitionQuery) throws QueryException {
-        return getRecords(leafPartitionQuery.toLeafQuery());
-    }
-
-    public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery) throws QueryException {
         LOGGER.info("Retrieving records for LeafPartitionQuery {}", leafPartitionQuery);
         List<String> files = leafPartitionQuery.getFiles();
         Schema tableSchema = tableProperties.getSchema();
@@ -111,7 +106,7 @@ public class LeafPartitionQueryExecutor {
         }
     }
 
-    private Schema createSchemaForDataRead(Query query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
+    private Schema createSchemaForDataRead(SubQuery query, Schema schema, SortedRecordIterator compactionIterator, SortedRecordIterator queryIterator) {
         List<String> requestedValueFields = query.getRequestedValueFields();
         if (requestedValueFields == null) {
             return schema;

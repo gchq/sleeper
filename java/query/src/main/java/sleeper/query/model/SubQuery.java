@@ -56,6 +56,18 @@ public class SubQuery {
         return parentQuery.getStatusReportDestinations();
     }
 
+    public String getQueryTimeIteratorClassName() {
+        return parentQuery.getQueryTimeIteratorClassName();
+    }
+
+    public String getQueryTimeIteratorConfig() {
+        return parentQuery.getQueryTimeIteratorConfig();
+    }
+
+    public List<String> getRequestedValueFields() {
+        return parentQuery.getRequestedValueFields();
+    }
+
     public Query getParentQuery() {
         return parentQuery;
     }
