@@ -33,6 +33,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.query.QueryException;
 import sleeper.query.model.LeafPartitionQuery;
 import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
 import sleeper.query.recordretrieval.LeafPartitionQueryExecutor;
 
 import java.util.ArrayList;
@@ -145,15 +146,23 @@ public class QueryExecutor {
      * @return A list of {@link LeafPartitionQuery}s
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
+        return splitIntoSubQueries(query).stream()
+                .map(SubQuery::toLeafQuery)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    public List<SubQuery> splitIntoSubQueries(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
         // that partition. Only leaf partitions that do overlap one of the ranges
         // from the query are contained in the map.
         Map<Partition, List<Region>> relevantLeafPartitions = getRelevantLeafPartitions(query);
         LOGGER.debug("There are {} relevant leaf partitions", relevantLeafPartitions.size());
 
-        List<LeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
+        List<SubQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Map.Entry<Partition, List<Region>> entry : relevantLeafPartitions.entrySet()) {
-            List<String> files = getFiles(entry.getKey());
+            Partition partition = entry.getKey();
+            List<Region> regions = entry.getValue();
+            List<String> files = getFiles(partition);
 
             if (files.isEmpty()) {
                 LOGGER.info("No files for partition {}", entry.getKey());
@@ -166,23 +175,16 @@ public class QueryExecutor {
             // requested and to the range of that leaf partition, this ensures
             // that records are not returned twice if they are in a non-leaf
             // partition).
-            LeafPartitionQuery leafPartitionQuery
-                    = new LeafPartitionQuery.Builder(
-                    query.getTableName(),
-                    query.getQueryId(),
-                    UUID.randomUUID().toString(),
-                    entry.getValue(),
-                    entry.getKey().getId(),
-                    entry.getKey().getRegion(),
-                    files)
-                    .setQueryTimeIteratorClassName(query.getQueryTimeIteratorClassName())
-                    .setQueryTimeIteratorConfig(query.getQueryTimeIteratorConfig())
-                    .setResultsPublisherConfig(query.getResultsPublisherConfig())
-                    .setRequestedValueFields(query.getRequestedValueFields())
-                    .setStatusReportDestinations(query.getStatusReportDestinations())
+            SubQuery leafQuery = SubQuery.builder()
+                    .parentQuery(query)
+                    .subQueryId(UUID.randomUUID().toString())
+                    .regions(regions)
+                    .leafPartitionId(partition.getId())
+                    .partitionRegion(partition.getRegion())
+                    .files(files)
                     .build();
-            LOGGER.debug("Created {}", leafPartitionQuery);
-            leafPartitionQueriesList.add(leafPartitionQuery);
+            LOGGER.debug("Created {}", leafQuery);
+            leafPartitionQueriesList.add(leafQuery);
         }
 
         return leafPartitionQueriesList;
