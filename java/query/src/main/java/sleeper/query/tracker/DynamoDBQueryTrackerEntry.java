@@ -20,9 +20,15 @@ import com.amazonaws.services.dynamodbv2.model.AttributeAction;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 
+import sleeper.query.model.Query;
+import sleeper.query.model.SubQuery;
+import sleeper.query.model.output.ResultsOutputInfo;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import static sleeper.query.tracker.DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER;
 
 public class DynamoDBQueryTrackerEntry {
 
@@ -46,6 +52,16 @@ public class DynamoDBQueryTrackerEntry {
         state = builder.state;
         recordCount = builder.recordCount;
         errorMessage = builder.errorMessage;
+    }
+
+    public static Builder withQuery(Query query) {
+        return builder().queryId(query.getQueryId());
+    }
+
+    public static Builder withSubQuery(SubQuery query) {
+        return builder()
+                .queryId(query.getQueryId())
+                .subQueryId(query.getSubQueryId());
     }
 
     public static Builder builder() {
@@ -81,9 +97,53 @@ public class DynamoDBQueryTrackerEntry {
         return valueUpdate;
     }
 
+    public static TrackedQuery toTrackedQuery(Map<String, AttributeValue> stringAttributeValueMap) {
+        String id = stringAttributeValueMap.get(QUERY_ID).getS();
+        Long updateTime = Long.valueOf(stringAttributeValueMap.get(LAST_UPDATE_TIME).getN());
+        Long expiryDate = Long.valueOf(stringAttributeValueMap.get(EXPIRY_DATE).getN());
+        Long recordCount = Long.valueOf(stringAttributeValueMap.get(RECORD_COUNT).getN());
+        QueryState state = QueryState.valueOf(stringAttributeValueMap.get(LAST_KNOWN_STATE).getS());
+        String subQueryId = stringAttributeValueMap.get(SUB_QUERY_ID).getS();
+        String errorMessage = null;
+        if (stringAttributeValueMap.containsKey(ERROR_MESSAGE)) {
+            errorMessage = stringAttributeValueMap.get(ERROR_MESSAGE).getS();
+        }
+
+        return TrackedQuery.builder()
+                .queryId(id).subQueryId(subQueryId)
+                .lastUpdateTime(updateTime)
+                .expiryDate(expiryDate)
+                .lastKnownState(state)
+                .recordCount(recordCount)
+                .errorMessage(errorMessage)
+                .build();
+    }
+
+    public boolean isUpdateParent() {
+        return isSubQuery() &&
+                (state.equals(QueryState.COMPLETED) || state.equals(QueryState.FAILED));
+    }
+
+    private boolean isSubQuery() {
+        return !NON_NESTED_QUERY_PLACEHOLDER.equals(subQueryId);
+    }
+
+    public String getQueryId() {
+        return queryId;
+    }
+
+    public DynamoDBQueryTrackerEntry updateParent(QueryState state, long totalRecordCount) {
+        return builder()
+                .queryId(queryId)
+                .state(state)
+                .recordCount(totalRecordCount)
+                .errorMessage(errorMessage)
+                .build();
+    }
+
     public static final class Builder {
         private String queryId;
-        private String subQueryId;
+        private String subQueryId = NON_NESTED_QUERY_PLACEHOLDER;
         private QueryState state;
         private long recordCount;
         private String errorMessage;
@@ -114,6 +174,27 @@ public class DynamoDBQueryTrackerEntry {
         public Builder errorMessage(String errorMessage) {
             this.errorMessage = errorMessage;
             return this;
+        }
+
+        public Builder completed(ResultsOutputInfo outputInfo) {
+            if (outputInfo.getError() != null) {
+                if (outputInfo.getRecordCount() > 0) {
+                    return state(QueryState.PARTIALLY_FAILED)
+                            .recordCount(outputInfo.getRecordCount())
+                            .errorMessage(outputInfo.getError().getMessage());
+                } else {
+                    return state(QueryState.FAILED)
+                            .errorMessage(outputInfo.getError().getMessage());
+                }
+            } else {
+                return state(QueryState.COMPLETED)
+                        .recordCount(outputInfo.getRecordCount());
+            }
+        }
+
+        public Builder failed(Exception e) {
+            return state(QueryState.FAILED)
+                    .errorMessage(e.getMessage());
         }
 
         public DynamoDBQueryTrackerEntry build() {

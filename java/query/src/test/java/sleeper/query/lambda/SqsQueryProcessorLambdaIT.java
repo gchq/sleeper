@@ -87,6 +87,7 @@ import sleeper.query.model.output.S3ResultsOutput;
 import sleeper.query.model.output.SQSResultsOutput;
 import sleeper.query.model.output.WebSocketResultsOutput;
 import sleeper.query.tracker.DynamoDBQueryTracker;
+import sleeper.query.tracker.DynamoDBQueryTrackerEntry;
 import sleeper.query.tracker.QueryState;
 import sleeper.query.tracker.QueryStatusReportListener;
 import sleeper.query.tracker.TrackedQuery;
@@ -182,7 +183,7 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
+        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
                 .withAttributeValueList(new AttributeValue("abc"))
                 .withComparisonOperator(ComparisonOperator.EQ)
         );
@@ -191,7 +192,7 @@ public class SqsQueryProcessorLambdaIT {
                         .withKeyConditions(keyCondition)
                 );
         assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
     }
 
     @Test
@@ -212,7 +213,7 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
+        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
                 .withAttributeValueList(new AttributeValue("abc"))
                 .withComparisonOperator(ComparisonOperator.EQ)
         );
@@ -242,11 +243,11 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
+        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
                 .withAttributeValueList(new AttributeValue("abc"))
                 .withComparisonOperator(ComparisonOperator.EQ)
         );
-        keyCondition.put(DynamoDBQueryTracker.SUB_QUERY_ID, new Condition()
+        keyCondition.put(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, new Condition()
                 .withAttributeValueList(new AttributeValue(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))
                 .withComparisonOperator(ComparisonOperator.EQ)
         );
@@ -255,7 +256,7 @@ public class SqsQueryProcessorLambdaIT {
                         .withKeyConditions(keyCondition)
                 );
         assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
+        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
         ReceiveMessageRequest request = new ReceiveMessageRequest(instanceProperties.get(QUERY_QUEUE_URL))
                 .withMaxNumberOfMessages(1);
         SqsQueryProcessorLambda queryProcessorLambda = new SqsQueryProcessorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
@@ -275,9 +276,9 @@ public class SqsQueryProcessorLambdaIT {
                     );
             assertThat(response.getCount().intValue()).isOne();
             if (i <= 2) {
-                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
+                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(IN_PROGRESS);
             } else {
-                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+                assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
             }
         }
         ReceiveMessageResult result = sqsClient.receiveMessage(request);
@@ -302,11 +303,11 @@ public class SqsQueryProcessorLambdaIT {
 
         // Then
         Map<String, Condition> keyCondition = new HashMap<>();
-        keyCondition.put(DynamoDBQueryTracker.QUERY_ID, new Condition()
+        keyCondition.put(DynamoDBQueryTrackerEntry.QUERY_ID, new Condition()
                 .withAttributeValueList(new AttributeValue("abc"))
                 .withComparisonOperator(ComparisonOperator.EQ)
         );
-        keyCondition.put(DynamoDBQueryTracker.SUB_QUERY_ID, new Condition()
+        keyCondition.put(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, new Condition()
                 .withAttributeValueList(new AttributeValue(DynamoDBQueryTracker.NON_NESTED_QUERY_PLACEHOLDER))
                 .withComparisonOperator(ComparisonOperator.EQ)
         );
@@ -315,7 +316,7 @@ public class SqsQueryProcessorLambdaIT {
                         .withKeyConditions(keyCondition)
                 );
         assertThat(response.getCount().intValue()).isOne();
-        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTracker.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
+        assertThat(QueryState.valueOf(response.getItems().get(0).get(DynamoDBQueryTrackerEntry.LAST_KNOWN_STATE).getS())).isEqualTo(COMPLETED);
     }
 
     @Test
@@ -771,18 +772,18 @@ public class SqsQueryProcessorLambdaIT {
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {
         return Lists.newArrayList(
-                new AttributeDefinition(DynamoDBQueryTracker.QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBQueryTracker.SUB_QUERY_ID, ScalarAttributeType.S)
+                new AttributeDefinition(DynamoDBQueryTrackerEntry.QUERY_ID, ScalarAttributeType.S),
+                new AttributeDefinition(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, ScalarAttributeType.S)
         );
     }
 
     private List<KeySchemaElement> createKeySchema() {
         return Lists.newArrayList(
                 new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.QUERY_ID)
+                        .withAttributeName(DynamoDBQueryTrackerEntry.QUERY_ID)
                         .withKeyType(KeyType.HASH),
                 new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.SUB_QUERY_ID)
+                        .withAttributeName(DynamoDBQueryTrackerEntry.SUB_QUERY_ID)
                         .withKeyType(KeyType.RANGE)
         );
     }

@@ -52,18 +52,18 @@ public class DynamoDBQueryTrackerCreator {
 
     private Collection<AttributeDefinition> createAttributeDefinitions() {
         return Lists.newArrayList(
-                new AttributeDefinition(DynamoDBQueryTracker.QUERY_ID, ScalarAttributeType.S),
-                new AttributeDefinition(DynamoDBQueryTracker.SUB_QUERY_ID, ScalarAttributeType.S)
+                new AttributeDefinition(DynamoDBQueryTrackerEntry.QUERY_ID, ScalarAttributeType.S),
+                new AttributeDefinition(DynamoDBQueryTrackerEntry.SUB_QUERY_ID, ScalarAttributeType.S)
         );
     }
 
     private List<KeySchemaElement> createKeySchema() {
         return Lists.newArrayList(
                 new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.QUERY_ID)
+                        .withAttributeName(DynamoDBQueryTrackerEntry.QUERY_ID)
                         .withKeyType(KeyType.HASH),
                 new KeySchemaElement()
-                        .withAttributeName(DynamoDBQueryTracker.SUB_QUERY_ID)
+                        .withAttributeName(DynamoDBQueryTrackerEntry.SUB_QUERY_ID)
                         .withKeyType(KeyType.RANGE)
         );
     }
